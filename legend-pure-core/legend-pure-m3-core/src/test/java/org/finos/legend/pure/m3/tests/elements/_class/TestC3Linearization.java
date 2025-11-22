@@ -15,13 +15,13 @@
 package org.finos.legend.pure.m3.tests.elements._class;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.multimap.list.MutableListMultimap;
+import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.multimap.list.FastListMultimap;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
@@ -35,12 +35,11 @@ import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.IOException;
 
 public class TestC3Linearization
 {
@@ -423,7 +422,7 @@ public class TestC3Linearization
     private static class StubCoreInstance extends AbstractCoreInstance
     {
         private final String name;
-        private final MutableListMultimap<String, CoreInstance> properties = FastListMultimap.newMultimap();
+        private final MutableMap<String, MutableList<CoreInstance>> properties = Maps.mutable.empty();
 
         private StubCoreInstance(String name)
         {
@@ -487,7 +486,7 @@ public class TestC3Linearization
         @Override
         public void addKeyWithEmptyList(ListIterable<String> key)
         {
-            this.properties.removeAll(key.getLast());
+            this.properties.remove(key.getLast());
         }
 
         @Override
@@ -515,21 +514,9 @@ public class TestC3Linearization
         }
 
         @Override
-        public CoreInstance getValueForMetaPropertyToOne(CoreInstance property)
+        public ListIterable<CoreInstance> getValueForMetaPropertyToMany(String keyName)
         {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public MutableList<CoreInstance> getValueForMetaPropertyToMany(String keyName)
-        {
-            return this.properties.get(keyName);
-        }
-
-        @Override
-        public MutableList<CoreInstance> getValueForMetaPropertyToMany(CoreInstance key)
-        {
-            throw new UnsupportedOperationException();
+            return this.properties.getIfAbsentValue(keyName, Lists.fixedSize.empty());
         }
 
         @Override
@@ -541,7 +528,15 @@ public class TestC3Linearization
         @Override
         public void removeValueForMetaPropertyToMany(String keyName, CoreInstance coreInstance)
         {
-            this.properties.remove(keyName, coreInstance);
+            MutableList<CoreInstance> values = this.properties.get(keyName);
+            if (values != null)
+            {
+                values.remove(coreInstance);
+                if (values.isEmpty())
+                {
+                    this.properties.remove(keyName);
+                }
+            }
         }
 
         @Override
@@ -571,58 +566,37 @@ public class TestC3Linearization
         @Override
         public void printFull(Appendable appendable, String tab)
         {
-            try
+            SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+            safeAppendable.append(this.name).append("\n");
+            this.properties.forEachKeyValue((key, values) ->
             {
-                appendable.append(this.name);
-                appendable.append("\n");
-                for (String key : this.properties.keysView())
-                {
-                    appendable.append(tab);
-                    appendable.append(key);
-                    appendable.append(": ");
-                    this.properties.get(key).collect(GET_NAME).appendString(appendable, "[", ", ", "]\n");
-                }
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Override
-        public void print(Appendable appendable, String tab)
-        {
-            printFull(appendable, tab);
+                safeAppendable.append(tab).append(key).append(": ");
+                values.asLazy().collect(CoreInstance::getName).appendString(safeAppendable, "[", ", ", "]\n");
+            });
         }
 
         @Override
         public void print(Appendable appendable, String tab, int max)
         {
-            print(appendable, tab);
-        }
-
-        @Override
-        public void printWithoutDebug(Appendable appendable, String tab)
-        {
-            print(appendable, tab);
+            printFull(appendable, tab);
         }
 
         @Override
         public void printWithoutDebug(Appendable appendable, String tab, int max)
         {
-            print(appendable, tab);
+            printFull(appendable, tab);
         }
 
         @Override
         public void setKeyValues(ListIterable<String> key, ListIterable<? extends CoreInstance> value)
         {
-            this.properties.replaceValues(key.getLast(), value);
+            this.properties.put(key.getLast(), Lists.mutable.withAll(value));
         }
 
         @Override
         public void addKeyValue(ListIterable<String> key, CoreInstance value)
         {
-            this.properties.put(key.getLast(), value);
+            this.properties.getIfAbsentPut(key.getLast(), Lists.mutable::empty).add(value);
         }
 
         @Override

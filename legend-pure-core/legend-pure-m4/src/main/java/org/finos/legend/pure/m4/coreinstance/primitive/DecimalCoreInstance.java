@@ -14,32 +14,15 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive;
 
+import org.eclipse.collections.api.block.function.Function;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.math.BigDecimal;
 
-public class DecimalCoreInstance extends PrimitiveCoreInstance<BigDecimal>
+public interface DecimalCoreInstance extends PrimitiveCoreInstance<BigDecimal>
 {
-    private String name = null;
-
-    protected DecimalCoreInstance(BigDecimal value, CoreInstance classifier, int internalSyntheticId)
-    {
-        super(value, classifier, internalSyntheticId);
-    }
+    Function<CoreInstance, BigDecimal> FROM_CORE_INSTANCE_FN = instance -> (instance == null) ? null : ((DecimalCoreInstance) instance).getValue();
 
     @Override
-    public CoreInstance copy()
-    {
-        return new DecimalCoreInstance(this.getValue(), this.getClassifier(), this.getSyntheticId());
-    }
-
-    @Override
-    public String getName()
-    {
-        if (this.name == null)
-        {
-            this.name = getValue().toPlainString();
-        }
-        return this.name;
-    }
+    DecimalCoreInstance copy();
 }

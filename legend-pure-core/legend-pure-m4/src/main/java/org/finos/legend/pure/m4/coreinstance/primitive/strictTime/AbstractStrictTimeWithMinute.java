@@ -16,25 +16,12 @@ package org.finos.legend.pure.m4.coreinstance.primitive.strictTime;
 
 abstract class AbstractStrictTimeWithMinute extends AbstractPureStrictTime
 {
-    private int hour;
-    private int minute;
+    protected final int minute;
 
     protected AbstractStrictTimeWithMinute(int hour, int minute)
     {
-        this.hour = hour;
+        super(hour);
         this.minute = minute;
-    }
-
-    @Override
-    public boolean hasHour()
-    {
-        return true;
-    }
-
-    @Override
-    public int getHour()
-    {
-        return this.hour;
     }
 
     @Override
@@ -50,19 +37,6 @@ abstract class AbstractStrictTimeWithMinute extends AbstractPureStrictTime
     }
 
     @Override
-    public PureStrictTime addHours(int hours)
-    {
-        if (hours == 0)
-        {
-            return this;
-        }
-
-        AbstractStrictTimeWithMinute copy = clone();
-        copy.incrementHour(hours);
-        return copy;
-    }
-
-    @Override
     public PureStrictTime addMinutes(int minutes)
     {
         if (minutes == 0)
@@ -70,40 +44,36 @@ abstract class AbstractStrictTimeWithMinute extends AbstractPureStrictTime
             return this;
         }
 
-        AbstractStrictTimeWithMinute copy = clone();
-        copy.incrementMinute(minutes);
-        return copy;
+        int hoursToAdd = minutes / 60;
+        int newMinute = this.minute + (minutes % 60);
+        if (newMinute < 0)
+        {
+            hoursToAdd -= 1;
+            newMinute += 60;
+        }
+        else if (newMinute > 59)
+        {
+            hoursToAdd += 1;
+            newMinute -= 60;
+        }
+
+        int newHour = this.hour + (hoursToAdd % 24);
+        if (newHour < 0)
+        {
+            newHour += 24;
+        }
+        else if (newHour > 23)
+        {
+            newHour -= 24;
+        }
+        return with(newHour, newMinute);
     }
 
     @Override
-    public abstract AbstractStrictTimeWithMinute clone();
-
-    void incrementHour(int delta)
+    protected AbstractStrictTimeWithMinute with(int hour)
     {
-        this.hour += (delta % 24);
-        if (this.hour < 0)
-        {
-            this.hour += 24;
-        }
-        else if (this.hour > 23)
-        {
-            this.hour -= 24;
-        }
+        return with(hour, this.minute);
     }
 
-    void incrementMinute(int delta)
-    {
-        incrementHour(delta / 60);
-        this.minute += (delta % 60);
-        if (this.minute < 0)
-        {
-            incrementHour(-1);
-            this.minute += 60;
-        }
-        else if (this.minute > 59)
-        {
-            incrementHour(1);
-            this.minute -= 60;
-        }
-    }
+    protected abstract AbstractStrictTimeWithMinute with(int hour, int minute);
 }

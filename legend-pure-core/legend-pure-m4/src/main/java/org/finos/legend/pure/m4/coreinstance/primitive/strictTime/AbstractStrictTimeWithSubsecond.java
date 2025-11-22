@@ -16,7 +16,7 @@ package org.finos.legend.pure.m4.coreinstance.primitive.strictTime;
 
 abstract class AbstractStrictTimeWithSubsecond extends AbstractStrictTimeWithSecond
 {
-    private String subsecond;
+    protected final String subsecond;
 
     protected AbstractStrictTimeWithSubsecond(int hour, int minute, int second, String subsecond)
     {
@@ -56,28 +56,14 @@ abstract class AbstractStrictTimeWithSubsecond extends AbstractStrictTimeWithSec
             return this;
         }
 
-        String subsecond = getSubsecond();
-        if (subsecond.length() < 3)
+        if (this.subsecond.length() < 3)
         {
-            throw new UnsupportedOperationException("Cannot add milliseconds to a strict time that does not have milliseconds: " + this);
+            throw new UnsupportedOperationException(appendString(new StringBuilder("Cannot add milliseconds to a date that does not have milliseconds: ")).toString());
         }
 
-        AbstractStrictTimeWithSubsecond copy = clone();
-        int seconds = milliseconds / 1000;
-        if (seconds != 0)
-        {
-            copy.incrementSecond(seconds);
-            milliseconds %= 1000;
-        }
-        if (milliseconds < 0)
-        {
-            copy.decrementSubsecond(String.format("%03d", -milliseconds), 0, 3);
-        }
-        else if (milliseconds != 0)
-        {
-            copy.incrementSubsecond(String.format("%03d", milliseconds), 0, 3);
-        }
-        return copy;
+        int secondsToAdd = milliseconds / 1000;
+        String subseconds = String.format("%03d", Math.abs(milliseconds % 1000L));
+        return adjustSubseconds(subseconds, milliseconds > 0).addSeconds(secondsToAdd);
     }
 
     @Override
@@ -88,67 +74,54 @@ abstract class AbstractStrictTimeWithSubsecond extends AbstractStrictTimeWithSec
             return this;
         }
 
-        String subsecond = getSubsecond();
-        if (subsecond.length() < 6)
+        if (this.subsecond.length() < 6)
         {
-            throw new UnsupportedOperationException("Cannot add microseconds to a strict time that does not have microseconds: " + this);
+            throw new UnsupportedOperationException(appendString(new StringBuilder("Cannot add microseconds to a strict time that does not have microseconds: ")).toString());
         }
 
-        AbstractStrictTimeWithSubsecond copy = clone();
-        int seconds = microseconds / 1_000_000;
-        if (seconds != 0)
-        {
-            copy.incrementSecond(seconds);
-            microseconds %= 1_000_000;
-        }
-        if (microseconds < 0)
-        {
-            copy.decrementSubsecond(String.format("%06d", -microseconds), 0, 6);
-        }
-        else if (microseconds != 0)
-        {
-            copy.incrementSubsecond(String.format("%06d", microseconds), 0, 6);
-        }
-        return copy;
+        int secondsToAdd = microseconds / 1_000_000;
+        String subseconds = String.format("%06d", Math.abs(microseconds % 1_000_000L));
+        return adjustSubseconds(subseconds, microseconds > 0).addSeconds(secondsToAdd);
     }
 
     @Override
     public PureStrictTime addNanoseconds(long nanoseconds)
     {
-        if (nanoseconds == 0)
+        if (nanoseconds == 0L)
         {
             return this;
         }
 
-        String subsecond = getSubsecond();
-        if (subsecond.length() < 9)
+        if (this.subsecond.length() < 9)
         {
-            throw new UnsupportedOperationException("Cannot add nanoseconds to a strict time that does not have nanoseconds: " + this);
+            throw new UnsupportedOperationException(appendString(new StringBuilder("Cannot add nanoseconds to a strict time that does not have nanoseconds: ")).toString());
         }
 
-        AbstractStrictTimeWithSubsecond copy = clone();
-        long seconds = nanoseconds / 1_000_000_000;
-        if (seconds != 0)
+        long secondsToAdd = (nanoseconds / 1_000_000_000L);
+        String subseconds = String.format("%09d", Math.abs(nanoseconds % 1_000_000_000L));
+        PureStrictTime result = adjustSubseconds(subseconds, nanoseconds > 0);
+        if (secondsToAdd > 0)
         {
-            if ((seconds > Integer.MAX_VALUE) || (seconds < Integer.MIN_VALUE))
+            while (secondsToAdd > Integer.MAX_VALUE)
             {
-                seconds %= 86_400;
+                result = result.addSeconds(Integer.MAX_VALUE);
+                secondsToAdd -= Integer.MAX_VALUE;
             }
-            copy.incrementSecond((int)seconds);
-            nanoseconds %= 1_000_000_000;
+            result = result.addSeconds((int) secondsToAdd);
         }
-        if (nanoseconds < 0)
+        else if (secondsToAdd < 0)
         {
-            copy.decrementSubsecond(String.format("%09d", -nanoseconds), 0, 9);
+            while (secondsToAdd < Integer.MIN_VALUE)
+            {
+                result = result.addSeconds(Integer.MIN_VALUE);
+                secondsToAdd -= Integer.MIN_VALUE;
+            }
+            result = result.addSeconds((int) secondsToAdd);
         }
-        else if (nanoseconds != 0)
-        {
-            copy.incrementSubsecond(String.format("%09d", nanoseconds), 0, 9);
-        }
-        return copy;
+        return result;
     }
 
-    private PureStrictTime adjustSubseconds(String subseconds, boolean add)
+    private AbstractStrictTimeWithSubsecond adjustSubseconds(String subseconds, boolean add)
     {
         StrictTimeFunctions.validateSubsecond(subseconds);
 
@@ -162,85 +135,110 @@ abstract class AbstractStrictTimeWithSubsecond extends AbstractStrictTimeWithSec
 
         if (start == end)
         {
-            // adjusting by zero seconds, nothing to change
+            // adjusting by zero, nothing to change
             return this;
         }
 
         if ((end - start) > this.subsecond.length())
         {
-            throw new UnsupportedOperationException("Cannot " + (add ? "add" : "subtract") + " subseconds with " + (end - start) + " digits of precision " + (add ? "to" : "from") + " a strict time that has subseconds to only " + this.subsecond.length() + " digits of precision");
+            throw new UnsupportedOperationException("Cannot " + (add ? "add" : "subtract") + " subseconds with " + (end - start) + " digits of precision " + (add ? "to" : "from") + " a date that has subseconds to only " + this.subsecond.length() + " digits of precision");
         }
 
-        AbstractStrictTimeWithSubsecond copy = clone();
+        char[] digits = this.subsecond.toCharArray();
+        int newSecond = this.second;
         if (add)
         {
-            copy.incrementSubsecond(subseconds, start, end);
+            boolean carry = false;
+            for (int i = (end - start) - 1; i >= 0; i--)
+            {
+                int sum = (int) digits[i] + (int) subseconds.charAt(i + start) - 96;
+                if (carry)
+                {
+                    sum += 1;
+                }
+                if (sum >= 10)
+                {
+                    carry = true;
+                    sum -= 10;
+                }
+                else
+                {
+                    carry = false;
+                }
+                digits[i] = (char) (sum + 48);
+            }
+            if (carry)
+            {
+                newSecond += 1;
+            }
         }
         else
         {
-            copy.decrementSubsecond(subseconds, start, end);
+            boolean carry = false;
+            for (int i = (end - start) - 1; i >= 0; i--)
+            {
+                int difference = (int) digits[i] - (int) subseconds.charAt(i + start);
+                if (carry)
+                {
+                    difference -= 1;
+                }
+                if (difference < 0)
+                {
+                    carry = true;
+                    difference = 10 + difference;
+                }
+                else
+                {
+                    carry = false;
+                }
+                digits[i] = (char) (difference + 48);
+            }
+            if (carry)
+            {
+                newSecond -= 1;
+            }
         }
-        return copy;
+
+        String newSubsecond = new String(digits);
+        int newMinute = this.minute;
+        int newHour = this.hour;
+        if (newSecond < 0)
+        {
+            newMinute -= 1;
+            newSecond += 60;
+            if (newMinute < 0)
+            {
+                newHour -= 1;
+                newMinute += 60;
+                if (newHour < 0)
+                {
+                    newHour += 24;
+                }
+            }
+        }
+        else if (newSecond > 59)
+        {
+            newMinute += 1;
+            newSecond -= 60;
+            if (newMinute > 59)
+            {
+                newHour += 1;
+                newMinute -= 60;
+                if (newHour > 23)
+                {
+                    newHour -= 24;
+                }
+            }
+        }
+
+        return with(newHour, newMinute, newSecond, newSubsecond);
     }
 
     @Override
-    public abstract AbstractStrictTimeWithSubsecond clone();
-
-    private void incrementSubsecond(String delta, int start, int end)
+    protected AbstractStrictTimeWithSubsecond with(int hour, int minute, int second)
     {
-        char[] digits = this.subsecond.toCharArray();
-        boolean carry = false;
-        for (int i = (end - start) - 1; i >= 0; i--)
-        {
-            int sum = (int)digits[i] + (int)delta.charAt(i + start) - 96;
-            if (carry)
-            {
-                sum += 1;
-            }
-            if (sum >= 10)
-            {
-                carry = true;
-                sum -= 10;
-            }
-            else
-            {
-                carry = false;
-            }
-            digits[i] = (char)(sum + 48);
-        }
-        if (carry)
-        {
-            incrementSecond(1);
-        }
-        this.subsecond = new String(digits);
+        return with(hour, minute, second, this.subsecond);
     }
 
-    private void decrementSubsecond(String delta, int start, int end)
-    {
-        char[] digits = this.subsecond.toCharArray();
-        boolean carry = false;
-        for (int i = (end - start) - 1; i >= 0; i--)
-        {
-            int difference = (int)digits[i] - (int)delta.charAt(i + start);
-            if (carry)
-            {
-                difference -= 1;
-            }
-            if (difference < 0)
-            {
-                carry = true;
-                difference = 10 + difference;
-            }
-            else
-            {
-                carry = false;
-            }
-            digits[i] = (char)(difference + 48);
-        }
-        if (carry)
-        {
-            incrementSecond(-1);
-        }
-        this.subsecond = new String(digits);
-    }
+    protected abstract AbstractStrictTimeWithSubsecond with(int hour, int minute, int second, String subsecond);
 }

@@ -20,12 +20,10 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.IRelationalParser;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.AssociationMappingContext;
-import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.BusinessMilestoningFromContext;
-import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.BussinessSnapshotDateContext;
+import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.BusinessMilestoningFromThruContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.ClassMappingContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.ColWithDbOrConstantContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.ColumnDefinitionContext;
@@ -87,9 +85,9 @@ import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.Relati
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.ViewContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor.ColumnDataTypeFactory;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor.ColumnDataTypeFactory.ColumnDataTypeException;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.AntlrContextToM3CoreInstance;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.ParsingUtils;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
@@ -225,11 +223,11 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         {
             tx = visitTransformerBlock(ctx.transformer(), mappingPath);
         }
-        String relationalOperation = visitJoinColWithDbOrConstantBlock(ctx.joinColWithDbOrConstant(), "", FastList.<String>newList(), scopeInfo);
+        String relationalOperation = visitJoinColWithDbOrConstantBlock(ctx.joinColWithDbOrConstant(), "", Lists.mutable.empty(), scopeInfo);
         return "^meta::relational::mapping::RelationalPropertyMapping" + sourceInformation.getPureSourceInformation(propertyName).toM4String() + "(" +
                 "        localMappingProperty = " + localMappingProperty + "," +
                 (localMappingPropertyType == null ? "" : "        localMappingPropertyType = " + localMappingPropertyType + ",") +
-                buildMul(localMappingPropertyFirstMul, localMappingPropertySecondMul) +
+                buildLocalPropertyMul(localMappingPropertyFirstMul, localMappingPropertySecondMul) +
                 "        property = '" + propertyName.getText() + "'," +
                 (id == null ? "" : "        sourceSetImplementationId = '" + id + "', ") +
                 (targetId == null ? "" : "        targetSetImplementationId = '" + targetId.getText() + "', ") +
@@ -238,15 +236,91 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
                 ")";
     }
 
-    private String buildMul(Token localMappingPropertyFirstMul, Token localMappingPropertySecondMul)
+    private String buildLocalPropertyMul(Token localMappingPropertyFirstMul, Token localMappingPropertySecondMul)
     {
-        Token secondOne = localMappingPropertySecondMul == null ? localMappingPropertyFirstMul : localMappingPropertySecondMul;
-        return localMappingPropertyFirstMul == null && localMappingPropertySecondMul == null ?
-                "" :
-                "localMappingPropertyMultiplicity = ^meta::pure::metamodel::multiplicity::Multiplicity(" +
-                        "   lowerBound=^meta::pure::metamodel::multiplicity::MultiplicityValue(value=" + (localMappingPropertySecondMul == null || localMappingPropertyFirstMul == null ? "0" : localMappingPropertyFirstMul.getText()) + ")," +
-                        "   upperBound=^meta::pure::metamodel::multiplicity::MultiplicityValue(" + (secondOne.getText().equals("*") ? "" : "value=" + secondOne.getText()) + ")" +
-                        "),";
+        if (localMappingPropertySecondMul != null)
+        {
+            return "localMappingPropertyMultiplicity = " + buildMultiplicity(localMappingPropertyFirstMul.getText(), localMappingPropertySecondMul.getText()) + ",";
+        }
+        if (localMappingPropertyFirstMul != null)
+        {
+            return "localMappingPropertyMultiplicity = " + buildMultiplicity(localMappingPropertyFirstMul.getText()) + ",";
+        }
+        return "";
+    }
+
+    private String buildMultiplicity(String value)
+    {
+        switch (value)
+        {
+            case "*":
+            {
+                return M3Paths.ZeroMany;
+            }
+            case "1":
+            {
+                return M3Paths.PureOne;
+            }
+            case "0":
+            {
+                return M3Paths.PureZero;
+            }
+            default:
+            {
+                return buildGenericMultiplicity(value, value);
+            }
+        }
+    }
+
+    private String buildMultiplicity(String lowerBound, String upperBound)
+    {
+        switch (upperBound)
+        {
+            case "*":
+            {
+                switch (lowerBound)
+                {
+                    case "0":
+                    {
+                        return M3Paths.ZeroMany;
+                    }
+                    case "1":
+                    {
+                        return M3Paths.OneMany;
+                    }
+                }
+                break;
+            }
+            case "1":
+            {
+                switch (lowerBound)
+                {
+                    case "0":
+                    {
+                        return M3Paths.ZeroOne;
+                    }
+                    case "1":
+                    {
+                        return M3Paths.PureOne;
+                    }
+                }
+                break;
+            }
+            case "0":
+            {
+                if ("0".equals(lowerBound))
+                {
+                    return M3Paths.PureZero;
+                }
+            }
+        }
+        return buildGenericMultiplicity(lowerBound, upperBound);
+    }
+
+    private String buildGenericMultiplicity(String lowerBound, String upperBound)
+    {
+        return "^meta::pure::metamodel::multiplicity::Multiplicity(lowerBound=^meta::pure::metamodel::multiplicity::MultiplicityValue(value=" + lowerBound +
+                "), upperBound=^meta::pure::metamodel::multiplicity::MultiplicityValue(" + ("*".equals(upperBound) ? "" : ("value=" + upperBound)) + "))";
     }
 
     private String visitTransformerBlock(TransformerContext ctx, String mappingPath)
@@ -256,8 +330,12 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
 
     private LocalMappingPropertyParseResult visitLocalMappingPropertyBlock(LocalMappingPropertyContext ctx)
     {
-        return new LocalMappingPropertyParseResult(ctx.qualifiedName().getText(), ctx.localMappingPropertyFirstMul().INTEGER() != null ? ctx.localMappingPropertyFirstMul().INTEGER().getSymbol() : ctx.localMappingPropertyFirstMul().STAR().getSymbol(), ctx.localMappingPropertySecondMul() != null ?
-                ctx.localMappingPropertySecondMul().INTEGER() != null ? ctx.localMappingPropertySecondMul().INTEGER().getSymbol() : ctx.localMappingPropertySecondMul().STAR().getSymbol() : null);
+        String type = "^meta::pure::metamodel::import::ImportStub " + this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().identifier().getStart()).toM4String() + " (importGroup=system::imports::" + this.importId + ", idOrPath='" + ctx.qualifiedName().getText() + "')";
+        Token firstMult = ctx.localMappingPropertyFirstMul().INTEGER() != null ? ctx.localMappingPropertyFirstMul().INTEGER().getSymbol() : ctx.localMappingPropertyFirstMul().STAR().getSymbol();
+        Token secondMult = ctx.localMappingPropertySecondMul() != null ?
+                           (ctx.localMappingPropertySecondMul().INTEGER() != null ? ctx.localMappingPropertySecondMul().INTEGER().getSymbol() : ctx.localMappingPropertySecondMul().STAR().getSymbol()) :
+                           null;
+        return new LocalMappingPropertyParseResult(type, firstMult, secondMult);
     }
 
     private String visitNonePlusSingleMappingLineBlock(NonePlusSingleMappingLineContext ctx, ScopeInfo scopeInfo, String id, String mappingPath)
@@ -441,7 +519,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     {
         if (ctx != null)
         {
-            return "[" + visitJoinColWithDbOrConstantsBlock(ctx.joinColWithDbOrConstants(), db, FastList.<String>newList(), new ScopeInfo(db, null, null, null)) + "]";
+            return "[" + visitJoinColWithDbOrConstantsBlock(ctx.joinColWithDbOrConstants(), db, Lists.mutable.empty(), new ScopeInfo(db, null, null, null)) + "]";
         }
         return null;
     }
@@ -609,10 +687,10 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     {
         String tables = visitTablesBlock(ctx.table());
 
-        ScopeInfo viewSchemaScopeInfo = new ScopeInfo(dbImport, ctx.identifier().getStart(), null, null, true);
+        ScopeInfo viewSchemaScopeInfo = new ScopeInfo(dbImport, ctx.relationalIdentifier().getStart(), null, null, true);
         String views = visitViewsBlock(ctx.view(), viewSchemaScopeInfo);
 
-        return "^meta::relational::metamodel::Schema " + sourceInformation.getPureSourceInformation(ctx.identifier().getStart(), ctx.identifier().getStart(), ctx.GROUP_CLOSE().getSymbol()).toM4String() + " (name='" + ctx.identifier().getText() + "', tables=[" + tables + "], views=[" + views + "])";
+        return "^meta::relational::metamodel::Schema " + sourceInformation.getPureSourceInformation(ctx.relationalIdentifier().getStart(), ctx.relationalIdentifier().getStart(), ctx.GROUP_CLOSE().getSymbol()).toM4String() + " (name='" + ctx.relationalIdentifier().getText() + "', tables=[" + tables + "], views=[" + views + "])";
     }
 
     private String visitTablesBlock(List<TableContext> tables)
@@ -623,7 +701,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         {
             for (TableContext tc : tables)
             {
-                MutableList<String> pk = FastList.newList();
+                MutableList<String> pk = Lists.mutable.empty();
                 sb.append(visitTableBlock(tc, pk));
                 sb.append(",");
             }
@@ -650,7 +728,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
 
     public String visitViewBlock(ViewContext ctx, ScopeInfo viewSchemaScopeInfo)
     {
-        MutableList<String> pks = FastList.newList();
+        MutableList<String> pks = Lists.mutable.empty();
         String filterBlock = visitFilterViewBlock(ctx.filterViewBlock(), viewSchemaScopeInfo.getDatabase());
         String groupByBlock = visitMappingBlockGroupByBlock(ctx.mappingBlockGroupBy(), viewSchemaScopeInfo.getDatabase());
         boolean distinct = ctx.DISTINCTCMD() != null;
@@ -813,7 +891,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     private String visitColWithDbOrConstantBlock(ColWithDbOrConstantContext ctx, ScopeInfo scopeInfo)
     {
         String db = ctx.database() != null ? visitDatabase(ctx.database()) : "";
-        return ctx.op_column() != null ? visitOp_columnBlock(ctx.op_column(), db, FastList.<String>newList(), scopeInfo) : visitConstant(ctx.constant());
+        return ctx.op_column() != null ? visitOp_columnBlock(ctx.op_column(), db, Lists.mutable.empty(), scopeInfo) : visitConstant(ctx.constant());
     }
 
     private String visitOp_groupOperationBlock(Op_groupOperationContext ctx, String database, ScopeInfo scopeInfo)
@@ -841,7 +919,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
 
     public Pair<String, String> visitViewColumnMappingLine(ViewColumnMappingLineContext ctx, ScopeInfo scopeInfo, MutableList<String> pks)
     {
-        MutableList<String> tacPks = FastList.newList();
+        MutableList<String> tacPks = Lists.mutable.empty();
         String relationalOperation = visitJoinColWithDbOrConstantBlock(ctx.joinColWithDbOrConstant(), scopeInfo.getDatabase(), tacPks, scopeInfo);
         String column = "^meta::relational::metamodel::Column" + sourceInformation.getPureSourceInformation(ctx.identifier(0).getStart()).toM4String() + "(name='" + ctx.identifier(0).getText() + "')";
         String buffer = "^meta::relational::mapping::ColumnMapping" + sourceInformation.getPureSourceInformation(ctx.identifier(0).getStart()).toM4String() + "(" +
@@ -859,7 +937,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     {
         if (ctx != null)
         {
-            String columns = visitJoinColWithDbOrConstantsBlock(ctx.joinColWithDbOrConstants(), db, FastList.<String>newList(), new ScopeInfo(db, null, null, null));
+            String columns = visitJoinColWithDbOrConstantsBlock(ctx.joinColWithDbOrConstants(), db, Lists.mutable.empty(), new ScopeInfo(db, null, null, null));
             return "^meta::relational::mapping::GroupByMapping " + sourceInformation.getPureSourceInformation(ctx.GROUP_OPEN().getSymbol()).toM4String() + "(columns = [" + columns + "])";
         }
         return null;
@@ -1159,7 +1237,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
 
     private AsciiNodeBuilder visitOneJoinBlock(OneJoinContext ctx, Token joinType, ScopeInfo scope, String db)
     {
-        MutableList<String> values = FastList.newListWith("INNER", "OUTER");
+        MutableList<String> values = Lists.mutable.with("INNER", "OUTER");
         if (joinType != null && !values.contains(joinType.getText().toUpperCase()))
         {
             throw new PureParserException(sourceInformation.getPureSourceInformation(joinType), "The joinType is not recognized. Valid join types are: " + values);
@@ -1168,7 +1246,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
                 "^meta::relational::metamodel::join::JoinTreeNode" + sourceInformation.getPureSourceInformation(ctx.identifier().getStart()).toM4String() + "(" +
                         (joinType == null ? "" : "           joinType='" + joinType.getText() + "',") +
                         "           joinName='" + ctx.identifier().getText() + "'" +
-                        ("".equals(db) ? scope == null || scope.getDatabase().equals("") ? "" : ", database=" + scope.getDatabase() : ", database=" + db));
+                        ("".equals(db) ? scope == null || "".equals(scope.getDatabase()) ? "" : ", database=" + scope.getDatabase() : ", database=" + db));
     }
 
     @Override
@@ -1289,21 +1367,21 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     @Override
     public String visitBusinessMilestoningInnerDefinition(org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.BusinessMilestoningInnerDefinitionContext ctx)
     {
-        if (ctx.businessMilestoningFrom() != null)
+        if (ctx.businessMilestoningFromThru() != null)
         {
-            return visitBusinessMilestoningFrom(ctx.businessMilestoningFrom());
+            return visitBusinessMilestoningFromThru(ctx.businessMilestoningFromThru());
         }
-        return visitBussinessSnapshotDate(ctx.bussinessSnapshotDate());
+        return visitBusinessSnapshotDate(ctx.businessSnapshotDate());
     }
 
     @Override
-    public String visitBusinessMilestoningFrom(BusinessMilestoningFromContext ctx)
+    public String visitBusinessMilestoningFromThru(BusinessMilestoningFromThruContext ctx)
     {
         return "^meta::relational::metamodel::relation::BusinessMilestoning(from='" + ctx.identifier(0).getText() + "', thru='" + ctx.identifier(1).getText() + "', thruIsInclusive = " + (ctx.THRU_IS_INCLUSIVE() == null ? false : ctx.BOOLEAN().getText()) + (ctx.INFINITY_DATE() == null ? "" : ", infinityDate=" + ctx.DATE().getText()) + ")";
     }
 
     @Override
-    public String visitBussinessSnapshotDate(BussinessSnapshotDateContext ctx)
+    public String visitBusinessSnapshotDate(RelationalParser.BusinessSnapshotDateContext ctx)
     {
         return "^meta::relational::metamodel::relation::BusinessSnapshotMilestoning(snapshotDate = '" + ctx.identifier().getText() + "')";
     }
@@ -1311,6 +1389,22 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     @Override
     public String visitProcessingMilestoningInnerDefinition(org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.ProcessingMilestoningInnerDefinitionContext ctx)
     {
+        if (ctx.processingMilestoningInOut() != null)
+        {
+            return visitProcessingMilestoningInOut(ctx.processingMilestoningInOut());
+        }
+        return visitProcessingSnapshotDate(ctx.processingSnapshotDate());
+    }
+
+    @Override
+    public String visitProcessingMilestoningInOut(RelationalParser.ProcessingMilestoningInOutContext ctx)
+    {
         return "^meta::relational::metamodel::relation::ProcessingMilestoning(in='" + ctx.identifier(0).getText() + "', out='" + ctx.identifier(1).getText() + "', outIsInclusive = " + (ctx.OUT_IS_INCLUSIVE() == null ? false : ctx.BOOLEAN().getText()) + (ctx.INFINITY_DATE() == null ? "" : ", infinityDate=" + ctx.DATE().getText()) + ")";
+    }
+
+    @Override
+    public String visitProcessingSnapshotDate(RelationalParser.ProcessingSnapshotDateContext ctx)
+    {
+        return "^meta::relational::metamodel::relation::ProcessingSnapshotMilestoning(snapshotDate = '" + ctx.identifier().getText() + "')";
     }
 }

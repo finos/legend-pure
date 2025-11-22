@@ -58,7 +58,6 @@ public class M3ToJavaGenerator
 
     private static final Map<String, String> PRIMITIVES = Maps.mutable.<String, String>empty()
             .withKeyValue(ModelRepository.INTEGER_TYPE_NAME, "Long")
-            .withKeyValue(ModelRepository.INTEGER_TYPE_NAME, "Long")
             .withKeyValue(ModelRepository.FLOAT_TYPE_NAME, "Double")
             .withKeyValue(ModelRepository.DECIMAL_TYPE_NAME, "java.math.BigDecimal")
             .withKeyValue(ModelRepository.BOOLEAN_TYPE_NAME, "Boolean")
@@ -104,6 +103,7 @@ public class M3ToJavaGenerator
             StubDef.build("Association", "ImportStub"),
             StubDef.build("ClassProjection", "ImportStub"),
             StubDef.build("Function", "ImportStub"),
+            StubDef.build("FunctionDefinition", "ImportStub"),
             StubDef.build("Property", "PropertyStub", Sets.immutable.with("Class", "Association")),
             StubDef.build("Enum", "EnumStub", Sets.immutable.with("Enumeration"))
     ).groupByUniqueKey(StubDef::getClassName);
@@ -1840,7 +1840,9 @@ public class M3ToJavaGenerator
             {
                 CoreInstance generalGenericType = generalization.getValueForMetaPropertyToOne("general");
                 CoreInstance type = getTypeFromGenericType(generalGenericType);
-                return getInterfaceName(Objects.requireNonNull(type)) + getTypeArgs(type, generalGenericType, false, true);
+                String fullyQualifiedInterfaceName = getFullyQualifiedM3InterfaceForCompiledModel(type);
+                String finalInterfaceName = imports.shouldFullyQualify(fullyQualifiedInterfaceName) ? fullyQualifiedInterfaceName : getInterfaceName(type);
+                return finalInterfaceName + getTypeArgs(type, generalGenericType, false, true);
             }, Sets.mutable.empty()).makeString(", ");
         }
 
@@ -2755,11 +2757,7 @@ public class M3ToJavaGenerator
 
     private static String getPrimitiveImports()
     {
-        return "import org.finos.legend.pure.m4.coreinstance.primitive.BooleanCoreInstance;\n" +
-                "import org.finos.legend.pure.m4.coreinstance.primitive.DateCoreInstance;\n" +
-                "import org.finos.legend.pure.m4.coreinstance.primitive.FloatCoreInstance;\n" +
-                "import org.finos.legend.pure.m4.coreinstance.primitive.IntegerCoreInstance;\n" +
-                "import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;\n";
+        return "import org.finos.legend.pure.m4.coreinstance.primitive.*;\n";
     }
 
     private static String nullSafe(String variable, String expression)

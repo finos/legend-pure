@@ -74,6 +74,24 @@ function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testCo
     assertIs(meta::pure::functions::boolean::greaterThan_Number_1__Number_1__Boolean_1_, pathToElement('meta::pure::functions::boolean::greaterThan_Number_1__Number_1__Boolean_1_'));
 }
 
+function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testTopLevelPathToElement():Boolean[1]
+{
+    assertIs(Boolean, pathToElement('Boolean'));
+    assertIs(Byte, pathToElement('Byte'));
+    assertIs(Date, pathToElement('Date'));
+    assertIs(DateTime, pathToElement('DateTime'));
+    assertIs(Decimal, pathToElement('Decimal'));
+    assertIs(Integer, pathToElement('Integer'));
+    assertIs(Float, pathToElement('Float'));
+    assertIs(LatestDate, pathToElement('LatestDate'));
+    assertIs(Number, pathToElement('Number'));
+    assertIs(Package, pathToElement('Package'));
+    assertIs(Root, pathToElement('Root'));
+    assertIs(StrictDate, pathToElement('StrictDate'));
+    assertIs(StrictTime, pathToElement('StrictTime'));
+    assertIs(String, pathToElement('String'));
+}
+
 // To be removed
 function <<test.Test, meta::pure::profiles::doc.deprecated>> meta::pure::functions::boolean::tests::testIsNativeFunctions():Boolean[1]
 {

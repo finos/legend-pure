@@ -18,7 +18,7 @@ import meta::pure::functions::collection::tests::removeDuplicates::*;
 native function
     <<PCT.function>>
     {
-        doc.doc=''
+        doc.doc='Returns a collection of elements with duplicates removed. The order of elements is unspecified. If a key function is provided, it is used to compute the key for each element and duplicates are determined based on the keys. If an equality function is provided, it is used to compare elements (or keys if a key function is provided) for equality. If no equality function is provided, the default equality comparison is used.'
     }
     meta::pure::functions::collection::removeDuplicates<T,V>(col:T[*], key:Function<{T[1]->V[1]}>[0..1], eql:Function<{V[1],V[1]->Boolean[1]}>[0..1]):T[*];
 
@@ -39,11 +39,15 @@ function meta::pure::functions::collection::tests::removeDuplicates::cmp(a:Any[1
     $a->toString() == $b->toString()
 }
 
-function <<PCT.test>> meta::pure::functions::collection::tests::removeDuplicates::testRemoveDuplicatesPrimitiveStandardFunction<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::removeDuplicates::testRemoveDuplicatesPrimitiveStandardFunctionSimple<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals([1, 2, 3], $f->eval(|[1, 2, 1, 3, 1, 3, 3, 2]->removeDuplicates()));
-    assertEquals(['a', 'b', 'c'], $f->eval(|['a', 'a', 'b', 'b', 'c']->removeDuplicates()));
-    assertEquals([1, 2, '1', '3', 3], $f->eval(|[1, 2, '1', '3', 1, 3, '3', 2]->removeDuplicates()));
+    assertEquals([1, 2, 3], $f->eval(|[1, 2, 1, 3, 1, 3, 3, 2]->removeDuplicates())->sort());
+    assertEquals(['a', 'b', 'c'], $f->eval(|['a', 'a', 'b', 'b', 'c']->removeDuplicates())->sort());
+}
+
+function <<PCT.test>> meta::pure::functions::collection::tests::removeDuplicates::testRemoveDuplicatesPrimitiveStandardFunctionMixedTypes<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals([1, 2, 3, '1', '3'], $f->eval(|[1, 2, '1', '3', 1, 3, '3', 2]->removeDuplicates())->sort());
 }
 
 function <<PCT.test>> meta::pure::functions::collection::tests::removeDuplicates::testRemoveDuplicatesPrimitiveStandardFunctionExplicit<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

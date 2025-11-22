@@ -27,11 +27,13 @@ import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Objects;
 
 public class ValCoreInstance extends AbstractCompiledCoreInstance
 {
@@ -42,6 +44,23 @@ public class ValCoreInstance extends AbstractCompiledCoreInstance
     {
         this.val = val;
         this.type = type;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (!(o instanceof ValCoreInstance))
+        {
+            return false;
+        }
+        ValCoreInstance that = (ValCoreInstance) o;
+        return Objects.equals(val, that.val) && Objects.equals(type, that.type);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(super.hashCode(), val, type);
     }
 
     public Object getValue()
@@ -157,12 +176,6 @@ public class ValCoreInstance extends AbstractCompiledCoreInstance
     }
 
     @Override
-    public void removeProperty(String keyName)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public CoreInstance getKeyByName(String name)
     {
         return null;
@@ -175,33 +188,9 @@ public class ValCoreInstance extends AbstractCompiledCoreInstance
     }
 
     @Override
-    public CoreInstance getValueForMetaPropertyToOne(CoreInstance property)
-    {
-        return null;
-    }
-
-    @Override
     public ListIterable<CoreInstance> getValueForMetaPropertyToMany(String keyName)
     {
         return Lists.immutable.empty();
-    }
-
-    @Override
-    public ListIterable<CoreInstance> getValueForMetaPropertyToMany(CoreInstance key)
-    {
-        return Lists.immutable.empty();
-    }
-
-    @Override
-    public CoreInstance getValueInValueForMetaPropertyToMany(String keyName, String keyInMany)
-    {
-        return null;
-    }
-
-    @Override
-    public CoreInstance getValueInValueForMetaPropertyToManyWithKey(String keyName, String key, String keyInMany)
-    {
-        return null;
     }
 
     @Override
@@ -252,33 +241,9 @@ public class ValCoreInstance extends AbstractCompiledCoreInstance
     }
 
     @Override
-    public void printFull(Appendable appendable, String tab)
-    {
-
-    }
-
-    @Override
-    public void print(Appendable appendable, String tab)
-    {
-
-    }
-
-    @Override
     public void print(Appendable appendable, String tab, int max)
     {
-
-    }
-
-    @Override
-    public void printWithoutDebug(Appendable appendable, String tab)
-    {
-
-    }
-
-    @Override
-    public void printWithoutDebug(Appendable appendable, String tab, int max)
-    {
-
+        SafeAppendable.wrap(appendable).append(tab).append(this.val);
     }
 
     @Override
@@ -298,11 +263,6 @@ public class ValCoreInstance extends AbstractCompiledCoreInstance
     {
     }
 
-    @Override
-    public void rollback(ModelRepositoryTransaction transaction)
-    {
-    }
-
     public static CoreInstance toCoreInstance(Object value)
     {
         if (value == null)
@@ -311,7 +271,7 @@ public class ValCoreInstance extends AbstractCompiledCoreInstance
         }
         if (value instanceof CoreInstance)
         {
-            return (CoreInstance)value;
+            return (CoreInstance) value;
         }
         String type;
         if (value instanceof Boolean)
@@ -320,7 +280,7 @@ public class ValCoreInstance extends AbstractCompiledCoreInstance
         }
         else if (value instanceof PureDate)
         {
-            type = DateFunctions.datePrimitiveType((PureDate)value);
+            type = DateFunctions.datePrimitiveType((PureDate) value);
         }
         else if ((value instanceof Long) || (value instanceof Integer) || (value instanceof BigInteger))
         {

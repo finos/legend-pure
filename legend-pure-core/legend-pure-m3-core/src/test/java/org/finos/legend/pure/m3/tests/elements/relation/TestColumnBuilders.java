@@ -65,6 +65,16 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     }
 
     @Test
+    public void testSimpleColumnWithTypeAndMultiplicity()
+    {
+        compileTestSource("fromString.pure",
+                "function test():meta::pure::metamodel::relation::ColSpec<(name:String)>[1]\n" +
+                        "{\n" +
+                        "   ~name:String[1];\n" +
+                        "}");
+    }
+
+    @Test
     public void testSimpleColumnWithTypeArray()
     {
         compileTestSource("fromString.pure",
@@ -386,6 +396,21 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     }
 
     @Test
+    public void testUnescapeSingleQuotes()
+    {
+        compileTestSource("fromString.pure",
+                "native function max(i:Integer[*]):Integer[0..1];\n" +
+                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "native function meta::pure::functions::relation::extend<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], f:meta::pure::metamodel::relation::FuncColSpec<{T[1]->Any[0..1]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1];\n" +
+                        "\n" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   []->toOne()->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, '\\'2000__|__newCol\\'':Integer)>)->toOne()->groupBy(~[name: x|$x.id : y|$y->max(), '\\'2000__|__newCol2\\'' : x|$x.'\\'2000__|__newCol\\'' : y|$y->max()])->extend(~newName:c|$c.'\\'2000__|__newCol2\\''->toOne());\n" +
+                        "   true;\n" +
+                        "}");
+    }
+
+    @Test
     public void testColumnSimpleFunctionInference()
     {
         compileTestSource("fromString.pure",
@@ -421,6 +446,44 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
                         "function test():Boolean[1]\n" +
                         "{\n" +
                         "   []->toOne()->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->extend(~[name:c|$c.id->toOne()]);\n" +
+                        "   true;\n" +
+                        "}");
+    }
+
+
+    @Test
+    public void testUseExtendedPrimitiveTypes()
+    {
+        compileTestSource("fromString.pure",
+                 "import test::*;\n" +
+                         "import meta::pure::functions::meta::*;\n" +
+                         "import meta::pure::metamodel::relation::*\n;" +
+                        "\n" +
+                         "Primitive test::Int8 extends Integer\n" +
+                         "" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   @(x:Integer[1])->genericType().rawType->cast(@RelationType<Any>)->toOne()->addColumns(~[z:Int8[1]]);\n" +
+                        "   true;\n" +
+                        "}");
+    }
+
+    @Test
+    public void testUseExtendedPrimitiveTypesWithTypeVariableValues()
+    {
+        compileTestSource("fromString.pure",
+                "import test::*;\n" +
+                        "import meta::pure::functions::meta::*;\n" +
+                        "import meta::pure::metamodel::relation::*\n;" +
+                        "\n" +
+                        "Primitive meta::pure::metamodel::relation::Varchar(x:Integer[1]) extends String\n" +
+                        "[\n" +
+                        "  $this->length() <= $x\n" +
+                        "]\n" +
+                        "" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   @(x:Integer[1])->genericType().rawType->cast(@RelationType<Any>)->toOne()->addColumns(~[z:Varchar(200)[1]]);\n" +
                         "   true;\n" +
                         "}");
     }

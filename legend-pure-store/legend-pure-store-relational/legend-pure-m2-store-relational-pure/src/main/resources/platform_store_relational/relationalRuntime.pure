@@ -44,6 +44,8 @@ Class meta::external::store::relational::runtime::DatabaseConnection extends Con
    queryPostProcessors: PostProcessors[*];
 
    queryPostProcessorsWithParameter: PostProcessorWithParameter[*];
+
+   queryGenerationConfigs: RelationalQueryGenerationConfig[*];
 }
 
 Class meta::relational::runtime::PostProcessorWithParameter
@@ -126,4 +128,8 @@ Class meta::relational::runtime::DataSource
     name : String[1];
     type : meta::relational::runtime::DatabaseType[1];
     serverPrincipal: String[0..1];
+}
+
+Class <<typemodifiers.abstract>> meta::external::store::relational::runtime::RelationalQueryGenerationConfig
+{
 }

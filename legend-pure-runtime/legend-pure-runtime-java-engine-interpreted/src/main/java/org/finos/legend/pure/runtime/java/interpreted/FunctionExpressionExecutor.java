@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.interpreted;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -24,6 +25,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Functi
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpressionCoreInstanceWrapper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -33,6 +35,7 @@ import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.property.Property;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
@@ -52,43 +55,47 @@ class FunctionExpressionExecutor implements Executor
     {
         profiler.startExecutingFunctionExpression(instance, functionExpressionCallStack.isEmpty() ? null : functionExpressionCallStack.peek());
         functionExpressionCallStack.push(instance);
-        FunctionExpression functionExpression = FunctionExpressionCoreInstanceWrapper.toFunctionExpression(instance);
-        ListIterable<CoreInstance> params = (ListIterable<CoreInstance>) (Object) functionExpression._parametersValues();
-        Function function = FunctionCoreInstanceWrapper.toFunction(functionExpression._func());
-
-        MutableMap<String, CoreInstance> localResolvedTypeParameters = Maps.mutable.empty();
-        MutableMap<String, CoreInstance> localResolvedMultiplicityParameters = Maps.mutable.empty();
-        this.resolveLocalTypeAndMultiplicityParams(functionExpression, functionExpressionCallStack, processorSupport, params, function, localResolvedTypeParameters, localResolvedMultiplicityParameters);
-        boolean deferExecution = Instance.instanceOf(function, M3Paths.NativeFunction, processorSupport) && functionExecutionInterpreted.getNativeFunction(function.getName()) != null && functionExecutionInterpreted.getNativeFunction(function.getName()).deferParameterExecution();
-
-        MutableList<CoreInstance> parameters;
-        if (deferExecution || params.isEmpty())
+        try
         {
-            parameters = params.toList();
-        }
-        else
-        {
-            parameters = params.collect(p ->
+            FunctionExpression functionExpression = FunctionExpressionCoreInstanceWrapper.toFunctionExpression(instance);
+            ListIterable<? extends ValueSpecification> params = ListHelper.wrapListIterable(functionExpression._parametersValues());
+            Function<?> function = FunctionCoreInstanceWrapper.toFunction(functionExpression._func());
+
+            MutableMap<String, CoreInstance> localResolvedTypeParameters = Maps.mutable.empty();
+            MutableMap<String, CoreInstance> localResolvedMultiplicityParameters = Maps.mutable.empty();
+            this.resolveLocalTypeAndMultiplicityParams(functionExpression, functionExpressionCallStack, processorSupport, params, function, localResolvedTypeParameters, localResolvedMultiplicityParameters);
+            boolean deferExecution = Instance.instanceOf(function, M3Paths.NativeFunction, processorSupport) && functionExecutionInterpreted.getNativeFunction(function.getName()) != null && functionExecutionInterpreted.getNativeFunction(function.getName()).deferParameterExecution();
+
+            MutableList<CoreInstance> parameters = (deferExecution || params.isEmpty()) ?
+                                                   Lists.mutable.withAll(params) :
+                                                   params.collect(p ->
+                                                   {
+                                                       Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(p, functionExpressionCallStack, processorSupport, functionExecutionInterpreted);
+                                                       return executor.execute(p, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, variableContext, profiler, instantiationContext, executionSupport, functionExecutionInterpreted, processorSupport);
+                                                   }, Lists.mutable.ofInitialCapacity(params.size()));
+
+            if (Instance.instanceOf(function, M3Paths.QualifiedProperty, processorSupport))
             {
-                Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(p, functionExpressionCallStack, processorSupport, functionExecutionInterpreted);
-                return executor.execute(p, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, variableContext, profiler, instantiationContext, executionSupport, functionExecutionInterpreted, processorSupport);
-            }).toList();
-        }
+                parameters.addAll(1, parameters.get(0).getValueForMetaPropertyToOne(M3Properties.genericType).getValueForMetaPropertyToMany(M3Properties.typeVariableValues).toList());
+            }
 
-        if (Instance.instanceOf(function, M3Paths.QualifiedProperty, processorSupport))
+            resolvedTypeParameters.push(this.resolveTypeParamsFromParent(resolvedTypeParameters, resolvedMultiplicityParameters, localResolvedTypeParameters, functionExpressionCallStack, processorSupport));
+            resolvedMultiplicityParameters.push(this.resolveMultiplicityParametersFromParent(resolvedMultiplicityParameters, localResolvedMultiplicityParameters, functionExpressionCallStack));
+            CoreInstance result = functionExecutionInterpreted.executeFunction(true, function, parameters, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
+
+            resolvedTypeParameters.pop();
+            resolvedMultiplicityParameters.pop();
+            profiler.finishedExecutingFunctionExpression(instance);
+            return result;
+        }
+        finally
         {
-            parameters.addAll(1, parameters.get(0).getValueForMetaPropertyToOne(M3Properties.genericType).getValueForMetaPropertyToMany(M3Properties.typeVariableValues).toList());
+            // These cases shouldn't happen, but it's better to make sure ...
+            if (functionExpressionCallStack.notEmpty() && (functionExpressionCallStack.peek() == instance))
+            {
+                functionExpressionCallStack.pop();
+            }
         }
-
-        resolvedTypeParameters.push(this.resolveTypeParamsFromParent(resolvedTypeParameters, resolvedMultiplicityParameters, localResolvedTypeParameters, functionExpressionCallStack, processorSupport));
-        resolvedMultiplicityParameters.push(this.resolveMultiplicityParametersFromParent(resolvedMultiplicityParameters, localResolvedMultiplicityParameters, functionExpressionCallStack));
-        CoreInstance result = functionExecutionInterpreted.executeFunction(true, function, parameters, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
-
-        resolvedTypeParameters.pop();
-        resolvedMultiplicityParameters.pop();
-        functionExpressionCallStack.pop();
-        profiler.finishedExecutingFunctionExpression(instance);
-        return result;
     }
 
     private void resolveLocalTypeAndMultiplicityParams(FunctionExpression functionExpression, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport, ListIterable<? extends CoreInstance> params, Function<?> function, MutableMap<String, CoreInstance> localResolvedTypeParameters, MutableMap<String, CoreInstance> localResolvedMultiplicityParameters)
@@ -98,8 +105,8 @@ class FunctionExpressionExecutor implements Executor
         if (Property.isQualifiedProperty(function, processorSupport) || "copy_T_1__String_1__KeyExpression_MANY__T_1_".equals(function.getName()) || "new_Class_1__String_1__KeyExpression_MANY__T_1_".equals(function.getName()) || "new_Class_1__String_1__T_1_".equals(function.getName()))
         {
             CoreInstance genericType = Property.isQualifiedProperty(function, processorSupport) || "copy_T_1__String_1__KeyExpression_MANY__T_1_".equals(function.getName()) ?
-                    Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, processorSupport) :
-                    Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, M3Properties.typeArguments, processorSupport);
+                                       Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, processorSupport) :
+                                       Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, M3Properties.typeArguments, processorSupport);
             CoreInstance classifier = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
             ListIterable<? extends CoreInstance> new_TypeParameters = Instance.getValueForMetaPropertyToManyResolved(classifier, M3Properties.typeParameters, processorSupport);
             ListIterable<? extends CoreInstance> new_MultiplicityParameters = Instance.getValueForMetaPropertyToManyResolved(classifier, M3Properties.multiplicityParameters, processorSupport);
@@ -165,10 +172,10 @@ class FunctionExpressionExecutor implements Executor
                 size--;
             }
 
-            if (!GenericType.isGenericTypeOperation(ci, processorSupport) && !GenericType.isGenericTypeFullyConcrete(ci, processorSupport))
-            {
-                throw new PureExecutionException(functionExpressionCallStack.isEmpty() ? null : functionExpressionCallStack.peek().getSourceInformation(), "Can't resolve some type parameters in: " + GenericType.print(ci, processorSupport), functionExpressionCallStack);
-            }
+//            if (!GenericType.isGenericTypeOperation(ci, processorSupport) && !GenericType.isGenericTypeFullyConcrete(ci, processorSupport))
+//            {
+//                throw new PureExecutionException(functionExpressionCallStack.isEmpty() ? null : functionExpressionCallStack.peek().getSourceInformation(), "Can't resolve some type parameters in: " + GenericType.print(ci, processorSupport), functionExpressionCallStack);
+//            }
 
             if (GenericType.isGenericTypeOperationEqual((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) ci))
             {
@@ -201,10 +208,10 @@ class FunctionExpressionExecutor implements Executor
             else
             {
                 CoreInstance resolvedMultiplicity = resolveMultiplicityParameter(Multiplicity.getMultiplicityParameter(multiplicity), stack);
-                if (resolvedMultiplicity == null)
-                {
-                    throw new PureExecutionException(functionExpressionCallStack.isEmpty() ? null : functionExpressionCallStack.peek().getSourceInformation(), "Cannot resolve multiplicity parameter: " + Multiplicity.getMultiplicityParameter(multiplicity), functionExpressionCallStack);
-                }
+//                if (resolvedMultiplicity == null)
+//                {
+//                    throw new PureExecutionException(functionExpressionCallStack.isEmpty() ? null : functionExpressionCallStack.peek().getSourceInformation(), "Cannot resolve multiplicity parameter: " + Multiplicity.getMultiplicityParameter(multiplicity), functionExpressionCallStack);
+//                }
                 result.put(parameter, resolvedMultiplicity);
             }
         });

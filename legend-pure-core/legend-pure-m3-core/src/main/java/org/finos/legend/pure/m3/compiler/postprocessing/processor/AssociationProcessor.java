@@ -135,37 +135,30 @@ public class AssociationProcessor extends Processor<Association>
         Class<?> leftProjectedRawType = (Class<?>) ImportStub.withImportStubByPass(firstProjection._projectionSpecification()._type()._rawTypeCoreInstance(), processorSupport);
         Class<?> rightProjectedRawType = (Class<?>) ImportStub.withImportStubByPass(lastProjection._projectionSpecification()._type()._rawTypeCoreInstance(), processorSupport);
 
-        MutableList<Property<?, ?>> projectedPropertiesCopy = Lists.mutable.ofInitialCapacity(2);
-
         ClassProjection<?> leftProjection = findProjectionTypeMatch(leftProjectedRawType, rightProjectedRawType, projectedPropertyLeftRawType, firstProjection, lastProjection, processorSupport);
         if (leftProjection == null)
         {
             throwInvalidProjectionException(associationProjection, rightProperty);
         }
-        Property<?, ?> leftPropertyCopy = (Property<?, ?>) ProjectionUtil.createPropertyCopy(leftProperty, associationProjection, modelRepository, processorSupport);
-        leftPropertyCopy._owner(null);
-        GenericType leftProjectionGTCopy = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(leftProjection, processorSupport);
-        projectedPropertiesCopy.add(leftPropertyCopy);
-
         ClassProjection<?> rightProjection = findProjectionTypeMatch(leftProjectedRawType, rightProjectedRawType, projectedPropertyRightRawType, (ClassProjection<?>) projections.getFirst(), (ClassProjection<?>) projections.getLast(), processorSupport);
         if (rightProjection == null)
         {
             throwInvalidProjectionException(associationProjection, leftProperty);
         }
 
-        Property<?, ?> rightPropertyCopy = (Property<?, ?>) ProjectionUtil.createPropertyCopy(rightProperty, associationProjection, modelRepository, processorSupport);
-        rightPropertyCopy._owner(null);
-        GenericType rightProjectionGTCopy = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(rightProjection, processorSupport);
-        projectedPropertiesCopy.add(rightPropertyCopy);
+        Property<?, ?> leftPropertyCopy = ProjectionUtil.createPropertyCopy(leftProperty, associationProjection, modelRepository, processorSupport)
+                ._owner(null);
+        GenericType leftPropertyCopyGT = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(rightProjection, leftPropertyCopy.getSourceInformation(), processorSupport);
+        replacePropertyGenericType(leftPropertyCopy, leftPropertyCopyGT);
+        replacePropertyReturnType(leftPropertyCopy, leftPropertyCopyGT);
 
-        replacePropertyGenericType(leftPropertyCopy, rightProjectionGTCopy);
-        replacePropertyReturnType(leftPropertyCopy, rightProjectionGTCopy);
+        Property<?, ?> rightPropertyCopy = ProjectionUtil.createPropertyCopy(rightProperty, associationProjection, modelRepository, processorSupport)
+                ._owner(null);
+        GenericType rightPropertyCopyGT = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(leftProjection, rightPropertyCopy.getSourceInformation(), processorSupport);
+        replacePropertyGenericType(rightPropertyCopy, rightPropertyCopyGT);
+        replacePropertyReturnType(rightPropertyCopy, rightPropertyCopyGT);
 
-        replacePropertyGenericType(rightPropertyCopy, leftProjectionGTCopy);
-        replacePropertyReturnType(rightPropertyCopy, leftProjectionGTCopy);
-
-
-        associationProjection._propertiesCoreInstance(Lists.immutable.<Property<?, ?>>ofAll(associationProjection._properties()).newWithAll(projectedPropertiesCopy));
+        associationProjection._propertiesAddAll(Lists.immutable.with(leftPropertyCopy, rightPropertyCopy));
     }
 
     private static void checkForValidProjectionType(AssociationProjection associationProjection, CoreInstance firstProjection)
@@ -297,13 +290,13 @@ public class AssociationProcessor extends Processor<Association>
         Property<?, ?> leftSideOfFilterOtherProperty = assnProperties.detect(p -> !leftSideOfFilterProperty.equals(p));
         GenericType leftSideOfFilterOtherPropertyGenericType = leftSideOfFilterOtherProperty._genericType();
 
-        FunctionType functionType = (FunctionType) qualifiedProperty._classifierGenericType()._typeArguments().toList().getFirst()._rawTypeCoreInstance();
+        FunctionType functionType = (FunctionType) qualifiedProperty._classifierGenericType()._typeArguments().getOnly()._rawTypeCoreInstance();
         Iterable<? extends VariableExpression> functionTypeParams = functionType._parameters();
         for (VariableExpression functionTypeParam : functionTypeParams)
         {
             if (functionTypeParam != null && "this".equals(functionTypeParam._name()))
             {
-                GenericType genericTypeCopy = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(leftSideOfFilterOtherPropertyGenericType, processorSupport);
+                GenericType genericTypeCopy = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(leftSideOfFilterOtherPropertyGenericType, true, processorSupport);
                 functionTypeParam._genericType(genericTypeCopy);
                 context.update(functionTypeParam);
                 if (functionTypeParam.hasBeenValidated())

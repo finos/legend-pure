@@ -21,7 +21,6 @@ import org.junit.Test;
 
 public abstract class AbstractTestToMultiplicity extends PureExpressionTest
 {
-
     @Test
     public void testErrorFromToOne()
     {
@@ -38,7 +37,7 @@ public abstract class AbstractTestToMultiplicity extends PureExpressionTest
     @Test
     public void testMatchExact()
     {
-        compileTestSource("fromString.pure",
+        compileSource("fromString.pure",
                 "function test():Boolean[1]" +
                         "{" +
                         "   x(|'1')" +
@@ -47,13 +46,13 @@ public abstract class AbstractTestToMultiplicity extends PureExpressionTest
                         "{\n" +
                         "   assert([1] == [1]->toMultiplicity(@[o]));\n" +
                         "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 
     @Test
     public void testBigger()
     {
-        compileTestSource("fromString.pure",
+        compileSource("fromString.pure",
                 "Class Firm{}" +
                         "function test():Boolean[1]" +
                         "{" +
@@ -63,13 +62,13 @@ public abstract class AbstractTestToMultiplicity extends PureExpressionTest
                         "{\n" +
                         "   assert([1] == [1]->toMultiplicity(@[o]));\n" +
                         "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 
     @Test
     public void testError()
     {
-        compileTestSource("fromString.pure",
+        compileSource("fromString.pure",
                 "function test():Boolean[1]" +
                         "{" +
                         "   x(|'1')" +
@@ -78,20 +77,7 @@ public abstract class AbstractTestToMultiplicity extends PureExpressionTest
                         "{\n" +
                         "   assert([1] == [1,2]->toMultiplicity(@[o]));\n" +
                         "}\n");
-
-        try
-        {
-            this.execute("test():Boolean[1]");
-            Assert.fail();
-        }
-        catch (RuntimeException e)
-        {
-            assertException(e);
-        }
-    }
-
-    protected void assertException(Exception e)
-    {
-        assertOriginatingPureException(PureExecutionException.class, "Cannot cast a collection of size 2 to multiplicity [1]", 3, 25, e);
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("test():Boolean[1]"));
+        assertPureException(PureExecutionException.class, "Cannot cast a collection of size 2 to multiplicity [1]", "fromString.pure", 3, 25, e);
     }
 }

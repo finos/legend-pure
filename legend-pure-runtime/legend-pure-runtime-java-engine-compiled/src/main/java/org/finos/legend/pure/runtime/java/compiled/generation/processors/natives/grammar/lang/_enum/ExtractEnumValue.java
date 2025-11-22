@@ -35,8 +35,8 @@ public class ExtractEnumValue extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        final ListIterable<? extends CoreInstance> parametersValues = Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorContext.getSupport());
-        final ProcessorSupport processorSupport = processorContext.getSupport();
+        ListIterable<? extends CoreInstance> parametersValues = Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorContext.getSupport());
+        ProcessorSupport processorSupport = processorContext.getSupport();
 
         if (processorContext.getSupport().instance_instanceOf(parametersValues.get(0), M3Paths.InstanceValue))
         {
@@ -54,13 +54,13 @@ public class ExtractEnumValue extends AbstractNative
     @Override
     public String buildBody()
     {
-        return "new DefendedPureFunction2<"  + FullJavaPaths.Enumeration + ", String, Object>()\n" +
-               "        {\n" +
-               "            @Override\n" +
-               "            public Object value("  + FullJavaPaths.Enumeration + " enumeration, String name, ExecutionSupport es)\n" +
-               "            {\n" +
-               "                return Pure.getEnumByName(enumeration, name);\n" +
-               "            }\n" +
-               "        }";
+        return "new DefendedPureFunction2<" + FullJavaPaths.Enumeration + ", String, Object>()\n" +
+                "        {\n" +
+                "            @Override\n" +
+                "            public Object value(" + FullJavaPaths.Enumeration + " enumeration, String name, ExecutionSupport es)\n" +
+                "            {\n" +
+                "                return Pure.getEnumByName(enumeration, name);\n" +
+                "            }\n" +
+                "        }";
     }
 }

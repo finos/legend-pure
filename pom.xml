@@ -20,13 +20,13 @@
     <parent>
         <groupId>org.finos</groupId>
         <artifactId>finos</artifactId>
-        <version>4</version>
+        <version>9</version>
     </parent>
 
     <name>Legend Pure</name>
     <groupId>org.finos.legend.pure</groupId>
     <artifactId>legend-pure</artifactId>
-    <version>5.26.1-SNAPSHOT</version>
+    <version>5.67.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -54,6 +54,7 @@
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
         <maven.compiler.release>8</maven.compiler.release>
         <java.version.range>[11,12),[17,18)</java.version.range>
+        <publish.server.id>central</publish.server.id>
 
         <!-- Dependency version -->
         <antlr.version>4.8-1</antlr.version>
@@ -76,12 +77,13 @@
         <jersey.version>2.25.1</jersey.version>
         <json-simple.version>1.1.1</json-simple.version>
         <junit.version>4.13.1</junit.version>
-        <slf4j.version>1.7.25</slf4j.version>
+        <maven.resolver.version>1.9.10</maven.resolver.version>
+        <slf4j.version>1.7.36</slf4j.version>
         <tomcat-dbcp.version>10.0.4</tomcat-dbcp.version>
 
         <!-- Plugin -->
         <build-helper.maven.plugin.version>1.9.1</build-helper.maven.plugin.version>
-        <exec.maven.plugin.version>1.6.0</exec.maven.plugin.version>
+        <exec.maven.plugin.version>3.5.0</exec.maven.plugin.version>
         <jacoco.maven.plugin.version>0.8.10</jacoco.maven.plugin.version>
         <maven.antrun.plugin.version>1.8</maven.antrun.plugin.version>
         <maven.checkstyle.plugin.version>3.3.0</maven.checkstyle.plugin.version>
@@ -97,7 +99,6 @@
         <maven.shade.plugin.version>3.4.1</maven.shade.plugin.version>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
         <maven.surefire.plugin.version>3.1.0</maven.surefire.plugin.version>
-        <nexus-staging.maven.plugin.version>1.6.13</nexus-staging.maven.plugin.version>
         <versions.maven.plugin.version>2.7</versions.maven.plugin.version>
     </properties>
 
@@ -201,14 +202,21 @@
                     <version>${project.version}</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.finos.legend.pure</groupId>
+                    <artifactId>legend-pure-maven-compiler</artifactId>
+                    <version>${project.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>compile-pure</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <version>${jacoco.maven.plugin.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.sonatype.plugins</groupId>
-                    <artifactId>nexus-staging-maven-plugin</artifactId>
-                    <version>${nexus-staging.maven.plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.finos.legend.pure</groupId>
@@ -268,14 +276,11 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <extensions>true</extensions>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
                 <configuration>
-                    <serverId>ossrh</serverId>
-                    <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                    <stagingProgressTimeoutMinutes>20</stagingProgressTimeoutMinutes>
+                    <publishingServerId>central</publishingServerId>
+                    <autoPublish>true</autoPublish>
                 </configuration>
             </plugin>
             <plugin>
@@ -433,6 +438,11 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-m3-precisePrimitives</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-m3-bootstrap-generator</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -535,6 +545,11 @@
 
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-maven-compiler</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-maven-generation-par</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -629,8 +644,29 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-api</artifactId>
+                <version>${maven.resolver.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-util</artifactId>
+                <version>${maven.resolver.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-model</artifactId>
+                <version>${apache.maven.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-plugin-api</artifactId>
+                <version>${apache.maven.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-artifact</artifactId>
                 <version>${apache.maven.version}</version>
             </dependency>
             <dependency>
@@ -960,20 +996,4 @@
             <!-- Test Scope -->
         </dependencies>
     </dependencyManagement>
-
-    <repositories>
-        <repository>
-            <id>ossrh</id>
-            <name>OSSRH Public Group</name>
-            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>ossrh-releases</id>
-            <name>OSSRH Public Releases Group</name>
-            <url>https://s01.oss.sonatype.org/content/repositories/releases/</url>
-        </repository>
-    </repositories>
 </project>

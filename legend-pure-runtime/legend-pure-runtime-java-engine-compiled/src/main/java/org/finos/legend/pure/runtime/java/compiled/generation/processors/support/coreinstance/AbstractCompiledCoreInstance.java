@@ -25,6 +25,8 @@ import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
+import org.finos.legend.pure.runtime.java.compiled.execution.ConsoleCompiled;
 
 public abstract class AbstractCompiledCoreInstance extends AbstractCoreInstance implements JavaCompiledCoreInstance
 {
@@ -34,6 +36,12 @@ public abstract class AbstractCompiledCoreInstance extends AbstractCoreInstance 
     public CoreInstance getClassifier()
     {
         throw new UnsupportedOperationException("Modify the code to use ProcessorSupport.getClassifier instead (" + this.getClass().getName() + ")");
+    }
+
+    @Override
+    public void print(Appendable appendable, String tab, int max)
+    {
+        ConsoleCompiled.append(SafeAppendable.wrap(appendable).append(tab), this, max);
     }
 
     @Override
@@ -122,15 +130,5 @@ public abstract class AbstractCompiledCoreInstance extends AbstractCoreInstance 
             }
         }
         return result;
-    }
-
-    public ListIterable<String> getDefaultValueKeys()
-    {
-        return Lists.immutable.empty();
-    }
-
-    public RichIterable<?> getDefaultValue(String property, ExecutionSupport es)
-    {
-        return Lists.immutable.empty();
     }
 }

@@ -16,29 +16,20 @@ package org.finos.legend.pure.m4.coreinstance.simple;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Stacks;
-import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.CoreInstanceWithStandardPrinting;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.finos.legend.pure.m4.coreinstance.indexing.IDConflictException;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
-import org.finos.legend.pure.m4.exception.PureException;
-import org.finos.legend.pure.m4.tools.SafeAppendable;
 import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 
-public class SimpleCoreInstance extends AbstractCoreInstance
+public class SimpleCoreInstance extends AbstractCoreInstance implements CoreInstanceWithStandardPrinting
 {
-    public static final int DEFAULT_MAX_PRINT_DEPTH = 1;
-
     private final int internalSyntheticId;
 
     private String name;
@@ -64,11 +55,6 @@ public class SimpleCoreInstance extends AbstractCoreInstance
     public void commit(ModelRepositoryTransaction transaction)
     {
         this.state = (SimpleCoreInstanceMutableState) transaction.getState(this);
-    }
-
-    @Override
-    public void rollback(ModelRepositoryTransaction transaction)
-    {
     }
 
     @Override
@@ -183,12 +169,6 @@ public class SimpleCoreInstance extends AbstractCoreInstance
         }
     }
 
-    @Override
-    public CoreInstance getValueForMetaPropertyToOne(CoreInstance property)
-    {
-        return this.getValueForMetaPropertyToOne(property.getName());
-    }
-
     // -------------
     //  Get To Many
     //--------------
@@ -197,12 +177,6 @@ public class SimpleCoreInstance extends AbstractCoreInstance
     {
         ListIterable<CoreInstance> values = this.getState().getValues(keyName);
         return (values == null) ? Lists.immutable.empty() : values;
-    }
-
-    @Override
-    public ListIterable<CoreInstance> getValueForMetaPropertyToMany(CoreInstance key)
-    {
-        return this.getValueForMetaPropertyToMany(key.getName());
     }
 
     @Override
@@ -333,81 +307,11 @@ public class SimpleCoreInstance extends AbstractCoreInstance
         return this.getState().hasValuesDefined(keyName);
     }
 
-
-    //------------
-    // Validation
-    //------------
-
     @Override
-    public void validate(MutableSet<CoreInstance> doneList) throws PureCompilationException
+    public String toString()
     {
-        validate(doneList, Stacks.mutable.with(this));
+        return this.name + "(" + this.internalSyntheticId + ") instanceOf " + ((getClassifier() == null) ? null : getClassifier().getName());
     }
-
-    private void validate(MutableSet<CoreInstance> doneList, MutableStack<SimpleCoreInstance> stack) throws PureCompilationException
-    {
-        while (!stack.isEmpty())
-        {
-            SimpleCoreInstance element = stack.pop();
-            doneList.add(element);
-
-            if (element.getClassifier() == null)
-            {
-                SourceInformation foundSourceInformation = element.sourceInformation;
-                if (stack.size() > 1)
-                {
-                    SourceInformation cursorSourceInformation = element.sourceInformation;
-                    int cursor = stack.size() - 1;
-                    while (cursorSourceInformation == null && cursor >= 0)
-                    {
-                        cursorSourceInformation = stack.peekAt(cursor--).sourceInformation;
-                    }
-                    foundSourceInformation = stack.peekAt(cursor + 1).sourceInformation;
-                }
-                throw new PureCompilationException(foundSourceInformation, element.getName() + " has not been defined!");
-            }
-
-            try
-            {
-                element.getState().getKeys().forEach(keyName ->
-                {
-                    ImmutableList<String> realKey = element.getState().getRealKeyByName(keyName);
-                    if (realKey == null)
-                    {
-                        throw new RuntimeException("No real key can be found for '" + keyName + "' in\n" + element.getName() + " (" + element + ")");
-                    }
-
-                    CoreInstance key = element.getKeyByName(keyName);
-                    if (key.getClassifier() == null)
-                    {
-                        throw new RuntimeException("'" + key.getName() + "' used in '" + element.name + "' has not been defined!\n" + element.print("   "));
-                    }
-
-                    ListIterable<CoreInstance> values = element.getState().getValues(keyName);
-                    if (values != null)
-                    {
-                        values.forEach(childElement ->
-                        {
-                            if ((!doneList.contains(childElement) || (childElement.getClassifier() == null)) && (childElement instanceof SimpleCoreInstance))
-                            {
-                                stack.push((SimpleCoreInstance) childElement);
-                            }
-                        });
-                    }
-                });
-            }
-            catch (Exception e)
-            {
-                PureException pe = PureException.findPureException(e);
-                if (pe != null)
-                {
-                    throw pe;
-                }
-                throw e;
-            }
-        }
-    }
-
 
     private SimpleCoreInstanceMutableState getState()
     {
@@ -421,180 +325,5 @@ public class SimpleCoreInstance extends AbstractCoreInstance
             }
         }
         return this.state;
-    }
-
-
-    //-------
-    // Print
-    //-------
-
-    @Override
-    public String toString()
-    {
-        return this.name + "(" + this.internalSyntheticId + ") instanceOf " + ((getClassifier() == null) ? null : getClassifier().getName());
-    }
-
-    @Override
-    public void printFull(Appendable appendable, String tab)
-    {
-        print(appendable, tab, true, true, DEFAULT_MAX_PRINT_DEPTH);
-    }
-
-    @Override
-    public void print(Appendable appendable, String tab)
-    {
-        print(appendable, tab, DEFAULT_MAX_PRINT_DEPTH);
-    }
-
-    @Override
-    public void print(Appendable appendable, String tab, int max)
-    {
-        print(appendable, tab, false, true, max);
-    }
-
-    @Override
-    public void printWithoutDebug(Appendable appendable, String tab)
-    {
-        print(appendable, tab, false, false, DEFAULT_MAX_PRINT_DEPTH);
-    }
-
-    @Override
-    public void printWithoutDebug(Appendable appendable, String tab, int max)
-    {
-        print(appendable, tab, false, false, max);
-    }
-
-    private void print(Appendable appendable, String tab, boolean full, boolean addDebug, int max)
-    {
-        print(SafeAppendable.wrap(appendable), tab, Stacks.mutable.empty(), full, addDebug, max);
-    }
-
-    private void print(SafeAppendable appendable, String tab, MutableStack<CoreInstance> stack, boolean full, boolean addDebug, int max)
-    {
-        stack.push(this);
-        printNodeName(appendable.append(tab), this, full, addDebug);
-        printNodeName(appendable.append(" instance "), this.classifier, full, addDebug);
-        getState().getKeys().toSortedList().forEach(key -> printProperty(appendable.append('\n'), key, this.getState().getValues(key), tab, stack, full, addDebug, max));
-        stack.pop();
-    }
-
-    private void printNodeName(SafeAppendable appendable, CoreInstance node, boolean full, boolean addDebug)
-    {
-        if (node == null)
-        {
-            return;
-        }
-        String name = node.getName();
-        if (full)
-        {
-            appendable.append(name).append('_').append(node.getSyntheticId());
-        }
-        else
-        {
-            appendable.append(ModelRepository.possiblyReplaceAnonymousId(name));
-        }
-
-        if (addDebug)
-        {
-            SourceInformation sourceInfo = node.getSourceInformation();
-            if (sourceInfo != null)
-            {
-                appendable.append('(').append(sourceInfo.getSourceId()).append(':');
-                appendable.append(sourceInfo.getStartLine()).append(',');
-                appendable.append(sourceInfo.getStartColumn()).append(',');
-                appendable.append(sourceInfo.getLine()).append(',');
-                appendable.append(sourceInfo.getColumn()).append(',');
-                appendable.append(sourceInfo.getEndLine()).append(',');
-                appendable.append(sourceInfo.getEndColumn()).append(')');
-            }
-        }
-    }
-
-    private void printProperty(SafeAppendable appendable, String propertyName, ListIterable<CoreInstance> values, String tab, MutableStack<CoreInstance> stack, boolean full, boolean addDebug, int max)
-    {
-        appendable.append(tab).append("    ");
-        if (propertyName == null)
-        {
-            appendable.append("null:");
-        }
-        else
-        {
-            CoreInstance property = getKeyByName(propertyName);
-            CoreInstance propertyClassifier = property.getClassifier();
-
-            printNodeName(appendable, property, full, addDebug);
-            appendable.append('(');
-            if (propertyClassifier == null)
-            {
-                appendable.append("null");
-            }
-            else
-            {
-                printNodeName(appendable, propertyClassifier, full, addDebug);
-            }
-            appendable.append("):");
-        }
-
-        SetIterable<CoreInstance> excluded = this.repository.getExclusionSet();
-        for (CoreInstance value : values)
-        {
-            appendable.append('\n');
-
-            if (value == null)
-            {
-                appendable.append(tab);
-                appendable.append("        NULL");
-            }
-            else
-            {
-                // TODO remove reference to "package" property, which is an M3 thing
-                boolean excludeFlag = ((excluded != null) && (excluded.contains(value.getValueForMetaPropertyToOne("package")) || excluded.contains(value))) ||
-                        (this.repository.getTopLevel(value.getName()) != null);
-                if (full ? stack.contains(value) : (excludeFlag || (stack.size() > max) || stack.contains(value)))
-                {
-                    CoreInstance valueClassifier = value.getClassifier();
-
-                    appendable.append(tab).append("        ");
-                    printNodeName(appendable, value, full, addDebug);
-                    appendable.append(" instance ");
-                    if (valueClassifier == null)
-                    {
-                        appendable.append("null");
-                    }
-                    else
-                    {
-                        printNodeName(appendable, valueClassifier, full, addDebug);
-                        if (full)
-                        {
-                            appendable.append('\n').append(tab).append("            [...]");
-                        }
-                        else if (!excludeFlag && (stack.size() > max) && value.getKeys().notEmpty())
-                        {
-                            appendable.append('\n').append(tab).append("            [... >").append(max).append(']');
-                        }
-                    }
-                }
-                else
-                {
-                    String newTab = tab + "        ";
-                    if (value instanceof SimpleCoreInstance)
-                    {
-                        ((SimpleCoreInstance) value).print(appendable, newTab, stack, full, addDebug, max);
-                    }
-                    else if (full)
-                    {
-                        value.printFull(appendable, newTab);
-                    }
-                    else if (addDebug)
-                    {
-                        value.print(appendable, newTab, max);
-                    }
-                    else
-                    {
-                        value.printWithoutDebug(appendable, newTab, max);
-                    }
-                }
-            }
-        }
     }
 }

@@ -16,8 +16,14 @@ import meta::pure::test::pct::*;
 
 Profile meta::pure::test::pct::PCT
 {
-    stereotypes : [test, adapter, function, platformOnly];
+    stereotypes : [test, adapter, function, platformOnly, testQualifierProfile];
     tags: [grammarDoc, grammarCharacters, adapterName];
+}
+
+Profile <<meta::pure::test::pct::PCT.testQualifierProfile>> meta::pure::test::pct::PCTCoreQualifier
+{
+    stereotypes : [variant, needsImplementation];
+
 }
 
 function

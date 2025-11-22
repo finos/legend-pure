@@ -29,12 +29,22 @@ public class BinaryReaders
 
     public static Reader newBinaryReader(ReadableByteChannel byteChannel)
     {
-        return new ReadableByteChannelReader(byteChannel);
+        return newBinaryReader(byteChannel, true);
+    }
+
+    public static Reader newBinaryReader(ReadableByteChannel byteChannel, boolean closeChannelOnClose)
+    {
+        return new ReadableByteChannelReader(byteChannel, closeChannelOnClose);
     }
 
     public static Reader newBinaryReader(InputStream stream)
     {
-        return new StreamBinaryReader(stream);
+        return newBinaryReader(stream, true);
+    }
+
+    public static Reader newBinaryReader(InputStream stream, boolean closeStreamOnClose)
+    {
+        return new StreamBinaryReader(stream, closeStreamOnClose);
     }
 
     public static Reader newBinaryReader(ByteBuffer buffer)

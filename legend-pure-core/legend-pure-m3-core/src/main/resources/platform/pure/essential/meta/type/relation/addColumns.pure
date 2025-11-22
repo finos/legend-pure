@@ -1,0 +1,47 @@
+// Copyright 2025 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::test::pct::*;
+import meta::pure::metamodel::relation::*;
+
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::addColumns(source:RelationType<Any>[1], colSpec:ColSpecArray<Any>[1]):RelationType<Any>[1];
+
+function <<test.Test>> meta::pure::functions::meta::tests::addColumns():Boolean[1]
+{
+    let newRelation = addColumns(@(x:String)->genericType().rawType->cast(@RelationType<Any>)->toOne(), ~[ab:String[1], z:Integer]);
+
+    assertEquals('x:String[0..1],ab:String[1..1],z:Integer[0..1]', $newRelation.columns->map(x| let multiplicity = $x.classifierGenericType.multiplicityArguments->at(0);
+                                                                                $x.name->toOne() +
+                                                                                ':' +
+                                                                                $x.classifierGenericType->toOne().typeArguments->at(1).rawType.name->toOne() +
+                                                                                '[' +
+                                                                                $multiplicity.lowerBound.value->toOne()->toString() +
+                                                                                '..' +
+                                                                                $multiplicity.upperBound.value->toOne()->toString() +
+                                                                                ']';
+                                                                            )->joinStrings(',')
+    );
+
+}
+
+
+function <<test.Test>> meta::pure::functions::relation::tests::testAddColumnsAfterEvaluateAndDeactivate():Boolean[1]
+{
+    let relType = ^meta::pure::metamodel::relation::RelationType<Any>()->evaluateAndDeactivate();
+
+    let newRelType = $relType->meta::pure::functions::meta::addColumns(~[strNew: String[1]]);
+
+    assertEquals(1, $newRelType.columns->size());
+    assertEquals('strNew', $newRelType.columns->at(0).name);
+}

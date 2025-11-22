@@ -31,6 +31,9 @@ import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
+import org.finos.legend.pure.runtime.java.interpreted.natives.MapCoreInstance;
+
+import java.util.Set;
 
 /**
  * Utilities related to equality between Pure instances.  This is equality in
@@ -106,6 +109,11 @@ public class EqualityUtilities
             return false;
         }
 
+        if (left instanceof MapCoreInstance && right instanceof MapCoreInstance)
+        {
+            return mapEquals((MapCoreInstance) left, (MapCoreInstance) right, processorSupport);
+        }
+
         if (Instance.instanceOf(left, M3Paths.InstanceValue, processorSupport))
         {
             return equal(ValueSpecification.getValues(left, processorSupport), ValueSpecification.getValues(right, processorSupport), processorSupport);
@@ -125,6 +133,25 @@ public class EqualityUtilities
             }
         }
         return true;
+    }
+
+    private static boolean mapEquals(MapCoreInstance left, MapCoreInstance right, ProcessorSupport processorSupport)
+    {
+        Set<CoreInstance> keySet = left.getMap().keySet();
+        if (keySet.equals(right.getMap().keySet())) // this is handled using the EqualityUtilities hashing strategy set on the map
+        {
+            for (CoreInstance key : keySet)
+            {
+                if (!EqualityUtilities.equal(left.getMap().get(key), right.getMap().get(key), Lists.fixedSize.empty(), processorSupport))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**

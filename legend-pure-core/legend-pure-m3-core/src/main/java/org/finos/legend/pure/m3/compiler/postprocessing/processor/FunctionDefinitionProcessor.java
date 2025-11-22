@@ -36,6 +36,7 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.serialization.runtime.pattern.URLPatternLibrary;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -81,6 +82,13 @@ public class FunctionDefinitionProcessor extends Processor<FunctionDefinition<?>
 
         functionType._parameters().forEach(var ->
         {
+            GenericType genericType = var._genericType();
+            // The generic type may be null if it's a lambda expression...
+            if (genericType != null)
+            {
+                // We resolve because we want to fail fast if a given type is unknown...
+                org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveImportStubs(genericType, processorSupport);
+            }
             try
             {
                 variableContext.registerValue(var._name(), var);
@@ -89,16 +97,9 @@ public class FunctionDefinitionProcessor extends Processor<FunctionDefinition<?>
             {
                 throw new PureCompilationException(functionDefinition.getSourceInformation(), e.getMessage());
             }
-            GenericType propertyType = var._genericType();
-            // The property type may be null if it's a lambda expression...
-            if (propertyType != null)
-            {
-                // We resolve because we want to fail fast if a given type is unknown...
-                org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveGenericTypeUsingImports(propertyType, repository, processorSupport);
-            }
         });
 
-        ListIterable<? extends ValueSpecification> expressions = functionDefinition._expressionSequence().toList();
+        ListIterable<? extends ValueSpecification> expressions = ListHelper.wrapListIterable(functionDefinition._expressionSequence());
         if (expressions.isEmpty())
         {
             throw new PureCompilationException(functionDefinition.getSourceInformation(), "Function definition must contain at least one expression");

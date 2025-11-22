@@ -37,6 +37,9 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profi
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.ColSpecArray;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Nil;
@@ -44,6 +47,9 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.relation._Column;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
@@ -827,19 +833,33 @@ public class CoreHelper
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static PureMap putAllPairs(PureMap pureMap, RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs)
     {
-        Map map = pureMap.getMap();
-        MutableMap<Object, Object> newOne = (map instanceof UnifiedMapWithHashingStrategy) ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
-        pairs.forEach(p -> newOne.put(p._first(), p._second()));
-        return new PureMap(newOne);
+        if (!pairs.isEmpty())
+        {
+            Map map = pureMap.getMap();
+            MutableMap<Object, Object> newOne = (map instanceof UnifiedMapWithHashingStrategy) ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
+            pairs.forEach(p -> newOne.put(p._first(), p._second()));
+            return new PureMap(newOne);
+        }
+        else
+        {
+            return pureMap;
+        }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static PureMap putAllPairs(PureMap pureMap, org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?> pair)
     {
-        Map map = pureMap.getMap();
-        MutableMap<Object, Object> newOne = (map instanceof UnifiedMapWithHashingStrategy) ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
-        newOne.put(pair._first(), pair._second());
-        return new PureMap(newOne);
+        if (pair != null)
+        {
+            Map map = pureMap.getMap();
+            MutableMap<Object, Object> newOne = (map instanceof UnifiedMapWithHashingStrategy) ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
+            newOne.put(pair._first(), pair._second());
+            return new PureMap(newOne);
+        }
+        else
+        {
+            return pureMap;
+        }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -1074,6 +1094,31 @@ public class CoreHelper
         return new BigDecimal(str.endsWith("D") || str.endsWith("d") ? str.substring(0, str.length() - 1) : str);
     }
 
+    public static BigDecimal parseDecimalWithScalePrecision(String str, Long precision, Long scale)
+    {
+        if (precision <= 0)
+        {
+            throw new IllegalArgumentException("Precision must be a positive integer.");
+        }
+        if (scale < 0)
+        {
+            throw new IllegalArgumentException("Scale cannot be negative.");
+        }
+        if (scale > precision)
+        {
+            throw new IllegalArgumentException("Scale cannot be greater than precision.");
+        }
+
+        BigDecimal bd = new BigDecimal(str);
+        bd = bd.setScale(scale.intValue(), RoundingMode.HALF_UP);
+        if (bd.precision() > precision)
+        {
+            throw new ArithmeticException("Value '" + str + "' cannot be represented as DECIMAL(" + precision + ", " + scale + ") due to precision overflow. Resulting precision (" + bd.precision() + ") exceeds allowed precision (" + precision + ").");
+        }
+
+        return bd;
+    }
+
     public static boolean contains(String str1, String str2)
     {
         return str1.contains(str2);
@@ -1143,4 +1188,13 @@ public class CoreHelper
         return (T) ((Any) instance)._elementOverrideRemove();
     }
 
+
+    public static RelationType<?> addColumns(RelationType<?> instance, ColSpecArray<?> colSpecArray, ExecutionSupport es)
+    {
+        ProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
+        MutableList<Column<?,?>> columns = Lists.mutable.withAll(instance._columns());
+        columns.withAll(Lists.mutable.withAll(((RelationType<?>)colSpecArray._classifierGenericType()._typeArguments().getFirst()._rawType())._columns()));
+        MutableList<? extends CoreInstance> newColumns = columns.collect(c -> _Column.getColumnInstance(c._name(), c._nameWildCard(), _Column.getColumnType(c), _Column.getColumnMultiplicity(c), c.getSourceInformation(), processorSupport)).toList();
+        return _RelationType.build(newColumns, colSpecArray.getSourceInformation(), processorSupport);
+    }
 }

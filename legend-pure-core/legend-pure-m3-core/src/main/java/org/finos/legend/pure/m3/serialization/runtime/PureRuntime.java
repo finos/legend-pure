@@ -34,10 +34,12 @@ import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.observer.PostProcessorObserver;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.function.InvalidFunctionDescriptorException;
+import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m3.serialization.PureRuntimeEventHandler;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
@@ -826,15 +828,23 @@ public class PureRuntime
                         {
                             message.setMessage("  Registering service patterns ...");
                         }
-                        for (CoreInstance func : context.getClassifierInstances(getCoreInstance(M3Paths.ConcreteFunctionDefinition)))
+                        CoreInstance serviceProfile = getCoreInstance(M3Paths.service);
+                        if (serviceProfile != null)
                         {
-                            try
+                            CoreInstance urlTag = Profile.findTag(serviceProfile, "url");
+                            if (urlTag != null)
                             {
-                                this.patternLibrary.possiblyRegister(func, processorSupport);
-                            }
-                            catch (Exception e)
-                            {
-                                // Ignore
+                                urlTag.getValueForMetaPropertyToMany(M3Properties.modelElements).forEach(elt ->
+                                {
+                                    try
+                                    {
+                                        this.patternLibrary.possiblyRegister(elt, processorSupport);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        // Ignore
+                                    }
+                                });
                             }
                         }
                         if (message != null)

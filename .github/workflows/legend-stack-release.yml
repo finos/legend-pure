@@ -44,7 +44,7 @@ jobs:
           distribution: 'temurin'
           java-version: 17
           java-package: jdk
-          server-id: ossrh
+          server-id: central
           server-username: CI_DEPLOY_USERNAME
           server-password: CI_DEPLOY_PASSWORD
           gpg-private-key: ${{ secrets.CI_GPG_PRIVATE_KEY }}

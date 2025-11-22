@@ -52,75 +52,81 @@ public class AdjustDate extends NativeFunction
         {
             PureDate date = PrimitiveUtilities.getDateValue(Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport));
             Number number = PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport));
-            if (number.intValue() == 0)
-            {
-                return params.get(0);
-            }
             String unit = Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, M3Properties.name, processorSupport).getName();
-            PureDate result;
-            switch (unit)
-            {
-                case "YEARS":
-                {
-                    result = date.addYears(number.longValue());
-                    break;
-                }
-                case "MONTHS":
-                {
-                    result = date.addMonths(number.longValue());
-                    break;
-                }
-                case "WEEKS":
-                {
-                    result = date.addWeeks(number.longValue());
-                    break;
-                }
-                case "DAYS":
-                {
-                    result = date.addDays(number.longValue());
-                    break;
-                }
-                case "HOURS":
-                {
-                    result = date.addHours(number.longValue());
-                    break;
-                }
-                case "MINUTES":
-                {
-                    result = date.addMinutes(number.longValue());
-                    break;
-                }
-                case "SECONDS":
-                {
-                    result = date.addSeconds(number.longValue());
-                    break;
-                }
-                case "MILLISECONDS":
-                {
-                    result = date.addMilliseconds(number.longValue());
-                    break;
-                }
-                case "MICROSECONDS":
-                {
-                    result = date.addMicroseconds(number.longValue());
-                    break;
-                }
-                case "NANOSECONDS":
-                {
-                    result = date.addNanoseconds(number.longValue());
-                    break;
-                }
-                default:
-                {
-                    throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Unsupported duration unit: " + unit, functionExpressionCallStack);
-                }
-            }
-            return ValueSpecificationBootstrap.newDateLiteral(this.repository, result, processorSupport);
+            PureDate adjustedDate = adjustDate(date, number, unit, functionExpressionCallStack);
+            return ValueSpecificationBootstrap.newDateLiteral(this.repository, adjustedDate, processorSupport);
         }
         catch (Exception e)
         {
             e.printStackTrace();
             throw e;
         }
+    }
+
+    public static PureDate adjustDate(PureDate date, Number number, String unit, MutableStack<CoreInstance> functionExpressionCallStack)
+    {
+        if (number.intValue() == 0)
+        {
+            return date;
+        }
+        PureDate result;
+        switch (unit)
+        {
+            case "YEARS":
+            {
+                result = date.addYears(number.longValue());
+                break;
+            }
+            case "MONTHS":
+            {
+                result = date.addMonths(number.longValue());
+                break;
+            }
+            case "WEEKS":
+            {
+                result = date.addWeeks(number.longValue());
+                break;
+            }
+            case "DAYS":
+            {
+                result = date.addDays(number.longValue());
+                break;
+            }
+            case "HOURS":
+            {
+                result = date.addHours(number.longValue());
+                break;
+            }
+            case "MINUTES":
+            {
+                result = date.addMinutes(number.longValue());
+                break;
+            }
+            case "SECONDS":
+            {
+                result = date.addSeconds(number.longValue());
+                break;
+            }
+            case "MILLISECONDS":
+            {
+                result = date.addMilliseconds(number.longValue());
+                break;
+            }
+            case "MICROSECONDS":
+            {
+                result = date.addMicroseconds(number.longValue());
+                break;
+            }
+            case "NANOSECONDS":
+            {
+                result = date.addNanoseconds(number.longValue());
+                break;
+            }
+            default:
+            {
+                throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Unsupported duration unit: " + unit, functionExpressionCallStack);
+            }
+        }
+        return result;
     }
 }

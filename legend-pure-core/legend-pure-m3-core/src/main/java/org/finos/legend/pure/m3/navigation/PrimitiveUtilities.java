@@ -20,15 +20,20 @@ import org.eclipse.collections.api.set.ImmutableSet;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.BooleanCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.ByteCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.DateCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.DecimalCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.FloatCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.IntegerCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.StrictTimeCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
+import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.StrictTimeFunctions;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -50,6 +55,16 @@ public class PrimitiveUtilities
     public static boolean getBooleanValue(CoreInstance instance, boolean defaultIfNull)
     {
         return (instance == null) ? defaultIfNull : getBooleanValue(instance);
+    }
+
+    public static byte getByteValue(CoreInstance instance)
+    {
+        return (instance instanceof ByteCoreInstance) ? ((ByteCoreInstance) instance).getValue() : Byte.parseByte(instance.getName());
+    }
+
+    public static byte getByteValue(CoreInstance instance, byte defaultIfNull)
+    {
+        return (instance == null) ? defaultIfNull : getByteValue(instance);
     }
 
     public static PureDate getDateValue(CoreInstance instance)
@@ -77,6 +92,36 @@ public class PrimitiveUtilities
         return (instance instanceof DecimalCoreInstance) ? ((DecimalCoreInstance) instance).getValue() : new BigDecimal(instance.getName());
     }
 
+    public static BigDecimal getDecimalValueWithPrecisionScale(CoreInstance numberInstance, CoreInstance precisionInstance, CoreInstance scaleInstance)
+    {
+        return (numberInstance instanceof DecimalCoreInstance) ? ((DecimalCoreInstance) numberInstance).getValue() : getDecimalWithScalePrecision(numberInstance.getName(), getIntegerValue(precisionInstance).intValue(), getIntegerValue(scaleInstance).intValue());
+    }
+
+    public static BigDecimal getDecimalWithScalePrecision(String str, int precision, int scale)
+    {
+        if (precision <= 0)
+        {
+            throw new IllegalArgumentException("Precision must be a positive integer.");
+        }
+        if (scale < 0)
+        {
+            throw new IllegalArgumentException("Scale cannot be negative.");
+        }
+        if (scale > precision)
+        {
+            throw new IllegalArgumentException("Scale cannot be greater than precision.");
+        }
+
+        BigDecimal bd = new BigDecimal(str);
+        bd = bd.setScale(scale, RoundingMode.HALF_UP);
+        if (bd.precision() > precision)
+        {
+            throw new ArithmeticException("Value '" + str + "' cannot be represented as DECIMAL(" + precision + ", " + scale + ") due to precision overflow. Resulting precision (" + bd.precision() + ") exceeds allowed precision (" + precision + ").");
+        }
+
+        return bd;
+    }
+
     public static BigDecimal getDecimalValue(CoreInstance instance, BigDecimal defaultIfNull)
     {
         return (instance == null) ? defaultIfNull : getDecimalValue(instance);
@@ -90,21 +135,23 @@ public class PrimitiveUtilities
         }
 
         String name = instance.getName();
-        try
-        {
-            return Integer.valueOf(name);
-        }
-        catch (NumberFormatException e)
+        if (name.length() <= 20)
         {
             try
             {
-                return Long.valueOf(name);
+                long l = Long.parseLong(name);
+                if ((Integer.MIN_VALUE <= l) && (l <= Integer.MAX_VALUE))
+                {
+                    return (int) l;
+                }
+                return l;
             }
-            catch (NumberFormatException e1)
+            catch (NumberFormatException ignore)
             {
-                return new BigInteger(name);
+                // not an Integer or Long, fall back to BigInteger
             }
         }
+        return new BigInteger(name);
     }
 
     public static Number getIntegerValue(CoreInstance instance, Integer defaultIfNull)
@@ -120,6 +167,16 @@ public class PrimitiveUtilities
     public static Number getIntegerValue(CoreInstance instance, BigInteger defaultIfNull)
     {
         return (instance == null) ? defaultIfNull : getIntegerValue(instance);
+    }
+
+    public static PureStrictTime getStrictTimeValue(CoreInstance instance)
+    {
+        return (instance instanceof StrictTimeCoreInstance) ? ((StrictTimeCoreInstance) instance).getValue() : StrictTimeFunctions.parsePureStrictTime(instance.getName());
+    }
+
+    public static PureStrictTime getStrictTimeValue(CoreInstance instance, PureStrictTime defaultIfNull)
+    {
+        return (instance == null) ? defaultIfNull : getStrictTimeValue(instance);
     }
 
     public static String getStringValue(CoreInstance instance)

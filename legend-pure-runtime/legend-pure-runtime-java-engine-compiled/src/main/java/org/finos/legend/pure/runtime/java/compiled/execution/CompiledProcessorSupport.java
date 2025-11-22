@@ -23,6 +23,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.BaseCoreInstance;
 import org.finos.legend.pure.m3.coreinstance.Package;
@@ -111,8 +112,25 @@ public class CompiledProcessorSupport implements ProcessorSupport
         if (object instanceof ValCoreInstance)
         {
             String valType = ((ValCoreInstance) object).getType();
-            return typeName.equals(valType) ||
-                    (M3Paths.Date.equals(typeName) && (valType.equals(M3Paths.DateTime) || valType.equals(M3Paths.StrictDate) || valType.equals(M3Paths.LatestDate)));
+            if (typeName.equals(valType))
+            {
+                return true;
+            }
+            switch (typeName)
+            {
+                case M3Paths.Date:
+                {
+                    return valType.equals(M3Paths.DateTime) || valType.equals(M3Paths.StrictDate) || valType.equals(M3Paths.LatestDate);
+                }
+                case M3Paths.Number:
+                {
+                    return valType.equals(M3Paths.Integer) || valType.equals(M3Paths.Float) || valType.equals(M3Paths.Decimal);
+                }
+                default:
+                {
+                    return false;
+                }
+            }
         }
 
         return Instance.instanceOf(object, typeName, this);
@@ -179,6 +197,10 @@ public class CompiledProcessorSupport implements ProcessorSupport
             case M3Paths.Number:
             {
                 return Number.class;
+            }
+            case M3Paths.Byte:
+            {
+                return Byte.class;
             }
             case M3Paths.Date:
             case M3Paths.StrictDate:
@@ -404,8 +426,8 @@ public class CompiledProcessorSupport implements ProcessorSupport
     public SetIterable<CoreInstance> function_getFunctionsForName(String functionName)
     {
         //TODO Iterate over ConcreteFunctionDefinition and FunctionDefinition along with NativeFunction.
-        return this.metadata.getMetadata(MetadataJavaPaths.NativeFunction).valuesView().asLazy()
-                .concatenate(this.metadata.getMetadata(MetadataJavaPaths.ConcreteFunctionDefinition).valuesView())
+        return LazyIterate.adapt(this.metadata.getClassifierInstances(MetadataJavaPaths.NativeFunction))
+                .concatenate(this.metadata.getClassifierInstances(MetadataJavaPaths.ConcreteFunctionDefinition))
                 .select(f -> (f instanceof FunctionAccessor) && functionName.equals(((FunctionAccessor<?>) f)._functionName()), Sets.mutable.empty());
     }
 

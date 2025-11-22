@@ -22,258 +22,211 @@ import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
 public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void cleanUp()
+    {
+        runtime.delete("fromString.pure");
+        runtime.compile();
+    }
+
     @Test
     public void testEvaluateWrongPrimitiveType()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "function myFunc(s:Integer[1]):String[1]\n" +
-                    "{\n" +
-                    "    $s->toString();\n" +
-                    "}\n" +
-                    "function test():Nil[0]\n" +
-                    "{\n" +
-                    "   print(myFunc_Integer_1__String_1_->eval('ok'), 1);" +
-                    "}\n");
-            this.execute("test():Nil[0]");
-            Assert.fail();
-        }
-        catch (RuntimeException e)
-        {
-            this.assertExceptionInformation(e, "Error during dynamic function evaluation. The type String is not compatible with the type Integer", 7, 39, this.checkLineNumbers());
-        }
+        compileTestSource("fromString.pure",
+                "function myFunc(s:Integer[1]):String[1]\n" +
+                        "{\n" +
+                        "    $s->toString();\n" +
+                        "}\n" +
+                        "function test():Nil[0]\n" +
+                        "{\n" +
+                        "   print(myFunc_Integer_1__String_1_->eval('ok'), 1);\n" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("test():Nil[0]"));
+        assertExceptionInformation(e, "Error during dynamic function evaluation. The type String is not compatible with the type Integer", 7, 39, checkLineNumbers());
     }
 
     @Test
     public void testEvaluateWrongPureType()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "Class Wave\n" +
-                    "{\n" +
-                    "    wavelength: Float[1];\n" +
-                    "}\n" +
-                    "Class ElementaryParticle\n" +
-                    "{\n" +
-                    "    energy: Float[1];\n" +
-                    "    charge: Charge[1];\n" +
-                    "}\n" +
-                    "Enum Charge\n" +
-                    "{\n" +
-                    "   Positive, Negative, Neutral\n" +
-                    "}\n" +
-                    "function isNeutralParticle(e:ElementaryParticle[1]):Boolean[1]\n" +
-                    "{\n" +
-                    "    $e.charge == Charge.Neutral;\n" +
-                    "}\n" +
-                    "function test():Nil[0]\n" +
-                    "{\n" +
-                    "   print(isNeutralParticle_ElementaryParticle_1__Boolean_1_->eval(^Wave(wavelength=42.01)), 1);" +
-                    "}\n");
-            this.execute("test():Nil[0]");
-            Assert.fail();
-        }
-        catch (RuntimeException e)
-        {
-            this.assertExceptionInformation(e, "Error during dynamic function evaluation. The type Wave is not compatible with the type ElementaryParticle", 20, 62, this.checkLineNumbers());
-        }
+        compileTestSource("fromString.pure",
+                "Class Wave\n" +
+                        "{\n" +
+                        "    wavelength: Float[1];\n" +
+                        "}\n" +
+                        "Class ElementaryParticle\n" +
+                        "{\n" +
+                        "    energy: Float[1];\n" +
+                        "    charge: Charge[1];\n" +
+                        "}\n" +
+                        "Enum Charge\n" +
+                        "{\n" +
+                        "   Positive, Negative, Neutral\n" +
+                        "}\n" +
+                        "function isNeutralParticle(e:ElementaryParticle[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    $e.charge == Charge.Neutral;\n" +
+                        "}\n" +
+                        "function test():Nil[0]\n" +
+                        "{\n" +
+                        "   print(isNeutralParticle_ElementaryParticle_1__Boolean_1_->eval(^Wave(wavelength=42.01)), 1);\n" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("test():Nil[0]"));
+        assertExceptionInformation(e, "Error during dynamic function evaluation. The type Wave is not compatible with the type ElementaryParticle", 20, 62, checkLineNumbers());
     }
 
     @Test
     public void testEvaluatePropertyWrongType()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "Class Wave\n" +
-                    "{\n" +
-                    "    wavelength: Float[1];\n" +
-                    "}\n" +
-                    "Class ElementaryParticle\n" +
-                    "{\n" +
-                    "    energy: Float[1];\n" +
-                    "}\n" +
-                    "function {doc.doc = 'Get all properties on the provided type / class'}\n" +
-                    "   meta::pure::functions::meta::allProperties(class : Class<Any>[1]) : AbstractProperty<Any>[*]\n" +
-                    "{\n" +
-                    "  []\n" +
-                    "     ->concatenate($class.properties)\n" +
-                    "     ->concatenate($class.propertiesFromAssociations)\n" +
-                    "     ->concatenate($class.qualifiedProperties)\n" +
-                    "     ->concatenate($class.qualifiedPropertiesFromAssociations)\n" +
-                    "}\n" +
-                    "function meta::pure::versioning::classPropertyByNonMilestonedName(c:Class<Any>[1], name:String[1]):AbstractProperty<Any>[0..1] {\n" +
-                    "   $c->allProperties()->filter(p|$p.name == $name || $p.name == ($name + 'AllVersions'))->first();//->meta::pure::milestoning::reverseMilestoningTransforms()->toOne();\n" +
-                    "}\n" +
-                    "function test():Nil[0]\n" +
-                    "{\n" +
-                    "   print(ElementaryParticle->classPropertyByName('energy')->toOne()->eval(^Wave(wavelength=42.01)), 1);" +
-                    "}\n");
-            this.execute("test():Nil[0]");
-            Assert.fail();
-        }
-        catch (RuntimeException e)
-        {
-            //e.printStackTrace();
-            this.assertExceptionInformation(e, "Error during dynamic function evaluation. The type Wave is not compatible with the type ElementaryParticle", 23, 70, this.checkLineNumbers());
-        }
+        compileTestSource("fromString.pure",
+                "Class Wave\n" +
+                        "{\n" +
+                        "    wavelength: Float[1];\n" +
+                        "}\n" +
+                        "Class ElementaryParticle\n" +
+                        "{\n" +
+                        "    energy: Float[1];\n" +
+                        "}\n" +
+                        "function {doc.doc = 'Get all properties on the provided type / class'}\n" +
+                        "   meta::pure::functions::meta::allProperties(class : Class<Any>[1]) : AbstractProperty<Any>[*]\n" +
+                        "{\n" +
+                        "  []\n" +
+                        "     ->concatenate($class.properties)\n" +
+                        "     ->concatenate($class.propertiesFromAssociations)\n" +
+                        "     ->concatenate($class.qualifiedProperties)\n" +
+                        "     ->concatenate($class.qualifiedPropertiesFromAssociations)\n" +
+                        "}\n" +
+                        "function meta::pure::functions::meta::classPropertyByName(class:Class<Any>[1], name:String[1]):Property<Nil,Any|*>[0..1]\n" +
+                        "{\n" +
+                        "    $class.properties->filter(p | $p.name == $name)->first()\n" +
+                        "}\n" +
+                        "function meta::pure::versioning::classPropertyByNonMilestonedName(c:Class<Any>[1], name:String[1]):AbstractProperty<Any>[0..1] {\n" +
+                        "   $c->allProperties()->filter(p|$p.name == $name || $p.name == ($name + 'AllVersions'))->first();//->meta::pure::milestoning::reverseMilestoningTransforms()->toOne();\n" +
+                        "}\n" +
+                        "function test():Nil[0]\n" +
+                        "{\n" +
+                        "   print(ElementaryParticle->classPropertyByName('energy')->toOne()->eval(^Wave(wavelength=42.01)), 1);\n" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("test():Nil[0]"));
+        assertExceptionInformation(e, "Error during dynamic function evaluation. The type Wave is not compatible with the type ElementaryParticle", 27, 70, checkLineNumbers());
     }
 
     @Test
     public void testEvaluateAnyWrongMultiplicity()
     {
-        compileTestSource("fromString.pure", "function myFunc(s:String[1], p:String[1]):String[1]\n" +
-                "{\n" +
-                "    $s;\n" +
-                "}\n" +
-                "function test():Nil[0]\n" +
-                "{\n" +
-                "   print(myFunc_String_1__String_1__String_1_->evaluate([^List<String>(values='ok'), ^List<String>(values=['ok1','ok2'])]), 1);\n" +
-                "}\n" +
-                "function test2():Nil[0]\n" +
-                "{\n" +
-                "   print(myFunc_String_1__String_1__String_1_->eval(['ok'], ['ok1','ok2']), 1);\n" +
-                "}");
-        try
-        {
-            this.execute("test():Nil[0]");
-            Assert.fail();
-        }
-        catch (RuntimeException e)
-        {
-            this.assertExceptionInformation(e, "Error during dynamic function evaluation. The multiplicity [2] is not compatible with the multiplicity [1] for parameter:p", 7, 48, this.checkLineNumbers());
-        }
-        try
-        {
-            this.execute("test2():Nil[0]");
-            Assert.fail();
-        }
-        catch (RuntimeException e)
-        {
-            this.assertExceptionInformation(e, "Error during dynamic function evaluation. The multiplicity [2] is not compatible with the multiplicity [1] for parameter:p", 11, 48, this.checkLineNumbers());
-        }
+        compileTestSource("fromString.pure",
+                "function myFunc(s:String[1], p:String[1]):String[1]\n" +
+                        "{\n" +
+                        "    $s;\n" +
+                        "}\n" +
+                        "function test():Nil[0]\n" +
+                        "{\n" +
+                        "   print(myFunc_String_1__String_1__String_1_->evaluate([^List<String>(values='ok'), ^List<String>(values=['ok1','ok2'])]), 1);\n" +
+                        "}\n" +
+                        "function test2():Nil[0]\n" +
+                        "{\n" +
+                        "   print(myFunc_String_1__String_1__String_1_->eval(['ok'], ['ok1','ok2']), 1);\n" +
+                        "}");
+        PureExecutionException e1 = Assert.assertThrows(PureExecutionException.class, () -> execute("test():Nil[0]"));
+        assertExceptionInformation(e1, "Error during dynamic function evaluation. The multiplicity [2] is not compatible with the multiplicity [1] for parameter:p", 7, 48, checkLineNumbers());
+
+        PureExecutionException e2 = Assert.assertThrows(PureExecutionException.class, () -> execute("test2():Nil[0]"));
+        assertExceptionInformation(e2, "Error during dynamic function evaluation. The multiplicity [2] is not compatible with the multiplicity [1] for parameter:p", 11, 48, checkLineNumbers());
     }
 
     @Test
     public void testEvaluateViolateLowerBound()
     {
-        compileTestSource("fromString.pure", "function myFunc(s:String[2..10], p:String[0..3]):String[1]\n" +
-                "{\n" +
-                "    $s->joinStrings('');\n" +
-                "}\n" +
-                "function test():Nil[0]\n" +
-                "{\n" +
-                "   print(myFunc_String_$2_10$__String_$0_3$__String_1_->evaluate([^List<String>(values=['ok']), ^List<String>(values=[])]),1);\n" +
-                "}\n" +
-                "function test2():Nil[0]\n" +
-                "{\n" +
-                "   print(myFunc_String_$2_10$__String_$0_3$__String_1_->eval(['ok'], []),1);\n" +
-                "}");
-        try
-        {
-            this.execute("test():Nil[0]");
-            Assert.fail();
-        }
-        catch (RuntimeException e)
-        {
-            this.assertExceptionInformation(e, "Error during dynamic function evaluation. The multiplicity [1] is not compatible with the multiplicity [2..10] for parameter:s", 7, 57, this.checkLineNumbers());
-        }
-        try
-        {
-            this.execute("test2():Nil[0]");
-            Assert.fail();
-        }
-        catch (RuntimeException e)
-        {
-            this.assertExceptionInformation(e, "Error during dynamic function evaluation. The multiplicity [1] is not compatible with the multiplicity [2..10] for parameter:s", 11, 57, this.checkLineNumbers());
-        }
+        compileTestSource("fromString.pure",
+                "function myFunc(s:String[2..10], p:String[0..3]):String[1]\n" +
+                        "{\n" +
+                        "    $s->joinStrings('');\n" +
+                        "}\n" +
+                        "function test():Nil[0]\n" +
+                        "{\n" +
+                        "   print(myFunc_String_$2_10$__String_$0_3$__String_1_->evaluate([^List<String>(values=['ok']), ^List<String>(values=[])]),1);\n" +
+                        "}\n" +
+                        "function test2():Nil[0]\n" +
+                        "{\n" +
+                        "   print(myFunc_String_$2_10$__String_$0_3$__String_1_->eval(['ok'], []),1);\n" +
+                        "}");
+
+        PureExecutionException e1 = Assert.assertThrows(PureExecutionException.class, () -> execute("test():Nil[0]"));
+        assertExceptionInformation(e1, "Error during dynamic function evaluation. The multiplicity [1] is not compatible with the multiplicity [2..10] for parameter:s", 7, 57, checkLineNumbers());
+
+        PureExecutionException e2 = Assert.assertThrows(PureExecutionException.class, () -> execute("test2():Nil[0]"));
+        assertExceptionInformation(e2, "Error during dynamic function evaluation. The multiplicity [1] is not compatible with the multiplicity [2..10] for parameter:s", 11, 57, checkLineNumbers());
     }
 
     @Test
     public void testEvaluateViolateUpperBound()
     {
-        compileTestSource("fromString.pure", "function myFunc(s:String[0..5], p:String[0..3]):String[1]\n" +
-                "{\n" +
-                "    $s->joinStrings('');\n" +
-                "}\n" +
-                "function test():Nil[0]\n" +
-                "{\n" +
-                "   print(myFunc_String_$0_5$__String_$0_3$__String_1_->evaluate([^List<String>(values=['ok']), ^List<String>(values=['ok','ok2','ok3','ok4','ok5'])]), 1);\n" +
-                "}\n" +
-                "function test2():Nil[0]\n" +
-                "{\n" +
-                "   print(myFunc_String_$0_5$__String_$0_3$__String_1_->eval(['ok'], ['ok','ok2','ok3','ok4','ok5']), 1);\n" +
-                "}");
-        try
-        {
-            this.execute("test():Nil[0]");
-            Assert.fail();
-        }
-        catch (RuntimeException e)
-        {
-            this.assertExceptionInformation(e, "Error during dynamic function evaluation. The multiplicity [5] is not compatible with the multiplicity [0..3] for parameter:p", 7, 56, this.checkLineNumbers());
-        }
-        try
-        {
-            this.execute("test2():Nil[0]");
-            Assert.fail();
-        }
-        catch (RuntimeException e)
-        {
-            this.assertExceptionInformation(e, "Error during dynamic function evaluation. The multiplicity [5] is not compatible with the multiplicity [0..3] for parameter:p", 11, 56, this.checkLineNumbers());
-        }
+        compileTestSource("fromString.pure",
+                "function myFunc(s:String[0..5], p:String[0..3]):String[1]\n" +
+                        "{\n" +
+                        "    $s->joinStrings('');\n" +
+                        "}\n" +
+                        "function test():Nil[0]\n" +
+                        "{\n" +
+                        "   print(myFunc_String_$0_5$__String_$0_3$__String_1_->evaluate([^List<String>(values=['ok']), ^List<String>(values=['ok','ok2','ok3','ok4','ok5'])]), 1);\n" +
+                        "}\n" +
+                        "function test2():Nil[0]\n" +
+                        "{\n" +
+                        "   print(myFunc_String_$0_5$__String_$0_3$__String_1_->eval(['ok'], ['ok','ok2','ok3','ok4','ok5']), 1);\n" +
+                        "}");
+
+        PureExecutionException e1 = Assert.assertThrows(PureExecutionException.class, () -> execute("test():Nil[0]"));
+        assertExceptionInformation(e1, "Error during dynamic function evaluation. The multiplicity [5] is not compatible with the multiplicity [0..3] for parameter:p", 7, 56, checkLineNumbers());
+
+        PureExecutionException e2 = Assert.assertThrows(PureExecutionException.class, () -> execute("test2():Nil[0]"));
+        assertExceptionInformation(e2, "Error during dynamic function evaluation. The multiplicity [5] is not compatible with the multiplicity [0..3] for parameter:p", 11, 56, checkLineNumbers());
     }
 
     @Test
     public void testEvaluateUnboundedMultiplicity()
     {
-        compileTestSource("fromString.pure", "function myFunc(s:String[*], x:Integer[1]):String[1]\n" +
-                "{\n" +
-                "    $s->joinStrings('');\n" +
-                "}\n" +
-                "function myFunc2(s:String[*], x:Integer[*]):String[1]" +
-                "{\n" +
-                "    $s->joinStrings('');\n" +
-                "}\n" +
-                "function test():Boolean[1]\n" +
-                "{\n" +
-                "   assert('3.14' == myFunc_String_MANY__Integer_1__String_1_->eval(['3','.','1','4'], 42), |'');\n" +
-                "   assert('3.14' == myFunc_String_MANY__Integer_1__String_1_->evaluate([^List<String>(values=['3','.','1','4']), ^List<Integer>(values=42)])->toOne(), |'');\n" +
-                "   assert('' == myFunc_String_MANY__Integer_1__String_1_->eval([],42), |'');\n" +
-                "   assert('' == myFunc_String_MANY__Integer_1__String_1_->evaluate([^List<String>(values=[]), ^List<Integer>(values=42)])->toOne(), |'');\n" +
-                "   assert('3' == myFunc_String_MANY__Integer_1__String_1_->eval(['3'],42), |'');\n" +
-                "   assert('3' == myFunc_String_MANY__Integer_1__String_1_->evaluate([^List<String>(values=['3']), ^List<Integer>(values=42)])->toOne(), |'');\n" +
-                "   assert('' == myFunc2_String_MANY__Integer_MANY__String_1_->eval([],[]), |'');\n" +
-                "   assert('' == myFunc2_String_MANY__Integer_MANY__String_1_->evaluate([^List<String>(values=[]), ^List<Integer>(values=[])])->toOne(), |'');\n" +
-                "}\n");
-        this.execute("test():Boolean[1]");
+        compileTestSource("fromString.pure",
+                "function myFunc(s:String[*], x:Integer[1]):String[1]\n" +
+                        "{\n" +
+                        "    $s->joinStrings('');\n" +
+                        "}\n" +
+                        "function myFunc2(s:String[*], x:Integer[*]):String[1]" +
+                        "{\n" +
+                        "    $s->joinStrings('');\n" +
+                        "}\n" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert('3.14' == myFunc_String_MANY__Integer_1__String_1_->eval(['3','.','1','4'], 42), |'');\n" +
+                        "   assert('3.14' == myFunc_String_MANY__Integer_1__String_1_->evaluate([^List<String>(values=['3','.','1','4']), ^List<Integer>(values=42)])->toOne(), |'');\n" +
+                        "   assert('' == myFunc_String_MANY__Integer_1__String_1_->eval([],42), |'');\n" +
+                        "   assert('' == myFunc_String_MANY__Integer_1__String_1_->evaluate([^List<String>(values=[]), ^List<Integer>(values=42)])->toOne(), |'');\n" +
+                        "   assert('3' == myFunc_String_MANY__Integer_1__String_1_->eval(['3'],42), |'');\n" +
+                        "   assert('3' == myFunc_String_MANY__Integer_1__String_1_->evaluate([^List<String>(values=['3']), ^List<Integer>(values=42)])->toOne(), |'');\n" +
+                        "   assert('' == myFunc2_String_MANY__Integer_MANY__String_1_->eval([],[]), |'');\n" +
+                        "   assert('' == myFunc2_String_MANY__Integer_MANY__String_1_->evaluate([^List<String>(values=[]), ^List<Integer>(values=[])])->toOne(), |'');\n" +
+                        "}\n");
+        execute("test():Boolean[1]");
     }
-
 
     @Test
     public void testEvaluateAssert()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "function myFunc():Boolean[1]\n" +
-                    "{\n" +
-                    "    fail('Failed');\n" +
-                    "}\n" +
-                    "function test():Nil[0]\n" +
-                    "{\n" +
-                    "   if( 1==1 , | print(myFunc__Boolean_1_->eval(), 1) , | print('x', 1));" +
-                    "}\n");
-            this.execute("test():Nil[0]");
-            Assert.fail();
-        }
-        catch (RuntimeException e)
-        {
-            this.assertExceptionInformation(e, "Failed", 26, 5, this.checkLineNumbers());
-        }
+        compileTestSource("fromString.pure",
+                "function myFunc():Boolean[1]\n" +
+                        "{\n" +
+                        "    fail('Failed');\n" +
+                        "}\n" +
+                        "function test():Nil[0]\n" +
+                        "{\n" +
+                        "   if( 1==1 , | print(myFunc__Boolean_1_->eval(), 1) , | print('x', 1));" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("test():Nil[0]"));
+        assertExceptionInformation(e, "Failed", 26, 5, checkLineNumbers());
     }
 
     @Test
@@ -282,28 +235,28 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
         compileTestSource("fromString.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
-                        "  assert([] == evaluate_Function_1__List_MANY__Any_MANY_->eval(first_T_MANY__T_$0_1$_, list([])), |'');" +
-                        "  assert(1 == evaluate_Function_1__List_MANY__Any_MANY_->eval(first_T_MANY__T_$0_1$_, list([1,2,3])), |'');" +
+                        "  assert([] == evaluate_Function_1__List_MANY__Any_MANY_->eval(first_T_MANY__T_$0_1$_, list([])), |'');\n" +
+                        "  assert(1 == evaluate_Function_1__List_MANY__Any_MANY_->eval(first_T_MANY__T_$0_1$_, list([1,2,3])), |'');\n" +
                         "}");
-        this.execute("test():Any[*]");
+        execute("test():Any[*]");
     }
 
     @Test
     public void testPureRuntimeClassConstraintFunctionEvaluate()
     {
         compileTestSource("fromString.pure",
-                "Class Employee" +
-                        "[" +
-                        "   $this.lastName->startsWith('A')" +
-                        "]" +
-                        "{" +
-                        "   lastName:String[1];" +
-                        "}" +
+                "Class Employee\n" +
+                        "[\n" +
+                        "   $this.lastName->startsWith('A')\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   lastName:String[1];\n" +
+                        "}\n" +
                         "function testNew():Any[*]\n" +
                         "{\n" +
-                        "   let t = ^Employee(lastName = 'AAAAAA');" +
-                        "   assert(Employee.constraints->at(0).functionDefinition->evaluate(^List<Any>(values=$t))->toOne()->cast(@Boolean), |'');" +
-                        "   $t;" +
+                        "   let t = ^Employee(lastName = 'AAAAAA');\n" +
+                        "   assert(Employee.constraints->at(0).functionDefinition->evaluate(^List<Any>(values=$t))->toOne()->cast(@Boolean), |'');\n" +
+                        "   $t;\n" +
                         "}\n");
         execute("testNew():Any[*]");
     }
@@ -337,8 +290,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
         Assert.assertEquals("Daniel Benedict", PrimitiveUtilities.getStringValue(result.getValueForMetaPropertyToOne(M3Properties.values)));
     }
 
-
-    public void assertExceptionInformation(Exception e, String message, int lineNo, int columnNo, boolean checkLineNumbers)
+    protected void assertExceptionInformation(Exception e, String message, int lineNo, int columnNo, boolean checkLineNumbers)
     {
         PureException pe = PureException.findPureException(e);
         Assert.assertNotNull(pe);
@@ -357,7 +309,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
         }
     }
 
-    public boolean checkLineNumbers()
+    protected boolean checkLineNumbers()
     {
         return true;
     }

@@ -14,8 +14,6 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
-import org.eclipse.collections.impl.utility.StringIterate;
-
 public abstract class TimeFunctions
 {
     public static void validateHour(int hour)
@@ -48,7 +46,7 @@ public abstract class TimeFunctions
         {
             throw new IllegalArgumentException("Invalid subsecond value: null");
         }
-        if (subsecond.isEmpty() || !StringIterate.isNumber(subsecond))
+        if (subsecond.isEmpty() || !subsecond.codePoints().allMatch(Character::isDigit))
         {
             throw new IllegalArgumentException("Invalid subsecond value: \"" + subsecond + "\"");
         }

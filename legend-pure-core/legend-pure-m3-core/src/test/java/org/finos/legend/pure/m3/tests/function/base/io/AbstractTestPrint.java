@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2025 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -162,23 +162,23 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
                 "}\n");
         this.execute("testPrintMixedCollection():Nil[0]");
         Assert.assertEquals("[\n" +
-                            "   1\n" +
-                            "   2.5\n" +
-                            "   'testString'\n" +
-                            "   2016-07-08\n" +
-                            "]", functionExecution.getConsole().getLine(0));
+                "   1\n" +
+                "   2.5\n" +
+                "   'testString'\n" +
+                "   2016-07-08\n" +
+                "]", functionExecution.getConsole().getLine(0));
     }
 
     @Test
     public void testFunction()
     {
         compileTestSource("fromString.pure",
-                          "function tst():String[1]{let c = 'a'+'b'; $c+'c';}\n" +
-                          "\n" +
-                          "function test():Nil[0]\n" +
-                          "{\n" +
-                          "   print(tst__String_1_,2);\n" +
-                          "}\n");
+                "function tst():String[1]{let c = 'a'+'b'; $c+'c';}\n" +
+                        "\n" +
+                        "function test():Nil[0]\n" +
+                        "{\n" +
+                        "   print(tst__String_1_,2);\n" +
+                        "}\n");
         this.compileAndExecute("test():Nil[0]");
         Assert.assertEquals("tst__String_1_ instance ConcreteFunctionDefinition\n" +
                 "    classifierGenericType(Property):\n" +
@@ -292,15 +292,15 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
     public void testPrintObj()
     {
         compileTestSource("fromString.pure","Class A\n" +
-                       "{\n" +
-                       "    test : String[1];\n" +
-                       "    test2 : String[1];\n" +
-                       "}\n" +
-                       "\n" +
-                       "function test():Nil[0]\n" +
-                       "{\n" +
-                       "   print(A,0);\n" +
-                       "}\n");
+                "{\n" +
+                "    test : String[1];\n" +
+                "    test2 : String[1];\n" +
+                "}\n" +
+                "\n" +
+                "function test():Nil[0]\n" +
+                "{\n" +
+                "   print(A,0);\n" +
+                "}\n");
         this.compileAndExecute("test():Nil[0]");
         Assert.assertEquals("A instance Class\n" +
                 "    classifierGenericType(Property):\n" +
@@ -317,7 +317,6 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
                 "    referenceUsages(Property):\n" +
                 "        [>0] Anonymous_StripedId instance ReferenceUsage\n" +
                 "        [>0] Anonymous_StripedId instance ReferenceUsage\n" +
-                "        [>0] Anonymous_StripedId instance ReferenceUsage\n" +
-                "    typeVariables(Property):", functionExecution.getConsole().getLine(0));
+                "        [>0] Anonymous_StripedId instance ReferenceUsage", functionExecution.getConsole().getLine(0));
     }
 }

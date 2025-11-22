@@ -39,11 +39,13 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class _RelationType
@@ -77,7 +79,7 @@ public class _RelationType
 
     public static Function<?> findColumn(RelationType<?> type, String name, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
-        CoreInstance col = Instance.getValueForMetaPropertyToManyResolved(type, "columns", processorSupport).select(c -> Instance.getValueForMetaPropertyToOneResolved(c, M3Properties.name, processorSupport).getName().equals(name)).getFirst();
+        CoreInstance col = Instance.getValueForMetaPropertyToManyResolved(type, "columns", processorSupport).select(c -> Instance.getValueForMetaPropertyToOneResolved(c, M3Properties.name, processorSupport).getName().equals(StringEscape.unescape(name))).getFirst();
         if (col == null)
         {
             throw new PureCompilationException(sourceInformation, "The system can't find the column " + name + " in the Relation " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(processorSupport.type_wrapGenericType(type), processorSupport));
@@ -214,7 +216,9 @@ public class _RelationType
                             String cName = c.getOne()._nameWildCard() ? c.getTwo()._name() : c.getOne()._name();
                             GenericType a = _Column.getColumnType(c.getOne());
                             GenericType b = _Column.getColumnType(c.getTwo());
-                            GenericType merged = a._rawType() == null ? b : b._rawType() == null ? a : (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(a, b), isCovariant, false, genericTypeCopy.getSourceInformation(), processorSupport);
+                            Type rawTypeA = (Type)Instance.getValueForMetaPropertyToOneResolved(a, M3Properties.rawType, processorSupport);
+                            Type rawTypeB = (Type)Instance.getValueForMetaPropertyToOneResolved(b, M3Properties.rawType, processorSupport);
+                            GenericType merged = rawTypeA == null ? b : rawTypeB == null ? a : (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(a, b), isCovariant, false, genericTypeCopy.getSourceInformation(), processorSupport);
                             org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity mergedMul = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) Multiplicity.minSubsumingMultiplicity(_Column.getColumnMultiplicity(c.getOne()), _Column.getColumnMultiplicity(c.getTwo()), processorSupport);
                             return _Column.getColumnInstance(cName, wildcard, merged, mergedMul, null, processorSupport);
                         }),
@@ -229,5 +233,29 @@ public class _RelationType
     {
         RelationType<?> rOne = RelationTypeCoreInstanceWrapper.toRelationType(relationType);
         return rOne._columns().injectInto(false, (a,b) -> a || org.finos.legend.pure.m3.navigation.generictype.GenericType.testContainsExtendedPrimitiveTypes(_Column.getColumnType(b), processorSupport));
+    }
+
+    public static boolean isRelationTypeFullyConcrete(CoreInstance relationType, boolean checkFunctionTypes, ProcessorSupport processorSupport)
+    {
+        return ((RelationType<?>) relationType)._columns()
+                .allSatisfy(c -> org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeFullyConcrete(_Column.getColumnType(c), checkFunctionTypes, processorSupport));
+    }
+
+    public static boolean isRelationTypeFullyDefined(CoreInstance relationType, ProcessorSupport processorSupport)
+    {
+        return ((RelationType<?>) relationType)._columns()
+                .allSatisfy(c -> org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeFullyDefined(_Column.getColumnType(c), processorSupport));
+    }
+
+    public static void resolveImportStubs(CoreInstance relationType, ProcessorSupport processorSupport)
+    {
+        relationType.getValueForMetaPropertyToMany(M3Properties.columns).forEach(c ->
+        {
+            CoreInstance classifierGenericType = c.getValueForMetaPropertyToOne(M3Properties.classifierGenericType);
+            classifierGenericType.getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).forEach(arg -> ImportStub.withImportStubByPass(arg, processorSupport));
+            // the first type argument of the column type is the relation type itself: we skip it to avoid infinite recursion
+            CoreInstance type = classifierGenericType.getValueForMetaPropertyToMany(M3Properties.typeArguments).get(1);
+            org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveImportStubs(type, processorSupport);
+        });
     }
 }

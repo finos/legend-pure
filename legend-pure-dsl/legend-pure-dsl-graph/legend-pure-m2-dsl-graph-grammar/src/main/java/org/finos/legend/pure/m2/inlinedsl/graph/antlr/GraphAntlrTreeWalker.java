@@ -14,8 +14,10 @@
 
 package org.finos.legend.pure.m2.inlinedsl.graph.antlr;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m2.inlinedsl.graph.serialization.grammar.GraphParser.DefinitionContext;
 import org.finos.legend.pure.m2.inlinedsl.graph.serialization.grammar.GraphParser.GraphDefinitionContext;
 import org.finos.legend.pure.m2.inlinedsl.graph.serialization.grammar.GraphParser.GraphPathContext;
@@ -49,11 +51,7 @@ public class GraphAntlrTreeWalker extends GraphParserBaseVisitor<String>
         SourceInformation definitionSourceInfo = this.sourceInformation.getPureSourceInformation(definitionContext.start, graphDefinitionContext.start, graphDefinitionContext.stop);
         SourceInformation classSourceInfo = this.sourceInformation.getPureSourceInformation(definitionContext.qualifiedName().start, definitionContext.qualifiedName().identifier().start, definitionContext.qualifiedName().stop);
 
-        MutableList<String> subTrees = FastList.newList();
-        for (GraphPathContext graphPathContext : graphDefinitionContext.graphPaths().graphPath())
-        {
-            subTrees.add(this.visitGraphPathContext(graphPathContext));
-        }
+        MutableList<String> subTrees = ListIterate.collect(graphDefinitionContext.graphPaths().graphPath(), this::visitGraphPathContext);
 
         return "^meta::pure::graphFetch::RootGraphFetchTree<" + definitionContext.qualifiedName().getText() + "> " + definitionSourceInfo.toM4String() + " (" +
                 "class = " + "^meta::pure::metamodel::import::ImportStub " + classSourceInfo.toM4String() + " (importGroup = system::imports::" + this.importId._name() + ", idOrPath = '" + definitionContext.qualifiedName().getText() + "'), " +
@@ -66,37 +64,22 @@ public class GraphAntlrTreeWalker extends GraphParserBaseVisitor<String>
         SourceInformation definitionSourceInfo = this.sourceInformation.getPureSourceInformation(graphPathContext.start, graphPathContext.start, graphPathContext.stop);
         SourceInformation propertySourceInfo = this.sourceInformation.getPureSourceInformation(graphPathContext.identifier().start, graphPathContext.identifier().start, graphPathContext.identifier().stop);
 
-        MutableList<String> subTrees = FastList.newList();
-        if (graphPathContext.graphDefinition() != null)
-        {
-            for (GraphPathContext subGraphPathContext : graphPathContext.graphDefinition().graphPaths().graphPath())
-            {
-                subTrees.add(this.visitGraphPathContext(subGraphPathContext));
-            }
-        }
+        ListIterable<String> subTrees = (graphPathContext.graphDefinition() == null) ? Lists.immutable.empty() : ListIterate.collect(graphPathContext.graphDefinition().graphPaths().graphPath(), this::visitGraphPathContext);
 
-        MutableList<String> parameters = FastList.newList();
-        if (graphPathContext.propertyParameters() != null)
-        {
-            for (ParameterContext parameterContext : graphPathContext.propertyParameters().parameter())
-            {
-                parameters.add(this.visitParameterContext(parameterContext));
-            }
-        }
+        ListIterable<String> parameters = (graphPathContext.propertyParameters() == null) ? Lists.immutable.empty() : ListIterate.collect(graphPathContext.propertyParameters().parameter(), this::visitParameterContext);
 
-        String subType = "";
-        if (graphPathContext.subtype() != null)
+        String subType;
+        if (graphPathContext.subtype() == null)
+        {
+            subType = "";
+        }
+        else
         {
             SourceInformation subTypeSourceInfo = this.sourceInformation.getPureSourceInformation(graphPathContext.subtype().qualifiedName().start, graphPathContext.subtype().qualifiedName().start, graphPathContext.subtype().qualifiedName().stop);
             subType = "^meta::pure::metamodel::import::ImportStub " + subTypeSourceInfo.toM4String() + " (importGroup = system::imports::" + this.importId._name() + ", idOrPath = '" + graphPathContext.subtype().qualifiedName().getText() + "')";
         }
 
-        String alias = "";
-        if (graphPathContext.alias() != null)
-        {
-            alias = graphPathContext.alias().STRING().getText();
-        }
-
+        String alias = (graphPathContext.alias() == null) ? "" : graphPathContext.alias().STRING().getText();
 
         return "^meta::pure::graphFetch::PropertyGraphFetchTree " + definitionSourceInfo.toM4String() + " (" +
                 "property = " + "^meta::pure::metamodel::import::PropertyStub " + propertySourceInfo.toM4String() + " (propertyName = '" + graphPathContext.identifier().getText() + "'), " +
@@ -109,19 +92,11 @@ public class GraphAntlrTreeWalker extends GraphParserBaseVisitor<String>
 
     private String visitParameterContext(ParameterContext parameterContext)
     {
-        MutableList<String> values = FastList.newList();
-        if (parameterContext.scalarParameter() != null)
-        {
-            values.add(this.visitScalarParameterContext(parameterContext.scalarParameter()));
-        }
-        else
-        {
-            for (ScalarParameterContext scalarParameterContext : parameterContext.collectionParameter().scalarParameter())
-            {
-                values.add(this.visitScalarParameterContext(scalarParameterContext));
-            }
-        }
-        return "^meta::pure::metamodel::valuespecification::InstanceValue(values = " + values.makeString("[", ", ", "]") + ")";
+        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(parameterContext.getStart(), parameterContext.getStart(), parameterContext.getStop(), true);
+        ListIterable<String> values = (parameterContext.scalarParameter() != null) ?
+                                      Lists.immutable.with(visitScalarParameterContext(parameterContext.scalarParameter())) :
+                                      ListIterate.collect(parameterContext.collectionParameter().scalarParameter(), this::visitScalarParameterContext);
+        return "^meta::pure::metamodel::valuespecification::InstanceValue" + sourceInfo.toM4String() + "(values = " + values.makeString("[", ", ", "]") + ")";
     }
 
     private String visitScalarParameterContext(ScalarParameterContext scalarParameterContext)

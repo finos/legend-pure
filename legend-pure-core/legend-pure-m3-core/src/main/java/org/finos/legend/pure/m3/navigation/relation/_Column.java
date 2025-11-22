@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.navigation.relation;
 
+import java.util.Objects;
 import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
@@ -26,6 +27,7 @@ import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class _Column
@@ -33,14 +35,15 @@ public class _Column
     public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, SourceInformation src, ProcessorSupport processorSupport)
     {
         GenericType target = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
-        target._rawType(type == null ? null : (Type) _Package.getByUserPath(type, processorSupport));
+        target._rawType(type == null ? null : (Type) Objects.requireNonNull(_Package.getByUserPath(type, processorSupport), () -> type + " not found!  (imports are not scan for TDS column type resolution)"));
         return _Column.getColumnInstance(name, nameWildCard, target, multiplicity, src, processorSupport);
     }
 
     public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity multiplicity, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         Column<?, ?> columnInstance = (Column<?, ?>) processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.Column);
-        columnInstance._name(removeQuotes(name));
+        columnInstance._name(StringEscape.unescape(removeQuotes(name)));
+        columnInstance._functionName("column:" + columnInstance._name());
         columnInstance._nameWildCard(nameWildCard);
         GenericType columnGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.GenericType);
         columnGenericType._rawType((Type) _Package.getByUserPath(M3Paths.Column, processorSupport));
@@ -86,6 +89,11 @@ public class _Column
     {
         Column<?, ?> column = (Column<?, ?>) col;
         org.finos.legend.pure.m3.navigation.generictype.GenericType.print(SafeAppendable.wrap(appendable).append(column._nameWildCard() ? "?" : column._name()).append(':'), getColumnType(column), processorSupport);
+        Multiplicity multiplicity = getColumnMultiplicity(column);
+        if (multiplicity == null || !(multiplicity._lowerBound()._value() == 0 && multiplicity._upperBound()._value() == 1))
+        {
+            org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(appendable, getColumnMultiplicity(column), true);
+        }
         return appendable;
     }
 }

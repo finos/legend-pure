@@ -32,35 +32,33 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Ty
 public class ClassLazyImplProcessor
 {
     private static final String IMPORTS = "import java.util.concurrent.atomic.AtomicBoolean;\n" +
+            "import org.eclipse.collections.api.RichIterable;\n" +
+            "import org.eclipse.collections.api.factory.Lists;\n" +
+            "import org.eclipse.collections.api.factory.Maps;\n" +
             "import org.eclipse.collections.api.list.ListIterable;\n" +
             "import org.eclipse.collections.api.list.MutableList;\n" +
-            "import org.eclipse.collections.api.RichIterable;\n" +
-            "import org.eclipse.collections.api.map.MutableMap;\n" +
-            "import org.eclipse.collections.impl.factory.Lists;\n" +
-            "import org.eclipse.collections.impl.factory.Maps;\n" +
-            "import org.eclipse.collections.impl.map.mutable.UnifiedMap;\n" +
             "import org.eclipse.collections.api.map.ImmutableMap;\n" +
+            "import org.eclipse.collections.api.map.MutableMap;\n" +
             "import org.eclipse.collections.impl.list.mutable.FastList;\n" +
-            "import org.finos.legend.pure.m4.coreinstance.CoreInstance;\n" +
-            "import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;\n" +
+            "import org.finos.legend.pure.m3.coreinstance.KeyIndex;\n" +
+            "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n" +
             "import org.finos.legend.pure.m4.ModelRepository;\n" +
+            "import org.finos.legend.pure.m4.coreinstance.CoreInstance;\n" +
             "import org.finos.legend.pure.m4.coreinstance.SourceInformation;\n" +
+            "import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n" +
+            "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.serialization.model.*;\n" +
-            "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n" +
-            "import org.finos.legend.pure.m4.coreinstance.CoreInstance;\n";
+            "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n" +
+            "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
+            "import org.finos.legend.pure.runtime.java.compiled.serialization.model.*;\n";
 
 
-    private static final String QUALIFIER_IMPORTS =
+    private static final String QUALIFIER_IMPORTS = "import org.eclipse.collections.api.block.function.Function0;\n" +
             "import org.eclipse.collections.api.block.function.Function2;\n" +
-                    "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;\n" +
-                    "import org.eclipse.collections.api.block.function.Function0;\n";
+            "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;\n";
 
     private static final String LAZY_INITIALIZED_SUFFIX = "_initialized";
 
@@ -92,18 +90,11 @@ public class ClassLazyImplProcessor
                 (instanceOfGetterOverride ? lazyGetterOverride(interfaceNamePlusTypeParams) : "") +
                 ClassImplProcessor.buildGetValueForMetaPropertyToOne(classGenericType, processorSupport) +
                 ClassImplProcessor.buildGetValueForMetaPropertyToMany(classGenericType, processorSupport) +
-                ClassImplProcessor.buildSimpleProperties(classGenericType, new ClassImplProcessor.FullPropertyImplementation()
-                {
-                    @Override
-                    public String build(CoreInstance property, String name, CoreInstance unresolvedReturnType, CoreInstance returnType, CoreInstance returnMultiplicity, String returnTypeJava, String classOwnerFullId, String ownerClassName, String ownerTypeParams, ProcessorContext processorContext)
-                    {
-                        return "    public final AtomicBoolean _" + name + LAZY_INITIALIZED_SUFFIX + " = new AtomicBoolean(false);\n" +
-                                (Multiplicity.isToOne(returnMultiplicity, false) ?
-                                        "    public " + returnTypeJava + " _" + name + ";\n" :
-                                        "    public RichIterable _" + name + " = Lists.mutable.with();\n") +
-                                buildLazyProperty(property, ownerClassName + (ownerTypeParams.isEmpty() ? "" : "<" + ownerTypeParams + ">"), "this", classOwnerFullId, name, returnType, unresolvedReturnType, returnMultiplicity, processorContext.getSupport(), processorContext);
-                    }
-                }, processorContext, processorSupport) +
+                ClassImplProcessor.buildSimpleProperties(classGenericType, (property, name, unresolvedReturnType, returnType, returnMultiplicity, returnTypeJava, classOwnerId, ownerClassName, ownerTypeParams, processorContext1) -> "    public final AtomicBoolean _" + name + LAZY_INITIALIZED_SUFFIX + " = new AtomicBoolean(false);\n" +
+                        (Multiplicity.isToOne(returnMultiplicity, false) ?
+                         "    public " + returnTypeJava + " _" + name + ";\n" :
+                         "    public RichIterable _" + name + " = Lists.mutable.empty();\n") +
+                        buildLazyProperty(property, ownerClassName + (ownerTypeParams.isEmpty() ? "" : "<" + ownerTypeParams + ">"), "this", name, returnType, unresolvedReturnType, returnMultiplicity, processorContext1.getSupport(), processorContext1), processorContext, processorSupport) +
                 ClassImplProcessor.buildQualifiedProperties(classGenericType, processorContext, processorSupport) +
                 buildLazyCopy(classGenericType, classInterfaceName, className, false, processorSupport) +
                 ClassImplProcessor.buildEquality(classGenericType, CLASS_LAZYIMPL_SUFFIX, true, false, true, processorContext, processorSupport) +
@@ -166,7 +157,7 @@ public class ClassLazyImplProcessor
 
     }
 
-    private static String buildLazyProperty(CoreInstance property, String className, String owner, String classOwnerFullId, String name, CoreInstance returnType, CoreInstance unresolvedReturnType, CoreInstance multiplicity, ProcessorSupport processorSupport, ProcessorContext processorContext)
+    private static String buildLazyProperty(CoreInstance property, String className, String owner, String name, CoreInstance returnType, CoreInstance unresolvedReturnType, CoreInstance multiplicity, ProcessorSupport processorSupport, ProcessorContext processorContext)
     {
         CoreInstance associationClass = processorSupport.package_getByUserPath(M3Paths.Association);
         CoreInstance propertyOwner = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.owner, processorSupport);

@@ -14,101 +14,8 @@
 
 package org.finos.legend.pure.m4.coreinstance;
 
-import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
-import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecifications;
-
 public abstract class AbstractCoreInstance implements CoreInstance
 {
-    @Override
-    public CoreInstance getValueInValueForMetaPropertyToMany(String keyName, String keyInMany)
-    {
-        return getValueInValueForMetaPropertyToManyByIDIndex(keyName, IndexSpecifications.getCoreInstanceNameIndexSpec(), keyInMany);
-    }
-
-    @Override
-    public CoreInstance getValueInValueForMetaPropertyToManyWithKey(String keyName, String key, String keyInMany)
-    {
-        return getValueInValueForMetaPropertyToManyByIDIndex(keyName, IndexSpecifications.getPropertyValueNameIndexSpec(key), keyInMany);
-    }
-
-    @Override
-    public void markProcessed()
-    {
-        addCompileState(CompileState.PROCESSED);
-    }
-
-    @Override
-    public void markNotProcessed()
-    {
-        markNotValidated();
-        removeCompileState(CompileState.PROCESSED);
-    }
-
-    @Override
-    public boolean hasBeenProcessed()
-    {
-        return hasCompileState(CompileState.PROCESSED);
-    }
-
-    @Override
-    public void markValidated()
-    {
-        markProcessed();
-        addCompileState(CompileState.VALIDATED);
-    }
-
-    @Override
-    public void markNotValidated()
-    {
-        removeCompileState(CompileState.VALIDATED);
-    }
-
-    @Override
-    public boolean hasBeenValidated()
-    {
-        return hasCompileState(CompileState.VALIDATED);
-    }
-
-    @Override
-    public String printFull(String tab)
-    {
-        StringBuilder builder = new StringBuilder();
-        printFull(builder, tab);
-        return builder.toString();
-    }
-
-    @Override
-    public String print(String tab)
-    {
-        StringBuilder builder = new StringBuilder();
-        print(builder, tab);
-        return builder.toString();
-    }
-
-    @Override
-    public String print(String tab, int max)
-    {
-        StringBuilder builder = new StringBuilder();
-        print(builder, tab, max);
-        return builder.toString();
-    }
-
-    @Override
-    public String printWithoutDebug(String tab)
-    {
-        StringBuilder builder = new StringBuilder();
-        printWithoutDebug(builder, tab);
-        return builder.toString();
-    }
-
-    @Override
-    public String printWithoutDebug(String tab, int max)
-    {
-        StringBuilder builder = new StringBuilder();
-        printWithoutDebug(builder, tab, max);
-        return builder.toString();
-    }
-
     @Override
     public boolean equals(Object obj)
     {
@@ -127,14 +34,6 @@ public abstract class AbstractCoreInstance implements CoreInstance
     public int hashCode()
     {
         return super.hashCode();
-    }
-
-
-
-    @Override
-    public void removeProperty(CoreInstance propertyNameKey)
-    {
-        this.removeProperty(propertyNameKey.getName());
     }
 
     public abstract CoreInstance copy();

@@ -16,46 +16,51 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
 import org.finos.legend.pure.m4.serialization.Reader;
 
+import java.util.concurrent.atomic.AtomicReferenceArray;
+
 public class LazyStringIndex extends StringIndex
 {
     private final String metadataName;
     private final FileReader fileReader;
-    private final String[] otherStrings;
+    private final AtomicReferenceArray<String> otherStrings;
 
     private LazyStringIndex(String[] classifierStrings, String metadataName, FileReader fileReader, int otherStringCount)
     {
         super(classifierStrings);
         this.metadataName = metadataName;
         this.fileReader = fileReader;
-        this.otherStrings = new String[otherStringCount];
+        this.otherStrings = new AtomicReferenceArray<>(otherStringCount);
     }
 
     @Override
     protected String getOtherString(int index)
     {
-        String string = this.otherStrings[index];
-        if (string == null)
+        String string = this.otherStrings.get(index);
+        if (string != null)
         {
-            loadPartition(index);
-            string = this.otherStrings[index];
+            return string;
         }
-        return string;
+        loadPartition(index);
+        return this.otherStrings.get(index);
     }
 
     private void loadPartition(int index)
     {
         int partitionStart = DistributedStringCache.getStartOfPartition(index);
         String filePath = DistributedMetadataHelper.getOtherStringsIndexPartitionFilePath(this.metadataName, partitionStart);
-        String[] partition;
         try (Reader reader = this.fileReader.getReader(filePath))
         {
-            partition = reader.readStringArray();
-        }
-        synchronized (this)
-        {
-            if (this.otherStrings[partitionStart] == null)
+            int partitionLength = reader.readInt();
+            for (int i = partitionStart, end = partitionStart + partitionLength; i < end; i++)
             {
-                System.arraycopy(partition, 0, this.otherStrings, partitionStart, partition.length);
+                String string = reader.readString();
+                if (!this.otherStrings.compareAndSet(i, null, string) && ((i >= index) || (this.otherStrings.get(index) != null)))
+                {
+                    // If the compareAndSet fails, it means one or more other threads are already loading this partition.
+                    // If the index we want has already been loaded, we can stop and leave the loading of the rest of the
+                    // partition to the other threads.
+                    return;
+                }
             }
         }
     }

@@ -15,9 +15,12 @@
 package org.finos.legend.pure.m3.pct.reports.config.exclusion;
 
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 
 public interface ExclusionSpecification
 {
     MutableMap<String, String> resolveExclusion(ProcessorSupport processorSupport);
+
+    MutableMap<String, MutableSet<String>> resolveQualifiers(ProcessorSupport processorSupport);
 }

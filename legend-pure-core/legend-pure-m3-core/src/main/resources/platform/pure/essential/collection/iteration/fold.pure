@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import meta::pure::test::pct::*;
-
 import meta::pure::functions::collection::tests::fold::*;
 
 native function
@@ -104,4 +103,3 @@ function <<PCT.test>> meta::pure::functions::collection::tests::fold::testFoldFi
     assertEquals('Roe', $person.lastName);
     assertEquals(['Doe', 'Branche'], $person.otherNames);
 }
-

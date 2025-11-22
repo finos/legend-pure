@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure-core</artifactId>
-        <version>5.26.1-SNAPSHOT</version>
+        <version>5.67.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -155,9 +155,26 @@
                                     /platform/pure/routing.pure,
                                     /platform/pure/anonymousCollections.pure,
                                     /platform/pure/relation.pure,
-                                    /platform/pure/routing.pure
+                                    /platform/pure/routing.pure,
+                                    /platform/pure/variant/variant.pure
                                 </argument>
                             </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>Compile Pure</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>org.finos.legend.pure.m3.generator.compiler.PureCompilerBinaryGenerator</mainClass>
+                            <arguments>
+                                <argument>${project.build.outputDirectory}</argument>
+                                <argument>platform</argument>
+                            </arguments>
+                            <classpathScope>provided</classpathScope>
+                            <useMavenLogger>true</useMavenLogger>
                         </configuration>
                     </execution>
                     <execution>
@@ -201,6 +218,23 @@
                                 <argument>${project.build.directory}/classes/pct-reports/</argument>
                                 <argument>org.finos.legend.pure.m3.PlatformCodeRepositoryProvider.grammarFunctions</argument>
                             </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>Compile Pure Test Repos</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>org.finos.legend.pure.m3.generator.compiler.PureCompilerBinaryGenerator</mainClass>
+                            <arguments>
+                                <argument>${project.build.testOutputDirectory}</argument>
+                                <argument>test_generic_repository</argument>
+                                <argument>other_test_generic_repository</argument>
+                            </arguments>
+                            <classpathScope>test</classpathScope>
+                            <useMavenLogger>true</useMavenLogger>
                         </configuration>
                     </execution>
                 </executions>
@@ -255,6 +289,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>
         </dependency>
@@ -299,16 +338,6 @@
         <dependency>
             <groupId>org.eclipse.collections</groupId>
             <artifactId>eclipse-collections-testutils</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.opentracing</groupId>
-            <artifactId>opentracing-util</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.opentracing</groupId>
-            <artifactId>opentracing-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

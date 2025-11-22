@@ -14,6 +14,11 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 /**
@@ -26,4 +31,19 @@ public interface JavaCompiledCoreInstance extends CoreInstance
     boolean pureEquals(Object obj);
 
     int pureHashCode();
+
+    default String toString(ExecutionSupport executionSupport)
+    {
+        return ModelRepository.possiblyReplaceAnonymousId(getName());
+    }
+
+    default ListIterable<String> getDefaultValueKeys()
+    {
+        return Lists.immutable.empty();
+    }
+
+    default RichIterable<?> getDefaultValue(String property, ExecutionSupport es)
+    {
+        return Lists.immutable.empty();
+    }
 }

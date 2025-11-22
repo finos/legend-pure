@@ -22,7 +22,7 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.KeyExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
@@ -30,6 +30,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Lambda
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
@@ -133,6 +134,10 @@ public class Reactivator
                 openVars.removeAll(Pure.getOpenVariables(lambdaFunction, bridge).getMap().keySet());
             }
             return openVars.isEmpty();
+        }
+        if (func instanceof Column)
+        {
+            return true;
         }
         if (func instanceof QualifiedProperty)
         {
@@ -302,7 +307,10 @@ public class Reactivator
                     paramValues.set(0, Lists.fixedSize.of(sfe._genericType()._rawType()));
                     break;
                 }
+                // can we generalize the @{type} so we can avoid hardcoding here?
                 case "cast_Any_m__T_1__T_m_":
+                case "to_Variant_$0_1$__T_$0_1$__T_$0_1$_":
+                case "toMany_Variant_$0_1$__T_$0_1$__T_MANY_":
                 {
                     //Have to get the second param from the generic type
                     paramValues.set(1, Lists.fixedSize.of(sfe._genericType()));

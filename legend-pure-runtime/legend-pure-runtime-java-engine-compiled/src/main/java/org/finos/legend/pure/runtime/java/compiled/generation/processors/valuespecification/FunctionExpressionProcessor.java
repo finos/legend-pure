@@ -15,8 +15,11 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification;
 
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -28,11 +31,13 @@ import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.tools.JavaTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.runtime.java.compiled.generation.GenericTypeSerializationInCode;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.FunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.NativeFunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.SourceInfoProcessor;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 
@@ -52,6 +57,18 @@ public class FunctionExpressionProcessor
         }
         if (support.instance_instanceOf(function, M3Paths.FunctionDefinition) && !Property.isQualifiedProperty(function, support))
         {
+            String maySetClassifierGenericType = "";
+            String functionName = (function instanceof PackageableElement) ? Pure.elementToPath((PackageableElement) function, "::") : "";
+            if (function instanceof PackageableElement && Sets.immutable.with("meta::pure::functions::relation::colSpec_String_1__T_1__ColSpec_1_", "meta::pure::functions::relation::colSpecArray_String_MANY__T_1__ColSpecArray_1_").contains(functionName))
+            {
+                FunctionExpression funcExpression = (FunctionExpression) functionExpression;
+                String rawType = "meta::pure::functions::relation::colSpecArray_String_MANY__T_1__ColSpecArray_1_".equals(functionName) ? M3Paths.ColSpecArray : M3Paths.ColSpec;
+                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType colSpecGenericType = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) support.newAnonymousCoreInstance(funcExpression._parametersValues().getFirst().getSourceInformation(), M3Paths.GenericType);
+                colSpecGenericType._rawType((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type) processorContext.getSupport().package_getByUserPath(rawType));
+                colSpecGenericType._typeArguments(Lists.mutable.with(funcExpression._parametersValues().getLast()._genericType()));
+                maySetClassifierGenericType = "._classifierGenericType(" + GenericTypeSerializationInCode.generateGenericTypeBuilder(colSpecGenericType, processorContext) + ")";
+            }
+
             CoreInstance functionType = support.function_getFunctionType(function);
             // May want to be a little bit more specific (when a parameter has a type which is a functionType that has type parameters leveraged in the returnType)
             boolean shouldCast = !topLevel && !GenericType.isGenericTypeFullyConcrete(functionType.getValueForMetaPropertyToOne(M3Properties.returnType), support);
@@ -81,9 +98,9 @@ public class FunctionExpressionProcessor
                 String interfaceString = TypeProcessor.pureTypeToJava(genericType, false, false, true, support);
                 SourceInformation sourceInformation = functionExpression.getSourceInformation();
                 return "(CompiledSupport.<" + castType + ">castWithExceptionHandling(" + (addCastToOne ? "CompiledSupport.makeOne(" : "") + possiblyWrappedFunctionCall + (addCastToOne ? ")" : "") + "," + interfaceString + ".class, "
-                        + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + "))";
+                        + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + "))" + maySetClassifierGenericType;
             }
-            return (shouldCast ? "((" + castType + ")" : "") + (addCastToOne ? "CompiledSupport.makeOne(" : "") + possiblyWrappedFunctionCall + (addCastToOne ? ")" : "") + (shouldCast ? ")" : "");
+            return (shouldCast ? "((" + castType + ")" : "") + (addCastToOne ? "CompiledSupport.makeOne(" : "") + possiblyWrappedFunctionCall + (addCastToOne ? ")" : "") + (shouldCast ? ")" : "") + maySetClassifierGenericType;
         }
         if (Property.isProperty(function, support))
         {

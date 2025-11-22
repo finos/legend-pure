@@ -22,25 +22,25 @@ public abstract class AbstractTestLast extends PureExpressionTest
     @Test
     public void testBasic()
     {
-        compileTestSource("fromString.pure",
+        compileSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(3 == [1,2,3]->last(), |'');\n" +
                         "   assert(3 == 3->last(), |'');\n" +
                         "   assert([] == []->last(), |'');\n" +
                         "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 
     @Test
     public void testEval()
     {
-        compileTestSource("fromString.pure",
+        compileSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(3 == last_T_MANY__T_$0_1$_->eval([1,2,3]), |'');\n" +
                         "   assert(3 == last_T_MANY__T_$0_1$_->eval(3), |'');\n" +
                         "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 }

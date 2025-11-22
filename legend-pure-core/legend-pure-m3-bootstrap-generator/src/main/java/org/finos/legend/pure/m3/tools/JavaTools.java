@@ -14,9 +14,16 @@
 
 package org.finos.legend.pure.m3.tools;
 
-import org.eclipse.collections.impl.utility.StringIterate;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 import javax.lang.model.SourceVersion;
+import java.util.Arrays;
 
 public class JavaTools
 {
@@ -24,6 +31,8 @@ public class JavaTools
     {
         // Utility class
     }
+
+    // Java identifiers
 
     /**
      * Make string into a valid Java identifier.
@@ -119,6 +128,131 @@ public class JavaTools
 
     private static boolean isValidPart(String fix)
     {
-        return (fix != null) && !fix.isEmpty() && StringIterate.allSatisfyCodePoint(fix, Character::isJavaIdentifierPart);
+        return (fix != null) && !fix.isEmpty() && fix.codePoints().allMatch(Character::isJavaIdentifierPart);
+    }
+
+    // Java imports
+
+    public static String sortReduceAndPrintImports(String... imports)
+    {
+        return sortReduceAndPrintImports(Arrays.asList(imports));
+    }
+
+    public static String sortReduceAndPrintImports(Iterable<? extends String> imports)
+    {
+        return sortReduceAndPrintImports(imports, null);
+    }
+
+    public static String sortReduceAndPrintImports(Iterable<? extends String> imports, String linebreak)
+    {
+        return sortReduceAndPrintImports(new StringBuilder(), imports, linebreak).toString();
+    }
+
+    public static <T extends Appendable> T sortReduceAndPrintImports(T appendable, String... imports)
+    {
+        return sortReduceAndPrintImports(appendable, Arrays.asList(imports));
+    }
+
+    public static <T extends Appendable> T sortReduceAndPrintImports(T appendable, Iterable<? extends String> imports)
+    {
+        return sortReduceAndPrintImports(appendable, imports, null);
+    }
+
+    public static <T extends Appendable> T sortReduceAndPrintImports(T appendable, Iterable<? extends String> imports, String linebreak)
+    {
+        MutableList<String> sortedAndReduced = sortAndReduceImports(imports);
+        if (sortedAndReduced.notEmpty())
+        {
+            SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+            String resolvedLinebreak = (linebreak == null) ? "\n" : linebreak;
+            boolean[] previousJavaImport = {false};
+            sortedAndReduced.forEach(imp ->
+            {
+                if (imp.startsWith("java.") && !previousJavaImport[0])
+                {
+                    safeAppendable.append(resolvedLinebreak);
+                    previousJavaImport[0] = true;
+                }
+                safeAppendable.append("import ").append(imp).append(';').append(resolvedLinebreak);
+            });
+        }
+        return appendable;
+    }
+
+    public static MutableList<String> sortAndReduceImports(String... imports)
+    {
+        return sortAndReduceImports(Arrays.asList(imports));
+    }
+
+    public static MutableList<String> sortAndReduceImports(Iterable<? extends String> imports)
+    {
+        MutableMap<String, String> byName = Maps.mutable.empty();
+        MutableSet<String> starImports = Sets.mutable.empty();
+        imports.forEach(imp ->
+        {
+            if (imp.endsWith(".*"))
+            {
+                starImports.add(imp);
+            }
+            else
+            {
+                String name = imp.substring(imp.lastIndexOf('.') + 1);
+                String otherImp = byName.put(name, imp);
+                if ((otherImp != null) && !otherImp.equals(imp))
+                {
+                    throw new IllegalArgumentException("Name conflict between imports: " + imp + " and " + otherImp);
+                }
+            }
+        });
+
+        MutableList<String> list = Lists.mutable.<String>ofInitialCapacity(byName.size() + starImports.size())
+                .withAll(starImports)
+                .withAll(byName.values())
+                .sortThis(JavaTools::compareImports);
+        String[] prev = {null};
+        list.removeIf(current ->
+        {
+            String previous = prev[0];
+            if ((previous != null) && (current.length() >= previous.length()) && previous.endsWith(".*"))
+            {
+                int lastDot = current.lastIndexOf('.');
+                if ((lastDot == (previous.length() - 2)) && previous.regionMatches(0, current, 0, lastDot))
+                {
+                    return true;
+                }
+            }
+            prev[0] = current;
+            return false;
+        });
+        return list;
+    }
+
+    private static int compareImports(String import1, String import2)
+    {
+        // Imports from the java package go last
+        if (import1.startsWith("java."))
+        {
+            if (!import2.startsWith("java."))
+            {
+                return 1;
+            }
+        }
+        else if (import2.startsWith("java."))
+        {
+            return -1;
+        }
+
+        // * imports go before others in the same package
+        if (import1.endsWith(".*") && (import1.length() <= import2.length()) && import1.regionMatches(0, import2, 0, import1.length() - 1))
+        {
+            return -1;
+        }
+        if (import2.endsWith(".*") && (import2.length() <= import1.length()) && import2.regionMatches(0, import1, 0, import2.length() - 1))
+        {
+            return 1;
+        }
+
+        // general case
+        return import1.compareTo(import2);
     }
 }

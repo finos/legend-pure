@@ -28,7 +28,7 @@ import org.eclipse.collections.impl.block.procedure.checked.CheckedProcedure;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.StringIterate;
 import org.finos.legend.pure.m3.coreinstance.Package;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.KeyExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
@@ -37,6 +37,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Native
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ConstraintsOverride;
@@ -63,6 +64,7 @@ import org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
 import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureDynamicReactivateException;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
@@ -285,6 +287,10 @@ public class Pure
         {
             return genericTypeBuilder.get()._rawType(ma.getBottomType());
         }
+        if (val instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType)
+        {
+            return (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) val;
+        }
         if (val instanceof QuantityCoreInstance)
         {
             return genericTypeBuilder.get()._rawType(((QuantityCoreInstance) val).getUnit());
@@ -323,6 +329,11 @@ public class Pure
         if (val instanceof BigDecimal)
         {
             Type type = ma.getPrimitiveType(M3Paths.Decimal);
+            return genericTypeBuilder.get()._rawType(type);
+        }
+        if (val instanceof PureMap)
+        {
+            Type type = (Type) processorSupport.package_getByUserPath(M3Paths.Map);
             return genericTypeBuilder.get()._rawType(type);
         }
         if (val instanceof RichIterable)
@@ -395,11 +406,11 @@ public class Pure
         }
         if (func instanceof LambdaFunction)
         {
-            LambdaFunction<?> lambda = (LambdaFunction<?>) func;
             if (canFindNativeOrLambdaFunction(es, func))
             {
                 return getNativeOrLambdaFunction(es, func);
             }
+            LambdaFunction<?> lambda = (LambdaFunction<?>) func;
             if (Reactivator.canReactivateWithoutJavaCompilation(lambda, es, getOpenVariables(func, bridge), bridge))
             {
                 PureMap openVariablesMap = getOpenVariables(func, bridge);
@@ -412,33 +423,31 @@ public class Pure
             if (func.getSourceInformation() != null)
             {
                 return ces.getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(func, () ->
-                        {
-                            try
-                            {
-                                RichIterable<? extends VariableExpression> params = ((FunctionType) func._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters();
-                                Class<?>[] paramClasses = new Class[params.size() + 1];
-                                int index = 0;
-                                for (VariableExpression o : params)
-                                {
-                                    paramClasses[index++] = pureTypeToJavaClassForExecution(o, bridge, es);
-                                }
-                                paramClasses[params.size()] = ExecutionSupport.class;
-                                Method method = ces.getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation())).getMethod(FunctionProcessor.functionNameToJava(func), paramClasses);
-                                return new JavaMethodWithParamsSharedPureFunction<>(method, paramClasses, func.getSourceInformation());
-                            }
-                            catch (ReflectiveOperationException e)
-                            {
-                                throw new RuntimeException(e);
-                            }
-                        });
-            }
-            else
-            {
-                PureMap openVars = new PureMap(Maps.mutable.empty());
-                if (Reactivator.canReactivateWithoutJavaCompilation(func, es, openVars, bridge))
                 {
-                    return DynamicPureFunctionImpl.createPureFunction((FunctionDefinition<?>) func, openVars.getMap(), bridge);
-                }
+                    try
+                    {
+                        RichIterable<? extends VariableExpression> params = ((FunctionType) func._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters();
+                        Class<?>[] paramClasses = new Class[params.size() + 1];
+                        int index = 0;
+                        for (VariableExpression o : params)
+                        {
+                            paramClasses[index++] = pureTypeToJavaClassForExecution(o, bridge, es);
+                        }
+                        paramClasses[params.size()] = ExecutionSupport.class;
+                        Method method = ces.getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation())).getMethod(FunctionProcessor.functionNameToJava(func), paramClasses);
+                        return new JavaMethodWithParamsSharedPureFunction<>(method, paramClasses, func.getSourceInformation());
+                    }
+                    catch (ReflectiveOperationException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+
+            PureMap openVars = new PureMap(Maps.mutable.empty());
+            if (Reactivator.canReactivateWithoutJavaCompilation(func, es, openVars, bridge))
+            {
+                return DynamicPureFunctionImpl.createPureFunction((FunctionDefinition<?>) func, openVars.getMap(), bridge);
             }
         }
 
@@ -522,7 +531,11 @@ public class Pure
                 throw new PureExecutionException(func.getSourceInformation(), "Error accessing property '" + func.getName() + "'", e, Stacks.mutable.empty());
             }
         }
-
+        if (func instanceof Column)
+        {
+            Object instance = getInstanceForPropertyEvaluate(paramInputs, func.getName(), func.getSourceInformation());
+            return Pure.findSharedPureFunction(func, bridge, es).execute(Lists.mutable.with(instance), es);
+        }
         RichIterable<? extends VariableExpression> params = ((FunctionType) func._classifierGenericType()._typeArguments().getAny()._rawType())._parameters();
         Class<?>[] paramClasses = new Class<?>[params.size()];
         int index = 0;
@@ -961,6 +974,10 @@ public class Pure
                 {
                     return StrictDate.class;
                 }
+                case "StrictTime":
+                {
+                    return PureStrictTime.class;
+                }
                 case "LatestDate":
                 {
                     return LatestDate.class;
@@ -1091,7 +1108,7 @@ public class Pure
             PackageableElement child = pkg._children().detect(c -> name.equals(c._name()));
             if (child == null)
             {
-                Package newPkg =  packageBuilder.apply(name)._name(name)._package(pkg);
+                Package newPkg = packageBuilder.apply(name)._name(name)._package(pkg);
                 pkg._childrenAdd(newPkg);
                 return newPkg;
             }

@@ -21,6 +21,8 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.Counter;
 import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
@@ -203,6 +205,21 @@ public abstract class AbstractLazySpliterable<T> extends AbstractLazyIterable<T>
             }
         }
         return atEnd;
+    }
+
+    protected static <T> Deque<T> splitDeque(Deque<T> original)
+    {
+        Deque<T> split = new ArrayDeque<>(original.size() / 2);
+        boolean[] shouldMoveToSplit = {false};
+        original.removeIf(v ->
+        {
+            if (shouldMoveToSplit[0])
+            {
+                split.add(v);
+            }
+            return !(shouldMoveToSplit[0] = !shouldMoveToSplit[0]);
+        });
+        return split;
     }
 
     private static class Holder<V>

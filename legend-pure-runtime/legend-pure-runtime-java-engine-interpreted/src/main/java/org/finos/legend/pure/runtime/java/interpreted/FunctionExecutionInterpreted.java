@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.interpreted;
 
-import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Stacks;
@@ -22,8 +21,8 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.stack.MutableStack;
+import org.eclipse.collections.impl.list.Interval;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinitionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunctionCoreInstanceWrapper;
@@ -44,8 +43,10 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
+import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
@@ -165,6 +166,7 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.ty
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.type._class.GenericTypeClass;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.type._enum.EnumName;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.type._enum.EnumValues;
+import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.type.relation.AddColumns;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string._boolean.Contains;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string._boolean.EndsWith;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string._boolean.StartsWith;
@@ -178,6 +180,7 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.parse.ParsePrimitiveBoolean;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.parse.ParsePrimitiveDate;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.parse.ParsePrimitiveDecimal;
+import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.parse.ParsePrimitiveDecimalWithScalePrecision;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.parse.ParsePrimitiveFloat;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.parse.ParsePrimitiveInteger;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.split.Split;
@@ -530,6 +533,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("instanceOf_Any_1__Type_1__Boolean_1_", new InstanceOf(repository));
         this.nativeFunctions.put("generalizations_Type_1__Type_$1_MANY$_", new Generalizations(this, repository));
         this.nativeFunctions.put("subTypeOf_Type_1__Type_1__Boolean_1_", new SubTypeOf(this, repository));
+        this.nativeFunctions.put("addColumns_RelationType_1__ColSpecArray_1__RelationType_1_", new AddColumns());
         //    Class
         this.nativeFunctions.put("genericTypeClass_GenericType_1__Class_1_", new GenericTypeClass(repository));
         //    Enum
@@ -558,6 +562,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("parseDate_String_1__Date_1_", new ParsePrimitiveDate(this, repository));
         this.nativeFunctions.put("parseFloat_String_1__Float_1_", new ParsePrimitiveFloat(this, repository));
         this.nativeFunctions.put("parseDecimal_String_1__Decimal_1_", new ParsePrimitiveDecimal(this, repository));
+        this.nativeFunctions.put("parseDecimal_String_1__Integer_1__Integer_1__Decimal_1_", new ParsePrimitiveDecimalWithScalePrecision(repository));
         this.nativeFunctions.put("parseInteger_String_1__Integer_1_", new ParsePrimitiveInteger(this, repository));
         //  Split
         this.nativeFunctions.put("split_String_1__String_1__String_MANY_", new Split(repository));
@@ -774,20 +779,20 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             {
                 result = this.executeProperty(PropertyCoreInstanceWrapper.toProperty(function), true, resolvedTypeParameters, resolvedMultiplicityParameters, varContext, profiler, params, functionExpressionCallStack, instantiationContext, executionSupport);
             }
-            //Qualified properties also go here
             else if (Instance.instanceOf(function, M3Paths.FunctionDefinition, processorSupport))
             {
-                RichIterable<? extends CoreInstance> expressions = FunctionDefinitionCoreInstanceWrapper.toFunctionDefinition(function)._expressionSequence();
+                function = resolveFunctionDefinition(function, params);
 
                 CoreInstance returnVal = null;
-                for (CoreInstance expression : expressions)
+                for (CoreInstance expression : function.getValueForMetaPropertyToMany(M3Properties.expressionSequence))
                 {
                     Executor executor = findValueSpecificationExecutor(expression, functionExpressionCallStack, processorSupport, this);
                     returnVal = executor.execute(expression, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, variableContext, profiler, instantiationContext, executionSupport, this, processorSupport);
                 }
                 result = returnVal;
             }
-            List<CoreInstance> instances = this.extensions.collect(x -> x.getExtraFunctionExecution(function, params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport, processorSupport, this)).select(Objects::nonNull);
+            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> finalFunc = function;
+            List<CoreInstance> instances = this.extensions.collect(x -> x.getExtraFunctionExecution(finalFunc, params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport, processorSupport, this)).select(Objects::nonNull);
 
             if (instances.size() == 1)
             {
@@ -895,6 +900,67 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             }
             throw e;
         }
+        catch (StackOverflowError stackOverflowError)
+        {
+            throw new PureExecutionException("Pure stackoverflow", stackOverflowError, functionExpressionCallStack);
+        }
+    }
+
+    private org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> resolveFunctionDefinition(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, ListIterable<? extends CoreInstance> params)
+    {
+        ProcessorSupport processorSupport = this.runtime.getProcessorSupport();
+        if (org.finos.legend.pure.m3.navigation.property.Property.isQualifiedProperty(function, processorSupport))
+        {
+            // Manage qualified property dispatch
+            String functionName = org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(function);
+            CoreInstance functionType = processorSupport.function_getFunctionType(function);
+            ListIterable<? extends CoreInstance> functionParams = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
+            CoreInstance functionSourceType = Instance.getValueForMetaPropertyToOneResolved(functionParams.get(0), M3Properties.rawType, processorSupport);
+
+            ListIterable<? extends CoreInstance> firstParamValues = params.get(0).getValueForMetaPropertyToMany(M3Properties.values);
+            if (firstParamValues == null)
+            {
+                throw new IllegalStateException("Unexpected value specification type for first parameter: " + PackageableElement.getUserPathForPackageableElement(params.get(0).getClassifier()));
+            }
+            CoreInstance instance = firstParamValues.get(0);
+            CoreInstance instanceType = instance.getClassifier();
+            if (functionSourceType != instanceType)
+            {
+                for (CoreInstance type : Type.getGeneralizationResolutionOrder(instanceType, processorSupport))
+                {
+                    if (type == functionSourceType)
+                    {
+                        // We've reached the source type of the qualified property the compiler chose, so it must be the best choice
+                        return function;
+                    }
+                    for (String qpProp : _Class.QUALIFIED_PROPERTIES_PROPERTIES)
+                    {
+                        for (CoreInstance qualProp : type.getValueForMetaPropertyToMany(qpProp))
+                        {
+                            if (functionName.equals(org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(qualProp)))
+                            {
+                                CoreInstance qpFT = processorSupport.function_getFunctionType(qualProp);
+                                ListIterable<? extends CoreInstance> qpParams = qpFT.getValueForMetaPropertyToMany(M3Properties.parameters);
+                                if ((functionParams.size() == qpParams.size()) &&
+                                        ((functionParams.size() <= 1) ||
+                                                Interval.fromTo(1, functionParams.size() - 1).allSatisfy(i -> org.finos.legend.pure.m3.navigation.generictype.GenericType.genericTypesEqual(functionParams.get(i).getValueForMetaPropertyToOne(M3Properties.genericType), qpParams.get(i).getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport))))
+                                {
+                                    return (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>) qualProp;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Could not find a matching qualified property: this should not happen, but give a good error message in case it does
+                StringBuilder builder = new StringBuilder("Could not find qualified property ")
+                        .append(org.finos.legend.pure.m3.navigation.property.Property.getQualifiedPropertyId(function, processorSupport))
+                        .append(" for instance of type ");
+                PackageableElement.writeUserPathForPackageableElement(builder, instanceType);
+                throw new IllegalStateException(builder.toString());
+            }
+        }
+        return function;
     }
 
     public CoreInstance executeProperty(Property<?, ?> property, boolean route, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, Profiler profiler, ListIterable<? extends CoreInstance> parameters, MutableStack<CoreInstance> functionExpressionCallStack, InstantiationContext instantiationContext, ExecutionSupport executionSupport) throws PureExecutionException
@@ -905,7 +971,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         boolean executable = ValueSpecification.isExecutable(source, processorSupport);
         CoreInstance multiplicity = property._multiplicity();
 
-        CoreInstance evaluatedSource = Instance.getValueForMetaPropertyToOneResolved(executable ? findValueSpecificationExecutor(source, Stacks.mutable.with((CoreInstance)property), processorSupport, this).execute(source, resolvedTypeParameters, resolvedMultiplicityParameters, Stacks.mutable.with(property), variableContext, profiler, instantiationContext, executionSupport, this, processorSupport) : source, M3Properties.values, processorSupport);
+        CoreInstance evaluatedSource = Instance.getValueForMetaPropertyToOneResolved(executable ? findValueSpecificationExecutor(source, Stacks.mutable.with((CoreInstance) property), processorSupport, this).execute(source, resolvedTypeParameters, resolvedMultiplicityParameters, Stacks.mutable.with(property), variableContext, profiler, instantiationContext, executionSupport, this, processorSupport) : source, M3Properties.values, processorSupport);
 
         if (evaluatedSource == null)
         {

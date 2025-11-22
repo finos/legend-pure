@@ -14,10 +14,15 @@
 
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
+import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Nil;
@@ -29,23 +34,29 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
  */
 public interface MetadataAccessor
 {
-    Class<?> getClass(String fullPath);
+    Class<?> getClass(String path);
 
-    Measure getMeasure(String fullPath);
+    Measure getMeasure(String path);
 
-    Unit getUnit(String fullPath);
+    Unit getUnit(String path);
 
-    Enumeration<?> getEnumeration(String fullPath);
+    Enumeration<?> getEnumeration(String path);
+
+    Enum getEnum(String enumerationName, String enumName);
 
     PrimitiveType getPrimitiveType(String name);
 
-    ConcreteFunctionDefinition<?> getConcreteFunctionDefinition(String name);
+    ConcreteFunctionDefinition<?> getConcreteFunctionDefinition(String path);
+
+    NativeFunction<?> getNativeFunction(String path);
 
     LambdaFunction<?> getLambdaFunction(String id);
 
-    org.finos.legend.pure.m3.coreinstance.Package getPackage(String path);
+    Package getPackage(String path);
 
-    org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum getEnum(String enumerationName, String enumName);
+    Association getAssociation(String path);
+
+    Profile getProfile(String path);
 
     @SuppressWarnings("unchecked")
     default Class<Any> getTopType()

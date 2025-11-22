@@ -14,9 +14,14 @@
 
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
+import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
@@ -37,27 +42,33 @@ public class MetadataHolder implements MetadataAccessor
     }
 
     @Override
-    public Class<?> getClass(String fullPath)
+    public Class<?> getClass(String path)
     {
-        return (Class<?>) this.metadata.getMetadata(MetadataJavaPaths.Class, fullPath);
+        return (Class<?>) this.metadata.getMetadata(MetadataJavaPaths.Class, path);
     }
 
     @Override
-    public Measure getMeasure(String fullPath)
+    public Measure getMeasure(String path)
     {
-        return (Measure) this.metadata.getMetadata(MetadataJavaPaths.Measure, fullPath);
+        return (Measure) this.metadata.getMetadata(MetadataJavaPaths.Measure, path);
     }
 
     @Override
-    public Unit getUnit(String fullPath)
+    public Unit getUnit(String path)
     {
-        return (Unit) this.metadata.getMetadata(MetadataJavaPaths.Unit, fullPath);
+        return (Unit) this.metadata.getMetadata(MetadataJavaPaths.Unit, path);
     }
 
     @Override
-    public Enumeration<?> getEnumeration(String fullPath)
+    public Enumeration<?> getEnumeration(String path)
     {
-        return (Enumeration<?>) this.metadata.getMetadata(MetadataJavaPaths.Enumeration, fullPath);
+        return (Enumeration<?>) this.metadata.getMetadata(MetadataJavaPaths.Enumeration, path);
+    }
+
+    @Override
+    public Enum getEnum(String enumerationName, String enumName)
+    {
+        return (Enum) this.metadata.getEnum(enumerationName, enumName);
     }
 
     @Override
@@ -67,9 +78,15 @@ public class MetadataHolder implements MetadataAccessor
     }
 
     @Override
-    public ConcreteFunctionDefinition<?> getConcreteFunctionDefinition(String name)
+    public ConcreteFunctionDefinition<?> getConcreteFunctionDefinition(String path)
     {
-        return (ConcreteFunctionDefinition<?>) this.metadata.getMetadata(MetadataJavaPaths.ConcreteFunctionDefinition, name);
+        return (ConcreteFunctionDefinition<?>) this.metadata.getMetadata(MetadataJavaPaths.ConcreteFunctionDefinition, path);
+    }
+
+    @Override
+    public NativeFunction<?> getNativeFunction(String path)
+    {
+        return (NativeFunction<?>) this.metadata.getMetadata(MetadataJavaPaths.NativeFunction, path);
     }
 
     @Override
@@ -79,14 +96,20 @@ public class MetadataHolder implements MetadataAccessor
     }
 
     @Override
-    public org.finos.legend.pure.m3.coreinstance.Package getPackage(String path)
+    public Package getPackage(String path)
     {
-        return (org.finos.legend.pure.m3.coreinstance.Package) this.metadata.getMetadata(M3Paths.Package, path);
+        return (Package) this.metadata.getMetadata(M3Paths.Package, path);
     }
 
     @Override
-    public org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum getEnum(String enumerationName, String enumName)
+    public Association getAssociation(String path)
     {
-        return (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum) this.metadata.getEnum(enumerationName, enumName);
+        return (Association) this.metadata.getMetadata(M3Paths.Association, path);
+    }
+
+    @Override
+    public Profile getProfile(String path)
+    {
+        return (Profile) this.metadata.getMetadata(M3Paths.Profile, path);
     }
 }

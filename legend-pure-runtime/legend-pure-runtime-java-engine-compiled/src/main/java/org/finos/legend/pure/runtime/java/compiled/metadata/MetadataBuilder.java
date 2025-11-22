@@ -79,16 +79,10 @@ public class MetadataBuilder
                 String id = idBuilder.buildId(instance);
                 CoreInstance classifier = instance.getClassifier();
 
-                for (String key : instance.getKeys())
-                {
-                    for (CoreInstance value : Instance.getValueForMetaPropertyToManyResolved(instance, key, processorSupport))
-                    {
-                        if (!state.isPrimitiveType(value.getClassifier()))
-                        {
-                            state.addNode(value);
-                        }
-                    }
-                }
+                instance.getKeys().asLazy()
+                        .flatCollect(key -> Instance.getValueForMetaPropertyToManyResolved(instance, key, processorSupport))
+                        .reject(value -> state.isPrimitiveType(value.getClassifier()))
+                        .forEach(state::addNode);
 
                 if (classifier instanceof Enumeration)
                 {

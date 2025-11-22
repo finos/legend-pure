@@ -39,6 +39,8 @@ public class M3Paths
     public static final String ClassConstraintValueSpecificationContext = "meta::pure::metamodel::valuespecification::ClassConstraintValueSpecificationContext";
     public static final String ClassProjection = "meta::pure::metamodel::type::ClassProjection";
     public static final String Column = "meta::pure::metamodel::relation::Column";
+    public static final String ColSpec = "meta::pure::metamodel::relation::ColSpec";
+    public static final String ColSpecArray = "meta::pure::metamodel::relation::ColSpecArray";
     public static final String ConcreteFunctionDefinition = "meta::pure::metamodel::function::ConcreteFunctionDefinition";
     public static final String Constraint = "meta::pure::metamodel::constraint::Constraint";
     public static final String ConstraintsOverride = "meta::pure::metamodel::type::ConstraintsOverride";
@@ -77,7 +79,7 @@ public class M3Paths
     public static final String Integer = ModelRepository.INTEGER_TYPE_NAME;
     public static final String InstanceValue = "meta::pure::metamodel::valuespecification::InstanceValue";
     public static final String InstanceValueSpecificationContext = "meta::pure::metamodel::valuespecification::InstanceValueSpecificationContext";
-    public static final String KeyExpression = "meta::pure::functions::lang::KeyExpression";
+    public static final String KeyExpression = "meta::pure::metamodel::function::KeyExpression";
     public static final String KeyValueValueSpecificationContext = "meta::pure::metamodel::valuespecification::KeyValueValueSpecificationContext";
     public static final String LambdaFunction = "meta::pure::metamodel::function::LambdaFunction";
     public static final String LatestDate = ModelRepository.LATEST_DATE_TYPE_NAME;
@@ -157,4 +159,8 @@ public class M3Paths
     public static final String Pair = "meta::pure::functions::collection::Pair";
     public static final String Map = "meta::pure::functions::collection::Map";
     public static final String List = "meta::pure::functions::collection::List";
+
+    // Variant
+    public static final String Variant = "meta::pure::metamodel::variant::Variant";
+
 }

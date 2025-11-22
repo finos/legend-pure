@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure-dsl-graph</artifactId>
-        <version>5.26.1-SNAPSHOT</version>
+        <version>5.67.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -76,44 +76,53 @@
                     </execution>
                 </executions>
             </plugin>
-        <plugin>
-            <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-maven-generation-par</artifactId>
-            <configuration>
-                <sourceDirectory>${project.basedir}/src/test/resources</sourceDirectory>
-                <purePlatformVersion>${project.version}</purePlatformVersion>
-                <extraRepositories>
-                    <extraRepository>${project.basedir}/src/test/resources/platform_dsl_graph_test.definition.json
-                    </extraRepository>
-                </extraRepositories>
-            </configuration>
-            <executions>
-                <execution>
-                    <phase>test-compile</phase>
-                    <goals>
-                        <goal>build-pure-jar</goal>
-                    </goals>
-                </execution>
-            </executions>
-            <dependencies>
-                <dependency>
-                    <groupId>org.finos.legend.pure</groupId>
-                    <artifactId>legend-pure-m3-core</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
+            <plugin>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-maven-compiler</artifactId>
+                <executions>
+                    <execution>
+                        <phase>test-compile</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-maven-generation-par</artifactId>
+                <configuration>
+                    <sourceDirectory>${project.basedir}/src/test/resources</sourceDirectory>
+                    <purePlatformVersion>${project.version}</purePlatformVersion>
+                    <extraRepositories>
+                        <extraRepository>${project.basedir}/src/test/resources/platform_dsl_graph_test.definition.json
+                        </extraRepository>
+                    </extraRepositories>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>build-pure-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-m3-core</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
 
-                <dependency>
-                    <groupId>org.finos.legend.pure</groupId>
-                    <artifactId>legend-pure-m2-dsl-graph-pure</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.finos.legend.pure</groupId>
-                    <artifactId>legend-pure-m2-dsl-graph-grammar</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
-        </plugin>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-m2-dsl-graph-pure</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-m2-dsl-graph-grammar</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
         </plugins>
     </build>
 

@@ -15,37 +15,29 @@
 package org.finos.legend.pure.m3.tests.function.base.meta;
 
 import org.finos.legend.pure.m3.tests.function.base.PureExpressionTest;
-import org.junit.After;
 import org.junit.Test;
 
 public abstract class AbstractTestId extends PureExpressionTest
 {
-    @After
-    public void cleanRuntime()
-    {
-        runtime.delete("fromString.pure");
-        runtime.compile();
-    }
-
     @Test
     public void testBasic()
     {
-        compileTestSource("fromString.pure",
+        compileSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(!(1->id()->isEmpty()), |'');\n" +
                         "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 
     @Test
     public void testEval()
     {
-        compileTestSource("fromString.pure",
+        compileSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(!id_Any_1__String_1_->eval(1)->isEmpty(),|'');\n" +
                         "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 }

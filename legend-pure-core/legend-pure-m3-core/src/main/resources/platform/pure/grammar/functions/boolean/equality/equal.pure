@@ -217,7 +217,8 @@ function <<PCT.test>> meta::pure::functions::boolean::tests::equality::equal::te
     assert($f->eval(|!equal($otherBot12, $otherBot21)));
 }
 
-function <<PCT.test>> meta::pure::functions::boolean::tests::equality::equal::testEqualPrimitiveCollections<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+// Find a better place... Not a PCT test
+function meta::pure::functions::boolean::tests::equality::equal::testEqualPrimitiveCollections<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assert(['a', 'b'] == ['a', 'b']);
     assert(equal(['a', 'b'], ['a', 'b']));
@@ -235,7 +236,8 @@ function <<PCT.test>> meta::pure::functions::boolean::tests::equality::equal::te
     assertFalse(equal(['a', 'b'], ['b', 'a']));
 }
 
-function <<PCT.test>> meta::pure::functions::boolean::tests::equality::equal::testEqualRecursivePrimitiveCollections<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+// Find a better place... Not a PCT test
+function meta::pure::functions::boolean::tests::equality::equal::testEqualRecursivePrimitiveCollections<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let side1 = ^SideClass(stringId='firstSide', intId=1);
     let side2 = ^SideClass(stringId='firstSide', intId=1);
@@ -262,7 +264,8 @@ function <<PCT.test>> meta::pure::functions::boolean::tests::equality::equal::te
     assertFalse(equal([$bot11, $bot21], [$bot11, $bot12]));
 }
 
-function <<PCT.test>> meta::pure::functions::boolean::tests::equality::equal::testEqualMixedCollections<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+// Find a better place... Not a PCT test
+function meta::pure::functions::boolean::tests::equality::equal::testEqualMixedCollections<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let side1 = ^SideClass(stringId='firstSide', intId=1);
     let side2 = ^SideClass(stringId='firstSide', intId=1);
@@ -289,7 +292,8 @@ function <<PCT.test>> meta::pure::functions::boolean::tests::equality::equal::te
     assertFalse(equal([$bot11, $bot21], [$bot11, 'a']));
 }
 
-function <<PCT.test>> meta::pure::functions::boolean::tests::equality::equal::testEqualEmptyCollections<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+// Find a better place... Not a PCT test
+function meta::pure::functions::boolean::tests::equality::equal::testEqualEmptyCollections<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assert([] == []);
     assert(equal([], []));

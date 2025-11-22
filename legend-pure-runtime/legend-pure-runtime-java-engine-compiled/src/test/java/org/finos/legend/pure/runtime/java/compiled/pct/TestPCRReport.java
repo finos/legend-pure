@@ -14,16 +14,21 @@
 
 package org.finos.legend.pure.runtime.java.compiled.pct;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
+import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
 import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProviderLoader;
+import org.finos.legend.pure.runtime.java.compiled.testHelper.PCTReportGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class TestPCRReport
 {
     @Test
-    public void canFindPCTReport()
+    public void canFindPCTReport() throws Exception
     {
-        Assert.assertEquals("Native", PCTReportProviderLoader.gatherReports().collect(c -> c.adapterKey.adapter.name).distinct().sortThis().makeString(", "));
-        Assert.assertEquals(2, PCTReportProviderLoader.gatherReports().size());
+        MutableList<AdapterReport> adapterReports = PCTReportProviderLoader.gatherReports();
+        Assert.assertEquals("Native", adapterReports.collect(c -> c.adapterKey.adapter.name).distinct().sortThis().makeString(", "));
+        Assert.assertEquals(Lists.fixedSize.of("essential", "grammar"), adapterReports.collect(x -> x.reportScope.module).sortThis());
     }
 }

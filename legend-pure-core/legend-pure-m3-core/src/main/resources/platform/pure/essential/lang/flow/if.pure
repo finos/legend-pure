@@ -21,7 +21,7 @@ native function
     }
     meta::pure::functions::lang::if<T|m>(test:Boolean[1], valid:Function<{->T[m]}>[1], invalid:Function<{->T[m]}>[1]):T[m];
 
-function meta::pure::functions::lang::if<T|m>(condList:Pair<Function<{->Boolean[1]}>, Function<{->T[m]}>>[*], last:Function<{->T[m]}>[1]):T[m]
+function <<PCT.function>> meta::pure::functions::lang::if<T|m>(condList:Pair<Function<{->Boolean[1]}>, Function<{->T[m]}>>[*], last:Function<{->T[m]}>[1]):T[m]
 {
   let matchCond = $condList->find(f|$f.first->eval());
   if ($matchCond->isEmpty(),
@@ -68,4 +68,11 @@ function <<PCT.test>> meta::pure::functions::lang::tests::if::testMultiIf<Z|y>(f
                         ],
                         |4
                     )+3));
+
+    assertEquals(13, $f->eval(|if(
+                              [
+                                pair(| $val==5,|10)
+                              ],
+                              |4
+                        )+3));
 }

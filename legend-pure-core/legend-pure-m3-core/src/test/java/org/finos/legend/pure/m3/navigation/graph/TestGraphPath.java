@@ -19,6 +19,7 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.graph.GraphPath.EdgeConsumer;
 import org.finos.legend.pure.m3.navigation.graph.GraphPath.EdgeVisitor;
 import org.finos.legend.pure.m3.navigation.graph.GraphPath.ToManyPropertyAtIndexEdge;
@@ -35,6 +36,8 @@ import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.function.Function;
 
 public class TestGraphPath extends AbstractPureTestWithCoreCompiled
 {
@@ -315,172 +318,195 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
     @Test
     public void testResolve()
     {
+        testResolve(processorSupport::package_getByUserPath);
+        testResolve(path -> _Package.getByUserPath(path, repository::getTopLevel));
+    }
+    
+    private void testResolve(Function<? super String, ? extends CoreInstance> packagePathResolver)
+    {
         Assert.assertSame(
                 runtime.getCoreInstance("test::domain::ClassA"),
-                GraphPath.buildPath("test::domain::ClassA").resolve(processorSupport));
+                GraphPath.buildPath("test::domain::ClassA").resolve(packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("test::domain::ClassA").getValueForMetaPropertyToOne("classifierGenericType"),
-                GraphPath.buildPath("test::domain::ClassA", "classifierGenericType").resolve(processorSupport));
+                GraphPath.buildPath("test::domain::ClassA", "classifierGenericType").resolve(packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance(M3Paths.Class),
-                GraphPath.buildPath("test::domain::ClassA", "classifierGenericType", "rawType").resolve(processorSupport));
+                GraphPath.buildPath("test::domain::ClassA", "classifierGenericType", "rawType").resolve(packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance(M3Paths.String),
-                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueAtIndex("properties", 0).addToOneProperties("genericType", "rawType").build().resolve(processorSupport));
+                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueAtIndex("properties", 0).addToOneProperties("genericType", "rawType").build().resolve(packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("test::domain::ClassA").getValueInValueForMetaPropertyToMany("properties", "prop2").getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToOne("rawType"),
-                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolve(processorSupport));
+                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolve(packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("test::domain::ClassB"),
-                ImportStub.withImportStubByPass(GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "prop2").addToOneProperties("genericType", "rawType").build().resolve(processorSupport), processorSupport));
+                ImportStub.withImportStubByPass(GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "prop2").addToOneProperties("genericType", "rawType").build().resolve(packagePathResolver), processorSupport));
         Assert.assertSame(
                 runtime.getCoreInstance("test::domain::ClassB"),
-                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "prop2").addToOneProperties("genericType", "rawType", "resolvedNode").build().resolve(processorSupport));
+                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "prop2").addToOneProperties("genericType", "rawType", "resolvedNode").build().resolve(packagePathResolver));
 
         Assert.assertSame(
                 runtime.getCoreInstance("::"),
-                GraphPath.buildPath("::").resolve(processorSupport));
+                GraphPath.buildPath("::").resolve(packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("Root"),
-                GraphPath.buildPath("Root").resolve(processorSupport));
+                GraphPath.buildPath("Root").resolve(packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("test"),
-                GraphPath.builder("::").addToManyPropertyValueWithName("children", "test").build().resolve(processorSupport));
+                GraphPath.builder("::").addToManyPropertyValueWithName("children", "test").build().resolve(packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("test::domain"),
-                GraphPath.builder("::").addToManyPropertyValueWithName("children", "test").addToManyPropertyValueWithName("children", "domain").build().resolve(processorSupport));
+                GraphPath.builder("::").addToManyPropertyValueWithName("children", "test").addToManyPropertyValueWithName("children", "domain").build().resolve(packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("test::domain::ClassA"),
-                GraphPath.builder("::").addToManyPropertyValueWithName("children", "test").addToManyPropertyValueWithName("children", "domain").addToManyPropertyValueWithName("children", "ClassA").build().resolve(processorSupport));
+                GraphPath.builder("::").addToManyPropertyValueWithName("children", "test").addToManyPropertyValueWithName("children", "domain").addToManyPropertyValueWithName("children", "ClassA").build().resolve(packagePathResolver));
 
         Assert.assertSame(
                 runtime.getCoreInstance("Integer"),
-                GraphPath.buildPath("Integer").resolve(processorSupport));
+                GraphPath.buildPath("Integer").resolve(packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("Number"),
-                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolve(processorSupport));
+                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolve(packagePathResolver));
 
         Assert.assertEquals(
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength"),
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength").resolve(processorSupport));
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength").resolve(packagePathResolver));
         Assert.assertEquals(
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength").getValueInValueForMetaPropertyToMany("nonCanonicalUnits", "Cubitum"),
-                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToManyPropertyValueWithName("nonCanonicalUnits", "Cubitum").build().resolve(processorSupport));
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToManyPropertyValueWithName("nonCanonicalUnits", "Cubitum").build().resolve(packagePathResolver));
         Assert.assertEquals(
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength"),
-                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToManyPropertyValueWithName("nonCanonicalUnits", "Cubitum").addToOneProperty("measure").build().resolve(processorSupport));
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToManyPropertyValueWithName("nonCanonicalUnits", "Cubitum").addToOneProperty("measure").build().resolve(packagePathResolver));
         Assert.assertEquals(
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength").getValueForMetaPropertyToOne("canonicalUnit"),
-                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToManyPropertyValueWithName("nonCanonicalUnits", "Cubitum").addToOneProperties("measure", "canonicalUnit").build().resolve(processorSupport));
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToManyPropertyValueWithName("nonCanonicalUnits", "Cubitum").addToOneProperties("measure", "canonicalUnit").build().resolve(packagePathResolver));
         Assert.assertEquals(
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength"),
-                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToManyPropertyValueWithName("nonCanonicalUnits", "Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").build().resolve(processorSupport));
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToManyPropertyValueWithName("nonCanonicalUnits", "Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").build().resolve(packagePathResolver));
         Assert.assertEquals(
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength").getValueInValueForMetaPropertyToMany("nonCanonicalUnits", "Actus"),
-                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToManyPropertyValueWithName("nonCanonicalUnits", "Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().resolve(processorSupport));
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToManyPropertyValueWithName("nonCanonicalUnits", "Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().resolve(packagePathResolver));
     }
 
     @Test
     public void testResolveUpTo()
     {
+        testResolveUpTo(processorSupport::package_getByUserPath);
+        testResolveUpTo(path -> _Package.getByUserPath(path, repository::getTopLevel));
+    }
+
+    private void testResolveUpTo(Function<? super String, ? extends CoreInstance> packagePathResolver)
+    {
         Assert.assertSame(
                 runtime.getCoreInstance(M3Paths.String),
-                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueAtIndex("properties", 0).addToOneProperties("genericType", "rawType").build().resolve(processorSupport));
+                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueAtIndex("properties", 0).addToOneProperties("genericType", "rawType").build().resolveUpTo(3, packagePathResolver));
 
         Assert.assertSame(
                 runtime.getCoreInstance("test::domain::ClassA"),
-                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(0, processorSupport));
+                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(0, packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("test::domain::ClassA"),
-                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(-3, processorSupport));
+                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(-3, packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("test::domain::ClassA").getValueInValueForMetaPropertyToMany("properties", "prop2"),
-                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(1, processorSupport));
+                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(1, packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("test::domain::ClassA").getValueInValueForMetaPropertyToMany("properties", "prop2"),
-                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(-2, processorSupport));
+                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(-2, packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("test::domain::ClassA").getValueInValueForMetaPropertyToMany("properties", "prop2").getValueForMetaPropertyToOne("genericType"),
-                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(2, processorSupport));
+                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(2, packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("test::domain::ClassA").getValueInValueForMetaPropertyToMany("properties", "prop2").getValueForMetaPropertyToOne("genericType"),
-                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(-1, processorSupport));
+                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(-1, packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("test::domain::ClassA").getValueInValueForMetaPropertyToMany("properties", "prop2").getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToOne("rawType"),
-                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(3, processorSupport));
+                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(3, packagePathResolver));
         Assert.assertEquals(
                 "Index: 4; size: 3",
                 Assert.assertThrows(
                         IndexOutOfBoundsException.class,
-                        () -> GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(4, processorSupport)).getMessage());
+                        () -> GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(4, packagePathResolver)).getMessage());
         Assert.assertEquals(
                 "Index: -4; size: 3",
                 Assert.assertThrows(
                         IndexOutOfBoundsException.class,
-                        () -> GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(-4, processorSupport)).getMessage());
+                        () -> GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolveUpTo(-4, packagePathResolver)).getMessage());
 
 
         Assert.assertSame(
                 runtime.getCoreInstance("Integer"),
-                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(0, processorSupport));
+                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(0, packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("Integer"),
-                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(-3, processorSupport));
+                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(-3, packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("Integer").getValueForMetaPropertyToOne("generalizations"),
-                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(1, processorSupport));
+                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(1, packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("Integer").getValueForMetaPropertyToOne("generalizations"),
-                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(-2, processorSupport));
+                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(-2, packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("Integer").getValueForMetaPropertyToOne("generalizations").getValueForMetaPropertyToOne("general"),
-                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(2, processorSupport));
+                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(2, packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("Integer").getValueForMetaPropertyToOne("generalizations").getValueForMetaPropertyToOne("general"),
-                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(-1, processorSupport));
+                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(-1, packagePathResolver));
         Assert.assertSame(
                 runtime.getCoreInstance("Number"),
-                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(3, processorSupport));
+                GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(3, packagePathResolver));
         Assert.assertEquals(
                 "Index: 4; size: 3",
                 Assert.assertThrows(
                         IndexOutOfBoundsException.class,
-                        () -> GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(4, processorSupport)).getMessage());
+                        () -> GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(4, packagePathResolver)).getMessage());
         Assert.assertEquals(
                 "Index: -4; size: 3",
                 Assert.assertThrows(
                         IndexOutOfBoundsException.class,
-                        () -> GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(-4, processorSupport)).getMessage());
+                        () -> GraphPath.buildPath("Integer", "generalizations", "general", "rawType").resolveUpTo(-4, packagePathResolver)).getMessage());
     }
 
     @Test
     public void testResolveFully()
     {
+
+    }
+
+    private void testResolveFully(Function<? super String, ? extends CoreInstance> packagePathResolver)
+    {
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.buildPath("test::domain::ClassA"),
                 runtime.getCoreInstance("test::domain::ClassA"));
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.buildPath("test::domain::ClassA", "classifierGenericType"),
                 runtime.getCoreInstance("test::domain::ClassA"),
                 runtime.getCoreInstance("test::domain::ClassA").getValueForMetaPropertyToOne("classifierGenericType"));
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.buildPath("test::domain::ClassA", "classifierGenericType", "rawType"),
                 runtime.getCoreInstance("test::domain::ClassA"),
                 runtime.getCoreInstance("test::domain::ClassA").getValueForMetaPropertyToOne("classifierGenericType"),
                 runtime.getCoreInstance(M3Paths.Class));
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.builder("test::domain::ClassA").addToManyPropertyValueAtIndex("properties", 0).addToOneProperties("genericType", "rawType").build(),
                 runtime.getCoreInstance("test::domain::ClassA"),
                 runtime.getCoreInstance("test::domain::ClassA").getValueForMetaPropertyToMany("properties").get(0),
                 runtime.getCoreInstance("test::domain::ClassA").getValueForMetaPropertyToMany("properties").get(0).getValueForMetaPropertyToOne("genericType"),
                 runtime.getCoreInstance(M3Paths.String));
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build(),
                 runtime.getCoreInstance("test::domain::ClassA"),
                 runtime.getCoreInstance("test::domain::ClassA").getValueInValueForMetaPropertyToMany("properties", "prop2"),
                 runtime.getCoreInstance("test::domain::ClassA").getValueInValueForMetaPropertyToMany("properties", "prop2").getValueForMetaPropertyToOne("genericType"),
                 runtime.getCoreInstance("test::domain::ClassA").getValueInValueForMetaPropertyToMany("properties", "prop2").getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToOne("rawType"));
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "prop2").addToOneProperties("genericType", "rawType", "resolvedNode").build(),
                 runtime.getCoreInstance("test::domain::ClassA"),
                 runtime.getCoreInstance("test::domain::ClassA").getValueInValueForMetaPropertyToMany("properties", "prop2"),
@@ -489,21 +515,26 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                 runtime.getCoreInstance("test::domain::ClassB"));
 
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.buildPath("::"),
                 runtime.getCoreInstance("::"));
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.buildPath("Root"),
                 runtime.getCoreInstance("Root"));
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.builder("::").addToManyPropertyValueWithName("children", "test").build(),
                 runtime.getCoreInstance("::"),
                 runtime.getCoreInstance("test"));
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.builder("::").addToManyPropertyValueWithName("children", "test").addToManyPropertyValueWithName("children", "domain").build(),
                 runtime.getCoreInstance("::"),
                 runtime.getCoreInstance("test"),
                 runtime.getCoreInstance("test::domain"));
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.builder("::").addToManyPropertyValueWithName("children", "test").addToManyPropertyValueWithName("children", "domain").addToManyPropertyValueWithName("children", "ClassA").build(),
                 runtime.getCoreInstance("::"),
                 runtime.getCoreInstance("test"),
@@ -511,9 +542,11 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                 runtime.getCoreInstance("test::domain::ClassA"));
 
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.buildPath("Integer"),
                 runtime.getCoreInstance("Integer"));
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.buildPath("Integer", "generalizations", "general", "rawType"),
                 runtime.getCoreInstance("Integer"),
                 runtime.getCoreInstance("Integer").getValueForMetaPropertyToOne("generalizations"),
@@ -521,24 +554,29 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                 runtime.getCoreInstance("Number"));
 
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength"),
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength"));
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToManyPropertyValueWithName("nonCanonicalUnits", "Cubitum").build(),
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength"),
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength").getValueInValueForMetaPropertyToMany("nonCanonicalUnits", "Cubitum"));
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToManyPropertyValueWithName("nonCanonicalUnits", "Cubitum").addToOneProperty("measure").build(),
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength"),
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength").getValueInValueForMetaPropertyToMany("nonCanonicalUnits", "Cubitum"),
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength"));
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToManyPropertyValueWithName("nonCanonicalUnits", "Cubitum").addToOneProperties("measure", "canonicalUnit").build(),
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength"),
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength").getValueInValueForMetaPropertyToMany("nonCanonicalUnits", "Cubitum"),
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength"),
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength").getValueForMetaPropertyToOne("canonicalUnit"));
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToManyPropertyValueWithName("nonCanonicalUnits", "Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").build(),
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength"),
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength").getValueInValueForMetaPropertyToMany("nonCanonicalUnits", "Cubitum"),
@@ -546,6 +584,7 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength").getValueForMetaPropertyToOne("canonicalUnit"),
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength"));
         assertResolveFully(
+                packagePathResolver,
                 GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToManyPropertyValueWithName("nonCanonicalUnits", "Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build(),
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength"),
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength").getValueInValueForMetaPropertyToMany("nonCanonicalUnits", "Cubitum"),
@@ -555,9 +594,9 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                 runtime.getCoreInstance("meta::pure::functions::meta::tests::model::RomanLength").getValueInValueForMetaPropertyToMany("nonCanonicalUnits", "Actus"));
     }
 
-    private void assertResolveFully(GraphPath path, CoreInstance... nodes)
+    private void assertResolveFully(Function<? super String, ? extends CoreInstance> packagePathResolver, GraphPath path, CoreInstance... nodes)
     {
-        Assert.assertEquals(new ResolvedGraphPath(path, Lists.immutable.with(nodes)), path.resolveFully(processorSupport));
+        Assert.assertEquals(new ResolvedGraphPath(path, Lists.immutable.with(nodes)), path.resolveFully(packagePathResolver));
     }
 
     @Test
@@ -757,6 +796,9 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                 GraphPath.builder("test::domain::ClassA").build(),
                 GraphPath.parse("test::domain::ClassA"));
         Assert.assertEquals(
+                GraphPath.builder("test::domain::ClassA").build(),
+                GraphPath.parse("prefix_test::domain::ClassA_suffix", 7, 27));
+        Assert.assertEquals(
                 GraphPath.builder("test::domain::ClassA")
                         .addToManyPropertyValueAtIndex("properties", 0)
                         .addToOneProperties("genericType", "rawType")
@@ -776,10 +818,16 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                 GraphPath.parse("test::domain::ClassA.properties[name='prop2'].genericType.rawType"));
         Assert.assertEquals(
                 GraphPath.builder("test::domain::ClassA")
+                        .addToManyPropertyValueWithKey("properties", "name", "name with escaped text, '\n\b\\][, and other unusual characters, \"#$%^.")
+                        .addToOneProperties("genericType", "rawType")
+                        .build(),
+                GraphPath.parse("test::domain::ClassA.properties[name='name with escaped text, \\'\\n\\b\\\\][, and other unusual characters, \"#$%^.'].genericType.rawType"));
+        Assert.assertEquals(
+                GraphPath.builder("test::domain::ClassA")
                         .addToManyPropertyValueWithKey("properties", "name", "name with escaped text, '\n\b\\, and other unusual characters, \"#$%^.")
                         .addToOneProperties("genericType", "rawType")
                         .build(),
-                GraphPath.parse("test::domain::ClassA.properties[name='name with escaped text, \\'\\n\\b\\\\, and other unusual characters, \"#$%^.'].genericType.rawType"));
+                GraphPath.parse("something_test::domain::ClassA.properties[name='name with escaped text, \\'\\n\\b\\\\, and other unusual characters, \"#$%^.'].genericType.rawType_somethingElse", 10,  140));
 
         // with excess whitespace
         Assert.assertEquals(
@@ -812,6 +860,12 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                         .addToOneProperties("genericType", "rawType")
                         .build(),
                 GraphPath.parse("test::domain::ClassA\r\n\t.properties[0]\r\n\t.genericType.\r\n\trawType"));
+        Assert.assertEquals(
+                GraphPath.builder("test::domain::ClassA")
+                        .addToManyPropertyValueAtIndex("properties", 0)
+                        .addToOneProperties("genericType", "rawType")
+                        .build(),
+                GraphPath.parse("prefix_test::domain::ClassA\r\n\t.properties[0]\r\n\t.genericType.\r\n\trawType_suffix", 7, 70));
     }
 
     @Test
@@ -822,7 +876,7 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                         "test::domain::ClassB",
                         "test::domain::ClassA.properties[0].genericType.rawType",
                         "test::domain::ClassA.properties['prop2'].genericType.rawType",
-                        "test::domain::ClassA.properties['name with escaped text, \\'\\n\\b\\\\, and other unusual characters, \"#$%^.'].genericType.rawType",
+                        "test::domain::ClassA.properties['name with escaped text, \\'\\n\\b\\\\][][, and other unusual characters, \"#$%^.'].genericType.rawType",
                         "::",
                         "::.children['test']",
                         "::.children['test'].children['domain']",
@@ -884,6 +938,7 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
     @Test
     public void testStartNodePath()
     {
+        Assert.assertEquals("start node path may not be null", Assert.assertThrows(NullPointerException.class, () -> GraphPath.builder().withStartNodePath(null)).getMessage());
         ArrayAdapter.adapt(
                         "",
                         "        ",
@@ -907,7 +962,7 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                 .forEach(s ->
                 {
                     IllegalArgumentException e = Assert.assertThrows("'" + StringEscape.escape(s) + "'", IllegalArgumentException.class, () -> GraphPath.builder().setStartNodePath(s));
-                    String expectedPrefix = "Invalid GraphPath start node path '" + StringEscape.escape(s) + "'";
+                    String expectedPrefix = "Invalid start node path '" + StringEscape.escape(s) + "'";
                     String message = e.getMessage();
                     if (!message.startsWith(expectedPrefix))
                     {

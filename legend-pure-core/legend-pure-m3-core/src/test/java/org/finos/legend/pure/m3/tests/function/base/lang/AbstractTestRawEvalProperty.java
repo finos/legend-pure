@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2025 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,28 +24,23 @@ public abstract class AbstractTestRawEvalProperty extends AbstractPureTestWithCo
     @Test
     public void objectDoesntHavePropertyFail()
     {
-        try
-        {
-            this.compileTestSource("Class Person\n" +
-                    "{\n" +
-                    "   name: String[1];\n" +
-                    "}\n" +
-                    "Class Alien\n" +
-                    "{\n" +
-                    "   species: String[1];\n" +
-                    "}\n" +
-                    "function test():Nil[0]\n" +
-                    "{\n" +
-                    "   let person = ^Person(name = 'Obi Wan');\n" +
-                    "   let alien = ^Alien(species='Wookiee');\n" +
-                    "   print(Person -> classPropertyByName('name') -> toOne() -> rawEvalProperty($alien), 1);\n" +
-                    "}");
-            this.execute("test():Nil[0]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertPureException(PureExecutionException.class, "Can't find the property 'name' in the class Alien", 13, 62, e);
-        }
+        compileTestSource("fromString.pure",
+                "Class Person\n" +
+                "{\n" +
+                "   name: String[1];\n" +
+                "}\n" +
+                "Class Alien\n" +
+                "{\n" +
+                "   species: String[1];\n" +
+                "}\n" +
+                "function test():Any[*]\n" +
+                "{\n" +
+                "   let person = ^Person(name = 'Obi Wan');\n" +
+                "   let alien = ^Alien(species='Wookiee');\n" +
+                "   let property = Person.properties->filter(p | $p.name == 'name')->toOne();\n" +
+                "   $property->rawEvalProperty($alien);\n" +
+                "}");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("test():Any[*]"));
+        assertPureException(PureExecutionException.class, "Can't find the property 'name' in the class Alien", "fromString.pure", 14, 15, e);
     }
 }

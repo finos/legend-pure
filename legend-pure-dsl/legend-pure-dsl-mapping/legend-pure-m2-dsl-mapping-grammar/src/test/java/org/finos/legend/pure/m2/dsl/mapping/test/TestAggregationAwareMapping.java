@@ -16,14 +16,14 @@ package org.finos.legend.pure.m2.dsl.mapping.test;
 
 import org.finos.legend.pure.m3.coreinstance.meta.external.store.model.PureInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.InstanceSetImplementation;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.aggregationAware.AggregationAwareSetImplementation;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.Comparator;
 
 public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCoreCompiled
 {
@@ -37,6 +37,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
     public void cleanRuntime()
     {
         runtime.delete("mapping.pure");
+        runtime.compile();
     }
 
     @Test
@@ -108,7 +109,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
         runtime.createInMemorySource("mapping.pure", source);
         runtime.compile();
 
-        InstanceSetImplementation setImpl = (InstanceSetImplementation) ((org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping) runtime.getCoreInstance("map"))._classMappings().toSortedListBy(SetImplementation::_id).get(0);
+        InstanceSetImplementation setImpl = (InstanceSetImplementation) ((Mapping) runtime.getCoreInstance("map"))._classMappings().toSortedListBy(SetImplementation::_id).get(0);
 
         Assert.assertTrue(setImpl instanceof AggregationAwareSetImplementation);
 
@@ -223,14 +224,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
         runtime.createInMemorySource("mapping.pure", source);
         runtime.compile();
 
-        InstanceSetImplementation setImpl = (InstanceSetImplementation) ((org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping) runtime.getCoreInstance("map"))._classMappings().toSortedList(new Comparator<SetImplementation>()
-        {
-            @Override
-            public int compare(SetImplementation o1, SetImplementation o2)
-            {
-                return o1._id().compareTo(o2._id());
-            }
-        }).get(0);
+        InstanceSetImplementation setImpl = (InstanceSetImplementation) ((Mapping) runtime.getCoreInstance("map"))._classMappings().minBy(SetImplementation::_id);
 
         Assert.assertTrue(setImpl instanceof AggregationAwareSetImplementation);
 
@@ -354,14 +348,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
         runtime.createInMemorySource("mapping.pure", source);
         runtime.compile();
 
-        InstanceSetImplementation setImpl = (InstanceSetImplementation) ((org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping) runtime.getCoreInstance("map"))._classMappings().toSortedList(new Comparator<SetImplementation>()
-        {
-            @Override
-            public int compare(SetImplementation o1, SetImplementation o2)
-            {
-                return o1._id().compareTo(o2._id());
-            }
-        }).get(0);
+        InstanceSetImplementation setImpl = (InstanceSetImplementation) ((Mapping) runtime.getCoreInstance("map"))._classMappings().minBy(SetImplementation::_id);
 
         Assert.assertTrue(setImpl instanceof AggregationAwareSetImplementation);
 
@@ -459,15 +446,8 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
                         "      }\n" +
                         "   }\n" +
                         ")");
-        try
-        {
-            runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:mapping.pure line:59 column:31), \"Can't find the property 'salesDate_NonExistent' in the class Sales\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Can't find the property 'salesDate_NonExistent' in the class Sales", "mapping.pure", 59, 31, e);
     }
 
     @Test
@@ -537,15 +517,8 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
                         "      }\n" +
                         "   }\n" +
                         ")");
-        try
-        {
-            runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:mapping.pure line:59 column:10), \"The property 'salesDate_nonExistent' is unknown in the Element 'Sales'\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "The property 'salesDate_nonExistent' is unknown in the Element 'Sales'", "mapping.pure", 59, 10, e);
     }
 
     @Test
@@ -615,15 +588,8 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
                         "      }\n" +
                         "   }\n" +
                         ")");
-        try
-        {
-            runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:mapping.pure line:52 column:37), \"Can't find the property 'salesDate_NonExistent' in the class Sales_By_Date\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Can't find the property 'salesDate_NonExistent' in the class Sales_By_Date", "mapping.pure", 52, 37, e);
     }
 
     @Test
@@ -693,15 +659,8 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
                         "      }\n" +
                         "   }\n" +
                         ")");
-        try
-        {
-            runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:mapping.pure line:52 column:16), \"The property 'salesDate_NonExistent' is unknown in the Element 'Sales'\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "The property 'salesDate_NonExistent' is unknown in the Element 'Sales'", "mapping.pure", 52, 16, e);
     }
 
     @Test
@@ -768,15 +727,8 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
                         "      }\n" +
                         "   }\n" +
                         ")");
-        try
-        {
-            runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:mapping.pure line:41 column:25), \"Can't find the property 'salesDate_NonExistent' in the class Sales\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Can't find the property 'salesDate_NonExistent' in the class Sales", "mapping.pure", 41, 25, e);
     }
 
     @Test
@@ -843,14 +795,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
                         "      }\n" +
                         "   }\n" +
                         ")");
-        try
-        {
-            runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:mapping.pure line:44 column:67), \"The system can't find a match for the function: summation(_:Float[*])\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "The system can't find a match for the function: summation(_:Float[*])", "mapping.pure", 44, 67, e);
     }
 }

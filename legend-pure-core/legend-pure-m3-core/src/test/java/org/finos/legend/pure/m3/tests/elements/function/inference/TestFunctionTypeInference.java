@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.elements.function.inference;
 
+import java.util.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
@@ -583,6 +584,54 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testFunctionReturnTypeInfersNestedTypeVariablesFromLambdaFunctions()
+    {
+        compileInferenceTest(
+                "Class MyClass<Z>{value:Z[1];}\n" +
+                        "function funcToTest<T>(s:Function<{Any[1]->MyClass<T>[1]}>[1]):MyClass<T>[1]{$s->eval(1)}\n" +
+                        "function newObject<T>(a:T[1]):MyClass<T>[1]{^MyClass<T>(value=$a)}\n" +
+                        "function testSimple1():Any[*]{funcToTest(a|$a->toString()->newObject());}\n" +
+                        "function testSimple2():Any[*]{funcToTest(a|$a->cast(@Integer)->newObject());}\n" +
+                        "function testNested():Any[*]{funcToTest(a|$a->cast(@Integer)->newObject()->newObject());}\n");
+
+        Function<String, String> resolvedParamName = (func) ->
+        {
+            CoreInstance ci = runtime.getCoreInstance(func);
+            return GenericType.print(ci.getValueForMetaPropertyToMany("expressionSequence")
+                    .getOnly()
+                    .getValueForMetaPropertyToOne("resolvedTypeParameters"), runtime.getProcessorSupport());
+        };
+
+        Assert.assertEquals("String", resolvedParamName.apply("testSimple1__Any_MANY_"));
+        Assert.assertEquals("Integer", resolvedParamName.apply("testSimple2__Any_MANY_"));
+        Assert.assertEquals("MyClass<Integer>", resolvedParamName.apply("testNested__Any_MANY_"));
+
+        deleteInferenceTest();
+    }
+
+    @Test
+    public void testFunctionReturnTypeInfersDeepNestedTypeVariablesFromLambdaFunctions()
+    {
+        compileInferenceTest(
+                "Class MyClass<Z>{value:Z[1];}\n" +
+                        "function newObject<T>(a:T[1]):MyClass<T>[1]{^MyClass<T>(value=$a)}\n" +
+                        "function funcToTest<T>(s:Function<{Any[1]->MyClass<MyClass<T>>[1]}>[1]):MyClass<MyClass<T>>[1]{$s->eval(1)}\n" +
+                        "function testNested():Any[*]{funcToTest(a|$a->cast(@Integer)->newObject()->newObject());}\n");
+
+        Function<String, String> resolvedParamName = (func) ->
+        {
+            CoreInstance ci = runtime.getCoreInstance(func);
+            return GenericType.print(ci.getValueForMetaPropertyToMany("expressionSequence")
+                    .getOnly()
+                    .getValueForMetaPropertyToOne("resolvedTypeParameters"), runtime.getProcessorSupport());
+        };
+
+        Assert.assertEquals("Integer", resolvedParamName.apply("testNested__Any_MANY_"));
+
+        deleteInferenceTest();
+    }
+
+    @Test
     public void testConflictingParameterTypes()
     {
         compileInferenceTest(
@@ -1008,6 +1057,45 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
         SimpleFunctionExpression mapExpr = (SimpleFunctionExpression) expressionSequence.get(1);
         LambdaFunction<?> mapFn = (LambdaFunction<?>) ((InstanceValue) mapExpr._parametersValues().toList().getLast())._values().getOnly();
         assertGenericTypeEquals("meta::pure::metamodel::function::LambdaFunction<{T[1]->String[1]}>", mapFn._classifierGenericType());
+    }
+
+    @Test
+    public void testGeneralizationWithTypeArguments()
+    {
+        compileInferenceTest(
+                "import test::*;\n" +
+                        "\n" +
+                        "Class test::IntStringPair extends Pair<Integer, String>\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "function test::getValue<X,Y>(pairs:Pair<X,Y>[*], key:X[1]):Y[1]\n" +
+                        "{\n" +
+                        "   $pairs->find(p | $key == $p.first)->toOne().second\n" +
+                        "}\n" +
+                        "\n" +
+                        "function test::process(key:Integer[1]):String[1]\n" +
+                        "{\n" +
+                        "  [\n" +
+                        "   ^IntStringPair(first=1, second='the quick brown fox'),\n" +
+                        "   ^IntStringPair(first=2, second='jumped over the'),\n" +
+                        "   ^IntStringPair(first=3, second='lazy dog')\n" +
+                        "  ]->getValue($key)\n" +
+                        "}\n");
+        ConcreteFunctionDefinition<?> processFn = (ConcreteFunctionDefinition<?>) runtime.getFunction("test::process(Integer[1]):String[1]");
+        SimpleFunctionExpression getValueExpr = (SimpleFunctionExpression) processFn._expressionSequence().getOnly();
+        assertGenericTypeEquals("String", getValueExpr._genericType());
+
+        ListIterable<? extends ValueSpecification> getValueArgs = ListHelper.wrapListIterable(getValueExpr._parametersValues());
+        Assert.assertEquals(2, getValueArgs.size());
+        assertGenericTypeEquals("test::IntStringPair", getValueArgs.get(0)._genericType());
+        assertGenericTypeEquals("Integer", getValueArgs.get(1)._genericType());
+
+        ListIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType> resolvedTypeParams = ListHelper.wrapListIterable(getValueExpr._resolvedTypeParameters());
+        assertGenericTypeEquals("Integer", resolvedTypeParams.get(0));
+        Assert.assertEquals(getValueExpr.getSourceInformation(), resolvedTypeParams.get(0).getSourceInformation());
+        assertGenericTypeEquals("String", resolvedTypeParams.get(1));
+        Assert.assertEquals(getValueExpr.getSourceInformation(), resolvedTypeParams.get(1).getSourceInformation());
     }
 
     @Test

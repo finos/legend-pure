@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.pct;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProviderLoader;
 import org.junit.Assert;
 import org.junit.Test;
@@ -24,6 +25,6 @@ public class TestPCRReport
     public void canFindPCTReport()
     {
         Assert.assertEquals("Native", PCTReportProviderLoader.gatherReports().collect(c -> c.adapterKey.adapter.name).distinct().sortThis().makeString(", "));
-        Assert.assertEquals(2, PCTReportProviderLoader.gatherReports().size());
+        Assert.assertEquals(Lists.fixedSize.of("essential", "grammar"), PCTReportProviderLoader.gatherReports().collect(x -> x.reportScope.module).sortThis());
     }
 }

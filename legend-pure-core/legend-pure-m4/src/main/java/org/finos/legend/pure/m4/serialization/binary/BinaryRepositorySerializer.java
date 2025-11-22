@@ -16,16 +16,14 @@ package org.finos.legend.pure.m4.serialization.binary;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Sets;
-import org.eclipse.collections.api.factory.Stacks;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableObjectIntMap;
-import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.primitive.MutableIntSet;
-import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.primitive.IntLists;
 import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.impl.factory.primitive.IntSets;
@@ -39,7 +37,9 @@ import org.finos.legend.pure.m4.serialization.Writer;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 
 public class BinaryRepositorySerializer
 {
@@ -61,16 +61,11 @@ public class BinaryRepositorySerializer
     {
         // Prepare for serialization
         MutableIntObjectMap<byte[]> serializedNodesById = IntObjectMaps.mutable.empty();
-        MutableSet<CoreInstance> doneSet = Sets.mutable.empty();
-        MutableIntObjectMap<ListIterable<String>> keys = IntObjectMaps.mutable.empty();
+        MutableMap<ListIterable<String>, CoreInstance> keys = Maps.mutable.empty();
         MutableObjectIntMap<String> idsByFile = ObjectIntMaps.mutable.empty();
 
-        MutableStack<CoreInstance> stack = Stacks.mutable.empty();
-        for (CoreInstance instance : repository.getTopLevels())
-        {
-            stack.push(instance);
-            serializeNode(serializedNodesById, keys, idsByFile, stack, doneSet);
-        }
+        RichIterable<CoreInstance> topLevels = repository.getTopLevels();
+        topLevels.forEach(topLevel -> serializeNode(topLevel, serializedNodesById, keys, idsByFile));
 
         // Write id counters
         this.writer.writeInt(repository.getIdCounter());
@@ -82,7 +77,6 @@ public class BinaryRepositorySerializer
         this.writer.writeStringArray(fileNames);
 
         // Write top level nodes
-        RichIterable<CoreInstance> topLevels = repository.getTopLevels();
         int[] topLevelIds = new int[topLevels.size()];
         int i = 0;
         for (CoreInstance topLevel : topLevels)
@@ -93,6 +87,8 @@ public class BinaryRepositorySerializer
         this.writer.writeIntArray(topLevelIds);
 
         // Write all nodes
+        MutableIntObjectMap<ListIterable<String>> keysById = IntObjectMaps.mutable.ofInitialCapacity(keys.size());
+        keys.forEachKeyValue((realKey, keyCoreInstance) -> keysById.put(keyCoreInstance.getSyntheticId(), realKey));
         this.writer.writeInt(serializedNodesById.size());
         serializedNodesById.forEachKeyValue((nodeId, nodeBytes) ->
         {
@@ -100,7 +96,7 @@ public class BinaryRepositorySerializer
             this.writer.writeBytes(nodeBytes);
 
             // Add possible realKeyPath
-            ListIterable<String> realKeys = keys.get(nodeId);
+            ListIterable<String> realKeys = keysById.get(nodeId);
             if (realKeys == null)
             {
                 this.writer.writeBoolean(false);
@@ -143,28 +139,30 @@ public class BinaryRepositorySerializer
         }
     }
 
-    private static void push(CoreInstance node, MutableStack<CoreInstance> stack, MutableSet<CoreInstance> doneSet)
+    private static void enqueue(CoreInstance node, Deque<CoreInstance> deque, IntObjectMap<byte[]> nodeSerializations)
     {
-        if (!doneSet.contains(node))
+        if (!nodeSerializations.containsKey(node.getSyntheticId()))
         {
-            stack.push(node);
+            deque.add(node);
         }
     }
 
-    private static void serializeNode(MutableIntObjectMap<byte[]> nodeSerializations, MutableIntObjectMap<ListIterable<String>> keys, MutableObjectIntMap<String> idsByFile, MutableStack<CoreInstance> stack, MutableSet<CoreInstance> doneSet)
+    private static void serializeNode(CoreInstance instance, MutableIntObjectMap<byte[]> nodeSerializations, MutableMap<ListIterable<String>, CoreInstance> keys, MutableObjectIntMap<String> idsByFile)
     {
         ByteArrayOutputStream nodeBytes = new ByteArrayOutputStream();
         try (Writer writer = BinaryWriters.newBinaryWriter(nodeBytes))
         {
-            while (stack.notEmpty())
+            Deque<CoreInstance> deque = new ArrayDeque<>();
+            deque.add(instance);
+            while (!deque.isEmpty())
             {
-                CoreInstance node = stack.pop();
-                if (doneSet.add(node))
+                CoreInstance node = deque.pollFirst();
+                int id = node.getSyntheticId();
+                if (!nodeSerializations.containsKey(id))
                 {
                     nodeBytes.reset();
-                    push(node.getClassifier(), stack, doneSet);
+                    enqueue(node.getClassifier(), deque, nodeSerializations);
 
-                    int id = node.getSyntheticId();
                     writer.writeInt(id);
                     writer.writeInt(node.getClassifier().getSyntheticId());
                     writer.writeString(node.getName());
@@ -174,22 +172,17 @@ public class BinaryRepositorySerializer
                     writer.writeInt(node.getKeys().size());
                     node.getKeys().forEach(key ->
                     {
-                        CoreInstance keyCoreInstance = node.getKeyByName(key);
-                        keys.put(keyCoreInstance.getSyntheticId(), node.getRealKeyByName(key));
-                        push(keyCoreInstance, stack, doneSet);
+                        CoreInstance keyCoreInstance = keys.getIfAbsentPut(node.getRealKeyByName(key), () -> node.getKeyByName(key));
+                        enqueue(keyCoreInstance, deque, nodeSerializations);
                         writer.writeInt(keyCoreInstance.getSyntheticId());
                         ListIterable<? extends CoreInstance> values = node.getValueForMetaPropertyToMany(key);
                         writer.writeInt(values.size());
                         values.forEach(value ->
                         {
-                            push(value, stack, doneSet);
+                            enqueue(value, deque, nodeSerializations);
                             writer.writeInt(value.getSyntheticId());
                         });
                     });
-                    if (nodeSerializations.containsKey(id))
-                    {
-                        throw new RuntimeException("ERROR");
-                    }
                     nodeSerializations.put(id, nodeBytes.toByteArray());
                 }
             }
@@ -355,7 +348,7 @@ public class BinaryRepositorySerializer
         // Second pass
         if (message != null)
         {
-            message.message("Loading from cache<BR>Second pass node instantiation<BR>(" + nodes.size() + " nodes)");
+            message.message("Loading from cache - Second pass node instantiation (" + nodes.size() + " nodes)");
         }
         nodes.forEach(node ->
         {

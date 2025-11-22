@@ -26,14 +26,14 @@ import meta::relational::metamodel::relation::*;
 import meta::relational::runtime::*;
 import meta::external::store::relational::runtime::*;
 
-Class meta::relational::metamodel::Database extends meta::pure::store::set::SetBasedStore
+Class meta::relational::metamodel::Database extends meta::pure::store::set::SetBasedStore, AnnotatedElement
 {
     schemas : Schema[*];
     joins : Join[*];
     filters : Filter[*];
 }
 
-Class meta::relational::metamodel::Schema extends meta::pure::store::set::Namespace
+Class meta::relational::metamodel::Schema extends meta::pure::store::set::Namespace, AnnotatedElement
 {
     name : String[1];
     database : Database[1];
@@ -76,17 +76,30 @@ Class meta::relational::metamodel::relation::BusinessMilestoning extends Tempora
    thruIsInclusive : Boolean[1];
 }
 
-Class meta::relational::metamodel::relation::BusinessSnapshotMilestoning extends TemporalMilestoning
+Class meta::relational::metamodel::relation::TemporalSnapshotMilestoning extends TemporalMilestoning
 {
    snapshotDate : Column[1];
 }
 
-Class meta::relational::metamodel::relation::Table extends NamedRelation
+Class meta::relational::metamodel::relation::BusinessSnapshotMilestoning extends TemporalSnapshotMilestoning
+{
+}
+
+Class meta::relational::metamodel::relation::ProcessingSnapshotMilestoning extends TemporalSnapshotMilestoning
+{
+}
+
+Class meta::relational::metamodel::relation::Table extends NamedRelation, AnnotatedElement
 {
    schema : Schema[1];
    primaryKey : Column[*];
    milestoning : Milestoning[*];
    temporaryTable : Boolean[0..1];
+}
+
+Class meta::relational::metamodel::relation::GeneratedAccessorTable extends Table
+{
+   sourceElement: PackageableElement[1];
 }
 
 Class meta::relational::metamodel::RelationalMappingSpecification
@@ -98,7 +111,7 @@ Class meta::relational::metamodel::RelationalMappingSpecification
     mainTableAlias : TableAlias[1];
 }
 
-Class meta::relational::metamodel::relation::View extends NamedRelation, RelationalMappingSpecification
+Class meta::relational::metamodel::relation::View extends NamedRelation, RelationalMappingSpecification, AnnotatedElement
 {
     schema : Schema[1];
     primaryKey : Column[*];
@@ -108,6 +121,13 @@ Class meta::relational::metamodel::relation::View extends NamedRelation, Relatio
 Class meta::relational::metamodel::relation::TabularFunction extends NamedRelation
 {
     schema : Schema[1];
+    parameters : FunctionParameter[*];
+}
+
+Class meta::relational::metamodel::relation::FunctionParameter
+{
+    name : String[1];
+    type : meta::relational::metamodel::datatype::DataType[1];
 }
 
 Class meta::relational::mapping::ColumnMapping
@@ -191,7 +211,7 @@ Class meta::relational::metamodel::TableAlias extends Alias
    relation(){$this.relationalElement->cast(@Relation)}:Relation[1];
 }
 
-Class meta::relational::metamodel::Column extends meta::relational::metamodel::RelationalOperationElement, meta::pure::store::set::SetColumn
+Class meta::relational::metamodel::Column extends meta::relational::metamodel::RelationalOperationElement, meta::pure::store::set::SetColumn, AnnotatedElement
 {
    <<equality.Key>> name : String[1];
    <<equality.Key>> type : meta::relational::metamodel::datatype::DataType[1];
@@ -225,6 +245,7 @@ Class meta::relational::metamodel::relation::SelectSQLQuery extends Relation, SQ
    groupBy : RelationalOperationElement[*];
    pivot : Pivot[0..1];
    havingOperation : RelationalOperationElement[*];
+   qualifyOperation : RelationalOperationElement[*];
    orderBy : OrderBy[*];
    fromRow : meta::relational::metamodel::Literal[0..1];
    toRow : meta::relational::metamodel::Literal[0..1];
@@ -232,6 +253,18 @@ Class meta::relational::metamodel::relation::SelectSQLQuery extends Relation, SQ
    savedFilteringOperation : Pair<RelationalTreeNode, RelationalOperationElement>[*];
    extraFilteringOperation : RelationalOperationElement[*];
    preIsolationCurrentTreeNode : RelationalTreeNode[0..1];
+   commonTableExpressions: CommonTableExpression[*];
+}
+
+Class meta::relational::metamodel::relation::CommonTableExpression extends RelationalOperationElement
+{
+  name: String[1];
+  sqlQuery: SelectSQLQuery[1];
+}
+
+Class meta::relational::metamodel::relation::CommonTableExpressionReference extends meta::relational::metamodel::relation::Relation
+{
+  name: String[1];
 }
 
 Class meta::relational::metamodel::relation::ViewSelectSQLQuery extends Table{
@@ -356,6 +389,10 @@ Class meta::relational::metamodel::RelationalOperationElementWithJoin extends me
     joinTreeNode : JoinTreeNode[0..1];
 }
 
+Class meta::relational::metamodel::datatype::Boolean extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
 Class meta::relational::metamodel::datatype::BigInt extends meta::relational::metamodel::datatype::CoreDataType
 {
 }
@@ -438,6 +475,13 @@ Class meta::relational::metamodel::datatype::Real extends meta::relational::meta
 
 Class meta::relational::metamodel::datatype::Array extends meta::relational::metamodel::datatype::CoreDataType
 {
+    type: meta::relational::metamodel::datatype::DataType[0..1];
+}
+
+Class meta::relational::metamodel::datatype::Object extends meta::relational::metamodel::datatype::CoreDataType
+{
+    keyType: meta::relational::metamodel::datatype::DataType[1];
+    valueType: meta::relational::metamodel::datatype::DataType[1];
 }
 
 Class meta::relational::metamodel::datatype::SemiStructured extends meta::relational::metamodel::datatype::CoreDataType
@@ -450,7 +494,6 @@ meta::relational::metamodel::datatype::Json extends meta::relational::metamodel:
 {
 }
 
-
 Class meta::relational::metamodel::Literal extends meta::relational::metamodel::RelationalOperationElement
 {
    <<equality.Key>> value:Any[1];
@@ -461,12 +504,10 @@ Class meta::relational::metamodel::LiteralList extends meta::relational::metamod
    <<equality.Key>> values:Literal[*];
 }
 
-
-
-
-
-
-
+Class meta::relational::metamodel::DataTypeInfo extends meta::relational::metamodel::RelationalOperationElement
+{
+   dataType: meta::relational::metamodel::datatype::DataType[1];
+}
 
 Class meta::relational::metamodel::SQLNull
 {
@@ -510,7 +551,55 @@ Class meta::relational::metamodel::Window extends meta::relational::metamodel::R
 {
    <<equality.Key>> partition: RelationalOperationElement[*];
 
-   <<equality.Key>> sortBy: RelationalOperationElement [*];
+   <<equality.Key>> sortBy: SortByInfo [*];
 
+   <<equality.Key>> frame: meta::relational::metamodel::Frame[0..1];
+}
+
+Class meta::relational::metamodel::SortByInfo extends meta::relational::metamodel::RelationalOperationElement
+{
+
+   sortByElement: RelationalOperationElement [1];
    sortDirection: meta::relational::metamodel::SortDirection[0..1] ;
+}
+
+Enum meta::relational::metamodel::FrameType
+{
+   ROWS, RANGE
+}
+
+Class meta::relational::metamodel::Frame
+{
+   offsetFrom: meta::relational::metamodel::FrameValue[1];
+   offsetTo: meta::relational::metamodel::FrameValue[1];
+   frameType: meta::relational::metamodel::FrameType[1];
+}
+
+Enum meta::relational::metamodel::FrameValueDirection
+{
+   PRECEDING, FOLLOWING
+}
+
+Class <<typemodifiers.abstract>> meta::relational::metamodel::FrameValue extends meta::relational::metamodel::RelationalOperationElement
+{
+}
+
+Class meta::relational::metamodel::FrameLiteralValue extends meta::relational::metamodel::FrameValue
+{
+   value: RelationalOperationElement[1];
+   direction: FrameValueDirection[1];
+}
+
+Class meta::relational::metamodel::FrameIntervalValue extends meta::relational::metamodel::FrameLiteralValue
+{
+   durationUnit: meta::pure::functions::date::DurationUnit[1];
+}
+
+Class meta::relational::metamodel::UnboundedFrameValue extends meta::relational::metamodel::FrameValue
+{
+   direction: FrameValueDirection[1];
+}
+
+Class meta::relational::metamodel::FrameCurrentRowValue extends meta::relational::metamodel::FrameValue
+{
 }

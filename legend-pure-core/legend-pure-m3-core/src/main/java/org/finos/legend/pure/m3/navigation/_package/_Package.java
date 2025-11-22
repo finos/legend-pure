@@ -17,8 +17,11 @@ package org.finos.legend.pure.m3.navigation._package;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.ordered.OrderedIterable;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
+import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
@@ -26,45 +29,76 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+
+import java.util.function.Function;
 
 public class _Package
 {
     public static final ImmutableSet<String> SPECIAL_TYPES = PrimitiveUtilities.getPrimitiveTypeNames().newWith(M3Paths.Package);
 
+    public static boolean isPackage(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        if (instance == null)
+        {
+            return false;
+        }
+        if (instance instanceof Package)
+        {
+            return true;
+        }
+        return (!(instance instanceof Any) || (instance instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(instance, M3Paths.Package);
+    }
+
     public static CoreInstance getByUserPath(String path, ProcessorSupport processorSupport)
+    {
+        return getByUserPath(path, processorSupport::repository_getTopLevel);
+    }
+
+    public static CoreInstance getByUserPath(String path, Function<? super String, ? extends CoreInstance> topLevelResolver)
     {
         if (path.isEmpty() || PackageableElement.DEFAULT_PATH_SEPARATOR.equals(path))
         {
-            return processorSupport.repository_getTopLevel(M3Paths.Root);
+            return topLevelResolver.apply(M3Paths.Root);
         }
         if (isTopLevelName(path))
         {
-            return processorSupport.repository_getTopLevel(path);
+            return topLevelResolver.apply(path);
         }
-        return getByUserPath(PackageableElement.splitUserPath(path), processorSupport);
+        return findByUserPathFromRoot(topLevelResolver.apply(M3Paths.Root), PackageableElement.splitUserPath(path));
     }
 
-    public static CoreInstance getByUserPath(ListIterable<String> path, ProcessorSupport processorSupport)
+    public static CoreInstance getByUserPath(OrderedIterable<String> path, ProcessorSupport processorSupport)
+    {
+        return getByUserPath(path, processorSupport::repository_getTopLevel);
+    }
+
+    public static CoreInstance getByUserPath(OrderedIterable<String> path, Function<? super String, ? extends CoreInstance> topLevelResolver)
     {
         if (path.size() == 1)
         {
-            String name = path.get(0);
+            String name = path.getFirst();
             if (name.isEmpty())
             {
-                return processorSupport.repository_getTopLevel(M3Paths.Root);
+                return topLevelResolver.apply(M3Paths.Root);
             }
             if (isTopLevelName(name))
             {
-                return processorSupport.repository_getTopLevel(name);
+                return topLevelResolver.apply(name);
             }
         }
 
-        CoreInstance element = processorSupport.repository_getTopLevel(M3Paths.Root);
-        if (element == null)
+        return findByUserPathFromRoot(topLevelResolver.apply(M3Paths.Root), path);
+    }
+
+    private static CoreInstance findByUserPathFromRoot(CoreInstance root, OrderedIterable<String> path)
+    {
+        if (root == null)
         {
             throw new RuntimeException("Cannot find " + M3Paths.Root);
         }
+        CoreInstance element = root;
         for (String name : path)
         {
             element = findInPackage(element, name);
@@ -79,6 +113,11 @@ public class _Package
     public static CoreInstance getByUserPath(String[] path, ProcessorSupport processorSupport)
     {
         return getByUserPath(ArrayAdapter.adapt(path), processorSupport);
+    }
+
+    public static CoreInstance getByUserPath(String[] path, Function<? super String, ? extends CoreInstance> topLevelResolver)
+    {
+        return getByUserPath(ArrayAdapter.adapt(path), topLevelResolver);
     }
 
     public static CoreInstance findInPackage(CoreInstance pkg, String name)

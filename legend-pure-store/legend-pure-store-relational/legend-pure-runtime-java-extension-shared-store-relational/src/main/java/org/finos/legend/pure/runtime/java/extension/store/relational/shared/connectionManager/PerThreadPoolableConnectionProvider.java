@@ -19,6 +19,8 @@ import org.eclipse.collections.api.map.ConcurrentMutableMap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 
+import java.sql.SQLException;
+
 public abstract class PerThreadPoolableConnectionProvider
 {
     protected final ConcurrentMutableMap<String, Pair<ThreadLocal<PerThreadPoolableConnectionWrapper>, BasicDataSource>> connectionPoolByUser = ConcurrentHashMap.newMap();
@@ -31,5 +33,26 @@ public abstract class PerThreadPoolableConnectionProvider
             ThreadLocal<PerThreadPoolableConnectionWrapper> tlConnectionWrapper = userConnectionPool.getOne();
             tlConnectionWrapper.remove();
         }
+    }
+
+    public void removeAllPerThreadConnections()
+    {
+        connectionPoolByUser.keysView().forEach(x ->
+        {
+            Pair<ThreadLocal<PerThreadPoolableConnectionWrapper>, BasicDataSource> val = this.connectionPoolByUser.get(x);
+            try
+            {
+                if (val.getOne().get() != null)
+                {
+                    val.getOne().get().close();
+                }
+                val.getTwo().close();
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeException(e);
+            }
+        });
+        connectionPoolByUser.clear();
     }
 }

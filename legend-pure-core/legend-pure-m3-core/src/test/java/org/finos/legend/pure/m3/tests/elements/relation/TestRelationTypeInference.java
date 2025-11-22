@@ -14,12 +14,19 @@
 
 package org.finos.legend.pure.m3.tests.elements.relation;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.map.ImmutableMap;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledPlatform
@@ -90,20 +97,105 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     {
         compileInferenceTest(
                 "import meta::pure::metamodel::relation::*;\n" +
+                        "Primitive x::Numeric(x:Integer[1], y:Integer[1]) extends Integer\n" +
                         "Class Firm\n" +
                         "{\n" +
                         "   legalName:String[1];\n" +
+                        "   numeric:x::Numeric(1, 2)[1];\n" +
                         "}\n" +
                         "\n" +
-                        "function f():Relation<(legal:String)>[1]\n" +
+                        "function f():Relation<(legal:String, numeric:x::Numeric(1, 2))>[1]\n" +
                         "{\n" +
-                        "   Firm.all()->project(~[legal:x|$x.legalName]);\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName, numeric:x|$x.numeric]);\n" +
                         "}\n" +
                         "\n" +
                         "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];"
         );
     }
 
+    @Test
+    public void testColumnFunctionCollectionInference2()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "Primitive x::Numeric(x:Integer[1], y:Integer[1]) extends Integer\n" +
+                        "Class Firm\n" +
+                        "{\n" +
+                        "   legalName:String[1];\n" +
+                        "   numeric:x::Numeric(1, 2)[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function f():Relation<(numeric:x::Numeric(1, 2))>[1]\n" +
+                        "{\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName, numeric:x|$x.numeric])->groupBy(~[legal], ~[sum:x|$x.numeric : y|$y->sum()])->project(~[numeric:x|$x.sum]);\n" +
+                        "}\n" +
+                        "\n" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];\n" +
+                        "native function groupBy<T,Z,K,V,R>(r:Relation<T>[1], cols:ColSpecArray<Z⊆T>[1], agg:AggColSpecArray<{T[1]->K[0..1]},{K[*]->V[0..1]}, R>[1]):Relation<Z+R>[1];\n" +
+                        "native function sum(values:Integer[*]):x::Numeric(1, 2)[1];\n" +
+                        "native function project<T,Z>(r:Relation<T>[1], fs:FuncColSpecArray<{T[1]->Any[*]},Z>[1]):Relation<Z>[1];"
+        );
+    }
+
+    @Ignore
+    @Test
+    public void testColumnFunctionCollectionInference3()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "Class Firm\n" +
+                        "{\n" +
+                        "   legalName:String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function f():Boolean[1]\n" +
+                        "{\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName])->wrapper(~[legal]);\n" +
+                        //if you remove the wrapper function, ths below does compile which is functionally identical
+//                        "   Firm.all()->project(~[legal:x|$x.legalName])->groupBy(~[legal], ~[size: x | $x : y | $y->size()])->filter(zz | $zz.size > 1)->size() == 0;\n" +
+                        // "Can't find the property 'size' in the class meta::pure::metamodel::relation::Relation"
+                        "}\n" +
+                        "function wrapper<Q,U>(r: Relation<Q>[1], cols:ColSpecArray<U⊆Q>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "   $r->groupBy($r->groupBy($cols, ~[size : x | $x : y | $y->size()])->filter(zz | $zz.size > 1)->size() == 0)->size() == 0\n" +
+                        "}\n" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];" +
+                        "\n" +
+                        "native function groupBy<T,Z,K,V,R>(r:Relation<T>[1], cols:ColSpecArray<Z⊆T>[1], agg:AggColSpecArray<{T[1]->K[0..1]},{K[*]->V[0..1]}, R>[1]):Relation<Z+R>[1];" +
+                        "\n" +
+                        "native function filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];" +
+                        "\n"
+        );
+    }
+    
+    @Ignore
+    @Test
+    public void testColumnFunctionCollectionInference4() // Stackoverflow
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "Class Firm\n" +
+                        "{\n" +
+                        "   legalName:String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function f():Boolean[1]\n" +
+                        "{\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName])->wrapper(~[legal]);\n" +
+                        "}\n" +
+                        "function wrapper<T,Z>(r: Relation<T>[1], cols:ColSpecArray<Z⊆T>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "   $r->groupBy($r->groupBy($cols, ~[size : x | $x : y | $y->size()])->filter(zz | $zz.size > 1)->size() == 0)->size() == 0\n" +
+                        "}\n" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];" +
+                        "\n" +
+                        "native function groupBy<T,Z,K,V,R>(r:Relation<T>[1], cols:ColSpecArray<Z⊆T>[1], agg:AggColSpecArray<{T[1]->K[0..1]},{K[*]->V[0..1]}, R>[1]):Relation<Z+R>[1];" +
+                        "\n" +
+                        "native function filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];" +
+                        "\n"
+        );
+    }
+    
     @Test
     public void testColumnFunctionCollectionChainedWithNewFunctionInference()
     {
@@ -752,5 +844,58 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     {
         runtime.delete(inferenceTestFileName);
         runtime.compile();
+    }
+
+    @Test
+    @Ignore
+    // Test fails due to bug in type inference, potentially due to incorrect unbind. The type (RelationType) for the 
+    // only expression in the function f() is correctly inferred after first compile. However, the type parameters 
+    // remain unresolved post unbind and re-compile.
+    public void testRelationTypeInferenceIntegrityWithSelect()
+    {
+        String functionSource = "import meta::pure::metamodel::relation::*;" +
+                                "function f(t:Relation<(value:Integer,str:String)>[1]):Relation<Any>[1]\n" +
+                                "{\n" +
+                                "    $t->select(~[value, str])\n" +
+                                "}";
+        String nativeFunctionSource = "import meta::pure::metamodel::relation::*;" +
+                                      "native function select<T,X>(x:Relation<X>[1], rel:ColSpecArray<T⊆X>[1]):Relation<T>[1];";
+        
+        ImmutableMap<String, String> sources = Maps.immutable.of("1.pure", functionSource, "2.pure", nativeFunctionSource);
+        
+        new RuntimeTestScriptBuilder().createInMemorySources(sources).compile().run(runtime, functionExecution);
+
+        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(
+            runtime, 
+            functionExecution,
+            Lists.fixedSize.of(Tuples.pair("2.pure", nativeFunctionSource)), 
+            this.getAdditionalVerifiers()
+        );
+    }
+
+    @Test
+    @Ignore
+    // Test fails due to bug in type inference, potentially due to incorrect unbind. The column type for the renamed 
+    // column in the RelationType returned by the function is set to null post unbind and re-compile.
+    public void testRelationTypeInferenceIntegrityWithRename()
+    {
+        String functionSource = "import meta::pure::metamodel::relation::*;" +
+                "function f(t:Relation<(value:Integer,str:String)>[1]):Relation<Any>[1]\n" +
+                "{\n" +
+                "    $t->rename(~value, ~newValue)\n" +
+                "}";
+        String nativeFunctionSource = "import meta::pure::metamodel::relation::*;" +
+                "native function rename<T,Z,K,V>(r:Relation<T>[1], old:ColSpec<Z=(?:K)⊆T>[1], new:ColSpec<V=(?:K)>[1]):Relation<T-Z+V>[1];";
+
+        ImmutableMap<String, String> sources = Maps.immutable.of("1.pure", functionSource, "2.pure", nativeFunctionSource);
+
+        new RuntimeTestScriptBuilder().createInMemorySources(sources).compile().run(runtime, functionExecution);
+
+        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(
+                runtime,
+                functionExecution,
+                Lists.fixedSize.of(Tuples.pair("2.pure", nativeFunctionSource)),
+                this.getAdditionalVerifiers()
+        );
     }
 }

@@ -107,14 +107,15 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
     {
         compileTestSource("fromString.pure",
                 "###Pure\n" +
-                        "   function go():Boolean[1]\n" +
-                        "   {\n" +
-                        "       nest();\n" +
-                        "       true;\n" +
-                        "   }\n" +
-                        "function nest():Boolean[1]" +
-                        "{" +
-                        "   fail();" +
+                        "function go():Boolean[1]\n" +
+                        "{\n" +
+                        "    nest();\n" +
+                        "    true;\n" +
+                        "}\n" +
+                        "\n" +
+                        "function nest():Boolean[1]\n" +
+                        "{\n" +
+                        "   fail();\n" +
                         "}");
 
         PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("go():Boolean[1]"));
@@ -123,10 +124,42 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
                 "   1: resource:/platform/pure/essential/tests/assert.pure line:26 column:5\n" +
                         "\n" +
                         "   Full Stack:\n" +
-                        "       nest():Boolean[1]     <-     resource:fromString.pure line:4 column:8\n" +
-                        "       fail():Boolean[1]     <-     resource:fromString.pure line:7 column:31\n" +
+                        "       nest():Boolean[1]     <-     resource:fromString.pure line:4 column:5\n" +
+                        "       fail():Boolean[1]     <-     resource:fromString.pure line:10 column:4\n" +
                         "       assert(Boolean[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/fail.pure line:19 column:5\n" +
                         "       assert(Boolean[1], String[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:31 column:5\n" +
-                        "       assert(Boolean[1], Function<{->String[1]}>[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:26 column:5", trace);
+                        "       assert(Boolean[1], Function<{->String[1]}>[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:26 column:5",
+                trace);
+    }
+
+    @Test
+    public void testCallStackInExecutionExceptionAfterAssertError()
+    {
+        compileTestSource("fromString.pure",
+                "###Pure\n" +
+                        "function go():Boolean[1]\n" +
+                        "{\n" +
+                        "    nest();\n" +
+                        "    true;\n" +
+                        "}\n" +
+                        "\n" +
+                        "function nest():Boolean[1]\n" +
+                        "{\n" +
+                        "   assertError(|fail('message'), 'message');\n" +
+                        "   fail();\n" +
+                        "}");
+
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("go():Boolean[1]"));
+        String trace = e.printPureStackTrace(new StringBuilder(), "   ", functionExecution.getProcessorSupport()).toString();
+        Assert.assertEquals(
+                "   1: resource:/platform/pure/essential/tests/assert.pure line:26 column:5\n" +
+                        "\n" +
+                        "   Full Stack:\n" +
+                        "       nest():Boolean[1]     <-     resource:fromString.pure line:4 column:5\n" +
+                        "       fail():Boolean[1]     <-     resource:fromString.pure line:11 column:4\n" +
+                        "       assert(Boolean[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/fail.pure line:19 column:5\n" +
+                        "       assert(Boolean[1], String[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:31 column:5\n" +
+                        "       assert(Boolean[1], Function<{->String[1]}>[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:26 column:5",
+                trace);
     }
 }

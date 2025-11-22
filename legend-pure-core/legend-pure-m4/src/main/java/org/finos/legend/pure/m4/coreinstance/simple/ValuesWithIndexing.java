@@ -14,11 +14,10 @@
 
 package org.finos.legend.pure.m4.coreinstance.simple;
 
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.indexing.IDConflictException;
 import org.finos.legend.pure.m4.coreinstance.indexing.IDIndex;
@@ -73,13 +72,7 @@ final class ValuesWithIndexing<V extends CoreInstance> implements Values<V>
         {
             this.indexes = Maps.mutable.empty();
         }
-        Index<?, V> index = this.indexes.get(indexSpec);
-        if (index == null)
-        {
-            index = Index.newIndex(indexSpec, this.values);
-            this.indexes.put(indexSpec, index);
-        }
-        return index.get(key);
+        return this.indexes.getIfAbsentPut(indexSpec, () -> Index.newIndex(indexSpec, this.values)).get(key);
     }
 
     @Override
@@ -139,29 +132,11 @@ final class ValuesWithIndexing<V extends CoreInstance> implements Values<V>
     {
         if (this.idIndexes != null)
         {
-            MutableList<IDIndex<?, V>> invalidIdIndexes = Lists.mutable.empty();
-            for (IDIndex<?, V> idIndex : this.idIndexes.valuesView())
-            {
-                try
-                {
-                    idIndex.add(value);
-                }
-                catch (IDConflictException e)
-                {
-                    invalidIdIndexes.add(idIndex);
-                }
-            }
-            for (IDIndex<?, V> invalidIdIndex : invalidIdIndexes)
-            {
-                this.idIndexes.remove(invalidIdIndex.getSpecification());
-            }
+            this.idIndexes.removeIf((key, idIndex) -> !idIndex.tryAdd(value));
         }
         if (this.indexes != null)
         {
-            for (Index<?, V> index : this.indexes.valuesView())
-            {
-                index.add(value);
-            }
+            this.indexes.forEachValue(index -> index.add(value));
         }
     }
 
@@ -169,29 +144,11 @@ final class ValuesWithIndexing<V extends CoreInstance> implements Values<V>
     {
         if (this.idIndexes != null)
         {
-            MutableList<IDIndex<?, V>> invalidIdIndexes = Lists.mutable.empty();
-            for (IDIndex<?, V> idIndex : this.idIndexes.valuesView())
-            {
-                try
-                {
-                    idIndex.add(values);
-                }
-                catch (IDConflictException e)
-                {
-                    invalidIdIndexes.add(idIndex);
-                }
-            }
-            for (IDIndex<?, V> invalidIdIndex : invalidIdIndexes)
-            {
-                this.idIndexes.remove(invalidIdIndex.getSpecification());
-            }
+            this.idIndexes.removeIf((key, idIndex) -> !idIndex.tryAdd(values));
         }
         if (this.indexes != null)
         {
-            for (Index<?, V> index : this.indexes.valuesView())
-            {
-                index.add(values);
-            }
+            this.indexes.forEachValue(index -> index.add(values));
         }
     }
 
@@ -199,17 +156,11 @@ final class ValuesWithIndexing<V extends CoreInstance> implements Values<V>
     {
         if (this.idIndexes != null)
         {
-            for (IDIndex<?, V> idIndex : this.idIndexes.valuesView())
-            {
-                idIndex.remove(value);
-            }
+            this.idIndexes.forEachValue(idIndex -> idIndex.remove(value));
         }
         if (this.indexes != null)
         {
-            for (Index<?, V> index : this.indexes.valuesView())
-            {
-                index.remove(value);
-            }
+            this.indexes.forEachValue(index -> index.remove(value));
         }
     }
 }

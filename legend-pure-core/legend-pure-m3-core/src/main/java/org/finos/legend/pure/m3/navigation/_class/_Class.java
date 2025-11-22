@@ -28,12 +28,15 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
+
+import java.util.Collection;
 
 public class _Class
 {
@@ -102,9 +105,14 @@ public class _Class
 
     public static ListIterable<CoreInstance> getEqualityKeyProperties(CoreInstance classifier, ProcessorSupport processorSupport)
     {
+        return collectEqualityKeyProperties(classifier, processorSupport, Lists.mutable.empty());
+    }
+
+    public static <T extends Collection<CoreInstance>> T collectEqualityKeyProperties(CoreInstance classifier, ProcessorSupport processorSupport, T target)
+    {
         CoreInstance profile = processorSupport.package_getByUserPath(M3Paths.equality);
         CoreInstance stereotype = Profile.findStereotype(profile, KEY_STEREOTYPE);
-        return processorSupport.class_getSimpleProperties(classifier).select(p -> hasStereotype(p, stereotype, processorSupport), Lists.mutable.empty());
+        return processorSupport.class_getSimpleProperties(classifier).select(p -> hasStereotype(p, stereotype, processorSupport), target);
     }
 
     private static boolean hasStereotype(CoreInstance property, CoreInstance stereotype, ProcessorSupport processorSupport)
@@ -131,8 +139,10 @@ public class _Class
     {
         ListIterable<? extends CoreInstance> typeParameters = cls.getValueForMetaPropertyToMany(M3Properties.typeParameters);
         ListIterable<? extends CoreInstance> multiplicityParameters = cls.getValueForMetaPropertyToMany(M3Properties.multiplicityParameters);
+        ListIterable<? extends CoreInstance> typeVariables = cls.getValueForMetaPropertyToMany(M3Properties.typeVariables);
         boolean hasTypeParams = typeParameters.notEmpty();
         boolean hasMultParams = multiplicityParameters.notEmpty();
+        boolean hasTypeVariables = typeVariables.notEmpty();
 
         SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
         if (fullPaths)
@@ -142,6 +152,15 @@ public class _Class
         else
         {
             safeAppendable.append(cls.getValueForMetaPropertyToOne(M3Properties.name).getName());
+        }
+        if (hasTypeVariables)
+        {
+            safeAppendable.append("(");
+            typeVariables.forEachWithIndex((var, i) -> ((i == 0) ? safeAppendable : safeAppendable.append(','))
+                    .append(PrimitiveUtilities.getStringValue(var.getValueForMetaPropertyToOne(M3Properties.name)))
+                    .append(':')
+                    .append(PrimitiveUtilities.getStringValue(var.getValueForMetaPropertyToOne(M3Properties.genericType).getValueForMetaPropertyToOne(M3Properties.rawType).getValueForMetaPropertyToOne(M3Properties.name))));
+            safeAppendable.append(")");
         }
         if (hasTypeParams || hasMultParams)
         {

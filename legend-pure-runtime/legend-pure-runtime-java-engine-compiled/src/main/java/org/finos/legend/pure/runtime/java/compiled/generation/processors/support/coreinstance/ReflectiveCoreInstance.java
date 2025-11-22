@@ -16,21 +16,14 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.suppor
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.map.MapIterable;
-import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.coreinstance.helper.AnyHelper;
 import org.finos.legend.pure.m3.coreinstance.helper.AnyStubHelper;
-import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -40,17 +33,13 @@ import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
-import org.finos.legend.pure.runtime.java.compiled.execution.ConsoleCompiled;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 
 public abstract class ReflectiveCoreInstance extends AbstractCompiledCoreInstance
 {
-    private static final int DEFAULT_MAX_PRINT_DEPTH = 1;
-
     private final String __id;
     private SourceInformation sourceInformation;
 
@@ -69,11 +58,6 @@ public abstract class ReflectiveCoreInstance extends AbstractCompiledCoreInstanc
     public String toString()
     {
         return this.toString(null);
-    }
-
-    public String toString(ExecutionSupport executionSupport)
-    {
-        return ModelRepository.possiblyReplaceAnonymousId(this.__id);
     }
 
     @Override
@@ -294,12 +278,6 @@ public abstract class ReflectiveCoreInstance extends AbstractCompiledCoreInstanc
     }
 
     @Override
-    public CoreInstance getValueForMetaPropertyToOne(CoreInstance property)
-    {
-        return getValueForMetaPropertyToOne(property.getName());
-    }
-
-    @Override
     public ListIterable<CoreInstance> getValueForMetaPropertyToMany(String keyName)
     {
         Object result = getRawValueForMetaProperty(keyName);
@@ -315,12 +293,6 @@ public abstract class ReflectiveCoreInstance extends AbstractCompiledCoreInstanc
         }
 
         return ValCoreInstance.toCoreInstances((RichIterable<?>) result);
-    }
-
-    @Override
-    public ListIterable<CoreInstance> getValueForMetaPropertyToMany(CoreInstance key)
-    {
-        return getValueForMetaPropertyToMany(key.getName());
     }
 
     @Override
@@ -416,50 +388,6 @@ public abstract class ReflectiveCoreInstance extends AbstractCompiledCoreInstanc
     public void validate(MutableSet<CoreInstance> doneList) throws PureCompilationException
     {
         throw new RuntimeException("TO CODE");
-    }
-
-    @Override
-    public void printFull(Appendable appendable, String tab)
-    {
-        print(appendable, tab, true, true, DEFAULT_MAX_PRINT_DEPTH);
-    }
-
-    @Override
-    public void print(Appendable appendable, String tab)
-    {
-        print(appendable, tab, DEFAULT_MAX_PRINT_DEPTH);
-    }
-
-    @Override
-    public void print(Appendable appendable, String tab, int max)
-    {
-        print(appendable, tab, false, true, max);
-    }
-
-    @Override
-    public void printWithoutDebug(Appendable appendable, String tab)
-    {
-        printWithoutDebug(appendable, tab, DEFAULT_MAX_PRINT_DEPTH);
-    }
-
-    @Override
-    public void printWithoutDebug(Appendable appendable, String tab, int max)
-    {
-        print(appendable, tab, false, false, max);
-    }
-
-    private void print(Appendable appendable, String tab, boolean full, boolean addDebug, int max)
-    {
-        // TODO consider adding support for full and addDebug
-        try
-        {
-            appendable.append(tab);
-            appendable.append(ConsoleCompiled.toString(this, max));
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
@@ -720,119 +648,6 @@ public abstract class ReflectiveCoreInstance extends AbstractCompiledCoreInstanc
             {
                 throw new IllegalArgumentException("Type not supported to retrieve value from ReflectiveCoreInstance - " + valueType);
             }
-        }
-    }
-
-    public static KeyIndexBuilder keyIndexBuilder()
-    {
-        return new KeyIndexBuilder();
-    }
-
-    public static KeyIndexBuilder keyIndexBuilder(int keyCount)
-    {
-        return new KeyIndexBuilder(keyCount);
-    }
-
-    public static class KeyIndexBuilder
-    {
-        private final MutableMap<String, ImmutableList<String>> realKeys;
-
-        private KeyIndexBuilder(int keyCount)
-        {
-            this.realKeys = Maps.mutable.ofInitialCapacity(keyCount);
-        }
-
-        private KeyIndexBuilder()
-        {
-            this.realKeys = Maps.mutable.empty();
-        }
-
-        public KeyIndexBuilder withKey(String sourceType, String keyName)
-        {
-            addKey(sourceType, M3Properties.properties, keyName);
-            return this;
-        }
-
-        public KeyIndexBuilder withKeyFromAssociation(String sourceType, String keyName)
-        {
-            addKey(sourceType, M3Properties.propertiesFromAssociations, keyName);
-            return this;
-        }
-
-        public KeyIndexBuilder withKeys(String sourceType, String keyName, String... moreKeyNames)
-        {
-            addKeys(sourceType, M3Properties.properties, keyName, moreKeyNames);
-            return this;
-        }
-
-        public KeyIndexBuilder withKeysFromAssociation(String sourceType, String keyName, String... moreKeyNames)
-        {
-            addKeys(sourceType, M3Properties.propertiesFromAssociations, keyName, moreKeyNames);
-            return this;
-        }
-
-        public KeyIndex build()
-        {
-            return new KeyIndex(this.realKeys.isEmpty() ? Maps.immutable.empty() : this.realKeys);
-        }
-
-        private void addKey(String sourceType, String propertiesProperty, String keyName)
-        {
-            MutableList<String> realKey = buildRealKey(sourceType, propertiesProperty, keyName);
-            this.realKeys.put(keyName, realKey.toImmutable());
-        }
-
-        private void addKeys(String sourceType, String propertiesProperty, String keyName, String... moreKeyNames)
-        {
-            MutableList<String> realKey = buildRealKey(sourceType, propertiesProperty, keyName);
-            this.realKeys.put(keyName, realKey.toImmutable());
-            int keyIndex = realKey.size() - 1;
-            for (String otherKeyName : moreKeyNames)
-            {
-                realKey.set(keyIndex, otherKeyName);
-                this.realKeys.put(otherKeyName, realKey.toImmutable());
-            }
-        }
-
-        private MutableList<String> buildRealKey(String sourceType, String propertyProperty, String keyName)
-        {
-            MutableList<String> list = Lists.mutable.empty();
-            PackageableElement.forEachSystemPathElement(sourceType, n ->
-            {
-                if (list.notEmpty())
-                {
-                    list.add(M3Properties.children);
-                }
-                list.add(n);
-            });
-            list.add(propertyProperty);
-            list.add(keyName);
-            return list;
-        }
-    }
-
-    public static class KeyIndex
-    {
-        private final MapIterable<String, ImmutableList<String>> realKeysByKey;
-
-        private KeyIndex(MapIterable<String, ImmutableList<String>> realKeysByKey)
-        {
-            this.realKeysByKey = realKeysByKey;
-        }
-
-        public RichIterable<String> getKeys()
-        {
-            return this.realKeysByKey.keysView();
-        }
-
-        public ListIterable<String> getRealKeyByName(String name)
-        {
-            ImmutableList<String> realKey = this.realKeysByKey.get(name);
-            if (realKey == null)
-            {
-                throw new RuntimeException("Unsupported key: " + name);
-            }
-            return realKey;
         }
     }
 }

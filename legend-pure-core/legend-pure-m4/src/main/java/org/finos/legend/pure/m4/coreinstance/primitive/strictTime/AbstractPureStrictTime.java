@@ -14,13 +14,44 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.strictTime;
 
-import org.eclipse.collections.impl.block.factory.Comparators;
-
-import java.io.IOException;
 import java.io.Serializable;
+import java.util.Objects;
 
 abstract class AbstractPureStrictTime implements PureStrictTime, Serializable
 {
+    protected final int hour;
+
+    protected AbstractPureStrictTime(int hour)
+    {
+        this.hour = hour;
+    }
+
+    @Override
+    public int getHour()
+    {
+        return this.hour;
+    }
+
+    @Override
+    public PureStrictTime addHours(int hours)
+    {
+        if (hours == 0)
+        {
+            return this;
+        }
+
+        int newHour = this.hour + (hours % 24);
+        if (newHour < 0)
+        {
+            newHour += 24;
+        }
+        else if (newHour > 23)
+        {
+            newHour -= 24;
+        }
+        return with(newHour);
+    }
+
     @Override
     public boolean equals(Object other)
     {
@@ -34,12 +65,11 @@ abstract class AbstractPureStrictTime implements PureStrictTime, Serializable
             return false;
         }
 
-        PureStrictTime that = (PureStrictTime)other;
-        return
-                (this.getHour() == that.getHour()) &&
+        PureStrictTime that = (PureStrictTime) other;
+        return (this.getHour() == that.getHour()) &&
                 (this.getMinute() == that.getMinute()) &&
                 (this.getSecond() == that.getSecond()) &&
-                Comparators.nullSafeEquals(this.getSubsecond(), that.getSubsecond());
+                Objects.equals(this.getSubsecond(), that.getSubsecond());
     }
 
     @Override
@@ -113,47 +143,10 @@ abstract class AbstractPureStrictTime implements PureStrictTime, Serializable
     }
 
     @Override
-    public String format(String formatString)
-    {
-        StringBuilder builder = new StringBuilder(32);
-        format(builder, formatString);
-        return builder.toString();
-    }
-
-    @Override
-    public void format(Appendable appendable, String formatString)
-    {
-        try
-        {
-            StrictTimeFormat.format(appendable, formatString, this);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
     public String toString()
     {
-        StringBuilder builder = new StringBuilder(32);
-        writeString(builder);
-        return builder.toString();
+        return appendString(new StringBuilder(32)).toString();
     }
 
-    @Override
-    public void writeString(Appendable appendable)
-    {
-        try
-        {
-            StrictTimeFormat.write(appendable, this);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public abstract AbstractPureStrictTime clone();
+    protected abstract AbstractPureStrictTime with(int hour);
 }

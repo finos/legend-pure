@@ -15,11 +15,9 @@
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Stacks;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
@@ -30,7 +28,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuild
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ReflectiveCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.MetadataJavaPaths;
 
-import java.util.Map;
 import java.util.Objects;
 
 public final class MetadataEager implements Metadata
@@ -87,7 +84,7 @@ public final class MetadataEager implements Metadata
     @Override
     public CoreInstance getEnum(String enumerationName, String enumName)
     {
-        return this.getMetadata(enumerationName, enumName);
+        return getMetadata(enumerationName, enumName);
     }
 
     @Deprecated
@@ -127,7 +124,7 @@ public final class MetadataEager implements Metadata
 
         if (coreInstance == null)
         {
-            throw new PureExecutionException("Element " + id + " of type " + classifier + " does not exist", Stacks.mutable.empty());
+            throw new PureExecutionException("Element " + id + " of type " + classifier + " does not exist");
         }
 
         return coreInstance;
@@ -137,16 +134,18 @@ public final class MetadataEager implements Metadata
     public MapIterable<String, CoreInstance> getMetadata(String classifier)
     {
         MapIterable<String, CoreInstance> instances = this.metamodelByClassifier.getMetadata(classifier);
-        if (this.isInTransaction())
+        if (isInTransaction())
         {
-            MutableMap<String, CoreInstance> allClassifierInstances = new UnifiedMap<>((Map<? extends String, ? extends CoreInstance>) instances);
-            allClassifierInstances.putAll((Map<? extends String, ? extends CoreInstance>) this.added.get().getMetadata(classifier));
-            return allClassifierInstances;
+            MapIterable<String, CoreInstance> addedInstances = this.added.get().getMetadata(classifier);
+            if (addedInstances.notEmpty())
+            {
+                MutableMap<String, CoreInstance> allInstances = Maps.mutable.ofInitialCapacity(instances.size());
+                instances.forEachKeyValue(allInstances::put);
+                addedInstances.forEachKeyValue(allInstances::put);
+                return allInstances;
+            }
         }
-        else
-        {
-            return instances;
-        }
+        return instances;
     }
 
     public int getSize()
@@ -167,7 +166,7 @@ public final class MetadataEager implements Metadata
 
     private static class MetamodelByClassifier
     {
-        private final MutableMap<String, MutableMap<String, CoreInstance>> metadata = UnifiedMap.newMap();
+        private final MutableMap<String, MutableMap<String, CoreInstance>> metadata = Maps.mutable.empty();
 
         private void clear()
         {
@@ -181,7 +180,7 @@ public final class MetadataEager implements Metadata
 
         private void commitChanges(MetamodelByClassifier toBeAdded)
         {
-            toBeAdded.metadata.forEachKeyValue((classifer, instancesById) -> this.metadata.getIfAbsentPut(classifer, Maps.mutable::empty).putAll(instancesById));
+            toBeAdded.metadata.forEachKeyValue((classifier, instancesById) -> this.metadata.getIfAbsentPut(classifier, Maps.mutable::empty).putAll(instancesById));
         }
 
         private CoreInstance getMetadata(String classifier, String id)
@@ -192,21 +191,14 @@ public final class MetadataEager implements Metadata
 
         private MapIterable<String, CoreInstance> getMetadata(String classifier)
         {
-            MapIterable<String, CoreInstance> result = this.metadata.get(classifier);
-            return result == null ? Maps.fixedSize.empty() : this.metadata.get(classifier);
+            return this.metadata.getIfAbsentValue(classifier, Maps.fixedSize.empty());
         }
 
         private void addChild(String packageClassifier, String packageId, String objectClassifier, String instanceId)
         {
-            try
-            {
-                Package _package = (Package) Objects.requireNonNull(this.getMetadata(packageClassifier, packageId));
-                _package._childrenAdd((PackageableElement) this.getMetadata(objectClassifier, instanceId));
-            }
-            catch (Exception ex)
-            {
-                throw new RuntimeException(ex);
-            }
+            Package _package = (Package) Objects.requireNonNull(getMetadata(packageClassifier, packageId));
+            PackageableElement child = (PackageableElement) Objects.requireNonNull(getMetadata(objectClassifier, instanceId));
+            _package._childrenAdd(child);
         }
 
         private void remove(String classifier, String identifier, String packClassifier, String packIdentifier)
@@ -215,13 +207,12 @@ public final class MetadataEager implements Metadata
             if (classifierMetaData != null)
             {
                 CoreInstance o = classifierMetaData.remove(identifier);
-                if (o != null && o instanceof PackageableElement)
+                if (o instanceof PackageableElement)
                 {
                     Package _package = (Package) Objects.requireNonNull(this.getMetadata(packClassifier, packIdentifier));
                     _package._childrenRemove((PackageableElement) o);
                 }
             }
         }
-
     }
 }

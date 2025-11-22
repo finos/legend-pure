@@ -76,6 +76,11 @@ public class ConnectionManager
     {
     }
 
+    public static void clearTestConnections()
+    {
+        testDatabaseConnect.removeAllPerThreadConnections();
+    }
+
     public static ConnectionWithDataSourceInfo getConnectionWithDataSourceInfo(CoreInstance connectionInformation, ProcessorSupport processorSupport)
     {
         if (processorSupport.instance_instanceOf(connectionInformation, TestDatabaseConnection))

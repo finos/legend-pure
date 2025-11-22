@@ -51,7 +51,7 @@ public class GetAll extends AbstractNative
 
         String type = TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.genericType, processorSupport), true, processorSupport);
 
-        return "((RichIterable<" + type + ">)Lists.mutable.ofAll(((CompiledExecutionSupport)es).getMetadata(\"" + name + "\").valuesView()))";
+        return "((RichIterable<" + type + ">)Lists.mutable.ofAll(((CompiledExecutionSupport)es).getClassifierInstances(\"" + name + "\")))";
     }
 
     @Override
@@ -63,7 +63,7 @@ public class GetAll extends AbstractNative
                 "            public Object value(Object o, final ExecutionSupport es)\n" +
                 "            {\n" +
                 "                String name = org.finos.legend.pure.runtime.java.compiled.generation.processors.type.MetadataJavaPaths.buildMetadataKeyFromType((org.finos.legend.pure.m4.coreinstance.CoreInstance)o);\n" +
-                "                return ((RichIterable)Lists.mutable.ofAll(((CompiledExecutionSupport)es).getMetadata(name).valuesView()));\n" +
+                "                return Lists.mutable.ofAll(((CompiledExecutionSupport)es).getClassifierInstances(name));\n" +
                 "            }\n" +
                 "        }";
     }

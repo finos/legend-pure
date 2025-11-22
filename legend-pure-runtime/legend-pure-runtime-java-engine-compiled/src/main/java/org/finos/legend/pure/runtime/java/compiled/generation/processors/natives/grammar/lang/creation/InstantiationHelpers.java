@@ -27,7 +27,6 @@ import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
@@ -35,8 +34,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Fu
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.MetadataJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
-
-import java.util.function.BiFunction;
 
 public class InstantiationHelpers
 {
@@ -165,7 +162,7 @@ public class InstantiationHelpers
     {
         if (Instance.instanceOf(multiplicity, M3Paths.PackageableMultiplicity, processorSupport))
         {
-            return "(" + FullJavaPaths.PackageableMultiplicity + ")((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.PackageableMultiplicity + "\",\"" + PackageableElement.getSystemPathForPackageableElement(multiplicity, "::") + "\")";
+            return "(" + FullJavaPaths.PackageableMultiplicity + ")((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.PackageableMultiplicity + "\",\"" + PackageableElement.getSystemPathForPackageableElement(multiplicity) + "\")";
         }
 
         CoreInstance lowerBound = Instance.getValueForMetaPropertyToOneResolved(multiplicity, M3Properties.lowerBound, processorSupport);

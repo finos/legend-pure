@@ -18,13 +18,13 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
-import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.set.SetIterable;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.compiler.validation.validator.GenericTypeValidator;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.KeyExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
@@ -44,26 +44,12 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 public class NewValidator
 {
-    private static ImmutableSet<String> EXCEPTION_FILES;
-
-    static
-    {
-        try
-        {
-            java.lang.Class externalClass = NewValidator.class.getClassLoader().loadClass("org.finos.legend.pure.m3.compiler.validation.functionExpression.NewValidatorExclusions");
-            Field field = externalClass.getField("EXCEPTION_FILES");
-            EXCEPTION_FILES = (ImmutableSet<String>) field.get(null);
-        }
-        catch (Exception e)
-        {
-            EXCEPTION_FILES = Sets.immutable.empty();
-        }
-    }
-
     public static void validateNew(Matcher matcher, ValidatorState state, FunctionExpression expression, ProcessorSupport processorSupport) throws PureCompilationException
     {
         GenericType genericType = expression._parametersValues().getFirst()._genericType()._typeArguments().getFirst();
@@ -117,12 +103,10 @@ public class NewValidator
                         CoreInstance property = propertiesByName.get(propertyName);
                         if (property == null)
                         {
-                            StringBuilder message = new StringBuilder("The property '");
-                            message.append(propertyName);
-                            message.append("' can't be found in the type '");
-                            message.append(classifier.getName());  // TODO we should write the full path
-                            message.append("' or in its hierarchy.");
-                            throw new PureCompilationException(keyInstance.getSourceInformation(), message.toString());
+                            String message = "The property '" + propertyName + "' can't be found in the type '" +
+                                    classifier.getName() +  // TODO we should write the full path
+                                    "' or in its hierarchy.";
+                            throw new PureCompilationException(keyInstance.getSourceInformation(), message);
                         }
                         remainingProperties.remove(propertyName);
 
@@ -133,7 +117,7 @@ public class NewValidator
         }
         // TODO remove exception check when there are no more files with violations
         SourceInformation sourceInfo = expression.getSourceInformation();
-        if ((sourceInfo == null) || !EXCEPTION_FILES.contains(sourceInfo.getSourceId()))
+        if ((sourceInfo == null) || !isNewValidationExceptionSource(sourceInfo.getSourceId()))
         {
             for (String propertyName : remainingProperties)
             {
@@ -202,6 +186,29 @@ public class NewValidator
                 org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(message, propertyMultiplicity, true);
                 throw new PureCompilationException(keyValue.getSourceInformation(), message.toString());
             }
+        }
+    }
+
+    // TODO remove exception check when there are no more files with violations
+    private static final Map<ClassLoader, SetIterable<String>> EXCEPTION_FILES_CACHE = Collections.synchronizedMap(new WeakHashMap<>());
+
+    private static boolean isNewValidationExceptionSource(String sourceId)
+    {
+        SetIterable<String> exceptionFiles = EXCEPTION_FILES_CACHE.computeIfAbsent(Thread.currentThread().getContextClassLoader(), NewValidator::getNewValidatorExclusions);
+        return exceptionFiles.contains(sourceId);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static SetIterable<String> getNewValidatorExclusions(ClassLoader classLoader)
+    {
+        try
+        {
+            java.lang.Class<?> exclusionsClass = classLoader.loadClass("org.finos.legend.pure.m3.compiler.validation.functionExpression.NewValidatorExclusions");
+            return (SetIterable<String>) exclusionsClass.getField("EXCEPTION_FILES").get(null);
+        }
+        catch (Exception e)
+        {
+            return Sets.immutable.empty();
         }
     }
 }

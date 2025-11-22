@@ -14,8 +14,10 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -54,6 +56,11 @@ public class DateWithSubsecond extends AbstractDateWithSubsecond
         calendar.setTime(timestamp);
         String subsecond = String.format("%09d", timestamp.getNanos());
         return new DateWithSubsecond(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND), subsecond);
+    }
+
+    public static DateTime fromInstant(Instant instant, int subsecondPrecision)
+    {
+        return fromLocalDateTime(LocalDateTime.ofInstant(instant, ZoneOffset.UTC), subsecondPrecision);
     }
 
     static DateTime fromLocalDateTime(LocalDateTime time, int subsecondPrecision)

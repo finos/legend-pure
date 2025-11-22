@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.navigation.profile;
 
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
@@ -34,9 +35,17 @@ public class Profile
 
     public static String getTaggedValue(CoreInstance annotatedElement, String profile, String tag, ProcessorSupport processorSupport)
     {
+        return getTaggedValues(annotatedElement, profile, tag, processorSupport).getAny();
+    }
+
+    public static RichIterable<String> getTaggedValues(CoreInstance annotatedElement, String profile, String tag, ProcessorSupport processorSupport)
+    {
         CoreInstance foundTag = Profile.findTag(processorSupport.package_getByUserPath(profile), tag);
-        TaggedValue found = ((AnnotatedElement)annotatedElement)._taggedValues().detect(x -> x._tag() == foundTag);
-        return found == null ? null : found._value();
+        return ((AnnotatedElement)annotatedElement)
+                ._taggedValues()
+                .asLazy()
+                .select(x -> x._tag() == foundTag)
+                .collect(TaggedValue::_value);
     }
 
     public static CoreInstance findStereotype(CoreInstance profile, String value)

@@ -22,18 +22,12 @@ import org.junit.Test;
 
 public abstract class AbstractTestDynamicNewConstraints extends AbstractPureTestWithCoreCompiled
 {
-    private static final String EMPLOYEE_SOURCE_NAME = "employee.pure";
-    private static final String EMPLOYEE_SOURCE_CODE = "Class Employee\n" +
-            "{\n" +
-            "   lastName:String[1];\n" +
-            "}\n";
-
     @After
     public void cleanRuntime()
     {
         runtime.delete("fromString.pure");
-        runtime.delete("/test/repro.pure");
-        runtime.modify(EMPLOYEE_SOURCE_NAME, EMPLOYEE_SOURCE_CODE);
+        runtime.delete("repro.pure");
+        runtime.delete("employee.pure");
         runtime.compile();
     }
 
@@ -64,10 +58,6 @@ public abstract class AbstractTestDynamicNewConstraints extends AbstractPureTest
                 "{\n" +
                 "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
                 "}\n" +
-                "function meta::pure::functions::collection::isNotEmpty(p:Any[*]):Boolean[1]\n" +
-                "{\n" +
-                "    !isEmpty($p)\n" +
-                "}" +
                 "function testNew():Any[*]\n" +
                 "{\n" +
                 "   assert(Position.constraints->at(0).messageFunction->toOne()->evaluate(^List<Any>(values=Position->dynamicNew([\n" +
@@ -126,7 +116,7 @@ public abstract class AbstractTestDynamicNewConstraints extends AbstractPureTest
     @Test
     public void testDeeplyNestedThis()
     {
-        compileTestSource("/test/repro.pure",
+        compileTestSource("repro.pure",
                 "import my::supportDemo::*;\n" +
                         "Class my::supportDemo::Person\n" +
                         "{\n" +
@@ -171,7 +161,7 @@ public abstract class AbstractTestDynamicNewConstraints extends AbstractPureTest
                         "}\n");
         execute("testSucceed():Any[*]");
         PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testFail():Any[*]"));
-        assertPureException(PureExecutionException.class, "Constraint :[superPeopleHaveNoDuplicates] violated in the Class SuperPeople, Message: test", "/test/repro.pure", 45, 4, 45, 4, 45, 128, e);
+        assertPureException(PureExecutionException.class, "Constraint :[superPeopleHaveNoDuplicates] violated in the Class SuperPeople, Message: test", "repro.pure", 41, 4, 41, 4, 41, 128, e);
     }
 
 
@@ -195,10 +185,6 @@ public abstract class AbstractTestDynamicNewConstraints extends AbstractPureTest
                 "   endDate: Date[1];\n" +
                 "}\n" +
                 "\n" +
-                "function meta::pure::functions::collection::isNotEmpty(p:Any[*]):Boolean[1]\n" +
-                "{\n" +
-                "    !isEmpty($p)\n" +
-                "}" +
                 "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
                 "{\n" +
                 "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
@@ -215,13 +201,13 @@ public abstract class AbstractTestDynamicNewConstraints extends AbstractPureTest
         );
 
         PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
-        assertPureException(PureExecutionException.class, "Constraint :[c3] violated in the Class Position", 27, 14, e);
+        assertPureException(PureExecutionException.class, "Constraint :[c3] violated in the Class Position", 24, 14, e);
     }
 
     @Test
     public void testConstraintWithDynamicNew()
     {
-        runtime.modify("employee.pure", "Class Employee" +
+        compileTestSource("employee.pure", "Class Employee" +
                 "[" +
                 "   rule1 : $this.lastName->toOne()->length() < 10" +
                 "]" +
@@ -297,7 +283,7 @@ public abstract class AbstractTestDynamicNewConstraints extends AbstractPureTest
     @Test
     public void testConstraintWithGenericTypeDynamicNew()
     {
-        runtime.modify("employee.pure", "Class Employee" +
+        compileTestSource("employee.pure", "Class Employee" +
                 "[" +
                 "   rule1 : $this.lastName->toOne()->length() < 10" +
                 "]" +

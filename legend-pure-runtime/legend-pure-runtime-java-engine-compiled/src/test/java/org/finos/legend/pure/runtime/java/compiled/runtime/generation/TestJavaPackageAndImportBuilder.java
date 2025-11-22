@@ -129,6 +129,17 @@ public class TestJavaPackageAndImportBuilder extends AbstractPureTestWithCoreCom
     }
 
     @Test
+    public void testBuildLazyImplClassNameFromUserPath()
+    {
+        Assert.assertEquals("Root_test_generation_compiled_SimpleClass_LazyImpl", JavaPackageAndImportBuilder.buildLazyImplClassNameFromUserPath("test::generation::compiled::SimpleClass"));
+        Assert.assertEquals("Root_test_generation_compiled_extra_ExtraClass_LazyImpl", JavaPackageAndImportBuilder.buildLazyImplClassNameFromUserPath("test::generation::compiled::extra::ExtraClass"));
+        Assert.assertEquals("Root_meta_pure_metamodel_type_Class_LazyImpl", JavaPackageAndImportBuilder.buildLazyImplClassNameFromUserPath(M3Paths.Class));
+        Assert.assertEquals("Root_meta_pure_metamodel_type_Enumeration_LazyImpl", JavaPackageAndImportBuilder.buildLazyImplClassNameFromUserPath(M3Paths.Enumeration));
+        Assert.assertEquals("Root_meta_pure_functions_meta_tests_model_RomanLength$Pes_LazyImpl", JavaPackageAndImportBuilder.buildLazyImplClassNameFromUserPath("meta::pure::functions::meta::tests::model::RomanLength~Pes"));
+        Assert.assertEquals("Root_meta_pure_functions_meta_tests_model_RomanLength$Stadium_LazyImpl", JavaPackageAndImportBuilder.buildLazyImplClassNameFromUserPath("meta::pure::functions::meta::tests::model::RomanLength~Stadium"));
+    }
+
+    @Test
     public void testBuildLazyImplClassNameFromType()
     {
         Assert.assertEquals("Root_test_generation_compiled_SimpleClass_LazyImpl", JavaPackageAndImportBuilder.buildLazyImplClassNameFromType(getElement("test::generation::compiled::SimpleClass"), processorSupport));
@@ -146,8 +157,8 @@ public class TestJavaPackageAndImportBuilder extends AbstractPureTestWithCoreCom
         Assert.assertEquals("org.finos.legend.pure.generated.Root_test_generation_compiled_extra_ExtraClass_Impl", JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath("test::generation::compiled::extra::ExtraClass"));
         Assert.assertEquals("org.finos.legend.pure.generated.Root_meta_pure_metamodel_type_Class_Impl", JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.Class));
         Assert.assertEquals("org.finos.legend.pure.generated.Root_meta_pure_metamodel_type_Enumeration_Impl", JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.Enumeration));
-        Assert.assertEquals("org.finos.legend.pure.generated.Root_meta_pure_functions_meta_tests_model_RomanLength$Pes_Impl", JavaPackageAndImportBuilder.buildImplClassReferenceFromType(getUnit("meta::pure::functions::meta::tests::model::RomanLength~Pes"), processorSupport));
-        Assert.assertEquals("org.finos.legend.pure.generated.Root_meta_pure_functions_meta_tests_model_RomanLength$Stadium_Impl", JavaPackageAndImportBuilder.buildImplClassReferenceFromType(getUnit("meta::pure::functions::meta::tests::model::RomanLength~Stadium"), processorSupport));
+        Assert.assertEquals("org.finos.legend.pure.generated.Root_meta_pure_functions_meta_tests_model_RomanLength$Pes_Impl", JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath("meta::pure::functions::meta::tests::model::RomanLength~Pes"));
+        Assert.assertEquals("org.finos.legend.pure.generated.Root_meta_pure_functions_meta_tests_model_RomanLength$Stadium_Impl", JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath("meta::pure::functions::meta::tests::model::RomanLength~Stadium"));
     }
 
     @Test
@@ -159,6 +170,17 @@ public class TestJavaPackageAndImportBuilder extends AbstractPureTestWithCoreCom
         Assert.assertEquals("org.finos.legend.pure.generated.Root_meta_pure_metamodel_type_Enumeration_Impl", JavaPackageAndImportBuilder.buildImplClassReferenceFromType(getElement(M3Paths.Enumeration), processorSupport));
         Assert.assertEquals("org.finos.legend.pure.generated.Root_meta_pure_functions_meta_tests_model_RomanLength$Pes_Impl", JavaPackageAndImportBuilder.buildImplClassReferenceFromType(getUnit("meta::pure::functions::meta::tests::model::RomanLength~Pes"), processorSupport));
         Assert.assertEquals("org.finos.legend.pure.generated.Root_meta_pure_functions_meta_tests_model_RomanLength$Stadium_Impl", JavaPackageAndImportBuilder.buildImplClassReferenceFromType(getUnit("meta::pure::functions::meta::tests::model::RomanLength~Stadium"), processorSupport));
+    }
+
+    @Test
+    public void testBuildLazyImplClassReferenceFromUserPath()
+    {
+        Assert.assertEquals("org.finos.legend.pure.generated.Root_test_generation_compiled_SimpleClass_LazyImpl", JavaPackageAndImportBuilder.buildLazyImplClassReferenceFromUserPath("test::generation::compiled::SimpleClass"));
+        Assert.assertEquals("org.finos.legend.pure.generated.Root_test_generation_compiled_extra_ExtraClass_LazyImpl", JavaPackageAndImportBuilder.buildLazyImplClassReferenceFromUserPath("test::generation::compiled::extra::ExtraClass"));
+        Assert.assertEquals("org.finos.legend.pure.generated.Root_meta_pure_metamodel_type_Class_LazyImpl", JavaPackageAndImportBuilder.buildLazyImplClassReferenceFromUserPath(M3Paths.Class));
+        Assert.assertEquals("org.finos.legend.pure.generated.Root_meta_pure_metamodel_type_Enumeration_LazyImpl", JavaPackageAndImportBuilder.buildLazyImplClassReferenceFromUserPath(M3Paths.Enumeration));
+        Assert.assertEquals("org.finos.legend.pure.generated.Root_meta_pure_functions_meta_tests_model_RomanLength$Pes_LazyImpl", JavaPackageAndImportBuilder.buildLazyImplClassReferenceFromUserPath("meta::pure::functions::meta::tests::model::RomanLength~Pes"));
+        Assert.assertEquals("org.finos.legend.pure.generated.Root_meta_pure_functions_meta_tests_model_RomanLength$Stadium_LazyImpl", JavaPackageAndImportBuilder.buildLazyImplClassReferenceFromUserPath("meta::pure::functions::meta::tests::model::RomanLength~Stadium"));
     }
 
     @Test

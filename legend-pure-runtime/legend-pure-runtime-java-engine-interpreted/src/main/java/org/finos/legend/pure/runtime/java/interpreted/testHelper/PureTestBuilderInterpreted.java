@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.testHelper;
 
+import java.nio.file.Paths;
 import junit.framework.TestSuite;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
@@ -56,12 +57,12 @@ public class PureTestBuilderInterpreted
     {
         FunctionExecutionInterpreted functionExecution = getFunctionExecutionInterpreted();
 
-        PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> testExecutor = getTestExecutor(functionExecution, Maps.mutable.empty(), "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_");
+        PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> testExecutor = getTestExecutor(functionExecution, Maps.mutable.empty(), null);
 
         TestSuite suite = new TestSuite();
         ArrayIterate.forEach(all, (path) ->
                 {
-                    TestCollection col = TestCollection.collectTests(path, functionExecution.getProcessorSupport(), ci -> PureTestBuilder.satisfiesConditionsInterpreted(ci, functionExecution.getProcessorSupport()));
+                    TestCollection col = TestCollection.collectTests(path, functionExecution.getProcessorSupport(), ci -> !isPCTTest(ci, functionExecution.getProcessorSupport()) && PureTestBuilder.satisfiesConditionsInterpreted(ci, functionExecution.getProcessorSupport()));
                     suite.addTest(PureTestBuilder.buildSuite(col, testExecutor, new ExecutionSupport()));
                 }
         );
@@ -105,25 +106,27 @@ public class PureTestBuilderInterpreted
             }
             try
             {
+                Object ret = functionExecution.start(a, params);
+
                 String message = expectedFailures.get(PackageableElement.getUserPathForPackageableElement(a, "::"));
                 if (message != null)
                 {
                     PCTTools.displayExpectedErrorFailMessage(message, a, PCTExecutor);
                 }
-                Object ret = functionExecution.start(a, params);
+
                 return ret;
             }
             catch (Exception e)
             {
                 // Check if the error was expected
                 String message = expectedFailures.get(PackageableElement.getUserPathForPackageableElement(a, "::"));
-                if (message != null && e.getCause().getMessage().contains(message))
+                if (message != null && PCTTools.getMessageFromError(e).contains(message))
                 {
                     return null;
                 }
                 else
                 {
-                    PCTTools.displayErrorMessage(message, a, PCTExecutor, functionExecution.getProcessorSupport(), e.getCause());
+                    PCTTools.displayErrorMessage(message, a, PCTExecutor, functionExecution.getProcessorSupport(), e);
                     if (e.getCause() instanceof PureAssertFailException)
                     {
                         fail(e.getCause().getMessage());
@@ -148,7 +151,18 @@ public class PureTestBuilderInterpreted
         CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true));
         RichIterable<CodeRepository> codeRepositories = builder.build().getRepositories();
         CompositeCodeStorage codeStorage = new CompositeCodeStorage(new ClassLoaderCodeStorage(codeRepositories));
-        FunctionExecutionInterpreted functionExecution = new FunctionExecutionInterpreted();
+
+        FunctionExecutionInterpreted functionExecution;
+
+        if (System.getProperty("functionExecutionInterpretedCoverageDirectory") != null)
+        {
+            functionExecution = new FunctionExecutionInterpretedWithCodeCoverage(Paths.get(System.getProperty("functionExecutionInterpretedCoverageDirectory")));
+        }
+        else
+        {
+            functionExecution = new FunctionExecutionInterpreted();
+        }
+
         PureRuntime runtime = new PureRuntimeBuilder(codeStorage).build();
         Message message = new Message("");
         functionExecution.init(runtime, message);

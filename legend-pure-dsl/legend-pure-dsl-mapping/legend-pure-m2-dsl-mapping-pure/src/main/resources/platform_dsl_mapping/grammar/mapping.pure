@@ -18,7 +18,8 @@ import meta::pure::store::*;
 import meta::pure::tools::*;
 import meta::pure::functions::collection::*;
 import meta::pure::mapping::aggregationAware::*;
-import meta::pure::test::*;
+import meta::pure::metamodel::testable::*;
+import meta::pure::metamodel::relation::*;
 
 // Mapping
 Class meta::pure::mapping::Mapping extends PackageableElement, Testable
@@ -218,4 +219,15 @@ Class meta::pure::mapping::aggregationAware::AggregationFunctionSpecification
 Class meta::pure::mapping::aggregationAware::AggregateSpecificationValueSpecificationContext extends ValueSpecificationContext
 {
     aggregateSetImplementation: InstanceSetImplementation[1];
+}
+
+Class meta::pure::mapping::relation::RelationFunctionInstanceSetImplementation extends InstanceSetImplementation
+{
+  relationFunction: FunctionDefinition<{->Relation<Any>[1]}>[1];
+}
+
+Class meta::pure::mapping::relation::RelationFunctionPropertyMapping extends PropertyMapping
+{
+  column: meta::pure::metamodel::relation::Column<Nil,Any|*>[1];
+  transformer: ValueTransformer<Any>[0..1];
 }

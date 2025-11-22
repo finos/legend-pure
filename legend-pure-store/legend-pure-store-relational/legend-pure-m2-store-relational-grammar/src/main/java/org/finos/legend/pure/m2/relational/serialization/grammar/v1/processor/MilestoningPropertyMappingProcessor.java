@@ -14,10 +14,7 @@
 
 package org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor;
 
-import org.eclipse.collections.api.block.predicate.Predicate2;
 import org.eclipse.collections.api.list.ImmutableList;
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m2.relational.M2RelationalPaths;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
@@ -36,7 +33,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.ProcessingMilestoning;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Table;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 public class MilestoningPropertyMappingProcessor
 {
@@ -46,17 +43,15 @@ public class MilestoningPropertyMappingProcessor
 
     static void processMilestoningPropertyMapping(RelationalInstanceSetImplementation immediateRelationalParentSet, RootRelationalInstanceSetImplementation rootRelationalParentSet, ProcessorSupport processorSupport)
     {
-        MutableList<EmbeddedRelationalInstanceSetImplementation> embeddedRelationalSets = immediateRelationalParentSet._propertyMappings().selectInstancesOf(EmbeddedRelationalInstanceSetImplementation.class).toList();
-        for (EmbeddedRelationalInstanceSetImplementation embeddedRelationalSet : embeddedRelationalSets)
-        {
-            processMilestoningPropertyMapping(embeddedRelationalSet, rootRelationalParentSet, processorSupport);
-        }
+        immediateRelationalParentSet._propertyMappings().asLazy()
+                .selectInstancesOf(EmbeddedRelationalInstanceSetImplementation.class)
+                .forEach(m -> processMilestoningPropertyMapping(m, rootRelationalParentSet, processorSupport));
         createMilestoningPropertyMapping(immediateRelationalParentSet, rootRelationalParentSet, processorSupport);
     }
 
     private static void createMilestoningPropertyMapping(RelationalInstanceSetImplementation immediateRelationalParentSet, RootRelationalInstanceSetImplementation rootRelationalParentSet, ProcessorSupport processorSupport)
     {
-        if (shouldCreateMilestoningPropertyMapping(immediateRelationalParentSet, processorSupport))
+        if (shouldCreateMilestoningPropertyMapping(immediateRelationalParentSet))
         {
             EmbeddedRelationalInstanceSetImplementation embeddedRelationalInstance = createEmbeddedRelationalInstance(immediateRelationalParentSet, rootRelationalParentSet, processorSupport);
             rootRelationalParentSet._parent()._classMappingsAdd(embeddedRelationalInstance);
@@ -66,13 +61,14 @@ public class MilestoningPropertyMappingProcessor
 
     private static EmbeddedRelationalInstanceSetImplementation createEmbeddedRelationalInstance(RelationalInstanceSetImplementation immediateRelationalParentSet, RootRelationalInstanceSetImplementation rootRelationalParentSet, ProcessorSupport processorSupport)
     {
-        EmbeddedRelationalInstanceSetImplementation embeddedRelationalInstance = (EmbeddedRelationalInstanceSetImplementation)processorSupport.newEphemeralAnonymousCoreInstance(M2RelationalPaths.EmbeddedRelationalInstanceSetImplementation);
+        EmbeddedRelationalInstanceSetImplementation embeddedRelationalInstance = (EmbeddedRelationalInstanceSetImplementation) processorSupport.newEphemeralAnonymousCoreInstance(M2RelationalPaths.EmbeddedRelationalInstanceSetImplementation);
+        embeddedRelationalInstance.setSourceInformation(immediateRelationalParentSet.getSourceInformation());
         embeddedRelationalInstance._root(false);
         embeddedRelationalInstance._sourceSetImplementationId(immediateRelationalParentSet._id());
         embeddedRelationalInstance._id(embeddedRelationalInstance._sourceSetImplementationId() + "_" + MilestoningFunctions.MILESTONING);
         embeddedRelationalInstance._targetSetImplementationId(embeddedRelationalInstance._id());
-        embeddedRelationalInstance._property((Property)processorSupport.class_getSimpleProperties(immediateRelationalParentSet._class()).detectWith(PROPERTY_BY_NAME, MilestoningFunctions.MILESTONING));
-        embeddedRelationalInstance._class((Class)embeddedRelationalInstance._property()._genericType()._rawType());
+        embeddedRelationalInstance._property((Property<?, ?>) processorSupport.class_getSimplePropertiesByName(immediateRelationalParentSet._class()).get(MilestoningFunctions.MILESTONING));
+        embeddedRelationalInstance._class((Class<?>) embeddedRelationalInstance._property()._genericType()._rawType());
         embeddedRelationalInstance._parent(rootRelationalParentSet._parent());
         embeddedRelationalInstance._owner(immediateRelationalParentSet);
         embeddedRelationalInstance._setMappingOwner(rootRelationalParentSet);
@@ -82,53 +78,53 @@ public class MilestoningPropertyMappingProcessor
 
     private static ImmutableList<RelationalPropertyMapping> createRelationalPropertyMappings(Class<?> immediateRelationalParentClass, RootRelationalInstanceSetImplementation rootRelationalParentSet, EmbeddedRelationalInstanceSetImplementation embeddedRelationalInstance, ProcessorSupport processorSupport)
     {
-        MutableList<String> propertyNames = MilestoningFunctions.getTemporalStereoTypesExcludingParents(immediateRelationalParentClass, processorSupport).getFirst().getMilestoningPropertyNames();
-        MutableList<RelationalPropertyMapping> relationalPropertyMappings = Lists.mutable.empty();
-        for (String propertyName : propertyNames)
-        {
-            relationalPropertyMappings.add(createRelationalPropertyMapping(propertyName, rootRelationalParentSet, embeddedRelationalInstance, processorSupport));
-        }
-        return relationalPropertyMappings.toImmutable();
+        return MilestoningFunctions.getTemporalStereoTypesExcludingParents(immediateRelationalParentClass).getFirst()
+                .getMilestoningPropertyNames()
+                .collect(name -> createRelationalPropertyMapping(name, rootRelationalParentSet, embeddedRelationalInstance, processorSupport))
+                .toImmutable();
     }
 
     private static RelationalPropertyMapping createRelationalPropertyMapping(String propertyName, RootRelationalInstanceSetImplementation rootRelationalParentSet, EmbeddedRelationalInstanceSetImplementation embeddedRelationalInstance, ProcessorSupport processorSupport)
     {
-        RelationalPropertyMapping propertyMapping = (RelationalPropertyMapping)processorSupport.newEphemeralAnonymousCoreInstance(M2RelationalPaths.RelationalPropertyMapping);
+        RelationalPropertyMapping propertyMapping = (RelationalPropertyMapping) processorSupport.newEphemeralAnonymousCoreInstance(M2RelationalPaths.RelationalPropertyMapping);
+        propertyMapping.setSourceInformation(embeddedRelationalInstance.getSourceInformation());
         propertyMapping._localMappingProperty(false);
-        propertyMapping._property((Property)processorSupport.class_getSimpleProperties(embeddedRelationalInstance._class()).detectWith(PROPERTY_BY_NAME, propertyName));
+        propertyMapping._property((Property<?, ?>) processorSupport.class_getSimplePropertiesByName(embeddedRelationalInstance._class()).get(propertyName));
         propertyMapping._owner(embeddedRelationalInstance);
         propertyMapping._sourceSetImplementationId(embeddedRelationalInstance._id());
         propertyMapping._targetSetImplementationId("");
-        propertyMapping._relationalOperationElement(createRelationalOperationElement(propertyName, rootRelationalParentSet, processorSupport));
+        propertyMapping._relationalOperationElement(createRelationalOperationElement(propertyName, rootRelationalParentSet, embeddedRelationalInstance.getSourceInformation(), processorSupport));
         return propertyMapping;
     }
 
-    private static RelationalOperationElement createRelationalOperationElement(String propertyName, RootRelationalInstanceSetImplementation rootRelationalParentSet, ProcessorSupport processorSupport)
+    private static RelationalOperationElement createRelationalOperationElement(String propertyName, RootRelationalInstanceSetImplementation rootRelationalParentSet, SourceInformation sourceInfo, ProcessorSupport processorSupport)
     {
         try
         {
             TableAlias mainTableAlias = rootRelationalParentSet._mainTableAlias();
             Column column = getColumn(propertyName, mainTableAlias);
-            return createTableAliasColumn(mainTableAlias, rootRelationalParentSet, column, processorSupport);
+            return createTableAliasColumn(mainTableAlias, rootRelationalParentSet, column, sourceInfo, processorSupport);
         }
-        catch (Exception e)
+        catch (Exception ignore)
         {
             return createSQLNullLiteral(processorSupport);
         }
     }
 
-    private static TableAliasColumn createTableAliasColumn(TableAlias mainTableAlias, RootRelationalInstanceSetImplementation rootRelationalParentSet, Column column, ProcessorSupport processorSupport)
+    private static TableAliasColumn createTableAliasColumn(TableAlias mainTableAlias, RootRelationalInstanceSetImplementation rootRelationalParentSet, Column column, SourceInformation sourceInfo, ProcessorSupport processorSupport)
     {
-        TableAliasColumn tableAliasColumn = (TableAliasColumn)processorSupport.newEphemeralAnonymousCoreInstance(M2RelationalPaths.TableAliasColumn);
-        tableAliasColumn._alias(createTableAlias(mainTableAlias, processorSupport));
+        TableAliasColumn tableAliasColumn = (TableAliasColumn) processorSupport.newEphemeralAnonymousCoreInstance(M2RelationalPaths.TableAliasColumn);
+        tableAliasColumn.setSourceInformation(sourceInfo);
+        tableAliasColumn._alias(createTableAlias(mainTableAlias, sourceInfo, processorSupport));
         tableAliasColumn._setMappingOwner(rootRelationalParentSet);
         tableAliasColumn._column(column);
         return tableAliasColumn;
     }
 
-    private static TableAlias createTableAlias(TableAlias mainTableAlias, ProcessorSupport processorSupport)
+    private static TableAlias createTableAlias(TableAlias mainTableAlias, SourceInformation sourceInfo, ProcessorSupport processorSupport)
     {
-        TableAlias tableAlias = (TableAlias)processorSupport.newEphemeralAnonymousCoreInstance(M2RelationalPaths.TableAlias);
+        TableAlias tableAlias = (TableAlias) processorSupport.newEphemeralAnonymousCoreInstance(M2RelationalPaths.TableAlias);
+        tableAlias.setSourceInformation(sourceInfo);
         tableAlias._database(mainTableAlias._database());
         tableAlias._relationalElement(mainTableAlias._relationalElement());
         tableAlias._name(mainTableAlias._name());
@@ -137,46 +133,53 @@ public class MilestoningPropertyMappingProcessor
 
     private static Literal createSQLNullLiteral(ProcessorSupport processorSupport)
     {
-        Literal literal = (Literal)processorSupport.newEphemeralAnonymousCoreInstance(M2RelationalPaths.Literal);
-        SQLNull sqlNull = (SQLNull)processorSupport.newEphemeralAnonymousCoreInstance(M2RelationalPaths.SQLNull);
+        Literal literal = (Literal) processorSupport.newEphemeralAnonymousCoreInstance(M2RelationalPaths.Literal);
+        SQLNull sqlNull = (SQLNull) processorSupport.newEphemeralAnonymousCoreInstance(M2RelationalPaths.SQLNull);
         literal._value(sqlNull);
         return literal;
     }
 
-    private static boolean shouldCreateMilestoningPropertyMapping(RelationalInstanceSetImplementation immediateRelationalParentSet, ProcessorSupport processorSupport)
+    private static boolean shouldCreateMilestoningPropertyMapping(RelationalInstanceSetImplementation immediateRelationalParentSet)
     {
-        boolean isBaseMapping = immediateRelationalParentSet._superSetImplementationId() == null;
-        boolean isClassTemporalStereotyped = MilestoningFunctions.getTemporalStereoTypesExcludingParents(immediateRelationalParentSet._class(), processorSupport).notEmpty();
-        return isBaseMapping && isClassTemporalStereotyped;
+        return (immediateRelationalParentSet._superSetImplementationId() == null) &&
+                MilestoningFunctions.getTemporalStereoTypesExcludingParents(immediateRelationalParentSet._class()).notEmpty();
     }
 
     private static Column getColumn(String milestoningPropertyName, TableAlias tableAlias)
     {
-        Table table = (Table)tableAlias._relationalElement();
-        BusinessMilestoning businessMilestoning = table._milestoning().selectInstancesOf(BusinessMilestoning.class).getFirst();
-        ProcessingMilestoning processingMilestoning = table._milestoning().selectInstancesOf(ProcessingMilestoning.class).getFirst();
-
+        Table table = (Table) tableAlias._relationalElement();
         switch (milestoningPropertyName)
         {
             case "from":
-                return businessMilestoning._from();
+            {
+                return getBusinessMilestoning(table)._from();
+            }
             case "thru":
-                return businessMilestoning._thru();
+            {
+                return getBusinessMilestoning(table)._thru();
+            }
             case "in":
-                return processingMilestoning._in();
+            {
+                return getProcessingMilestoning(table)._in();
+            }
             case "out":
-                return processingMilestoning._out();
+            {
+                return getProcessingMilestoning(table)._out();
+            }
             default:
+            {
                 return null;
+            }
         }
     }
 
-    private static final Predicate2<CoreInstance, String> PROPERTY_BY_NAME = new Predicate2<CoreInstance, String>()
+    private static BusinessMilestoning getBusinessMilestoning(Table table)
     {
-        @Override
-        public boolean accept(CoreInstance coreInstance, String propertyName)
-        {
-            return propertyName.equals(((Property)coreInstance)._name());
-        }
-    };
+        return (BusinessMilestoning) table._milestoning().detect(m -> m instanceof BusinessMilestoning);
+    }
+
+    private static ProcessingMilestoning getProcessingMilestoning(Table table)
+    {
+        return (ProcessingMilestoning) table._milestoning().detect(m -> m instanceof ProcessingMilestoning);
+    }
 }

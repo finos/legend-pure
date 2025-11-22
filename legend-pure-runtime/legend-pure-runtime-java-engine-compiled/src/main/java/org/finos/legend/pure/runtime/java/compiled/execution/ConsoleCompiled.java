@@ -23,10 +23,10 @@ import org.finos.legend.pure.m3.execution.AbstractConsole;
 import org.finos.legend.pure.m3.navigation.Printer;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.Objects;
 import java.util.function.Predicate;
 
 public class ConsoleCompiled extends AbstractConsole
@@ -60,79 +60,112 @@ public class ConsoleCompiled extends AbstractConsole
 
     public static String toString(Object content, int max, Predicate<Object> isExcluded)
     {
+        return (content == null) ? "null" : append(new StringBuilder(), content, max, isExcluded).toString();
+    }
+
+    public static <T extends Appendable> T append(T appendable, Object content, int max)
+    {
+        return append(appendable, content, max, o -> false);
+    }
+
+    public static <T extends Appendable> T append(T appendable, Object content, int max, Predicate<Object> isExcluded)
+    {
+        append(SafeAppendable.wrap(appendable), content, max, isExcluded);
+        return appendable;
+    }
+
+    private static SafeAppendable append(SafeAppendable appendable, Object content, int max, Predicate<Object> isExcluded)
+    {
         if (content == null)
         {
-            return "null";
+            return appendable.append("null");
         }
         if (content instanceof RichIterable)
         {
             RichIterable<?> collection = (RichIterable<?>) content;
-            int size = collection.size();
-            switch (size)
+            switch (collection.size())
             {
                 case 0:
                 {
-                    return "[]";
+                    return appendable.append("[]");
                 }
                 case 1:
                 {
-                    Object element = collection.getAny();
-                    return processTopLevelValue(element, max, isExcluded);
+                    return appendTopLevelValue(appendable, collection.getAny(), max, isExcluded);
                 }
                 default:
                 {
-                    StringBuilder builder = new StringBuilder("[");
-                    collection.forEach(o -> builder.append("\n   ").append(processTopLevelValue(o, max, isExcluded)));
-                    builder.append("\n]");
-                    return builder.toString();
+                    appendable.append("[");
+                    collection.forEach(o -> appendTopLevelValue(appendable.append("\n   "), o, max, isExcluded));
+                    return appendable.append("\n]");
                 }
             }
         }
-        return processTopLevelValue(content, max, isExcluded);
+        return appendTopLevelValue(appendable, content, max, isExcluded);
     }
 
-    private static String processTopLevelValue(Object object, int max, Predicate<Object> isExcluded)
+    private static SafeAppendable appendTopLevelValue(SafeAppendable appendable, Object object, int max, Predicate<Object> isExcluded)
     {
         if (object instanceof String)
         {
             String objectStr = object.toString();
-            return ("\n".equals(objectStr) || objectStr.isEmpty()) ? objectStr : "'" + objectStr + "'";
+            return ("\n".equals(objectStr) || objectStr.isEmpty()) ?
+                   appendable.append(objectStr) :
+                   appendable.append('\'').append(objectStr).append('\'');
         }
-        if (object instanceof Boolean || object instanceof Number || object instanceof PureDate)
+        if ((object instanceof Boolean) || (object instanceof Number))
         {
-            return object.toString();
+            return appendable.append(object);
         }
-
-        return processOneValue(object, Sets.mutable.empty(), "", 0, max, isExcluded);
+        if (object instanceof PureDate)
+        {
+            return ((PureDate) object).appendString(appendable);
+        }
+        return appendOneValue(appendable, object, Sets.mutable.empty(), "", 0, max, isExcluded);
     }
 
-    private static String processOneValue(Object content, MutableSet<Object> processed, String space, int current, int max, Predicate<Object> isExcluded)
+    private static SafeAppendable appendOneValue(SafeAppendable appendable, Object content, MutableSet<Object> processed, String space, int current, int max, Predicate<Object> isExcluded)
     {
         if (content == null)
         {
-            return "NULL";
+            return appendable.append("NULL");
         }
         if (content instanceof String || content instanceof Boolean || content instanceof Long)
         {
-            return space + content + " instance " + content.getClass().getSimpleName();
+            return appendable.append(space).append(content).append(" instance ").append(content.getClass().getSimpleName());
         }
         if (content instanceof RichIterable)
         {
-            return ((RichIterable<?>) content).collect(o -> processOneValue(o, processed, space, current + 1, max, isExcluded)).makeString("\n");
+            boolean[] first = {true};
+            ((RichIterable<?>) content).forEach(o ->
+            {
+                if (first[0])
+                {
+                    first[0] = false;
+                }
+                else
+                {
+                    appendable.append("\n");
+                }
+                appendOneValue(appendable, o, processed, space, current + 1, max, isExcluded);
+            });
+            return appendable;
         }
         if (content instanceof BaseCoreInstance)
         {
-            return Printer.print((BaseCoreInstance) content, space, max, new CompiledProcessorSupport(null, null, null));
+            Printer.print(appendable, (BaseCoreInstance) content, space, max, new CompiledProcessorSupport(null, null, null));
+            return appendable;
         }
         if (processed.add(content))
         {
             if (current > max)
             {
-                return space + "[>" + max + "] " + safeGetId(content) + " instance " + getType(content);
+                return appendable.append(space).append("[>").append(max).append("] ").append(safeGetId(content)).append(" instance ").append(getType(content));
             }
-            return ArrayIterate.select(content.getClass().getFields(), ConsoleCompiled::selectField)
+            appendable.append(space).append(safeGetId(content)).append(" instance ").append(getType(content));
+            ArrayIterate.select(content.getClass().getFields(), ConsoleCompiled::selectField)
                     .sortThisBy(Field::getName)
-                    .collect(field ->
+                    .forEach(field ->
                     {
                         field.setAccessible(true);
                         Object result;
@@ -144,34 +177,22 @@ public class ConsoleCompiled extends AbstractConsole
                         {
                             throw new RuntimeException(e);
                         }
-                        if (result == null)
+                        if ((result != null) && !((result instanceof RichIterable) && ((RichIterable<?>) result).isEmpty()))
                         {
-                            return null;
-                        }
-                        if (result instanceof RichIterable)
-                        {
-                            if (((RichIterable<?>) result).isEmpty())
+                            appendable.append(space).append(TAB).append(field.getName().substring(1)).append("(Property):\n");
+                            if (isExcluded.test(result))
                             {
-                                return null;
+                                appendable.append(space).append(TAB).append(TAB).append("[X] ").append(safeGetId(result)).append(" instance ").append(getType(result));
+                            }
+                            else
+                            {
+                                appendOneValue(appendable, result, processed, space + TAB + TAB, current + 1, max, isExcluded);
                             }
                         }
-
-                        String toPrint;
-                        if (isExcluded.test(result))
-                        {
-                            toPrint = space + TAB + TAB + "[X] " + safeGetId(result) + " instance " + getType(result);
-                        }
-                        else
-                        {
-                            toPrint = processOneValue(result, processed, space + TAB + TAB, current + 1, max, isExcluded);
-                        }
-
-                        return space + TAB + field.getName().substring(1) + "(Property):\n" + toPrint;
-                    })
-                    .select(Objects::nonNull)
-                    .makeString(space + safeGetId(content) + " instance " + getType(content) + "\n", "\n", "");
+                    });
+            return appendable;
         }
-        return space + "[_] " + safeGetId(content) + " instance " + getType(content);
+        return appendable.append(space).append("[_] ").append(safeGetId(content)).append(" instance ").append(getType(content));
     }
 
     private static boolean selectField(Field field)

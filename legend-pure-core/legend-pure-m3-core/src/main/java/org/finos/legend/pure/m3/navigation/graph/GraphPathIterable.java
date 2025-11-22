@@ -57,6 +57,26 @@ public class GraphPathIterable extends AbstractLazySpliterable<ResolvedGraphPath
     }
 
     @Override
+    public ResolvedGraphPath getAny()
+    {
+        if (this.startPaths.isEmpty())
+        {
+            return null;
+        }
+        if (this.pathFilter == null)
+        {
+            return this.startPaths.getAny();
+        }
+        return super.getAny();
+    }
+
+    @Override
+    public ResolvedGraphPath getFirst()
+    {
+        return this.startPaths.isEmpty() ? null : super.getFirst();
+    }
+
+    @Override
     public boolean contains(Object object)
     {
         if (!(object instanceof ResolvedGraphPath))
@@ -153,18 +173,7 @@ public class GraphPathIterable extends AbstractLazySpliterable<ResolvedGraphPath
         @Override
         public Spliterator<ResolvedGraphPath> trySplit()
         {
-            if (this.deque.size() < 2)
-            {
-                return null;
-            }
-
-            int splitSize = this.deque.size() / 2;
-            Deque<ResolvedGraphPath> newDeque = new ArrayDeque<>(splitSize);
-            for (int i = 0; i < splitSize; i++)
-            {
-                newDeque.addFirst(this.deque.pollLast());
-            }
-            return new GraphPathSpliterator(newDeque);
+            return (this.deque.size() < 2) ? null : new GraphPathSpliterator(splitDeque(this.deque));
         }
 
         @Override

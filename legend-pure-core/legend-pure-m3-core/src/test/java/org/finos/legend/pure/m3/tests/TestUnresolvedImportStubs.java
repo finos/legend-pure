@@ -16,6 +16,8 @@ package org.finos.legend.pure.m3.tests;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
@@ -26,7 +28,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestUnresolvedImportStubs extends AbstractPureTestWithCoreCompiledPlatform
+public class TestUnresolvedImportStubs extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -40,6 +42,7 @@ public class TestUnresolvedImportStubs extends AbstractPureTestWithCoreCompiledP
         CoreInstance importStubClass = runtime.getCoreInstance(M3Paths.ImportStub);
         CoreInstance propertyStubClass = runtime.getCoreInstance(M3Paths.PropertyStub);
         CoreInstance enumStubClass = runtime.getCoreInstance(M3Paths.EnumStub);
+        CoreInstance grammarInfoStubClass = runtime.getCoreInstance(M3Paths.GrammarInfoStub);
         MutableList<CoreInstance> unresolvedStubs = GraphNodeIterable.fromModelRepository(repository).select(node ->
         {
             CoreInstance classifier = node.getClassifier();
@@ -54,6 +57,10 @@ public class TestUnresolvedImportStubs extends AbstractPureTestWithCoreCompiledP
             if (classifier == enumStubClass)
             {
                 return node.getValueForMetaPropertyToOne(M3Properties.resolvedEnum) == null;
+            }
+            if (classifier == grammarInfoStubClass)
+            {
+                return node.getValueForMetaPropertyToOne(M3Properties.value) == null;
             }
             return false;
         }, Lists.mutable.empty());
@@ -74,18 +81,39 @@ public class TestUnresolvedImportStubs extends AbstractPureTestWithCoreCompiledP
                     message.append("PropertyStub: owner=").append(instance.getValueForMetaPropertyToOne(M3Properties.owner).getValueForMetaPropertyToOne(M3Properties.idOrPath).getName());
                     message.append(", propertyName=").append(instance.getValueForMetaPropertyToOne(M3Properties.propertyName).getName());
                 }
-                else
+                else if (classifier == enumStubClass)
                 {
                     message.append("EnumStub: enumeration=").append(instance.getValueForMetaPropertyToOne(M3Properties.enumeration).getValueForMetaPropertyToOne(M3Properties.idOrPath).getName());
                     message.append(", enumName=").append(instance.getValueForMetaPropertyToOne(M3Properties.enumName).getName());
                 }
+                else if (classifier == grammarInfoStubClass)
+                {
+                    message.append("GrammarInfoStub: original=").append(instance.getValueForMetaPropertyToOne(M3Properties.original));
+                }
+                else
+                {
+                    PackageableElement.writeUserPathForPackageableElement(message.append("Unknown stub type: "), classifier);
+                }
                 SourceInformation sourceInfo = instance.getSourceInformation();
                 if (sourceInfo != null)
                 {
-                    sourceInfo.appendMessage(message);
+                    sourceInfo.appendMessage(message.append(' '));
                 }
             });
             Assert.fail(message.toString());
         }
+    }
+
+    public static Pair<String, String> getExtra()
+    {
+        return Tuples.pair(
+                "extra.pure",
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "Primitive test::TestInt extends Integer\n" +
+                        "\n" +
+                        "function test::testFn(x:Any[1]):Any[1]\n" +
+                        "{\n" +
+                        "  $x->cast(@Relation<(c1:test::TestInt)>)\n" +
+                        "}\n");
     }
 }

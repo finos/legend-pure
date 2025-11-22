@@ -18,6 +18,7 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.MutableSet;
+import org.finos.legend.pure.m3.coreinstance.KeyIndex;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ElementOverride;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
@@ -38,7 +39,7 @@ import java.util.Objects;
 
 public abstract class AbstractQuantityCoreInstance extends ReflectiveCoreInstance implements QuantityCoreInstance
 {
-    private static final KeyIndex KEY_INDEX = keyIndexBuilder(6)
+    private static final KeyIndex KEY_INDEX = KeyIndex.builder(6)
             .withKeys("Root::meta::pure::metamodel::valuespecification::ValueSpecification", "genericType", "multiplicity", "usageContext")
             .withKey("Root::meta::pure::metamodel::valuespecification::InstanceValue", "values")
             .withKeys("Root::meta::pure::metamodel::type::Any", "classifierGenericType", "elementOverride")

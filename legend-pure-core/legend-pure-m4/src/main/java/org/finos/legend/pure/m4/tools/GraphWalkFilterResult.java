@@ -83,8 +83,26 @@ public enum GraphWalkFilterResult
 
     public static GraphWalkFilterResult get(boolean accept, boolean cont)
     {
-        return accept ?
-               (cont ? ACCEPT_AND_CONTINUE : ACCEPT_AND_STOP) :
-               (cont ? REJECT_AND_CONTINUE : REJECT_AND_STOP);
+        return accept ? accept(cont) : reject(cont);
+    }
+
+    public static GraphWalkFilterResult accept(boolean cont)
+    {
+        return cont ? ACCEPT_AND_CONTINUE : ACCEPT_AND_STOP;
+    }
+
+    public static GraphWalkFilterResult reject(boolean cont)
+    {
+        return cont ? REJECT_AND_CONTINUE : REJECT_AND_STOP;
+    }
+
+    public static GraphWalkFilterResult cont(boolean accept)
+    {
+        return accept ? ACCEPT_AND_CONTINUE : REJECT_AND_CONTINUE;
+    }
+
+    public static GraphWalkFilterResult stop(boolean accept)
+    {
+        return accept ? ACCEPT_AND_STOP : REJECT_AND_STOP;
     }
 }

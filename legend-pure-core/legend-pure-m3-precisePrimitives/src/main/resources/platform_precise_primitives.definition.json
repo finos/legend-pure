@@ -1,0 +1,7 @@
+{
+  "name": "platform_precise_primitives",
+  "pattern": "(meta::pure::precisePrimitives)(::.*)?",
+  "dependencies": [
+    "platform"
+  ]
+}

@@ -19,8 +19,6 @@ import org.finos.legend.pure.m4.ModelRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.chrono.IsoChronology;
 import java.util.Calendar;
 import java.util.Date;
@@ -180,7 +178,7 @@ public class DateFunctions extends TimeFunctions
 
     public static DateTime fromInstant(Instant instant, int subsecondPrecision)
     {
-        return DateWithSubsecond.fromLocalDateTime(LocalDateTime.ofInstant(instant, ZoneOffset.UTC), subsecondPrecision);
+        return DateWithSubsecond.fromInstant(instant, subsecondPrecision);
     }
 
     /**

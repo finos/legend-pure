@@ -112,7 +112,7 @@ function <<PCT.test>> meta::pure::functions::string::tests::format::testFormatPa
 
 function <<PCT.test>> meta::pure::functions::string::tests::format::testFormatRepr<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq('the quick brown fox jumps over the lazy \'dog \\ \\\'dog\\\'\'', $f->eval(|format('the quick brown %s jumps over the lazy %r', ['fox', 'dog \\ \'dog\''])));
+    assertEq('the quick brown fox jumps over the lazy \'dog \\\\ \\\'dog\\\'\'', $f->eval(|format('the quick brown %s jumps over the lazy %r', ['fox', 'dog \\ \'dog\''])));
     assertEq('the quick brown fox jumps over the lazy %2014-01-01T00:00:00.000+0000', $f->eval(|format('the quick brown %s jumps over the lazy %r', ['fox', %2014-01-01T00:00:00.000])));
 }
 

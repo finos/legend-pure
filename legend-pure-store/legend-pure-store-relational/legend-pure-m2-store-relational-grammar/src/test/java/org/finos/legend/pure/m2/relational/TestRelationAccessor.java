@@ -14,10 +14,16 @@
 
 package org.finos.legend.pure.m2.relational;
 
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.store.RelationStoreAccessorInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.DatabaseInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Table;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreCompiled
@@ -124,6 +130,83 @@ public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreComp
                         "   Table FirmTable(legalName VARCHAR(200), firmId INTEGER)\n" +
                         ")\n";
         createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+    }
+
+    @Test
+    public void testRelationAccessorDataTypes()
+    {
+        String sourceCode =
+                "###Pure\n" +
+                        "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.PersonTable}#->filter(f|$f.firstName == 'ee');" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "( \n" +
+                        "   Table PersonTable(" +
+                        "       firstName VARCHAR(200), " +
+                        "       firmId INTEGER," +
+                        "       salary DECIMAL(10, 2), " +
+                        "       height DOUBLE," +
+                        "       modifiedTime TIMESTAMP, " +
+                        "       birthDate DATE" +
+                        "   )\n" +
+                        ")\n";
+        createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+    }
+
+
+    @Test
+    public void testMultyChainedFunctions()
+    {
+        String sourceCode =
+                "###Pure\n" +
+                        "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
+                        "native function meta::pure::functions::relation::select<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], cols:meta::pure::metamodel::relation::ColSpecArray<Z⊆T>[1]):meta::pure::metamodel::relation::Relation<Z>[1];" +
+                        "native function meta::pure::functions::relation::extend<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], f:meta::pure::metamodel::relation::FuncColSpec<{T[1]->Any[0..1]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1];\n" +
+                        "native function meta::pure::functions::string::joinStrings(strings:String[*]):String[1];" +
+                        "function f():Any[1]" +
+                        "{" +
+                        "   {|#>{my::mainDb.PersonTable}#->select(~[FIRSTNAME, LASTNAME])->extend(~fullname:x|[$x.FIRSTNAME->meta::pure::functions::multiplicity::toOne(), $x.LASTNAME->meta::pure::functions::multiplicity::toOne()]->joinStrings())->filter(row2|$row2.FIRSTNAME->meta::pure::functions::collection::isNotEmpty()->meta::pure::functions::boolean::not())}" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "( \n" +
+                        "   Table PersonTable(" +
+                        "       FIRSTNAME VARCHAR(200), " +
+                        "       LASTNAME VARCHAR(200)" +
+                        "   )\n" +
+                        ")\n";
+        createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+    }
+
+    @Test
+    public void testRelationAccessorProperties()
+    {
+        String sourceCode =
+                "###Pure\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.PersonTable}#" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "( \n" +
+                        "   Table PersonTable(firstName VARCHAR(200))\n" +
+                        ")\n";
+        createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+
+        ConcreteFunctionDefinition<?> function = (ConcreteFunctionDefinition<?>) this.runtime.getFunction("f__Relation_1_");
+        InstanceValue iv = (InstanceValue) function._expressionSequence().getOnly();
+        RelationStoreAccessorInstance accessor = (RelationStoreAccessorInstance) iv._values().getOnly();
+
+        DatabaseInstance database = (DatabaseInstance) this.runtime.getCoreInstance("my::mainDb");
+        Table table = database._schemas().getOnly()._tables().getOnly();
+
+        assertEquals(database, accessor._sourceElementContainer());
+        assertEquals(table, accessor._sourceElement());
     }
 
     private static void createAndCompileSourceCode(PureRuntime runtime, String sourceId, String sourceCode)

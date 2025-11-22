@@ -57,6 +57,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.NamedRelation;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.NamedRelationAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.ProcessingMilestoning;
+import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.ProcessingSnapshotMilestoning;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Relation;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Table;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -295,6 +296,20 @@ public class DatabaseProcessor extends Processor<Database>
                         String processingOut = processingMilestoning._out() == null ? "" : processingMilestoning._out().getName();
                         Column processingOutColumn = getColumn(table, columnsByName, processingOut);
                         processingMilestoning._out(processingOutColumn);
+                    }
+                }
+                else if (milestoningInfo instanceof ProcessingSnapshotMilestoning)
+                {
+                    ProcessingSnapshotMilestoning processingSnapshotMilestoning = (ProcessingSnapshotMilestoning) milestoningInfo;
+                    if (processorSupport.instance_instanceOf(processingSnapshotMilestoning._snapshotDate(), M3Paths.String))
+                    {
+                        String snapshotDateColumnName = processingSnapshotMilestoning._snapshotDate().getName();
+                        Column snapshotDateColumn = getColumn(table, columnsByName, snapshotDateColumnName);
+                        if (!(snapshotDateColumn._type() instanceof Date))
+                        {
+                            throw new PureCompilationException(snapshotDateColumn.getSourceInformation(), "Column set as PROCESSING_SNAPSHOT_DATE can only be of type : [Date]");
+                        }
+                        processingSnapshotMilestoning._snapshotDate(snapshotDateColumn);
                     }
                 }
                 else

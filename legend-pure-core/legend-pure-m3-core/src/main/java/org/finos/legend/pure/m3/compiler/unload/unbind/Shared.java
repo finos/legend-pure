@@ -15,14 +15,19 @@
 package org.finos.legend.pure.m3.compiler.unload.unbind;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.compiler.ReferenceUsage;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.EnumStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.PropertyStub;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.InferredGenericType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -33,22 +38,18 @@ public class Shared
     {
         state.freeValidated(genericType);
         genericType._referenceUsagesRemove();
-        CoreInstance rawType = genericType._rawTypeCoreInstance();
-        if (rawType != null)
+        cleanUpRawType(genericType, state, processorSupport);
+        for (CoreInstance multArgument : genericType.getValueForMetaPropertyToMany(M3Properties.multiplicityArguments))
         {
-            cleanUpReferenceUsage(rawType, genericType, processorSupport);
-            if (rawType instanceof FunctionType)
-            {
-                cleanUpFunctionType((FunctionType) rawType, state, processorSupport);
-            }
-            else
-            {
-                cleanImportStub(rawType, processorSupport);
-            }
+            cleanImportStub(multArgument, processorSupport);
         }
         for (GenericType typeArgument : genericType._typeArguments())
         {
             cleanUpGenericType(typeArgument, state, processorSupport);
+        }
+        for (ValueSpecification typeVariableValue : genericType._typeVariableValues())
+        {
+            cleanUpGenericType(typeVariableValue._genericType(), state, processorSupport);
         }
     }
 
@@ -103,6 +104,27 @@ public class Shared
         }
     }
 
+    private static void cleanUpRawType(GenericType genericType, UnbindState state, ProcessorSupport processorSupport)
+    {
+        CoreInstance rawType = genericType._rawTypeCoreInstance();
+        if (rawType != null)
+        {
+            cleanUpReferenceUsage(rawType, genericType, processorSupport);
+            if (rawType instanceof FunctionType)
+            {
+                cleanUpFunctionType((FunctionType) rawType, state, processorSupport);
+            }
+            else if (rawType instanceof RelationType)
+            {
+                cleanUpRelationType((RelationType<?>) rawType, state, processorSupport);
+            }
+            else
+            {
+                cleanImportStub(rawType, processorSupport);
+            }
+        }
+    }
+
     private static void cleanUpFunctionType(FunctionType functionType, UnbindState state, ProcessorSupport processorSupport)
     {
         GenericType returnType = functionType._returnType();
@@ -123,6 +145,30 @@ public class Shared
                     variableExpression._genericTypeRemove();
                     variableExpression._multiplicityRemove();
                 }
+            }
+        }
+    }
+
+    private static void cleanUpRelationType(RelationType<?> relationType, UnbindState state, ProcessorSupport processorSupport)
+    {
+        for (Column<?, ?> column : relationType._columns())
+        {
+            // The first type argument of the column's classifierGenericType is the relation type itself.
+            // We need special handling to avoid infinite recursion.
+            GenericType classifierGenericType = column._classifierGenericType();
+            cleanUpRawType(classifierGenericType, state, processorSupport);
+            for (CoreInstance multArgument : classifierGenericType.getValueForMetaPropertyToMany(M3Properties.multiplicityArguments))
+            {
+                cleanImportStub(multArgument, processorSupport);
+            }
+            // NB: we skip the first type argument
+            for (GenericType typeArgument : LazyIterate.drop(classifierGenericType._typeArguments(), 1))
+            {
+                cleanUpGenericType(typeArgument, state, processorSupport);
+            }
+            for (ValueSpecification typeVariableValue : classifierGenericType._typeVariableValues())
+            {
+                cleanUpGenericType(typeVariableValue._genericType(), state, processorSupport);
             }
         }
     }

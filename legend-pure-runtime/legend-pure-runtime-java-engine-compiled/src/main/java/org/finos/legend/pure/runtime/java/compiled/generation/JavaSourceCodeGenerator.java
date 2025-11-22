@@ -36,11 +36,13 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.VersionControlledCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
+import org.finos.legend.pure.m3.tools.JavaTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.exception.PureException;
@@ -64,6 +66,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Comparator;
 
 public final class JavaSourceCodeGenerator
 {
@@ -99,31 +102,32 @@ public final class JavaSourceCodeGenerator
                     "import org.eclipse.collections.impl.utility.Iterate;\n" +
                     "import org.eclipse.collections.impl.utility.LazyIterate;\n" +
                     "import org.eclipse.collections.impl.utility.StringIterate;\n" +
-                    "import org.finos.legend.pure.m3.navigation.generictype.GenericType;\n" +
-                    "import org.finos.legend.pure.m3.navigation.ProcessorSupport;\n" +
-                    "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n" +
 
-                    "import org.finos.legend.pure.m3.exception.PureExecutionException;\n" +
                     "import org.finos.legend.pure.m4.coreinstance.CoreInstance;\n" +
                     "import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;\n" +
                     "import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;\n" +
-                    "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.*;\n" +
-                    "import org.finos.legend.pure.runtime.java.compiled.metadata.*;\n" +
-                    "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.*;\n" +
 
+                    "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;\n" +
+                    "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;\n" +
+                    "import org.finos.legend.pure.m3.exception.PureExecutionException;\n" +
+                    "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n" +
+                    "import org.finos.legend.pure.m3.navigation.ProcessorSupport;\n" +
+                    "import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;\n" +
+                    "import org.finos.legend.pure.m3.navigation.generictype.GenericType;\n" +
                     "import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.ChangeType;\n" +
                     "import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.ChangedPath;\n" +
                     "import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.Revision;\n" +
-                    "import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;\n" +
                     "import org.finos.legend.pure.m3.tools.ListHelper;\n" +
 
-                    "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.*;\n" +
-                    "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
-                    "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n" +
                     "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n" +
                     "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n" +
-                    "import org.finos.legend.pure.runtime.java.compiled.serialization.model.*;\n" +
+                    "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.*;\n" +
+                    "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.*;\n" +
+                    "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n" +
+                    "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
+                    "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.*;\n" +
                     "import org.finos.legend.pure.runtime.java.compiled.metadata.*;\n" +
+                    "import org.finos.legend.pure.runtime.java.compiled.serialization.model.*;\n" +
 
                     "import java.lang.reflect.Method;\n" +
                     "import java.math.BigInteger;\n" +
@@ -136,8 +140,6 @@ public final class JavaSourceCodeGenerator
                     "import java.util.ArrayDeque;\n" +
                     "import java.util.Deque;\n" +
                     "import org.json.simple.JSONObject;\n" +
-                    "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;\n" +
-                    "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;\n" +
                     "\n";
 
     private final ProcessorSupport processorSupport;
@@ -484,19 +486,62 @@ public final class JavaSourceCodeGenerator
 
     private String buildFunctionClass(String name, RichIterable<String> functionDefinitions, MapIterable<String, String> lambdaFunctions, MapIterable<String, String> nativeFunctions)
     {
+        StringBuilder staticBlockContent = new StringBuilder();
+        StringBuilder helperMethodsContent = new StringBuilder();
+        MutableList<Pair<String, String>> allFunctions = Lists.mutable.empty();
+
+        if (lambdaFunctions != null)
+        {
+            lambdaFunctions.forEachKeyValue((key, value) -> allFunctions.add(Tuples.pair(key, value)));
+        }
+        if (nativeFunctions != null)
+        {
+            nativeFunctions.forEachKeyValue((key, value) -> allFunctions.add(Tuples.pair(key, value)));
+        }
+
+        allFunctions.sort(Comparator.comparing(Pair::getOne));
+
+        if (!allFunctions.isEmpty())
+        {
+            staticBlockContent.append("    public static MutableMap<String, SharedPureFunction<?>> __functions = Maps.mutable.empty();\n");
+            staticBlockContent.append("    static\n");
+            staticBlockContent.append("    {\n");
+
+            allFunctions.forEach(pair ->
+            {
+                String key = pair.getOne();
+                String methodName = JavaTools.makeValidJavaIdentifier(key);
+                staticBlockContent.append("        __functions.put(\"").append(key).append("\", ").append(methodName).append("());\n");
+            });
+
+            staticBlockContent.append("    }\n");
+        }
+        else
+        {
+            staticBlockContent.append("    public static MutableMap<String, SharedPureFunction<?>> __functions = Maps.fixedSize.empty();\n");
+        }
+
+        if (!allFunctions.isEmpty())
+        {
+            allFunctions.forEach(pair ->
+            {
+                String key = pair.getOne();
+                String value = pair.getTwo();
+                String methodName = JavaTools.makeValidJavaIdentifier(key);
+                helperMethodsContent.append("\n");
+                helperMethodsContent.append("    private static SharedPureFunction<?> ").append(methodName).append("()\n");
+                helperMethodsContent.append("    {\n");
+                helperMethodsContent.append("        return ").append(value).append(";\n");
+                helperMethodsContent.append("    }\n");
+            });
+        }
+
         return
                 "public class " + name + "\n" +
                         "{\n" +
-                        ((lambdaFunctions != null || nativeFunctions != null) ?
-                                "    public static MutableMap<String, SharedPureFunction<?>> __functions = Maps.mutable.empty();\n" +
-                                        "    static\n" +
-                                        "    {\n" +
-                                        (lambdaFunctions == null ? "" : lambdaFunctions.keyValuesView().collect(keyValuePair -> "        __functions.put(\"" + keyValuePair.getOne() + "\", " + keyValuePair.getTwo() + ");\n").makeString("")) +
-                                        (nativeFunctions == null ? "" : nativeFunctions.keyValuesView().collect(keyValuePair -> "        __functions.put(\"" + keyValuePair.getOne() + "\", " + keyValuePair.getTwo() + ");\n").makeString("")) +
-                                        "    }\n" :
-                                "    public static MutableMap<String, SharedPureFunction<?>> __functions = Maps.fixedSize.empty();\n"
-                        ) +
+                        staticBlockContent.toString() +
                         (functionDefinitions == null || functionDefinitions.isEmpty() ? "" : functionDefinitions.makeString("\n", "\n\n", "\n")) +
+                        helperMethodsContent.toString() +
                         "}";
     }
 
@@ -509,70 +554,38 @@ public final class JavaSourceCodeGenerator
     private String buildPureCompiledLambda(ProcessorContext processorContext)
     {
         return "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.*;\n" +
-                "import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;\n" +
-                "public class PureCompiledLambda extends ReflectiveCoreInstance implements LambdaFunction<Object>, org.finos.legend.pure.runtime.java.compiled.generation.processors.support.LambdaCompiledExtended\n" +
+                "\n" +
+                "public class PureCompiledLambda extends AbstractPureCompiledLambda<Object>\n" +
                 "{\n" +
-                "     LambdaFunction lambdaFunction;\n" +
-                "     public SharedPureFunction pureFunction;\n" +
-                "\n" +
-                "    public PureCompiledLambda()\n" +
-                "    {\n" +
-                "        super(\"Anonymous_Lambda\");\n" +
-                "    }\n" +
-                "\n" +
-                "    public PureCompiledLambda(String id)\n" +
-                "    {\n" +
-                "        super(id);\n" +
-                "    }\n" +
-                "\n" +
                 "    public PureCompiledLambda(LambdaFunction lambdaFunction, SharedPureFunction pureFunction)\n" +
                 "    {\n" +
-                "        this();\n" +
-                "        this.lambdaFunction = (LambdaFunction)lambdaFunction;\n" +
-                "        this.pureFunction = pureFunction;\n" +
-                "    }" +
-                "\n" +
-                "    public SharedPureFunction pureFunction()" +
-                "    {" +
-                "       return this.pureFunction;" +
+                "        super(lambdaFunction, pureFunction);\n" +
                 "    }\n" +
-                "    public String __id(){return this.lambdaFunction == null ? \"Anonymous_Lambda\" : this.lambdaFunction.getName();}\n" +
+                "\n" +
+                "    public PureCompiledLambda(ExecutionSupport executionSupport, String lambdaId, SharedPureFunction pureFunction)\n" +
+                "    {\n" +
+                "        super(executionSupport, lambdaId, pureFunction);\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
                 "    public PureCompiledLambda copy()\n" +
                 "    {\n" +
-                "        return new PureCompiledLambda(\n" +
-                "                   (LambdaFunction)((AbstractCoreInstance)this.lambdaFunction).copy(),\n" +
-                "                   this.pureFunction\n" +
-                "                   );\n" +
+                "        LambdaFunction<Object> lambda = lambdaFunction();\n" +
+                "        return new PureCompiledLambda((lambda == null) ? null : lambda.copy(), pureFunction());\n" +
                 "    }\n" +
-                "\n" +
-                "    public static SharedPureFunction getPureFunction(final org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, ExecutionSupport es)\n" +
-                "    {\n" +
-                "        if (function == null)\n" +
-                "        {\n" +
-                "            return null;\n" +
-                "        }\n" +
-                "        else\n" +
-                "        {\n" +
-                "            return CoreGen.getSharedPureFunction(function, es);\n" +
-                "        }" +
-                "    }\n" +
-                "\n" +
-                this.processorSupport.class_getSimpleProperties(this.processorSupport.package_getByUserPath(M3Paths.LambdaFunction)).collect(coreInstance ->
+                this.processorSupport.class_getSimpleProperties(this.processorSupport.package_getByUserPath(M3Paths.LambdaFunction)).toSortedListBy(CoreInstance::getName).collect(prop ->
                 {
-                    CoreInstance functionType = this.processorSupport.function_getFunctionType(coreInstance);
+                    CoreInstance functionType = this.processorSupport.function_getFunctionType(prop);
                     CoreInstance unresolvedReturnType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, this.processorSupport);
                     CoreInstance returnType = GenericType.isGenericTypeConcrete(unresolvedReturnType) ? unresolvedReturnType : Type.wrapGenericType(this.processorSupport.package_getByUserPath(M3Paths.Any), this.processorSupport);
-                    String name = Instance.getValueForMetaPropertyToOneResolved(coreInstance, M3Properties.name, this.processorSupport).getName();
-                    CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(coreInstance, M3Properties.multiplicity, this.processorSupport);
-                    return buildDelegationReadProperty(coreInstance, "LambdaFunction", "this.lambdaFunction", true, "", name, returnType, unresolvedReturnType, multiplicity, this.processorSupport, processorContext);
-
+                    CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(prop, M3Properties.multiplicity, this.processorSupport);
+                    return buildDelegationReadProperty(prop, "LambdaFunction", "lambdaFunction()", true, "", Property.getPropertyName(prop), returnType, unresolvedReturnType, multiplicity, this.processorSupport, processorContext);
                 }).makeString("", "\n", "\n") +
-                "\n" +
-                "    public String getFullSystemPath()\n" +
+                "    public static SharedPureFunction getPureFunction(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, ExecutionSupport es)\n" +
                 "    {\n" +
-                "        return \"Root::meta::pure::metamodel::function::LambdaFunction\";\n" +
+                "        return (function == null) ? null : CoreGen.getSharedPureFunction(function, es);\n" +
                 "    }\n" +
-                "}";
+                "}\n";
     }
 
     public static String buildDelegationReadProperty(CoreInstance property, String className, String owner, String classOwnerFullId, String name, CoreInstance returnType,
@@ -597,19 +610,19 @@ public final class JavaSourceCodeGenerator
             // it just won't be called.
             return (isPrimitive ? "" :
                     "\n" +
-                            "    public void _reverse_" + name + "(" + typePrimitive + " val)\n" +
-                            "    {\n" +
-                            "        throw new RuntimeException(\"Not Supported !\");" +
-                            "    }\n" +
-                            "\n" +
-                            "    public void _sever_reverse_" + name + "(" + typePrimitive + " val)\n" +
-                            "    {\n" +
-                            "        throw new RuntimeException(\"Not Supported!\");" +
-                            "    }\n") +
+                    "    public void _reverse_" + name + "(" + typePrimitive + " val)\n" +
+                    "    {\n" +
+                    "        throw new RuntimeException(\"Not Supported !\");\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    public void _sever_reverse_" + name + "(" + typePrimitive + " val)\n" +
+                    "    {\n" +
+                    "        throw new RuntimeException(\"Not Supported!\");\n" +
+                    "    }\n") +
                     "\n" +
                     "    public " + className + " _" + name + "(" + typePrimitive + " val)\n" +
                     "    {\n" +
-                    "        " + owner + "._" + name + "(val);" +
+                    "        " + owner + "._" + name + "(val);\n" +
                     "        return " + returnRef + ";\n" +
                     "    }\n" +
                     "\n" +

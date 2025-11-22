@@ -18,16 +18,23 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingProperties;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.EnumerationMappingParser;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.MappingParser;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.RelationalParser;
 import org.finos.legend.pure.m3.compiler.validation.ValidationType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMapping;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.coreinstance.meta.relational.mapping.RelationalInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.BusinessSnapshotMilestoning;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Milestoning;
+import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.ProcessingSnapshotMilestoning;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
@@ -136,7 +143,33 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
     }
 
     @Test
-    public void testSnapshotDateColumnType()
+    public void testTableWithProcessingSnapshotMilestoning()
+    {
+        runtime.createInMemorySource("test.pure", "###Relational\n" +
+                "Database pack::ProductDatabase (\n" +
+                "   Table ProductTable\n" +
+                "   (\n" +
+                "       milestoning( \n" +
+                "          processing(PROCESSING_SNAPSHOT_DATE = snapshotDate)\n" +
+                "       )" +
+                "       id INT PRIMARY KEY,\n" +
+                "       name VARCHAR(200),\n" +
+                "       snapshotDate Date\n" +
+                "   )\n" +
+                ")\n");
+        runtime.compile();
+
+        Database productDatabase = (Database) runtime.getCoreInstance("pack::ProductDatabase");
+        RichIterable<? extends Milestoning> milestonings = productDatabase._schemas().toList().get(0)._tables().toList().get(0)._milestoning().selectInstancesOf(ProcessingSnapshotMilestoning.class);
+        Assert.assertEquals(1, milestonings.size());
+        Assert.assertTrue(milestonings.toList().get(0) instanceof ProcessingSnapshotMilestoning);
+        ProcessingSnapshotMilestoning processingSnapshotMilestoning = (ProcessingSnapshotMilestoning) milestonings.toList().get(0);
+        Assert.assertEquals("snapshotDate", processingSnapshotMilestoning._snapshotDate()._name());
+        Assert.assertNull(processingSnapshotMilestoning._infinityDate());
+    }
+
+    @Test
+    public void testBusinessSnapshotDateColumnType()
     {
         runtime.createInMemorySource("test.pure", "###Relational\n" +
                 "Database pack::ProductDatabase (\n" +
@@ -152,6 +185,25 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 ")\n");
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
         Assert.assertEquals("Compilation error at (resource:test.pure line:9 column:8), \"Column set as BUS_SNAPSHOT_DATE can only be of type : [Date]\"", e.getMessage());
+    }
+
+    @Test
+    public void testProcessingSnapshotDateColumnType()
+    {
+        runtime.createInMemorySource("test.pure", "###Relational\n" +
+                "Database pack::ProductDatabase (\n" +
+                "   Table ProductTable\n" +
+                "   (\n" +
+                "       milestoning( \n" +
+                "          processing(PROCESSING_SNAPSHOT_DATE = snapshotDate)\n" +
+                "       )" +
+                "       id INT PRIMARY KEY,\n" +
+                "       name VARCHAR(200),\n" +
+                "       snapshotDate Timestamp\n" +
+                "   )\n" +
+                ")\n");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:test.pure line:9 column:8), \"Column set as PROCESSING_SNAPSHOT_DATE can only be of type : [Date]\"", e.getMessage());
     }
 
     @Test
@@ -500,7 +552,7 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   )\n" +
                 ")\n");
         PureParserException e1 = Assert.assertThrows(PureParserException.class, runtime::compile);
-        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:20), expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE', 'processing'} found: 'INFINITY_DATE'", e1.getMessage());
+        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:20), expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE'} found: 'INFINITY_DATE'", e1.getMessage());
 
         runtime.modify("test.pure", "###Relational\n" +
                 "Database pack::ProductDatabase (\n" +
@@ -547,7 +599,7 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   )\n" +
                 ")\n");
         PureParserException e4 = Assert.assertThrows(PureParserException.class, runtime::compile);
-        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:20), expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE', 'processing'} found: ','", e4.getMessage());
+        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:20), expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE'} found: ','", e4.getMessage());
 
         runtime.modify("test.pure", "###Relational\n" +
                 "Database pack::ProductDatabase (\n" +
@@ -562,7 +614,88 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   )\n" +
                 ")\n");
         PureParserException e5 = Assert.assertThrows(PureParserException.class, runtime::compile);
-        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:20), expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE', 'processing'} found: 'bus_snapshot_date'", e5.getMessage());
+        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:20), expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE'} found: 'bus_snapshot_date'", e5.getMessage());
+    }
+
+    @Test
+    public void testProcessingSnapshotMilestoningSyntax()
+    {
+        runtime.createInMemorySource("test.pure", "###Relational\n" +
+                "Database pack::ProductDatabase (\n" +
+                "   Table ProductTable\n" +
+                "   (\n" +
+                "       milestoning( \n" +
+                "          processing(INFINITY_DATE=%9999-12-31, PROCESSING_SNAPSHOT_DATE = snapshotDate)\n" +
+                "       )" +
+                "       id INT PRIMARY KEY,\n" +
+                "       name VARCHAR(200),\n" +
+                "       snapshotDate Date\n" +
+                "   )\n" +
+                ")\n");
+        PureParserException e1 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:22), expected: one of {'PROCESSING_IN', 'PROCESSING_SNAPSHOT_DATE'} found: 'INFINITY_DATE'", e1.getMessage());
+
+        runtime.modify("test.pure", "###Relational\n" +
+                "Database pack::ProductDatabase (\n" +
+                "   Table ProductTable\n" +
+                "   (\n" +
+                "       milestoning( \n" +
+                "          processing(PROCESSING_SNAPSHOT_DATE = snapshotDate, INFINITY_DATE=%9999-12-31, )\n" +
+                "       )" +
+                "       id INT PRIMARY KEY,\n" +
+                "       name VARCHAR(200),\n" +
+                "       snapshotDate Date\n" +
+                "   )\n" +
+                ")\n");
+        runtime.compile(); // parser can auto-correct this syntax error
+//        PureParserException e2 = Assert.assertThrows(PureParserException.class, runtime::compile);
+//        Assert.assertEquals("expected: ')' found: ','", e2.getMessage());
+
+        runtime.modify("test.pure", "###Relational\n" +
+                "Database pack::ProductDatabase (\n" +
+                "   Table ProductTable\n" +
+                "   (\n" +
+                "       milestoning( \n" +
+                "          processing(PROCESSING_SNAPSHOT_DATE = snapshotDate, )\n" +
+                "       )" +
+                "       id INT PRIMARY KEY,\n" +
+                "       name VARCHAR(200),\n" +
+                "       snapshotDate Date\n" +
+                "   )\n" +
+                ")\n");
+        runtime.compile(); // parser can auto-correct this syntax error
+//        PureParserException e3 = Assert.assertThrows(PureParserException.class, runtime::compile);
+//        Assert.assertEquals("expected: \")\" found: \",\"", e3.getMessage());
+
+        runtime.modify("test.pure", "###Relational\n" +
+                "Database pack::ProductDatabase (\n" +
+                "   Table ProductTable\n" +
+                "   (\n" +
+                "       milestoning( \n" +
+                "          processing(, PROCESSING_SNAPSHOT_DATE = snapshotDate)\n" +
+                "       )" +
+                "       id INT PRIMARY KEY,\n" +
+                "       name VARCHAR(200),\n" +
+                "       snapshotDate Date\n" +
+                "   )\n" +
+                ")\n");
+        PureParserException e4 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:22), expected: one of {'PROCESSING_IN', 'PROCESSING_SNAPSHOT_DATE'} found: ','", e4.getMessage());
+
+        runtime.modify("test.pure", "###Relational\n" +
+                "Database pack::ProductDatabase (\n" +
+                "   Table ProductTable\n" +
+                "   (\n" +
+                "       milestoning( \n" +
+                "          processing(processing_snapshot_date = snapshotDate)\n" +
+                "       )" +
+                "       id INT PRIMARY KEY,\n" +
+                "       name VARCHAR(200),\n" +
+                "       snapshotDate Date\n" +
+                "   )\n" +
+                ")\n");
+        PureParserException e5 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:22), expected: one of {'PROCESSING_IN', 'PROCESSING_SNAPSHOT_DATE'} found: 'processing_snapshot_date'", e5.getMessage());
     }
 
     @Test
@@ -931,7 +1064,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            type(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Integer\n" +
-                "                    milestoning(Property):\n" +
                 "                    name(Property):\n" +
                 "                        employeeTable instance String\n" +
                 "                    primaryKey(Property):\n" +
@@ -954,7 +1086,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            tables(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Table\n" +
-                "                            views(Property):\n" +
                 "                    setColumns(Property):\n" +
                 "                        Anonymous_StripedId instance Column\n" +
                 "                            name(Property):\n" +
@@ -1031,7 +1162,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            type(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Integer\n" +
-                "                    milestoning(Property):\n" +
                 "                    name(Property):\n" +
                 "                        employeeTable instance String\n" +
                 "                    primaryKey(Property):\n" +
@@ -1054,7 +1184,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            tables(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Table\n" +
-                "                            views(Property):\n" +
                 "                    setColumns(Property):\n" +
                 "                        Anonymous_StripedId instance Column\n" +
                 "                            name(Property):\n" +
@@ -1113,7 +1242,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Column\n" +
                 "                                [>3] Anonymous_StripedId instance Column\n" +
                 "                                [>3] Anonymous_StripedId instance Column\n" +
-                "                            milestoning(Property):\n" +
                 "                            name(Property):\n" +
                 "                                [>3] employeeTable instance String\n" +
                 "                            primaryKey(Property):\n" +
@@ -1299,7 +1427,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            type(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Integer\n" +
-                "                    milestoning(Property):\n" +
                 "                    name(Property):\n" +
                 "                        employeeTable instance String\n" +
                 "                    primaryKey(Property):\n" +
@@ -1322,7 +1449,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            tables(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Table\n" +
-                "                            views(Property):\n" +
                 "                    setColumns(Property):\n" +
                 "                        Anonymous_StripedId instance Column\n" +
                 "                            name(Property):\n" +
@@ -1401,7 +1527,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            type(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Integer\n" +
-                "                    milestoning(Property):\n" +
                 "                    name(Property):\n" +
                 "                        employeeTable instance String\n" +
                 "                    primaryKey(Property):\n" +
@@ -1416,7 +1541,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            tables(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Table\n" +
-                "                            views(Property):\n" +
                 "                    setColumns(Property):\n" +
                 "                        [_] Anonymous_StripedId instance Column\n" +
                 "                        Anonymous_StripedId instance Column\n" +
@@ -1473,7 +1597,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Column\n" +
                 "                                [>3] Anonymous_StripedId instance Column\n" +
                 "                                [>3] Anonymous_StripedId instance Column\n" +
-                "                            milestoning(Property):\n" +
                 "                            name(Property):\n" +
                 "                                [>3] employeeTable instance String\n" +
                 "                            primaryKey(Property):\n" +
@@ -1659,7 +1782,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            type(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Integer\n" +
-                "                    milestoning(Property):\n" +
                 "                    name(Property):\n" +
                 "                        employeeTable instance String\n" +
                 "                    primaryKey(Property):\n" +
@@ -1682,7 +1804,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            tables(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Table\n" +
-                "                            views(Property):\n" +
                 "                    setColumns(Property):\n" +
                 "                        Anonymous_StripedId instance Column\n" +
                 "                            name(Property):\n" +
@@ -1759,7 +1880,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            type(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Integer\n" +
-                "                    milestoning(Property):\n" +
                 "                    name(Property):\n" +
                 "                        employeeTable instance String\n" +
                 "                    primaryKey(Property):\n" +
@@ -1782,7 +1902,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            tables(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Table\n" +
-                "                            views(Property):\n" +
                 "                    setColumns(Property):\n" +
                 "                        Anonymous_StripedId instance Column\n" +
                 "                            name(Property):\n" +
@@ -1841,7 +1960,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Column\n" +
                 "                                [>3] Anonymous_StripedId instance Column\n" +
                 "                                [>3] Anonymous_StripedId instance Column\n" +
-                "                            milestoning(Property):\n" +
                 "                            name(Property):\n" +
                 "                                [>3] employeeTable instance String\n" +
                 "                            primaryKey(Property):\n" +
@@ -2315,6 +2433,108 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
         assertPureException(PureCompilationException.class, "The join 'Employee_FirmErr' has not been found in the database 'db'", "testSource.pure", 40, 33, e);
     }
 
+
+    @Test
+    public void testLocalPropertyWithInvalidType()
+    {
+        runtime.createInMemorySource("testSource.pure",
+                "Class Person\n" +
+                        "{\n" +
+                        "   lastName : String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "###Mapping\n" +
+                        "Mapping FirmMapping\n" +
+                        "(\n" +
+                        "   Person[e] : Relational\n" +
+                        "   {\n" +
+                        "      +firmId:Strixng[1] : [db]PersonTable.firmId,\n" +
+                        "      lastName : [db]PersonTable.lastName\n" +
+                        "   }\n" +
+                        ")\n" +
+                        "\n" +
+                        "###Relational\n" +
+                        "Database db\n" +
+                        "(\n" +
+                        "   Table FirmTable (id INTEGER, legal_name VARCHAR(200))\n" +
+                        "   Table PersonTable (firmId INTEGER, lastName VARCHAR(200))\n" +
+                        ")");
+
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Strixng has not been defined!", "testSource.pure", 11, 15, 11, 15, 11, 21, e);
+    }
+
+
+    @Test
+    public void testLocalPropertyMultiplicity()
+    {
+        runtime.createInMemorySource("testSource.pure",
+                "Class Person\n" +
+                        "{\n" +
+                        "   lastName : String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "###Mapping\n" +
+                        "Mapping FirmMapping\n" +
+                        "(\n" +
+                        "   Person[e] : Relational\n" +
+                        "   {\n" +
+                        "      +firmId:Integer[1] : [db]PersonTable.firmId,\n" +
+                        "      +otherFirmIds:Integer[*] : [db]PersonTable.firmId,\n"  +
+                        "      +allFirmIds:Integer[1..*] : [db]PersonTable.firmId,\n" +
+                        "      +firstName:String[0..1] : 'none',\n" +
+                        "      +allNames:String[0..*] : [db]PersonTable.lastName,\n"  +
+                        "      +someNames:String[1..2] : [db]PersonTable.lastName,\n"  +
+                        "      +noNames:String[0] : [db]PersonTable.lastName,\n"  +
+                        "      +tooManyNames:String[2..*] : [db]PersonTable.lastName,\n"  +
+                        "      lastName : [db]PersonTable.lastName\n" +
+                        "   }\n" +
+                        ")\n" +
+                        "\n" +
+                        "###Relational\n" +
+                        "Database db\n" +
+                        "(\n" +
+                        "   Table FirmTable (id INTEGER, legal_name VARCHAR(200))\n" +
+                        "   Table PersonTable (firmId INTEGER, lastName VARCHAR(200))\n" +
+                        ")");
+        runtime.compile();
+
+        Mapping firmMapping = (Mapping) runtime.getCoreInstance("FirmMapping");
+        RelationalInstanceSetImplementation personMapping = (RelationalInstanceSetImplementation) firmMapping._classMappings().getOnly();
+        MapIterable<String, ? extends PropertyMapping> propertyMappings = personMapping._propertyMappings().groupByUniqueKey(pm -> pm._property()._name());
+        assertMultiplicity(M3Paths.PureOne, propertyMappings.get("firmId")._localMappingPropertyMultiplicity());
+        assertMultiplicity(M3Paths.ZeroMany, propertyMappings.get("otherFirmIds")._localMappingPropertyMultiplicity());
+        assertMultiplicity(M3Paths.OneMany, propertyMappings.get("allFirmIds")._localMappingPropertyMultiplicity());
+        assertMultiplicity(M3Paths.ZeroOne, propertyMappings.get("firstName")._localMappingPropertyMultiplicity());
+        assertMultiplicity(M3Paths.ZeroMany, propertyMappings.get("allNames")._localMappingPropertyMultiplicity());
+        assertMultiplicity("1..2", propertyMappings.get("someNames")._localMappingPropertyMultiplicity());
+        assertMultiplicity(M3Paths.PureZero, propertyMappings.get("noNames")._localMappingPropertyMultiplicity());
+        assertMultiplicity("2..*", propertyMappings.get("tooManyNames")._localMappingPropertyMultiplicity());
+    }
+
+    private void assertMultiplicity(String expected, Multiplicity multiplicity)
+    {
+        switch (expected)
+        {
+            case M3Paths.OneMany:
+            case M3Paths.PureOne:
+            case M3Paths.PureZero:
+            case M3Paths.ZeroMany:
+            case M3Paths.ZeroOne:
+            {
+                CoreInstance expectedInstance = runtime.getCoreInstance(expected);
+                if (expectedInstance != multiplicity)
+                {
+                    Assert.assertSame("expected " + expected + ", got: " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(multiplicity, false), expectedInstance, multiplicity);
+                }
+                break;
+            }
+            default:
+            {
+                Assert.assertEquals(expected, org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(multiplicity, false));
+            }
+        }
+    }
 
     @Test
     public void testSelfJoin()

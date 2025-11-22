@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::pure::functions::relation::*;
+import meta::pure::test::pct::*;
 
 Class meta::pure::functions::relation::Frame
 {
@@ -29,11 +30,22 @@ Class meta::pure::functions::relation::FrameIntValue extends meta::pure::functio
     value : Integer[1];
 }
 
+Class meta::pure::functions::relation::FrameNumericValue extends meta::pure::functions::relation::FrameValue
+{
+    value : Number[1];
+}
+
+Class meta::pure::functions::relation::FrameIntervalValue extends meta::pure::functions::relation::FrameValue
+{
+    value : Integer[1];
+    durationUnit : DurationUnit[1];
+}
+
 Class meta::pure::functions::relation::UnboundedFrameValue extends meta::pure::functions::relation::FrameValue
 {
 }
 
-function meta::pure::functions::relation::unbounded():meta::pure::functions::relation::UnboundedFrameValue[1]
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::relation::unbounded():meta::pure::functions::relation::UnboundedFrameValue[1]
 {
     ^meta::pure::functions::relation::UnboundedFrameValue();
 }

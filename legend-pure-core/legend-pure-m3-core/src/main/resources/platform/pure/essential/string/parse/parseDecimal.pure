@@ -14,7 +14,17 @@
 
 import meta::pure::test::pct::*;
 
-native function <<PCT.function>> meta::pure::functions::string::parseDecimal(string:String[1]):Decimal[1];
+native function <<PCT.function>>
+    {
+        doc.doc='Cast a String to decimal with database default precision and scale. Deprecated in preference of parseDecimal(precision, scale).'
+    }
+meta::pure::functions::string::parseDecimal(string:String[1]):Decimal[1];
+
+native function <<PCT.function>>
+    {
+        doc.doc='Cast a String to decimal with user defined precision and scale.'
+    }
+meta::pure::functions::string::parseDecimal(string:String[1], precision: Integer[1], scale: Integer[1]):Decimal[1];
 
 function <<PCT.test>> meta::pure::functions::string::tests::parseDecimal::testParseDecimal<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
@@ -29,4 +39,14 @@ function <<PCT.test>> meta::pure::functions::string::tests::parseDecimal::testPa
 {
     assertEq(0.0d, $f->eval(|parseDecimal('0.0')));
     assertEq(0.000d, $f->eval(|parseDecimal('-000.000')));
+}
+
+function <<PCT.test>> meta::pure::functions::string::tests::parseDecimal::testParseDecimalWithPrecisionScale<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(123.13d, $f->eval(|parseDecimal('123.126', 5, 2)));
+    assertEq(123.123d, $f->eval(|parseDecimal('123.123', 7, 3)));
+    assertEq(-3.14d, $f->eval(|parseDecimal('-3.14159', 5, 2)));
+    assertEq(123.12300d, $f->eval(|parseDecimal('123.123', 10, 5)));
+    assertEq(3.1415900000d, $f->eval(|parseDecimal('+0000003.1415900000', 38, 10)));
+    assertEq(-3.1415900000d, $f->eval(|parseDecimal('-0000003.1415900000', 38, 10)));
 }

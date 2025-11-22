@@ -134,6 +134,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.graph.PathToElement;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.type._enum.EnumName;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.type._enum.EnumValues;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.type.relation.AddColumns;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string._boolean.Contains;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string._boolean.EndsWith;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.index.IndexOfWithFrom;
@@ -143,6 +144,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.parse.ParseBoolean;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.parse.ParseDate;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.parse.ParseDecimal;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.parse.ParseDecimalWithScalePrecision;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.parse.ParseFloat;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.parse.ParseInteger;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.toString.Format;
@@ -504,6 +506,8 @@ public class NativeFunctionProcessor
         //    Enum
         registerNative(map, new EnumName());
         registerNative(map, new EnumValues());
+        //    Relation
+        registerNative(map, new AddColumns());
 
         //String
         //  Boolean
@@ -526,6 +530,7 @@ public class NativeFunctionProcessor
         registerNative(map, new ParseDate());
         registerNative(map, new ParseFloat());
         registerNative(map, new ParseDecimal());
+        registerNative(map, new ParseDecimalWithScalePrecision());
         registerNative(map, new ParseInteger());
         //  Split
         registerNative(map, new Split());

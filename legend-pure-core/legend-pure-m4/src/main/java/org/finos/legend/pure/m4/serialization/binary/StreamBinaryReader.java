@@ -27,10 +27,12 @@ class StreamBinaryReader extends AbstractSimpleBinaryReader
     private static final int MAX_SKIP_BUFFER_SIZE = 8192;
 
     private final InputStream stream;
+    private final boolean closeStreamOnClose;
 
-    StreamBinaryReader(InputStream stream)
+    StreamBinaryReader(InputStream stream, boolean closeStreamOnClose)
     {
         this.stream = Objects.requireNonNull(stream, "stream may not be null");
+        this.closeStreamOnClose = closeStreamOnClose;
     }
 
     @Override
@@ -80,20 +82,23 @@ class StreamBinaryReader extends AbstractSimpleBinaryReader
     @Override
     public synchronized void close()
     {
-        try
+        if (this.closeStreamOnClose)
         {
-            if (this.stream instanceof ZipInputStream)
+            try
             {
-                ((ZipInputStream) this.stream).closeEntry();
+                if (this.stream instanceof ZipInputStream)
+                {
+                    ((ZipInputStream) this.stream).closeEntry();
+                }
+                else
+                {
+                    this.stream.close();
+                }
             }
-            else
+            catch (IOException e)
             {
-                this.stream.close();
+                throw new UncheckedIOException(e);
             }
-        }
-        catch (IOException e)
-        {
-            throw new UncheckedIOException(e);
         }
     }
 

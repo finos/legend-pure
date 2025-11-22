@@ -15,21 +15,17 @@
 package org.finos.legend.pure.m3.compiler.postprocessing.processor.projection;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.partition.PartitionIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.Automap;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.ClassProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.Processor;
+import org.finos.legend.pure.m3.compiler.postprocessing.processor.TypeProcessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
@@ -54,17 +50,8 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class ClassProjectionProcessor extends Processor<ClassProjection>
+public class ClassProjectionProcessor extends Processor<ClassProjection<?>>
 {
-    private static final Predicate<CoreInstance> IS_PROPERTY_PREDICATE = new Predicate<CoreInstance>()
-    {
-        @Override
-        public boolean accept(CoreInstance coreInstance)
-        {
-            return coreInstance instanceof Property;
-        }
-    };
-
     @Override
     public String getClassName()
     {
@@ -72,28 +59,28 @@ public class ClassProjectionProcessor extends Processor<ClassProjection>
     }
 
     @Override
-    public void process(ClassProjection classProjection, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
+    public void process(ClassProjection<?> classProjection, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
         RootRouteNode projectionSpec = classProjection._projectionSpecification();
-        Type projectedRawType = projectionSpec._type() == null ? null : (Type)ImportStub.withImportStubByPass(projectionSpec._type()._rawTypeCoreInstance(), processorSupport);
+        Type projectedRawType = projectionSpec._type() == null ? null : (Type) ImportStub.withImportStubByPass(projectionSpec._type()._rawTypeCoreInstance(), processorSupport);
 
         PostProcessor.processElement(matcher, projectionSpec, state, processorSupport);
 
-        processDerivedProperties(classProjection, repository, context, processorSupport);
+        processDerivedProperties(classProjection, projectionSpec, repository, context, processorSupport);
         processSimpleProperties(classProjection, state, repository, context, processorSupport);
 
-        ProjectionUtil.copyAnnotations((AnnotatedElement)projectedRawType, classProjection, true, processorSupport);
+        ProjectionUtil.copyAnnotations((AnnotatedElement) projectedRawType, classProjection, true, processorSupport);
         ProjectionUtil.copyAnnotations(projectionSpec, classProjection, true, processorSupport);
 
         context.update(classProjection);
-        processClass(classProjection, state, matcher, repository, processorSupport);
+        processClass(classProjection, state, matcher, processorSupport);
     }
 
-    private static void processClass(ClassProjection cls, ProcessorState state, Matcher matcher, ModelRepository repository, ProcessorSupport processorSupport)
+    private static void processClass(ClassProjection<?> cls, ProcessorState state, Matcher matcher, ProcessorSupport processorSupport)
     {
         state.newTypeInferenceContext(cls);
 
-        MutableList<CoreInstance> propertiesProperties = FastList.newList();
+        MutableList<CoreInstance> propertiesProperties = Lists.mutable.empty();
 
         // Simple properties
         propertiesProperties.addAllIterable(cls._properties());
@@ -106,106 +93,102 @@ public class ClassProjectionProcessor extends Processor<ClassProjection>
         // Original milestoned properties
         propertiesProperties.addAllIterable(cls._originalMilestonedProperties());
 
-        for (CoreInstance property : propertiesProperties)
+        propertiesProperties.forEach(property ->
         {
             try
             {
                 PostProcessor.processElement(matcher, property, state, processorSupport);
             }
-            catch (PureCompilationException pe)
+            catch (PureCompilationException e)
             {
-                throw new PureCompilationException(pe.getSourceInformation(), String.format("Error compiling projection '%s'. Property '%s' cannot be resolved due to underlying cause: %s", PackageableElement.getUserPathForPackageableElement(cls), org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property), pe.getInfo()), pe);
+                StringBuilder builder = PackageableElement.writeUserPathForPackageableElement(new StringBuilder("Error compiling projection '"), cls)
+                        .append("'. Property '").append(org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property))
+                        .append("' cannot be resolved due to underlying cause: ")
+                        .append(e.getInfo());
+                throw new PureCompilationException(e.getSourceInformation(), builder.toString(), e);
             }
-        }
+        });
 
         state.deleteTypeInferenceContext();
     }
 
 
     @Override
-    public void populateReferenceUsages(ClassProjection cls, ModelRepository repository, ProcessorSupport processorSupport)
+    public void populateReferenceUsages(ClassProjection<?> cls, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        ClassProcessor.processClassReferenceUsages(cls, repository, processorSupport);
+        TypeProcessor.processGeneralizationReferenceUsages(cls, repository, processorSupport);
     }
 
-    private static void processDerivedProperties(final ClassProjection classProjection, final ModelRepository modelRepository, final Context context, final ProcessorSupport processorSupport)
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static void processDerivedProperties(ClassProjection classProjection, RootRouteNode projectionSpec, ModelRepository modelRepository, Context context, ProcessorSupport processorSupport)
     {
-        final RootRouteNode projectionSpec = classProjection._projectionSpecification();
         validateDerivedProperties(projectionSpec, processorSupport);
-        RichIterable<Property> derivedSimpleProperties = projectionSpec._children().collect(new Function<PropertyRouteNode, Property>()
+        MutableList<Property<?, ?>> newSimpleProperties = projectionSpec._children().collect(instance ->
         {
-            @Override
-            public Property valueOf(PropertyRouteNode instance)
-            {
-                ListIterable<? extends ValueSpecification> valueSpecifications = ((NewPropertyRouteNode)instance)._specifications().toList();
-                CoreInstance autoMapExpressionSequence = Automap.getAutoMapExpressionSequence(valueSpecifications.get(0));
-                Property property = (Property)ImportStub.withImportStubByPass(autoMapExpressionSequence != null ? ((FunctionExpression)autoMapExpressionSequence)._funcCoreInstance() : ((FunctionExpression)valueSpecifications.get(0))._funcCoreInstance(), processorSupport);
-                Property propertyCopy = (Property)ProjectionUtil.deepCopyAndBindSimpleProperty(property, classProjection, modelRepository, context, processorSupport);
-                renameDerivedProperty(instance, propertyCopy);
-                return propertyCopy;
-            }
-        });
-        copyPropertyAnnotations(projectionSpec, derivedSimpleProperties, processorSupport);
-        classProjection._propertiesCoreInstance(Lists.immutable.ofAll(classProjection._properties()).newWithAll(derivedSimpleProperties));
+            ListIterable<? extends ValueSpecification> valueSpecifications = ((NewPropertyRouteNode) instance)._specifications().toList();
+            CoreInstance autoMapExpressionSequence = Automap.getAutoMapExpressionSequence(valueSpecifications.get(0));
+            Property<?, ?> property = (Property<?, ?>) ImportStub.withImportStubByPass(autoMapExpressionSequence != null ? ((FunctionExpression) autoMapExpressionSequence)._funcCoreInstance() : ((FunctionExpression) valueSpecifications.get(0))._funcCoreInstance(), processorSupport);
+            Property<?, ?> propertyCopy = ProjectionUtil.deepCopyAndBindSimpleProperty(property, classProjection, modelRepository, context, processorSupport);
+            renameDerivedProperty(instance, propertyCopy);
+            return propertyCopy;
+        }, Lists.mutable.empty());
+        copyPropertyAnnotations(projectionSpec, newSimpleProperties, processorSupport);
+        classProjection._propertiesAddAll(newSimpleProperties);
     }
 
-    private static void processSimpleProperties(final ClassProjection classProjection, final ProcessorState state, final ModelRepository modelRepository, final Context context, final ProcessorSupport processorSupport)
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static void processSimpleProperties(ClassProjection classProjection, ProcessorState state, ModelRepository modelRepository, Context context, ProcessorSupport processorSupport)
     {
         RootRouteNode projectionSpec = classProjection._projectionSpecification();
-        RichIterable<? extends AbstractProperty> resolvedProperties = (RichIterable<? extends AbstractProperty>)projectionSpec._resolvedPropertiesCoreInstance();
-        PartitionIterable<? extends AbstractProperty> simpleProperties = resolvedProperties.partition(IS_PROPERTY_PREDICATE);
-        if (simpleProperties.getSelected().notEmpty())
+        MutableList<Property<?, ?>> simplePropertyCopies = Lists.mutable.empty();
+        MutableList<QualifiedProperty<?>> qualifiedPropertyCopies = Lists.mutable.empty();
+        projectionSpec._resolvedProperties().forEach(prop ->
         {
-            RichIterable<Property> simplePropertyCopies = simpleProperties.getSelected().collect(new Function<AbstractProperty, Property>()
+            if (prop instanceof Property<?, ?>)
             {
-                @Override
-                public Property valueOf(AbstractProperty coreInstance)
-                {
-                    return (Property)ProjectionUtil.deepCopyAndBindSimpleProperty(coreInstance, classProjection, modelRepository, context, processorSupport);
-                }
-            });
+                simplePropertyCopies.add(ProjectionUtil.deepCopyAndBindSimpleProperty((Property<?, ?>) prop, classProjection, modelRepository, context, processorSupport));
+            }
+            else
+            {
+                qualifiedPropertyCopies.add(ProjectionUtil.deepCopyAndBindQualifiedProperty((QualifiedProperty<?>) prop, classProjection, state, modelRepository, context, processorSupport));
+            }
+        });
+        if (simplePropertyCopies.notEmpty())
+        {
             copyPropertyAnnotations(projectionSpec, simplePropertyCopies, processorSupport);
-            classProjection._propertiesCoreInstance(Lists.immutable.ofAll(classProjection._properties()).newWithAll(simplePropertyCopies));
+            classProjection._propertiesAddAll(simplePropertyCopies);
         }
-        if (simpleProperties.getRejected().notEmpty())
+        if (qualifiedPropertyCopies.notEmpty())
         {
-            RichIterable<QualifiedProperty> qualifiedPropertyCopies = simpleProperties.getRejected().collect(new Function<AbstractProperty, QualifiedProperty>()
-            {
-                @Override
-                public QualifiedProperty valueOf(AbstractProperty originalProperty)
-                {
-                    return ProjectionUtil.deepCopyAndBindQualifiedProperty((QualifiedProperty)originalProperty, classProjection, state, modelRepository, context, processorSupport);
-                }
-            });
             copyPropertyAnnotations(projectionSpec, qualifiedPropertyCopies, processorSupport);
-            classProjection._qualifiedProperties(Lists.immutable.ofAll(classProjection._qualifiedProperties()).newWithAll(qualifiedPropertyCopies));
+            classProjection._qualifiedPropertiesAddAll(qualifiedPropertyCopies);
         }
     }
 
-    private static void copyPropertyAnnotations(RootRouteNode projectionSpec, RichIterable<? extends AbstractProperty> resolvedProperties, ProcessorSupport processorSupport)
+    private static void copyPropertyAnnotations(RootRouteNode projectionSpec, RichIterable<? extends AbstractProperty<?>> resolvedProperties, ProcessorSupport processorSupport)
     {
         if (resolvedProperties.notEmpty())
         {
             RichIterable<? extends RouteNodePropertyStub> includedPropertyStubs = projectionSpec._included();
             if (includedPropertyStubs.notEmpty())
             {
-                MutableMap<String, AbstractProperty> resolvedPropertiesById = UnifiedMap.newMap(resolvedProperties.size());
-                for (AbstractProperty resolvedProperty : resolvedProperties)
+                MutableMap<String, AbstractProperty<?>> resolvedPropertiesById = Maps.mutable.ofInitialCapacity(resolvedProperties.size());
+                resolvedProperties.forEach(resolvedProperty ->
                 {
                     String resolvedPropertyId = org.finos.legend.pure.m3.navigation.property.Property.getPropertyId(resolvedProperty, processorSupport);
                     resolvedPropertiesById.put(resolvedPropertyId, resolvedProperty);
-                }
+                });
 
-                for (RouteNodePropertyStub includedPropertyStub : includedPropertyStubs)
+                includedPropertyStubs.forEach(includedPropertyStub ->
                 {
                     CoreInstance includedProperty = ImportStub.withImportStubByPass(includedPropertyStub._propertyCoreInstance().toList().getFirst(), processorSupport);
                     String includedPropertyId = org.finos.legend.pure.m3.navigation.property.Property.getPropertyId(includedProperty, processorSupport);
-                    AbstractProperty derivedProperty = resolvedPropertiesById.get(includedPropertyId);
+                    AbstractProperty<?> derivedProperty = resolvedPropertiesById.get(includedPropertyId);
                     if (derivedProperty != null)
                     {
                         ProjectionUtil.copyAnnotations(includedPropertyStub, derivedProperty, false, processorSupport);
                     }
-                }
+                });
             }
         }
     }
@@ -225,14 +208,14 @@ public class ClassProjectionProcessor extends Processor<ClassProjection>
                 throw new PureCompilationException(derivedProperty.getSourceInformation(), String.format("Invalid projection specification. Derived property '%s' should be of PrimitiveType.", derivedProperty._propertyName()));
             }
             ListIterable<? extends ValueSpecification> valueSpecifications = derivedProperty instanceof NewPropertyRouteNode ?
-                    ((NewPropertyRouteNode)derivedProperty)._specifications().toList() : Lists.immutable.<ValueSpecification>empty();
+                                                                             ((NewPropertyRouteNode) derivedProperty)._specifications().toList() : Lists.immutable.empty();
             if (valueSpecifications.size() != 1)
             {
                 throw new PureCompilationException(derivedProperty.getSourceInformation(), "Invalid projection specification: derived property '" + derivedProperty._propertyName() + "' should have exactly 1 value specification, found " + valueSpecifications.size());
             }
             if (valueSpecifications.getFirst() instanceof FunctionExpression)
             {
-                CoreInstance func = ImportStub.withImportStubByPass(((FunctionExpression)valueSpecifications.getFirst())._funcCoreInstance(), processorSupport);
+                CoreInstance func = ImportStub.withImportStubByPass(((FunctionExpression) valueSpecifications.getFirst())._funcCoreInstance(), processorSupport);
                 if (func != null && !(func instanceof Property) && Automap.getAutoMapExpressionSequence(valueSpecifications.getFirst()) == null)
                 {
                     throw new PureCompilationException(derivedProperty.getSourceInformation(), String.format("Invalid projection specification. Derived property '%s' should be a simple property.", derivedProperty._propertyName()));
@@ -241,7 +224,7 @@ public class ClassProjectionProcessor extends Processor<ClassProjection>
         }
     }
 
-    private static void renameDerivedProperty(RouteNode instance, Property propertyCopy)
+    private static void renameDerivedProperty(RouteNode instance, Property<?, ?> propertyCopy)
     {
         String derivedPropertyName = instance._name();
         propertyCopy._name(derivedPropertyName);

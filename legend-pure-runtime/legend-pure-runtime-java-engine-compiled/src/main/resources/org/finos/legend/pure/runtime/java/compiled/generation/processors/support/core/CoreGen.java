@@ -19,12 +19,11 @@ import org.eclipse.collections.api.block.function.Function0;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
-import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.KeyExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
@@ -46,8 +45,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.LambdaCompiledExtended;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.AbstractCompiledCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.GetterOverrideExecutor;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.JavaCompiledCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.QuantityCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction2;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction2Wrapper;
@@ -64,7 +63,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
-import java.util.Stack;
 
 public class CoreGen extends CoreHelper
 {
@@ -165,39 +163,7 @@ public class CoreGen extends CoreHelper
 
     public static String toRepresentation(Object any, ExecutionSupport es)
     {
-        if (any instanceof String)
-        {
-            return "'" + CompiledSupport.replace((String) any, "'", "\\'") + "'";
-        }
-        if (any instanceof org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate)
-        {
-            return "%" + CompiledSupport.pureToString((PureDate) any, es);
-        }
-        if (any instanceof BigDecimal)
-        {
-            return CompiledSupport.pureToString((BigDecimal) any, es) + "D";
-        }
-        if (any instanceof Number)
-        {
-            return CompiledSupport.pureToString((Number) any, es);
-        }
-        if (any instanceof Boolean)
-        {
-            return CompiledSupport.pureToString(((Boolean) any).booleanValue(), es);
-        }
-        if (any instanceof PackageableElement)
-        {
-            PackageableElement p = (PackageableElement) any;
-            if (p._name() != null)
-            {
-                return Pure.elementToPath(p, "::");
-            }
-        }
-        if (any instanceof QuantityCoreInstance)
-        {
-            return ((QuantityCoreInstance) any).getName();
-        }
-        return "<" + Pure.manageId(any) + " instanceOf " + Pure.elementToPath((PackageableElement) CoreGen.safeGetGenericType(any, es)._rawType(), "::") + ">";
+        return org.finos.legend.pure.generated.platform_pure_essential_string_toString_toRepresentation.Root_meta_pure_functions_string_toRepresentation_Any_1__String_1_(any, es);
     }
 
     public static RichIterable<? extends Root_meta_pure_functions_lang_KeyValue> processKeyExpressions(java.lang.Class<?> _class, Object instance, RichIterable<? extends Root_meta_pure_functions_lang_KeyValue> keyExpressions, ExecutionSupport es)
@@ -209,7 +175,7 @@ public class CoreGen extends CoreHelper
             result.add(kv);
             keys.add(kv._key());
         }
-        AbstractCompiledCoreInstance coreInstance = (AbstractCompiledCoreInstance) instance;
+        JavaCompiledCoreInstance coreInstance = (JavaCompiledCoreInstance) instance;
         for (String key : coreInstance.getDefaultValueKeys())
         {
             if (!keys.contains(key))
@@ -380,27 +346,21 @@ public class CoreGen extends CoreHelper
         try
         {
             Pure.evaluate(es, func, bridge);
-            throw new PureAssertFailException(sourceInformation, "No error was thrown", Stacks.mutable.<CoreInstance>empty());
+            throw new PureAssertFailException(sourceInformation, "No error was thrown");
         }
         catch (PureExecutionException e)
         {
-            if (!e.getInfo().equals(message))
+            if ((message != null) && !message.equals(e.getInfo()))
             {
-                throw new PureAssertFailException(sourceInformation, "Execution error message mismatch.\nThe actual message was \"" + e.getInfo() + "\"\nwhere the expected message was:\"" + message + "\"", Stacks.mutable.<CoreInstance>empty());
+                throw new PureAssertFailException(sourceInformation, "Execution error message mismatch.\nThe actual message was \"" + e.getInfo() + "\"\nwhere the expected message was:\"" + message + "\"");
             }
-            if (line != -1)
+            if ((line != -1) && (e.getSourceInformation().getLine() != line))
             {
-                if (e.getSourceInformation().getLine() != line)
-                {
-                    throw new PureAssertFailException(sourceInformation, "Execution error line mismatch. Actual: " + e.getSourceInformation().getLine() + " where expected: " + line, Stacks.mutable.<CoreInstance>empty());
-                }
+                throw new PureAssertFailException(sourceInformation, "Execution error line mismatch. Actual: " + e.getSourceInformation().getLine() + " where expected: " + line);
             }
-            if (column != -1)
+            if ((column != -1) && (e.getSourceInformation().getColumn() != column))
             {
-                if (e.getSourceInformation().getColumn() != column)
-                {
-                    throw new PureAssertFailException(sourceInformation, "Execution error column mismatch. Actual: " + e.getSourceInformation().getColumn() + " where expected: " + column, Stacks.mutable.<CoreInstance>empty());
-                }
+                throw new PureAssertFailException(sourceInformation, "Execution error column mismatch. Actual: " + e.getSourceInformation().getColumn() + " where expected: " + column);
             }
         }
         return true;

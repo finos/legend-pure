@@ -16,9 +16,12 @@ package org.finos.legend.pure.m3.pct.reports.generation;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import java.util.Set;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
@@ -29,9 +32,11 @@ import org.finos.legend.pure.m3.pct.reports.model.AdapterKey;
 import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
 import org.finos.legend.pure.m3.pct.reports.model.FunctionTestResults;
 import org.finos.legend.pure.m3.pct.reports.model.TestInfo;
+import org.finos.legend.pure.m3.pct.shared.PCTTools;
 import org.finos.legend.pure.m3.pct.shared.generation.Shared;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 
 public class ReportGeneration
@@ -47,7 +52,13 @@ public class ReportGeneration
             }
             catch (Exception e)
             {
-                throw new RuntimeException(e);
+                StringBuilder builder = new StringBuilder("Error generating report for ").append(suiteClass);
+                String eMessage = e.getMessage();
+                if (eMessage != null)
+                {
+                    builder.append(": ").append(eMessage);
+                }
+                throw new RuntimeException(builder.toString(), e);
             }
         });
     }
@@ -55,6 +66,7 @@ public class ReportGeneration
     private static AdapterReport generateReport(TestCollection testCollection, PCTReportConfiguration reportManager, ProcessorSupport ps)
     {
         MutableMap<String, String> explodedExpectedFailures = PCTReportConfiguration.explodeExpectedFailures(reportManager.expectedFailures(), ps);
+        MutableMap<String, MutableSet<String>> explodedQualifiers = PCTReportConfiguration.explodeQualifiers(reportManager.expectedFailures(), ps);
 
         MutableMap<String, FunctionTestResults> testResults = Maps.mutable.empty();
 
@@ -62,33 +74,38 @@ public class ReportGeneration
         {
             FunctionTestResults functionInfo = testResults.getIfAbsentPut(x.getSourceInformation().getSourceId(), () -> new FunctionTestResults(x.getSourceInformation().getSourceId()));
             PackageableFunction<?> f = (PackageableFunction<?>) x;
+
+            Set<String> pctQualifiers = PCTTools.getPCTQualifiers(f, ps);
             String error = explodedExpectedFailures.get(PackageableElement.getUserPathForPackageableElement(f));
-            functionInfo.tests.add(new TestInfo(f._functionName(), error == null, error));
+            MutableSet<String> adapterQualifiers = explodedQualifiers.get(PackageableElement.getUserPathForPackageableElement(f));
+            if (adapterQualifiers != null && !adapterQualifiers.isEmpty())
+            {
+                pctQualifiers.addAll(adapterQualifiers);
+            }
+            functionInfo.tests.add(new TestInfo(f._functionName(), error == null, error, pctQualifiers));
         });
 
         return new AdapterReport(
                 reportManager.getReportScope(),
                 new AdapterKey(reportManager.getAdapter(), reportManager.getPlatform()),
-                testResults.valuesView().toList()
+                Lists.mutable.withAll(testResults.values())
         );
-
     }
 
     public static void writeToTarget(String targetDir, MutableList<AdapterReport> reports)
     {
         reports.forEach(x ->
-                {
-                    try
-                    {
-                        String reportStr = JsonMapper.builder().build().setSerializationInclusion(JsonInclude.Include.NON_NULL).writerWithDefaultPrettyPrinter().writeValueAsString(x);
-                        Shared.writeStringToTarget(targetDir, ReportGeneration.getReportName(x) + ".json", reportStr);
-                    }
-                    catch (IOException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }
-        );
+        {
+            try
+            {
+                String reportStr = JsonMapper.builder().build().setSerializationInclusion(JsonInclude.Include.NON_NULL).writerWithDefaultPrettyPrinter().writeValueAsString(x);
+                Shared.writeStringToTarget(targetDir, ReportGeneration.getReportName(x) + ".json", reportStr);
+            }
+            catch (IOException e)
+            {
+                throw new UncheckedIOException(e);
+            }
+        });
     }
 
     public static String getReportName(AdapterReport adapterReport)
