@@ -5,6 +5,8 @@
 .idea/**
 .factorypath
 **/*.iml
+**/pom.xml.versionsBackup
+**/.develocity/**
 
 # Build
 **/target
