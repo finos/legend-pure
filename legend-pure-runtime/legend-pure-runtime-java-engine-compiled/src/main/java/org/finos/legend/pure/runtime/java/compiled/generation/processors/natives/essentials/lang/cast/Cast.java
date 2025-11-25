@@ -109,11 +109,15 @@ public class Cast extends AbstractNative
                 "            {\n" +
                 "                if (instances instanceof RichIterable)\n" +
                 "                {\n" +
-                "                    return CompiledSupport.castWithExceptionHandling((RichIterable)instances, Pure.pureTypeToJavaClass(type._rawType(), es), null);\n" +
+                "                    RichIterable<?> value = CompiledSupport.castWithExceptionHandling((RichIterable)instances, Pure.pureTypeToJavaClass(type._rawType(), es), null);\n" +
+                "                    CompiledSupport.validate(value, type, null, es);\n" +
+                "                    return value;\n" +
                 "                }\n" +
                 "                else\n" +
                 "                {\n" +
-                "                    return CompiledSupport.castWithExceptionHandling(instances, Pure.pureTypeToJavaClass(type._rawType(), es), null);\n" +
+                "                    Object value = CompiledSupport.castWithExceptionHandling(instances, Pure.pureTypeToJavaClass(type._rawType(), es), null);\n" +
+                "                    CompiledSupport.validate(value, type, null, es);\n" +
+                "                    return value;\n" +
                 "                }\n" +
                 "            }\n" +
                 "        }\n";
