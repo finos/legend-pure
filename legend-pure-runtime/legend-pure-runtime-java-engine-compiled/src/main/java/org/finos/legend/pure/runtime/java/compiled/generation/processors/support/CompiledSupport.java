@@ -36,6 +36,7 @@ import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.coreinstance.BaseCoreInstance;
 import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.ElementWithConstraintsAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.GeneralizationAccessor;
@@ -43,6 +44,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
@@ -2052,11 +2054,11 @@ public class CompiledSupport
 
         RichIterable<? extends CoreInstance> typeVariableValues = variableValues != null ? variableValues : type._typeVariableValues();
 
-        boolean hasConstraints = rawType.getValueForMetaPropertyToMany(M3Properties.constraints).notEmpty();
+        boolean hasConstraints = rawType instanceof ElementWithConstraintsAccessor && !((ElementWithConstraintsAccessor) rawType)._constraints().isEmpty();
 
         if (hasConstraints)
         {
-            return Optional.of(Tuples.pair(rawType, typeVariableValues.flatCollect(v -> v.getValueForMetaPropertyToMany(M3Properties.values)).collect(v -> ((ValCoreInstance) v).getValue())));
+            return Optional.of(Tuples.pair(rawType, typeVariableValues.select(v -> v instanceof InstanceValue).flatCollect(v -> (RichIterable<Object>)((InstanceValue) v)._values())));
         }
 
         RichIterable<? extends Generalization> generalizations = rawType._generalizations();
