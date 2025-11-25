@@ -2007,7 +2007,7 @@ public class CompiledSupport
     {
         try
         {
-            CoreInstance rawType = type.getValueForMetaPropertyToOne("rawType");
+            CoreInstance rawType = type._rawType();
             ProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
             boolean isExtendedPrimitive = org.finos.legend.pure.m3.navigation.type.Type.isExtendedPrimitiveType(rawType, processorSupport);
 
