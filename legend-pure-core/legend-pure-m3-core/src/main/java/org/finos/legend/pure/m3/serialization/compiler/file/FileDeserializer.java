@@ -712,6 +712,19 @@ public class FileDeserializer
     }
 
     /**
+     * Deserialize module element back reference metadata from a file in a directory. Returns null if the module element
+     * back reference metadata cannot be found.
+     *
+     * @param directory  directory to search for the module element back reference metadata file
+     * @param moduleName module name
+     * @return module element back reference metadata, or null if not found
+     */
+    public ElementBackReferenceMetadata deserializeModuleElementBackReferenceMetadataIfPresent(Path directory, String moduleName, String elementPath)
+    {
+        return deserializeModuleElementBackReferenceMetadataIfPresent(directory, moduleName, elementPath, this.filePathProvider.getDefaultVersion());
+    }
+
+    /**
      * Deserialize module element back reference metadata from a file in a directory using the given file path version.
      * Throws a {@link ModuleElementMetadataNotFoundException} if the module element back reference metadata cannot be
      * found.
@@ -723,6 +736,25 @@ public class FileDeserializer
      * @throws ModuleElementMetadataNotFoundException if the module element back reference metadata cannot be found
      */
     public ElementBackReferenceMetadata deserializeModuleElementBackReferenceMetadata(Path directory, String moduleName, String elementPath, int filePathVersion)
+    {
+        return deserializeModuleElementBackReferenceMetadata(directory, moduleName, elementPath, filePathVersion, true);
+    }
+
+    /**
+     * Deserialize module element back reference metadata from a file in a directory using the given file path version.
+     * Returns null if the module element back reference metadata cannot be found.
+     *
+     * @param directory       directory to search for the module element back reference metadata file
+     * @param moduleName      module name
+     * @param filePathVersion file path version
+     * @return module element back reference metadata, or null if not found
+     */
+    public ElementBackReferenceMetadata deserializeModuleElementBackReferenceMetadataIfPresent(Path directory, String moduleName, String elementPath, int filePathVersion)
+    {
+        return deserializeModuleElementBackReferenceMetadata(directory, moduleName, elementPath, filePathVersion, false);
+    }
+
+    private ElementBackReferenceMetadata deserializeModuleElementBackReferenceMetadata(Path directory, String moduleName, String elementPath, int filePathVersion, boolean errorIfNotFound)
     {
         Objects.requireNonNull(directory, "directory is required");
         Objects.requireNonNull(moduleName, "module name is required");
@@ -737,8 +769,14 @@ public class FileDeserializer
         }
         catch (NoSuchFileException | FileNotFoundException e)
         {
-            LOGGER.error("Error deserializing module {} element {} back reference metadata from {}", moduleName, elementPath, filePath, e);
-            throw new ModuleElementMetadataNotFoundException(moduleName, elementPath, "cannot find file " + filePath, e);
+            if (errorIfNotFound)
+            {
+                LOGGER.error("Error deserializing module {} element {} back reference metadata from {}: file not found", moduleName, elementPath, filePath, e);
+                throw new ModuleElementMetadataNotFoundException(moduleName, elementPath, "cannot find file " + filePath, e);
+            }
+
+            LOGGER.debug("Cannot deserialize module {} element {} back reference metadata from {}: file not found", moduleName, elementPath, filePath, e);
+            return null;
         }
         catch (Exception e)
         {
@@ -792,6 +830,19 @@ public class FileDeserializer
     }
 
     /**
+     * Deserialize module element back reference metadata from a resource in a class loader. Returns null if the module
+     * element back reference metadata cannot be found.
+     *
+     * @param classLoader class loader to search for the module element back reference metadata resource
+     * @param moduleName  module name
+     * @return module element back reference metadata, or null if not found
+     */
+    public ElementBackReferenceMetadata deserializeModuleElementBackReferenceMetadataIfPresent(ClassLoader classLoader, String moduleName, String elementPath)
+    {
+        return deserializeModuleElementBackReferenceMetadataIfPresent(classLoader, moduleName, elementPath, this.filePathProvider.getDefaultVersion());
+    }
+
+    /**
      * Deserialize module element back reference metadata from a resource in a class loader using the given file path
      * version. Throws a {@link ModuleElementMetadataNotFoundException} if the module element back reference metadata
      * cannot be found.
@@ -803,6 +854,25 @@ public class FileDeserializer
      * @throws ModuleElementMetadataNotFoundException if the module element back reference metadata cannot be found
      */
     public ElementBackReferenceMetadata deserializeModuleElementBackReferenceMetadata(ClassLoader classLoader, String moduleName, String elementPath, int filePathVersion)
+    {
+        return deserializeModuleElementBackReferenceMetadata(classLoader, moduleName, elementPath, filePathVersion, true);
+    }
+
+    /**
+     * Deserialize module element back reference metadata from a resource in a class loader using the given file path
+     * version. Returns null if the module element back reference metadata cannot be found.
+     *
+     * @param classLoader     class loader to search for the module element back reference metadata resource
+     * @param moduleName      module name
+     * @param filePathVersion file path version
+     * @return module element back reference metadata, or null if not found
+     */
+    public ElementBackReferenceMetadata deserializeModuleElementBackReferenceMetadataIfPresent(ClassLoader classLoader, String moduleName, String elementPath, int filePathVersion)
+    {
+        return deserializeModuleElementBackReferenceMetadata(classLoader, moduleName, elementPath, filePathVersion, false);
+    }
+
+    private ElementBackReferenceMetadata deserializeModuleElementBackReferenceMetadata(ClassLoader classLoader, String moduleName, String elementPath, int filePathVersion, boolean errorIfNotFound)
     {
         Objects.requireNonNull(classLoader, "class loader is required");
         Objects.requireNonNull(moduleName, "module name is required");
@@ -816,7 +886,13 @@ public class FileDeserializer
             URL url = classLoader.getResource(resourceName);
             if (url == null)
             {
-                throw new ModuleElementMetadataNotFoundException(moduleName, elementPath, "cannot find resource " + resourceName);
+                if (errorIfNotFound)
+                {
+                    LOGGER.error("Error deserializing module {} element {} back reference metadata from resource {}: resource not found", moduleName, elementPath, resourceName);
+                    throw new ModuleElementMetadataNotFoundException(moduleName, elementPath, "cannot find resource " + resourceName);
+                }
+                LOGGER.debug("Cannot deserialize module {} element {} back reference metadata from resource {}: resource not found", moduleName, elementPath, resourceName);
+                return null;
             }
             LOGGER.debug("Deserializing module {} element {} back reference metadata from resource '{}': {}", moduleName, elementPath, resourceName, url);
             try (Reader reader = BinaryReaders.newBinaryReader(url.openStream()))
