@@ -138,6 +138,7 @@ public class PureCompilerSerializer
         {
             long eltStart = System.nanoTime();
             LOGGER.info("Starting element serialization");
+            int[] eltCount = {0};
             try
             {
                 GraphTools.getTopLevelAndPackagedElements(this.processorSupport).forEach(e ->
@@ -145,13 +146,14 @@ public class PureCompilerSerializer
                     if (ModuleHelper.isElementInModule(e, moduleName))
                     {
                         serializer.serializeElement(e);
+                        eltCount[0]++;
                     }
                 });
             }
             finally
             {
                 long eltEnd = System.nanoTime();
-                LOGGER.info("Finished element serialization in {}s", (eltEnd - eltStart) / 1_000_000_000.0);
+                LOGGER.info("Finished serializing {} elements in {}s", eltCount[0], (eltEnd - eltStart) / 1_000_000_000.0);
             }
 
             long modMetaGenStart = System.nanoTime();
@@ -243,6 +245,7 @@ public class PureCompilerSerializer
                 {
                     long eltStart = System.nanoTime();
                     LOGGER.info("Starting element serialization");
+                    int[] eltCount = {0};
                     try
                     {
                         GraphTools.getTopLevelAndPackagedElements(this.processorSupport).forEach(e ->
@@ -250,13 +253,14 @@ public class PureCompilerSerializer
                             if (moduleNames.contains(ModuleHelper.getElementModule(e)))
                             {
                                 serializer.serializeElement(e);
+                                eltCount[0]++;
                             }
                         });
                     }
                     finally
                     {
                         long eltEnd = System.nanoTime();
-                        LOGGER.info("Finished element serialization in {}s", (eltEnd - eltStart) / 1_000_000_000.0);
+                        LOGGER.info("Finished serializing {} elements in {}s", eltCount[0], (eltEnd - eltStart) / 1_000_000_000.0);
                     }
 
                     generateAndSerializeModuleMetadata(serializer, moduleNames);
@@ -285,6 +289,7 @@ public class PureCompilerSerializer
             MutableSet<String> moduleNames = Sets.mutable.empty();
             long eltStart = System.nanoTime();
             LOGGER.info("Starting element serialization");
+            int[] eltCount = {0};
             try
             {
                 GraphTools.getTopLevelAndPackagedElements(this.processorSupport).forEach(e ->
@@ -294,13 +299,14 @@ public class PureCompilerSerializer
                     {
                         moduleNames.add(moduleName);
                         serializer.serializeElement(e);
+                        eltCount[0]++;
                     }
                 });
             }
             finally
             {
                 long eltEnd = System.nanoTime();
-                LOGGER.info("Finished element serialization in {}s", (eltEnd - eltStart) / 1_000_000_000.0);
+                LOGGER.info("Finished serializing {} elements in {}s", eltCount[0], (eltEnd - eltStart) / 1_000_000_000.0);
             }
 
             generateAndSerializeModuleMetadata(serializer, moduleNames);
