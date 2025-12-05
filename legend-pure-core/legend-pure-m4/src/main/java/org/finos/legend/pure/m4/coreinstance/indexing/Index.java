@@ -49,9 +49,7 @@ public abstract class Index<K, V extends CoreInstance>
 
     public void add(Iterable<? extends V> values)
     {
-        MutableMap<K, MutableList<V>> toAdd = Maps.mutable.empty();
-        values.forEach(v -> toAdd.getIfAbsentPut(this.spec.getIndexKey(v), Lists.mutable::empty).add(v));
-        toAdd.forEachKeyValue(this::add);
+        values.forEach(this::add);
     }
 
     public final void add(V value)
@@ -72,8 +70,6 @@ public abstract class Index<K, V extends CoreInstance>
     }
 
     protected abstract ListIterable<V> tryGet(Object key);
-
-    protected abstract void add(K key, MutableList<V> values);
 
     protected abstract void add(K key, V value);
 
@@ -119,12 +115,6 @@ public abstract class Index<K, V extends CoreInstance>
         }
 
         @Override
-        protected void add(K key, MutableList<V> values)
-        {
-            this.index.getIfAbsentPut(key, Lists.mutable::empty).addAll(values);
-        }
-
-        @Override
         protected void add(K key, V value)
         {
             this.index.getIfAbsentPut(key, Lists.mutable::empty).add(value);
@@ -167,9 +157,11 @@ public abstract class Index<K, V extends CoreInstance>
         }
 
         @Override
-        protected void add(K key, MutableList<V> values)
+        public void add(Iterable<? extends V> values)
         {
-            this.index.updateValue(key, Functions0.nullValue(), current -> (current == null) ? values.toImmutable() : current.newWithAll(values));
+            MutableMap<K, MutableList<V>> toAdd = Maps.mutable.empty();
+            values.forEach(v -> toAdd.getIfAbsentPut(this.spec.getIndexKey(v), Lists.mutable::empty).add(v));
+            toAdd.forEachKeyValue((k, v) -> this.index.updateValue(k, Functions0.nullValue(), current -> (current == null) ? v.toImmutable() : current.newWithAll(v)));
         }
 
         @Override
