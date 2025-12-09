@@ -19,6 +19,7 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -31,52 +32,48 @@ public class TestNamespaces extends AbstractPureTestWithCoreCompiledPlatform
         setUpRuntime(getExtra());
     }
 
+    @After
+    public void clearRuntime()
+    {
+        runtime.delete("testModel1.pure");
+        runtime.delete("testModel2.pure");
+        runtime.compile();
+    }
+
     @Test
     public void testClassNameConflict()
     {
-        compileTestSource("class1.pure",
+        compileTestSource("testModel1.pure",
                 "Class test::MyClass {}");
         CoreInstance myClass = runtime.getCoreInstance("test::MyClass");
         Assert.assertNotNull(myClass);
         Assert.assertTrue(Instance.instanceOf(myClass, M3Paths.Class, processorSupport));
 
-        try
-        {
-            compileTestSource("class2.pure",
-                    "Class test::MyClass {}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureParserException.class, "The element 'MyClass' already exists in the package 'test'", "class2.pure", 1, 13, 1, 13, 1, 19, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "testModel2.pure",
+                "Class test::MyClass {}"));
+        assertPureException(PureParserException.class, "The element 'MyClass' already exists in the package 'test'", "testModel2.pure", 1, 13, 1, 13, 1, 19, e);
     }
 
     @Test
     public void testEnumerationNameConflict()
     {
-        compileTestSource("enum1.pure",
+        compileTestSource("testModel1.pure",
                 "Enum test::MyEnum {VALUE}");
         CoreInstance myEnum = runtime.getCoreInstance("test::MyEnum");
         Assert.assertNotNull(myEnum);
         Assert.assertTrue(Instance.instanceOf(myEnum, M3Paths.Enumeration, processorSupport));
 
-        try
-        {
-            compileTestSource("enum2.pure",
-                    "Enum test::MyEnum {VALUE}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureParserException.class, "The element 'MyEnum' already exists in the package 'test'", "enum2.pure", 1, 12, 1, 12, 1, 17, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "testModel2.pure",
+                "Enum test::MyEnum {VALUE}"));
+        assertPureException(PureParserException.class, "The element 'MyEnum' already exists in the package 'test'", "testModel2.pure", 1, 12, 1, 12, 1, 17, e);
     }
 
     @Test
     public void testAssociationNameConflict()
     {
-        compileTestSource("assoc1.pure",
+        compileTestSource("testModel1.pure",
                 "Class test::TestClass {}\n" +
                         "Association test::MyAssociation" +
                         "{\n" +
@@ -87,19 +84,13 @@ public class TestNamespaces extends AbstractPureTestWithCoreCompiledPlatform
         Assert.assertNotNull(myAssoc);
         Assert.assertTrue(Instance.instanceOf(myAssoc, M3Paths.Association, processorSupport));
 
-        try
-        {
-            compileTestSource("assoc2.pure",
-                    "Association test::MyAssociation" +
-                            "{\n" +
-                            "  prop1 : test::TestClass[*];\n" +
-                            "  prop2 : test::TestClass[*];\n" +
-                            "}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureParserException.class, "The element 'MyAssociation' already exists in the package 'test'", "assoc2.pure", 1, 19, 1, 19, 1, 31, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "testModel2.pure",
+                "Association test::MyAssociation" +
+                        "{\n" +
+                        "  prop1 : test::TestClass[*];\n" +
+                        "  prop2 : test::TestClass[*];\n" +
+                        "}"));
+        assertPureException(PureParserException.class, "The element 'MyAssociation' already exists in the package 'test'", "testModel2.pure", 1, 19, 1, 19, 1, 31, e);
     }
 }
