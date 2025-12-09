@@ -93,4 +93,27 @@ public class TestNamespaces extends AbstractPureTestWithCoreCompiledPlatform
                         "}"));
         assertPureException(PureParserException.class, "The element 'MyAssociation' already exists in the package 'test'", "testModel2.pure", 1, 19, 1, 19, 1, 31, e);
     }
+
+    @Test
+    public void testProfileNameConflict()
+    {
+        compileTestSource("testModel1.pure",
+                "Profile test::MyProfile\n" +
+                        "{\n" +
+                        "  stereotypes: [st1, st2];\n" +
+                        "  tags: [t1, t2, t3];\n" +
+                        "}");
+        CoreInstance myProfile = runtime.getCoreInstance("test::MyProfile");
+        Assert.assertNotNull(myProfile);
+        Assert.assertTrue(Instance.instanceOf(myProfile, M3Paths.Profile, processorSupport));
+
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "testModel2.pure",
+                "Profile test::MyProfile\n" +
+                        "{\n" +
+                        "  stereotypes: [st1, st2];\n" +
+                        "  tags: [t1, t2, t3];\n" +
+                        "}"));
+        assertPureException(PureParserException.class, "The element 'MyProfile' already exists in the package 'test'", "testModel2.pure", 1, 15, 1, 15, 1, 23, e);
+    }
 }
