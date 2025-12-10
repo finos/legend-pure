@@ -33,40 +33,35 @@ public class TestImportConflict extends AbstractPureTestWithCoreCompiledPlatform
     public void clearRuntime()
     {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test
-    public void testImportTypeConflict() throws Exception
+    public void testImportTypeConflict()
     {
-        try
-        {
-            compileTestSource("fromString.pure",
-                    "import a::*;\n" +
-                            "import b::*;\n" +
-                            "Class a::Employee\n" +
-                            "{\n" +
-                            "   a:String[1];\n" +
-                            "}\n" +
-                            "Class b::Employee\n" +
-                            "{\n" +
-                            "    b: String[1];\n" +
-                            "}\n" +
-                            "function test():Nil[0]\n" +
-                            "{\n" +
-                            "    print(Employee);\n" +
-                            "}\n");
-            Assert.fail("Expected a compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Employee has been found more than one time in the imports: [a::Employee, b::Employee]", "fromString.pure", 13, 11, 13, 11, 13, 18, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "import a::*;\n" +
+                        "import b::*;\n" +
+                        "Class a::Employee\n" +
+                        "{\n" +
+                        "   a:String[1];\n" +
+                        "}\n" +
+                        "Class b::Employee\n" +
+                        "{\n" +
+                        "    b: String[1];\n" +
+                        "}\n" +
+                        "function test():Nil[0]\n" +
+                        "{\n" +
+                        "    print(Employee);\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Employee has been found more than one time in the imports: [a::Employee, b::Employee]", "fromString.pure", 13, 11, 13, 11, 13, 18, e);
     }
 
     @Test
-    public void testImportTypeNonConflict() throws Exception
+    public void testImportTypeNonConflict()
     {
-        runtime.createInMemorySource("fromString.pure",
+        compileTestSource("fromString.pure",
                 "import a::*;\n" +
                         "import a::*;\n" +
                         "Class a::Employee\n" +
@@ -77,6 +72,5 @@ public class TestImportConflict extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    print(Employee,1);\n" +
                         "}\n");
-        runtime.compile();
     }
 }

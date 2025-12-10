@@ -3346,6 +3346,8 @@ public class AntlrContextToM3CoreInstance
 
     private Profile profile(ProfileContext ctx, ImportGroup importId)
     {
+        checkExists(ctx.qualifiedName().packagePath(), ctx.qualifiedName().identifier(), null);
+
         String profileName = ctx.qualifiedName().identifier().getText();
         SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().getStop(), ctx.getStop());
         Profile profile = ProfileInstance.createPersistent(this.repository, profileName, sourceInfo);

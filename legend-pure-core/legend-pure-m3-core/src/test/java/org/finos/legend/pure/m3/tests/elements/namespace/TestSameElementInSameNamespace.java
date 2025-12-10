@@ -136,4 +136,23 @@ public class TestSameElementInSameNamespace extends AbstractPureTestWithCoreComp
                         "Enum test::myEnum {CUSIP, SEDOL}\n"));
         assertPureException(PureParserException.class, "The element 'myEnum' already exists in the package 'test'", "/test/testSource.pure", 2, 12, e);
     }
+
+    @Test
+    public void testProfile()
+    {
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "/test/testSource.pure",
+                "Profile test::MyProfile\n" +
+                        "{\n" +
+                        "  stereotypes: [st1, st2];\n" +
+                        "  tags: [t1, t2, t3];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Profile test::MyProfile\n" +
+                        "{\n" +
+                        "  stereotypes: [st1, st2];\n" +
+                        "  tags: [t1, t2, t3];\n" +
+                        "}\n"));
+        assertPureException(PureParserException.class, "The element 'MyProfile' already exists in the package 'test'", "/test/testSource.pure", 7, 15, e);
+    }
 }
