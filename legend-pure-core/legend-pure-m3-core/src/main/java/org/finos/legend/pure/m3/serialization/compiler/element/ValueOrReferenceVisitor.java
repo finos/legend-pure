@@ -14,8 +14,15 @@
 
 package org.finos.legend.pure.m3.serialization.compiler.element;
 
-public interface ValueOrReferenceVisitor<T>
+import org.eclipse.collections.api.block.function.Function;
+
+public interface ValueOrReferenceVisitor<T> extends Function<ValueOrReference, T>
 {
+    default T valueOf(ValueOrReference valOrRef)
+    {
+        return valOrRef.visit(this);
+    }
+
     default T visit(Reference.ExternalReference reference)
     {
         throw new UnsupportedOperationException();

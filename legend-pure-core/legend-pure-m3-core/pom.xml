@@ -136,6 +136,23 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>Generate Lazy M3 Support Classes</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>org.finos.legend.pure.m3.coreinstance.lazy.generator.M3LazyCoreInstanceGenerator</mainClass>
+                            <additionalClasspathElements>
+                                <additionalClasspathElement>${project.basedir}/src/main/resources</additionalClasspathElement>
+                            </additionalClasspathElements>
+                            <arguments>
+                                <argument>${project.build.directory}/generated-sources/</argument>
+                                <argument>/platform/pure/grammar/m3.pure</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>Generate Other Support Classes</id>
                         <phase>compile</phase>
                         <goals>

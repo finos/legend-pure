@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.coreinstance.helper;
 
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.function.Function2;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -28,8 +29,23 @@ import java.math.BigInteger;
 
 public class AnyHelper
 {
-    public static final Function<CoreInstance, ? extends Object> UNWRAP_PRIMITIVES = AnyHelper::unwrapPrimitives;
-    public static final Function2<Object, ModelRepository, ? extends CoreInstance> WRAP_PRIMITIVES = AnyHelper::wrapPrimitives;
+    public static final Function<CoreInstance, Object> UNWRAP_PRIMITIVES = AnyHelper::unwrapPrimitives;
+    public static final Function2<Object, ModelRepository, CoreInstance> WRAP_PRIMITIVES = AnyHelper::wrapPrimitive;
+
+    public static RichIterable<Object> resolveAndUnwrap(RichIterable<? extends CoreInstance> instances)
+    {
+        return instances.collect(AnyHelper::resolveAndUnwrap);
+    }
+
+    public static RichIterable<Object> unwrapPrimitives(RichIterable<? extends CoreInstance> instances)
+    {
+        return instances.collect(AnyHelper::unwrapPrimitives);
+    }
+
+    public static Object resolveAndUnwrap(CoreInstance instance)
+    {
+        return unwrapPrimitives(AnyStubHelper.fromStub(instance));
+    }
 
     public static Object unwrapPrimitives(CoreInstance instance)
     {
@@ -50,7 +66,18 @@ public class AnyHelper
         return result;
     }
 
+    public static RichIterable<CoreInstance> wrapPrimitives(RichIterable<?> objects, ModelRepository modelRepository)
+    {
+        return objects.collectWith(AnyHelper::wrapPrimitive, modelRepository);
+    }
+
+    @Deprecated
     public static CoreInstance wrapPrimitives(Object object, ModelRepository modelRepository)
+    {
+        return wrapPrimitive(object, modelRepository);
+    }
+
+    public static CoreInstance wrapPrimitive(Object object, ModelRepository modelRepository)
     {
         if (object instanceof CoreInstance)
         {
