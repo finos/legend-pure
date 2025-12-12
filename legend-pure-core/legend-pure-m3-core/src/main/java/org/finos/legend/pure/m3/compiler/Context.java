@@ -27,6 +27,7 @@ import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
+import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -222,7 +223,20 @@ public class Context
         String functionName = getFunctionName(function);
         if (functionName != null)
         {
-            this.functionsByName.getIfAbsentPut(functionName, ConcurrentHashSet::newSet).add(function);
+            registerFunctionByName(functionName, function);
+        }
+    }
+
+    public void registerFunctionByName(String functionName, CoreInstance function)
+    {
+        this.functionsByName.getIfAbsentPut(functionName, ConcurrentHashSet::newSet).add(function);
+    }
+
+    public void registerFunctionsByName(String functionName, Iterable<? extends CoreInstance> functions)
+    {
+        if (Iterate.notEmpty(functions))
+        {
+            this.functionsByName.getIfAbsentPut(functionName, ConcurrentHashSet::newSet).addAllIterable(functions);
         }
     }
 
