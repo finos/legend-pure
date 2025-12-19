@@ -235,12 +235,6 @@ Class meta::relational::metamodel::datatype::DbSpecificDataType extends meta::re
 
 Class meta::relational::metamodel::RelationalOperationElement
 {
-    metadata: RelationalOperationElementMetadata[0..1];
-}
-
-Class meta::relational::metamodel::RelationalOperationElementMetadata
-{
-
 }
 
 Class meta::relational::metamodel::relation::SelectSQLQuery extends Relation, SQLQuery
