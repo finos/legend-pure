@@ -72,4 +72,6 @@ public interface CodeStorageNode
     String getPath();
 
     CodeStorageNodeStatus getStatus();
+
+    long lastModified();
 }
