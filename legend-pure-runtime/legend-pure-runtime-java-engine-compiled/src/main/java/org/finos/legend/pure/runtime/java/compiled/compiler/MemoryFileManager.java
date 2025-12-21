@@ -232,7 +232,7 @@ public class MemoryFileManager extends ForwardingJavaFileManager<StandardJavaFil
             if (!displayed.contains(val))
             {
                 displayed.add(val);
-                log.info("    completed " + percentage + "% in " + ((float) (System.currentTimeMillis() - start) / 1000) + "s");
+                log.debug("    completed " + percentage + "% in " + ((float) (System.currentTimeMillis() - start) / 1000) + "s");
             }
             // Progress ----
             Path path = directory.resolve(source.getName().substring(1));

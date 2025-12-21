@@ -27,7 +27,7 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.set.mutable.SetAdapter;
 import org.finos.legend.pure.m3.generator.bootstrap.M3CoreInstanceGenerator;
-import org.finos.legend.pure.m3.generator.par.Log;
+import org.finos.legend.pure.m3.generator.Log;
 
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
@@ -71,13 +71,19 @@ public class M3CoreInstanceGeneratorMojo extends AbstractMojo
         Log log = new Log()
         {
             @Override
+            public void debug(String txt)
+            {
+                getLog().debug(txt);
+            }
+
+            @Override
             public void info(String txt)
             {
                 getLog().info(txt);
             }
 
             @Override
-            public void error(String txt, Exception e)
+            public void error(String txt, Throwable e)
             {
                 getLog().error(txt, e);
             }
@@ -125,7 +131,7 @@ public class M3CoreInstanceGeneratorMojo extends AbstractMojo
         }).toArray(new URL[0]);
         URL[] combinedURLs = Stream.concat(Arrays.stream(urlsForClassLoader), Arrays.stream(getDependencyURLs()))
                 .toArray(URL[]::new);
-        log.info("    Project classLoader URLs " + Arrays.toString(combinedURLs));
+        log.debug("    Project classLoader URLs " + Arrays.toString(combinedURLs));
         return new URLClassLoader(combinedURLs, parent);
     }
 

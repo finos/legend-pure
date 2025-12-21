@@ -178,7 +178,7 @@ public class JavaStandaloneLibraryGenerator
             {
                 if (!message.startsWith("Generating Java sources"))
                 {
-                    log.info("  " + message);
+                    log.debug("  " + message);
                 }
             }
         });
@@ -192,7 +192,7 @@ public class JavaStandaloneLibraryGenerator
             }
             else
             {
-                log.info("    Skipping External API generation");
+                log.debug("    Skipping External API generation");
             }
         }
         else
@@ -205,7 +205,7 @@ public class JavaStandaloneLibraryGenerator
             }
             else
             {
-                log.info("    Skipping External API generation");
+                log.debug("    Skipping External API generation");
             }
         }
         return generateAndCompile.getPureJavaCompiler();
@@ -220,7 +220,7 @@ public class JavaStandaloneLibraryGenerator
             {
                 if (!message.startsWith("Generating Java sources"))
                 {
-                    log.info("  " + message);
+                    log.debug("  " + message);
                 }
             }
         });
@@ -234,7 +234,7 @@ public class JavaStandaloneLibraryGenerator
             }
             else
             {
-                log.info("    Skipping External API generation");
+                log.debug("    Skipping External API generation");
             }
         }
         else
@@ -247,7 +247,7 @@ public class JavaStandaloneLibraryGenerator
             }
             else
             {
-                log.info("    Skipping External API generation");
+                log.debug("    Skipping External API generation");
             }
         }
         return generate;

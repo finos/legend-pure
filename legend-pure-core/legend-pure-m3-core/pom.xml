@@ -191,7 +191,6 @@
                                 <argument>platform</argument>
                             </arguments>
                             <classpathScope>provided</classpathScope>
-                            <useMavenLogger>true</useMavenLogger>
                         </configuration>
                     </execution>
                     <execution>
@@ -251,7 +250,6 @@
                                 <argument>other_test_generic_repository</argument>
                             </arguments>
                             <classpathScope>test</classpathScope>
-                            <useMavenLogger>true</useMavenLogger>
                         </configuration>
                     </execution>
                 </executions>

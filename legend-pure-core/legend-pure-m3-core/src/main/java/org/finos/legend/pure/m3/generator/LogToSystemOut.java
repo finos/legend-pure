@@ -1,4 +1,4 @@
-// Copyright 2023 Goldman Sachs
+// Copyright 2025 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m3.generator.par;
+package org.finos.legend.pure.m3.generator;
 
-public interface Log
+public class LogToSystemOut implements Log
 {
-    void info(String txt);
+    @Override
+    public void debug(String txt)
+    {
+        System.out.println(txt);
+    }
 
-    void error(String txt, Exception e);
+    @Override
+    public void info(String txt)
+    {
+        System.out.println(txt);
+    }
+
+    @Override
+    public void error(String txt, Throwable e)
+    {
+        System.out.println("ERROR" + txt);
+        e.printStackTrace();
+    }
 }

@@ -117,18 +117,18 @@ public class Generate
             sourceCounter.reset();
             compiledSourcesByRepo.forEach((compileGroup, sources) ->
             {
-                log.info("    Generating Java sources for group: " + compileGroup);
+                log.debug("    Generating Java sources for group: " + compileGroup);
                 if (sources.notEmpty())
                 {
                     long start = System.currentTimeMillis();
                     JavaSourceCodeGenerator sourceCodeGenerator = sourceCodeGeneratorFn.apply(compileGroup);
                     ListIterable<StringJavaSource> compileGroupJavaSources = generate(compileGroup, sources, sourceCodeGenerator, sourceCounter, totalSourceCount, generatePureTests);
                     this.javaSourcesByGroup.put(compileGroup, compileGroupJavaSources.toImmutable());
-                    log.info("      generated " + compileGroupJavaSources.size() + " sources in " + ((float) (System.currentTimeMillis() - start) / 1000) + "s");
+                    log.debug("      generated " + compileGroupJavaSources.size() + " sources in " + ((float) (System.currentTimeMillis() - start) / 1000) + "s");
                 }
                 else
                 {
-                    log.info("      generated 0 sources (input sources is empty).");
+                    log.debug("      generated 0 sources (input sources is empty).");
                 }
             });
         }
