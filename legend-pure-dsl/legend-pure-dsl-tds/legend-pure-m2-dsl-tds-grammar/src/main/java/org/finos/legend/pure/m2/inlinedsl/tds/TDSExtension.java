@@ -151,7 +151,7 @@ public class TDSExtension implements InlineDSL
 
         return ((TDS<?>) processorSupport.newAnonymousCoreInstance(sourceInfo, M2TDSPaths.TDS))
                 ._classifierGenericType(tdsGenericType)
-                ._csv(text);
+                ._csv(text.replace("\r\n", "\n"));
     }
 
     private static Pair<String, String> getNameAndType(CsvReader.ResultColumn c)
