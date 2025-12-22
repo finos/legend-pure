@@ -42,7 +42,7 @@ public class Compile
     {
         for (Pair<? extends String, ? extends Iterable<? extends StringJavaSource>> javaSources : javaSourcesByCompileGroup)
         {
-            log.info("    Compiling group " + javaSources.getOne());
+            log.debug("    Compiling group " + javaSources.getOne());
             compile(javaSources.getOne(), javaSources.getTwo(), log);
         }
     }
@@ -60,12 +60,12 @@ public class Compile
             }
         });
         long start = System.currentTimeMillis();
-        log.info("      compiling " + javaSourcesByName.valuesView().size() + " sources");
+        log.debug("      compiling " + javaSourcesByName.valuesView().size() + " sources");
         if (javaSourcesByName.notEmpty())
         {
             this.pureJavaCompiler.compile(javaSourcesByName.valuesView());
         }
-        log.info("      finished in " + ((float) (System.currentTimeMillis() - start) / 1000) + "s");
+        log.debug("      finished in " + ((float) (System.currentTimeMillis() - start) / 1000) + "s");
         this.observer.endCompilingJavaFiles(compileGroup);
     }
 

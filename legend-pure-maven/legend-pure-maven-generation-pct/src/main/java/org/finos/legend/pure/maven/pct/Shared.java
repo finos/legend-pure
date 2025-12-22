@@ -49,7 +49,7 @@ public class Shared
                             }
                         }).toArray(new URL[0]);
 
-        log.info("    Project classLoader URLs " + Arrays.toString(urlsForClassLoader));
+        log.debug("    Project classLoader URLs " + Arrays.toString(urlsForClassLoader));
         return new URLClassLoader(urlsForClassLoader, parent);
     }
 

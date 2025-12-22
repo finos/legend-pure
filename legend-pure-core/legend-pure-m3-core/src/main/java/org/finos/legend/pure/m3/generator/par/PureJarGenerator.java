@@ -16,6 +16,8 @@ package org.finos.legend.pure.m3.generator.par;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Sets;
+import org.finos.legend.pure.m3.generator.Log;
+import org.finos.legend.pure.m3.generator.LogToSystemOut;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
@@ -36,21 +38,7 @@ public class PureJarGenerator
         String purePlatformVersion = args[0];
         String repositories = args[1];
         String outputDirectory = args[2];
-        doGeneratePAR(Sets.mutable.with(repositories), Sets.mutable.empty(), Sets.mutable.empty(), purePlatformVersion, null, null, new File(outputDirectory), new Log()
-        {
-            @Override
-            public void info(String txt)
-            {
-                System.out.println(txt);
-            }
-
-            @Override
-            public void error(String txt, Exception e)
-            {
-                System.out.println("ERROR" + txt);
-                e.printStackTrace();
-            }
-        });
+        doGeneratePAR(Sets.mutable.with(repositories), Sets.mutable.empty(), Sets.mutable.empty(), purePlatformVersion, null, null, new File(outputDirectory), new LogToSystemOut());
     }
 
 
@@ -61,18 +49,18 @@ public class PureJarGenerator
         {
             ParserService ps = new ParserService();
 
-            log.info("Generating Pure PAR file(s)");
-            log.info("  Requested repositories: " + repositories);
-            log.info("  Excluded repositories: " + excludedRepositories);
-            log.info("  Extra repositories: " + extraRepositories);
+            log.debug("Generating Pure PAR file(s)");
+            log.debug("  Requested repositories: " + repositories);
+            log.debug("  Excluded repositories: " + excludedRepositories);
+            log.debug("  Extra repositories: " + extraRepositories);
             CodeRepositorySet resolvedRepositories = resolveRepositories(repositories, excludedRepositories, extraRepositories, log);
-            log.info("  Specified repositories (with resolved dependencies): " + resolvedRepositories.getRepositories().collect(CodeRepository::getName).makeString("[", ",", "]"));
-            log.info("  Register DSLs: " + ps.parsers().collect(Parser::getName).makeString(", "));
-            log.info("  Register in-line DSLs: " + ps.inlineDSLs().collect(InlineDSL::getName).makeString(", "));
-            log.info("  Pure platform version: " + purePlatformVersion);
-            log.info("  Model version: " + modelVersion);
-            log.info("  Pure source directory: " + sourceDirectory);
-            log.info("  Output directory: " + outputDirectory);
+            log.debug("  Specified repositories (with resolved dependencies): " + resolvedRepositories.getRepositories().collect(CodeRepository::getName).makeString("[", ",", "]"));
+            log.debug("  Register DSLs: " + ps.parsers().collect(Parser::getName).makeString(", "));
+            log.debug("  Register in-line DSLs: " + ps.inlineDSLs().collect(InlineDSL::getName).makeString(", "));
+            log.debug("  Pure platform version: " + purePlatformVersion);
+            log.debug("  Model version: " + modelVersion);
+            log.debug("  Pure source directory: " + sourceDirectory);
+            log.debug("  Output directory: " + outputDirectory);
 
             log.info("  Starting compilation and generation of Pure PAR file(s)");
             PureJarSerializer.writePureRepositoryJars(outputDirectory.toPath(), (sourceDirectory == null) ? null : sourceDirectory.toPath(), purePlatformVersion, modelVersion, resolvedRepositories, log);
@@ -89,7 +77,7 @@ public class PureJarGenerator
     {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         RichIterable<CodeRepository> cpRepositories = CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true);
-        log.info("  Found repositories (in the classpath): " + cpRepositories.collect(CodeRepository::getName).makeString("[", ",", "]"));
+        log.debug("  Found repositories (in the classpath): " + cpRepositories.collect(CodeRepository::getName).makeString("[", ",", "]"));
         CodeRepositorySet.Builder builder = CodeRepositorySet.builder().withCodeRepositories(cpRepositories);
         if (extraRepositories != null)
         {

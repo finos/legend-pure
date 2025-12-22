@@ -31,6 +31,7 @@ import org.apache.maven.project.ProjectDependenciesResolver;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.graph.DependencyFilter;
 import org.eclipse.aether.util.filter.ScopeDependencyFilter;
+import org.finos.legend.pure.m3.generator.Log;
 import org.finos.legend.pure.m3.generator.compiler.PureCompilerBinaryGenerator;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
@@ -101,11 +102,11 @@ public class PureCompilerMojo extends AbstractMojo
     {
         getLog().info("Compiling Pure");
         File resolvedOutputDir = resolveOutputDirectory();
-        getLog().info("Output directory: " + resolvedOutputDir);
-        getLog().info("Requested repositories: " + (isNonEmpty(this.repositories) ? String.join(", ", this.repositories) : "<none>"));
-        getLog().info("Excluded repositories: " + (isNonEmpty(this.excludedRepositories) ? String.join(", ", this.excludedRepositories) : "<none>"));
+        getLog().debug("Output directory: " + resolvedOutputDir);
+        getLog().debug("Requested repositories: " + (isNonEmpty(this.repositories) ? String.join(", ", this.repositories) : "<none>"));
+        getLog().debug("Excluded repositories: " + (isNonEmpty(this.excludedRepositories) ? String.join(", ", this.excludedRepositories) : "<none>"));
         String resolvedDependencyScope = resolveDependencyScope();
-        getLog().info("Dependency scope: " + resolvedDependencyScope);
+        getLog().debug("Dependency scope: " + resolvedDependencyScope);
 
         Set<String> resolvedRepos = resolveRepositoriesToSerialize(resolvedDependencyScope);
         if ((resolvedRepos != null) && resolvedRepos.isEmpty())
@@ -113,11 +114,30 @@ public class PureCompilerMojo extends AbstractMojo
             getLog().warn("No repositories to serialize");
             return;
         }
-        getLog().info("Resolved repositories: " + ((resolvedRepos == null) ? "<all>" : String.join(", ", resolvedRepos)));
+        getLog().debug("Resolved repositories: " + ((resolvedRepos == null) ? "<all>" : String.join(", ", resolvedRepos)));
 
         try (URLClassLoader classLoader = new URLClassLoader(getDependencyURLs(resolvedDependencyScope), Thread.currentThread().getContextClassLoader()))
         {
-            PureCompilerBinaryGenerator.serializeModules(resolvedOutputDir.toPath(), classLoader, resolvedRepos, this.excludedRepositories);
+            PureCompilerBinaryGenerator.serializeModules(resolvedOutputDir.toPath(), classLoader, resolvedRepos, this.excludedRepositories, new Log()
+            {
+                @Override
+                public void debug(String txt)
+                {
+                    getLog().debug(txt);
+                }
+
+                @Override
+                public void info(String txt)
+                {
+                    getLog().info(txt);
+                }
+
+                @Override
+                public void error(String txt, Throwable e)
+                {
+                    getLog().error(txt, e);
+                }
+            });
         }
         catch (MojoExecutionException e)
         {

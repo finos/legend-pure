@@ -57,6 +57,12 @@ public class JavaCodeGeneration
         Log log = new Log()
         {
             @Override
+            public void debug(String txt)
+            {
+                System.out.println(txt);
+            }
+
+            @Override
             public void info(String txt)
             {
                 System.out.println(txt);
@@ -150,20 +156,20 @@ public class JavaCodeGeneration
 
         long start = System.nanoTime();
         log.info("Generating Java Compiled JAR");
-        log.info("  Requested repositories: " + repositories);
-        log.info("  Excluded repositories: " + excludedRepositories);
-        log.info("  Extra repositories: " + extraRepositories);
-        log.info("  Generation type: " + generationType);
-        log.info("  Generate External API: '" + addExternalAPI + "' in package '" + externalAPIPackage + "'");
+        log.debug("  Requested repositories: " + repositories);
+        log.debug("  Excluded repositories: " + excludedRepositories);
+        log.debug("  Extra repositories: " + extraRepositories);
+        log.debug("  Generation type: " + generationType);
+        log.debug("  Generate External API: '" + addExternalAPI + "' in package '" + externalAPIPackage + "'");
 
         try
         {
             CodeRepositorySet allRepositories = getAllRepositories(extraRepositories);
-            log.info(allRepositories.getRepositories().collect(CodeRepository::getName).makeString("  Found repositories: ", ", ", ""));
-            log.info(new ParserService().parsers().collect(Parser::getName).makeString("  Found parsers: ", ", ", ""));
-            log.info(new ParserService().inlineDSLs().collect(InlineDSL::getName).makeString("  Found DSL parsers: ", ", ", ""));
+            log.debug(allRepositories.getRepositories().collect(CodeRepository::getName).makeString("  Found repositories: ", ", ", ""));
+            log.debug(new ParserService().parsers().collect(Parser::getName).makeString("  Found parsers: ", ", ", ""));
+            log.debug(new ParserService().inlineDSLs().collect(InlineDSL::getName).makeString("  Found DSL parsers: ", ", ", ""));
             MutableSet<String> selectedRepositories = getSelectedRepositories(allRepositories, repositories, excludedRepositories);
-            log.info(selectedRepositories.makeString("  Selected repositories: ", ", ", ""));
+            log.debug(selectedRepositories.makeString("  Selected repositories: ", ", ", ""));
 
             Path distributedMetadataDirectory;
             if (!generateMetadata)
@@ -225,13 +231,13 @@ public class JavaCodeGeneration
 
     private static long startStep(String step, Log log)
     {
-        log.info("  Beginning " + step);
+        log.debug("  Beginning " + step);
         return System.nanoTime();
     }
 
     private static void completeStep(String step, long stepStart, Log log)
     {
-        log.info(String.format("    Finished %s (%.9fs)", step, durationSinceInSeconds(stepStart)));
+        log.debug(String.format("    Finished %s (%.9fs)", step, durationSinceInSeconds(stepStart)));
     }
 
     private static CodeRepositorySet getAllRepositories(Set<String> extraRepositories)
@@ -360,7 +366,7 @@ public class JavaCodeGeneration
                 @Override
                 public void setMessage(String message)
                 {
-                    log.info(message);
+                    log.debug(message);
                 }
             };
 
@@ -379,7 +385,7 @@ public class JavaCodeGeneration
                         log.warn("    Cache initialization failure: " + lastStackTrace);
                     }
                 }
-                log.info("    Initialization from caches failed - compiling from scratch");
+                log.debug("    Initialization from caches failed - compiling from scratch");
                 runtime.reset();
                 runtime.loadAndCompileCore(message);
                 runtime.loadAndCompileSystem(message);

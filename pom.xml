@@ -185,6 +185,10 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>${exec.maven.plugin.version}</version>
+                    <configuration>
+                        <useMavenLogger>true</useMavenLogger>
+                        <quietLogs>true</quietLogs>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>

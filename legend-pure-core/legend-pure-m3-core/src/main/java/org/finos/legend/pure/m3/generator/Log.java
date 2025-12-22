@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.runtime.java.compiled.generation.orchestrator;
+package org.finos.legend.pure.m3.generator;
 
 public interface Log
 {
@@ -20,9 +20,5 @@ public interface Log
 
     void info(String txt);
 
-    void error(String txt, Exception e);
-
-    void error(String format);
-
-    void warn(String s);
+    void error(String txt, Throwable e);
 }

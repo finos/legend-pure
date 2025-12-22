@@ -18,7 +18,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.finos.legend.pure.m3.generator.par.Log;
+import org.finos.legend.pure.m3.generator.Log;
 import org.finos.legend.pure.m3.generator.par.PureJarGenerator;
 
 import java.io.File;
@@ -63,13 +63,19 @@ public class PureJarMojo extends AbstractMojo
                     new Log()
                     {
                         @Override
+                        public void debug(String txt)
+                        {
+                            getLog().debug(txt);
+                        }
+
+                        @Override
                         public void info(String txt)
                         {
                             getLog().info(txt);
                         }
 
                         @Override
-                        public void error(String txt, Exception e)
+                        public void error(String txt, Throwable e)
                         {
                             getLog().error(txt, e);
                         }

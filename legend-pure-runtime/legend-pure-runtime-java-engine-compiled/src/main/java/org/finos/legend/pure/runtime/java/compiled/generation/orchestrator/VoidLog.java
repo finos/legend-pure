@@ -17,6 +17,12 @@ package org.finos.legend.pure.runtime.java.compiled.generation.orchestrator;
 public class VoidLog implements Log
 {
     @Override
+    public void debug(String txt)
+    {
+
+    }
+
+    @Override
     public void info(String txt)
     {
 

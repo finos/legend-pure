@@ -17,6 +17,7 @@ package org.finos.legend.pure.m3.generator.par;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
+import org.finos.legend.pure.m3.generator.Log;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
@@ -54,9 +55,9 @@ public class PureJarSerializer
         RichIterable<CodeRepository> repositoriesToSerialize;
         if (sourceDirectory == null)
         {
-            log.info("    *Building code storage leveraging the class loader (as sourceDirectory is not specified)");
+            log.debug("    *Building code storage leveraging the class loader (as sourceDirectory is not specified)");
             ClassLoaderCodeStorage cs = new ClassLoaderCodeStorage(classLoader, repositories.getRepositories());
-            log.info("      " + cs.getAllRepositories().collect(CodeRepository::getName) + " - " + cs.getUserFiles().size() + " files");
+            log.debug("      " + cs.getAllRepositories().collect(CodeRepository::getName) + " - " + cs.getUserFiles().size() + " files");
             MutableRepositoryCodeStorage codeStorage = new CompositeCodeStorage(cs);
 
             Message message = getMessage(log, "      ");
@@ -67,7 +68,7 @@ public class PureJarSerializer
         }
         else
         {
-            log.info("    *Building code storage leveraging the sourceDirectory " + sourceDirectory);
+            log.debug("    *Building code storage leveraging the sourceDirectory " + sourceDirectory);
 
             MutableList<CodeRepository> repositoriesWithSource = Lists.mutable.empty();
             MutableList<CodeRepository> repositoriesWithoutSource = Lists.mutable.empty();
@@ -76,7 +77,7 @@ public class PureJarSerializer
             // Code Storages
             MutableList<RepositoryCodeStorage> codeStoragesFromSource = repositoriesWithSource.collect(r -> new MutableFSCodeStorage(r, sourceDirectory.resolve(r.getName())));
             MutableList<RepositoryCodeStorage> allCodeStorage = Lists.mutable.withAll(codeStoragesFromSource).with(new ClassLoaderCodeStorage(classLoader, repositoriesWithoutSource));
-            log.info("    *Loading the following repo from PARs: " + repositoriesWithoutSource.collect(CodeRepository::getName));
+            log.debug("    *Loading the following repo from PARs: " + repositoriesWithoutSource.collect(CodeRepository::getName));
 
             // Build the runtime
             MutableRepositoryCodeStorage codeStorage = new CompositeCodeStorage(allCodeStorage.toArray(new RepositoryCodeStorage[0]));
@@ -90,16 +91,16 @@ public class PureJarSerializer
 
             // Compile Sources
             log.info("    *Starting file compilation");
-            codeStoragesFromSource.forEach(r -> log.info("      " + r.getAllRepositories().collect(CodeRepository::getName) + " - " + r.getUserFiles().size() + " files (from: " + ((FSCodeStorage) r).getRoot() + ")"));
+            codeStoragesFromSource.forEach(r -> log.debug("      " + r.getAllRepositories().collect(CodeRepository::getName) + " - " + r.getUserFiles().size() + " files (from: " + ((FSCodeStorage) r).getRoot() + ")"));
             repositoriesWithSource.forEach(repository ->
             {
                 Path path = sourceDirectory.resolve(repository.getName());
-                log.info("      Compiling repository '" + repository.getName() + "' in " + path);
+                log.debug("      Compiling repository '" + repository.getName() + "' in " + path);
                 MutableFSCodeStorage fs = new MutableFSCodeStorage(repository, path);
                 RichIterable<String> filesToCompile = fs.getUserFiles();
-                log.info("        Found " + filesToCompile.size() + " files");
+                log.debug("        Found " + filesToCompile.size() + " files");
                 runtime.loadAndCompile(filesToCompile);
-                log.info("        -> Finished compiling repository '" + repository.getName() + "'");
+                log.debug("        -> Finished compiling repository '" + repository.getName() + "'");
             });
 
             repositoriesToSerialize = repositoriesWithSource;
@@ -111,7 +112,7 @@ public class PureJarSerializer
         for (String repositoryName : repositoriesToSerialize.collect(CodeRepository::getName))
         {
             Path outputFile = outputDirectory.resolve("pure-" + repositoryName + "." + ARCHIVE_FILE_EXTENSION);
-            log.info("      Writing " + outputFile);
+            log.debug("      Writing " + outputFile);
             try (OutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(outputFile)))
             {
                 BinaryModelRepositorySerializer.serialize(outputStream, platformVersion, modelVersion, repositoryName, runtime);
@@ -128,7 +129,7 @@ public class PureJarSerializer
             {
                 if (!message.startsWith("Binding") && !message.startsWith("Parsing") && !message.startsWith("Unbinding"))
                 {
-                    log.info(prefix + message);
+                    log.debug(prefix + message);
                 }
             }
         };
