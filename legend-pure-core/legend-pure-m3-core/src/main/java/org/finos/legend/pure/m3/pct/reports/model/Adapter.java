@@ -14,8 +14,16 @@
 
 package org.finos.legend.pure.m3.pct.reports.model;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import java.util.Objects;
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "_type")
+@JsonSubTypes({
+        // Collection
+        @JsonSubTypes.Type(value = AdapterReverse.class, name = "reverse"),
+})
 public class Adapter
 {
     public String name;
