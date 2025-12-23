@@ -18,7 +18,6 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
 import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProviderLoader;
-import org.finos.legend.pure.runtime.java.compiled.testHelper.PCTReportGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 
