@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure-maven</artifactId>
-        <version>5.70.0</version>
+        <version>5.70.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>legend-pure-maven-compiler</artifactId>
