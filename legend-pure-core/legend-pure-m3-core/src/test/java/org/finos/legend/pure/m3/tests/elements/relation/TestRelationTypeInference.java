@@ -114,6 +114,54 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testColumnMultiplicityPropagationWithSelector()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(p:Relation<(legal:String[1], other:Integer[0..1])>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "   $p->select(~[legal, other])->map(x|$x.legal + 'a');\n" +
+                        "   true;\n" +
+                        "}\n" +
+                        "\n" +
+                        "native function select<T,X>(x:Relation<X>[1], rel:ColSpecArray<T⊆X>[1]):Relation<T>[1];" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];"
+        );
+    }
+
+    @Test
+    public void testColumnMultiplicityPropagationWithSelectorWithError()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(p:Relation<(legal:String[1], other:Integer[0..1])>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "   $p->select(~[legal,other])->map(x|$x.other + 1);\n" +
+                        "   true;\n" +
+                        "}\n" +
+                        "\n" +
+                        "native function select<T,X>(x:Relation<X>[1], rel:ColSpecArray<T⊆X>[1]):Relation<T>[1];" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];"));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:4 column:41), \"Required multiplicity: 1, found: 0..1\"", e.getMessage());
+    }
+
+    @Test
+    public void testColumnMultiplicityPropagationWithSelectorWithErrorWithDefault()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(p:Relation<(legal:String[1], other:Integer)>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "   $p->select(~[legal,other])->map(x|$x.other + 1);\n" +
+                        "   true;\n" +
+                        "}\n" +
+                        "\n" +
+                        "native function select<T,X>(x:Relation<X>[1], rel:ColSpecArray<T⊆X>[1]):Relation<T>[1];" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];"));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:4 column:41), \"Required multiplicity: 1, found: 0..1\"", e.getMessage());
+    }
+
+    @Test
     public void testColumnFunctionCollectionInference2()
     {
         compileInferenceTest(

@@ -714,9 +714,13 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                             }
 
                             GenericType foundColumnType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(_Column.getColumnType(foundColumn), processorSupport);
+
                             // Fill the type
                             potentialEmptyType._rawType(foundColumnType._rawType());
                             potentialEmptyType._typeVariableValues(foundColumnType._typeVariableValues());
+
+                            // Replace the multiplicity
+                            currentColumn._classifierGenericType()._multiplicityArguments(Lists.mutable.with((Multiplicity)org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.copyMultiplicity(_Column.getColumnMultiplicity(foundColumn), true, processorSupport)));
 
                             CoreInstance left = org.finos.legend.pure.m3.navigation.generictype.GenericType.getLeftFromSubset(typeToAnalyze);
                             // Check if left is an EQUAL operation
