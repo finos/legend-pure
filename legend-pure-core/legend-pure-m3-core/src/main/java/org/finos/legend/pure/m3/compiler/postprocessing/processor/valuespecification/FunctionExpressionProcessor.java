@@ -302,8 +302,22 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 }
                 else if (_RelationType.isRelationType(sourceGenericType._rawType(), processorSupport))
                 {
-                    String name = functionExpression._propertyName()._valuesCoreInstance().getAny().getName();
-                    foundFunctions.add(_RelationType.findColumn((RelationType<?>) sourceGenericType._rawType(), name, functionExpression.getSourceInformation(), processorSupport));
+                    Multiplicity sourceMultiplicity = source._multiplicity();
+                    if (org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isToOne(sourceMultiplicity, true))
+                    {
+                        String name = functionExpression._propertyName()._valuesCoreInstance().getAny().getName();
+                        foundFunctions.add(_RelationType.findColumn((RelationType<?>) sourceGenericType._rawType(), name, functionExpression.getSourceInformation(), processorSupport));
+                    }
+                    else
+                    {
+                        //Automap
+                        reprocessPropertyForManySources(functionExpression, parametersValues, M3Properties.propertyName, sourceGenericType, repository, processorSupport);
+                        //The parameters values are now different, so update
+                        parametersValues = ListHelper.wrapListIterable(functionExpression._parametersValues());
+                        //Have another go at type inference
+                        parametersRequiringTypeInference = firstPassTypeInference(functionExpression, parametersValues, state, matcher, repository, context, processorSupport);
+                        //return;
+                    }
                 }
                 else
                 {

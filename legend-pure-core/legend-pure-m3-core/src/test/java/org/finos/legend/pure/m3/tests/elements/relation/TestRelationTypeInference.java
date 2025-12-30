@@ -114,6 +114,41 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testRespectPotentialEmptyRow()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(x:Relation<(legal:String[1], other:Integer[0..1])>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "   $x->extend(over(), ~new:{p,w,r|$p->lag($r).legal + 'w'});\n" +
+                        "   true;\n" +
+                        "}\n" +
+                        "\n" +
+                        "native function over<T>():_Window<T>[1];" +
+                        "native function extend<T,Z,W,R>(r:Relation<T>[1], window:_Window<T>[1], f:FuncColSpec<{Relation<T>[1],_Window<T>[1],T[1]->Any[0..1]},R>[1]):Relation<T+R>[1];" +
+                        "native function lag<T>(w:Relation<T>[1],r:T[1]):T[0..1];"
+        ));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:4 column:47), \"Required multiplicity: 1, found: 0..1\"", e.getMessage());
+    }
+
+    @Test
+    public void testRespectPotentialEmptyRowWorking()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(x:Relation<(legal:String[1], other:Integer[0..1])>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "   $x->extend(over(), ~new:{p,w,r|$p->lag($r).legal + 'w'});\n" +
+                        "   true;\n" +
+                        "}\n" +
+                        "\n" +
+                        "native function over<T>():_Window<T>[1];" +
+                        "native function extend<T,Z,W,R>(r:Relation<T>[1], window:_Window<T>[1], f:FuncColSpec<{Relation<T>[1],_Window<T>[1],T[1]->Any[0..1]},R>[1]):Relation<T+R>[1];" +
+                        "native function lag<T>(w:Relation<T>[1],r:T[1]):T[1];"
+        );
+    }
+
+    @Test
     public void testColumnMultiplicityPropagationWithSelector()
     {
         compileInferenceTest(
