@@ -302,8 +302,22 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 }
                 else if (_RelationType.isRelationType(sourceGenericType._rawType(), processorSupport))
                 {
-                    String name = functionExpression._propertyName()._valuesCoreInstance().getAny().getName();
-                    foundFunctions.add(_RelationType.findColumn((RelationType<?>) sourceGenericType._rawType(), name, functionExpression.getSourceInformation(), processorSupport));
+                    Multiplicity sourceMultiplicity = source._multiplicity();
+                    if (org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isToOne(sourceMultiplicity, true))
+                    {
+                        String name = functionExpression._propertyName()._valuesCoreInstance().getAny().getName();
+                        foundFunctions.add(_RelationType.findColumn((RelationType<?>) sourceGenericType._rawType(), name, functionExpression.getSourceInformation(), processorSupport));
+                    }
+                    else
+                    {
+                        //Automap
+                        reprocessPropertyForManySources(functionExpression, parametersValues, M3Properties.propertyName, sourceGenericType, repository, processorSupport);
+                        //The parameters values are now different, so update
+                        parametersValues = ListHelper.wrapListIterable(functionExpression._parametersValues());
+                        //Have another go at type inference
+                        parametersRequiringTypeInference = firstPassTypeInference(functionExpression, parametersValues, state, matcher, repository, context, processorSupport);
+                        //return;
+                    }
                 }
                 else
                 {
@@ -714,9 +728,13 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                             }
 
                             GenericType foundColumnType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(_Column.getColumnType(foundColumn), processorSupport);
+
                             // Fill the type
                             potentialEmptyType._rawType(foundColumnType._rawType());
                             potentialEmptyType._typeVariableValues(foundColumnType._typeVariableValues());
+
+                            // Replace the multiplicity
+                            currentColumn._classifierGenericType()._multiplicityArguments(Lists.mutable.with((Multiplicity)org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.copyMultiplicity(_Column.getColumnMultiplicity(foundColumn), true, processorSupport)));
 
                             CoreInstance left = org.finos.legend.pure.m3.navigation.generictype.GenericType.getLeftFromSubset(typeToAnalyze);
                             // Check if left is an EQUAL operation
