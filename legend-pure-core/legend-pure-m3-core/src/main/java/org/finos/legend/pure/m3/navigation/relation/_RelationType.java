@@ -216,10 +216,10 @@ public class _RelationType
                             String cName = c.getOne()._nameWildCard() ? c.getTwo()._name() : c.getOne()._name();
                             GenericType a = _Column.getColumnType(c.getOne());
                             GenericType b = _Column.getColumnType(c.getTwo());
-                            Type rawTypeA = (Type)Instance.getValueForMetaPropertyToOneResolved(a, M3Properties.rawType, processorSupport);
-                            Type rawTypeB = (Type)Instance.getValueForMetaPropertyToOneResolved(b, M3Properties.rawType, processorSupport);
+                            Type rawTypeA = (Type) Instance.getValueForMetaPropertyToOneResolved(a, M3Properties.rawType, processorSupport);
+                            Type rawTypeB = (Type) Instance.getValueForMetaPropertyToOneResolved(b, M3Properties.rawType, processorSupport);
                             GenericType merged = rawTypeA == null ? b : rawTypeB == null ? a : (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(a, b), isCovariant, false, genericTypeCopy.getSourceInformation(), processorSupport);
-                            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity mergedMul = rawTypeA == null ? _Column.getColumnMultiplicity(c.getTwo()) : rawTypeB == null ? _Column.getColumnMultiplicity(c.getOne()) :(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) Multiplicity.minSubsumingMultiplicity(_Column.getColumnMultiplicity(c.getOne()), _Column.getColumnMultiplicity(c.getTwo()), processorSupport);
+                            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity mergedMul = rawTypeA == null ? _Column.getColumnMultiplicity(c.getTwo()) : rawTypeB == null ? _Column.getColumnMultiplicity(c.getOne()) : (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) Multiplicity.minSubsumingMultiplicity(_Column.getColumnMultiplicity(c.getOne()), _Column.getColumnMultiplicity(c.getTwo()), processorSupport);
                             return _Column.getColumnInstance(cName, wildcard, merged, mergedMul, null, processorSupport);
                         }),
                         existingGenericType.getValueForMetaPropertyToOne(M3Properties.rawType).getSourceInformation(),
@@ -232,7 +232,7 @@ public class _RelationType
     public static boolean containsExtendedPrimitiveType(CoreInstance relationType, ProcessorSupport processorSupport)
     {
         RelationType<?> rOne = RelationTypeCoreInstanceWrapper.toRelationType(relationType);
-        return rOne._columns().injectInto(false, (a,b) -> a || org.finos.legend.pure.m3.navigation.generictype.GenericType.testContainsExtendedPrimitiveTypes(_Column.getColumnType(b), processorSupport));
+        return rOne._columns().injectInto(false, (a, b) -> a || org.finos.legend.pure.m3.navigation.generictype.GenericType.testContainsExtendedPrimitiveTypes(_Column.getColumnType(b), processorSupport));
     }
 
     public static boolean isRelationTypeFullyConcrete(CoreInstance relationType, boolean checkFunctionTypes, ProcessorSupport processorSupport)
