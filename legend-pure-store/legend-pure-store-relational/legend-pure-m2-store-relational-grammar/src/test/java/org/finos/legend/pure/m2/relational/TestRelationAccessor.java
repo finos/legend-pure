@@ -91,6 +91,27 @@ public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreComp
     }
 
     @Test
+    public void testRelationAccessorMultiplicityWithChaining()
+    {
+        String sourceCode =
+                "###Pure\n" +
+                        "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
+                        "native function meta::pure::functions::relation::select<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], cols:meta::pure::metamodel::relation::ColSpecArray<Z⊆T>[1]):meta::pure::metamodel::relation::Relation<Z>[1];\n" +
+                        "native function meta::pure::functions::relation::select<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], cols:meta::pure::metamodel::relation::ColSpec<Z⊆T>[1]):meta::pure::metamodel::relation::Relation<Z>[1];\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.PersonTable}#->select(~[firstName, lastName, firmId])->select(~firmId)->filter(f|($f.firmId + 1) == 1);" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "( \n" +
+                        "   Table PersonTable(firstName VARCHAR(200), lastName VARCHAR(200), firmId INTEGER NOT NULL)\n" +
+                        ")\n";
+        createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+    }
+
+
+    @Test
     public void testRelationAccessorWithSpace()
     {
         String sourceCode =
