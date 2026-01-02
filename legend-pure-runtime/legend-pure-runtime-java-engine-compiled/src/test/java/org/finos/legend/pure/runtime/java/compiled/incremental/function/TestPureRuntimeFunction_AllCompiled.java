@@ -45,4 +45,10 @@ public class TestPureRuntimeFunction_AllCompiled extends TestPureRuntimeFunction
     {
         return Lists.fixedSize.of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
     }
+
+    // Map is not supported in compiled in Legend Pure...
+    @Override
+    public void testPureRuntimeFunctionTypePropagationWithSelector()
+    {
+    }
 }

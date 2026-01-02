@@ -21,6 +21,7 @@ import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionTypeCoreInstanceWrapper;
@@ -29,11 +30,14 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.T
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.relation._Column;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
@@ -92,7 +96,7 @@ public class GenericTypeValidator implements MatchRunner<GenericType>
     private static void validateGenericTypeRecursive(GenericType genericType, boolean validateFullyDefined, ProcessorSupport processorSupport)
     {
         validateGenericTypeRecursive(
-                ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport),
+                Instance.getValueForMetaPropertyToOneResolved(genericType,"rawType", processorSupport),//ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport),
                 ListHelper.wrapListIterable(genericType._typeArguments()),
                 ListHelper.wrapListIterable(genericType._multiplicityArguments()),
                 ListHelper.wrapListIterable(genericType._typeVariableValues()),
@@ -156,6 +160,10 @@ public class GenericTypeValidator implements MatchRunner<GenericType>
                     org.finos.legend.pure.m3.navigation.generictype.GenericType.print(message, rawType, typeVariableValues, typeArguments, multiplicityArguments, processorSupport);
                     throw new PureCompilationException(sourceInformationForError, message.toString());
                 }
+            }
+            else if (_RelationType.isRelationType(rawType, processorSupport))
+            {
+                ((RelationType<?>)rawType)._columns().forEach(x -> validateGenericTypeRecursive(_Column.getColumnType(x), validateFullyDefined, processorSupport));
             }
             else if (org.finos.legend.pure.m3.navigation.function.FunctionType.isFunctionType(rawType, processorSupport))
             {
@@ -226,7 +234,7 @@ public class GenericTypeValidator implements MatchRunner<GenericType>
         if (val instanceof InstanceValue)
         {
             // TODO make this more principled
-            return processorSupport.getClassifier(((InstanceValue) val)._valuesCoreInstance().getFirst());
+            return processorSupport.getClassifier(val.getValueForMetaPropertyToMany("values").getFirst());
         }
         if (val instanceof VariableExpression)
         {

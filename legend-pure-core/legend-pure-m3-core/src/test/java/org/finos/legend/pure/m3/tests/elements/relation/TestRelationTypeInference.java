@@ -250,7 +250,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                         "\n"
         );
     }
-    
+
     @Ignore
     @Test
     public void testColumnFunctionCollectionInference4() // Stackoverflow
@@ -278,7 +278,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                         "\n"
         );
     }
-    
+
     @Test
     public void testColumnFunctionCollectionChainedWithNewFunctionInference()
     {
@@ -436,7 +436,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                         "native function diff<Z,T>(x:Relation<T>[1], k:Relation<Z>[1]):Relation<T-Z>[1];\n" +
                         "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];\n"
         ));
-        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:10 column:135), \"The system can't find the column legal3 in the Relation (legal:String)\"", e.getMessage());
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:10 column:135), \"The system can't find the column legal3 in the Relation (legal:String[1])\"", e.getMessage());
     }
 
     @Test
@@ -864,6 +864,25 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testFunctionExpressionSortAfterExtend()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "import meta::pure::metamodel::variant::*;" +
+                        "function meta::pure::functions::relation::descending<T>(column:ColSpec<T>[1]):SortInfo<T>[1]\n" +
+                        "{\n" +
+                        "   ^SortInfo<T>(column=$column, direction=SortType.DESC)\n" +
+                        "}\n" +
+                        "function f(t:Relation<(value:Integer, name:Variant)>[1]):Relation<Any>[1]\n" +
+                        "{\n" +
+                        "    $t->extend(~ok:x|$x.name)->sort(descending(~ok));\n" +
+                        "}" +
+                        "native function sort<X,T>(rel:Relation<T>[1], sortInfo:SortInfo<X⊆T>[*]):Relation<T>[1];\n" +
+                        "native function extend<T,Z>(r:Relation<T>[1], f:FuncColSpec<{T[1]->Any[0..1]},Z>[1]):Relation<T+Z>[1];\n" +
+                        "native function get(variant: Variant[0..1], key: String[1]): Variant[0..1];");
+    }
+
+    @Test
     public void testDistinctError()
     {
         compileInferenceTest(
@@ -937,22 +956,22 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     public void testRelationTypeInferenceIntegrityWithSelect()
     {
         String functionSource = "import meta::pure::metamodel::relation::*;" +
-                                "function f(t:Relation<(value:Integer,str:String)>[1]):Relation<Any>[1]\n" +
-                                "{\n" +
-                                "    $t->select(~[value, str])\n" +
-                                "}";
+                "function f(t:Relation<(value:Integer,str:String)>[1]):Relation<Any>[1]\n" +
+                "{\n" +
+                "    $t->select(~[value, str])\n" +
+                "}";
         String nativeFunctionSource = "import meta::pure::metamodel::relation::*;" +
-                                      "native function select<T,X>(x:Relation<X>[1], rel:ColSpecArray<T⊆X>[1]):Relation<T>[1];";
-        
+                "native function select<T,X>(x:Relation<X>[1], rel:ColSpecArray<T⊆X>[1]):Relation<T>[1];";
+
         ImmutableMap<String, String> sources = Maps.immutable.of("1.pure", functionSource, "2.pure", nativeFunctionSource);
-        
+
         new RuntimeTestScriptBuilder().createInMemorySources(sources).compile().run(runtime, functionExecution);
 
         RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(
-            runtime, 
-            functionExecution,
-            Lists.fixedSize.of(Tuples.pair("2.pure", nativeFunctionSource)), 
-            this.getAdditionalVerifiers()
+                runtime,
+                functionExecution,
+                Lists.fixedSize.of(Tuples.pair("2.pure", nativeFunctionSource)),
+                this.getAdditionalVerifiers()
         );
     }
 

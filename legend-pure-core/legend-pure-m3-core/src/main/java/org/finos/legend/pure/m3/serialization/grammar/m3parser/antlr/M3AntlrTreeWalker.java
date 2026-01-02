@@ -100,6 +100,12 @@ public class M3AntlrTreeWalker extends org.finos.legend.pure.m3.serialization.gr
         return this.antlrContextToM3Builder.type(ctx, Lists.mutable.<String>empty(), "", this.importId, true);
     }
 
+    @Override
+    public CoreInstance visitExpression(M3Parser.ExpressionContext ctx)
+    {
+        return this.antlrContextToM3Builder.expression(ctx, "", Lists.mutable.<String>empty(), Lists.mutable.<String>empty(), null, "", true, this.importId, true);
+   }
+
     TemporaryPureSetImplementation walkMapping(org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MappingContext ctx, AntlrContextToM3CoreInstance.LambdaContext lambdaContext)
     {
         return this.antlrContextToM3Builder.mapping(ctx, this.classPathForMapping, lambdaContext, this.importId);

@@ -423,7 +423,8 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             columnTypeInferenceSuccess = true;
             for (int i = 0; i < lambdas.size(); i++)
             {
-                CoreInstance lambdaReturnType = lambdas.get(i).getValueForMetaPropertyToMany("expressionSequence").getLast().getValueForMetaPropertyToOne("genericType");
+                CoreInstance lastExpression = lambdas.get(i).getValueForMetaPropertyToMany("expressionSequence").getLast();
+                CoreInstance lambdaReturnType = lastExpression.getValueForMetaPropertyToOne("genericType");
                 if (lambdaReturnType != null)
                 {
                     CoreInstance columnGenericType = _Column.getColumnType((Column<?, ?>) columns.get(i));
@@ -433,6 +434,8 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                     {
                         columnGenericType.setKeyValues(Lists.mutable.with("typeVariableValues"), typeVariableValues);
                     }
+                    // Set multiplicity
+                    ((Column<?, ?>)columns.get(i))._classifierGenericType().setKeyValues(Lists.mutable.with("multiplicityArguments"), Lists.mutable.with(lastExpression.getValueForMetaPropertyToOne("multiplicity")));
                     ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(2).getValueForMetaPropertyToOne("genericType"), (GenericType) parameters.get(2).getValueForMetaPropertyToOne("genericType"), ctx, observer);
                 }
                 else
@@ -446,7 +449,9 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
             CoreInstance reduceLambda = parameters.get(1).getValueForMetaPropertyToOne("values");
             CoreInstance column = parameters.get(3).getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToOne("columns");
-            CoreInstance lambdaReturnType = reduceLambda.getValueForMetaPropertyToMany("expressionSequence").getLast().getValueForMetaPropertyToOne("genericType");
+
+            CoreInstance lastExpression = reduceLambda.getValueForMetaPropertyToMany("expressionSequence").getLast();
+            CoreInstance lambdaReturnType = lastExpression.getValueForMetaPropertyToOne("genericType");
             if (lambdaReturnType != null)
             {
                 CoreInstance columnGenericType = _Column.getColumnType((Column<?, ?>) column);
@@ -456,6 +461,8 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 {
                     columnGenericType.setKeyValues(Lists.mutable.with("typeVariableValues"), typeVariableValues);
                 }
+                // Set multiplicity
+                ((Column<?, ?>)column)._classifierGenericType().setKeyValues(Lists.mutable.with("multiplicityArguments"), Lists.mutable.with(lastExpression.getValueForMetaPropertyToOne("multiplicity")));
                 ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(3).getValueForMetaPropertyToOne("genericType"), (GenericType) parameters.get(3).getValueForMetaPropertyToOne("genericType"), ctx, observer);
                 columnTypeInferenceSuccess = true;
             }
@@ -707,7 +714,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             }
             TypeInferenceContext foundParentToUpdate = state.getTypeInferenceContext().findParentForOperation(actualTemplateToInferColumnType);
 
-            GenericType instanceGenericType = instance._genericType();
+            GenericType instanceGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(instance._genericType(), processorSupport);
             GenericType typeToAnalyze = _typeToAnalyze;
             ((RelationType<?>) instanceGenericType._rawType())._columns().forEach(currentColumn ->
             {
