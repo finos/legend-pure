@@ -75,4 +75,22 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
         CoreInstance classifier = ci.getClassifier();
         Assert.assertEquals(expected, classifier);
     }
+
+    @Test
+    public void testLazyMetaDataClassifierForGenericTypes()
+    {
+        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::generics::GenericType");
+        MutableList<String> invalidGenericTypes = this.metadataLazy.getClassifierInstances("meta::pure::metamodel::type::generics::GenericType")
+                .collectIf(ci -> ci.getClassifier() != expected, CoreInstance::getName, Lists.mutable.empty());
+        Assert.assertEquals("generic types with the wrong classifier", Lists.fixedSize.empty(), invalidGenericTypes);
+    }
+
+    @Test
+    public void testLazyMetaDataClassifierForGenericType()
+    {
+        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::Class");
+        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::generics::GenericType");
+        CoreInstance classifier = ci.getClassifier();
+        Assert.assertEquals(expected, classifier);
+    }
 }

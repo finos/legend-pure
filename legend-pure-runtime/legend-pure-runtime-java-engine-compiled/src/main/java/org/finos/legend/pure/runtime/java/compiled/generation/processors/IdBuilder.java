@@ -36,6 +36,8 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
 
+import java.nio.ByteBuffer;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -46,14 +48,16 @@ public class IdBuilder
     private final ProcessorSupport processorSupport;
     private final ImmutableMap<CoreInstance, Function<? super CoreInstance, String>> idBuilders;
     private final ConcurrentMutableMap<CoreInstance, Function<? super CoreInstance, String>> cache;
+    private final boolean hashIds;
 
-    private IdBuilder(String defaultIdPrefix, ProcessorSupport processorSupport, ImmutableMap<CoreInstance, Function<? super CoreInstance, String>> idBuilders)
+    private IdBuilder(String defaultIdPrefix, ProcessorSupport processorSupport, ImmutableMap<CoreInstance, Function<? super CoreInstance, String>> idBuilders, boolean hashIds)
     {
         this.defaultIdPrefix = defaultIdPrefix;
         this.processorSupport = processorSupport;
         this.idBuilders = idBuilders;
         this.cache = ConcurrentHashMap.newMap(this.idBuilders.size());
         this.idBuilders.forEachKeyValue(this.cache::put);
+        this.hashIds = hashIds;
     }
 
     public String buildId(CoreInstance instance)
@@ -89,13 +93,18 @@ public class IdBuilder
     private String applyBuilderFunction(Function<? super CoreInstance, String> function, CoreInstance instance)
     {
         String id = function.apply(instance);
-        return (id == null) ? buildDefaultId(instance) : id;
+        return possiblyHashId((id == null) ? buildDefaultId(instance) : id);
     }
 
     private String buildDefaultId(CoreInstance instance)
     {
         int syntheticId = instance.getSyntheticId();
-        return (this.defaultIdPrefix == null) ? Integer.toString(syntheticId) : (this.defaultIdPrefix + syntheticId);
+        return possiblyHashId((this.defaultIdPrefix == null) ? Integer.toString(syntheticId) : (this.defaultIdPrefix + syntheticId));
+    }
+
+    private String possiblyHashId(String id)
+    {
+        return this.hashIds ? hashToBase64String(id) : id;
     }
 
     // QualifiedProperty
@@ -194,6 +203,7 @@ public class IdBuilder
         private final MutableMap<CoreInstance, Function<? super CoreInstance, String>> idBuilders = Maps.mutable.empty();
         private final ProcessorSupport processorSupport;
         private String defaultIdPrefix;
+        private boolean hashIds;
 
         public Builder(ProcessorSupport processorSupport)
         {
@@ -316,6 +326,17 @@ public class IdBuilder
             return this;
         }
 
+        public void setHashIds(boolean hashIds)
+        {
+            this.hashIds = hashIds;
+        }
+
+        public Builder withHashIds(boolean hashIds)
+        {
+            setHashIds(hashIds);
+            return this;
+        }
+
         /**
          * Build the {@linkplain IdBuilder}.
          *
@@ -323,7 +344,7 @@ public class IdBuilder
          */
         public IdBuilder build()
         {
-            return new IdBuilder(this.defaultIdPrefix, this.processorSupport, this.idBuilders.toImmutable());
+            return new IdBuilder(this.defaultIdPrefix, this.processorSupport, this.idBuilders.toImmutable(), this.hashIds);
         }
 
         private void addStandardIdBuilders()
@@ -381,5 +402,22 @@ public class IdBuilder
 
         int endIndex = CodeStorageTools.hasPureFileExtension(sourceId) ? (sourceId.length() - RepositoryCodeStorage.PURE_FILE_EXTENSION.length()) : sourceId.length();
         return sourceId.substring(1, endIndex).replace('/', '_');
+    }
+
+    public static String hashToBase64String(String instanceId)
+    {
+        long hashedInstanceId = hash(instanceId);
+        byte[] longBytes = ByteBuffer.allocate(8).putLong(hashedInstanceId).array();
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(longBytes);
+    }
+
+    private static long hash(String id)
+    {
+        long value = 0;
+        for (int i = 0, codePoint; i < id.length(); i += Character.charCount(codePoint))
+        {
+            value = (31 * value) + (codePoint = id.codePointAt(i));
+        }
+        return value;
     }
 }
