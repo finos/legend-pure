@@ -164,10 +164,10 @@ public class TestTDSDSLCompilation extends AbstractPureTestWithCoreCompiled
                 "import meta::pure::metamodel::relation::*;" +
                         "import meta::pure::precisePrimitives::*;" +
                         "Primitive meta::pure::precisePrimitives::Numeric(x:Integer[1], y:Integer[1]) extends Decimal\n" +
-                        "function test():TDS<(value:Float[1],other:Numeric(10,4)[0..1],name:String)>[*]\n" +
+                        "function test():TDS<(value:Float[1],other:Numeric(10,4)[0..1],'name ok':String)>[*]\n" +
                         "{\n" +
                         "       #TDS\n" +
-                        "         value : Float[1], other: Numeric(10,4)[1], name :String\n" +
+                        "         value : Float[1], other: Numeric(10,4)[1], 'name ok' :String\n" +
                         "         1, 3, A\n" +
                         "         2, 4, B\n" +
                         "       #\n" +

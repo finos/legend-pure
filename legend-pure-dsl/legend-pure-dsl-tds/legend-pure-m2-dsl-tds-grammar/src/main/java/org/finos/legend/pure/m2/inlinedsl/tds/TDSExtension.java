@@ -27,7 +27,6 @@ import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m2.inlinedsl.tds.processor.TDSProcessor;
 import org.finos.legend.pure.m2.inlinedsl.tds.unloader.TDSUnbind;
@@ -42,13 +41,16 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Mu
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.TDS;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.MilestoningDatesVarNamesExtractor;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.VisibilityValidator;
@@ -57,6 +59,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -137,9 +140,64 @@ public class TDSExtension implements InlineDSL
     public static TDS<?> parse(String text, SourceInformation sourceInfo, ProcessorSupport processorSupport)
     {
         Pair<String, GenericType> res = extractBodyAndType(text, header ->
-                (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(ArrayIterate.collect(header.split(","), a -> _Column.getColumnInstance(a.trim(), false, (String) null, null, sourceInfo, processorSupport)), null, processorSupport))
+                {
+                    AntlrSourceInformation sourceInformation = new AntlrSourceInformation(0, 0, "", true);
+                    org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = M3AntlrParser.initAntlrParser(true, "~[" + header + "]", sourceInformation);
+
+                    return (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(ListIterate.collect(parser.columnBuilders().oneColSpec(), oneColSpec ->
+                            {
+                                String name = oneColSpec.columnName().getText().trim();
+                                if (name.startsWith("'"))
+                                {
+                                    name = name.substring(1, name.length() - 1).trim();
+                                }
+                                Multiplicity multiplicity = oneColSpec.multiplicity() == null ? null : processMultiplicity(oneColSpec.multiplicity().multiplicityArgument(), processorSupport);
+                                GenericType type = processType(oneColSpec.type(), processorSupport);
+                                return _Column.getColumnInstance(name.trim(), false, type, multiplicity, sourceInfo, processorSupport);
+                            }
+                    ), null, processorSupport));
+                }
         );
         return parse(res.getTwo(), res.getOne(), sourceInfo, processorSupport);
+    }
+
+    private static GenericType processType(M3Parser.TypeContext type, ProcessorSupport processorSupport)
+    {
+        GenericType target = (GenericType) processorSupport.newAnonymousCoreInstance(null, M3Paths.GenericType);
+        if (type == null)
+        {
+            target._rawType(null);
+        }
+        else
+        {
+            CoreInstance _type = _Package.getByUserPath(type.getText(), processorSupport);
+            if (_type == null)
+            {
+                throw new PureCompilationException(type.getText() + " not found!  (imports are not scan for TDS column type resolution)");
+            }
+            target._rawType((Type) _type);
+        }
+        return target;
+    }
+
+    private static Multiplicity processMultiplicity(M3Parser.MultiplicityArgumentContext ctx, ProcessorSupport processorSupport)
+    {
+        if (ctx.identifier() == null)
+        {
+            if ((ctx.fromMultiplicity() == null || "1".equals(ctx.fromMultiplicity().getText())) && "1".equals(ctx.toMultiplicity().getText()))
+            {
+                return (Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne);
+            }
+            else if (ctx.fromMultiplicity() != null && "0".equals(ctx.fromMultiplicity().getText()) && "1".equals(ctx.toMultiplicity().getText()))
+            {
+                return (Multiplicity) processorSupport.package_getByUserPath(M3Paths.ZeroOne);
+            }
+            else
+            {
+                throw new RuntimeException("Not supported yet");
+            }
+        }
+        return null;
     }
 
     public static Pair<String, GenericType> extractBodyAndType(String text, Function<String, GenericType> res)
