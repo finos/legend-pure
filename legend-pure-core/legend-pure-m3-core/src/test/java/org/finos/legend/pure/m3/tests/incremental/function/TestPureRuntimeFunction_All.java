@@ -190,4 +190,38 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
     }
+
+
+    @Test
+    public void testPureRuntimeFunctionTypePropagationWithSelector()
+    {
+        RuntimeVerifier.verifyOperationIsStable(
+                new RuntimeTestScriptBuilder()
+                        .createInMemorySource(
+                                "/test/model.pure",
+                                "import meta::pure::metamodel::relation::*;" +
+                                        "native function test::select<T,X>(x:Relation<X>[1], rel:ColSpecArray<T⊆X>[1]):Relation<T>[1];" +
+                                        "native function test::map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];")
+                        .createInMemorySource(
+                                "/test/function.pure",
+                                "import meta::pure::metamodel::relation::*;" +
+                                        "import test::*;\n" +
+                                        "function test::f(p:Relation<(legal:String[1], other:Integer[0..1])>[1]):Boolean[1]\n" +
+                                        "{\n" +
+                                        "   $p->select(~[legal])->map(x|$x.legal + 'a');\n" +
+                                        "   true;\n" +
+                                        "}\n"
+                                )
+                        .compile(),
+                new RuntimeTestScriptBuilder()
+                        .deleteSource("/test/model.pure")
+                        .compileWithExpectedCompileFailure("The system can't find a match for the function: select(_:Relation<(legal:String[1], other:Integer)>[1],_:ColSpecArray<T>[1])", "/test/function.pure", 4, 8)
+                        .createInMemorySource(
+                                "/test/model.pure",
+                                "import meta::pure::metamodel::relation::*;" +
+                                        "native function test::select<T,X>(x:Relation<X>[1], rel:ColSpecArray<T⊆X>[1]):Relation<T>[1];" +
+                                        "native function test::map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];")
+                        .compile(),
+                runtime, functionExecution, this.getAdditionalVerifiers());
+    }
 }

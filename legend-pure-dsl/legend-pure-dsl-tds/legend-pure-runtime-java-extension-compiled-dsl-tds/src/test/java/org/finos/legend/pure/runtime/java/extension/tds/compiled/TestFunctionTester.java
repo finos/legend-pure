@@ -46,7 +46,7 @@ public class TestFunctionTester extends PureExpressionTest
         AbstractPureTestWithCoreCompiled.compileTestSource("fromString.pure",
                                 "function test():Any[*]\n" +
                                         "{" +
-                                        " meta::pure::metamodel::relation::stringToTDS('a\\n1');" +
+                                        " meta::pure::metamodel::relation::stringToTDS('\\'a bb\\':Integer\\n1');" +
                                         "}");
         this.execute("test():Any[*]");
         AbstractPureTestWithCoreCompiled.runtime.delete("fromString.pure");

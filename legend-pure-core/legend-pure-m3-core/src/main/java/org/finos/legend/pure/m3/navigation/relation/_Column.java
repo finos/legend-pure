@@ -27,6 +27,7 @@ import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
@@ -35,7 +36,19 @@ public class _Column
     public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, SourceInformation src, ProcessorSupport processorSupport)
     {
         GenericType target = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
-        target._rawType(type == null ? null : (Type) Objects.requireNonNull(_Package.getByUserPath(type, processorSupport), () -> type + " not found!  (imports are not scan for TDS column type resolution)"));
+        if (type == null)
+        {
+            target._rawType(null);
+        }
+        else
+        {
+            CoreInstance _type = _Package.getByUserPath(type, processorSupport);
+            if (_type == null)
+            {
+                throw new PureCompilationException(src, type + " not found!  (imports are not scan for TDS column type resolution)");
+            }
+            target._rawType((Type)_type);
+        }
         return _Column.getColumnInstance(name, nameWildCard, target, multiplicity, src, processorSupport);
     }
 

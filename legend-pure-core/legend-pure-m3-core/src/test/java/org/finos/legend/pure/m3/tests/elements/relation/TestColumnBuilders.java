@@ -104,7 +104,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     public void testSimpleColumnWithFunction()
     {
         compileTestSource("fromString.pure",
-                "function test<U>():meta::pure::metamodel::relation::FuncColSpec<{U[1]->Any[1]}, (name:String)>[1]\n" +
+                "function test<U>():meta::pure::metamodel::relation::FuncColSpec<{U[1]->Any[1]}, (name:String[1])>[1]\n" +
                         "{\n" +
                         "   ~name:x|'ok';\n" +
                         "}");
@@ -115,7 +115,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("fromString.pure",
                 "import meta::pure::metamodel::relation::*;\n" +
-                        "function test<U>():meta::pure::metamodel::relation::FuncColSpec<{Relation<U>[1], _Window<U>[1], U[1]->Any[1]}, (name:String)>[1]\n" +
+                        "function test<U>():meta::pure::metamodel::relation::FuncColSpec<{Relation<U>[1], _Window<U>[1], U[1]->Any[1]}, (name:String[1])>[1]\n" +
                         "{\n" +
                         "   ~name:{p,f,r|'ok'};\n" +
                         "}");
@@ -125,7 +125,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     public void testSimpleColumnWithFunctionArray()
     {
         compileTestSource("fromString.pure",
-                "function test<U>():meta::pure::metamodel::relation::FuncColSpecArray<{Nil[1]->Any[*]}, (name:String, val:Integer)>[1]\n" +
+                "function test<U>():meta::pure::metamodel::relation::FuncColSpecArray<{Nil[1]->Any[*]}, (name:String[1], val:Integer[1])>[1]\n" +
                         "{\n" +
                         "   ~[name:x|'ok', val:x|1];\n" +
                         "}");
@@ -170,7 +170,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
                         "}"));
         assertPureException(
                 PureCompilationException.class,
-                "Return type error in function 'test'; found: meta::pure::metamodel::relation::FuncColSpec<{U[1]->meta::pure::metamodel::type::Any[1]}, (name:Integer)>; expected: meta::pure::metamodel::relation::FuncColSpec<{U[1]->meta::pure::metamodel::type::Any[1]}, (name:String)>",
+                "Return type error in function 'test'; found: meta::pure::metamodel::relation::FuncColSpec<{U[1]->meta::pure::metamodel::type::Any[1]}, (name:Integer[1])>; expected: meta::pure::metamodel::relation::FuncColSpec<{U[1]->meta::pure::metamodel::type::Any[1]}, (name:String)>",
                 "fromString.pure", 3, 4, 3, 4, 3, 4,
                 e);
     }
@@ -196,7 +196,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("fromString.pure",
                 "native function sum(i:Integer[*]):Integer[1];\n" +
-                        "function test<U>():meta::pure::metamodel::relation::AggColSpec<{U[1]->Integer[0..1]}, {Integer[*]->Integer[0..1]}, (name:Integer)>[1]\n" +
+                        "function test<U>():meta::pure::metamodel::relation::AggColSpec<{U[1]->Integer[0..1]}, {Integer[*]->Integer[0..1]}, (name:Integer[1])>[1]\n" +
                         "{\n" +
                         "   ~name: x|1 : y|$y->sum();\n" +
                         "}");
@@ -208,7 +208,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
         compileTestSource("fromString.pure",
                 "import meta::pure::metamodel::relation::*;\n" +
                         "native function sum(i:Integer[*]):Integer[1];\n" +
-                        "function test<U>():meta::pure::metamodel::relation::AggColSpec<{Relation<U>[1], _Window<U>[1], U[1]->Integer[0..1]}, {Integer[*]->Integer[0..1]}, (name:Integer)>[1]\n" +
+                        "function test<U>():meta::pure::metamodel::relation::AggColSpec<{Relation<U>[1], _Window<U>[1], U[1]->Integer[0..1]}, {Integer[*]->Integer[0..1]}, (name:Integer[1])>[1]\n" +
                         "{\n" +
                         "   ~name: {p,f,r|1} : y|$y->sum();\n" +
                         "}");
@@ -233,7 +233,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("fromString.pure",
                 "native function sum(i:Integer[*]):Integer[1];\n" +
-                        "function test<U>():meta::pure::metamodel::relation::AggColSpecArray<{Nil[1]->Any[0..1]}, {Nil[*]->Any[0..1]}, (name:Integer, newO:String)>[1]\n" +
+                        "function test<U>():meta::pure::metamodel::relation::AggColSpecArray<{Nil[1]->Any[0..1]}, {Nil[*]->Any[0..1]}, (name:Integer[1], newO:String[1])>[1]\n" +
                         "{\n" +
                         "   ~[name: x|1 : y|$y->sum(), newO: z|'a' : y|$y->joinStrings(',')]\n" +
                         "}");
@@ -310,7 +310,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
                         "}"));
         assertPureException(
                 PureCompilationException.class,
-                "The system can't find the column otherXne in the Relation (id:String, ok:Integer, name:Integer, otherOne:String)",
+                "The system can't find the column otherXne in the Relation (id:String, ok:Integer, name:Integer[1], otherOne:String[1])",
                 "fromString.pure", 7, 190, 7, 190, 7, 197,
                 e);
     }

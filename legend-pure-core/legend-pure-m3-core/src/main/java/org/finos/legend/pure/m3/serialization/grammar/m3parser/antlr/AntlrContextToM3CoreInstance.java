@@ -757,7 +757,7 @@ public class AntlrContextToM3CoreInstance
                 ._parametersValues(params);
     }
 
-    private CoreInstance expression(ExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    public CoreInstance expression(ExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         CoreInstance result;
 

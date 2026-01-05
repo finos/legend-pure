@@ -178,9 +178,14 @@ public class _RelationType
         }
         return col_one.zip(col_two).injectInto(true, (a, b) ->
         {
-            CoreInstance typeOne = b.getOne().getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).get(1).getValueForMetaPropertyToOne(M3Properties.rawType);
-            CoreInstance typeTwo = b.getTwo().getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).get(1).getValueForMetaPropertyToOne(M3Properties.rawType);
-            return a && typeOne == typeTwo && b.getOne().getValueForMetaPropertyToOne(M3Properties.name).getName().equals(b.getTwo().getValueForMetaPropertyToOne(M3Properties.name).getName());
+            CoreInstance typeOne = Instance.getValueForMetaPropertyToOneResolved(b.getOne().getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).get(1), M3Properties.rawType, processorSupport);
+            CoreInstance multiplicityOne = b.getOne().getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).get(0);
+            CoreInstance typeTwo = Instance.getValueForMetaPropertyToOneResolved(b.getTwo().getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).get(1), M3Properties.rawType, processorSupport);
+            CoreInstance multiplicityTwo = b.getTwo().getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).get(0);
+            return a &&
+                    typeOne == typeTwo &&
+                    Multiplicity.multiplicitiesEqual(multiplicityOne, multiplicityTwo) &&
+                    b.getOne().getValueForMetaPropertyToOne(M3Properties.name).getName().equals(b.getTwo().getValueForMetaPropertyToOne(M3Properties.name).getName());
         });
     }
 

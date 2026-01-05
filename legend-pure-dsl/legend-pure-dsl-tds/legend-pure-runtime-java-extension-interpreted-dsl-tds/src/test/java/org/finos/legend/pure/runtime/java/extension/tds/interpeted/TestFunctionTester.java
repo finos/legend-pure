@@ -41,7 +41,9 @@ public class TestFunctionTester extends PureExpressionTest
 
     protected static FunctionExecution getFunctionExecution()
     {
-        return new FunctionExecutionInterpreted();
+        FunctionExecutionInterpreted fi = new FunctionExecutionInterpreted();
+        fi.getConsole().enable();
+        return fi;
     }
 
     @org.junit.Test
@@ -50,7 +52,7 @@ public class TestFunctionTester extends PureExpressionTest
         compileTestSource("fromString.pure",
                                 "function test():Any[*]\n" +
                                         "{" +
-                                        " meta::pure::metamodel::relation::stringToTDS('a\\n1');" +
+                                        " println(meta::pure::metamodel::relation::stringToTDS('a:Integer[1]\\n1')->toString());" +
                                         "}");
         this.execute("test():Any[*]");
     }

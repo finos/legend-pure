@@ -20,7 +20,6 @@ import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m2.inlinedsl.tds.TDSExtension;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m4.ModelRepository;

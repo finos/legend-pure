@@ -22,6 +22,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.After;
 import org.junit.Assert;
@@ -74,6 +75,32 @@ public class TestTDSDSLCompilation extends AbstractPureTestWithCoreCompiled
         runtime.compile();
     }
 
+
+    @Test
+    public void testParsingError()
+    {
+        try
+        {
+            runtime.createInMemorySource("file.pure",
+                    "import meta::pure::metamodel::relation::*;\n" +
+                            "function test():Any[*]\n" +
+                            "{\n" +
+                            "   print(\n" +
+                            "       #TDS\n" +
+                            "         value, other, name, otherCol\n" +
+                            "         1, 3, A\n" +
+                            "         2, 4, B\n" +
+                            "       #\n" +
+                            ", 2);\n" +
+                            "}\n");
+            runtime.compile();
+        }
+        catch (PureCompilationException e)
+        {
+            Assert.assertEquals("Compilation error at (resource:file.pure lines:5c9-9c7), \"io.deephaven.csv.util.CsvReaderException: Row 2 has too few columns (expected 4)\"", e.getMessage());
+        }
+    }
+
     @Test
     public void testDeclarationWithExplicitTyping()
     {
@@ -88,6 +115,89 @@ public class TestTDSDSLCompilation extends AbstractPureTestWithCoreCompiled
                         "       #\n" +
                         "}\n");
         runtime.compile();
+    }
+
+    @Test
+    public void testDeclarationWithExplicitTypingError()
+    {
+        try
+        {
+            runtime.createInMemorySource("file.pure",
+                    "import meta::pure::metamodel::relation::*;\n" +
+                            "function test():TDS<(value:Float,other:Number,name:String)>[*]\n" +
+                            "{\n" +
+                            "       #TDS\n" +
+                            "         value:Float, other:Numxber, name\n" +
+                            "         1, 3, A\n" +
+                            "         2, 4, B\n" +
+                            "       #\n" +
+                            "}\n");
+            runtime.compile();
+            Assert.fail();
+        }
+        catch (PureCompilationException e)
+        {
+            Assert.assertEquals("Compilation error at (resource:file.pure lines:4c9-8c7), \"Numxber has not been defined!\"", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testDeclarationWithExplicitTypingAndMultiplicity()
+    {
+        runtime.createInMemorySource("file.pure",
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function test():TDS<(value:Float[1],other:Number[0..1],name:String)>[*]\n" +
+                        "{\n" +
+                        "       #TDS\n" +
+                        "         value : Float[1], other: Number[1], name :String\n" +
+                        "         1, 3, A\n" +
+                        "         2, 4, B\n" +
+                        "       #\n" +
+                        "}\n");
+        runtime.compile();
+    }
+
+    @Test
+    public void testDeclarationWithExplicitDecimalType()
+    {
+        runtime.createInMemorySource("file.pure",
+                "import meta::pure::metamodel::relation::*;" +
+                        "import meta::pure::precisePrimitives::*;" +
+                        "Primitive meta::pure::precisePrimitives::Numeric(x:Integer[1], y:Integer[1]) extends Decimal\n" +
+                        "function test():TDS<(value:Float[1],other:Numeric(10,4)[0..1],'name ok':String)>[*]\n" +
+                        "{\n" +
+                        "       #TDS\n" +
+                        "         value : Float[1], other: Numeric(10,4)[1], 'name ok' :String\n" +
+                        "         1, 3, A\n" +
+                        "         2, 4, B\n" +
+                        "       #\n" +
+                        "}\n");
+        runtime.compile();
+    }
+
+    @Test
+    public void testDeclarationWithExplicitTypingAndMultiplicityError()
+    {
+        try
+        {
+            runtime.createInMemorySource("file.pure",
+                    "import meta::pure::metamodel::relation::*;\n" +
+                            "function test():TDS<(value:Float[1],other:Number[0..1],name:String)>[*]\n" +
+                            "{\n" +
+                            "       #TDS\n" +
+                            "         value : Float, other: Number[1], name :String\n" +
+                            "         1, 3, A\n" +
+                            "         2, 4, B\n" +
+                            "       #\n" +
+                            "}\n");
+            runtime.compile();
+            Assert.fail();
+        }
+        catch (PureCompilationException e)
+        {
+            Assert.assertEquals("Compilation error at (resource:file.pure lines:2c10-9c1), \"Return type error in function 'test'; found: meta::pure::metamodel::relation::TDS<(value:Float, other:Number[1], name:String)>; expected: meta::pure::metamodel::relation::TDS<(value:Float[1], other:Number, name:String)>\"", e.getMessage());
+        }
+
     }
 
     @Test

@@ -247,6 +247,29 @@ public class M3AntlrParser implements Parser
         }
     }
 
+    public CoreInstance parseExpression(boolean useFastParser, String code, String fileName, int offsetLine, int offsetColumn, ImportGroup importId, ModelRepository repository, Context context) throws PureParserException
+    {
+        try
+        {
+            AntlrSourceInformation sourceInformation = new AntlrSourceInformation(offsetLine - 1, offsetColumn - 1, fileName, true);
+            org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(useFastParser, code, sourceInformation);
+            M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(sourceInformation, this.inlineDSLLibrary, repository, null, null, context, importId, 0, null);
+            return visitor.visit(parser.expression());
+        }
+        catch (Exception e)
+        {
+            if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
+            {
+                //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
+                return this.parseExpression(false, code, fileName, offsetLine, offsetColumn, importId, repository, context);
+            }
+            else
+            {
+                throw e;
+            }
+        }
+    }
+
     public CoreInstance parseInstance(boolean useFastParser, String code, String fileName, int offsetLine, int offsetColumn, ImportGroup importId, ModelRepository repository, Context context) throws PureParserException
     {
         try
