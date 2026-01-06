@@ -31,7 +31,6 @@ import org.apache.maven.project.ProjectDependenciesResolver;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.graph.DependencyFilter;
 import org.eclipse.aether.util.filter.ScopeDependencyFilter;
-import org.finos.legend.pure.m3.generator.Log;
 import org.finos.legend.pure.m3.generator.compiler.PureCompilerBinaryGenerator;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
@@ -118,26 +117,7 @@ public class PureCompilerMojo extends AbstractMojo
 
         try (URLClassLoader classLoader = new URLClassLoader(getDependencyURLs(resolvedDependencyScope), Thread.currentThread().getContextClassLoader()))
         {
-            PureCompilerBinaryGenerator.serializeModules(resolvedOutputDir.toPath(), classLoader, resolvedRepos, this.excludedRepositories, new Log()
-            {
-                @Override
-                public void debug(String txt)
-                {
-                    getLog().debug(txt);
-                }
-
-                @Override
-                public void info(String txt)
-                {
-                    getLog().info(txt);
-                }
-
-                @Override
-                public void error(String txt, Throwable e)
-                {
-                    getLog().error(txt, e);
-                }
-            });
+            PureCompilerBinaryGenerator.serializeModules(resolvedOutputDir.toPath(), classLoader, resolvedRepos, this.excludedRepositories);
         }
         catch (MojoExecutionException e)
         {

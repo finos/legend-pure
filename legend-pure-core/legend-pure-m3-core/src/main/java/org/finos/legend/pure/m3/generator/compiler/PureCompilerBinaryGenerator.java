@@ -21,8 +21,6 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.set.mutable.SetAdapter;
 import org.eclipse.collections.impl.utility.ArrayIterate;
-import org.finos.legend.pure.m3.generator.Log;
-import org.finos.legend.pure.m3.generator.LogToSystemOut;
 import org.finos.legend.pure.m3.serialization.compiler.PureCompilerSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.element.ConcreteElementSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.element.ElementLoader;
@@ -42,6 +40,8 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -49,6 +49,8 @@ import java.util.Set;
 
 public class PureCompilerBinaryGenerator
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PureCompilerBinaryGenerator.class);
+
     public static void main(String[] args)
     {
         Path outputDir = Paths.get(args[0]);
@@ -63,10 +65,10 @@ public class PureCompilerBinaryGenerator
 
     public static void serializeModules(Path outputDirectory, Iterable<String> modules)
     {
-        serializeModules(outputDirectory, null, modules, null, new LogToSystemOut());
+        serializeModules(outputDirectory, null, modules, null);
     }
 
-    public static void serializeModules(Path outputDirectory, ClassLoader classLoader, Iterable<String> modules, Iterable<String> excludedModules, Log log)
+    public static void serializeModules(Path outputDirectory, ClassLoader classLoader, Iterable<String> modules, Iterable<String> excludedModules)
     {
         long start = System.nanoTime();
         SetIterable<String> moduleSet = (modules == null) ? Sets.immutable.empty() :
@@ -74,7 +76,7 @@ public class PureCompilerBinaryGenerator
                                          ((modules instanceof Set) ? SetAdapter.adapt((Set<String>) modules) :
                                           Sets.mutable.withAll(modules)));
         String modulesLogString = moduleSet.isEmpty() ? "all modules" : moduleSet.toSortedList().makeString(", ");
-        log.info("Starting compilation of " + modulesLogString);
+        LOGGER.info("Starting compilation of {}", modulesLogString);
         Thread currentThread = Thread.currentThread();
         ClassLoader previousClassLoader = currentThread.getContextClassLoader();
         ClassLoader currentClassLoader = (classLoader == null) ? previousClassLoader : classLoader;
@@ -85,19 +87,19 @@ public class PureCompilerBinaryGenerator
         try
         {
             FilePathProvider filePathProvider = FilePathProvider.builder().withLoadedExtensions(currentClassLoader).build();
-            RepositoryInfo repositoryInfo = resolveRepositories(moduleSet, excludedModules, currentClassLoader, filePathProvider, log);
-            PureRuntime runtime = compile(currentClassLoader, repositoryInfo.toCompile, log);
-            serialize(outputDirectory, repositoryInfo.toSerialize, runtime, filePathProvider, log);
+            RepositoryInfo repositoryInfo = resolveRepositories(moduleSet, excludedModules, currentClassLoader, filePathProvider);
+            PureRuntime runtime = compile(currentClassLoader, repositoryInfo.toCompile);
+            serialize(outputDirectory, repositoryInfo.toSerialize, runtime, filePathProvider);
         }
         catch (Throwable t)
         {
-            log.error("Error during compilation of " + modulesLogString, t);
+            LOGGER.error("Error during compilation of {}", modulesLogString, t);
             throw t;
         }
         finally
         {
             long end = System.nanoTime();
-            log.info(String.format("Finished compilation of %s in %fs", modulesLogString, (end - start) / 1_000_000_000.0));
+            LOGGER.info("Finished compilation of {} in {}s", modulesLogString, (end - start) / 1_000_000_000.0);
             if (classLoader != null)
             {
                 currentThread.setContextClassLoader(previousClassLoader);
@@ -105,10 +107,10 @@ public class PureCompilerBinaryGenerator
         }
     }
 
-    private static RepositoryInfo resolveRepositories(SetIterable<String> modules, Iterable<String> excludedModules, ClassLoader classLoader, FilePathProvider filePathProvider, Log log)
+    private static RepositoryInfo resolveRepositories(SetIterable<String> modules, Iterable<String> excludedModules, ClassLoader classLoader, FilePathProvider filePathProvider)
     {
         MutableList<CodeRepository> foundRepos = CodeRepositoryProviderHelper.findCodeRepositories(true).toList();
-        log.debug(String.format("Found repositories: %s", foundRepos.asLazy().collect(CodeRepository::getName)));
+        LOGGER.debug("Found repositories: {}", foundRepos.asLazy().collect(CodeRepository::getName));
         CodeRepositorySet.Builder builder = CodeRepositorySet.builder().withCodeRepositories(foundRepos);
         if (excludedModules != null)
         {
@@ -122,7 +124,7 @@ public class PureCompilerBinaryGenerator
                     repo -> !excludedSet.contains(repo.getName()) && classLoader.getResource(filePathProvider.getModuleManifestResourceName(repo.getName())) == null,
                     CodeRepository::getName,
                     Sets.mutable.empty());
-            log.debug(String.format("Selected to serialize: %s", toSerialize.isEmpty() ? "<all>" : toSerialize));
+            LOGGER.debug("Selected to serialize: {}", toSerialize.isEmpty() ? "<all>" : toSerialize);
         }
         else
         {
@@ -133,14 +135,14 @@ public class PureCompilerBinaryGenerator
             builder.subset(toSerialize);
         }
         CodeRepositorySet resolvedRepositories = builder.build();
-        log.debug("Resolved repositories: " + resolvedRepositories.getRepositoryNames());
+        LOGGER.debug("Resolved repositories: {}", resolvedRepositories.getRepositoryNames());
         return new RepositoryInfo(resolvedRepositories, toSerialize);
     }
 
-    private static PureRuntime compile(ClassLoader classLoader, CodeRepositorySet codeRepositories, Log log)
+    private static PureRuntime compile(ClassLoader classLoader, CodeRepositorySet codeRepositories)
     {
         long start = System.nanoTime();
-        log.info("Starting compilation");
+        LOGGER.info("Starting compilation");
         try
         {
             CompositeCodeStorage codeStorage = new CompositeCodeStorage(new ClassLoaderCodeStorage(classLoader, codeRepositories.getRepositories()));
@@ -156,15 +158,15 @@ public class PureCompilerBinaryGenerator
             if (reposToLoad.isEmpty())
             {
                 long initStart = System.nanoTime();
-                log.info("No repositories to load: initializing runtime");
+                LOGGER.info("No repositories to load: initializing runtime");
                 runtime.initialize();
                 long initEnd = System.nanoTime();
-                log.info(String.format("Finished initializing runtime in %fs", (initEnd - initStart) / 1_000_000_000.0));
+                LOGGER.info("Finished initializing runtime in {}s", (initEnd - initStart) / 1_000_000_000.0);
                 return runtime;
             }
 
             long initStart = System.nanoTime();
-            log.info("Loading repositories: " + reposToLoad);
+            LOGGER.info("Loading repositories: {}", reposToLoad);
             loader.load(runtime, reposToLoad, false, new ElementLoader.BackReferenceFilter()
             {
                 @Override
@@ -192,41 +194,41 @@ public class PureCompilerBinaryGenerator
                 }
             });
             long initEnd = System.nanoTime();
-            log.info(String.format("Finished loading repositories in %fs", (initEnd - initStart) / 1_000_000_000.0));
+            LOGGER.info("Finished loading repositories in {}s", (initEnd - initStart) / 1_000_000_000.0);
 
             if (reposToCompile.notEmpty())
             {
                 long compileStart = System.nanoTime();
-                log.info("Compiling repositories: " + reposToCompile);
+                LOGGER.info("Compiling repositories: {}", reposToCompile);
                 runtime.loadAndCompile(reposToCompile.asLazy().flatCollect(codeStorage::getFileOrFiles).select(CodeStorageTools::isPureFilePath));
                 long compileEnd = System.nanoTime();
-                log.info(String.format("Finished compiling repositories in %fs", (compileEnd - compileStart) / 1_000_000_000.0));
+                LOGGER.info("Finished compiling repositories in {}s", (compileEnd - compileStart) / 1_000_000_000.0);
             }
 
             return runtime;
         }
         catch (PureCompilationException | PureParserException e)
         {
-            log.error("Compilation failed", e);
+            LOGGER.error("Compilation failed", e);
             throw e;
         }
         catch (Throwable t)
         {
-            log.error("Error during compilation", t);
+            LOGGER.error("Error during compilation", t);
             throw t;
         }
         finally
         {
             long end = System.nanoTime();
-            log.info(String.format("Finished compilation in %fs", (end - start) / 1_000_000_000.0));
+            LOGGER.info("Finished compilation in {}s", (end - start) / 1_000_000_000.0);
         }
     }
 
-    private static void serialize(Path outputDirectory, SetIterable<String> modules, PureRuntime runtime, FilePathProvider filePathProvider, Log log)
+    private static void serialize(Path outputDirectory, SetIterable<String> modules, PureRuntime runtime, FilePathProvider filePathProvider)
     {
         long start = System.nanoTime();
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        log.info("Starting serialization");
+        LOGGER.info("Starting serialization");
         try
         {
             ModuleMetadataGenerator moduleMetadataGenerator = ModuleMetadataGenerator.fromPureRuntime(runtime);
@@ -253,13 +255,13 @@ public class PureCompilerBinaryGenerator
         }
         catch (Throwable t)
         {
-            log.error("Error during serialization", t);
+            LOGGER.error("Error during serialization", t);
             throw t;
         }
         finally
         {
             long end = System.nanoTime();
-            log.info(String.format("Finished serialization in %fs", (end - start) / 1_000_000_000.0));
+            LOGGER.info("Finished serialization in {}s", (end - start) / 1_000_000_000.0);
         }
     }
 
