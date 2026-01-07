@@ -58,10 +58,18 @@ Primitive meta::pure::precisePrimitives::Float4 extends Float
 
 Primitive meta::pure::precisePrimitives::Double extends Float
 
-Primitive meta::pure::precisePrimitives::Numeric(x:Integer[1], y:Integer[1]) extends Decimal
+Primitive meta::pure::precisePrimitives::Numeric(precision:Integer[1], scale:Integer[1]) extends Decimal
 [
-  $this->floor()->toString()->length() <= $x && ($this->fractionDigits()->toString()->length()-2 <= $y)
+  $precision >= $scale,
+  validate($this, $precision, $scale)
 ]
+
+function meta::pure::precisePrimitives::validate(x:Decimal[1], precision:Integer[1], scale:Integer[1]):Boolean[1]
+{
+  let integerSize = $x->floor()->toString()->length();
+  let rationalSize = $x->fractionDigits()->toString()->length()-2;
+  (($integerSize + $rationalSize) <= $precision) && ($rationalSize <= $scale);
+}
 
 function meta::pure::precisePrimitives::fractionDigits(x:Decimal[1]):Decimal[1]
 {
