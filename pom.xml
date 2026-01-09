@@ -186,9 +186,33 @@
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>${exec.maven.plugin.version}</version>
                     <configuration>
-                        <useMavenLogger>true</useMavenLogger>
-                        <quietLogs>true</quietLogs>
+                        <includePluginDependencies>true</includePluginDependencies>
+                        <systemProperties>
+                            <systemProperty>
+                                <key>org.slf4j.simpleLogger.logFile</key>
+                                <value>System.out</value>
+                            </systemProperty>
+                            <systemProperty>
+                                <key>org.slf4j.simpleLogger.levelInBrackets</key>
+                                <value>true</value>
+                            </systemProperty>
+                            <systemProperty>
+                                <key>org.slf4j.simpleLogger.showThreadName</key>
+                                <value>false</value>
+                            </systemProperty>
+                            <systemProperty>
+                                <key>org.slf4j.simpleLogger.showLogName</key>
+                                <value>false</value>
+                            </systemProperty>
+                        </systemProperties>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.maven</groupId>
+                            <artifactId>maven-slf4j-provider</artifactId>
+                            <version>${apache.maven.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
