@@ -75,26 +75,18 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-maven-generation-platform-java</artifactId>
                 <executions>
                     <execution>
-                        <id>generate-path-grammar</id>
-                        <phase>compile</phase>
                         <goals>
-                            <goal>java</goal>
+                            <goal>generate-m3-core-instances</goal>
                         </goals>
                         <configuration>
-                            <mainClass>org.finos.legend.pure.m3.generator.bootstrap.M3CoreInstanceGenerator</mainClass>
-                            <additionalClasspathElements>
-                                <additionalClasspathElement>${project.basedir}/src/main/resources
-                                </additionalClasspathElement>
-                            </additionalClasspathElements>
-                            <arguments>
-                                <argument>${project.build.directory}/generated-sources/</argument>
-                                <argument>Diagram</argument>
-                                <argument>/platform_dsl_diagram/diagram.pure</argument>
-                            </arguments>
+                            <factoryNamePrefix>Diagram</factoryNamePrefix>
+                            <fileNameSet>
+                                <fileName>/platform_dsl_diagram/diagram.pure</fileName>
+                            </fileNameSet>
                         </configuration>
                     </execution>
                 </executions>

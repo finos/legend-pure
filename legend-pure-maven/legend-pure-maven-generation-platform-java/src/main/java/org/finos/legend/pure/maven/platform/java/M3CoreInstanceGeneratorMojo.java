@@ -14,29 +14,35 @@
 
 package org.finos.legend.pure.maven.platform.java;
 
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.DefaultDependencyResolutionRequest;
+import org.apache.maven.project.DependencyResolutionException;
+import org.apache.maven.project.DependencyResolutionRequest;
 import org.apache.maven.project.MavenProject;
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
+import org.apache.maven.project.ProjectDependenciesResolver;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.graph.DependencyFilter;
+import org.eclipse.aether.util.filter.ScopeDependencyFilter;
 import org.eclipse.collections.impl.set.mutable.SetAdapter;
 import org.finos.legend.pure.m3.generator.bootstrap.M3CoreInstanceGenerator;
-import org.finos.legend.pure.m3.generator.Log;
 
+import java.io.File;
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Paths;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
-import java.util.stream.Stream;
 
 @Mojo(name = "generate-m3-core-instances",
         defaultPhase = LifecyclePhase.COMPILE,
@@ -44,14 +50,23 @@ import java.util.stream.Stream;
         threadSafe = true)
 public class M3CoreInstanceGeneratorMojo extends AbstractMojo
 {
+    private static final String COMPILE_RESOLUTION_SCOPE = "compile";
+    private static final String COMPILE_RUNTIME_RESOLUTION_SCOPE = "compile+runtime";
+    private static final String RUNTIME_RESOLUTION_SCOPE = "runtime";
+    private static final String RUNTIME_SYSTEM_RESOLUTION_SCOPE = "runtime+system";
+    private static final String TEST_RESOLUTION_SCOPE = "test";
+
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     protected MavenProject project;
 
     @Parameter(defaultValue = "false")
     private boolean skip;
 
-    @Parameter(property = "outputDir", required = true)
-    private String outputDir;
+    @Parameter
+    private File outputDir;
+
+    @Parameter(defaultValue = "true")
+    private boolean addOutputDirectoryAsSource;
 
     @Parameter(property = "factoryNamePrefix", required = true)
     private String factoryNamePrefix;
@@ -65,118 +80,97 @@ public class M3CoreInstanceGeneratorMojo extends AbstractMojo
     @Parameter(defaultValue = "compile")
     private String dependencyScope;
 
+    @Parameter(defaultValue = "${mojoExecution}", readonly = true, required = true)
+    private MojoExecution execution;
+
+    @Parameter(readonly = true, required = true, defaultValue = "${project.build.directory}")
+    private File projectBuildDirectory;
+
+    @Parameter(readonly = true, required = true, defaultValue = "${project.build.outputDirectory}")
+    private File projectOutputDirectory;
+
+    @Parameter(readonly = true, required = true, defaultValue = "${project.build.testOutputDirectory}")
+    private File projectTestOutputDirectory;
+
+    @Component
+    private ProjectDependenciesResolver mavenProjectDependenciesResolver;
+
+    @Parameter(readonly = true, required = true, defaultValue = "${repositorySystemSession}")
+    private RepositorySystemSession mavenRepoSession;
+
     @Override
     public void execute() throws MojoExecutionException
     {
-        Log log = new Log()
+        if (this.skip)
         {
-            @Override
-            public void debug(String txt)
-            {
-                getLog().debug(txt);
-            }
-
-            @Override
-            public void info(String txt)
-            {
-                getLog().info(txt);
-            }
-
-            @Override
-            public void error(String txt, Throwable e)
-            {
-                getLog().error(txt, e);
-            }
-
-        };
-
-        if (skip)
-        {
-            log.info("    Skipping M3 core instance generation");
+            getLog().info("Skipping M3 core instance generation");
             return;
         }
+
+        Path resolvedOutputDir = resolveOutputDirectory();
+        String resolvedDependencyScope = resolveDependencyScope();
+
         ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
-        try
+        try (URLClassLoader classLoader = new URLClassLoader(getDependencyURLs(resolvedDependencyScope), savedClassLoader))
         {
-            Thread.currentThread().setContextClassLoader(buildClassLoader(savedClassLoader, log));
-            M3CoreInstanceGenerator.generate(outputDir, factoryNamePrefix, SetAdapter.adapt(fileNameSet), fileNameStartsWith);
+            Thread.currentThread().setContextClassLoader(classLoader);
+            M3CoreInstanceGenerator.generate(resolvedOutputDir.toString() + resolvedOutputDir.getFileSystem().getSeparator(), this.factoryNamePrefix, SetAdapter.adapt(this.fileNameSet), this.fileNameStartsWith);
         }
         catch (Exception e)
         {
-            log.error("    Failed to generate M3 core instances", e);
+            getLog().error("Failed to generate M3 core instances", e);
             throw new MojoExecutionException("Failed to generate M3 core instances", e);
         }
         finally
         {
             Thread.currentThread().setContextClassLoader(savedClassLoader);
         }
-    }
 
-    private ClassLoader buildClassLoader(ClassLoader parent, Log log) throws MojoExecutionException
-    {
-        MutableList<String> classpathElements = Lists.mutable.empty();
-
-        classpathElements.add(this.project.getBuild().getOutputDirectory());
-
-        URL[] urlsForClassLoader = classpathElements.collect(mavenCompilePath ->
+        if (this.addOutputDirectoryAsSource)
         {
-            try
-            {
-                return Paths.get(mavenCompilePath).toUri().toURL();
-            }
-            catch (MalformedURLException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }).toArray(new URL[0]);
-        URL[] combinedURLs = Stream.concat(Arrays.stream(urlsForClassLoader), Arrays.stream(getDependencyURLs()))
-                .toArray(URL[]::new);
-        log.debug("    Project classLoader URLs " + Arrays.toString(combinedURLs));
-        return new URLClassLoader(combinedURLs, parent);
-    }
-
-    private static URL toURL(Artifact artifact)
-    {
-        try
-        {
-            return artifact.getFile().toURI().toURL();
-        }
-        catch (MalformedURLException e)
-        {
-            throw new UncheckedIOException(e);
+            String newSourceDirectory = resolvedOutputDir.toAbsolutePath().toString();
+            this.project.addCompileSourceRoot(newSourceDirectory);
+            getLog().debug("Added source directory: " + newSourceDirectory);
         }
     }
 
-    private URL[] getDependencyURLs() throws MojoExecutionException
+    private URL[] getDependencyURLs(String resolvedDependencyScope) throws DependencyResolutionException, MojoExecutionException
     {
-        Set<String> dependencyFilter = getDependencyFilter();
-        return this.project.getArtifacts().stream()
-                .filter(artifact -> dependencyFilter == null || dependencyFilter.contains(artifact.getScope()))
-                .map(M3CoreInstanceGeneratorMojo::toURL)
-                .toArray(URL[]::new);
+        DependencyResolutionRequest request = new DefaultDependencyResolutionRequest(this.project, this.mavenRepoSession)
+                .setResolutionFilter(getDependencyFilter(resolvedDependencyScope));
+        List<File> classpath = new ArrayList<>();
+        classpath.add(this.projectOutputDirectory);
+        if (inTestPhase() && isTestDependencyScope(resolvedDependencyScope))
+        {
+            classpath.add(this.projectTestOutputDirectory);
+        }
+        this.mavenProjectDependenciesResolver.resolve(request).getDependencies().forEach(dep -> classpath.add(dep.getArtifact().getFile()));
+        URL[] urls = classpath.stream().map(M3CoreInstanceGeneratorMojo::toURL).toArray(URL[]::new);
+        getLog().debug("Dependency URLs: " + Arrays.toString(urls));
+        return urls;
     }
 
-    private Set<String> getDependencyFilter() throws MojoExecutionException
+    private DependencyFilter getDependencyFilter(String resolvedDependencyScope) throws MojoExecutionException
     {
-        switch (this.dependencyScope)
+        switch (resolvedDependencyScope)
         {
-            case "compile":
+            case COMPILE_RESOLUTION_SCOPE:
             {
-                return Sets.mutable.with("compile", "provided", "system");
+                return new ScopeDependencyFilter(Arrays.asList("compile", "provided", "system"), null);
             }
-            case "compile+runtime":
+            case COMPILE_RUNTIME_RESOLUTION_SCOPE:
             {
-                return Sets.mutable.with("compile", "provided", "runtime", "system");
+                return new ScopeDependencyFilter(Arrays.asList("compile", "provided", "runtime", "system"), null);
             }
-            case "runtime":
+            case RUNTIME_RESOLUTION_SCOPE:
             {
-                return Sets.mutable.with("compile", "runtime");
+                return new ScopeDependencyFilter(Arrays.asList("compile", "runtime"), null);
             }
-            case "runtime+system":
+            case RUNTIME_SYSTEM_RESOLUTION_SCOPE:
             {
-                return Sets.mutable.with("compile", "runtime", "system");
+                return new ScopeDependencyFilter(Arrays.asList("compile", "runtime", "system"), null);
             }
-            case "test":
+            case TEST_RESOLUTION_SCOPE:
             {
                 return null;
             }
@@ -184,6 +178,60 @@ public class M3CoreInstanceGeneratorMojo extends AbstractMojo
             {
                 throw new MojoExecutionException("Unknown scope: " + this.dependencyScope);
             }
+        }
+    }
+
+    private Path resolveOutputDirectory()
+    {
+        return (this.outputDir == null) ?
+               this.projectBuildDirectory.toPath().resolve(inTestPhase() ? "generated-test-sources" : "generated-sources") :
+               this.outputDir.toPath();
+    }
+
+    private String resolveDependencyScope()
+    {
+        if (this.dependencyScope != null)
+        {
+            return this.dependencyScope;
+        }
+        if (inTestPhase())
+        {
+            return TEST_RESOLUTION_SCOPE;
+        }
+        return COMPILE_RESOLUTION_SCOPE;
+    }
+
+    private boolean inTestPhase()
+    {
+        switch (this.execution.getLifecyclePhase())
+        {
+            case "test-compile":
+            case "process-test-classes":
+            case "test":
+            {
+                return true;
+            }
+            default:
+            {
+                return false;
+            }
+        }
+    }
+
+    private static boolean isTestDependencyScope(String dependencyScope)
+    {
+        return TEST_RESOLUTION_SCOPE.equals(dependencyScope);
+    }
+
+    private static URL toURL(File file)
+    {
+        try
+        {
+            return file.toURI().toURL();
+        }
+        catch (MalformedURLException e)
+        {
+            throw new UncheckedIOException(e);
         }
     }
 }
