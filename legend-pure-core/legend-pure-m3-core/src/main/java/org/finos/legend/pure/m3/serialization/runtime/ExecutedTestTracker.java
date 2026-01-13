@@ -14,23 +14,18 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
-import org.eclipse.collections.api.block.function.Function2;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.eclipse.collections.impl.utility.MapIterate;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.IOException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
@@ -57,7 +52,7 @@ public class ExecutedTestTracker
     {
         this.path = path;
         this.activeUserDBDirectory = activeUserDBDirectory;
-        this.tests = this.readFromFile().getIfAbsent(activeUserDBDirectory, Maps.mutable::empty);
+        this.tests = readFromFile().getIfAbsent(activeUserDBDirectory, Maps.mutable::empty);
     }
 
     public MutableMap<String, TestState> getTests()
@@ -67,23 +62,23 @@ public class ExecutedTestTracker
 
     private void noteTestsState(SetIterable<String> newTests, TestState state)
     {
-        this.tests.putAll(newTests.toMap(t -> t, t -> state));
+        newTests.forEach(t -> this.tests.put(t, state));
     }
 
     /**
      * Store the state of a set of tests after it has been determined that they pass under the current set of changes
      */
-    public void notePassingTests(UnifiedSet<String> passedTests)
+    public void notePassingTests(SetIterable<String> passedTests)
     {
-        this.noteTestsState(passedTests, TestState.Passed);
+        noteTestsState(passedTests, TestState.Passed);
     }
 
     /**
      * Store the state of a set of tests after it has been determined that they fail under the current set of changes
      */
-    public void noteFailingTests(UnifiedSet<String> failedTests)
+    public void noteFailingTests(SetIterable<String> failedTests)
     {
-        this.noteTestsState(failedTests, TestState.Failed);
+        noteTestsState(failedTests, TestState.Failed);
     }
 
     /**
@@ -95,58 +90,48 @@ public class ExecutedTestTracker
         this.tests = Maps.mutable.empty();
     }
 
-    private static final Function2<String, Map<? extends String, ? extends String>, MutableMap<String, TestState>> userDbsTestsDeserializer = (usedDbName, data) ->
-            MapIterate.collect(data, name -> name, TestState::valueOf, Maps.mutable.ofInitialCapacity(data.size()));
-
-    private static final Function2<String, MutableMap<String, TestState>, MutableMap<String, String>> userDbsTestsSerializer = (usedDbName, data) -> data.collectValues((testName, state) -> state.name());
-
+    @SuppressWarnings("unchecked")
     private MutableMap<String, MutableMap<String, TestState>> readFromFile()
     {
-        try
+        if (Files.exists(this.path))
         {
-            if (Files.exists(this.path))
+            try (BufferedReader reader = Files.newBufferedReader(this.path, StandardCharsets.UTF_8))
             {
-                try (BufferedReader reader = Files.newBufferedReader(this.path, Charset.defaultCharset()))
+                Map<? extends String, ? extends Map<? extends String, ? extends String>> json = (Map<? extends String, ? extends Map<? extends String, ? extends String>>) new JSONParser().parse(reader);
+                MutableMap<String, MutableMap<String, TestState>> result = Maps.mutable.ofInitialCapacity(json.size());
+                json.forEach((userDbName, data) ->
                 {
-                    return (MutableMap<String, MutableMap<String, TestState>>) new UnifiedMap<>((Map<? extends String, ? extends Map<? extends String, ? extends String>>) new JSONParser().parse(reader)).collectValues(userDbsTestsDeserializer);
-                }
+                    MutableMap<String, TestState> transformed = Maps.mutable.ofInitialCapacity(data.size());
+                    data.forEach((name, state) -> transformed.put(name, TestState.valueOf(state)));
+                    result.put(userDbName, transformed);
+                });
+                return result;
             }
-            else
+            catch (Exception ignore)
             {
-                return new UnifiedMap<>();
+                // ignore exception and return empty map
             }
         }
-        catch (Exception e)
-        {
-            return new UnifiedMap<>();
-        }
+        return Maps.mutable.empty();
     }
 
     private void writeDataToFile(MutableMap<String, MutableMap<String, TestState>> data)
     {
         try
         {
-            if (Files.notExists(this.path))
-            {
-                Files.createDirectories(this.path.getParent());
-                Files.createFile(this.path);
-            }
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Exception while loading " + this.path, e);
-        }
-
-        try (BufferedWriter writer = Files.newBufferedWriter(this.path, Charset.defaultCharset()))
-        {
             synchronized (this.lock)
             {
-                new JSONObject(data.collectValues(userDbsTestsSerializer)).writeJSONString(writer);
+                Map<String, Map<String, String>> serialized = data.collectValues((n, d) -> d.collectValues((testName, state) -> state.name()));
+                Files.createDirectories(this.path.getParent());
+                try (BufferedWriter writer = Files.newBufferedWriter(this.path, StandardCharsets.UTF_8))
+                {
+                    JSONObject.writeJSONString(serialized, writer);
+                }
             }
         }
-        catch (IOException e)
+        catch (Exception e)
         {
-            throw new RuntimeException("Exception while loading " + this.path, e);
+            throw new RuntimeException("Exception while writing data to " + this.path, e);
         }
     }
 
@@ -157,6 +142,7 @@ public class ExecutedTestTracker
         this.writeDataToFile(currentlyStored);
     }
 
+    @SuppressWarnings("unchecked")
     public JSONObject summaryOfImpactedTests(MutableSet<String> impactedTests)
     {
         if (impactedTests.isEmpty())

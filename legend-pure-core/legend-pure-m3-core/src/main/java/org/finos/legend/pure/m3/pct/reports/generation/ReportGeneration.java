@@ -16,7 +16,6 @@ package org.finos.legend.pure.m3.pct.reports.generation;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import java.util.Set;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
@@ -38,6 +37,7 @@ import org.finos.legend.pure.m3.pct.shared.generation.Shared;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Set;
 
 public class ReportGeneration
 {
@@ -70,7 +70,7 @@ public class ReportGeneration
 
         MutableMap<String, FunctionTestResults> testResults = Maps.mutable.empty();
 
-        testCollection.getAllTestFunctions().forEach(x ->
+        testCollection.forEachTestFunction(x ->
         {
             FunctionTestResults functionInfo = testResults.getIfAbsentPut(x.getSourceInformation().getSourceId(), () -> new FunctionTestResults(x.getSourceInformation().getSourceId()));
             PackageableFunction<?> f = (PackageableFunction<?>) x;

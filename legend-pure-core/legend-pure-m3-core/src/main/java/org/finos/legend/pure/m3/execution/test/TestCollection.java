@@ -15,7 +15,6 @@
 package org.finos.legend.pure.m3.execution.test;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
@@ -33,14 +32,13 @@ import org.finos.legend.pure.m3.pct.shared.PCTTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
 
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
-
-import static org.finos.legend.pure.m3.pct.shared.PCTTools.isPCTTest;
+import java.util.function.Predicate;
 
 public class TestCollection
 {
-    private static final Predicate<? super CoreInstance> DEFAULT_FILTER_PREDICATE = c -> true;
-
     private final CoreInstance pkg;
     private String testParameterizationId;
     private Object testFunctionParam;
@@ -53,10 +51,15 @@ public class TestCollection
     private final MutableList<CoreInstance> alloyOnlyFunctions = Lists.mutable.with();
     private final MutableList<TestCollection> subCollections = Lists.mutable.with();
 
-    private TestCollection(CoreInstance testPackage, ProcessorSupport processorSupport, Function<CoreInstance, TestCollection> pureTestCollectionGenerator, Predicate<? super CoreInstance> testFilter, boolean getBeforeAfterFromParents)
+    private TestCollection(CoreInstance testPackage, Predicate<? super CoreInstance> testFilter)
     {
         this.pkg = testPackage;
-        this.testFilter = (testFilter == null) ? DEFAULT_FILTER_PREDICATE : testFilter;
+        this.testFilter = (testFilter == null) ? c -> true : testFilter;
+    }
+
+    private TestCollection(CoreInstance testPackage, ProcessorSupport processorSupport, Function<CoreInstance, TestCollection> pureTestCollectionGenerator, Predicate<? super CoreInstance> testFilter, boolean getBeforeAfterFromParents)
+    {
+        this(testPackage, testFilter);
         findPackageTests(processorSupport, pureTestCollectionGenerator);
         if (getBeforeAfterFromParents)
         {
@@ -67,8 +70,7 @@ public class TestCollection
 
     private TestCollection(CoreInstance testPackage)
     {
-        this.pkg = testPackage;
-        this.testFilter = DEFAULT_FILTER_PREDICATE;
+        this(testPackage, null);
     }
 
     /**
@@ -154,15 +156,46 @@ public class TestCollection
     public MutableList<CoreInstance> getAllTestFunctions(boolean includeAlloyOnly)
     {
         MutableList<CoreInstance> tests = Lists.mutable.with();
-        collectAllTests(tests, includeAlloyOnly);
+        forEachTestFunction(tests::add, includeAlloyOnly);
         return tests;
+    }
+
+    public void forEachTestFunction(Consumer<? super CoreInstance> consumer)
+    {
+        forEachTestFunction(consumer, false);
+    }
+
+    public void forEachTestFunction(Consumer<? super CoreInstance> consumer, boolean includeAlloyOnly)
+    {
+        this.testFunctions.forEach(consumer);
+        if (includeAlloyOnly)
+        {
+            this.alloyOnlyFunctions.forEach(consumer);
+        }
+        for (TestCollection subCollection : this.subCollections)
+        {
+            subCollection.forEachTestFunction(consumer, includeAlloyOnly);
+        }
     }
 
     public MutableList<Pair<CoreInstance, String>> getAllTestFunctionsWithParameterizations(boolean includeAlloyOnly)
     {
         MutableList<Pair<CoreInstance, String>> tests = Lists.mutable.with();
-        collectAllTestsWithParameterizations(tests, includeAlloyOnly);
+        forEachTestFunctionWithParameterization((f, p) -> tests.add(Tuples.pair(f, p)), includeAlloyOnly);
         return tests;
+    }
+
+    public void forEachTestFunctionWithParameterization(BiConsumer<? super CoreInstance, ? super String> consumer, boolean includeAlloyOnly)
+    {
+        this.testFunctions.forEach(f -> consumer.accept(f, this.testParameterizationId));
+        if (includeAlloyOnly)
+        {
+            this.alloyOnlyFunctions.forEach(f -> consumer.accept(f, this.testParameterizationId));
+        }
+        for (TestCollection subCollection : this.subCollections)
+        {
+            subCollection.forEachTestFunctionWithParameterization(consumer, includeAlloyOnly);
+        }
     }
 
     /**
@@ -173,8 +206,17 @@ public class TestCollection
     public MutableList<CoreInstance> getAllToFixFunctions()
     {
         MutableList<CoreInstance> toFixFunctions = Lists.mutable.with();
-        collectAllToFix(toFixFunctions);
+        forEachToFixFunction(toFixFunctions::add);
         return toFixFunctions;
+    }
+
+    public void forEachToFixFunction(Consumer<? super CoreInstance> consumer)
+    {
+        this.toFixFunctions.forEach(consumer);
+        for (TestCollection subCollection : this.subCollections)
+        {
+            subCollection.forEachToFixFunction(consumer);
+        }
     }
 
     /**
@@ -283,41 +325,6 @@ public class TestCollection
         return this.testFunctionParamCustomizer;
     }
 
-    private void collectAllTests(MutableList<CoreInstance> tests, boolean includeAlloyOnly)
-    {
-        tests.addAll(this.testFunctions);
-        if (includeAlloyOnly)
-        {
-            tests.addAll(alloyOnlyFunctions);
-        }
-        for (TestCollection subCollection : this.subCollections)
-        {
-            subCollection.collectAllTests(tests, includeAlloyOnly);
-        }
-    }
-
-    private void collectAllTestsWithParameterizations(MutableList<Pair<CoreInstance, String>> tests, boolean includeAlloyOnly)
-    {
-        tests.addAll(this.testFunctions.collect(t -> Tuples.pair(t, this.testParameterizationId)));
-        if (includeAlloyOnly)
-        {
-            tests.addAll(this.alloyOnlyFunctions.collect(t -> Tuples.pair(t, this.testParameterizationId)));
-        }
-        for (TestCollection subCollection : this.subCollections)
-        {
-            subCollection.collectAllTestsWithParameterizations(tests, includeAlloyOnly);
-        }
-    }
-
-    private void collectAllToFix(MutableList<CoreInstance> toFixFunctions)
-    {
-        toFixFunctions.addAll(this.toFixFunctions);
-        for (TestCollection subCollection : this.subCollections)
-        {
-            subCollection.collectAllToFix(toFixFunctions);
-        }
-    }
-
     private void findBeforeAfterForParents(CoreInstance node, ProcessorSupport processorSupport)
     {
         if (Instance.getValueForMetaPropertyToOneResolved(node, M3Properties._package, processorSupport) != null)
@@ -382,7 +389,7 @@ public class TestCollection
                 {
                     this.afterFunctions.add(child);
                 }
-                if (this.testFilter.accept(child))
+                if (this.testFilter.test(child))
                 {
                     if (TestTools.hasToFixStereotype(child, processorSupport))
                     {
@@ -562,7 +569,7 @@ public class TestCollection
      */
     public static TestCollection collectTests(CoreInstance pkg, ProcessorSupport processorSupport)
     {
-        return collectTests(pkg, processorSupport, DEFAULT_FILTER_PREDICATE);
+        return collectTests(pkg, processorSupport, (Predicate<? super CoreInstance>) null);
     }
 
     /**
@@ -625,10 +632,9 @@ public class TestCollection
      * @param extraPredicate         extra predicate
      * @return test collection
      */
-    public static TestCollection collectTests(String path, ProcessorSupport processorSupport, Class<? extends FunctionExecution> executionPlatformClass, Predicate<CoreInstance> extraPredicate)
+    public static TestCollection collectTests(String path, ProcessorSupport processorSupport, Class<? extends FunctionExecution> executionPlatformClass, Predicate<? super CoreInstance> extraPredicate)
     {
-        Predicate<CoreInstance> basePredicate = getFilterPredicateForExecutionPlatformClass(executionPlatformClass, processorSupport);
-        return collectTests(path, processorSupport, i -> basePredicate.accept(i) && extraPredicate.accept(i));
+        return collectTests(path, processorSupport, getFilterPredicateForExecutionPlatformClass(executionPlatformClass, processorSupport).and(extraPredicate));
     }
 
     /**
@@ -652,7 +658,7 @@ public class TestCollection
      */
     public static TestCollection collectTests(String pkgPath, ProcessorSupport processorSupport)
     {
-        return collectTests(pkgPath, processorSupport, DEFAULT_FILTER_PREDICATE);
+        return collectTests(pkgPath, processorSupport, (Predicate<? super CoreInstance>) null);
     }
 
     /**
@@ -662,7 +668,7 @@ public class TestCollection
      * @param executionPlatformClass execution platform class
      * @return execution platform filter predicate
      */
-    public static Predicate<CoreInstance> getFilterPredicateForExecutionPlatformClass(Class<?> executionPlatformClass, ProcessorSupport processorSupport)
+    public static org.eclipse.collections.api.block.predicate.Predicate<CoreInstance> getFilterPredicateForExecutionPlatformClass(Class<?> executionPlatformClass, ProcessorSupport processorSupport)
     {
         if (!ExecutionPlatformRegistry.isExecutionPlatformClass(executionPlatformClass))
         {
@@ -683,7 +689,7 @@ public class TestCollection
      * @param executionPlatformName execution platform name
      * @return execution platform filter predicate
      */
-    private static Predicate<CoreInstance> getFilterPredicateForExecutionPlatform(String executionPlatformName, ProcessorSupport processorSupport)
+    private static org.eclipse.collections.api.block.predicate.Predicate<CoreInstance> getFilterPredicateForExecutionPlatform(String executionPlatformName, ProcessorSupport processorSupport)
     {
         if (executionPlatformName == null)
         {
@@ -692,19 +698,19 @@ public class TestCollection
         return function -> !TestTools.hasPlatformExclusionTaggedValue(function, executionPlatformName, processorSupport);
     }
 
-    public static Predicate<? super CoreInstance> getFilterPredicateForAlloyExclusion(ProcessorSupport processorSupport)
+    public static org.eclipse.collections.api.block.predicate.Predicate<? super CoreInstance> getFilterPredicateForAlloyExclusion(ProcessorSupport processorSupport)
     {
         return (System.getProperty("alloy.test.server.host") != null || System.getProperty("legend.test.server.host") != null) ?
                 i -> !TestTools.hasExcludeAlloyStereotype(i, processorSupport) :
-                DEFAULT_FILTER_PREDICATE;
+                i -> true;
     }
 
-    public static Predicate<? super CoreInstance> getFilterPredicateForAlloyTextModeExclusion(ProcessorSupport processorSupport)
+    public static org.eclipse.collections.api.block.predicate.Predicate<? super CoreInstance> getFilterPredicateForAlloyTextModeExclusion(ProcessorSupport processorSupport)
     {
         return ("text".equals(System.getProperty("legend.test.serializationKind")) &&
                 (System.getProperty("alloy.test.server.host") != null || System.getProperty("legend.test.server.host") != null)) ?
                 i -> !TestTools.hasExcludeAlloyTextModeStereotype(i, processorSupport) :
-                DEFAULT_FILTER_PREDICATE;
+                i -> true;
     }
 
     public static TestCollection buildPCTTestCollection(String path, String filePath, ProcessorSupport processorSupport)
@@ -712,18 +718,17 @@ public class TestCollection
         return TestCollection.collectTests(
                 path,
                 processorSupport,
-                node -> node.getSourceInformation().getSourceId().startsWith(filePath) && isPCTTest(node, processorSupport)
+                node -> node.getSourceInformation().getSourceId().startsWith(filePath) && PCTTools.isPCTTest(node, processorSupport)
         );
     }
 
     public static void validateExclusions(TestCollection collection, MutableMap<String, String> exclusions)
     {
         MutableSet<String> exList = exclusions.keysView().toSet();
-        MutableSet<String> allTests = collection.getAllTestFunctions().collect(c -> PackageableElement.getUserPathForPackageableElement(c, "::")).toSet();
-        exList.removeAll(allTests);
-        if (!exList.isEmpty())
+        collection.forEachTestFunction(f -> exList.remove(PackageableElement.getUserPathForPackageableElement(f)));
+        if (exList.notEmpty())
         {
-            throw new RuntimeException("\n The excluded tests:\n" + exList.collect(x -> "     " + x).makeString("\n") + "\n are not covered by this test suite");
+            throw new RuntimeException(exList.makeString("\n The excluded tests:     \n", "\n     ", "\n are not covered by this test suite"));
         }
     }
 }
