@@ -19,6 +19,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeReposito
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 
 import java.io.InputStream;
+import java.util.Date;
 
 public interface RepositoryCodeStorage
 {
@@ -64,4 +65,16 @@ public interface RepositoryCodeStorage
     boolean isFolder(String path);
 
     boolean isEmptyFolder(String path);
+
+    default long lastModified()
+    {
+        long lastModified = 0L;
+        for  (String fileName : getFileOrFiles("/"))
+        {
+            CodeStorageNode codeNode = getNode(fileName);
+            long codeLastModified = codeNode.lastModified();
+            lastModified = Math.max(lastModified, codeLastModified);
+        }
+        return lastModified;
+    }
 }
