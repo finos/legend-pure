@@ -46,8 +46,7 @@ public class ExternalClassBuilder
             "import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy",
             "import org.finos.legend.pure.runtime.java.compiled.metadata.ClassCache",
             "import org.finos.legend.pure.runtime.java.compiled.metadata.FunctionCache",
-            "import org.finos.legend.pure.runtime.java.compiled.execution.CompiledProcessorSupport",
-            "import org.tmatesoft.svn.core.wc.SVNWCUtil").makeString("", ";\n", ";\n");
+            "import org.finos.legend.pure.runtime.java.compiled.execution.CompiledProcessorSupport").makeString("", ";\n", ";\n");
 
     public static String buildExternalizableFunctionClass(RichIterable<String> functionDefinitions, String externalFunctionClass, RichIterable<String> vcsRepos, RichIterable<String> classLoaderRepos)
     {
@@ -100,7 +99,6 @@ public class ExternalClassBuilder
         builder.append("                if (result == null)\n");
         builder.append("                {\n");
         classLoaderRepos = Lists.mutable.withAll(classLoaderRepos).sortThis();
-        vcsRepos = Lists.mutable.withAll(vcsRepos).sortThis();
         classLoaderRepos.appendString(builder, "                    ClassLoaderCodeStorage classLoaderCodeStorage = new ClassLoaderCodeStorage(Lists.immutable.with(\"", "\", \"", "\").collect(new DefendedFunction<String, CodeRepository>()\n" +
                 "        {\n" +
                 "            @Override\n" +
@@ -123,15 +121,7 @@ public class ExternalClassBuilder
                 "                return this.accept(each);\n" +
                 "            }\n" +
                 "        }));\n");
-        if (vcsRepos.isEmpty())
-        {
-            builder.append("                    CompositeCodeStorage codeStorage = new CompositeCodeStorage(classLoaderCodeStorage);\n");
-        }
-        else
-        {
-            vcsRepos.appendString(builder, "                    VersionControlledClassLoaderCodeStorage vcsCodeStorage = new VersionControlledClassLoaderCodeStorage(Lists.immutable.with(\"", "\", \"", "\").collect(c -> repoByName.get(c)), new PureRepositoryRevisionCache(SVNWCUtil.createDefaultAuthenticationManager(\"puresvntest\", \"Pure#Test#Access\".toCharArray()), false));\n");
-            builder.append("                    CompositeCodeStorage codeStorage = new CompositeCodeStorage(classLoaderCodeStorage, vcsCodeStorage);\n");
-        }
+        builder.append("                    CompositeCodeStorage codeStorage = new CompositeCodeStorage(classLoaderCodeStorage);\n");
         builder.append("                    ConsoleCompiled console = new ConsoleCompiled();\n");
         builder.append("                    if (disableConsole) { console.disable(); }\n");
         builder.append("                    EXECUTION_SUPPORT = result = new CompiledExecutionSupport(new JavaCompilerState(null, PureExternal.class.getClassLoader()), new CompiledProcessorSupport(PureExternal.class.getClassLoader(), MetadataLazy.fromClassLoader(PureExternal.class.getClassLoader()), org.eclipse.collections.api.factory.Sets.mutable.<String>of()), null, codeStorage, null, EXECUTION_ACTIVITY_LISTENER, console, new FunctionCache(), new ClassCache(), null, org.eclipse.collections.api.factory.Sets.mutable.<String>of(), CompiledExtensionLoader.extensions());\n");
