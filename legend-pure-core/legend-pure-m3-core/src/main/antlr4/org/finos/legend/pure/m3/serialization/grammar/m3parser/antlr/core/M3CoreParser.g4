@@ -315,7 +315,7 @@ atomicExpression:
 
 columnBuilders: TILDE (oneColSpec | (BRACKET_OPEN (oneColSpec(COMMA oneColSpec)*)? BRACKET_CLOSE))
 ;
-oneColSpec: columnName (COLON (type multiplicity? | anyLambda) extraFunction?)?
+oneColSpec: stereotypes? taggedValues? columnName (COLON (type multiplicity? | anyLambda) extraFunction?)?
 ;
 extraFunction: (COLON anyLambda)
 ;

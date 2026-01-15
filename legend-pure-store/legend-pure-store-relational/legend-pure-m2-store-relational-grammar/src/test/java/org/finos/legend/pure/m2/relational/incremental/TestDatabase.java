@@ -508,4 +508,141 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany("schemas").size());
         Assert.assertEquals(size, runtime.getModelRepository().serialize().length);
     }
+
+    @Test
+    public void testColumnStereotype() throws Exception
+    {
+        String relationalDB = "###Pure\n" +
+                "Profile meta::pure::profiles::testDatabase\n" +
+                "{\n" +
+                "    stereotypes: [deprecated, experimental];\n" +
+                "}\n" +
+                "\n" +
+                "###Relational\n" +
+                "Database test::TestDB\n" +
+                "(\n" +
+                "  Table Product\n" +
+                "  (\n" +
+                "    ProductID <<meta::pure::profiles::testDatabase.deprecated, meta::pure::profiles::testDatabase.experimental>> VARCHAR(30) PRIMARY KEY\n" +
+                "  )\n" +
+                ")";
+        runtime.createInMemorySource("sourceId.pure", relationalDB);
+        runtime.compile();
+        int size = runtime.getModelRepository().serialize().length;
+
+        CoreInstance db = processorSupport.package_getByUserPath("test::TestDB");
+        Assert.assertEquals(1, db.getValueForMetaPropertyToMany("schemas").size());
+        Assert.assertEquals(size, runtime.getModelRepository().serialize().length);
+        Assert.assertEquals("meta::pure::profiles::testDatabase@deprecated", db.getValueForMetaPropertyToMany("schemas").getFirst()
+                .getValueForMetaPropertyToMany("tables").getFirst()
+                .getValueForMetaPropertyToMany("columns").getFirst()
+                .getValueForMetaPropertyToMany("stereotypes").getFirst()
+                .getValueForMetaPropertyToOne("idOrPath").getName()
+        );
+        Assert.assertEquals("meta::pure::profiles::testDatabase@experimental", db.getValueForMetaPropertyToMany("schemas").getFirst()
+                .getValueForMetaPropertyToMany("tables").getFirst()
+                .getValueForMetaPropertyToMany("columns").getFirst()
+                .getValueForMetaPropertyToMany("stereotypes").getLast()
+                .getValueForMetaPropertyToOne("idOrPath").getName()
+        );
+    }
+
+    @Test
+    public void testColumnTaggedValue() throws Exception
+    {
+        String relationalDB = "###Pure\n" +
+                "Profile meta::pure::profiles::testDatabase\n" +
+                "{\n" +
+                "    tags: [description, description2];\n" +
+                "}\n" +
+                "\n" +
+                "###Relational\n" +
+                "Database test::TestDB\n" +
+                "(\n" +
+                "  Table Product\n" +
+                "  (\n" +
+                "    ProductID {meta::pure::profiles::testDatabase.description='Primary identifier', meta::pure::profiles::testDatabase.description2='Secondary identifier'} VARCHAR(30) PRIMARY KEY\n" +
+                "  )\n" +
+                ")";
+
+        runtime.createInMemorySource("sourceId.pure", relationalDB);
+        runtime.compile();
+        int size = runtime.getModelRepository().serialize().length;
+
+        CoreInstance db = processorSupport.package_getByUserPath("test::TestDB");
+        Assert.assertEquals(1, db.getValueForMetaPropertyToMany("schemas").size());
+        Assert.assertEquals(size, runtime.getModelRepository().serialize().length);
+        Assert.assertEquals("meta::pure::profiles::testDatabase@description", db.getValueForMetaPropertyToMany("schemas").getFirst()
+                .getValueForMetaPropertyToMany("tables").getFirst()
+                .getValueForMetaPropertyToMany("columns").getFirst()
+                .getValueForMetaPropertyToMany("taggedValues").getFirst()
+                .getValueForMetaPropertyToOne("tag")
+                .getValueForMetaPropertyToOne("idOrPath").getName()
+        );
+        Assert.assertEquals("Primary identifier", db.getValueForMetaPropertyToMany("schemas").getFirst()
+                .getValueForMetaPropertyToMany("tables").getFirst()
+                .getValueForMetaPropertyToMany("columns").getFirst()
+                .getValueForMetaPropertyToMany("taggedValues").getFirst()
+                .getValueForMetaPropertyToOne("value").getName()
+        );
+        Assert.assertEquals("meta::pure::profiles::testDatabase@description2", db.getValueForMetaPropertyToMany("schemas").getFirst()
+                .getValueForMetaPropertyToMany("tables").getFirst()
+                .getValueForMetaPropertyToMany("columns").getFirst()
+                .getValueForMetaPropertyToMany("taggedValues").getLast()
+                .getValueForMetaPropertyToOne("tag")
+                .getValueForMetaPropertyToOne("idOrPath").getName()
+        );
+        Assert.assertEquals("Secondary identifier", db.getValueForMetaPropertyToMany("schemas").getFirst()
+                .getValueForMetaPropertyToMany("tables").getFirst()
+                .getValueForMetaPropertyToMany("columns").getFirst()
+                .getValueForMetaPropertyToMany("taggedValues").getLast()
+                .getValueForMetaPropertyToOne("value").getName()
+        );
+    }
+
+    @Test
+    public void testColumnStereotypeAndTaggedValue() throws Exception
+    {
+        String relationalDB = "###Pure\n" +
+                "Profile meta::pure::profiles::testDatabase\n" +
+                "{\n" +
+                "    stereotypes: [deprecated];\n" +
+                "    tags: [description];\n" +
+                "}\n" +
+                "\n" +
+                "###Relational\n" +
+                "Database test::TestDB\n" +
+                "(\n" +
+                "  Table Product\n" +
+                "  (\n" +
+                "    ProductID <<meta::pure::profiles::testDatabase.deprecated>> {meta::pure::profiles::testDatabase.description='Primary identifier'} VARCHAR(30) PRIMARY KEY\n" +
+                "  )\n" +
+                ")";
+        runtime.createInMemorySource("sourceId.pure", relationalDB);
+        runtime.compile();
+        int size = runtime.getModelRepository().serialize().length;
+
+        CoreInstance db = processorSupport.package_getByUserPath("test::TestDB");
+        Assert.assertEquals(1, db.getValueForMetaPropertyToMany("schemas").size());
+        Assert.assertEquals(size, runtime.getModelRepository().serialize().length);
+        Assert.assertEquals("meta::pure::profiles::testDatabase@deprecated", db.getValueForMetaPropertyToMany("schemas").getFirst()
+                .getValueForMetaPropertyToMany("tables").getFirst()
+                .getValueForMetaPropertyToMany("columns").getFirst()
+                .getValueForMetaPropertyToMany("stereotypes").getFirst()
+                .getValueForMetaPropertyToOne("idOrPath").getName()
+        );
+        Assert.assertEquals("meta::pure::profiles::testDatabase@description", db.getValueForMetaPropertyToMany("schemas").getFirst()
+                .getValueForMetaPropertyToMany("tables").getFirst()
+                .getValueForMetaPropertyToMany("columns").getFirst()
+                .getValueForMetaPropertyToMany("taggedValues").getFirst()
+                .getValueForMetaPropertyToOne("tag")
+                .getValueForMetaPropertyToOne("idOrPath").getName()
+        );
+        Assert.assertEquals("Primary identifier", db.getValueForMetaPropertyToMany("schemas").getFirst()
+                .getValueForMetaPropertyToMany("tables").getFirst()
+                .getValueForMetaPropertyToMany("columns").getFirst()
+                .getValueForMetaPropertyToMany("taggedValues").getFirst()
+                .getValueForMetaPropertyToOne("value").getName()
+        );
+    }
 }

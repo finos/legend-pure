@@ -13,8 +13,9 @@
 // limitations under the License.
 
 import meta::pure::metamodel::relation::*;
+import meta::pure::metamodel::extension::*;
 
-Class meta::pure::metamodel::relation::ColSpec<T> // Where T is of type RelationType
+Class meta::pure::metamodel::relation::ColSpec<T> extends meta::pure::metamodel::extension::AnnotatedElement // Where T is of type RelationType
 {
     name : String[1];
 }
@@ -48,4 +49,3 @@ Class meta::pure::metamodel::relation::AggColSpecArray<A,B,T> // Where T is of t
 {
   aggSpecs : AggColSpec<A,B,Any>[*];
 }
-

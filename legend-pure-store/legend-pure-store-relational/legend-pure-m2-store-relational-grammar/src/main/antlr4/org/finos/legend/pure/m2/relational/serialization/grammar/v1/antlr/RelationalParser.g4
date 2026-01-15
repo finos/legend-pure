@@ -134,6 +134,7 @@ columnDefinitions: columnDefinition (COMMA columnDefinition)*
 ;
 columnDefinition:
     relationalIdentifier
+    stereotypes? taggedValues?
     identifier (GROUP_OPEN INTEGER (COMMA INTEGER)? GROUP_CLOSE)? (PRIMARYKEY | NOT_NULL)?
 ;
 
