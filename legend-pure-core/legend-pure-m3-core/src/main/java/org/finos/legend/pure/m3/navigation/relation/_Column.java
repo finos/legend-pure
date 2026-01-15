@@ -15,7 +15,12 @@
 package org.finos.legend.pure.m3.navigation.relation;
 
 import java.util.Objects;
+
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.StereotypeCoreInstanceWrapper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
@@ -49,10 +54,15 @@ public class _Column
             }
             target._rawType((Type)_type);
         }
-        return _Column.getColumnInstance(name, nameWildCard, target, multiplicity, src, processorSupport);
+        return _Column.getColumnInstance(name, nameWildCard, target, multiplicity, null, null, src, processorSupport);
     }
 
     public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity multiplicity, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    {
+        return getColumnInstance(name, nameWildCard, targetType, multiplicity, null, null, sourceInformation, processorSupport);
+    }
+
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, RichIterable<? extends TaggedValue> taggedValues, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         Column<?, ?> columnInstance = (Column<?, ?>) processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.Column);
         columnInstance._name(StringEscape.unescape(removeQuotes(name)));
@@ -63,6 +73,15 @@ public class _Column
         columnGenericType._typeArguments(Lists.mutable.with(null, targetType));
         columnGenericType._multiplicityArgumentsAdd(multiplicity);
         columnInstance.setKeyValues(M3PropertyPaths.classifierGenericType, Lists.mutable.with(columnGenericType));
+        if (stereotypes != null && stereotypes.notEmpty())
+        {
+            RichIterable<? extends Stereotype> stereotypeInstances = stereotypes.collect(s -> (s instanceof Stereotype) ? (Stereotype) s : StereotypeCoreInstanceWrapper.FROM_CORE_INSTANCE_FN.valueOf(s));
+            columnInstance._stereotypes(stereotypeInstances);
+        }
+        if (taggedValues != null && taggedValues.notEmpty())
+        {
+            columnInstance._taggedValues(taggedValues);
+        }
         return columnInstance;
     }
 
