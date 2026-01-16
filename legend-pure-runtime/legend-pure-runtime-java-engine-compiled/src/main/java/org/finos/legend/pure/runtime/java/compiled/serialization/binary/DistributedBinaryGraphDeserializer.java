@@ -29,6 +29,7 @@ import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m4.serialization.Reader;
 import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 
 import java.io.Serializable;
@@ -74,6 +75,15 @@ public abstract class DistributedBinaryGraphDeserializer
     }
 
     protected abstract ListIterable<Obj> getInstances(String classifierId, Iterable<String> instanceIds, boolean throwIfNotFound);
+
+    public String processId(String id)
+    {
+        if (DistributedBinaryGraphSerializer.HASH_IDS)
+        {
+            return IdBuilder.hashToBase64String(id);
+        }
+        return id;
+    }
 
     public static void setSourceCoordinateMapProvider(SourceCoordinateMapProvider provider)
     {

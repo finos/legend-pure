@@ -41,6 +41,8 @@ import java.util.jar.JarOutputStream;
 
 public abstract class DistributedBinaryGraphSerializer
 {
+    public static final boolean HASH_IDS = Boolean.parseBoolean(System.getProperty("legend.pure.runtime.java.compiled.serialization.binary.distributed.hashids", "false"));
+
     private static final int MAX_BIN_FILE_BYTES = 512 * 1024;
 
     private final DistributedMetadataSpecification metadataSpecification;
@@ -54,7 +56,7 @@ public abstract class DistributedBinaryGraphSerializer
         this.metadataSpecification = metadataSpecification;
         this.runtime = runtime;
         this.processorSupport = runtime.getProcessorSupport();
-        this.idBuilder = newIdBuilder(this.metadataSpecification, this.processorSupport, true);
+        this.idBuilder = newIdBuilder(this.metadataSpecification, this.processorSupport, HASH_IDS);
         this.classifierCaches = new GraphSerializer.ClassifierCaches(this.processorSupport);
     }
 
