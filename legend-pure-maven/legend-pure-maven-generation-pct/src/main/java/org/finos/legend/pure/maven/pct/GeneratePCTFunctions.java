@@ -44,7 +44,7 @@ public class GeneratePCTFunctions extends AbstractMojo
         assertPresentOrNotEmpty("scopeProviderMethod", scopeProviderMethod);
 
         ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
-        try(URLClassLoader cl = Shared.buildClassLoader(this.project, savedClassLoader, getLog()))
+        try (URLClassLoader cl = Shared.buildClassLoader(this.project, savedClassLoader, getLog()))
         {
             Thread.currentThread().setContextClassLoader(cl);
             FunctionsGeneration.generateFunctions(targetDir, scopeProviderMethod);

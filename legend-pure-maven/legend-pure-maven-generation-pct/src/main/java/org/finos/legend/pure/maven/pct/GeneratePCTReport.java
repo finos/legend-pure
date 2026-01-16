@@ -51,7 +51,7 @@ public class GeneratePCTReport extends AbstractMojo
         assertPresentOrNotEmpty("PCTTestSuites", PCTTestSuites);
 
         ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
-        try(URLClassLoader cl = Shared.buildClassLoader(this.project, savedClassLoader, getLog()))
+        try (URLClassLoader cl = Shared.buildClassLoader(this.project, savedClassLoader, getLog()))
         {
             Thread.currentThread().setContextClassLoader(cl);
             for (String testClass : PCTTestSuites)
