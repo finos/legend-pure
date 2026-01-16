@@ -120,7 +120,7 @@ public class PureCompiledJarMojo extends AbstractMojo
 
         ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
         long start = System.nanoTime();
-        try(URLClassLoader cl = this.buildClassLoader(this.project, savedClassLoader, log))
+        try (URLClassLoader cl = this.buildClassLoader(this.project, savedClassLoader, log))
         {
             Thread.currentThread().setContextClassLoader(cl);
             JavaCodeGeneration.doIt(repositories, excludedRepositories, extraRepositories, generationType, skip, addExternalAPI, externalAPIPackage, generateMetadata, useSingleDir, generateSources, false, preventJavaCompilation, classesDirectory, targetDirectory, generatePureTests, log);
