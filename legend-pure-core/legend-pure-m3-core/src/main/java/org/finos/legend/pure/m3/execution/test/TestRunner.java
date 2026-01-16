@@ -14,11 +14,11 @@
 
 package org.finos.legend.pure.m3.execution.test;
 
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
+import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.execution.Console;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
@@ -28,6 +28,7 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.pct.shared.PCTTools;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
@@ -35,31 +36,12 @@ import org.finos.legend.pure.m4.exception.PureException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.finos.legend.pure.m3.pct.shared.PCTTools.isPCTTest;
-
 public class TestRunner implements Runnable
 {
-    private static final Function<TestCollection, Comparable> TEST_COLLECTION_SORT_KEY = new Function<TestCollection, Comparable>()
-    {
-        @Override
-        public Comparable valueOf(TestCollection testCollection)
-        {
-            return testCollection.getPackage().getName();
-        }
-    };
-
-    private static final Function<CoreInstance, Comparable> TEST_SORT_KEY = new Function<CoreInstance, Comparable>()
-    {
-        @Override
-        public Comparable valueOf(CoreInstance test)
-        {
-            return test.getName();
-        }
-    };
-
     private final TestCollection tests;
     private final boolean includeAlloyOnlyTests;
     private final String pctAdapter;
@@ -67,8 +49,8 @@ public class TestRunner implements Runnable
     private final TestCallBack testCallBack;
     private final boolean shuffle;
     private final AtomicBoolean stopped = new AtomicBoolean(false);
-    protected UnifiedSet<String> passedTests;
-    protected UnifiedSet<String> failedTests;
+    protected final MutableSet<String> passedTests;
+    protected final MutableSet<String> failedTests;
 
     public TestRunner(TestCollection tests, FunctionExecution functionExecution, TestCallBack callBack, boolean shuffle)
     {
@@ -90,8 +72,8 @@ public class TestRunner implements Runnable
         this.testCallBack = callBack;
         this.shuffle = shuffle;
         callBack.foundTests(this.tests.getAllTestFunctions(includeAlloyOnlyTests));
-        this.passedTests = new UnifiedSet<>();
-        this.failedTests = new UnifiedSet<>();
+        this.passedTests = Sets.mutable.empty();
+        this.failedTests = Sets.mutable.empty();
     }
 
     public TestRunner(TestCollection tests, FunctionExecution functionExecution, TestCallBack callBack)
@@ -135,7 +117,7 @@ public class TestRunner implements Runnable
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -165,7 +147,7 @@ public class TestRunner implements Runnable
             catch (Throwable t)
             {
                 // One of the set-up functions failed, so we fail all the tests in this collection and sub-collections
-                failTestsFromCollectionWithErrorStatus(testCollection, console, new ErrorTestStatus(t));
+                failTestsFromCollectionWithErrorStatus(testCollection, new ErrorTestStatus(t));
                 return;
             }
         }
@@ -199,7 +181,7 @@ public class TestRunner implements Runnable
             catch (Throwable t)
             {
                 PureException exception = PureException.findPureException(t);
-                if ((exception != null) && (exception instanceof PureAssertFailException))
+                if (exception instanceof PureAssertFailException)
                 {
                     this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), stream.toString(), new AssertFailTestStatus((PureAssertFailException) exception));
                 }
@@ -232,40 +214,39 @@ public class TestRunner implements Runnable
 
     private void executeTestFunc(CoreInstance testFunc, Object testFunctionParam, CoreInstance testFunctionParamCustomizer)
     {
-        ListIterable<? extends CoreInstance> args = Lists.mutable.empty();
-
-        if (isPCTTest(testFunc, functionExecution.getProcessorSupport()))
+        ProcessorSupport processorSupport = this.functionExecution.getProcessorSupport();
+        if (PCTTools.isPCTTest(testFunc, processorSupport))
         {
-            String adapterLocation = this.pctAdapter;
-            testFunctionParam = _Package.getByUserPath(adapterLocation, functionExecution.getProcessorSupport());
+            testFunctionParam = _Package.getByUserPath(this.pctAdapter, processorSupport);
             if (testFunctionParam == null)
             {
-                throw new RuntimeException("The adapter " + adapterLocation + " can't be found in the graph");
+                throw new RuntimeException("The adapter " + this.pctAdapter + " can't be found in the graph");
             }
         }
 
-        if (testFunctionParam != null)
+        ListIterable<? extends CoreInstance> args;
+        if (testFunctionParam == null)
         {
-            ProcessorSupport processorSupport = this.functionExecution.getProcessorSupport();
-            if (testFunctionParamCustomizer != null)
-            {
-                CoreInstance customizedParam = this.functionExecution.start(testFunctionParamCustomizer,
-                        Lists.mutable.with(
-                                ValueSpecificationBootstrap.wrapValueSpecification(testFunc, false, processorSupport),
-                                ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance) testFunctionParam, false, processorSupport)
-                        ));
-                customizedParam = Instance.getValueForMetaPropertyToOneResolved(customizedParam, M3Properties.values, processorSupport);
-                args = Lists.mutable.with(ValueSpecificationBootstrap.wrapValueSpecification(customizedParam, false, processorSupport));
-            }
-            else
-            {
-                args = Lists.mutable.with(ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance) testFunctionParam, false, processorSupport));
-            }
+            args = Lists.immutable.empty();
+        }
+        else if (testFunctionParamCustomizer == null)
+        {
+            args = Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance) testFunctionParam, false, processorSupport));
+        }
+        else
+        {
+            CoreInstance customizedParam = this.functionExecution.start(testFunctionParamCustomizer,
+                    Lists.immutable.with(
+                            ValueSpecificationBootstrap.wrapValueSpecification(testFunc, false, processorSupport),
+                            ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance) testFunctionParam, false, processorSupport)
+                    ));
+            customizedParam = Instance.getValueForMetaPropertyToOneResolved(customizedParam, M3Properties.values, processorSupport);
+            args = Lists.mutable.with(ValueSpecificationBootstrap.wrapValueSpecification(customizedParam, false, processorSupport));
         }
         this.functionExecution.start(testFunc, args);
     }
 
-    private void failTestsFromCollectionWithErrorStatus(TestCollection testCollection, Console console, ErrorTestStatus status) throws IOException
+    private void failTestsFromCollectionWithErrorStatus(TestCollection testCollection, ErrorTestStatus status)
     {
         // Fail tests for subcollections
         for (TestCollection subCollection : getSubCollections(testCollection))
@@ -274,7 +255,7 @@ public class TestRunner implements Runnable
             {
                 return;
             }
-            failTestsFromCollectionWithErrorStatus(subCollection, console, status);
+            failTestsFromCollectionWithErrorStatus(subCollection, status);
         }
 
         // Fail tests
@@ -297,7 +278,7 @@ public class TestRunner implements Runnable
         }
         else
         {
-            subCollections.sortThisBy(TEST_COLLECTION_SORT_KEY);
+            subCollections.sortThisBy(tc -> tc.getPackage().getName());
         }
         return subCollections;
     }
@@ -311,7 +292,7 @@ public class TestRunner implements Runnable
         }
         else
         {
-            testFunctions.sortThisBy(TEST_SORT_KEY);
+            testFunctions.sortThisBy(CoreInstance::getName);
         }
         return testFunctions;
     }
