@@ -22,6 +22,7 @@ import org.apache.maven.project.MavenProject;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.runtime.java.compiled.testHelper.PCTReportGenerator;
 
+import java.net.URLClassLoader;
 import java.util.Set;
 
 import static org.finos.legend.pure.maven.pct.Shared.assertPresentOrNotEmpty;
@@ -50,9 +51,9 @@ public class GeneratePCTReport extends AbstractMojo
         assertPresentOrNotEmpty("PCTTestSuites", PCTTestSuites);
 
         ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
-        try
+        try(URLClassLoader cl = Shared.buildClassLoader(this.project, savedClassLoader, getLog()))
         {
-            Thread.currentThread().setContextClassLoader(Shared.buildClassLoader(this.project, savedClassLoader, getLog()));
+            Thread.currentThread().setContextClassLoader(cl);
             for (String testClass : PCTTestSuites)
             {
                 try
