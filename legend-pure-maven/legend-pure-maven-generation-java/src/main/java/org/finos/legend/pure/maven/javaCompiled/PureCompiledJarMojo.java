@@ -25,6 +25,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.Log;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaCodeGeneration;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -119,9 +120,11 @@ public class PureCompiledJarMojo extends AbstractMojo
         };
 
         ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader childClassLoader = null;
         long start = System.nanoTime();
         try
         {
+            childClassLoader = buildClassLoader(this.project, savedClassLoader, log);
             Thread.currentThread().setContextClassLoader(buildClassLoader(this.project, savedClassLoader, log));
             JavaCodeGeneration.doIt(repositories, excludedRepositories, extraRepositories, generationType, skip, addExternalAPI, externalAPIPackage, generateMetadata, useSingleDir, generateSources, false, preventJavaCompilation, classesDirectory, targetDirectory, generatePureTests, log);
         }
@@ -134,6 +137,17 @@ public class PureCompiledJarMojo extends AbstractMojo
         finally
         {
             Thread.currentThread().setContextClassLoader(savedClassLoader);
+            if (childClassLoader instanceof URLClassLoader)
+            {
+                try
+                {
+                    ((URLClassLoader) childClassLoader).close();
+                }
+                catch (IOException e)
+                {
+                    getLog().warn("Failed to close child classloader", e);
+                }
+            }
         }
     }
 
