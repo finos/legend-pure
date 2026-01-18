@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.grammar.math.oper
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
+import java.math.RoundingMode;
 
 /**
  * Numeric accumulator for performing arithmetic operations.
@@ -891,15 +892,7 @@ public class NumericAccumulator
         @Override
         NumberWrapper divide(BigDecimal number)
         {
-            try
-            {
-                this.value = this.value.divide(number);
-            }
-            catch (ArithmeticException e)
-            {
-                // The result has a non-terminating decimal representation, so we have to round it to a finite precision.
-                this.value = this.value.divide(number, MathContext.DECIMAL128);
-            }
+            this.value = this.value.divide(number, new MathContext(16, RoundingMode.HALF_UP));
             return this;
         }
 
@@ -1113,15 +1106,8 @@ public class NumericAccumulator
         NumberWrapper multiply(double number)
         {
             double newValue = this.value * number;
-            if (Double.isInfinite(newValue))
-            {
-                return new BigDecimalWrapper(this.value).multiply(number);
-            }
-            else
-            {
-                this.value = newValue;
-                return this;
-            }
+            this.value = newValue;
+            return this;
         }
 
         @Override
@@ -1575,15 +1561,7 @@ public class NumericAccumulator
         @Override
         NumberWrapper divide(long number)
         {
-            if ((this.value % number) == 0)
-            {
-                this.value /= number;
-                return this;
-            }
-            else
-            {
-                return new BigDecimalWrapper(this.value).divide(number);
-            }
+            return new DoubleWrapper((double) this.value).divide((double) number);
         }
 
         @Override
