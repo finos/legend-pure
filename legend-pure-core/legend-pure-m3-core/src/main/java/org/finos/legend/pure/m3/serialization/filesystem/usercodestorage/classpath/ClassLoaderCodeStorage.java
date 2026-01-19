@@ -57,6 +57,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -80,8 +81,6 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
             return getResourceType(url);
         }
     };
-
-    private static final Function<String, ClassLoaderDirectoryNode> NEW_DIR_NODE = ClassLoaderDirectoryNode::new;
 
     private final ClassLoader classLoader;
     private volatile ImmutableMap<String, ImmutableMap<String, ClassLoaderCodeStorageNode>> nodesByPathByRepo; //NOSONAR we actually want to protect the pointer
@@ -363,12 +362,13 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
                         case "file":
                         {
                             Path filePath = fileURLToPath(url);
-                            node = Files.isDirectory(filePath) ? new ClassLoaderDirectoryNode(path) : new ClassLoaderPathFileNode(path, filePath);
+                            node = Files.isDirectory(filePath) ? new ClassLoaderDirectoryNode(path, filePath) : new ClassLoaderPathFileNode(path, filePath);
                             break;
                         }
                         case "jar":
                         {
-                            node = (getJarURLResourceType(url) == ResourceType.DIRECTORY) ? new ClassLoaderDirectoryNode(path) : new ClassLoaderURLFileNode(path, url);
+                            Path filePath = fileURLToPath(url);
+                            node = (getJarURLResourceType(url) == ResourceType.DIRECTORY) ? new ClassLoaderDirectoryNode(path, filePath) : new ClassLoaderURLFileNode(path, url, filePath);
                             break;
                         }
                         default:
@@ -386,7 +386,7 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
                     }
                     if (resourceTypes.contains(ResourceType.DIRECTORY))
                     {
-                        node = new ClassLoaderDirectoryNode(path);
+                        node = new ClassLoaderDirectoryNode(path, fileURLToPath(urls.getFirst()));
                     }
                     else
                     {
@@ -406,7 +406,7 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
                         }
                         // Choose just one URL for the actual node
                         URL firstURL = urls.minBy(Functions.getToString());
-                        node = "file".equals(firstURL.getProtocol()) ? new ClassLoaderPathFileNode(path, fileURLToPath(firstURL)) : new ClassLoaderURLFileNode(path, firstURL);
+                        node = "file".equals(firstURL.getProtocol()) ? new ClassLoaderPathFileNode(path, fileURLToPath(firstURL)) : new ClassLoaderURLFileNode(path, firstURL, fileURLToPath(firstURL));
                     }
                 }
                 String repositoryName = CodeStorageTools.getInitialPathElement(path);
@@ -422,7 +422,7 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
                         for (int slashIndex = path.indexOf('/', 1); slashIndex != -1; slashIndex = path.indexOf('/', slashIndex + 1))
                         {
                             String ancestorPath = path.substring(0, slashIndex);
-                            ClassLoaderCodeStorageNode ancestorNode = nodeMap.getIfAbsentPutWithKey(ancestorPath, NEW_DIR_NODE);
+                            ClassLoaderCodeStorageNode ancestorNode = nodeMap.getIfAbsentPutWithKey(ancestorPath, (x) -> new ClassLoaderDirectoryNode(x, Paths.get(ancestorPath)));
                             if (!ancestorNode.isDirectory())
                             {
                                 throw new RuntimeException("Found both file and directory for path: " + ancestorPath);
@@ -590,7 +590,18 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
     {
         try
         {
-            return Paths.get(fileURL.toURI());
+            if (fileURL.getProtocol().equals("jar"))
+            {
+                return Paths.get(fileURL.getPath().split("!")[0]);
+            }
+            else
+            {
+                return Paths.get(fileURL.toURI());
+            }
+        }
+        catch (FileSystemNotFoundException e)
+        {
+            throw new RuntimeException("Invalid URL: " + fileURL, e);
         }
         catch (URISyntaxException e)
         {
