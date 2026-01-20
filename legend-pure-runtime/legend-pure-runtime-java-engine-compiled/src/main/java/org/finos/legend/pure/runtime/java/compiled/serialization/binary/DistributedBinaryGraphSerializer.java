@@ -41,8 +41,6 @@ import java.util.jar.JarOutputStream;
 
 public abstract class DistributedBinaryGraphSerializer
 {
-    public static final boolean HASH_IDS = Boolean.parseBoolean(System.getProperty("legend.pure.runtime.java.compiled.serialization.binary.distributed.hashids", "false"));
-
     private static final int MAX_BIN_FILE_BYTES = 512 * 1024;
 
     private final DistributedMetadataSpecification metadataSpecification;
@@ -56,7 +54,7 @@ public abstract class DistributedBinaryGraphSerializer
         this.metadataSpecification = metadataSpecification;
         this.runtime = runtime;
         this.processorSupport = runtime.getProcessorSupport();
-        this.idBuilder = newIdBuilder(this.metadataSpecification, this.processorSupport, HASH_IDS);
+        this.idBuilder = DistributedMetadataHelper.possiblyHashIds(newIdBuilder(this.metadataSpecification, this.processorSupport));
         this.classifierCaches = new GraphSerializer.ClassifierCaches(this.processorSupport);
     }
 
@@ -284,29 +282,18 @@ public abstract class DistributedBinaryGraphSerializer
 
     public static IdBuilder newIdBuilder(String metadataName, ProcessorSupport processorSupport)
     {
-        return newIdBuilder(metadataName, processorSupport, false);
+        return newIdBuilder_internal(DistributedMetadataHelper.validateMetadataNameIfPresent(metadataName), processorSupport);
     }
 
     public static IdBuilder newIdBuilder(DistributedMetadataSpecification metadataSpec, ProcessorSupport processorSupport)
     {
-        return newIdBuilder(metadataSpec, processorSupport, false);
+        return newIdBuilder_internal((metadataSpec == null) ? null : metadataSpec.getName(), processorSupport);
     }
 
-    public static IdBuilder newIdBuilder(String metadataName, ProcessorSupport processorSupport, boolean hashIds)
-    {
-        return newIdBuilder_internal(DistributedMetadataHelper.validateMetadataNameIfPresent(metadataName), processorSupport, hashIds);
-    }
-
-    public static IdBuilder newIdBuilder(DistributedMetadataSpecification metadataSpec, ProcessorSupport processorSupport, boolean hashIds)
-    {
-        return newIdBuilder_internal((metadataSpec == null) ? null : metadataSpec.getName(), processorSupport, hashIds);
-    }
-
-    private static IdBuilder newIdBuilder_internal(String metadataName, ProcessorSupport processorSupport, boolean hashIds)
+    private static IdBuilder newIdBuilder_internal(String metadataName, ProcessorSupport processorSupport)
     {
         return IdBuilder.builder(processorSupport)
                 .withDefaultIdPrefix(DistributedMetadataHelper.getMetadataIdPrefix(metadataName))
-                .withHashIds(hashIds)
                 .build();
     }
 

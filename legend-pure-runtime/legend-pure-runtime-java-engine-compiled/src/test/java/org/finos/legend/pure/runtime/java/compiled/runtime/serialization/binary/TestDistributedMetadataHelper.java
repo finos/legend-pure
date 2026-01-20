@@ -148,4 +148,13 @@ public class TestDistributedMetadataHelper
         Assert.assertEquals("metadata/strings/null/other-131072.idx", DistributedMetadataHelper.getOtherStringsIndexPartitionFilePath("null", 131072));
         Assert.assertEquals("metadata/strings/_-_/other-1638400.idx", DistributedMetadataHelper.getOtherStringsIndexPartitionFilePath("_-_", 1638400));
     }
+
+    @Test
+    public void testPossiblyHashId()
+    {
+        String input1 = "Root::meta::pure::metamodel::type::Class";
+        String input2 = "Root::meta::pure::metamodel::type::Package";
+        Assert.assertEquals(DistributedMetadataHelper.possiblyHashId(input1), DistributedMetadataHelper.possiblyHashId(input1));
+        Assert.assertNotEquals(DistributedMetadataHelper.possiblyHashId(input1), DistributedMetadataHelper.possiblyHashId(input2));
+    }
 }

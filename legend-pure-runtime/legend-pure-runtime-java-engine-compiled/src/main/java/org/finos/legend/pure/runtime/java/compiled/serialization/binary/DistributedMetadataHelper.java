@@ -14,8 +14,17 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
+
+import java.nio.ByteBuffer;
+import java.util.Base64;
+import java.util.Objects;
+
 public class DistributedMetadataHelper
 {
+    static final boolean HASH_IDS = Boolean.parseBoolean(System.getProperty("legend.pure.runtime.java.compiled.serialization.binary.distributed.hashids", "false"));
+
     private static final String META_DATA_DIRNAME = "metadata/";
     private static final String SPECS_DIRNAME = META_DATA_DIRNAME + "specs/";
     private static final String CLASSIFIERS_DIRNAME = META_DATA_DIRNAME + "classifiers/";
@@ -171,5 +180,53 @@ public class DistributedMetadataHelper
         return (metadataName == null) ?
                 (STRINGS_DIRNAME + "other-" + partitionId + INDEX_FILE_EXTENSION) :
                 (STRINGS_DIRNAME + metadataName + "/other-" + partitionId + INDEX_FILE_EXTENSION);
+    }
+
+    // Id hashing
+
+    public static String possiblyHashId(String id)
+    {
+        return HASH_IDS ? hashId(id) : id;
+    }
+
+    public static IdBuilder possiblyHashIds(IdBuilder idBuilder)
+    {
+        return HASH_IDS ? new HashingIdBuilder(idBuilder) : idBuilder;
+    }
+
+    private static class HashingIdBuilder extends IdBuilder
+    {
+        private final IdBuilder delegate;
+
+        private HashingIdBuilder(IdBuilder delegate)
+        {
+            this.delegate = Objects.requireNonNull(delegate);
+        }
+
+        @Override
+        public String buildId(CoreInstance instance)
+        {
+            return hashId(this.delegate.buildId(instance));
+        }
+    }
+
+    private static String hashId(String id)
+    {
+        if (id == null)
+        {
+            return null;
+        }
+
+        // generate hash
+        long hash = 0;
+        for (int i = 0, codePoint; i < id.length(); i += Character.charCount(codePoint))
+        {
+            hash = (31 * hash) + (codePoint = id.codePointAt(i));
+        }
+
+        // convert to base64 string
+        byte[] bytes = new byte[8];
+        ByteBuffer.wrap(bytes).putLong(hash);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 }

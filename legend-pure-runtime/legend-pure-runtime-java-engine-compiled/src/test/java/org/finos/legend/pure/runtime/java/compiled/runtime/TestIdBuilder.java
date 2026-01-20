@@ -21,7 +21,6 @@ import org.eclipse.collections.api.map.primitive.MutableObjectIntMap;
 import org.eclipse.collections.api.map.primitive.ObjectIntMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.factory.primitive.ObjectIntMaps;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -96,31 +95,6 @@ public class TestIdBuilder
         }
     }
 
-    @Test
-    public void testCustomIdBuilder()
-    {
-        IdBuilder standardIdBuilder = IdBuilder.builder(processorSupport).build();
-        IdBuilder customIdBuilder = IdBuilder.builder(processorSupport)
-                .withIdBuilder(M3Paths.Class, c -> PackageableElement.getSystemPathForPackageableElement(c, "/"))
-                .withIdBuilder(M3Paths.Package, c -> PackageableElement.getSystemPathForPackageableElement(c, "+"))
-                .build();
-
-        // Class (with custom builder)
-        CoreInstance classClass = runtime.getCoreInstance("meta::pure::metamodel::type::Class");
-        Assert.assertEquals("Root::meta::pure::metamodel::type::Class", standardIdBuilder.buildId(classClass));
-        Assert.assertEquals("Root/meta/pure/metamodel/type/Class", customIdBuilder.buildId(classClass));
-
-        // Package (with custom builder)
-        CoreInstance metaPurePackage = runtime.getCoreInstance("meta::pure");
-        Assert.assertEquals("Root::meta::pure", standardIdBuilder.buildId(metaPurePackage));
-        Assert.assertEquals("Root+meta+pure", customIdBuilder.buildId(metaPurePackage));
-
-        // Profile (no custom builder)
-        CoreInstance testProfile = runtime.getCoreInstance("meta::pure::profiles::test");
-        Assert.assertEquals("Root::meta::pure::profiles::test", standardIdBuilder.buildId(testProfile));
-        Assert.assertEquals("Root::meta::pure::profiles::test", customIdBuilder.buildId(testProfile));
-    }
-
     private void testIdUniqueness(IdBuilder idBuilder)
     {
         MutableSet<CoreInstance> excludedClassifiers = PrimitiveUtilities.getPrimitiveTypes(processorSupport).toSet();
@@ -151,24 +125,5 @@ public class TestIdBuilder
             });
             Assert.fail(builder.toString());
         }
-    }
-
-    @Test
-    public void testSameInputProducesSameHash()
-    {
-        String input = "Root::meta::pure::metamodel::type::Class";
-        String hash1 = IdBuilder.hashToBase64String(input);
-        String hash2 = IdBuilder.hashToBase64String(input);
-        Assert.assertEquals(hash1, hash2);
-    }
-
-    @Test
-    public void testDifferentInputProducesDifferentHash()
-    {
-        String input1 = "Root::meta::pure::metamodel::type::Class";
-        String input2 = "Root::meta::pure::metamodel::type::Package";
-        String hash1 = IdBuilder.hashToBase64String(input1);
-        String hash2 = IdBuilder.hashToBase64String(input2);
-        Assert.assertNotEquals(hash1, hash2);
     }
 }

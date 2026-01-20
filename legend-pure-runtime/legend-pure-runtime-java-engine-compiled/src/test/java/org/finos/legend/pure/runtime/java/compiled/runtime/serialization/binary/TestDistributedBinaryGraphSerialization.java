@@ -30,6 +30,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuild
 import org.finos.legend.pure.runtime.java.compiled.serialization.GraphSerializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphDeserializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphSerializer;
+import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedMetadataHelper;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.FileReader;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.FileWriter;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
@@ -58,7 +59,7 @@ public abstract class TestDistributedBinaryGraphSerialization extends AbstractPu
     {
         MutableSet<CoreInstance> ignoredClassifiers = PrimitiveUtilities.getPrimitiveTypes(repository).toSet();
         ArrayAdapter.adapt(M3Paths.EnumStub, M3Paths.ImportStub, M3Paths.PropertyStub, M3Paths.RouteNodePropertyStub).collect(processorSupport::package_getByUserPath, ignoredClassifiers);
-        IdBuilder idBuilder = IdBuilder.builder(processorSupport).withHashIds(DistributedBinaryGraphSerializer.HASH_IDS).build();
+        IdBuilder idBuilder = DistributedMetadataHelper.possiblyHashIds(IdBuilder.newIdBuilder(processorSupport));
         GraphSerializer.ClassifierCaches classifierCaches = new GraphSerializer.ClassifierCaches(processorSupport);
         return GraphNodeIterable.fromModelRepository(repository)
                 .reject(i -> ignoredClassifiers.contains(i.getClassifier()))
