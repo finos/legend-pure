@@ -21,6 +21,8 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.finos.legend.pure.m3.pct.functions.generation.FunctionsGeneration;
 
+import java.net.URLClassLoader;
+
 import static org.finos.legend.pure.maven.pct.Shared.assertPresentOrNotEmpty;
 
 @Mojo(name = "generate-pct-functions", threadSafe = true)
@@ -42,9 +44,9 @@ public class GeneratePCTFunctions extends AbstractMojo
         assertPresentOrNotEmpty("scopeProviderMethod", scopeProviderMethod);
 
         ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
-        try
+        try (URLClassLoader cl = Shared.buildClassLoader(this.project, savedClassLoader, getLog()))
         {
-            Thread.currentThread().setContextClassLoader(Shared.buildClassLoader(this.project, savedClassLoader, getLog()));
+            Thread.currentThread().setContextClassLoader(cl);
             FunctionsGeneration.generateFunctions(targetDir, scopeProviderMethod);
         }
         catch (Exception e)

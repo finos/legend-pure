@@ -137,32 +137,33 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
         Path classesDir = this.temporaryFolder.newFolder("classes").toPath();
         generator.serializeAndWriteDistributedMetadata(classesDir);
         generator.compileAndWriteClasses(classesDir, new VoidLog());
-        URLClassLoader classLoader = new URLClassLoader(new URL[] {classesDir.toUri().toURL()}, Thread.currentThread().getContextClassLoader());
+        try (URLClassLoader classLoader = new URLClassLoader(new URL[] {classesDir.toUri().toURL()}, Thread.currentThread().getContextClassLoader()))
+        {
+            MetadataLazy metadataLazy = MetadataLazy.fromClassLoader(classLoader);
+            CompiledExecutionSupport executionSupport = new CompiledExecutionSupport(
+                    new JavaCompilerState(null, classLoader),
+                    new CompiledProcessorSupport(classLoader, metadataLazy, null),
+                    null,
+                    runtime.getCodeStorage(),
+                    null,
+                    VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER,
+                    new ConsoleCompiled(),
+                    null,
+                    null,
+                    CompiledExtensionLoader.extensions()
+            );
 
-        MetadataLazy metadataLazy = MetadataLazy.fromClassLoader(classLoader);
-        CompiledExecutionSupport executionSupport = new CompiledExecutionSupport(
-                new JavaCompilerState(null, classLoader),
-                new CompiledProcessorSupport(classLoader, metadataLazy, null),
-                null,
-                runtime.getCodeStorage(),
-                null,
-                VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER,
-                new ConsoleCompiled(),
-                null,
-                null,
-                CompiledExtensionLoader.extensions()
-        );
+            String className = JavaPackageAndImportBuilder.getRootPackage() + ".test_standalone_tests";
+            Class<?> testClass = classLoader.loadClass(className);
 
-        String className = JavaPackageAndImportBuilder.getRootPackage() + ".test_standalone_tests";
-        Class<?> testClass = classLoader.loadClass(className);
+            Method joinWithCommas = testClass.getMethod("Root_test_standalone_joinWithCommas_String_MANY__String_1_", RichIterable.class, ExecutionSupport.class);
+            Object result1 = joinWithCommas.invoke(null, Lists.immutable.with("a", "b", "c"), executionSupport);
+            Assert.assertEquals("a, b, c", result1);
 
-        Method joinWithCommas = testClass.getMethod("Root_test_standalone_joinWithCommas_String_MANY__String_1_", RichIterable.class, ExecutionSupport.class);
-        Object result1 = joinWithCommas.invoke(null, Lists.immutable.with("a", "b", "c"), executionSupport);
-        Assert.assertEquals("a, b, c", result1);
-
-        Method testWithReflection = testClass.getMethod("Root_test_standalone_testWithReflection_String_1__String_1_", String.class, ExecutionSupport.class);
-        Object result2 = testWithReflection.invoke(null, "_*_", executionSupport);
-        Assert.assertEquals("_*_testWithReflection", result2);
+            Method testWithReflection = testClass.getMethod("Root_test_standalone_testWithReflection_String_1__String_1_", String.class, ExecutionSupport.class);
+            Object result2 = testWithReflection.invoke(null, "_*_", executionSupport);
+            Assert.assertEquals("_*_testWithReflection", result2);
+        }
     }
 
     @Test
