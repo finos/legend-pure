@@ -24,7 +24,7 @@ import java.util.Objects;
 
 public class DistributedMetadataHelper
 {
-    private static final boolean HASH_IDS = Boolean.parseBoolean(System.getProperty("legend.pure.runtime.java.compiled.serialization.binary.distributed.hashids", "false"));
+    private static final boolean HASH_IDS = Boolean.parseBoolean(System.getProperty("legend.pure.runtime.java.compiled.serialization.binary.distributed.hashids", "true"));
 
     private static final String META_DATA_DIRNAME = "metadata/";
     private static final String SPECS_DIRNAME = META_DATA_DIRNAME + "specs/";

@@ -16,9 +16,7 @@ package org.finos.legend.pure.runtime.java.compiled.pct.functions;
 
 import junit.framework.Test;
 import org.finos.legend.pure.runtime.java.compiled.testHelper.PureTestBuilderCompiled;
-import org.junit.Ignore;
 
-@Ignore
 public class TestCoreFunctions_MetadataEager
 {
     public static Test suite()

@@ -44,7 +44,7 @@ class ReferenceIdV1IdBuilder extends IdBuilder
         }
 
         int syntheticId = instance.getSyntheticId();
-        return (this.defaultIdPrefix == null) ? Integer.toString(syntheticId) : (this.defaultIdPrefix + syntheticId);
+        return (this.defaultIdPrefix == null) ? Integer.toUnsignedString(syntheticId, 32) : (this.defaultIdPrefix + Integer.toUnsignedString(syntheticId, 32));
     }
 
     private ReferenceIdProvider getIdProvider()

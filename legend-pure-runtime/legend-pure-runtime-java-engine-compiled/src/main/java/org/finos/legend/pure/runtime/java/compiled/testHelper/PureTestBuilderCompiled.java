@@ -55,7 +55,7 @@ import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegis
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.FunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
-import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataBuilder;
+import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataEager;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
 import org.junit.Assert;
 
@@ -247,7 +247,7 @@ public class PureTestBuilderCompiled extends TestSuite
                 }
                 throw new RuntimeException(builder.toString());
             }
-            return MetadataBuilder.indexAll(runtime.getModelRepository().getTopLevels(), IdBuilder.newIdBuilder(runtime.getProcessorSupport()), runtime.getProcessorSupport());
+            return new MetadataEager(runtime.getProcessorSupport());
         }
         return MetadataLazy.fromClassLoader(classLoader, codeStorage.getAllRepositories().asLazy().collect(CodeRepository::getName));
     }
