@@ -26,8 +26,11 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.Counter;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.EnumProcessor;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphDeserializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedMetadataSpecification;
@@ -101,7 +104,16 @@ public class MetadataLazy implements Metadata
     @Override
     public CoreInstance getMetadata(String classifier, String id)
     {
-        return hasClassifier(classifier) ? toJavaObject(classifier, this.deserializer.processId(id)) : null;
+        if (!hasClassifier(classifier))
+        {
+            return null;
+        }
+        // for backward compatibility
+        if (id.startsWith("Root::"))
+        {
+            id = id.substring(6);
+        }
+        return toJavaObject(classifier, this.deserializer.processId(id));
     }
 
     @Override
@@ -125,7 +137,7 @@ public class MetadataLazy implements Metadata
         }
 
         ConcurrentMutableMap<String, CoreInstance> cache = getClassifierInstanceCache(enumerationName);
-        String enumId = this.deserializer.processId(enumName);
+        String enumId = this.deserializer.processId(enumerationName + "." + M3Properties.values + "['" + enumName + "']");
         CoreInstance result = cache.get(enumId);
         if (result == null)
         {

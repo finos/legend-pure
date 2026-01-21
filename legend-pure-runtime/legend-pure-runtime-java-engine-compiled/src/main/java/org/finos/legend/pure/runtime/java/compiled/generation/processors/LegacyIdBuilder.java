@@ -34,6 +34,7 @@ import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLo
 import java.util.Objects;
 import java.util.function.Function;
 
+@Deprecated
 class LegacyIdBuilder extends IdBuilder
 {
     private final String defaultIdPrefix;
