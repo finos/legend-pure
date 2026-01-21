@@ -46,7 +46,7 @@ function <<PCT.test>> meta::pure::functions::math::tests::divide::testComplexDiv
 
 function <<PCT.test>> meta::pure::functions::math::tests::divide::testDivideWithNonTerminatingExpansion<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(0.01041666666666666666666666666666667, $f->eval(|1 / 96));
+    assertEq(0.010416666666666666, $f->eval(|1 / 96));
 }
 
 function <<PCT.test>> meta::pure::functions::math::tests::divide::testNegativeDivide<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
@@ -62,6 +62,7 @@ function <<PCT.test>> meta::pure::functions::math::tests::divide::testFloatDivid
 
 function <<PCT.test>> meta::pure::functions::math::tests::divide::testDecimalDivide<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
+    assertEq(0.5238095238095238, $f->eval(|1.1d/2.1d));
     assertEq(0.5, $f->eval(|1.0d/2.0));
     assertEq(-2.0, $f->eval(|-4.0d/2.0/1));
     assertEq(-0.5, $f->eval(|-4.0d/8/1.0));

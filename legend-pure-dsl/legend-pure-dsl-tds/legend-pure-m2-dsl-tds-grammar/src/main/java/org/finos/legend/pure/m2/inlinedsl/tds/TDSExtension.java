@@ -32,6 +32,7 @@ import org.finos.legend.pure.m2.inlinedsl.tds.processor.TDSProcessor;
 import org.finos.legend.pure.m2.inlinedsl.tds.unloader.TDSUnbind;
 import org.finos.legend.pure.m2.inlinedsl.tds.validation.TDSVisibilityValidator;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.compiler.postprocessing.processor.valuespecification.InstanceValueProcessor;
 import org.finos.legend.pure.m3.compiler.validation.validator.GenericTypeValidator;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.TDSCoreInstanceFactoryRegistry;
@@ -43,6 +44,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.TDS;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -170,12 +172,20 @@ public class TDSExtension implements InlineDSL
         }
         else
         {
-            CoreInstance _type = _Package.getByUserPath(type.getText(), processorSupport);
+            CoreInstance _type = _Package.getByUserPath(type.qualifiedName().getText(), processorSupport);
             if (_type == null)
             {
-                throw new PureCompilationException(type.getText() + " not found!  (imports are not scan for TDS column type resolution)");
+                throw new PureCompilationException(type.qualifiedName().getText() + " not found!  (imports are not scan for TDS column type resolution)");
             }
-            target._rawType((Type) _type);
+            target._rawType((Type) _type)
+                    ._typeVariableValues(type.typeVariableValues() == null ? Lists.mutable.empty() : ListIterate.collect(type.typeVariableValues().instanceLiteral(), x ->
+                    {
+                        InstanceValue res = (InstanceValue)processorSupport.newAnonymousCoreInstance(null, M3Paths.InstanceValue);
+                        res._valuesAdd(Integer.valueOf(x.instanceLiteralToken().INTEGER().getText()));
+                        InstanceValueProcessor.updateInstanceValue(res, processorSupport);
+                        return res;
+                    })
+                    );
         }
         return target;
     }

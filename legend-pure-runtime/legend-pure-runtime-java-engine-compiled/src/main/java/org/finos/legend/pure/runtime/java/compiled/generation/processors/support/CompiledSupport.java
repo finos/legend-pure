@@ -1457,7 +1457,7 @@ public class CompiledSupport
 
         if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
         {
-            return toBigDecimal(left).divide(toBigDecimal(right), RoundingMode.HALF_UP).doubleValue();
+            return divideDecimal(toBigDecimal(left), toBigDecimal(right), 16).doubleValue();
         }
 
         return left.doubleValue() / right.doubleValue();
