@@ -14,9 +14,7 @@
 
 package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath;
 
-import org.eclipse.collections.api.factory.Sets;
-import org.eclipse.collections.impl.test.Verify;
-import org.eclipse.collections.impl.utility.LazyIterate;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
@@ -41,72 +39,75 @@ public class TestClassLoaderCodeStorage
     @Before
     public void setUp()
     {
-        this.testCodeStorage = new ClassLoaderCodeStorage(new GenericCodeRepository("test", null, "platform"));
+        this.testCodeStorage = new ClassLoaderCodeStorage(new GenericCodeRepository("test", null, "platform"), new GenericCodeRepository("empty", null));
         this.platformCodeStorage = new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository());
-        this.combinedCodeStorage = new ClassLoaderCodeStorage(LazyIterate.concatenate(this.testCodeStorage.getAllRepositories(), this.platformCodeStorage.getAllRepositories()));
+        this.combinedCodeStorage = new ClassLoaderCodeStorage(this.testCodeStorage.getAllRepositories().asLazy().concatenate(this.platformCodeStorage.getAllRepositories()));
     }
 
     @Test
     public void testGetFileOrFiles()
     {
-        Verify.assertContainsAll(
-                "unable to find all files under /platform",
-                this.platformCodeStorage.getFileOrFiles("/platform"),
-                "/platform/pure/grammar/m3.pure",
-                "/platform/pure/anonymousCollections.pure");
+        Assert.assertTrue(this.platformCodeStorage.getFileOrFiles("/platform").contains("/platform/pure/grammar/m3.pure"));
+        Assert.assertTrue(this.platformCodeStorage.getFileOrFiles("/platform").contains("/platform/pure/anonymousCollections.pure"));
 
-        Verify.assertSetsEqual(
+        Assert.assertEquals(
                 "unable to find all files under /test",
-                Sets.mutable.with(
+                Lists.mutable.with(
                         "/test/codestorage/fake.pure",
                         "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure",
                         "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level2/level2.pure"),
-                this.testCodeStorage.getFileOrFiles("/test").toSet());
+                this.testCodeStorage.getFileOrFiles("/test").toSortedList());
+        Assert.assertEquals(
+                Lists.mutable.empty(),
+                this.testCodeStorage.getFileOrFiles("/empty").toSortedList());
 
-        Verify.assertSetsEqual(
-                this.platformCodeStorage.getFileOrFiles("/platform").toSet(),
-                this.combinedCodeStorage.getFileOrFiles("/platform").toSet());
-        Verify.assertSetsEqual(
-                this.testCodeStorage.getFileOrFiles("/test").toSet(),
-                this.combinedCodeStorage.getFileOrFiles("/test").toSet());
+        Assert.assertEquals(
+                this.platformCodeStorage.getFileOrFiles("/platform").toSortedList(),
+                this.combinedCodeStorage.getFileOrFiles("/platform").toSortedList());
+        Assert.assertEquals(
+                this.testCodeStorage.getFileOrFiles("/test").toSortedList(),
+                this.combinedCodeStorage.getFileOrFiles("/test").toSortedList());
+        Assert.assertEquals(
+                this.testCodeStorage.getFileOrFiles("/empty").toSortedList(),
+                this.combinedCodeStorage.getFileOrFiles("/empty").toSortedList());
 
-        Verify.assertSetsEqual(
+        Assert.assertEquals(
                 "unable to find all files for a non-directory path",
-                Sets.mutable.with("/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure"),
-                this.testCodeStorage.getFileOrFiles("/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure").toSet());
+                Lists.mutable.with("/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure"),
+                this.testCodeStorage.getFileOrFiles("/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure").toSortedList());
 
-        Verify.assertSetsEqual(
+        Assert.assertEquals(
                 "unable to find all files under /test/com",
-                Sets.mutable.with(
+                Lists.mutable.with(
                         "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure",
                         "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level2/level2.pure"),
-                this.testCodeStorage.getFileOrFiles("/test/org").toSet());
+                this.testCodeStorage.getFileOrFiles("/test/org").toSortedList());
     }
 
     @Test
     public void testGetFiles()
     {
-        Verify.assertSetsEqual(
+        Assert.assertEquals(
                 "unable to find all files immediately under /test",
-                Sets.mutable.with("codestorage", "org"),
-                this.testCodeStorage.getFiles("/test").collect(CodeStorageNode.GET_NAME).toSet());
-        Verify.assertSetsEqual(
+                Lists.mutable.with("codestorage", "org"),
+                this.testCodeStorage.getFiles("/test").collect(CodeStorageNode.GET_NAME, Lists.mutable.empty()).sortThis());
+        Assert.assertEquals(
                 "unable to find all files immediately under /test",
-                Sets.mutable.with("codestorage", "org"),
-                this.combinedCodeStorage.getFiles("/test").collect(CodeStorageNode.GET_NAME).toSet());
+                Lists.mutable.with("codestorage", "org"),
+                this.combinedCodeStorage.getFiles("/test").collect(CodeStorageNode.GET_NAME, Lists.mutable.empty()).sortThis());
     }
 
     @Test
     public void testGetUserFiles()
     {
-        Verify.assertSetsEqual(
-                Sets.mutable.with("/test/codestorage/fake.pure", "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure", "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level2/level2.pure"),
-                this.testCodeStorage.getUserFiles().toSet());
-        Verify.assertEquals(238, this.combinedCodeStorage.getUserFiles().toSet().size());
+        Assert.assertEquals(
+                Lists.mutable.with("/test/codestorage/fake.pure", "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure", "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level2/level2.pure"),
+                this.testCodeStorage.getUserFiles().toSortedList());
+        Assert.assertEquals(238, this.combinedCodeStorage.getUserFiles().toSet().size());
     }
 
     @Test
-    public void testGetContentAsText() throws Exception
+    public void testGetContentAsText()
     {
         String level1_pure = readResource("test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure");
         String m3_pure = readResource("platform/pure/grammar/m3.pure");
@@ -137,9 +138,9 @@ public class TestClassLoaderCodeStorage
     @Test
     public void testRepositoryName()
     {
-        Verify.assertSetsEqual(Sets.mutable.with("platform"), this.platformCodeStorage.getAllRepositories().collect(CodeRepository::getName).toSet());
-        Verify.assertSetsEqual(Sets.mutable.with("test"), this.testCodeStorage.getAllRepositories().collect(CodeRepository::getName).toSet());
-        Verify.assertSetsEqual(Sets.mutable.with("platform", "test"), this.combinedCodeStorage.getAllRepositories().collect(CodeRepository::getName).toSet());
+        Assert.assertEquals(Lists.mutable.with("platform"), this.platformCodeStorage.getAllRepositories().collect(CodeRepository::getName, Lists.mutable.empty()));
+        Assert.assertEquals(Lists.mutable.with("test", "empty"), this.testCodeStorage.getAllRepositories().collect(CodeRepository::getName, Lists.mutable.empty()));
+        Assert.assertEquals(Lists.mutable.with("empty", "platform", "test"), this.combinedCodeStorage.getAllRepositories().collect(CodeRepository::getName, Lists.mutable.empty()).sortThis());
     }
 
     @Test

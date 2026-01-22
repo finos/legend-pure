@@ -20,50 +20,11 @@ import org.eclipse.collections.api.block.predicate.Predicate2;
 
 public interface CodeStorageNode
 {
-    Function<CodeStorageNode, String> GET_NAME = new Function<CodeStorageNode, String>()
-    {
-        @Override
-        public String valueOf(CodeStorageNode node)
-        {
-            return node.getName();
-        }
-    };
-
-    Function<CodeStorageNode, String> GET_PATH = new Function<CodeStorageNode, String>()
-    {
-        @Override
-        public String valueOf(CodeStorageNode node)
-        {
-            return node.getPath();
-        }
-    };
-
-    Predicate<CodeStorageNode> IS_DIRECTORY = new Predicate<CodeStorageNode>()
-    {
-        @Override
-        public boolean accept(CodeStorageNode node)
-        {
-            return node.isDirectory();
-        }
-    };
-
-    Predicate2<CodeStorageNode, CodeStorageNodeStatus> HAS_STATUS = new Predicate2<CodeStorageNode, CodeStorageNodeStatus>()
-    {
-        @Override
-        public boolean accept(CodeStorageNode node, CodeStorageNodeStatus status)
-        {
-            return node.getStatus() == status;
-        }
-    };
-
-    Predicate<CodeStorageNode> IS_REJECT_FILE = new Predicate<CodeStorageNode>()
-    {
-        @Override
-        public boolean accept(CodeStorageNode node)
-        {
-            return !node.isDirectory() && node.getName().endsWith(".rej");
-        }
-    };
+    Function<CodeStorageNode, String> GET_NAME = CodeStorageNode::getName;
+    Function<CodeStorageNode, String> GET_PATH = CodeStorageNode::getPath;
+    Predicate<CodeStorageNode> IS_DIRECTORY = CodeStorageNode::isDirectory;
+    Predicate2<CodeStorageNode, CodeStorageNodeStatus> HAS_STATUS = (node, status) -> node.getStatus() == status;
+    Predicate<CodeStorageNode> IS_REJECT_FILE = node -> !node.isDirectory() && node.getName().endsWith(".rej");
 
     boolean isDirectory();
 
