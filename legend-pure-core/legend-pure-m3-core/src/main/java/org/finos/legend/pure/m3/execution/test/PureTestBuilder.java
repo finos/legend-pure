@@ -22,9 +22,8 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.Ignore;
 
@@ -126,63 +125,23 @@ public class PureTestBuilder
 
     public static boolean satisfiesConditions(CoreInstance node, ProcessorSupport processorSupport, String... exclusions)
     {
-        return !hasStereotype(node, "meta::pure::profiles::test", "AlloyOnly", processorSupport) &&
-                !hasStereotype(node, "meta::pure::profiles::temporaryLazyExclusion", "exclude", processorSupport) &&
-                !hasTaggedValue(node, "meta::pure::profiles::test", "excludePlatform", "Java compiled", processorSupport);
+        return !Profile.hasStereotype(node, "meta::pure::profiles::test", "AlloyOnly", processorSupport) &&
+                !Profile.hasStereotype(node, "meta::pure::profiles::temporaryLazyExclusion", "exclude", processorSupport) &&
+                !Profile.hasTaggedValue(node, "meta::pure::profiles::test", "excludePlatform", "Java compiled", processorSupport);
     }
 
     public static boolean satisfiesConditionsInterpreted(CoreInstance node, ProcessorSupport processorSupport, String... exclusions)
     {
-        return !hasStereotype(node, "meta::pure::profiles::test", "AlloyOnly", processorSupport) &&
-                !hasStereotype(node, "meta::pure::profiles::temporaryLazyExclusion", "exclude", processorSupport);
+        return !Profile.hasStereotype(node, "meta::pure::profiles::test", "AlloyOnly", processorSupport) &&
+                !Profile.hasStereotype(node, "meta::pure::profiles::temporaryLazyExclusion", "exclude", processorSupport);
     }
 
     public static boolean satisfiesConditionsModular(CoreInstance node, ProcessorSupport processorSupport, String... exclusions)
     {
-        return !hasStereotype(node, "meta::pure::profiles::test", "AlloyOnly", processorSupport) &&
-                !hasStereotype(node, "meta::pure::profiles::test", "ExcludeModular", processorSupport) &&
-                !hasStereotype(node, "meta::pure::profiles::temporaryLazyExclusion", "exclude", processorSupport) &&
-                !hasTaggedValue(node, "meta::pure::profiles::test", "excludePlatform", "Java compiled", processorSupport);
-    }
-
-    private static boolean hasStereotype(CoreInstance node, String profile, String value, ProcessorSupport processorSupport)
-    {
-        ListIterable<? extends CoreInstance> stereotypes = Instance.getValueForMetaPropertyToManyResolved(node, M3Properties.stereotypes, processorSupport);
-        if (stereotypes.notEmpty())
-        {
-            CoreInstance testProfile = processorSupport.package_getByUserPath(profile);
-            for (CoreInstance stereotype : stereotypes)
-            {
-                if ((testProfile == Instance.getValueForMetaPropertyToOneResolved(stereotype, M3Properties.profile, processorSupport)) &&
-                        value.equals(Instance.getValueForMetaPropertyToOneResolved(stereotype, M3Properties.value, processorSupport).getName()))
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private static boolean hasTaggedValue(CoreInstance node, String profile, String tag, String value, ProcessorSupport processorSupport)
-    {
-        ListIterable<? extends CoreInstance> taggedValues = Instance.getValueForMetaPropertyToManyResolved(node, M3Properties.taggedValues, processorSupport);
-        if (taggedValues.notEmpty())
-        {
-            CoreInstance profileObject = processorSupport.package_getByUserPath(profile);
-            for (CoreInstance taggedValue : taggedValues)
-            {
-                if ((taggedValue.getValueForMetaPropertyToOne("tag").getValueForMetaPropertyToOne("profile") == profileObject)
-                        && (taggedValue.getValueForMetaPropertyToOne("tag").getName().equals(tag)))
-                {
-                    String foundValue = Instance.getValueForMetaPropertyToOneResolved(taggedValue, M3Properties.value, processorSupport).getName();
-                    if (value.equals(foundValue))
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+        return !Profile.hasStereotype(node, "meta::pure::profiles::test", "AlloyOnly", processorSupport) &&
+                !Profile.hasStereotype(node, "meta::pure::profiles::test", "ExcludeModular", processorSupport) &&
+                !Profile.hasStereotype(node, "meta::pure::profiles::temporaryLazyExclusion", "exclude", processorSupport) &&
+                !Profile.hasTaggedValue(node, "meta::pure::profiles::test", "excludePlatform", "Java compiled", processorSupport);
     }
 
     public interface F2<T1, T2, R>

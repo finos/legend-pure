@@ -17,7 +17,6 @@ package org.finos.legend.pure.runtime.java.compiled.testHelper;
 import io.opentracing.noop.NoopTracerFactory;
 import io.opentracing.util.GlobalTracer;
 import junit.framework.TestSuite;
-import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
@@ -41,24 +40,30 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeReposito
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
+import org.finos.legend.pure.m3.serialization.runtime.PrintPureRuntimeStatus;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
+import org.finos.legend.pure.m3.serialization.runtime.cache.CacheState;
+import org.finos.legend.pure.m3.serialization.runtime.cache.ClassLoaderPureGraphCache;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.compiler.JavaCompilerState;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledProcessorSupport;
 import org.finos.legend.pure.runtime.java.compiled.execution.ConsoleCompiled;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.FunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
+import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
+import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataBuilder;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
 import org.junit.Assert;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Objects;
-
-import static org.finos.legend.pure.m3.pct.shared.PCTTools.isPCTTest;
-import static org.junit.Assert.fail;
 
 public class PureTestBuilderCompiled extends TestSuite
 {
@@ -68,19 +73,27 @@ public class PureTestBuilderCompiled extends TestSuite
         return PureTestBuilder.buildSuite(testCollection, p, executionSupport);
     }
 
-    public static TestSuite buildSuite(String... all)
+    public static TestSuite buildSuite(boolean eagerMetadata, String... paths)
     {
-        CompiledExecutionSupport executionSupport = getClassLoaderExecutionSupport();
+        return buildSuite(eagerMetadata, Arrays.asList(paths));
+    }
+
+    public static TestSuite buildSuite(String... paths)
+    {
+        return buildSuite(false, paths);
+    }
+
+    private static TestSuite buildSuite(boolean eagerMetadata, Iterable<String> paths)
+    {
+        CompiledExecutionSupport executionSupport = getClassLoaderExecutionSupport(eagerMetadata);
         PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> p = (a, b) -> executeFn(a, null, Maps.fixedSize.empty(), executionSupport, b);
         TestSuite suite = new TestSuite();
-        ArrayIterate.forEach(all, (path) ->
-                {
-                    TestCollection col = TestCollection.collectTests(path, executionSupport.getProcessorSupport(),
-                                    ci ->  !isPCTTest(ci, executionSupport.getProcessorSupport()) && PureTestBuilder.satisfiesConditionsModular(ci, executionSupport.getProcessorSupport())
-                    );
-                    suite.addTest(PureTestBuilder.buildSuite(col, p, executionSupport));
-                }
-        );
+        paths.forEach((path) ->
+        {
+            TestCollection col = TestCollection.collectTests(path, executionSupport.getProcessorSupport(),
+                    ci -> !PCTTools.isPCTTest(ci, executionSupport.getProcessorSupport()) && PureTestBuilder.satisfiesConditionsModular(ci, executionSupport.getProcessorSupport()));
+            suite.addTest(PureTestBuilder.buildSuite(col, p, executionSupport));
+        });
         return suite;
     }
 
@@ -110,7 +123,7 @@ public class PureTestBuilderCompiled extends TestSuite
     public static Object executeFn(CoreInstance coreInstance, String PCTExecutor, MutableMap<String, String> exclusions, ExecutionSupport executionSupport, MutableList<Object> paramList) throws Throwable
     {
         Class<?> _class = Class.forName("org.finos.legend.pure.generated." + IdBuilder.sourceToId(coreInstance.getSourceInformation()));
-        if (isPCTTest(coreInstance, ((CompiledExecutionSupport) executionSupport).getProcessorSupport()))
+        if (PCTTools.isPCTTest(coreInstance, ((CompiledExecutionSupport) executionSupport).getProcessorSupport()))
         {
             CoreInstance executor = _Package.getByUserPath(PCTExecutor, ((CompiledExecutionSupport) executionSupport).getProcessorSupport());
             if (executor == null)
@@ -123,7 +136,7 @@ public class PureTestBuilderCompiled extends TestSuite
         Object[] params = paramList.toArray();
         String methodName = FunctionProcessor.functionNameToJava(coreInstance);
         Method method = params.length == 1 ? _class.getMethod(methodName, ExecutionSupport.class)
-                : ArrayIterate.detect(_class.getMethods(), m -> methodName.equals(m.getName()));
+                                           : ArrayIterate.detect(_class.getMethods(), m -> methodName.equals(m.getName()));
 
         // NOTE: mock out the global tracer for test
         // See https://github.com/opentracing/opentracing-java/issues/170
@@ -144,7 +157,8 @@ public class PureTestBuilderCompiled extends TestSuite
         {
             // Check if the error was expected
             String message = exclusions.get(PackageableElement.getUserPathForPackageableElement(coreInstance, "::"));
-            Throwable thrown = e.getCause().getMessage() != null && e.getCause().getMessage().contains("Unexpected error executing function with params") && e.getCause().getCause() != null ? e.getCause().getCause() : e.getCause();
+            Throwable cause = e.getCause();
+            Throwable thrown = cause.getMessage() != null && cause.getMessage().contains("Unexpected error executing function with params") && cause.getCause() != null ? cause.getCause() : cause;
             if (message != null && PCTTools.getMessageFromError(thrown).contains(message))
             {
                 return null;
@@ -154,7 +168,7 @@ public class PureTestBuilderCompiled extends TestSuite
                 PCTTools.displayErrorMessage(message, coreInstance, PCTExecutor, ((CompiledExecutionSupport) executionSupport).getProcessorSupport(), thrown);
                 if (thrown instanceof PureAssertFailException)
                 {
-                    fail(thrown.getMessage());
+                    Assert.fail(thrown.getMessage());
                 }
                 throw thrown;
             }
@@ -177,17 +191,30 @@ public class PureTestBuilderCompiled extends TestSuite
 
     public static CompiledExecutionSupport getClassLoaderExecutionSupport()
     {
-        return getClassLoaderExecutionSupport(PureTestBuilderCompiled.class.getClassLoader());
+        return getClassLoaderExecutionSupport(Thread.currentThread().getContextClassLoader());
     }
 
     public static CompiledExecutionSupport getClassLoaderExecutionSupport(ClassLoader classLoader)
     {
-        RichIterable<CodeRepository> codeRepos = CodeRepositoryProviderHelper.findCodeRepositories().select(r -> !r.getName().equals("test_generic_repository") && !r.getName().equals("other_test_generic_repository"));
+        return getClassLoaderExecutionSupport(classLoader, false);
+    }
+
+    private static CompiledExecutionSupport getClassLoaderExecutionSupport(boolean eagerMetadata)
+    {
+        return getClassLoaderExecutionSupport(Thread.currentThread().getContextClassLoader(), eagerMetadata);
+    }
+
+    private static CompiledExecutionSupport getClassLoaderExecutionSupport(ClassLoader classLoader, boolean eagerMetadata)
+    {
+        MutableList<CodeRepository> codeRepos = CodeRepositoryProviderHelper.findCodeRepositories(classLoader)
+                .reject(r -> "test_generic_repository".equals(r.getName()) || "other_test_generic_repository".equals(r.getName()), Lists.mutable.empty());
+        CompositeCodeStorage codeStorage = new CompositeCodeStorage(new ClassLoaderCodeStorage(classLoader, codeRepos));
+        Metadata metadata = buildMetadata(classLoader, codeStorage, eagerMetadata);
         return new CompiledExecutionSupport(
                 new JavaCompilerState(null, classLoader),
-                new CompiledProcessorSupport(classLoader, MetadataLazy.fromClassLoader(classLoader, codeRepos.collect(CodeRepository::getName)), Sets.mutable.empty()),
+                new CompiledProcessorSupport(classLoader, metadata, Sets.mutable.empty()),
                 null,
-                new CompositeCodeStorage(new ClassLoaderCodeStorage(classLoader, codeRepos)),
+                codeStorage,
                 null,
                 null,
                 new ConsoleCompiled(),
@@ -195,6 +222,34 @@ public class PureTestBuilderCompiled extends TestSuite
                 Sets.mutable.empty(),
                 CompiledExtensionLoader.extensions()
         );
+    }
+
+    private static Metadata buildMetadata(ClassLoader classLoader, CompositeCodeStorage codeStorage, boolean eager)
+    {
+        if (eager)
+        {
+            PureRuntime runtime = new PureRuntimeBuilder(codeStorage)
+                    .withCache(new ClassLoaderPureGraphCache(classLoader))
+                    .withFactoryRegistryOverride(JavaModelFactoryRegistryLoader.loader())
+                    .withRuntimeStatus(new PrintPureRuntimeStatus(System.out))
+                    .buildAndInitialize();
+            if (!runtime.isInitialized())
+            {
+                StringBuilder builder = new StringBuilder("Pure runtime not initialized");
+                CacheState cacheState = runtime.getCache().getCacheState();
+                if (cacheState.getLastErrorMessage() != null)
+                {
+                    builder.append(": ").append(cacheState.getLastErrorMessage());
+                }
+                if (cacheState.getLastStackTrace() != null)
+                {
+                    builder.append('\n').append(cacheState.getLastStackTrace());
+                }
+                throw new RuntimeException(builder.toString());
+            }
+            return MetadataBuilder.indexAll(runtime.getModelRepository().getTopLevels(), IdBuilder.newIdBuilder(runtime.getProcessorSupport()), runtime.getProcessorSupport());
+        }
+        return MetadataLazy.fromClassLoader(classLoader, codeStorage.getAllRepositories().asLazy().collect(CodeRepository::getName));
     }
 
     public static MutableSet<CoreInstance> buildExclusionList(ProcessorSupport processorSupport, String... exclusions)
@@ -210,16 +265,12 @@ public class PureTestBuilderCompiled extends TestSuite
             {
                 return executeFn(f, null, Maps.mutable.empty(), executionSupport, Lists.mutable.empty());
             }
+            catch (Error | RuntimeException e)
+            {
+                throw e;
+            }
             catch (Throwable e)
             {
-                if (e instanceof Error)
-                {
-                    throw (Error) e;
-                }
-                if (e instanceof RuntimeException)
-                {
-                    throw (RuntimeException) e;
-                }
                 throw new RuntimeException(e);
             }
         });
