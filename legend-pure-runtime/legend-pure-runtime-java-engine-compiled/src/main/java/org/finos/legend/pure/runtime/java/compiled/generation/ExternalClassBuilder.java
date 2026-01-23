@@ -31,7 +31,6 @@ public class ExternalClassBuilder
             "import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage",
             "import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage",
             "import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.VersionControlledClassLoaderCodeStorage",
-            "import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.svn.PureRepositoryRevisionCache",
             "import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository",
             "import org.finos.legend.pure.runtime.java.compiled.execution.ConsoleCompiled",
             "import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport",
