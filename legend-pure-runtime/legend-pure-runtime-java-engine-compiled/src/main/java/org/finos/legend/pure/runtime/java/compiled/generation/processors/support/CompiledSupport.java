@@ -59,6 +59,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
 import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.runtime.java.compiled.compiler.MemoryClassLoader;
 import org.finos.legend.pure.runtime.java.compiled.compiler.MemoryFileManager;
@@ -1262,6 +1263,11 @@ public class CompiledSupport
         return value.toString();
     }
 
+    public static String primitiveToString(PureStrictTime value)
+    {
+        return value.toString();
+    }
+
     public static String primitiveToString(Number value)
     {
         if ((value instanceof Float) || (value instanceof Double))
@@ -1293,6 +1299,10 @@ public class CompiledSupport
         if (value instanceof PureDate)
         {
             return primitiveToString((PureDate) value);
+        }
+        if (value instanceof PureStrictTime)
+        {
+            return primitiveToString((PureStrictTime) value);
         }
         if (value instanceof String)
         {
