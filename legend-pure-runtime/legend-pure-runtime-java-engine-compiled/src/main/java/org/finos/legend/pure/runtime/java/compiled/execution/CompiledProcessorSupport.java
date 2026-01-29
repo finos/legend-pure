@@ -377,7 +377,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
     {
         if (PrimitiveUtilities.isPrimitiveTypeName(type))
         {
-            return new ValCoreInstance(null, type);
+            return ValCoreInstance.newVal(null, type);
         }
         try
         {
@@ -395,7 +395,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
     {
         if (PrimitiveUtilities.isPrimitiveTypeName(typeName))
         {
-            return new ValCoreInstance(name, typeName);
+            return ValCoreInstance.newVal(name, typeName);
         }
         try
         {

@@ -263,6 +263,11 @@ public class ValCoreInstance extends AbstractCompiledCoreInstance
     {
     }
 
+    public static CoreInstance newVal(String val, String type)
+    {
+        return new ValCoreInstance(val, type);
+    }
+
     public static CoreInstance toCoreInstance(Object value)
     {
         if (value == null)
