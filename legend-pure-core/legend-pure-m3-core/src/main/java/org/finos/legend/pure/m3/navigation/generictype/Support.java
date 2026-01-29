@@ -107,7 +107,7 @@ public class Support
             else
             {
                 CoreInstance newParameter = processorSupport.newCoreInstance(parameter.getName(), M3Paths.VariableExpression, null);
-                Instance.addValueToProperty(newParameter, M3Properties.name, Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.name, processorSupport), processorSupport);
+                Instance.addValueToProperty(newParameter, M3Properties.name, parameter.getValueForMetaPropertyToOne(M3Properties.name), processorSupport);
                 Instance.addValueToProperty(newParameter, M3Properties.multiplicity, Multiplicity.makeMultiplicityAsConcreteAsPossible(multiplicity, sourceMulBinding), processorSupport);
                 Instance.addValueToProperty(newParameter, M3Properties.genericType, GenericType.makeTypeArgumentAsConcreteAsPossible(genericType, resolved, sourceMulBinding, processorSupport), processorSupport);
                 Instance.addValueToProperty(newFunctionType, M3Properties.parameters, newParameter, processorSupport);
