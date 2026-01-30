@@ -66,6 +66,7 @@
         <commons-io.version>2.7</commons-io.version>
         <commons-lang.version>3.5</commons-lang.version>
         <commons-text.version>1.10.0</commons-text.version>
+        <deephaven-csv.version>0.18.0</deephaven-csv.version>
         <eclipsecollections.version>10.2.0</eclipsecollections.version>
         <guava.version>30.0-jre</guava.version>
         <h2.version>2.1.214</h2.version>
@@ -915,6 +916,14 @@
                 <version>${duckdb.version}</version>
             </dependency>
             <!-- DB drivers -->
+
+            <!-- Deephaven -->
+            <dependency>
+                <groupId>io.deephaven</groupId>
+                <artifactId>deephaven-csv</artifactId>
+                <version>${deephaven-csv.version}</version>
+            </dependency>
+            <!-- Deephaven -->
 
             <!-- Test Scope -->
             <dependency>
