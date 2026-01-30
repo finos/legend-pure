@@ -97,7 +97,7 @@ public class TestTDSDSLCompilation extends AbstractPureTestWithCoreCompiled
         }
         catch (PureCompilationException e)
         {
-            Assert.assertEquals("Compilation error at (resource:file.pure lines:5c9-9c7), \"io.deephaven.csv.util.CsvReaderException: Row 2 has too few columns (expected 4)\"", e.getMessage());
+            Assert.assertEquals("Compilation error at (resource:file.pure lines:5c9-9c7), \"Row 2 has too few columns (expected 4)\"", e.getMessage());
         }
     }
 
