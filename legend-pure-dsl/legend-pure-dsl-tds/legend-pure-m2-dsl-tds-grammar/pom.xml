@@ -98,7 +98,7 @@
         <dependency>
             <groupId>io.deephaven</groupId>
             <artifactId>deephaven-csv</artifactId>
-            <version>0.12.0</version>
+            <version>0.18.0</version>
         </dependency>
 
         <dependency>
