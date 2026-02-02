@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
+import org.eclipse.collections.impl.SpreadFunctions;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 
@@ -221,7 +222,7 @@ public class DistributedMetadataHelper
         long hash = 0;
         for (int i = 0, codePoint; i < id.length(); i += Character.charCount(codePoint))
         {
-            hash = (31 * hash) + (codePoint = id.codePointAt(i));
+            hash = SpreadFunctions.longSpreadOne(hash) + (codePoint = id.codePointAt(i));
         }
 
         // convert to base64 string
