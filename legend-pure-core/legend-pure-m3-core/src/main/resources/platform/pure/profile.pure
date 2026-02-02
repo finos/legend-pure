@@ -14,5 +14,5 @@
 
 Profile meta::pure::profiles::functionType
 {
-    stereotypes : [SideEffectFunction, NotImplementedFunction, NormalizeRequiredFunction];
+    stereotypes : [SideEffectFunction, NotImplementedFunction, NormalizeRequiredFunction, ReducerFunction];
 }
