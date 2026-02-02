@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.tools;
 
+import org.eclipse.collections.impl.SpreadFunctions;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class FilePathTools
@@ -139,7 +140,7 @@ public class FilePathTools
      * no more than 255 bytes when encoded using UTF-16. In effect, this means that the file name (including extension)
      * must be no more than 126 characters (since UTF-16 uses 2 bytes per Java character, plus a possible 2 bytes for a
      * byte order marker). If this limit is exceeded, then the file name will be truncated and the overage will be
-     * replaced with a hexadecimal string of a hash computed from the overage. Note that the extension, if provided,
+     * replaced with a base 32 string of a hash computed from the overage. Note that the extension, if provided,
      * will not be truncated. It will be appended after the base file name is truncated. If the extension is itself too
      * long, an {@link IllegalArgumentException} will be thrown.
      *
@@ -192,11 +193,17 @@ public class FilePathTools
 
     private static String getOverageSuffix(String string, int start, int end)
     {
-        long value = 0;
+        return Long.toUnsignedString(hashOverage(string, start, end), 32);
+    }
+
+    // exposed for testing
+    static long hashOverage(String string, int start, int end)
+    {
+        long hash = 0;
         for (int i = start, cp; i < end; i += Character.charCount(cp))
         {
-            value = (31 * value) + (cp = string.codePointAt(i));
+            hash = SpreadFunctions.longSpreadOne(hash) + (cp = string.codePointAt(i));
         }
-        return Long.toUnsignedString(value, 32);
+        return hash;
     }
 }
