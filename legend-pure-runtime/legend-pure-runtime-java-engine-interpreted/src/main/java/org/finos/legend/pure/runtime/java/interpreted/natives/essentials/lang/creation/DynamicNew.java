@@ -20,7 +20,6 @@ import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.stack.MutableStack;
-import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.validator.PropertyValidator;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
@@ -78,8 +77,11 @@ public class DynamicNew extends NativeFunction
             Instance.addValueToProperty(instance, M3Properties.classifierGenericType, genericType, processorSupport);
         }
 
-        //TODO - extend to cover generics
-        boolean shouldValidate = Iterate.isEmpty(Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, processorSupport));
+        // Only validate if the type is fully specified (type parameters match type arguments)
+        // Skip validation for generic types where type arguments are missing, as we can't properly resolve property types
+        ListIterable<? extends CoreInstance> typeParameters = Instance.getValueForMetaPropertyToManyResolved(classifier, M3Properties.typeParameters, processorSupport);
+        ListIterable<? extends CoreInstance> typeArguments = Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, processorSupport);
+        boolean shouldValidate = typeParameters.size() == typeArguments.size();
         MapIterable<String, CoreInstance> propertiesByName = processorSupport.class_getSimplePropertiesByName(classifier);
 
         // Set property values

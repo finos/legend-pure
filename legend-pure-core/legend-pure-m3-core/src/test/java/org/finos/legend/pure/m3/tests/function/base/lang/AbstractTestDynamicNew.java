@@ -40,6 +40,14 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
             + "    enum : myEnum[1];  \n"
             + "    enums : myEnum[*]; \n"
             + "}  \n"
+            + "Class L<T>\n"
+            + "{\n"
+            + "    l : T[1];\n"
+            + "}\n"
+            + "Class M\n"
+            + "{\n"
+            + "    m : L<String>[1];\n"
+            + "}\n"
             + "Class D \n"
             + "{  \n"
             + "   name : String[1];\n"
@@ -308,6 +316,23 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
                 + " let r = dynamicNew(A, \n"
                 + "     [ $a, $b ]);\n"
                 + " print($r, 1);\n"
+                + "}\n");
+        CoreInstance func = runtime.getFunction("test():Any[*]");
+        functionExecution.start(func, Lists.immutable.empty());
+    }
+
+    @Test
+    public void testDynamicNewWithGenericClassProperty()
+    {
+        compileTestSource("testSource.pure", DECLARATION
+                + "function test():Any[*] \n{"
+                + "let m = dynamicNew(M,\n"
+                + "                      [\n"
+                + "                        ^KeyValue(key='m', value=dynamicNew(L, [^KeyValue(key='l',value='hello'), ^KeyValue(key='classifierGenericType', value=^GenericType(rawType=L, typeArguments=^GenericType(rawType=String)))])),\n"
+                + "                        ^KeyValue(key='classifierGenericType', value=^GenericType(rawType=M))\n"
+                + "                      ])->cast(@M);\n"
+                + "\n"
+                + "  assertEquals($m.m.l, 'hello');"
                 + "}\n");
         CoreInstance func = runtime.getFunction("test():Any[*]");
         functionExecution.start(func, Lists.immutable.empty());
