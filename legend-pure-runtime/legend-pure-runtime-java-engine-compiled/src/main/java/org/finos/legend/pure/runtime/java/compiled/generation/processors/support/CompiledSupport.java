@@ -972,7 +972,7 @@ public class CompiledSupport
         {
             return eq((Number) left, (Number) right);
         }
-        if ((left instanceof String) || (left instanceof PureDate) || (left instanceof QuantityCoreInstance))
+        if ((left instanceof Boolean) || (left instanceof String) || (left instanceof PureDate) || (left instanceof PureStrictTime) || (left instanceof QuantityCoreInstance))
         {
             return left.equals(right);
         }
@@ -1008,6 +1008,10 @@ public class CompiledSupport
         return left == right;
     }
 
+    public static boolean eq_Boolean_1(boolean left, boolean right)
+    {
+        return left == right;
+    }
 
     public static boolean equal(Object left, Object right) //NOSONAR Function signature avoids confusion
     {
@@ -1070,6 +1074,10 @@ public class CompiledSupport
         if (left instanceof Number)
         {
             return (right instanceof Number) && eq((Number) left, (Number) right);
+        }
+        if (right instanceof Number)
+        {
+            return false;
         }
 
         if (left instanceof JavaCompiledCoreInstance)

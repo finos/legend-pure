@@ -61,8 +61,13 @@ public class Eq extends AbstractNativeFunctionGeneric
                 {
                     return "CompiledSupport.eq_Float_1(" + transformedParams.get(0) + ", " + transformedParams.get(1) + ")";
                 }
-            }
 
+                if (ValueSpecification.instanceOf(left, M3Paths.Boolean, processorSupport)
+                        && ValueSpecification.instanceOf(right, M3Paths.Boolean, processorSupport))
+                {
+                    return "CompiledSupport.eq_Boolean_1(" + transformedParams.get(0) + ", " + transformedParams.get(1) + ")";
+                }
+            }
         }
 
         return "CompiledSupport.eq(" + transformedParams.get(0) + ", " + transformedParams.get(1) + ")";
