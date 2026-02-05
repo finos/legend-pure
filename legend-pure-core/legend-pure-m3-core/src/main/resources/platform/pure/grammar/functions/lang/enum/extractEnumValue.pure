@@ -24,8 +24,19 @@ native function
     }
     meta::pure::functions::lang::extractEnumValue<T>(enum:Enumeration<T>[1], value:String[1]):T[1];
 
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::extractEnumValue<T>(enum:Enumeration<T>[1], value:String[0..1]):T[0..1]
+{
+    if ($value->isEmpty(), | [], | $enum->extractEnumValue($value->toOne()));
+}
+
 function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::testDotAccess():Boolean[1]
 {
     let val = LA_GeographicEntityType.COUNTRY;
     assertEquals('COUNTRY', $val->id());
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::testEmptyValue():Boolean[1]
+{
+    assertEquals(LA_GeographicEntityType.COUNTRY, extractEnumValue(LA_GeographicEntityType, 'COUNTRY'->head())); // force 0..1
+    assertEquals([], extractEnumValue(LA_GeographicEntityType, []));
 }
