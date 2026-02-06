@@ -44,6 +44,11 @@ public class PureJarSerializer
 {
     public static final String ARCHIVE_FILE_EXTENSION = "par";
 
+    /**
+     * @deprecated Use {@link #writePureRepositoryJars(Path, Path, String, String, CodeRepositorySet, ClassLoader, Log)}
+     * instead, that forces you to specify the specific classloader to use.
+     */
+    @Deprecated
     public static void writePureRepositoryJars(Path outputDirectory, Path sourceDirectory, String platformVersion, String modelVersion, CodeRepositorySet repositories, Log log) throws IOException
     {
         writePureRepositoryJars(outputDirectory, sourceDirectory, platformVersion, modelVersion, repositories, Thread.currentThread().getContextClassLoader(), log);

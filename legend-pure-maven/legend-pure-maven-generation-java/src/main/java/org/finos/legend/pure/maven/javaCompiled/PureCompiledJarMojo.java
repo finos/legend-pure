@@ -21,8 +21,8 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.collections.impl.utility.ListIterate;
-import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.Log;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaCodeGeneration;
+import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.Log;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -120,6 +120,7 @@ public class PureCompiledJarMojo extends AbstractMojo
 
         ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
         long start = System.nanoTime();
+
         try (URLClassLoader cl = this.buildClassLoader(this.project, savedClassLoader, log))
         {
             Thread.currentThread().setContextClassLoader(cl);
@@ -136,7 +137,6 @@ public class PureCompiledJarMojo extends AbstractMojo
             Thread.currentThread().setContextClassLoader(savedClassLoader);
         }
     }
-
 
 
     public URLClassLoader buildClassLoader(MavenProject project, ClassLoader parent, Log log) throws DependencyResolutionRequiredException
