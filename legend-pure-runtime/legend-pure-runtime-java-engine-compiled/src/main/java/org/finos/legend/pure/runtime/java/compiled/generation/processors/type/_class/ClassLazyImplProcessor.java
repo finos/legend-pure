@@ -97,7 +97,7 @@ public class ClassLazyImplProcessor
                         buildLazyProperty(property, ownerClassName + (ownerTypeParams.isEmpty() ? "" : "<" + ownerTypeParams + ">"), "this", name, returnType, unresolvedReturnType, returnMultiplicity, processorContext1.getSupport(), processorContext1), processorContext, processorSupport) +
                 ClassImplProcessor.buildQualifiedProperties(classGenericType, processorContext, processorSupport) +
                 buildLazyCopy(classGenericType, classInterfaceName, className, false, processorSupport) +
-                ClassImplProcessor.buildEquality(classGenericType, CLASS_LAZYIMPL_SUFFIX, true, false, true, processorContext, processorSupport) +
+                ClassImplProcessor.buildEquality(classGenericType, false, processorContext, processorSupport) +
                 ClassImplProcessor.buildGetFullSystemPath() +
                 //Not supported on platform classes yet
                 (ClassProcessor.isPlatformClass(_class) ? "" : ClassImplProcessor.validate(true, _class, className, classGenericType, processorContext, processorSupport.class_getSimpleProperties(_class), null, null)) +

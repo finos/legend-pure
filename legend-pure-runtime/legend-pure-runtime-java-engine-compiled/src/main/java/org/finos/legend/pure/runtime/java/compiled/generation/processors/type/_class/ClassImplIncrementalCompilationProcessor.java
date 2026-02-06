@@ -59,7 +59,7 @@ public class ClassImplIncrementalCompilationProcessor
                 createClassConstructors(className) +
                 ClassImplProcessor.buildQualifiedProperties(classGenericType, processorContext, processorSupport) +
                 M3ToJavaGenerator.createClassCopyMethod(className, interfaceName + M3ToJavaGenerator.getTypeParams(_class, true)) +
-                ClassImplProcessor.buildEquality(classGenericType, CLASS_IMPL_SUFFIX, true, true, false, processorContext, processorSupport) +
+                ClassImplProcessor.buildEquality(classGenericType, true, processorContext, processorSupport) +
                 "}");
     }
 
