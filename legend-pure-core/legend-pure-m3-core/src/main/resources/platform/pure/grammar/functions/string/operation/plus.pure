@@ -16,7 +16,7 @@ import meta::pure::test::pct::*;
 import meta::pure::functions::string::tests::plus::model::*;
 
 function
-    <<PCT.function>>
+    <<PCT.function, functionType.ReducerFunction>>
     {
         doc.doc='Concatenate two strings',
         PCT.grammarDoc='\'str\'+\'other\'',

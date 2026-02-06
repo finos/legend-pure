@@ -15,7 +15,7 @@
 import meta::pure::test::pct::*;
 
 native function
-    <<PCT.function>>
+    <<PCT.function, functionType.ReducerFunction>>
     {
         doc.doc='Adds all the provided values',
         PCT.grammarDoc='4 + 1',
