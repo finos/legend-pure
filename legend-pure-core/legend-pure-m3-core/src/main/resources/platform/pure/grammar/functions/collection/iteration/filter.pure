@@ -16,7 +16,7 @@ import meta::pure::test::pct::*;
 import meta::pure::functions::collection::tests::model::*;
 
 native function
-    <<PCT.function, functionType.ReducerFunction>>
+    <<PCT.function>>
     {
         doc.doc='Applies the given function to each elements and filters out the ones where the applied function returns false.',
         PCT.grammarDoc='filter is leveraged in milestoning generated derived properties'

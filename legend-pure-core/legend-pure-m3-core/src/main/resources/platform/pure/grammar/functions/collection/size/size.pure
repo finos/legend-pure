@@ -15,7 +15,7 @@
 import meta::pure::test::pct::*;
 
 native function
-    <<PCT.function, functionType.ReducerFunction>>
+    <<PCT.function>>
     {
         doc.doc='Returns the number of elements in the given collection',
         PCT.grammarDoc='size is used in the implementation of inequalities functions'
