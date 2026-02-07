@@ -170,7 +170,7 @@ public class ClassImplProcessor
                 }, processorContext, processorSupport) +
                 buildQualifiedProperties(classGenericType, processorContext, processorSupport) +
                 buildCopy(classGenericType, CLASS_IMPL_SUFFIX, isGetterOverride, processorSupport) +
-                (ClassProcessor.isLazy(_class) ? buildEquality(classGenericType, CLASS_IMPL_SUFFIX, true, false, true, processorContext, processorSupport) : buildEquality(classGenericType, CLASS_IMPL_SUFFIX, false, false, false, processorContext, processorSupport)) +
+                buildEquality(classGenericType, false, processorContext, processorSupport) +
                 buildGetFullSystemPath() +
                 //Not supported on platform classes yet
                 (ClassProcessor.isPlatformClass(_class) ? "" : validate(true, _class, className, classGenericType, processorContext, processorSupport.class_getSimpleProperties(_class), null, validateExtraValues)) +
@@ -649,7 +649,7 @@ public class ClassImplProcessor
 
     }
 
-    static String buildEquality(CoreInstance classGenericType, String suffix, boolean useMethodForEquals, boolean useMethodForHashcode, boolean lazy, ProcessorContext processorContext, ProcessorSupport processorSupport)
+    static String buildEquality(CoreInstance classGenericType, boolean useMethodForHashcode, ProcessorContext processorContext, ProcessorSupport processorSupport)
     {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
         String className = TypeProcessor.javaInterfaceForType(_class, processorSupport);
@@ -661,38 +661,30 @@ public class ClassImplProcessor
         }
         equalityProperties.sortThisBy(CoreInstance::getName);
 
-        String equalsCompilationClass = ClassProcessor.requiresCompilationImpl(processorContext.getSupport(), _class) ?
-                " && o.getClass() != " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, ClassImplIncrementalCompilationProcessor.CLASS_IMPL_SUFFIX, processorSupport) + ".class" : "";
-
         return "    public boolean pureEquals(Object o)\n" +
                 "    {\n" +
                 "        if (this == o)\n" +
                 "        {\n" +
                 "            return true;\n" +
                 "        }\n" +
-                "        if (o == null || " + (lazy ? "(o.getClass() != " + JavaPackageAndImportBuilder.buildLazyImplClassReferenceFromType(_class, processorSupport) + ".class && o.getClass() !=" + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, processorSupport) + ".class" + equalsCompilationClass + "))" : "getClass() != o.getClass())\n") +
+                "        if (!(o instanceof " + className + "))\n" +
                 "        {\n" +
                 "            return false;\n" +
                 "        }\n" +
-                "        " + className + (useMethodForEquals ? "" : suffix) + " that = (" + className + (useMethodForEquals ? "" : suffix) + ")o;\n" +
-                equalityProperties.collect(coreInstance ->
+                "        " + className + " that = (" + className + ")o;\n" +
+                "        return this.getFullSystemPath().equals(that.getFullSystemPath())" +
+                equalityProperties.collect(property ->
                 {
-                    CoreInstance functionType = processorSupport.function_getFunctionType(coreInstance);
+                    CoreInstance functionType = processorSupport.function_getFunctionType(property);
                     CoreInstance returnType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, M3Properties.rawType, processorSupport);
                     CoreInstance returnMultiplicity = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport);
-                    if (returnType != null &&
+                    return ((returnType != null) &&
                             Multiplicity.isToOne(returnMultiplicity, true) &&
-                            Lists.immutable.with(M3Paths.Boolean, M3Paths.Float, M3Paths.Integer).contains(PackageableElement.getUserPathForPackageableElement(returnType)))
-                    {
-                        // Java primitive
-                        return "        if (this._" + coreInstance.getName() + (useMethodForEquals ? "()" : "") + " != that._" + coreInstance.getName() + (useMethodForEquals ? "()" : "") + ")\n        {\n            return false;\n        }\n";
-                    }
-                    else
-                    {
-                        return "        if (!CompiledSupport.equal(this._" + coreInstance.getName() + (useMethodForEquals ? "()" : "") + ", that._" + coreInstance.getName() + (useMethodForEquals ? "()" : "") + "))\n        {\n            return false;\n        }\n";
-                    }
-                }).makeString("") +
-                "        return true;\n" +
+                            Lists.immutable.with(M3Paths.Boolean, M3Paths.Float, M3Paths.Integer).contains(PackageableElement.getUserPathForPackageableElement(returnType))) ?
+                           // Java primitive
+                           " &&\n                this._" + property.getName() + "() == that._" + property.getName() + "()" :
+                           " &&\n                CompiledSupport.equal(this._" + property.getName() + "(), that._" + property.getName() + "())";
+                }).makeString("") + ";\n" +
                 "    }\n" +
                 "\n" +
                 "    public int pureHashCode()\n" +
