@@ -1,0 +1,98 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::asserts::*;
+import meta::pure::functions::date::*;
+
+function meta::pure::functions::asserts::assertEquivalent(expected:Number[1], actual:Number[1]):Boolean[1]
+{
+    assertEqWithinTolerance($expected, $actual, 0);
+}
+
+function meta::pure::functions::asserts::assertEquivalent(expected:Date[1], actual:Date[1], du:DurationUnit[1]):Boolean[1]
+{
+    assert(dateDiff($expected, $actual, $du) == 0, | format('expected equivalent up to %s: <%s> but was: <%s>', [$du->toString(), $expected->toRepresentation(), $actual->toRepresentation()]));
+}
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testAssertEquivalent():Boolean[1]
+{
+    assertEquivalent(1, 1);
+    assertEquivalent(1.0, 1.0);
+    assertEquivalent(1, 1.0);
+    assertEquivalent(1.0, 1);
+    assertEquivalent(1.00, 1.0);
+    assertEquivalent(1.0, 1.000);
+    assertEquivalent(3.14, 3.14);
+    assertEquivalent(3.14, 3.140);
+
+    assertEquivalent(1D, 1);
+    assertEquivalent(1, 1D);
+    assertEquivalent(1D, 1.0);
+    assertEquivalent(1.0, 1D);
+    assertEquivalent(1D, 1.0D);
+    assertEquivalent(1.0D, 1D);
+    assertEquivalent(1.00D, 1.0D);
+    assertEquivalent(3.14D, 3.14);
+    assertEquivalent(3.14, 3.14D);
+    assertEquivalent(3.14D, 3.140D);
+
+    assertError(|assertEquivalent(1, 2), '\nexpected: 1\nactual:   2');
+    assertError(|assertEquivalent(1.0, 1.1), '\nexpected: 1.0\nactual:   1.1');
+    assertError(|assertEquivalent(1, 1.0000000001), '\nexpected: 1\nactual:   1.0000000001');
+    assertError(|assertEquivalent(1D, 1.0000000001), '\nexpected: 1D\nactual:   1.0000000001');
+    assertError(|assertEquivalent(1D, 2D), '\nexpected: 1D\nactual:   2D');
+    true;
+}
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testDateAssertEquivalent():Boolean[1]
+{
+    // Years
+    assertEquivalent(%2015, %2015-06, DurationUnit.YEARS);
+    assertEquivalent(%2015-01-01, %2015-12-31, DurationUnit.YEARS);
+    assertError(|assertEquivalent(%2015, %2016, DurationUnit.YEARS), 'expected equivalent up to YEARS: <%2015> but was: <%2016>');
+
+    // Months
+    assertEquivalent(%2016-02-01, %2016-02-29, DurationUnit.MONTHS);
+    assertError(|assertEquivalent(%2016-02-01, %2016-03-01, DurationUnit.MONTHS), 'expected equivalent up to MONTHS: <%2016-02-01> but was: <%2016-03-01>');
+
+    // Days
+    assertEquivalent(%2015-07-07, %2015-07-07T23:59, DurationUnit.DAYS);
+    assertError(|assertEquivalent(%2015-07-07, %2015-07-08, DurationUnit.DAYS), 'expected equivalent up to DAYS: <%2015-07-07> but was: <%2015-07-08>');
+
+    // Hours
+    assertEquivalent(%2015-07-07T13:00:00, %2015-07-07T13:59:59, DurationUnit.HOURS);
+    assertError(|assertEquivalent(%2015-07-07T13:00:00, %2015-07-07T14:00:00, DurationUnit.HOURS), 'expected equivalent up to HOURS: <%2015-07-07T13:00:00+0000> but was: <%2015-07-07T14:00:00+0000>');
+
+    // Minutes
+    assertEquivalent(%2015-07-07T13:00:00, %2015-07-07T13:00:59, DurationUnit.MINUTES);
+    assertError(|assertEquivalent(%2015-07-07T13:00:00, %2015-07-07T13:01:00, DurationUnit.MINUTES), 'expected equivalent up to MINUTES: <%2015-07-07T13:00:00+0000> but was: <%2015-07-07T13:01:00+0000>');
+
+    // Seconds
+    assertEquivalent(%2015-07-07T13:00:00, %2015-07-07T13:00:00.999, DurationUnit.SECONDS);
+    assertError(|assertEquivalent(%2015-07-07T13:00:00, %2015-07-07T13:00:01, DurationUnit.SECONDS), 'expected equivalent up to SECONDS: <%2015-07-07T13:00:00+0000> but was: <%2015-07-07T13:00:01+0000>');
+
+    // Milliseconds
+    assertEquivalent(%2015-07-07T13:00:00.123, %2015-07-07T13:00:00.123999999, DurationUnit.MILLISECONDS);
+    assertError(|assertEquivalent(%2015-07-07T13:00:00.123, %2015-07-07T13:00:00.124, DurationUnit.MILLISECONDS), 'expected equivalent up to MILLISECONDS: <%2015-07-07T13:00:00.123+0000> but was: <%2015-07-07T13:00:00.124+0000>');
+
+    // Microseconds
+    assertEquivalent(%2015-07-07T13:00:00.123456, %2015-07-07T13:00:00.123456999, DurationUnit.MICROSECONDS);
+    assertError(|assertEquivalent(%2015-07-07T13:00:00.123456, %2015-07-07T13:00:00.123457, DurationUnit.MICROSECONDS), 'expected equivalent up to MICROSECONDS: <%2015-07-07T13:00:00.123456+0000> but was: <%2015-07-07T13:00:00.123457+0000>');
+
+    // Nanoseconds - equivalence is equality at this precision
+    assertEquivalent(%2015-07-07T13:00:00.123456789, %2015-07-07T13:00:00.123456789, DurationUnit.NANOSECONDS);
+    assertError(|assertEquivalent(%2015-07-07T13:00:00.123456789, %2015-07-07T13:00:00.123456790, DurationUnit.NANOSECONDS), 'expected equivalent up to NANOSECONDS: <%2015-07-07T13:00:00.123456789+0000> but was: <%2015-07-07T13:00:00.123456790+0000>');
+
+    true;
+}
