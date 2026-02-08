@@ -118,6 +118,25 @@ function <<PCT.test>> meta::pure::functions::date::tests::testDateDiffMillisecon
    assertEquals(7200 * 1000, $f->eval(|%2015-07-07T23:00:00->dateDiff(%2015-07-08T01:00:00, DurationUnit.MILLISECONDS)));
 }
 
+function <<PCT.test>> meta::pure::functions::date::tests::testDateDiffMicroseconds<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+   assertEquals(0, $f->eval(|%2015-07-07T13:00:00.123456->dateDiff(%2015-07-07T13:00:00.123456, DurationUnit.MICROSECONDS)));
+   assertEquals(1, $f->eval(|%2015-07-07T13:00:00.123456->dateDiff(%2015-07-07T13:00:00.123457, DurationUnit.MICROSECONDS)));
+   assertEquals(-1, $f->eval(|%2015-07-07T13:00:00.123457->dateDiff(%2015-07-07T13:00:00.123456, DurationUnit.MICROSECONDS)));
+   assertEquals(1000, $f->eval(|%2015-07-07T13:00:00.123456->dateDiff(%2015-07-07T13:00:00.124456, DurationUnit.MICROSECONDS)));
+   assertEquals(1000000, $f->eval(|%2015-07-07T13:00:00.123456->dateDiff(%2015-07-07T13:00:01.123456, DurationUnit.MICROSECONDS)));
+}
+
+function <<PCT.test>> meta::pure::functions::date::tests::testDateDiffNanoseconds<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+   assertEquals(0, $f->eval(|%2015-07-07T13:00:00.123456789->dateDiff(%2015-07-07T13:00:00.123456789, DurationUnit.NANOSECONDS)));
+   assertEquals(1, $f->eval(|%2015-07-07T13:00:00.123456789->dateDiff(%2015-07-07T13:00:00.123456790, DurationUnit.NANOSECONDS)));
+   assertEquals(-1, $f->eval(|%2015-07-07T13:00:00.123456790->dateDiff(%2015-07-07T13:00:00.123456789, DurationUnit.NANOSECONDS)));
+   assertEquals(1000, $f->eval(|%2015-07-07T13:00:00.123456789->dateDiff(%2015-07-07T13:00:00.123457789, DurationUnit.NANOSECONDS)));
+   assertEquals(1000000, $f->eval(|%2015-07-07T13:00:00.123456789->dateDiff(%2015-07-07T13:00:00.124456789, DurationUnit.NANOSECONDS)));
+   assertEquals(1000000000, $f->eval(|%2015-07-07T13:00:00.123456789->dateDiff(%2015-07-07T13:00:01.123456789, DurationUnit.NANOSECONDS)));
+}
+
 function <<PCT.test>> meta::pure::functions::date::tests::testDateDiffWithDifferentTimeZones<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
    let ny = parseDate('2014-12-31T23:00:00.000-0500');

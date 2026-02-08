@@ -170,10 +170,8 @@ function <<PCT.test>> meta::pure::functions::date::tests::testAdjustByMicrosecon
 function <<PCT.test>> meta::pure::functions::date::tests::testAdjustByMicrosecondsBigNumber<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
   // Test epoch calculation
-  assertEquals(%2021-06-21T09:37:37.4990000+0000,
-               $f->eval(|%1970-01-01T00:00:00.0000000->adjust(1624268257499000, DurationUnit.MICROSECONDS)));
-  assertEquals(%2021-06-21T09:37:37.4990000+0000,
-               $f->eval(|%1970-01-01T00:00:00.0000000->adjust(floor(1624268257499000000/1000), DurationUnit.MICROSECONDS)));
+  assertEquals(%2021-06-21T09:37:37.499000, $f->eval(|%1970-01-01T00:00:00.000000->adjust(1624268257499000, DurationUnit.MICROSECONDS)));
+  assertEquals(%2021-06-21T09:37:37.499000, $f->eval(|%1970-01-01T00:00:00.000000->adjust(floor(1624268257499000000/1000), DurationUnit.MICROSECONDS)));
 }
 
 function <<PCT.test>> meta::pure::functions::date::tests::testAdjustByMilliseconds<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
@@ -192,4 +190,22 @@ function <<PCT.test>> meta::pure::functions::date::tests::testAdjustByMillisecon
 {
     assertEquals(%2016-07-20T21:21:18.912, $f->eval(|%2016-02-29T00:00:00.000->adjust(12345678912, DurationUnit.MILLISECONDS)));
     assertEquals(%2015-10-09T02:38:41.088, $f->eval(|%2016-02-29T00:00:00.000->adjust(-12345678912, DurationUnit.MILLISECONDS)));
+}
+
+function <<PCT.test>> meta::pure::functions::date::tests::testAdjustByNanoseconds<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+  assertEquals(%2015-04-15T13:11:11.338000001, $f->eval(|%2015-04-15T13:11:11.338000000->adjust(1, DurationUnit.NANOSECONDS)));
+  assertEquals(%2015-04-15T13:11:11.337999999, $f->eval(|%2015-04-15T13:11:11.338000000->adjust(-1, DurationUnit.NANOSECONDS)));
+
+  assertEquals(%2015-04-15T13:11:11.338000061, $f->eval(|%2015-04-15T13:11:11.338000000->adjust(61, DurationUnit.NANOSECONDS)));
+  assertEquals(%2015-04-15T13:11:11.337999939, $f->eval(|%2015-04-15T13:11:11.338000000->adjust(-61, DurationUnit.NANOSECONDS)));
+
+  assertEquals(%2015-04-15T13:11:11.338003601, $f->eval(|%2015-04-15T13:11:11.338000000->adjust(3601, DurationUnit.NANOSECONDS)));
+  assertEquals(%2015-04-15T13:11:11.337996399, $f->eval(|%2015-04-15T13:11:11.338000000->adjust(-3601, DurationUnit.NANOSECONDS)));
+}
+
+function <<PCT.test>> meta::pure::functions::date::tests::testAdjustByNanosecondsBigNumber<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+  // Test epoch calculation
+  assertEquals(%2021-06-21T09:37:37.499000000, $f->eval(|%1970-01-01T00:00:00.000000000->adjust(1624268257499000000, DurationUnit.NANOSECONDS)));
 }

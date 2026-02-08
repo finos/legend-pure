@@ -2,7 +2,7 @@
 .settings
 .classpath
 .project
-.idea/**
+/.idea
 .factorypath
 **/*.iml
 **/pom.xml.versionsBackup
@@ -17,3 +17,5 @@
 
 **/.DS_Store
 **/pure-duckDB-test-Db
+/.mvn
+/.vscode
