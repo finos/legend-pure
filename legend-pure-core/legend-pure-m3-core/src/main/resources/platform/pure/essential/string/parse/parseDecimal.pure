@@ -28,17 +28,36 @@ meta::pure::functions::string::parseDecimal(string:String[1], precision: Integer
 
 function <<PCT.test>> meta::pure::functions::string::tests::parseDecimal::testParseDecimal<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(3.14159d, $f->eval(|parseDecimal('3.14159d')));
-    assertEq(3.14159d, $f->eval(|parseDecimal('3.14159')));
-    assertEq(-3.14159d, $f->eval(|parseDecimal('-3.14159d')));
-    assertEq(3.1415900000d, $f->eval(|parseDecimal('+0000003.1415900000')));
-    assertEq(-3.1415900000d, $f->eval(|parseDecimal('-0000003.1415900000')));
+    let r1 = $f->eval(|parseDecimal('3.14159d'));
+    assert($r1->instanceOf(Decimal));
+    assertEquivalent(3.14159d, $r1);
+
+    let r2 = $f->eval(|parseDecimal('3.14159'));
+    assert($r2->instanceOf(Decimal));
+    assertEquivalent(3.14159d, $r2);
+
+    let r3 = $f->eval(|parseDecimal('-3.14159d'));
+    assert($r3->instanceOf(Decimal));
+    assertEquivalent(-3.14159d, $r3);
+
+    let r4 = $f->eval(|parseDecimal('+0000003.1415900000'));
+    assert($r4->instanceOf(Decimal));
+    assertEquivalent(3.1415900000d, $r4);
+
+    let r5 = $f->eval(|parseDecimal('-0000003.1415900000'));
+    assert($r5->instanceOf(Decimal));
+    assertEquivalent(-3.1415900000d, $r5);
 }
 
 function <<PCT.test>> meta::pure::functions::string::tests::parseDecimal::testParseZero<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(0.0d, $f->eval(|parseDecimal('0.0')));
-    assertEq(0.000d, $f->eval(|parseDecimal('-000.000')));
+    let r1 = $f->eval(|parseDecimal('0.0'));
+    assert($r1->instanceOf(Decimal));
+    assertEquivalent(0.0d, $r1);
+
+    let r2 = $f->eval(|parseDecimal('-000.000'));
+    assert($r2->instanceOf(Decimal));
+    assertEquivalent(0.000d, $r2);
 }
 
 function <<PCT.test>> meta::pure::functions::string::tests::parseDecimal::testParseDecimalWithPrecisionScale<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
