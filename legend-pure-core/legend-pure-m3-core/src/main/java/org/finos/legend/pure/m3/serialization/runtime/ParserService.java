@@ -33,8 +33,13 @@ public class ParserService
 
     public ParserService()
     {
-        this.loader = ServiceLoader.load(Parser.class);
-        this.dslsLoader = ServiceLoader.load(InlineDSL.class);
+        this(Thread.currentThread().getContextClassLoader());
+    }
+
+    public ParserService(ClassLoader cl)
+    {
+        this.loader = ServiceLoader.load(Parser.class, cl);
+        this.dslsLoader = ServiceLoader.load(InlineDSL.class, cl);
     }
 
     public ListIterable<Parser> parsers()

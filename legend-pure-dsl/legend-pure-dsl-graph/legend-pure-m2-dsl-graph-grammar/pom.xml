@@ -91,6 +91,7 @@
                 <configuration>
                     <sourceDirectory>${project.basedir}/src/test/resources</sourceDirectory>
                     <purePlatformVersion>${project.version}</purePlatformVersion>
+                    <dependencyScope>compile</dependencyScope>
                     <extraRepositories>
                         <extraRepository>${project.basedir}/src/test/resources/platform_dsl_graph_test.definition.json
                         </extraRepository>

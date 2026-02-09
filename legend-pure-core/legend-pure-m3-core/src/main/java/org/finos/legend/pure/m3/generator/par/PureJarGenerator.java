@@ -41,19 +41,23 @@ public class PureJarGenerator
         doGeneratePAR(Sets.mutable.with(repositories), Sets.mutable.empty(), Sets.mutable.empty(), purePlatformVersion, null, null, new File(outputDirectory), new LogToSystemOut());
     }
 
-
     public static void doGeneratePAR(Set<String> repositories, Set<String> excludedRepositories, Set<String> extraRepositories, String purePlatformVersion, String modelVersion, File sourceDirectory, File outputDirectory, Log log) throws Exception
+    {
+        doGeneratePAR(repositories, excludedRepositories, extraRepositories, purePlatformVersion, modelVersion, sourceDirectory, outputDirectory, Thread.currentThread().getContextClassLoader(), log);
+    }
+
+    public static void doGeneratePAR(Set<String> repositories, Set<String> excludedRepositories, Set<String> extraRepositories, String purePlatformVersion, String modelVersion, File sourceDirectory, File outputDirectory, ClassLoader cl, Log log) throws Exception
     {
         long start = System.nanoTime();
         try
         {
-            ParserService ps = new ParserService();
+            ParserService ps = new ParserService(cl);
 
             log.debug("Generating Pure PAR file(s)");
             log.debug("  Requested repositories: " + repositories);
             log.debug("  Excluded repositories: " + excludedRepositories);
             log.debug("  Extra repositories: " + extraRepositories);
-            CodeRepositorySet resolvedRepositories = resolveRepositories(repositories, excludedRepositories, extraRepositories, log);
+            CodeRepositorySet resolvedRepositories = resolveRepositories(repositories, excludedRepositories, extraRepositories, cl, log);
             log.debug("  Specified repositories (with resolved dependencies): " + resolvedRepositories.getRepositories().collect(CodeRepository::getName).makeString("[", ",", "]"));
             log.debug("  Register DSLs: " + ps.parsers().collect(Parser::getName).makeString(", "));
             log.debug("  Register in-line DSLs: " + ps.inlineDSLs().collect(InlineDSL::getName).makeString(", "));
@@ -63,7 +67,7 @@ public class PureJarGenerator
             log.debug("  Output directory: " + outputDirectory);
 
             log.info("  Starting compilation and generation of Pure PAR file(s)");
-            PureJarSerializer.writePureRepositoryJars(outputDirectory.toPath(), (sourceDirectory == null) ? null : sourceDirectory.toPath(), purePlatformVersion, modelVersion, resolvedRepositories, log);
+            PureJarSerializer.writePureRepositoryJars(outputDirectory.toPath(), (sourceDirectory == null) ? null : sourceDirectory.toPath(), purePlatformVersion, modelVersion, resolvedRepositories, cl, log);
         }
         catch (Exception e)
         {
@@ -73,9 +77,8 @@ public class PureJarGenerator
         log.info(String.format("  -> Finished Pure PAR generation in %.9fs", durationSinceInSeconds(start)));
     }
 
-    private static CodeRepositorySet resolveRepositories(Set<String> repositories, Set<String> excludedRepositories, Set<String> extraRepositories, Log log)
+    private static CodeRepositorySet resolveRepositories(Set<String> repositories, Set<String> excludedRepositories, Set<String> extraRepositories, ClassLoader classLoader, Log log)
     {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         RichIterable<CodeRepository> cpRepositories = CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true);
         log.debug("  Found repositories (in the classpath): " + cpRepositories.collect(CodeRepository::getName).makeString("[", ",", "]"));
         CodeRepositorySet.Builder builder = CodeRepositorySet.builder().withCodeRepositories(cpRepositories);
