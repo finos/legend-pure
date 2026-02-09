@@ -18,6 +18,7 @@ import java.util.Objects;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
+import org.finos.legend.pure.m3.coreinstance.BaseCoreInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.StereotypeCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
@@ -29,6 +30,7 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -75,8 +77,12 @@ public class _Column
         columnInstance.setKeyValues(M3PropertyPaths.classifierGenericType, Lists.mutable.with(columnGenericType));
         if (stereotypes != null && stereotypes.notEmpty())
         {
-            RichIterable<? extends Stereotype> stereotypeInstances = stereotypes.collect(s -> (s instanceof Stereotype) ? (Stereotype) s : StereotypeCoreInstanceWrapper.FROM_CORE_INSTANCE_FN.valueOf(s));
+            RichIterable<? extends Stereotype> stereotypeInstances = stereotypes.collect(s -> (Stereotype) ImportStub.withImportStubByPass(s, processorSupport));
             columnInstance._stereotypes(stereotypeInstances);
+            if (columnInstance instanceof BaseCoreInstance)
+            {
+                columnInstance._stereotypesCoreInstance(stereotypeInstances);
+            }
         }
         if (taggedValues != null && taggedValues.notEmpty())
         {
