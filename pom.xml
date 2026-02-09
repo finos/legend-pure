@@ -592,6 +592,11 @@
                 <artifactId>legend-pure-maven-generation-java</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-maven-shared</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
