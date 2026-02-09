@@ -25,6 +25,20 @@ function meta::pure::functions::asserts::assertEquivalent(expected:Date[1], actu
     assert(dateDiff($expected, $actual, $du) == 0, | format('expected equivalent up to %s: <%s> but was: <%s>', [$du->toString(), $expected->toRepresentation(), $actual->toRepresentation()]));
 }
 
+function meta::pure::functions::asserts::assertEquivalent(expected:Number[*], actual:Number[*]):Boolean[1]
+{
+    assertEquals($expected->size(), $actual->size(), 'Expected and actual collections have different sizes');
+    $expected->zip($actual)->map(p | assertEquivalent($p.first, $p.second));
+    true;
+}
+
+function meta::pure::functions::asserts::assertEquivalent(expected:Date[*], actual:Date[*], du:DurationUnit[1]):Boolean[1]
+{
+    assertEquals($expected->size(), $actual->size(), 'Expected and actual collections have different sizes');
+    $expected->zip($actual)->map(p | assertEquivalent($p.first, $p.second, $du));
+    true;
+}
+
 function <<test.Test>> meta::pure::functions::asserts::tests::testAssertEquivalent():Boolean[1]
 {
     assertEquivalent(1, 1);
@@ -52,6 +66,13 @@ function <<test.Test>> meta::pure::functions::asserts::tests::testAssertEquivale
     assertError(|assertEquivalent(1, 1.0000000001), '\nexpected: 1\nactual:   1.0000000001');
     assertError(|assertEquivalent(1D, 1.0000000001), '\nexpected: 1D\nactual:   1.0000000001');
     assertError(|assertEquivalent(1D, 2D), '\nexpected: 1D\nactual:   2D');
+
+    // Multiplicity many tests for Number
+    assertEquivalent([1, 2, 3], [1, 2, 3]);
+    assertEquivalent([1, 2.0, 3D], [1.0, 2, 3.0D]);
+    assertError(|assertEquivalent([1, 2], [1, 3]), '\nexpected: 2\nactual:   3');
+    assertError(|assertEquivalent([1, 2], [1, 2, 3]), 'Expected and actual collections have different sizes');
+    assertError(|assertEquivalent([1, 2, 3], [1, 2]), 'Expected and actual collections have different sizes');
     true;
 }
 
@@ -93,6 +114,13 @@ function <<test.Test>> meta::pure::functions::asserts::tests::testDateAssertEqui
     // Nanoseconds - equivalence is equality at this precision
     assertEquivalent(%2015-07-07T13:00:00.123456789, %2015-07-07T13:00:00.123456789, DurationUnit.NANOSECONDS);
     assertError(|assertEquivalent(%2015-07-07T13:00:00.123456789, %2015-07-07T13:00:00.123456790, DurationUnit.NANOSECONDS), 'expected equivalent up to NANOSECONDS: <%2015-07-07T13:00:00.123456789+0000> but was: <%2015-07-07T13:00:00.123456790+0000>');
+
+    // Multiplicity many tests for Date
+    assertEquivalent([%2015, %2016-01-01], [%2015-06, %2016-12-31], DurationUnit.YEARS);
+    assertError(|assertEquivalent([%2015], [%2016], DurationUnit.YEARS), 'expected equivalent up to YEARS: <%2015> but was: <%2016>');
+    assertError(|assertEquivalent([%2015, %2016], [%2015, %2017], DurationUnit.YEARS), 'expected equivalent up to YEARS: <%2016> but was: <%2017>');
+    assertError(|assertEquivalent([%2015], [%2015, %2016], DurationUnit.YEARS), 'Expected and actual collections have different sizes');
+    assertError(|assertEquivalent([%2015, %2016], [%2015], DurationUnit.YEARS), 'Expected and actual collections have different sizes');
 
     true;
 }
