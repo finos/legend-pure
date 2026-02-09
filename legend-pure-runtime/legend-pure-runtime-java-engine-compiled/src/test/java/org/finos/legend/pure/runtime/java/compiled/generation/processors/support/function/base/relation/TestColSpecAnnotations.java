@@ -43,16 +43,45 @@ public class TestColSpecAnnotations extends AbstractPureTestWithCoreCompiled
                 "Profile test::myProfile\n" +
                         "{\n" +
                         "   stereotypes: [ignore];\n" +
-                        "   tags: [enumValue, propertyName];\n" +
+                        "   tags: [myTag];\n" +
                         "}\n" +
                 "function go():Any[*]\n" +
                         "{\n" +
                         "   let colSpec = getColSpec();\n" +
-                        "   assertEquals(1, $colSpec.stereotypes->length());\n" +
+                        "   assertEquals(1, $colSpec.stereotypes->size());\n" +
+                        "   assertEquals('test', $colSpec.stereotypes->at(0).profile.package.name);\n" +
+                        "   assertEquals('myProfile', $colSpec.stereotypes->at(0).profile.name);\n" +
+                        "   assertEquals('ignore', $colSpec.stereotypes->at(0).value);\n" +
                         "}\n" +
                         "function getColSpec():meta::pure::metamodel::relation::ColSpec<(firstName:String)>[1]\n" +
                         "{\n" +
                         "   ~<<test::myProfile.ignore>> firstName:String[1];\n" +
+                        "}\n"
+        );
+        execute("go():Any[*]");
+    }
+
+    @Test
+    public void testSimpleColumnWithTaggedValue()
+    {
+        compileTestSource("testSource.pure",
+                "Profile test::myProfile\n" +
+                        "{\n" +
+                        "   stereotypes: [ignore];\n" +
+                        "   tags: [myTag];\n" +
+                        "}\n" +
+                        "function go():Any[*]\n" +
+                        "{\n" +
+                        "   let colSpec = getColSpec();\n" +
+                        "   assertEquals(1, $colSpec.taggedValues->size());\n" +
+                        "   assertEquals('test', $colSpec.taggedValues->at(0).tag.profile.package.name);\n" +
+                        "   assertEquals('myProfile', $colSpec.taggedValues->at(0).tag.profile.name);\n" +
+                        "   assertEquals('myTag', $colSpec.taggedValues->at(0).tag.value);\n" +
+                        "   assertEquals('test tag value', $colSpec.taggedValues->at(0).value);\n" +
+                        "}\n" +
+                        "function getColSpec():meta::pure::metamodel::relation::ColSpec<(firstName:String)>[1]\n" +
+                        "{\n" +
+                        "   ~{test::myProfile.myTag = 'test tag value'} firstName:String[1];\n" +
                         "}\n"
         );
         execute("go():Any[*]");
