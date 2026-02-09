@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure-maven</artifactId>
-        <version>5.75.0</version>
+        <version>5.74.5-SNAPSHOT</version>
     </parent>
 
     <artifactId>legend-pure-maven-generation-platform-java</artifactId>
