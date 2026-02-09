@@ -23,11 +23,11 @@ native function
     }
     meta::pure::functions::math::plus(ints:Integer[*]):Integer[1];
 
-native function <<PCT.function>> meta::pure::functions::math::plus(float:Float[*]):Float[1];
+native function <<PCT.function, functionType.ReducerFunction>> meta::pure::functions::math::plus(float:Float[*]):Float[1];
 
-native function <<PCT.function>> meta::pure::functions::math::plus(decimal:Decimal[*]):Decimal[1];
+native function <<PCT.function, functionType.ReducerFunction>> meta::pure::functions::math::plus(decimal:Decimal[*]):Decimal[1];
 
-native function <<PCT.function>> meta::pure::functions::math::plus(numbers:Number[*]):Number[1];
+native function <<PCT.function, functionType.ReducerFunction>> meta::pure::functions::math::plus(numbers:Number[*]):Number[1];
 
 
 function <<PCT.test>> meta::pure::functions::math::tests::plus::testSimplePlus<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
