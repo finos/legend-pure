@@ -17,10 +17,15 @@ package org.finos.legend.pure.m3.tools;
 import org.eclipse.collections.impl.utility.Iterate;
 
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class FileTools
 {
@@ -165,5 +170,76 @@ public class FileTools
         {
             return Iterate.isEmpty(dirStream);
         }
+    }
+
+    public static Optional<Path> findOldestModified(Path... directory) throws IOException
+    {
+        return findOldestModified(n -> true, directory);
+    }
+
+
+    public static Optional<Path> findOldestModified(Predicate<Path> fileFilter, Path... directory) throws IOException
+    {
+        Path[] directories = Arrays.stream(directory)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList()).toArray(new Path[]{});
+
+        if (directories.length == 0)
+        {
+            return Optional.empty();
+        }
+        else
+        {
+            Optional<Path> first = findOldestModified(directories[0],  fileFilter);
+            for (int i = 1; i < directory.length; i++)
+            {
+                Optional<Path> next = findOldestModified(directories[i], fileFilter);
+                if (!first.isPresent()  || (next.isPresent() && next.get().toFile().lastModified() < first.get().toFile().lastModified()))
+                {
+                    first = next;
+                }
+            }
+
+            return first;
+        }
+    }
+
+    public static Optional<Path> findOldestModified(Path directory) throws IOException
+    {
+        return findOldestModified(directory, f -> true);
+    }
+
+    public static Optional<Path> findOldestModified(Path directory, Predicate<Path> fileFilter) throws IOException
+    {
+        final AtomicLong minModifiedTime = new AtomicLong(Long.MAX_VALUE);
+        final AtomicReference<Path> minModifiedPath = new AtomicReference<>();
+
+        if (Files.exists(directory))
+        {
+            Files.walkFileTree(Paths.get(directory.toAbsolutePath().toString()), new SimpleFileVisitor<Path>()
+            {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                {
+                    if (!Files.isDirectory(file) && Files.exists(file))
+                    {
+                        if (fileFilter.test(file))
+                        {
+                            long fileLastModifiedValue = attrs.lastModifiedTime().toMillis();
+
+                            minModifiedTime.compareAndSet(0, fileLastModifiedValue);
+                            if (fileLastModifiedValue < minModifiedTime.get())
+                            {
+                                minModifiedTime.set(fileLastModifiedValue);
+                                minModifiedPath.set(file);
+                            }
+                        }
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        }
+
+        return Optional.ofNullable(minModifiedPath.get());
     }
 }
