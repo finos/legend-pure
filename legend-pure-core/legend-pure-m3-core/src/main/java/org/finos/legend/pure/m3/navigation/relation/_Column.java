@@ -43,6 +43,11 @@ public class _Column
 {
     public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, SourceInformation src, ProcessorSupport processorSupport)
     {
+        return _Column.getColumnInstance(name, nameWildCard, type, multiplicity, null, null, src, processorSupport);
+    }
+
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, RichIterable<? extends TaggedValue> taggedValues, SourceInformation src, ProcessorSupport processorSupport)
+    {
         GenericType target = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
         if (type == null)
         {
@@ -57,7 +62,7 @@ public class _Column
             }
             target._rawType((Type)_type);
         }
-        return _Column.getColumnInstance(name, nameWildCard, target, multiplicity, null, null, src, processorSupport);
+        return _Column.getColumnInstance(name, nameWildCard, target, multiplicity, stereotypes, taggedValues, src, processorSupport);
     }
 
     public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity multiplicity, SourceInformation sourceInformation, ProcessorSupport processorSupport)
