@@ -211,6 +211,24 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
        Generate generate = generator.generateOnly("test", false, sourcesDir);
        Assert.assertFalse(generate.getJavaSourcesByGroup().get("test").stream().filter(s -> s.toUri().getPath().equals("/org/finos/legend/pure/generated/test_standalone_tests.java")).collect(Collectors.toList()).get(0).getCode().contains("Root_test_standalone_simplePureTest__Boolean_1_"));
        Assert.assertTrue(generate.getJavaSourcesByGroup().get("test").stream().filter(s -> s.toUri().getPath().equals("/org/finos/legend/pure/generated/test_standalone_tests.java")).collect(Collectors.toList()).get(0).getCode().contains("Root_test_standalone_simplePureTestWithApplication__Boolean_1_"));
+    }
 
+    @Test
+    public void testStandaloneLibraryExternalExecution() throws Exception
+    {
+        String externalPackage = "org.finos.legend.pure.runtime.java.compiled";
+        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), true, externalPackage, new VoidLog());
+        Path classesDir = this.temporaryFolder.newFolder("classes").toPath();
+        generator.serializeAndWriteDistributedMetadata(classesDir);
+        generator.compileAndWriteClasses(classesDir, new VoidLog());
+        try (URLClassLoader classLoader = new URLClassLoader(new URL[] {classesDir.toUri().toURL()}, Thread.currentThread().getContextClassLoader()))
+        {
+            String className = externalPackage + ".PureExternal";
+            Class<?> testClass = classLoader.loadClass(className);
+
+            Method testWithReflection = testClass.getMethod("testWithReflection", String.class);
+            Object result2 = testWithReflection.invoke(null, "_*_");
+            Assert.assertEquals("_*_testWithReflection", result2);
+        }
     }
 }
