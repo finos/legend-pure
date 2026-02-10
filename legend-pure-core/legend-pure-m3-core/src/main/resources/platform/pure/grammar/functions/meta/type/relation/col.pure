@@ -30,21 +30,3 @@ function
         name = $s
     );
 }
-
-function
-    <<functionType.NormalizeRequiredFunction,
-    PCT.function>>
-    {
-        doc.doc='Create a Relation typed column containing a name, stereotypes, and tagged values from a Column',
-        PCT.grammarDoc='~col',
-        PCT.grammarCharacters='~'
-    }
-    meta::pure::functions::relation::colSpec<U,V,m,T>(c:Column<U,V|m>[1], cl:T[1]):ColSpec<T>[1]
-{
-    ^ColSpec<T>
-    (
-        name = $c.name->toOne(),
-        stereotypes = $c.stereotypes,
-        taggedValues = $c.taggedValues
-    );
-}

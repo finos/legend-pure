@@ -1064,20 +1064,7 @@ public class AntlrContextToM3CoreInstance
                 {
                     parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(extraFunction.getFirst(), true, processorSupport));
                 }
-                boolean hasAnnotations = nonFunction && !isArray && columnInstances.anySatisfy(c ->
-                {
-                    Column<?, ?> col = (Column<?, ?>) c;
-                    return (col._stereotypes() != null && col._stereotypes().notEmpty()) ||
-                            (col._taggedValues() != null && col._taggedValues().notEmpty());
-                });
-                if (hasAnnotations)
-                {
-                    parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(columnInstances, true, processorSupport));
-                }
-                else
-                {
-                    parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(columnNames, true, processorSupport));
-                }
+                parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(columnNames, true, processorSupport));
                 parameters.add(InstanceValueInstance.createPersistent(this.repository, "", relationTypeGenericType, this.getPureOne()));
 
                 replacementFunction.setKeyValues(Lists.mutable.with("parametersValues"), parameters);

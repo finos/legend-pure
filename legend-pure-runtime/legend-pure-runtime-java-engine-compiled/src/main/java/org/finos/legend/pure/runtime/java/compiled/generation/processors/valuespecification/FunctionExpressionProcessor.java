@@ -59,7 +59,7 @@ public class FunctionExpressionProcessor
         {
             String maySetClassifierGenericType = "";
             String functionName = (function instanceof PackageableElement) ? Pure.elementToPath((PackageableElement) function, "::") : "";
-            if (function instanceof PackageableElement && Sets.immutable.with("meta::pure::functions::relation::colSpec_String_1__T_1__ColSpec_1_", "meta::pure::functions::relation::colSpec_Column_1__T_1__ColSpec_1_", "meta::pure::functions::relation::colSpecArray_String_MANY__T_1__ColSpecArray_1_").contains(functionName))
+            if (function instanceof PackageableElement && Sets.immutable.with("meta::pure::functions::relation::colSpec_String_1__T_1__ColSpec_1_", "meta::pure::functions::relation::colSpecArray_String_MANY__T_1__ColSpecArray_1_").contains(functionName))
             {
                 FunctionExpression funcExpression = (FunctionExpression) functionExpression;
                 String rawType = "meta::pure::functions::relation::colSpecArray_String_MANY__T_1__ColSpecArray_1_".equals(functionName) ? M3Paths.ColSpecArray : M3Paths.ColSpec;
