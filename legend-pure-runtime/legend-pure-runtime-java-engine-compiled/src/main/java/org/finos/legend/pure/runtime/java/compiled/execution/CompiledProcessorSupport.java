@@ -79,6 +79,11 @@ public class CompiledProcessorSupport implements ProcessorSupport
         this.extraSupportedTypes = extraSupportedTypes;
     }
 
+    public CompiledProcessorSupport(ClassLoader globalClassLoader, Metadata metadata)
+    {
+        this(globalClassLoader, metadata, null);
+    }
+
     @Override
     public boolean instance_instanceOf(CoreInstance object, String typeName)
     {
