@@ -20,8 +20,9 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.coreinstance.BaseCoreInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.StereotypeCoreInstanceWrapper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValueInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
@@ -86,6 +87,17 @@ public class _Column
         }
         if (taggedValues != null && taggedValues.notEmpty())
         {
+            taggedValues.each(tv ->
+            {
+                if (tv instanceof TaggedValueInstance)
+                {
+                    CoreInstance rawTag = tv._tagCoreInstance();
+                    if (rawTag != null)
+                    {
+                        tv._tag((Tag) ImportStub.withImportStubByPass(rawTag, processorSupport));
+                    }
+                }
+            });
             columnInstance._taggedValues(taggedValues);
         }
         return columnInstance;
