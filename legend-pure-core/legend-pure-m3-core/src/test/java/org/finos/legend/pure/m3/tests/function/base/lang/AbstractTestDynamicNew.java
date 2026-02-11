@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m3.tests.function.base.lang;
 
 import org.eclipse.collections.api.factory.Lists;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
@@ -25,6 +26,7 @@ import org.finos.legend.pure.m3.tests.elements.property.AbstractTestDefaultValue
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.Assert;
 
 public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCompiled
 {
@@ -336,6 +338,24 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
                 + "}\n");
         CoreInstance func = runtime.getFunction("test():Any[*]");
         functionExecution.start(func, Lists.immutable.empty());
+    }
+
+    @Test
+    public void testDynamicNewWithGenericClassPropertyTypeFailure()
+    {
+        compileTestSource("testSource.pure", DECLARATION
+                + "function test():Any[*] \n{"
+                + "let m = dynamicNew(M,\n"
+                + "                      [\n"
+                + "                        ^KeyValue(key='m', value=dynamicNew(L, [^KeyValue(key='l',value='hello'), ^KeyValue(key='classifierGenericType', value=^GenericType(rawType=L, typeArguments=^GenericType(rawType=Integer)))])),\n"
+                + "                        ^KeyValue(key='classifierGenericType', value=^GenericType(rawType=M))\n"
+                + "                      ])->cast(@M);\n"
+                + "\n"
+                + "  assertEquals($m.m.l, 'hello');"
+                + "}\n");
+
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("test():Any[*]"));
+        assertPureException(PureExecutionException.class, "Type Error: 'L<Integer>' not a subtype of 'L<String>'", 41, 50, e);
     }
 
     protected static MutableRepositoryCodeStorage getCodeStorage()
