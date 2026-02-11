@@ -37,10 +37,11 @@ import org.finos.legend.pure.runtime.java.compiled.generation.Generate;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaStandaloneLibraryGenerator;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.VoidLog;
+import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Rule;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
@@ -56,13 +57,13 @@ import java.util.stream.Collectors;
 
 public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCoreCompiled
 {
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @ClassRule
+    public static TemporaryFolder TMP = new TemporaryFolder();
 
     @BeforeClass
     public static void setUp()
     {
-        RichIterable<? extends CodeRepository> repositories = AbstractPureTestWithCoreCompiled.getCodeRepositories();
+        RichIterable<? extends CodeRepository> repositories = getCodeRepositories();
         MutableRepositoryCodeStorage codeStorage = new CompositeCodeStorage(
                 new ClassLoaderCodeStorage(repositories),
                 new EmptyCodeStorage(new GenericCodeRepository("test", "test::.*", "platform", "core_functions_unclassified"), new GenericCodeRepository("other", "other::.*", "test")));
@@ -134,43 +135,49 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     public void testStandaloneLibraryNoExternal() throws Exception
     {
         JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null, new VoidLog());
-        Path classesDir = this.temporaryFolder.newFolder("classes").toPath();
+        Path classesDir = TMP.newFolder().toPath();
         generator.serializeAndWriteDistributedMetadata(classesDir);
         generator.compileAndWriteClasses(classesDir, new VoidLog());
-        try (URLClassLoader classLoader = new URLClassLoader(new URL[] {classesDir.toUri().toURL()}, Thread.currentThread().getContextClassLoader()))
+        try (URLClassLoader classLoader = new URLClassLoader(new URL[]{classesDir.toUri().toURL()}, Thread.currentThread().getContextClassLoader()))
         {
-            MetadataLazy metadataLazy = MetadataLazy.fromClassLoader(classLoader);
-            CompiledExecutionSupport executionSupport = new CompiledExecutionSupport(
-                    new JavaCompilerState(null, classLoader),
-                    new CompiledProcessorSupport(classLoader, metadataLazy, null),
-                    null,
-                    runtime.getCodeStorage(),
-                    null,
-                    VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER,
-                    new ConsoleCompiled(),
-                    null,
-                    null,
-                    CompiledExtensionLoader.extensions()
-            );
-
-            String className = JavaPackageAndImportBuilder.getRootPackage() + ".test_standalone_tests";
-            Class<?> testClass = classLoader.loadClass(className);
-
-            Method joinWithCommas = testClass.getMethod("Root_test_standalone_joinWithCommas_String_MANY__String_1_", RichIterable.class, ExecutionSupport.class);
-            Object result1 = joinWithCommas.invoke(null, Lists.immutable.with("a", "b", "c"), executionSupport);
-            Assert.assertEquals("a, b, c", result1);
-
-            Method testWithReflection = testClass.getMethod("Root_test_standalone_testWithReflection_String_1__String_1_", String.class, ExecutionSupport.class);
-            Object result2 = testWithReflection.invoke(null, "_*_", executionSupport);
-            Assert.assertEquals("_*_testWithReflection", result2);
+            Metadata metadata = MetadataLazy.fromClassLoader(classLoader);
+            testStandaloneLibraryNoExternal(classLoader, metadata);
         }
+    }
+
+    private void testStandaloneLibraryNoExternal(ClassLoader classLoader, Metadata metadata) throws Exception
+    {
+        CompiledExecutionSupport executionSupport = new CompiledExecutionSupport(
+                new JavaCompilerState(null, classLoader),
+                new CompiledProcessorSupport(classLoader, metadata),
+                null,
+                runtime.getCodeStorage(),
+                null,
+                VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER,
+                new ConsoleCompiled(),
+                null,
+                null,
+                CompiledExtensionLoader.extensions()
+        );
+
+        String className = JavaPackageAndImportBuilder.getRootPackage() + ".test_standalone_tests";
+        Class<?> testClass = classLoader.loadClass(className);
+
+        Method joinWithCommas = testClass.getMethod("Root_test_standalone_joinWithCommas_String_MANY__String_1_", RichIterable.class, ExecutionSupport.class);
+        Object result1 = joinWithCommas.invoke(null, Lists.immutable.with("a", "b", "c"), executionSupport);
+        Assert.assertEquals("a, b, c", result1);
+
+        Method testWithReflection = testClass.getMethod("Root_test_standalone_testWithReflection_String_1__String_1_", String.class, ExecutionSupport.class);
+        Object result2 = testWithReflection.invoke(null, "_*_", executionSupport);
+        Assert.assertEquals("_*_testWithReflection", result2);
     }
 
     @Test
     public void testGenerateOnly_allRepos() throws Exception
     {
         JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null, new VoidLog());
-        Path sourcesDir = this.temporaryFolder.newFolder("src", "java").toPath();
+        Path rootFolder = TMP.newFolder().toPath();
+        Path sourcesDir = Files.createDirectories(rootFolder.resolve("src").resolve("java"));
         Assert.assertEquals(Lists.fixedSize.empty(), Files.list(sourcesDir).collect(Collectors.toList()));
 
         Generate generate = generator.generateOnly(true, sourcesDir);
@@ -188,7 +195,8 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     public void testGenerateOnly_oneRepo() throws Exception
     {
         JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null, new VoidLog());
-        Path sourcesDir = this.temporaryFolder.newFolder("src", "java").toPath();
+        Path rootFolder = TMP.newFolder().toPath();
+        Path sourcesDir = Files.createDirectories(rootFolder.resolve("src").resolve("java"));
         Assert.assertEquals(Lists.fixedSize.empty(), Files.list(sourcesDir).collect(Collectors.toList()));
 
         Generate generate = generator.generateOnly("test", true, sourcesDir);
@@ -200,17 +208,17 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
         Pattern pattern = Pattern.compile("org/finos/legend/pure/generated/((CoreGen|PureEnum|LambdaZero|PureCompiledLambda|PureEnum_LazyImpl)|(test_\\w++(\\$\\w++)?)|(Root_test_\\w++(\\$\\w++)?))\\.java");
         Assert.assertEquals(Lists.fixedSize.empty(), ListIterate.reject(files, f -> pattern.matcher(Iterate.makeString(sourcesDir.relativize(f), "/")).matches()));
         Assert.assertTrue(generate.getJavaSourcesByGroup().get("test").stream().filter(s -> s.toUri().getPath().equals("/org/finos/legend/pure/generated/test_standalone_tests.java")).collect(Collectors.toList()).get(0).getCode().contains("Root_test_standalone_simplePureTest__Boolean_1_"));
-
     }
 
     @Test
     public void testPureTestsAreSkipped() throws Exception
     {
-       JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null, false, new VoidLog());
-       Path sourcesDir = this.temporaryFolder.newFolder("src", "java").toPath();
-       Generate generate = generator.generateOnly("test", false, sourcesDir);
-       Assert.assertFalse(generate.getJavaSourcesByGroup().get("test").stream().filter(s -> s.toUri().getPath().equals("/org/finos/legend/pure/generated/test_standalone_tests.java")).collect(Collectors.toList()).get(0).getCode().contains("Root_test_standalone_simplePureTest__Boolean_1_"));
-       Assert.assertTrue(generate.getJavaSourcesByGroup().get("test").stream().filter(s -> s.toUri().getPath().equals("/org/finos/legend/pure/generated/test_standalone_tests.java")).collect(Collectors.toList()).get(0).getCode().contains("Root_test_standalone_simplePureTestWithApplication__Boolean_1_"));
+        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null, false, new VoidLog());
+        Path rootFolder = TMP.newFolder().toPath();
+        Path sourcesDir = Files.createDirectories(rootFolder.resolve("src").resolve("java"));
+        Generate generate = generator.generateOnly("test", false, sourcesDir);
+        Assert.assertFalse(generate.getJavaSourcesByGroup().get("test").stream().filter(s -> s.toUri().getPath().equals("/org/finos/legend/pure/generated/test_standalone_tests.java")).collect(Collectors.toList()).get(0).getCode().contains("Root_test_standalone_simplePureTest__Boolean_1_"));
+        Assert.assertTrue(generate.getJavaSourcesByGroup().get("test").stream().filter(s -> s.toUri().getPath().equals("/org/finos/legend/pure/generated/test_standalone_tests.java")).collect(Collectors.toList()).get(0).getCode().contains("Root_test_standalone_simplePureTestWithApplication__Boolean_1_"));
     }
 
     @Test
@@ -218,17 +226,19 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     {
         String externalPackage = "org.finos.legend.pure.runtime.java.compiled";
         JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), true, externalPackage, new VoidLog());
-        Path classesDir = this.temporaryFolder.newFolder("classes").toPath();
+        Path classesDir = TMP.newFolder().toPath();
         generator.serializeAndWriteDistributedMetadata(classesDir);
         generator.compileAndWriteClasses(classesDir, new VoidLog());
-        try (URLClassLoader classLoader = new URLClassLoader(new URL[] {classesDir.toUri().toURL()}, Thread.currentThread().getContextClassLoader()))
+        try (URLClassLoader classLoader = new URLClassLoader(new URL[]{classesDir.toUri().toURL()}, Thread.currentThread().getContextClassLoader()))
         {
             String className = externalPackage + ".PureExternal";
             Class<?> testClass = classLoader.loadClass(className);
 
+            Method joinWithCommas = testClass.getMethod("joinWithCommas", RichIterable.class);
+            Assert.assertEquals("a, b, c", joinWithCommas.invoke(null, Lists.immutable.with("a", "b", "c")));
+
             Method testWithReflection = testClass.getMethod("testWithReflection", String.class);
-            Object result2 = testWithReflection.invoke(null, "_*_");
-            Assert.assertEquals("_*_testWithReflection", result2);
+            Assert.assertEquals("_*_testWithReflection", testWithReflection.invoke(null, "_*_"));
         }
     }
 }

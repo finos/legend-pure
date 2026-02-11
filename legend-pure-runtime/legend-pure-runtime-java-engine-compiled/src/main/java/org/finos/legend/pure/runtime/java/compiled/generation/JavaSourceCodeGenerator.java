@@ -21,7 +21,6 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
-import org.eclipse.collections.api.partition.PartitionIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
@@ -34,13 +33,13 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.VersionControlledCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m3.tools.JavaTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -346,17 +345,13 @@ public final class JavaSourceCodeGenerator
 
     ListIterable<StringJavaSource> generateExternalizableAPI(String pack)
     {
-        MutableList<String> externalizableFunctionCode = Lists.mutable.empty();
         CoreInstance functionClass = this.processorSupport.package_getByUserPath(M3Paths.Function);
         ProcessorContext processorContext = new ProcessorContext(this.processorSupport, this.extensions, this.idBuilder, this.includePureStackTrace);
-        AccessLevel.EXTERNALIZABLE.getStereotype(this.processorSupport).getValueForMetaPropertyToMany(M3Properties.modelElements).forEach(element ->
-        {
-            if (Instance.instanceOf(element, functionClass, this.processorSupport))
-            {
-                externalizableFunctionCode.add(FunctionProcessor.buildExternalizableFunction(element, processorContext));
-            }
-        });
-        String text = this.buildExternalizableFunctionClass(externalizableFunctionCode);
+        MutableList<String> externalizableFunctionCode = AccessLevel.EXTERNALIZABLE.getStereotype(this.processorSupport).getValueForMetaPropertyToMany(M3Properties.modelElements).collectIf(
+                e -> (e instanceof Function) || Instance.instanceOf(e, functionClass, this.processorSupport),
+                e -> FunctionProcessor.buildExternalizableFunction(e, processorContext),
+                Lists.mutable.empty());
+        String text = ExternalClassBuilder.buildExternalizableFunctionClass(pack, EXTERNAL_FUNCTIONS_CLASS_NAME, externalizableFunctionCode, this.codeStorage.getAllRepositories().collect(CodeRepository::getName));
         return Lists.immutable.with(StringJavaSource.newStringJavaSource(pack, EXTERNAL_FUNCTIONS_CLASS_NAME, text));
     }
 
@@ -543,12 +538,6 @@ public final class JavaSourceCodeGenerator
                         (functionDefinitions == null || functionDefinitions.isEmpty() ? "" : functionDefinitions.makeString("\n", "\n\n", "\n")) +
                         helperMethodsContent.toString() +
                         "}";
-    }
-
-    private String buildExternalizableFunctionClass(RichIterable<String> functionDefinitions)
-    {
-        PartitionIterable<CodeRepository> sortedRepos = this.codeStorage.getAllRepositories().partition(p -> this.codeStorage.getOriginalCodeStorage(p) instanceof VersionControlledCodeStorage);
-        return ExternalClassBuilder.buildExternalizableFunctionClass(functionDefinitions, EXTERNAL_FUNCTIONS_CLASS_NAME, sortedRepos.getSelected().collect(CodeRepository::getName), sortedRepos.getRejected().collect(CodeRepository::getName));
     }
 
     private String buildPureCompiledLambda(ProcessorContext processorContext)

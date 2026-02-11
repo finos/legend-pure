@@ -212,7 +212,7 @@ public class PureTestBuilderCompiled extends TestSuite
         Metadata metadata = buildMetadata(classLoader, codeStorage, eagerMetadata);
         return new CompiledExecutionSupport(
                 new JavaCompilerState(null, classLoader),
-                new CompiledProcessorSupport(classLoader, metadata, Sets.mutable.empty()),
+                new CompiledProcessorSupport(classLoader, metadata),
                 null,
                 codeStorage,
                 null,

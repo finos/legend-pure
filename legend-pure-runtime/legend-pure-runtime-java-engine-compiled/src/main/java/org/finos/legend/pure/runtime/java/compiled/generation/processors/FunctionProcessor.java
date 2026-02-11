@@ -153,8 +153,7 @@ public class FunctionProcessor
             CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.multiplicity, processorSupport);
             if (Multiplicity.isToOne(multiplicity, true))
             {
-                CoreInstance genericType = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.genericType, processorSupport);
-                if (!TypeProcessor.isJavaPrimitivePossible(genericType, processorSupport))
+                if (!TypeProcessor.isJavaPrimitivePossible(parameter.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport))
                 {
                     String parameterName = JavaTools.makeValidJavaIdentifier(PrimitiveUtilities.getStringValue(parameter.getValueForMetaPropertyToOne(M3Properties.name)), "_");
                     builder.append("        if (").append(parameterName).append(" == null)\n");
@@ -190,7 +189,7 @@ public class FunctionProcessor
         builder.append("        }\n");
         builder.append("        catch (Exception ex)\n");
         builder.append("        {\n");
-        builder.append("            org.finos.legend.pure.m4.exception.PureException pureException = org.finos.legend.pure.m4.exception.PureException.findPureException(ex);\n");
+        builder.append("            PureException pureException = PureException.findPureException(ex);\n");
         builder.append("            if (pureException != null)\n");
         builder.append("            {\n");
         builder.append("                throw pureException;\n");
