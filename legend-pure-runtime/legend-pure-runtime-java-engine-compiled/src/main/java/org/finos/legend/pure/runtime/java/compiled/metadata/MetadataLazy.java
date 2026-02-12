@@ -101,7 +101,16 @@ public class MetadataLazy implements Metadata
     @Override
     public CoreInstance getMetadata(String classifier, String id)
     {
-        return hasClassifier(classifier) ? toJavaObject(classifier, this.deserializer.processId(id)) : null;
+        if (!hasClassifier(classifier))
+        {
+            return null;
+        }
+        // for backward compatibility
+        if (id.startsWith("Root::"))
+        {
+            id = id.substring(6);
+        }
+        return toJavaObject(classifier, this.deserializer.processId(id));
     }
 
     @Override
