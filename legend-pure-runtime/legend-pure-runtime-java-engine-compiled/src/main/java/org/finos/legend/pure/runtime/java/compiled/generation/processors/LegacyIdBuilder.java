@@ -83,14 +83,14 @@ class LegacyIdBuilder extends IdBuilder
     private String buildDefaultId(CoreInstance instance)
     {
         int syntheticId = instance.getSyntheticId();
-        return (this.defaultIdPrefix == null) ? Integer.toString(syntheticId) : (this.defaultIdPrefix + syntheticId);
+        return (this.defaultIdPrefix == null) ? Integer.toUnsignedString(syntheticId, 32) : (this.defaultIdPrefix + Integer.toUnsignedString(syntheticId, 32));
     }
 
     // QualifiedProperty
 
     private static String buildIdForQualifiedProperty(CoreInstance property)
     {
-        return PackageableElement.writeUserPathForPackageableElement(new StringBuilder(), property.getValueForMetaPropertyToOne(M3Properties.owner))
+        return PackageableElement.writeUserPathForPackageableElement(new StringBuilder(64), property.getValueForMetaPropertyToOne(M3Properties.owner))
                 .append('.').append(property.getName())
                 .toString();
     }
@@ -119,7 +119,7 @@ class LegacyIdBuilder extends IdBuilder
             propertyProperty = M3Properties.properties;
         }
 
-        StringBuilder builder = PackageableElement.writeUserPathForPackageableElement(new StringBuilder(), owner);
+        StringBuilder builder = PackageableElement.writeUserPathForPackageableElement(new StringBuilder(64), owner);
         builder.append('.').append(propertyProperty);
         builder.append('.').append(property.getName());
         if (owner instanceof Association)
@@ -142,7 +142,7 @@ class LegacyIdBuilder extends IdBuilder
 
     private static String buildIdForAnnotation(CoreInstance annotation)
     {
-        return PackageableElement.writeUserPathForPackageableElement(new StringBuilder(), annotation.getValueForMetaPropertyToOne(M3Properties.profile))
+        return PackageableElement.writeUserPathForPackageableElement(new StringBuilder(64), annotation.getValueForMetaPropertyToOne(M3Properties.profile))
                 .append('.').append(annotation.getName())
                 .toString();
     }
@@ -151,14 +151,14 @@ class LegacyIdBuilder extends IdBuilder
 
     private static String buildIdForUnit(CoreInstance unit)
     {
-        return Measure.getSystemPathForUnit(unit);
+        return Measure.getUserPathForUnit(unit);
     }
 
     // PackageableElement
 
     private static String buildIdForPackageableElement(CoreInstance instance)
     {
-        String id = PackageableElement.getSystemPathForPackageableElement(instance);
+        String id = PackageableElement.getUserPathForPackageableElement(instance);
         if (ModelRepository.isAnonymousInstanceName(id) && (id.indexOf(':') == -1))
         {
             // don't return anonymous ids
