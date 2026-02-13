@@ -30,4 +30,18 @@ function <<PCT.test>> meta::pure::functions::math::tests::exp::testSimple<Z|y>(f
     assertEqWithinTolerance(4.0, $f->eval(|4->exp()->log()), 0.000000000000001);
 }
 
+function <<PCT.test>> meta::pure::functions::math::tests::exp::testNumberExpLowPrecision<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    let z = {a:Number[1] | exp($a)};
+    assertEqWithinTolerance(2.718281828459045, $f->eval(|$z->eval(1.0)), 0.00000001);
+}
+
+function <<PCT.test>> meta::pure::functions::math::tests::exp::testSimpleLowPrecision<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEqWithinTolerance(2.718281828459045, $f->eval(|exp(1.0)), 0.00000001);
+    assertEqWithinTolerance(2.718281828459045, $f->eval(|exp(1)), 0.00000001);
+    assertEqWithinTolerance(4.0, $f->eval(|exp(4)->log()), 0.00000001);
+    assertEqWithinTolerance(4.0, $f->eval(|4->exp()->log()), 0.00000001);
+}
+
 
