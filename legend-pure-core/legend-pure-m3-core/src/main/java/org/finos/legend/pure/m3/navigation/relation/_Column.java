@@ -83,26 +83,10 @@ public class _Column
         columnInstance.setKeyValues(M3PropertyPaths.classifierGenericType, Lists.mutable.with(columnGenericType));
         if (stereotypes != null && stereotypes.notEmpty())
         {
-            RichIterable<? extends Stereotype> stereotypeInstances = stereotypes.collect(s -> (Stereotype) ImportStub.withImportStubByPass(s, processorSupport));
-            columnInstance._stereotypes(stereotypeInstances);
-            if (columnInstance instanceof BaseCoreInstance)
-            {
-                columnInstance._stereotypesCoreInstance(stereotypeInstances);
-            }
+            columnInstance._stereotypesCoreInstance(stereotypes);
         }
         if (taggedValues != null && taggedValues.notEmpty())
         {
-            taggedValues.each(tv ->
-            {
-                if (tv instanceof TaggedValueInstance)
-                {
-                    CoreInstance rawTag = tv._tagCoreInstance();
-                    if (rawTag != null)
-                    {
-                        tv._tag((Tag) ImportStub.withImportStubByPass(rawTag, processorSupport));
-                    }
-                }
-            });
             columnInstance._taggedValues(taggedValues);
         }
         return columnInstance;

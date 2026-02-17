@@ -114,13 +114,12 @@ public class GenericTypeSerializationInCode
     {
         if (column._stereotypes() != null && column._stereotypes().notEmpty())
         {
-            return "Lists.mutable.with(" +
-                    column._stereotypes().collect(s ->
-                            "org.finos.legend.pure.runtime.java.compiled.CoreHelper.stereotype(" +
-                                    "((CompiledExecutionSupport)es).getMetadataAccessor().getProfile(\"" +
-                                    PackageableElement.getSystemPathForPackageableElement(s._profile()) +
-                                    "\"), \"" + s._value() + "\")"
-                    ).makeString(", ") + ")";
+            return  column._stereotypes().collect(s ->
+                    "org.finos.legend.pure.runtime.java.compiled.CoreHelper.stereotype(" +
+                            "((CompiledExecutionSupport)es).getMetadataAccessor().getProfile(\"" +
+                            PackageableElement.getSystemPathForPackageableElement(s._profile()) +
+                            "\"), \"" + s._value() + "\")"
+            ).makeString("Lists.mutable.with(", ", ", ")");
         }
         else
         {
@@ -132,16 +131,15 @@ public class GenericTypeSerializationInCode
     {
         if (column._taggedValues() != null && column._taggedValues().notEmpty())
         {
-            return "Lists.mutable.with(" +
-                    column._taggedValues().collect(tv ->
-                            "new Root_meta_pure_metamodel_extension_TaggedValue_Impl(\"\", null, " +
-                                    "((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"Root::" + M3Paths.TaggedValue + "\"))" +
-                                    "._tag(org.finos.legend.pure.runtime.java.compiled.CoreHelper.tag(" +
-                                    "((CompiledExecutionSupport)es).getMetadataAccessor().getProfile(\"" +
-                                    PackageableElement.getSystemPathForPackageableElement(tv._tag()._profile()) +
-                                    "\"), \"" + tv._tag()._value() + "\"))" +
-                                    "._value(\"" + tv._value() + "\")"
-                    ).makeString(", ") + ")";
+            return  column._taggedValues().collect(tv ->
+                    "new Root_meta_pure_metamodel_extension_TaggedValue_Impl(\"\", null, " +
+                            "((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"Root::" + M3Paths.TaggedValue + "\"))" +
+                            "._tag(org.finos.legend.pure.runtime.java.compiled.CoreHelper.tag(" +
+                            "((CompiledExecutionSupport)es).getMetadataAccessor().getProfile(\"" +
+                            PackageableElement.getSystemPathForPackageableElement(tv._tag()._profile()) +
+                            "\"), \"" + tv._tag()._value() + "\"))" +
+                            "._value(\"" + tv._value() + "\")"
+            ).makeString("Lists.mutable.with(", ", ", ")");
         }
         else
         {
