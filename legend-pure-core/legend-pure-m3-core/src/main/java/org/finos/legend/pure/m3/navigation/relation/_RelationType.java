@@ -256,6 +256,8 @@ public class _RelationType
     {
         relationType.getValueForMetaPropertyToMany(M3Properties.columns).forEach(c ->
         {
+            c.getValueForMetaPropertyToMany(M3Properties.stereotypes).forEach(s -> ImportStub.withImportStubByPass(s, processorSupport));
+            c.getValueForMetaPropertyToMany(M3Properties.taggedValues).forEach(tv -> ImportStub.withImportStubByPass(tv.getValueForMetaPropertyToOne(M3Properties.tag), processorSupport));
             CoreInstance classifierGenericType = c.getValueForMetaPropertyToOne(M3Properties.classifierGenericType);
             classifierGenericType.getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).forEach(arg -> ImportStub.withImportStubByPass(arg, processorSupport));
             // the first type argument of the column type is the relation type itself: we skip it to avoid infinite recursion
