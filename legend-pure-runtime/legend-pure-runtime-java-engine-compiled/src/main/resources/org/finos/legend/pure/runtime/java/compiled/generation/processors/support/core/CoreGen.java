@@ -21,6 +21,7 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.factory.Stacks;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.KeyExpression;
@@ -36,6 +37,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
@@ -192,7 +194,14 @@ public class CoreGen extends CoreHelper
 
     public static Object newObject(final Class<?> aClass, RichIterable<? extends Root_meta_pure_functions_lang_KeyValue> keyExpressions, ElementOverride override, Function getterToOne, Function getterToMany, Object payload, PureFunction2 getterToOneExec, PureFunction2 getterToManyExec, ExecutionSupport es)
     {
-        final ClassCache classCache = ((CompiledExecutionSupport) es).getClassCache();
+        return newObject(aClass, keyExpressions, override, getterToOne, getterToMany, payload, getterToOneExec, getterToManyExec, null, es);
+    }
+
+    public static Object newObject(final Class<?> aClass, RichIterable<? extends Root_meta_pure_functions_lang_KeyValue> keyExpressions, ElementOverride override, Function getterToOne, Function getterToMany, Object payload, PureFunction2 getterToOneExec, PureFunction2 getterToManyExec, final SourceInformation sourceInfo, final ExecutionSupport es)
+    {
+        final CompiledExecutionSupport ces = (CompiledExecutionSupport) es;
+        final ClassCache classCache = ces.getClassCache();
+        final ProcessorSupport processorSupport = ces.getProcessorSupport();
         Constructor<?> constructor = classCache.getIfAbsentPutConstructorForType(aClass);
         final Any result;
         try
@@ -212,20 +221,61 @@ public class CoreGen extends CoreHelper
             }
             throw new RuntimeException(builder.toString(), cause);
         }
+
+        // Set source information on the instance if provided, but NOT on FunctionDefinitions
+        // (setting source info on FunctionDefinitions breaks function lookup by name)
+        if (sourceInfo != null && result instanceof CoreInstance && !org.finos.legend.pure.m3.navigation.function.Function.isFunctionDefinition((CoreInstance) result, processorSupport))
+        {
+            ((CoreInstance) result).setSourceInformation(sourceInfo);
+        }
+
+        // Build a GenericType for property type resolution
+        // We use the instance's classifierGenericType if set (from key values), otherwise a basic one from the class
+        // This is needed to properly resolve type parameters for generic classes like L<T>
+        final CoreInstance basicGenericType = processorSupport.type_wrapGenericType(aClass);
+
+        // Check if the class has type parameters - if so, we can only validate if the instance has a
+        // classifierGenericType with type arguments set (from key values)
+        final boolean classHasTypeParameters = !aClass._typeParameters().isEmpty();
+
         keyExpressions.forEach(new DefendedProcedure<Root_meta_pure_functions_lang_KeyValue>()
         {
             @Override
             public void value(Root_meta_pure_functions_lang_KeyValue keyValue)
             {
-                Method m = classCache.getIfAbsentPutPropertySetterMethodForType(aClass, keyValue._key());
+                String key = keyValue._key();
+                RichIterable<?> values = keyValue._value();
+
+                // Skip classifierGenericType validation - it's metadata, not a real property to validate
+                if (!"classifierGenericType".equals(key))
+                {
+                    // Only validate if the class doesn't have type parameters, or if we can properly resolve them
+                    // For generic classes like L<T>, we rely on outer validation (when assigned to properties like M.m)
+                    if (!classHasTypeParameters)
+                    {
+                        // Validate type compatibility for each value
+                        CoreInstance property = processorSupport.class_findPropertyUsingGeneralization(aClass, key);
+                        if (property != null)
+                        {
+                            CoreInstance propertyGenericType = org.finos.legend.pure.m3.navigation.generictype.GenericType.resolvePropertyReturnType(basicGenericType, property, processorSupport);
+                            for (Object val : values)
+                            {
+                                CoreInstance valGenericType = safeGetGenericType(val, es);
+                                validatePropertyType(propertyGenericType, valGenericType, val, sourceInfo, processorSupport);
+                            }
+                        }
+                    }
+                }
+
+                Method m = classCache.getIfAbsentPutPropertySetterMethodForType(aClass, key);
                 try
                 {
-                    m.invoke(result, keyValue._value());
+                    m.invoke(result, values);
                 }
                 catch (InvocationTargetException | IllegalAccessException e)
                 {
                     Throwable cause = (e instanceof InvocationTargetException) ? e.getCause() : e;
-                    StringBuilder builder = new StringBuilder("Error setting property '").append(keyValue._key()).append("' for instance of ");
+                    StringBuilder builder = new StringBuilder("Error setting property '").append(key).append("' for instance of ");
                     org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.writeUserPathForPackageableElement(builder, aClass);
                     String eMessage = cause.getMessage();
                     if (eMessage != null)
@@ -250,6 +300,67 @@ public class CoreGen extends CoreHelper
         return result;
     }
 
+    private static SourceInformation getSourceInfoFromValue(Object val)
+    {
+        // Try to get source info from the value itself
+        if (val instanceof CoreInstance)
+        {
+            SourceInformation sourceInfo = ((CoreInstance) val).getSourceInformation();
+            if (sourceInfo != null)
+            {
+                return sourceInfo;
+            }
+            // If value doesn't have source info, try its classifierGenericType
+            if (val instanceof Any)
+            {
+                GenericType gt = ((Any) val)._classifierGenericType();
+                if (gt != null)
+                {
+                    return ((CoreInstance) gt).getSourceInformation();
+                }
+            }
+        }
+        return null;
+    }
+
+    private static void validatePropertyType(CoreInstance propertyGenericType, CoreInstance valGenericType, Object val, SourceInformation fallbackSourceInfo, ProcessorSupport processorSupport)
+    {
+        // Use source info from value if available, otherwise use the fallback (from dynamicNew call site)
+        SourceInformation sourceInfo = getSourceInfoFromValue(val);
+        if (sourceInfo == null)
+        {
+            sourceInfo = fallbackSourceInfo;
+        }
+
+        boolean compatible;
+        try
+        {
+            compatible = org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(valGenericType, propertyGenericType, processorSupport);
+        }
+        catch (Exception e)
+        {
+            String valTypeString = org.finos.legend.pure.m3.navigation.generictype.GenericType.print(valGenericType, false, processorSupport);
+            String propertyTypeString = org.finos.legend.pure.m3.navigation.generictype.GenericType.print(propertyGenericType, false, processorSupport);
+            if (valTypeString.equals(propertyTypeString))
+            {
+                valTypeString = org.finos.legend.pure.m3.navigation.generictype.GenericType.print(valGenericType, true, processorSupport);
+                propertyTypeString = org.finos.legend.pure.m3.navigation.generictype.GenericType.print(propertyGenericType, true, processorSupport);
+            }
+            throw new PureExecutionException(sourceInfo, "Error checking if value type '" + valTypeString + "' is compatible with property type '" + propertyTypeString + "'", e, Stacks.mutable.<CoreInstance>empty());
+        }
+        if (!compatible)
+        {
+            String valTypeString = org.finos.legend.pure.m3.navigation.generictype.GenericType.print(valGenericType, false, processorSupport);
+            String propertyTypeString = org.finos.legend.pure.m3.navigation.generictype.GenericType.print(propertyGenericType, false, processorSupport);
+            if (valTypeString.equals(propertyTypeString))
+            {
+                valTypeString = org.finos.legend.pure.m3.navigation.generictype.GenericType.print(valGenericType, true, processorSupport);
+                propertyTypeString = org.finos.legend.pure.m3.navigation.generictype.GenericType.print(propertyGenericType, true, processorSupport);
+            }
+            throw new PureExecutionException(sourceInfo, "Type Error: '" + valTypeString + "' not a subtype of '" + propertyTypeString + "'", Stacks.mutable.<CoreInstance>empty());
+        }
+    }
+
     public static Object newObject(GenericType genericType,
                                    RichIterable<? extends Root_meta_pure_functions_lang_KeyValue> root_meta_pure_functions_lang_keyExpressions,
                                    ElementOverride override,
@@ -260,7 +371,21 @@ public class CoreGen extends CoreHelper
                                    PureFunction2 getterToManyExec,
                                    ExecutionSupport es)
     {
-        return newObject((Class<?>) genericType._rawType(), root_meta_pure_functions_lang_keyExpressions, override, getterToOne, getterToMany, payload, getterToOneExec, getterToManyExec, es);
+        return newObject((Class<?>) genericType._rawType(), root_meta_pure_functions_lang_keyExpressions, override, getterToOne, getterToMany, payload, getterToOneExec, getterToManyExec, null, es);
+    }
+
+    public static Object newObject(GenericType genericType,
+                                   RichIterable<? extends Root_meta_pure_functions_lang_KeyValue> root_meta_pure_functions_lang_keyExpressions,
+                                   ElementOverride override,
+                                   Function getterToOne,
+                                   Function getterToMany,
+                                   Object payload,
+                                   PureFunction2 getterToOneExec,
+                                   PureFunction2 getterToManyExec,
+                                   SourceInformation sourceInfo,
+                                   ExecutionSupport es)
+    {
+        return newObject((Class<?>) genericType._rawType(), root_meta_pure_functions_lang_keyExpressions, override, getterToOne, getterToMany, payload, getterToOneExec, getterToManyExec, sourceInfo, es);
     }
 
     public static PureMap newMap(RichIterable<? extends Pair<?, ?>> pairs, RichIterable<? extends Property<?, ?>> properties, ExecutionSupport es)
