@@ -15,6 +15,8 @@
 package org.finos.legend.pure.runtime.java.compiled.runtime.serialization.binary;
 
 import org.eclipse.collections.impl.utility.ArrayIterate;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedMetadataHelper;
 import org.junit.Assert;
 import org.junit.Test;
@@ -150,11 +152,29 @@ public class TestDistributedMetadataHelper
     }
 
     @Test
-    public void testPossiblyHashId()
+    public void testHashId()
     {
         String input1 = "Root::meta::pure::metamodel::type::Class";
         String input2 = "Root::meta::pure::metamodel::type::Package";
-        Assert.assertEquals(DistributedMetadataHelper.possiblyHashId(input1), DistributedMetadataHelper.possiblyHashId(input1));
-        Assert.assertNotEquals(DistributedMetadataHelper.possiblyHashId(input1), DistributedMetadataHelper.possiblyHashId(input2));
+        Assert.assertEquals(DistributedMetadataHelper.hashId(input1), DistributedMetadataHelper.hashId(input1));
+        Assert.assertNotEquals(DistributedMetadataHelper.hashId(input1), DistributedMetadataHelper.hashId(input2));
+    }
+
+    @Test
+    public void testHashIds()
+    {
+        IdBuilder builder = new IdBuilder()
+        {
+            @Override
+            public String buildId(CoreInstance instance)
+            {
+                return Integer.toString(instance.getSyntheticId());
+            }
+        };
+
+        IdBuilder hashedBuilder = DistributedMetadataHelper.hashIds(builder);
+        Assert.assertNotSame(hashedBuilder, builder);
+        // ensure we do not double hash
+        Assert.assertSame(hashedBuilder, DistributedMetadataHelper.hashIds(hashedBuilder));
     }
 }

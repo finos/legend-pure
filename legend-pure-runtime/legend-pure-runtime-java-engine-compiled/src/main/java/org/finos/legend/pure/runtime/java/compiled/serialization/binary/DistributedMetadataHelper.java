@@ -24,7 +24,7 @@ import java.util.Objects;
 
 public class DistributedMetadataHelper
 {
-    static final boolean HASH_IDS = Boolean.parseBoolean(System.getProperty("legend.pure.runtime.java.compiled.serialization.binary.distributed.hashids", "false"));
+    private static final boolean HASH_IDS = Boolean.parseBoolean(System.getProperty("legend.pure.runtime.java.compiled.serialization.binary.distributed.hashids", "false"));
 
     private static final String META_DATA_DIRNAME = "metadata/";
     private static final String SPECS_DIRNAME = META_DATA_DIRNAME + "specs/";
@@ -192,26 +192,10 @@ public class DistributedMetadataHelper
 
     public static IdBuilder possiblyHashIds(IdBuilder idBuilder)
     {
-        return HASH_IDS ? new HashingIdBuilder(idBuilder) : idBuilder;
+        return HASH_IDS ? hashIds(idBuilder) : idBuilder;
     }
 
-    private static class HashingIdBuilder extends IdBuilder
-    {
-        private final IdBuilder delegate;
-
-        private HashingIdBuilder(IdBuilder delegate)
-        {
-            this.delegate = Objects.requireNonNull(delegate);
-        }
-
-        @Override
-        public String buildId(CoreInstance instance)
-        {
-            return hashId(this.delegate.buildId(instance));
-        }
-    }
-
-    private static String hashId(String id)
+    public static String hashId(String id)
     {
         if (id == null)
         {
@@ -229,5 +213,26 @@ public class DistributedMetadataHelper
         byte[] bytes = new byte[8];
         ByteBuffer.wrap(bytes).putLong(hash);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    public static IdBuilder hashIds(IdBuilder idBuilder)
+    {
+        return (idBuilder instanceof HashingIdBuilder) ? idBuilder : new HashingIdBuilder(idBuilder);
+    }
+
+    private static class HashingIdBuilder extends IdBuilder
+    {
+        private final IdBuilder delegate;
+
+        private HashingIdBuilder(IdBuilder delegate)
+        {
+            this.delegate = Objects.requireNonNull(delegate);
+        }
+
+        @Override
+        public String buildId(CoreInstance instance)
+        {
+            return hashId(this.delegate.buildId(instance));
+        }
     }
 }
