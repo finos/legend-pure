@@ -25,18 +25,16 @@ import java.util.Objects;
 
 public abstract class IdBuilder
 {
-    private static final boolean DEFAULT_BUILDER_LEGACY = true;
-
     public abstract String buildId(CoreInstance instance);
 
     // Builder
 
-    public abstract static class Builder
+    abstract static class AbstractBuilder
     {
         protected final ProcessorSupport processorSupport;
         protected String defaultIdPrefix;
 
-        protected Builder(ProcessorSupport processorSupport)
+        protected AbstractBuilder(ProcessorSupport processorSupport)
         {
             this.processorSupport = Objects.requireNonNull(processorSupport, "processorSupport may not be null");
         }
@@ -53,18 +51,6 @@ public abstract class IdBuilder
         }
 
         /**
-         * Set the optional default id prefix. If non-null, the default id function will use this as the prefix for
-         * all ids it generates.
-         *
-         * @param prefix default id prefix
-         */
-        public Builder withDefaultIdPrefix(String prefix)
-        {
-            setDefaultIdPrefix(prefix);
-            return this;
-        }
-
-        /**
          * Build the {@linkplain IdBuilder}.
          *
          * @return {@linkplain IdBuilder}
@@ -72,27 +58,19 @@ public abstract class IdBuilder
         public abstract IdBuilder build();
     }
 
-    public static class LegacyBuilder extends Builder
-    {
-        private LegacyBuilder(ProcessorSupport processorSupport)
-        {
-            super(processorSupport);
-        }
-
-        @Override
-        public IdBuilder build()
-        {
-            return new LegacyIdBuilder(this.defaultIdPrefix, this.processorSupport);
-        }
-    }
-
-    public static class ReferenceIdBuilder extends Builder
+    public static class Builder extends AbstractBuilder
     {
         private boolean allowNonReferenceIds = true;
 
-        private ReferenceIdBuilder(ProcessorSupport processorSupport)
+        private Builder(ProcessorSupport processorSupport)
         {
             super(processorSupport);
+        }
+
+        public Builder withDefaultIdPrefix(String prefix)
+        {
+            setDefaultIdPrefix(prefix);
+            return this;
         }
 
         public void setAllowNonReferenceIds(boolean allowNonReferenceIds)
@@ -110,18 +88,18 @@ public abstract class IdBuilder
             setAllowNonReferenceIds(false);
         }
 
-        public ReferenceIdBuilder withNonReferenceIdsAllowed(boolean allowNonReferenceIds)
+        public Builder withNonReferenceIdsAllowed(boolean allowNonReferenceIds)
         {
             setAllowNonReferenceIds(allowNonReferenceIds);
             return this;
         }
 
-        public ReferenceIdBuilder withNonReferenceIdsAllowed()
+        public Builder withNonReferenceIdsAllowed()
         {
             return withNonReferenceIdsAllowed(true);
         }
 
-        public ReferenceIdBuilder withNonReferenceIdsDisallowed()
+        public Builder withNonReferenceIdsDisallowed()
         {
             return withNonReferenceIdsAllowed(false);
         }
@@ -133,14 +111,29 @@ public abstract class IdBuilder
         }
     }
 
-    public static Builder builder(ProcessorSupport processorSupport)
+    public static class LegacyBuilder extends AbstractBuilder
     {
-        return builder(processorSupport, DEFAULT_BUILDER_LEGACY);
+        private LegacyBuilder(ProcessorSupport processorSupport)
+        {
+            super(processorSupport);
+        }
+
+        public LegacyBuilder withDefaultIdPrefix(String prefix)
+        {
+            setDefaultIdPrefix(prefix);
+            return this;
+        }
+
+        @Override
+        public IdBuilder build()
+        {
+            return new LegacyIdBuilder(this.defaultIdPrefix, this.processorSupport);
+        }
     }
 
-    public static Builder builder(ProcessorSupport processorSupport, boolean legacy)
+    public static Builder builder(ProcessorSupport processorSupport)
     {
-        return legacy ? legacyBuilder(processorSupport) : referenceIdBuilder(processorSupport);
+        return new Builder(processorSupport);
     }
 
     public static LegacyBuilder legacyBuilder(ProcessorSupport processorSupport)
@@ -148,29 +141,19 @@ public abstract class IdBuilder
         return new LegacyBuilder(processorSupport);
     }
 
-    public static ReferenceIdBuilder referenceIdBuilder(ProcessorSupport processorSupport)
-    {
-        return new ReferenceIdBuilder(processorSupport);
-    }
-
     public static IdBuilder newIdBuilder(String defaultIdPrefix, ProcessorSupport processorSupport)
     {
-        return newIdBuilder(defaultIdPrefix, processorSupport, DEFAULT_BUILDER_LEGACY);
-    }
-
-    public static IdBuilder newIdBuilder(String defaultIdPrefix, ProcessorSupport processorSupport, boolean legacy)
-    {
-        return builder(processorSupport, legacy).withDefaultIdPrefix(defaultIdPrefix).build();
+        return builder(processorSupport).withDefaultIdPrefix(defaultIdPrefix).build();
     }
 
     public static IdBuilder newIdBuilder(ProcessorSupport processorSupport)
     {
-        return newIdBuilder(processorSupport, DEFAULT_BUILDER_LEGACY);
+        return builder(processorSupport).build();
     }
 
-    public static IdBuilder newIdBuilder(ProcessorSupport processorSupport, boolean legacy)
+    public static IdBuilder newIdBuilder(ProcessorSupport processorSupport, boolean allowNonReferenceIds)
     {
-        return builder(processorSupport, legacy).build();
+        return builder(processorSupport).withNonReferenceIdsAllowed(allowNonReferenceIds).build();
     }
 
     @Deprecated

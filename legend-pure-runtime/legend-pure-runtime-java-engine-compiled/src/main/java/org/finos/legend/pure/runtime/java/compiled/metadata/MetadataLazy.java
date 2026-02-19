@@ -134,7 +134,7 @@ public class MetadataLazy implements Metadata
         }
 
         ConcurrentMutableMap<String, CoreInstance> cache = getClassifierInstanceCache(enumerationName);
-        String enumId = this.deserializer.processId(enumName);
+        String enumId = this.deserializer.processEnumId(enumerationName, enumName);
         CoreInstance result = cache.get(enumId);
         if (result == null)
         {
