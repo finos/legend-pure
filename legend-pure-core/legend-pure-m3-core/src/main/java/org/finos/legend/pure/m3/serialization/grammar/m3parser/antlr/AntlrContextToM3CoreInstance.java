@@ -978,7 +978,7 @@ public class AntlrContextToM3CoreInstance
                     returnType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
                     returnType._rawType(null);
                 }
-                columnInstances.add(_Column.getColumnInstance(colName, false, returnType, multiplicity, stereotypes, taggedValues, src, processorSupport));
+                columnInstances.add(_Column.getColumnInstance(colName, false, returnType, multiplicity, stereotypes, false, taggedValues, src, processorSupport));
             });
             RelationType<?> relationType = _RelationType.build(columnInstances, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport);
             GenericType relationTypeGenericType = (GenericType) processorSupport.type_wrapGenericType(relationType);
@@ -1003,7 +1003,7 @@ public class AntlrContextToM3CoreInstance
                     for (int i = 0; i < lambdas.size(); i++)
                     {
                         GenericType localColumnType = GenericTypeInstance.createPersistent(this.repository);
-                        localColumnType._rawTypeCoreInstance(_RelationType.build(Lists.immutable.with(_Column.getColumnInstance(columnNames.get(i).getName(), false, (String) null, (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport), src, processorSupport)), this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
+                        localColumnType._rawTypeCoreInstance(_RelationType.build(Lists.immutable.with(_Column.getColumnInstance(columnNames.get(i).getName(), false, (String) null, (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport), null, false, null, src, processorSupport)), this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
 
                         CoreInstance aggColFunc = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart()), null, null, importId, null);
                         aggColFunc.setKeyValues(Lists.immutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance(mayShiftTo2kindFunction((LambdaFunction<?>) lambdas.get(i), "aggColSpec"))));
@@ -1028,7 +1028,7 @@ public class AntlrContextToM3CoreInstance
                     for (int i = 0; i < lambdas.size(); i++)
                     {
                         GenericType localColumnType = GenericTypeInstance.createPersistent(this.repository);
-                        localColumnType._rawTypeCoreInstance(_RelationType.build(Lists.immutable.with(_Column.getColumnInstance(columnNames.get(i).getName(), false, (String) null, (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport), src, processorSupport)), this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
+                        localColumnType._rawTypeCoreInstance(_RelationType.build(Lists.immutable.with(_Column.getColumnInstance(columnNames.get(i).getName(), false, (String) null, (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport), null, false, null, src, processorSupport)), this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
 
                         CoreInstance colFunc = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart()), null, null, importId, null);
                         colFunc.setKeyValues(Lists.immutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance(mayShiftTo2kindFunction((LambdaFunction<?>) lambdas.get(i), "funcColSpec"))));
@@ -2032,6 +2032,9 @@ public class AntlrContextToM3CoreInstance
                                                 c.multiplicity() == null ?
                                                         (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport) :
                                                         this.buildMultiplicity(c.multiplicity().multiplicityArgument()),
+                                                null,
+                                                false,
+                                                null,
                                                 srcInfo,
                                                 processorSupport
                                         );

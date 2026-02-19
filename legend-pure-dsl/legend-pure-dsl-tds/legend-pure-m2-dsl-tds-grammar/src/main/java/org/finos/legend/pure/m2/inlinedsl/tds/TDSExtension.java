@@ -155,7 +155,7 @@ public class TDSExtension implements InlineDSL
                                 }
                                 Multiplicity multiplicity = oneColSpec.multiplicity() == null ? null : processMultiplicity(oneColSpec.multiplicity().multiplicityArgument(), processorSupport);
                                 GenericType type = processType(oneColSpec.type(), processorSupport);
-                                return _Column.getColumnInstance(name.trim(), false, type, multiplicity, sourceInfo, processorSupport);
+                                return _Column.getColumnInstance(name.trim(), false, type, multiplicity, null, false, null, sourceInfo, processorSupport);
                             }
                     ), null, processorSupport));
                 }
@@ -245,11 +245,11 @@ public class TDSExtension implements InlineDSL
             }
             if (columnType == null || columnType.getValueForMetaPropertyToOne("rawType") == null)
             {
-                return _Column.getColumnInstance(c.getTwo()._name(), false, convertType(c.getOne().dataType()), multiplicity, sourceInfo, processorSupport);
+                return _Column.getColumnInstance(c.getTwo()._name(), false, convertType(c.getOne().dataType()), multiplicity, null, false, null, sourceInfo, processorSupport);
             }
             else
             {
-                return _Column.getColumnInstance(c.getTwo()._name(), false, (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(columnType, sourceInfo, processorSupport), multiplicity, sourceInfo, processorSupport);
+                return _Column.getColumnInstance(c.getTwo()._name(), false, (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(columnType, sourceInfo, processorSupport), multiplicity, null, false, null, sourceInfo, processorSupport);
             }
         }), sourceInfo, processorSupport);
 

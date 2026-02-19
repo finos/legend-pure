@@ -14,15 +14,10 @@
 
 package org.finos.legend.pure.m3.navigation.relation;
 
-import java.util.Objects;
-
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.finos.legend.pure.m3.coreinstance.BaseCoreInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValueInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
@@ -31,7 +26,6 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -41,12 +35,7 @@ import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class _Column
 {
-    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, SourceInformation src, ProcessorSupport processorSupport)
-    {
-        return _Column.getColumnInstance(name, nameWildCard, type, multiplicity, null, null, src, processorSupport);
-    }
-
-    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, RichIterable<? extends TaggedValue> taggedValues, SourceInformation src, ProcessorSupport processorSupport)
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, boolean assumeNoImportStubs, RichIterable<? extends TaggedValue> taggedValues, SourceInformation src, ProcessorSupport processorSupport)
     {
         GenericType target = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
         if (type == null)
@@ -62,15 +51,17 @@ public class _Column
             }
             target._rawType((Type)_type);
         }
-        return _Column.getColumnInstance(name, nameWildCard, target, multiplicity, stereotypes, taggedValues, src, processorSupport);
+        return _Column.getColumnInstance(name, nameWildCard, target, multiplicity, stereotypes, assumeNoImportStubs, taggedValues, src, processorSupport);
     }
 
-    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity multiplicity, SourceInformation sourceInformation, ProcessorSupport processorSupport)
-    {
-        return getColumnInstance(name, nameWildCard, targetType, multiplicity, null, null, sourceInformation, processorSupport);
-    }
-
-    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, RichIterable<? extends TaggedValue> taggedValues, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    // Parameterize getColumnInstance
+    // One version does exactly what is here
+    // The other version will call ._stereotypes(stereotypes) and it's going to assume that it's not getting any import stubs
+    //      i.e., make the stereotypes param a RichIterable<Stereotype> instead of RichIterable<CoreInstance>
+    //      compiled version should assume it's not getting any import stubs
+    // OR
+    // Create 1 method and get a warning by casting to RichIterable<Stereotype>
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, boolean assumeNoImportStubs, RichIterable<? extends TaggedValue> taggedValues, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         Column<?, ?> columnInstance = (Column<?, ?>) processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.Column);
         columnInstance._name(StringEscape.unescape(removeQuotes(name)));
@@ -83,7 +74,14 @@ public class _Column
         columnInstance.setKeyValues(M3PropertyPaths.classifierGenericType, Lists.mutable.with(columnGenericType));
         if (stereotypes != null && stereotypes.notEmpty())
         {
-            columnInstance._stereotypesCoreInstance(stereotypes);
+            if (assumeNoImportStubs)
+            {
+                columnInstance._stereotypes(ListHelper.wrapListIterable(stereotypes).selectInstancesOf(Stereotype.class));
+            }
+            else
+            {
+                columnInstance._stereotypesCoreInstance(stereotypes);
+            }
         }
         if (taggedValues != null && taggedValues.notEmpty())
         {
