@@ -29,6 +29,7 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m3.serialization.compiler.element.ConcreteElementDeserializer;
+import org.finos.legend.pure.m3.serialization.compiler.element.ElementBuilder;
 import org.finos.legend.pure.m3.serialization.compiler.element.ElementLoader;
 import org.finos.legend.pure.m3.serialization.compiler.element.ElementLoader.BackReferenceFilter;
 import org.finos.legend.pure.m3.serialization.compiler.file.FileDeserializer;
@@ -52,6 +53,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 public abstract class PureCompilerLoader
 {
@@ -59,8 +61,9 @@ public abstract class PureCompilerLoader
 
     final ClassLoader classLoader;
     final FileDeserializer fileDeserializer;
+    private final BiFunction<? super ClassLoader, ? super ModelRepository, ? extends ElementBuilder> elementBuilderFactory;
 
-    private PureCompilerLoader(ClassLoader classLoader)
+    private PureCompilerLoader(ClassLoader classLoader, BiFunction<? super ClassLoader, ? super ModelRepository, ? extends ElementBuilder> elementBuilderFactory)
     {
         this.classLoader = Objects.requireNonNull(classLoader);
         StringIndexer stringIndexer = StringIndexer.builder()
@@ -78,6 +81,7 @@ public abstract class PureCompilerLoader
                 .withFilePathProvider(FilePathProvider.builder().withLoadedExtensions(classLoader).build())
                 .withSerializers(elementDeserializer, moduleMetadataSerializer)
                 .build();
+        this.elementBuilderFactory = (elementBuilderFactory == null) ? M3GeneratedLazyElementBuilder::newElementBuilder : elementBuilderFactory;
     }
 
     /**
@@ -306,7 +310,7 @@ public abstract class PureCompilerLoader
                     .withClassLoader(this.classLoader)
                     .withAvailableReferenceIdExtensions(this.classLoader)
                     .withFileDeserializer(this.fileDeserializer)
-                    .withElementBuilder(M3GeneratedLazyElementBuilder.newElementBuilder(this.classLoader, repository))
+                    .withElementBuilder(this.elementBuilderFactory.apply(this.classLoader, repository))
                     .withBackReferenceFilter(backReferenceFilter)
                     .build();
             long loaderEnd = System.nanoTime();
@@ -410,21 +414,31 @@ public abstract class PureCompilerLoader
 
     abstract ModuleFunctionNameMetadata loadModuleFunctionsByName(String repository);
 
+    public static PureCompilerLoader newLoader(ClassLoader classLoader, BiFunction<? super ClassLoader, ? super ModelRepository, ? extends ElementBuilder> elementBuilderFactory)
+    {
+        return new ClassLoaderPureCompilerLoader(classLoader, elementBuilderFactory);
+    }
+
     public static PureCompilerLoader newLoader(ClassLoader classLoader)
     {
-        return new ClassLoaderPureCompilerLoader(classLoader);
+        return newLoader(classLoader, (BiFunction<? super ClassLoader, ? super ModelRepository, ? extends ElementBuilder>) null);
+    }
+
+    public static PureCompilerLoader newLoader(ClassLoader classLoader, Path directory, BiFunction<? super ClassLoader, ? super ModelRepository, ? extends ElementBuilder> elementBuilderFactory)
+    {
+        return new DirectoryPureCompilerLoader(classLoader, directory, elementBuilderFactory);
     }
 
     public static PureCompilerLoader newLoader(ClassLoader classLoader, Path directory)
     {
-        return new DirectoryPureCompilerLoader(classLoader, directory);
+        return newLoader(classLoader, directory, null);
     }
 
     private static class ClassLoaderPureCompilerLoader extends PureCompilerLoader
     {
-        private ClassLoaderPureCompilerLoader(ClassLoader classLoader)
+        private ClassLoaderPureCompilerLoader(ClassLoader classLoader, BiFunction<? super ClassLoader, ? super ModelRepository, ? extends ElementBuilder> elementBuilderFactory)
         {
-            super(classLoader);
+            super(classLoader, elementBuilderFactory);
         }
 
         @Override
@@ -456,9 +470,9 @@ public abstract class PureCompilerLoader
     {
         private final Path directory;
 
-        private DirectoryPureCompilerLoader(ClassLoader classLoader, Path directory)
+        private DirectoryPureCompilerLoader(ClassLoader classLoader, Path directory, BiFunction<? super ClassLoader, ? super ModelRepository, ? extends ElementBuilder> elementBuilderFactory)
         {
-            super(classLoader);
+            super(classLoader, elementBuilderFactory);
             this.directory = Objects.requireNonNull(directory);
         }
 
