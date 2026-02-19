@@ -313,6 +313,9 @@ public class RelationalParser implements IRelationalParser
                                         false,
                                         convertType(c.getValueForMetaPropertyToOne("type"), repository, processorSupport),
                                         (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(((Column) c)._nullable() ? 0 : 1, 1, processorSupport),
+                                        null,
+                                        false,
+                                        null,
                                         sourceInformation,
                                         processorSupport
                                 ),

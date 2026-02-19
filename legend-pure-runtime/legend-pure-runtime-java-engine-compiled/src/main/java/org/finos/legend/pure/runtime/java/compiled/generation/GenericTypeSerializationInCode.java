@@ -97,7 +97,7 @@ public class GenericTypeSerializationInCode
 
     public static String generateColumnBuilder(Column<?, ?> column, ProcessorContext processorContext)
     {
-        return "org.finos.legend.pure.m3.navigation.relation._Column.getColumnInstance(\"" + column._name() + "\", " + column._nameWildCard() + ", " + generateGenericTypeBuilder(_Column.getColumnType(column), processorContext) + ", " + generateMultiplicityBuilder(_Column.getColumnMultiplicity(column)) + ", " + generateStereotypesBuilder(column) + ", " + generateTaggedValuesBuilder(column) + ", null, ((CompiledExecutionSupport)es).getProcessorSupport())";
+        return "org.finos.legend.pure.m3.navigation.relation._Column.getColumnInstance(\"" + column._name() + "\", " + column._nameWildCard() + ", " + generateGenericTypeBuilder(_Column.getColumnType(column), processorContext) + ", " + generateMultiplicityBuilder(_Column.getColumnMultiplicity(column)) + ", " + generateStereotypesBuilder(column) + ", true, " + generateTaggedValuesBuilder(column) + ", null, ((CompiledExecutionSupport)es).getProcessorSupport())";
     }
 
     public static String generateMultiplicityBuilder(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity multiplicity)
