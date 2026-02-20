@@ -487,4 +487,34 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
                         "   true;\n" +
                         "}");
     }
+
+    @Test
+    public void testSimpleColumnWithStereotype()
+    {
+        compileTestSource("fromString.pure",
+                "function test():meta::pure::metamodel::relation::ColSpec<(name:String)>[1]\n" +
+                        "{\n" +
+                        "   ~<<meta::pure::profiles::doc.deprecated>> name:String[1];\n" +
+                        "}");
+    }
+
+    @Test
+    public void testSimpleColumnWithTaggedValue()
+    {
+        compileTestSource("fromString.pure",
+                "function test():meta::pure::metamodel::relation::ColSpec<(name:String)>[1]\n" +
+                        "{\n" +
+                        "   ~{meta::pure::profiles::doc.doc='test tagged value'} name:String[1];\n" +
+                        "}");
+    }
+
+    @Test
+    public void testSimpleColumnWithStereotypeAndTaggedValue()
+    {
+        compileTestSource("fromString.pure",
+                "function test():meta::pure::metamodel::relation::ColSpec<(name:String)>[1]\n" +
+                        "{\n" +
+                        "   ~<<meta::pure::profiles::doc.deprecated>> {meta::pure::profiles::doc.doc='test tagged value'} name:String[1];\n" +
+                        "}");
+    }
 }
