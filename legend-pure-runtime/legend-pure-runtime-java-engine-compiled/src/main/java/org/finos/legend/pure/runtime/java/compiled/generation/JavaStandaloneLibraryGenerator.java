@@ -23,6 +23,14 @@ import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.utility.Iterate;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.serialization.compiler.PureCompilerSerializer;
+import org.finos.legend.pure.m3.serialization.compiler.element.ConcreteElementSerializer;
+import org.finos.legend.pure.m3.serialization.compiler.file.FilePathProvider;
+import org.finos.legend.pure.m3.serialization.compiler.file.FileSerializer;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataGenerator;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializer;
+import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProviders;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
@@ -53,15 +61,17 @@ public class JavaStandaloneLibraryGenerator
     private final Iterable<? extends CompiledExtension> extensions;
     private final boolean addExternalAPI;
     private final String externalAPIPackage;
+    private final boolean useLegacyMetadataForExternalAPI;
     private final Log log;
     private final boolean generatePureTests;
 
-    private JavaStandaloneLibraryGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, boolean generatePureTests, Log log)
+    private JavaStandaloneLibraryGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, boolean useLegacyMetadataForExternalAPI, boolean generatePureTests, Log log)
     {
         this.runtime = runtime;
         this.extensions = extensions;
         this.addExternalAPI = addExternalAPI;
         this.externalAPIPackage = externalAPIPackage;
+        this.useLegacyMetadataForExternalAPI = useLegacyMetadataForExternalAPI;
         this.log = log;
         this.generatePureTests = generatePureTests;
     }
@@ -141,6 +151,52 @@ public class JavaStandaloneLibraryGenerator
     {
         PureJavaCompiler compiler = compile();
         compiler.writeClassJavaSourcesToJar(jarOutputStream);
+    }
+
+    public void serializeAndWriteMetadata(Path directory)
+    {
+        buildMetadataSerializer().serializeAll(directory);
+    }
+
+    public void serializeAndWriteMetadata(Path directory, String... repositories)
+    {
+        buildMetadataSerializer().serializeModules(directory, repositories);
+    }
+
+    public void serializeAndWriteMetadata(Path directory, Iterable<? extends String> repositories)
+    {
+        buildMetadataSerializer().serializeModules(directory, repositories);
+    }
+
+    public void serializeAndWriteMetadata(JarOutputStream jarOutputStream)
+    {
+        buildMetadataSerializer().serializeAll(jarOutputStream);
+    }
+
+    public void serializeAndWriteMetadata(JarOutputStream jarOutputStream, String... repositories)
+    {
+        buildMetadataSerializer().serializeModules(jarOutputStream, repositories);
+    }
+
+    public void serializeAndWriteMetadata(JarOutputStream jarOutputStream, Iterable<? extends String> repositories)
+    {
+        buildMetadataSerializer().serializeModules(jarOutputStream, repositories);
+    }
+
+    private PureCompilerSerializer buildMetadataSerializer()
+    {
+        ProcessorSupport processorSupport = this.runtime.getProcessorSupport();
+        ReferenceIdProviders referenceIds = ReferenceIdProviders.builder().withProcessorSupport(processorSupport).withAvailableExtensions().build();
+        FileSerializer fileSerializer = FileSerializer.builder()
+                .withFilePathProvider(FilePathProvider.builder().withLoadedExtensions().build())
+                .withConcreteElementSerializer(ConcreteElementSerializer.builder(processorSupport).withLoadedExtensions().withReferenceIdProviders(referenceIds).build())
+                .withModuleMetadataSerializer(ModuleMetadataSerializer.builder().withLoadedExtensions().build())
+                .build();
+        return PureCompilerSerializer.builder()
+                .withFileSerializer(fileSerializer)
+                .withModuleMetadataGenerator(ModuleMetadataGenerator.fromProcessorSupport(processorSupport))
+                .withProcessorSupport(processorSupport)
+                .build();
     }
 
     public void serializeAndWriteDistributedMetadata(Path directory) throws IOException
@@ -256,7 +312,7 @@ public class JavaStandaloneLibraryGenerator
     private JavaSourceCodeGenerator getSourceCodeGenerator(String compileGroup, boolean writeJavaSourcesToDisk, Path pathToWriteTo)
     {
         IdBuilder idBuilder = DistributedBinaryGraphSerializer.newIdBuilder(compileGroup, this.runtime.getProcessorSupport());
-        JavaSourceCodeGenerator javaSourceCodeGenerator = new JavaSourceCodeGenerator(this.runtime.getProcessorSupport(), idBuilder, this.runtime.getCodeStorage(), writeJavaSourcesToDisk, pathToWriteTo, false, this.extensions, "UserCode", this.externalAPIPackage, false);
+        JavaSourceCodeGenerator javaSourceCodeGenerator = new JavaSourceCodeGenerator(this.runtime.getProcessorSupport(), idBuilder, this.runtime.getCodeStorage(), writeJavaSourcesToDisk, pathToWriteTo, false, this.extensions, "UserCode", this.externalAPIPackage, false, this.useLegacyMetadataForExternalAPI);
         javaSourceCodeGenerator.collectClassesToSerialize();
         return javaSourceCodeGenerator;
     }
@@ -314,14 +370,19 @@ public class JavaStandaloneLibraryGenerator
         return sourcesByRepo;
     }
 
-    public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, Log log)
+    public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, boolean useLegacyMetadataForExternalAPI, boolean generatePureTests, Log log)
     {
-        return new JavaStandaloneLibraryGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, true, log);
+        return new JavaStandaloneLibraryGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, useLegacyMetadataForExternalAPI, generatePureTests, log);
     }
 
     public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, boolean generatePureTests, Log log)
     {
-        return new JavaStandaloneLibraryGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, generatePureTests, log);
+        return newGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, true, generatePureTests, log);
+    }
+
+    public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, Log log)
+    {
+        return newGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, true, log);
     }
 
     public static PureJavaCompiler compileOnly(MapIterable<? extends String, ? extends Iterable<? extends StringJavaSource>> javaSources, ListIterable<? extends StringJavaSource> externalizableSources, boolean addExternalAPI, Log log) throws PureJavaCompileException

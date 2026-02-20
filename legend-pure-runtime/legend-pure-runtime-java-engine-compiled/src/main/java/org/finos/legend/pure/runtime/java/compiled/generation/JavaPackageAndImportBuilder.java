@@ -30,6 +30,7 @@ import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassImplProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassLazyImplProcessor;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassPeltImplProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassProcessor;
 
 import java.util.function.Predicate;
@@ -120,6 +121,7 @@ public class JavaPackageAndImportBuilder
         return buildImplClassNameFromUserPath(new StringBuilder(elementPath.length()), elementPath).toString();
     }
 
+
     public static String buildLazyImplClassReferenceFromUserPath(String elementPath)
     {
         return buildLazyImplClassReferenceFromUserPath(new StringBuilder(elementPath.length() + CODE_GEN_PACKAGE_NAME.length()), elementPath).toString();
@@ -130,27 +132,134 @@ public class JavaPackageAndImportBuilder
         return buildLazyImplClassNameFromUserPath(new StringBuilder(elementPath.length()), elementPath).toString();
     }
 
-    public static <T extends Appendable> T  buildLazyImplClassReferenceFromUserPath(T appendable, String elementPath)
+
+    public static String buildLazyConcreteElementClassReferenceFromUserPath(String elementPath)
     {
-        buildLazyImplClassNameFromUserPath(SafeAppendable.wrap(appendable).append(CODE_GEN_PACKAGE_NAME).append('.'), elementPath);
-        return appendable;
+        return buildLazyConcreteElementClassReferenceFromUserPath(new StringBuilder(elementPath.length() + CODE_GEN_PACKAGE_NAME.length()), elementPath).toString();
     }
 
+    public static String buildLazyConcreteElementClassNameFromUserPath(String elementPath)
+    {
+        return buildLazyConcreteElementClassNameFromUserPath(new StringBuilder(elementPath.length() + CODE_GEN_PACKAGE_NAME.length()), elementPath).toString();
+    }
+
+    public static String buildLazyConcreteElementCompClassReferenceFromUserPath(String elementPath)
+    {
+        return buildLazyConcreteElementCompClassReferenceFromUserPath(new StringBuilder(elementPath.length() + CODE_GEN_PACKAGE_NAME.length()), elementPath).toString();
+    }
+
+    public static String buildLazyConcreteElementCompClassNameFromUserPath(String elementPath)
+    {
+        return buildLazyConcreteElementCompClassNameFromUserPath(new StringBuilder(elementPath.length() + CODE_GEN_PACKAGE_NAME.length()), elementPath).toString();
+    }
+
+    public static String buildLazyComponentInstanceClassReferenceFromUserPath(String elementPath)
+    {
+        return buildLazyComponentInstanceClassReferenceFromUserPath(new StringBuilder(elementPath.length() + CODE_GEN_PACKAGE_NAME.length()), elementPath).toString();
+    }
+
+    public static String buildLazyComponentInstanceClassNameFromUserPath(String elementPath)
+    {
+        return buildLazyComponentInstanceClassNameFromUserPath(new StringBuilder(elementPath.length() + CODE_GEN_PACKAGE_NAME.length()), elementPath).toString();
+    }
+
+    public static String buildLazyComponentInstanceCompClassReferenceFromUserPath(String elementPath)
+    {
+        return buildLazyComponentInstanceCompClassReferenceFromUserPath(new StringBuilder(elementPath.length() + CODE_GEN_PACKAGE_NAME.length()), elementPath).toString();
+    }
+
+    public static String buildLazyComponentInstanceCompClassNameFromUserPath(String elementPath)
+    {
+        return buildLazyComponentInstanceCompClassNameFromUserPath(new StringBuilder(elementPath.length() + CODE_GEN_PACKAGE_NAME.length()), elementPath).toString();
+    }
+
+    public static String buildLazyVirtualPackageClassReference()
+    {
+        return buildLazyVirtualPackageClassReference(new StringBuilder(CODE_GEN_PACKAGE_NAME.length() + M3Paths.Package.length() + ClassPeltImplProcessor.CLASS_VIRTUAL_PACKAGE_SUFFIX.length())).toString();
+    }
+
+    public static String buildLazyVirtualPackageClassName()
+    {
+        return buildLazyVirtualPackageClassName(new StringBuilder(M3Paths.Package.length() + ClassPeltImplProcessor.CLASS_VIRTUAL_PACKAGE_SUFFIX.length())).toString();
+    }
+
+    public static <T extends Appendable> T buildLazyImplClassReferenceFromUserPath(T appendable, String elementPath)
+    {
+        buildLazyImplClassNameFromUserPath(appendCodeGenPackage(appendable), elementPath);
+        return appendable;
+    }
 
     public static <T extends Appendable> T buildLazyImplClassNameFromUserPath(T appendable, String elementPath)
     {
         return buildImplClassNameFromUserPath(appendable, elementPath, ClassLazyImplProcessor.CLASS_LAZYIMPL_SUFFIX);
     }
 
+
     public static <T extends Appendable> T buildImplClassReferenceFromUserPath(T appendable, String elementPath)
     {
-        buildImplClassNameFromUserPath(SafeAppendable.wrap(appendable).append(CODE_GEN_PACKAGE_NAME).append('.'), elementPath);
+        buildImplClassNameFromUserPath(appendCodeGenPackage(appendable), elementPath);
         return appendable;
     }
 
     public static <T extends Appendable> T buildImplClassNameFromUserPath(T appendable, String elementPath)
     {
         return buildImplClassNameFromUserPath(appendable, elementPath, ClassImplProcessor.CLASS_IMPL_SUFFIX);
+    }
+
+
+    public static <T extends Appendable> T buildLazyConcreteElementClassReferenceFromUserPath(T appendable, String elementPath)
+    {
+        buildLazyConcreteElementClassNameFromUserPath(appendCodeGenPackage(appendable), elementPath);
+        return appendable;
+    }
+
+    public static <T extends Appendable> T buildLazyConcreteElementClassNameFromUserPath(T appendable, String elementPath)
+    {
+        return buildImplClassNameFromUserPath(appendable, elementPath, ClassPeltImplProcessor.CLASS_LAZY_CONCRETE_SUFFIX);
+    }
+
+    public static <T extends Appendable> T buildLazyConcreteElementCompClassReferenceFromUserPath(T appendable, String elementPath)
+    {
+        buildLazyConcreteElementCompClassNameFromUserPath(appendCodeGenPackage(appendable), elementPath);
+        return appendable;
+    }
+
+    public static <T extends Appendable> T buildLazyConcreteElementCompClassNameFromUserPath(T appendable, String elementPath)
+    {
+        return buildImplClassNameFromUserPath(appendable, elementPath, ClassPeltImplProcessor.CLASS_LAZY_CONCRETE_COMP_SUFFIX);
+    }
+
+    public static <T extends Appendable> T buildLazyComponentInstanceClassReferenceFromUserPath(T appendable, String elementPath)
+    {
+        buildLazyComponentInstanceClassNameFromUserPath(appendCodeGenPackage(appendable), elementPath);
+        return appendable;
+    }
+
+    public static <T extends Appendable> T buildLazyComponentInstanceClassNameFromUserPath(T appendable, String elementPath)
+    {
+        return buildImplClassNameFromUserPath(appendable, elementPath, ClassPeltImplProcessor.CLASS_LAZY_COMPONENT_SUFFIX);
+    }
+
+    public static <T extends Appendable> T buildLazyComponentInstanceCompClassReferenceFromUserPath(T appendable, String elementPath)
+    {
+        buildLazyComponentInstanceCompClassNameFromUserPath(appendCodeGenPackage(appendable), elementPath);
+        return appendable;
+    }
+
+    public static <T extends Appendable> T buildLazyComponentInstanceCompClassNameFromUserPath(T appendable, String elementPath)
+    {
+        return buildImplClassNameFromUserPath(appendable, elementPath, ClassPeltImplProcessor.CLASS_LAZY_COMPONENT_COMP_SUFFIX);
+    }
+
+    public static <T extends Appendable> T buildLazyVirtualPackageClassReference(T appendable)
+    {
+        buildLazyVirtualPackageClassName(appendCodeGenPackage(appendable));
+        return appendable;
+    }
+
+    public static <T extends Appendable> T buildLazyVirtualPackageClassName(T appendable)
+    {
+        return buildImplClassNameFromUserPath(appendable, M3Paths.Package, ClassPeltImplProcessor.CLASS_VIRTUAL_PACKAGE_SUFFIX);
     }
 
     // Java classes from Pure types
@@ -185,10 +294,50 @@ public class JavaPackageAndImportBuilder
         return buildImplClassNameFromType(new StringBuilder(suffix.length() + 64), element, suffix, processorSupport).toString();
     }
 
+    public static String buildLazyConcreteElementClassReferenceFromType(CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return buildLazyConcreteElementClassReferenceFromType(new StringBuilder(64), type, processorSupport).toString();
+    }
+
+    public static String buildLazyConcreteElementCompClassReferenceFromType(CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return buildLazyConcreteElementCompClassReferenceFromType(new StringBuilder(64), type, processorSupport).toString();
+    }
+
+    public static String buildLazyConcreteElementClassNameFromType(CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return buildLazyConcreteElementClassNameFromType(new StringBuilder(64), type, processorSupport).toString();
+    }
+
+    public static String buildLazyConcreteElementCompClassNameFromType(CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return buildLazyConcreteElementCompClassNameFromType(new StringBuilder(64), type, processorSupport).toString();
+    }
+
+    public static String buildLazyComponentInstanceClassReferenceFromType(CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return buildLazyComponentInstanceClassReferenceFromType(new StringBuilder(64), type, processorSupport).toString();
+    }
+
+    public static String buildLazyComponentInstanceCompClassReferenceFromType(CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return buildLazyComponentInstanceCompClassReferenceFromType(new StringBuilder(64), type, processorSupport).toString();
+    }
+
+    public static String buildLazyComponentInstanceClassNameFromType(CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return buildLazyComponentInstanceClassNameFromType(new StringBuilder(64), type, processorSupport).toString();
+    }
+
+    public static String buildLazyComponentInstanceCompClassNameFromType(CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return buildLazyComponentInstanceCompClassNameFromType(new StringBuilder(64), type, processorSupport).toString();
+    }
+
 
     public static <T extends Appendable> T buildImplClassReferenceFromType(T appendable, CoreInstance element, ProcessorSupport processorSupport)
     {
-        buildImplClassNameFromType(SafeAppendable.wrap(appendable).append(CODE_GEN_PACKAGE_NAME).append('.'), element, processorSupport);
+        buildImplClassNameFromType(appendCodeGenPackage(appendable), element, processorSupport);
         return appendable;
     }
 
@@ -199,7 +348,7 @@ public class JavaPackageAndImportBuilder
 
     public static <T extends Appendable> T buildLazyImplClassReferenceFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)
     {
-        buildLazyImplClassNameFromType(SafeAppendable.wrap(appendable).append(CODE_GEN_PACKAGE_NAME).append('.'), type, processorSupport);
+        buildLazyImplClassNameFromType(appendCodeGenPackage(appendable), type, processorSupport);
         return appendable;
     }
 
@@ -208,6 +357,50 @@ public class JavaPackageAndImportBuilder
         return buildImplClassNameFromType(appendable, type, ClassLazyImplProcessor.CLASS_LAZYIMPL_SUFFIX, processorSupport);
     }
 
+
+    public static <T extends Appendable> T buildLazyConcreteElementClassReferenceFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)
+    {
+        buildLazyConcreteElementClassNameFromType(appendCodeGenPackage(appendable), type, processorSupport);
+        return appendable;
+    }
+
+    public static <T extends Appendable> T buildLazyConcreteElementCompClassReferenceFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)
+    {
+        buildLazyConcreteElementCompClassNameFromType(appendCodeGenPackage(appendable), type, processorSupport);
+        return appendable;
+    }
+
+    public static <T extends Appendable> T buildLazyConcreteElementClassNameFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return buildImplClassNameFromType(appendable, type, ClassPeltImplProcessor.CLASS_LAZY_CONCRETE_SUFFIX, processorSupport);
+    }
+
+    public static <T extends Appendable> T buildLazyConcreteElementCompClassNameFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return buildImplClassNameFromType(appendable, type, ClassPeltImplProcessor.CLASS_LAZY_CONCRETE_COMP_SUFFIX, processorSupport);
+    }
+
+    public static <T extends Appendable> T buildLazyComponentInstanceClassReferenceFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)
+    {
+        buildLazyComponentInstanceClassNameFromType(appendCodeGenPackage(appendable), type, processorSupport);
+        return appendable;
+    }
+
+    public static <T extends Appendable> T buildLazyComponentInstanceCompClassReferenceFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)
+    {
+        buildLazyComponentInstanceCompClassNameFromType(appendCodeGenPackage(appendable), type, processorSupport);
+        return appendable;
+    }
+
+    public static <T extends Appendable> T buildLazyComponentInstanceClassNameFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return buildImplClassNameFromType(appendable, type, ClassPeltImplProcessor.CLASS_LAZY_COMPONENT_SUFFIX, processorSupport);
+    }
+
+    public static <T extends Appendable> T buildLazyComponentInstanceCompClassNameFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return buildImplClassNameFromType(appendable, type, ClassPeltImplProcessor.CLASS_LAZY_COMPONENT_COMP_SUFFIX, processorSupport);
+    }
 
     // JAVA INTERFACES
 
@@ -250,7 +443,7 @@ public class JavaPackageAndImportBuilder
             return M3ToJavaGenerator.appendFullyQualifiedM3InterfaceForCompiledModel(appendable, elementPath);
         }
 
-        buildInterfaceNameFromUserPath(SafeAppendable.wrap(appendable).append(CODE_GEN_PACKAGE_NAME).append('.'), elementPath);
+        buildInterfaceNameFromUserPath(appendCodeGenPackage(appendable), elementPath);
         return appendable;
     }
 
@@ -279,7 +472,7 @@ public class JavaPackageAndImportBuilder
             return M3ToJavaGenerator.appendFullyQualifiedM3InterfaceForCompiledModel(appendable, type);
         }
 
-        buildInterfaceNameFromType(SafeAppendable.wrap(appendable).append(CODE_GEN_PACKAGE_NAME).append('.'), type, processorSupport);
+        buildInterfaceNameFromType(appendCodeGenPackage(appendable), type, processorSupport);
         return appendable;
     }
 
@@ -290,6 +483,11 @@ public class JavaPackageAndImportBuilder
     }
 
     // HELPERS
+
+    private static SafeAppendable appendCodeGenPackage(Appendable appendable)
+    {
+        return SafeAppendable.wrap(appendable).append(CODE_GEN_PACKAGE_NAME).append('.');
+    }
 
     private static <T extends Appendable> T  buildImplClassNameFromUserPath(T appendable, String elementPath, String suffix)
     {

@@ -54,7 +54,15 @@ public class ClassProcessor
 
             boolean useJavaInheritance = _class.getValueForMetaPropertyToMany(M3Properties.generalizations).size() == 1;
 
-            if (!isPlatformClass(_class))
+            if (isPlatformClass(_class))
+            {
+                ClassPeltImplProcessor.buildImplementation(_package, classGenericType, processorContext, processorSupport, processorContext::addJavaSource);
+                if (_Class.getQualifiedProperties(_class, processorSupport).notEmpty() || _Class.getEqualityKeyProperties(_class, processorSupport).notEmpty())
+                {
+                    ClassPeltImplProcessor.buildCompImplementation(_package, classGenericType, processorContext, processorSupport, processorContext::addJavaSource);
+                }
+            }
+            else
             {
                 processorContext.addJavaSource(ClassInterfaceProcessor.buildInterface(_package, imports, classGenericType, processorContext, processorSupport, useJavaInheritance));
             }

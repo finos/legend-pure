@@ -19,6 +19,7 @@ import org.finos.legend.pure.m3.serialization.compiler.element.InstanceData;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolver;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceMutableState;
+import org.finos.legend.pure.m4.coreinstance.CoreInstanceStandardPrinter;
 import org.finos.legend.pure.m4.coreinstance.CoreInstanceWithStandardPrinting;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
@@ -32,6 +33,24 @@ public abstract class AbstractM3GeneratedLazyComponentInstance extends AbstractL
     protected AbstractM3GeneratedLazyComponentInstance(AbstractM3GeneratedLazyComponentInstance source)
     {
         super(source);
+    }
+
+    @Override
+    public void printFull(Appendable appendable, String tab)
+    {
+        CoreInstanceStandardPrinter.printFull(appendable, this, tab);
+    }
+
+    @Override
+    public void print(Appendable appendable, String tab, int max)
+    {
+        CoreInstanceStandardPrinter.print(appendable, this, tab, max);
+    }
+
+    @Override
+    public void printWithoutDebug(Appendable appendable, String tab, int max)
+    {
+        CoreInstanceStandardPrinter.printWithoutDebug(appendable, this, tab, max);
     }
 
     protected <_T> _T mandatory(_T value, String propertyName)
