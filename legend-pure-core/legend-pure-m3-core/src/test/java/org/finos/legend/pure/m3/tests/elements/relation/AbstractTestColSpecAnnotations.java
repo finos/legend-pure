@@ -40,12 +40,11 @@ public class AbstractTestColSpecAnnotations extends AbstractPureTestWithCoreComp
                         "{\n" +
                         "   let colSpec = getColSpec();\n" +
                         "   let columns = $colSpec->genericType().typeArguments->at(0).rawType->cast(@meta::pure::metamodel::relation::RelationType<(firstName:String)>).columns;\n" +
-                        "   print($columns->at(0).stereotypes);\n" +
-//                        "   assertEquals(1, $columns->size());\n" +
-//                        "   assertEquals(1, $columns->at(0).stereotypes->size());\n" +
-//                        "   assertEquals('test', $columns->at(0).stereotypes->at(0).profile.package.name);\n" +
-//                        "   assertEquals('myProfile', $columns->at(0).stereotypes->at(0).profile.name);\n" +
-//                        "   assertEquals('ignore', $columns->at(0).stereotypes->at(0).value);\n" +
+                        "   assertEquals(1, $columns->size());\n" +
+                        "   assertEquals(1, $columns->at(0).stereotypes->size());\n" +
+                        "   assertEquals('test', $columns->at(0).stereotypes->at(0).profile.package.name);\n" +
+                        "   assertEquals('myProfile', $columns->at(0).stereotypes->at(0).profile.name);\n" +
+                        "   assertEquals('ignore', $columns->at(0).stereotypes->at(0).value);\n" +
                         "}\n" +
                         "function getColSpec():meta::pure::metamodel::relation::ColSpec<(firstName:String)>[1]\n" +
                         "{\n" +
@@ -53,98 +52,97 @@ public class AbstractTestColSpecAnnotations extends AbstractPureTestWithCoreComp
                         "}\n"
         );
         execute("go():Any[*]");
-        System.out.println(this.functionExecution.getConsole().getLine(0));
     }
 
-//    @Test
-//    public void testSimpleColumnWithTaggedValue()
-//    {
-//        compileTestSource("testSource.pure",
-//                "Profile test::myProfile\n" +
-//                        "{\n" +
-//                        "   stereotypes: [ignore];\n" +
-//                        "   tags: [myTag];\n" +
-//                        "}\n" +
-//                        "function go():Any[*]\n" +
-//                        "{\n" +
-//                        "   let colSpec = getColSpec();\n" +
-//                        "   let columns = $colSpec->genericType().typeArguments->at(0).rawType->cast(@meta::pure::metamodel::relation::RelationType<(firstName:String)>).columns;\n" +
-//                        "   assertEquals(1, $columns->size());\n" +
-//                        "   assertEquals(1, $columns->at(0).taggedValues->size());\n" +
-//                        "   assertEquals('test', $columns->at(0).taggedValues->at(0).tag.profile.package.name);\n" +
-//                        "   assertEquals('myProfile', $columns->at(0).taggedValues->at(0).tag.profile.name);\n" +
-//                        "   assertEquals('myTag', $columns->at(0).taggedValues->at(0).tag.value);\n" +
-//                        "   assertEquals('test tag value', $columns->at(0).taggedValues->at(0).value);\n" +
-//                        "}\n" +
-//                        "function getColSpec():meta::pure::metamodel::relation::ColSpec<(firstName:String)>[1]\n" +
-//                        "{\n" +
-//                        "   ~{test::myProfile.myTag = 'test tag value'} firstName:String[1];\n" +
-//                        "}\n"
-//        );
-//        execute("go():Any[*]");
-//    }
-//
-//    @Test
-//    public void testColSpecArrayWithStereotype()
-//    {
-//        compileTestSource("testSource.pure",
-//                "Profile test::myProfile\n" +
-//                        "{\n" +
-//                        "   stereotypes: [ignore, ignore2];\n" +
-//                        "   tags: [myTag, myTag2];\n" +
-//                        "}\n" +
-//                        "function go():Any[*]\n" +
-//                        "{\n" +
-//                        "   let colSpecArray = getColSpecArray();\n" +
-//                        "   let columns = $colSpecArray->genericType().typeArguments->at(0).rawType->cast(@meta::pure::metamodel::relation::RelationType<(firstName:String, lastName:String)>).columns;\n" +
-//                        "   assertEquals(2, $columns->size());\n" +
-//                        "   assertEquals(1, $columns->at(0).stereotypes->size());\n" +
-//                        "   assertEquals('test', $columns->at(0).stereotypes->at(0).profile.package.name);\n" +
-//                        "   assertEquals('myProfile', $columns->at(0).stereotypes->at(0).profile.name);\n" +
-//                        "   assertEquals('ignore', $columns->at(0).stereotypes->at(0).value);\n" +
-//                        "   assertEquals(1, $columns->at(1).stereotypes->size());\n" +
-//                        "   assertEquals('test', $columns->at(1).stereotypes->at(0).profile.package.name);\n" +
-//                        "   assertEquals('myProfile', $columns->at(1).stereotypes->at(0).profile.name);\n" +
-//                        "   assertEquals('ignore2', $columns->at(1).stereotypes->at(0).value);\n" +
-//                        "}\n" +
-//                        "function getColSpecArray():meta::pure::metamodel::relation::ColSpecArray<(firstName:String, lastName:String)>[1]\n" +
-//                        "{\n" +
-//                        "   ~[<<test::myProfile.ignore>> firstName:String[1], <<test::myProfile.ignore2>> lastName:String[1]];\n" +
-//                        "}\n"
-//        );
-//        execute("go():Any[*]");
-//    }
-//
-//    @Test
-//    public void testColSpecArrayWithTaggedValue()
-//    {
-//        compileTestSource("testSource.pure",
-//                "Profile test::myProfile\n" +
-//                        "{\n" +
-//                        "   stereotypes: [ignore, ignore2];\n" +
-//                        "   tags: [myTag, myTag2];\n" +
-//                        "}\n" +
-//                        "function go():Any[*]\n" +
-//                        "{\n" +
-//                        "   let colSpecArray = getColSpecArray();\n" +
-//                        "   let columns = $colSpecArray->genericType().typeArguments->at(0).rawType->cast(@meta::pure::metamodel::relation::RelationType<(firstName:String, lastName:String)>).columns;\n" +
-//                        "   assertEquals(2, $columns->size());\n" +
-//                        "   assertEquals(1, $columns->at(0).taggedValues->size());\n" +
-//                        "   assertEquals('test', $columns->at(0).taggedValues->at(0).tag.profile.package.name);\n" +
-//                        "   assertEquals('myProfile', $columns->at(0).taggedValues->at(0).tag.profile.name);\n" +
-//                        "   assertEquals('myTag', $columns->at(0).taggedValues->at(0).tag.value);\n" +
-//                        "   assertEquals('test tag value', $columns->at(0).taggedValues->at(0).value);\n" +
-//                        "   assertEquals(1, $columns->at(1).taggedValues->size());\n" +
-//                        "   assertEquals('test', $columns->at(1).taggedValues->at(0).tag.profile.package.name);\n" +
-//                        "   assertEquals('myProfile', $columns->at(1).taggedValues->at(0).tag.profile.name);\n" +
-//                        "   assertEquals('myTag2', $columns->at(1).taggedValues->at(0).tag.value);\n" +
-//                        "   assertEquals('test tag value 2', $columns->at(1).taggedValues->at(0).value);\n" +
-//                        "}\n" +
-//                        "function getColSpecArray():meta::pure::metamodel::relation::ColSpecArray<(firstName:String, lastName:String)>[1]\n" +
-//                        "{\n" +
-//                        "   ~[{test::myProfile.myTag = 'test tag value'} firstName:String[1], {test::myProfile.myTag2 = 'test tag value 2'} lastName:String[1]];\n" +
-//                        "}\n"
-//        );
-//        execute("go():Any[*]");
-//    }
+    @Test
+    public void testSimpleColumnWithTaggedValue()
+    {
+        compileTestSource("testSource.pure",
+                "Profile test::myProfile\n" +
+                        "{\n" +
+                        "   stereotypes: [ignore];\n" +
+                        "   tags: [myTag];\n" +
+                        "}\n" +
+                        "function go():Any[*]\n" +
+                        "{\n" +
+                        "   let colSpec = getColSpec();\n" +
+                        "   let columns = $colSpec->genericType().typeArguments->at(0).rawType->cast(@meta::pure::metamodel::relation::RelationType<(firstName:String)>).columns;\n" +
+                        "   assertEquals(1, $columns->size());\n" +
+                        "   assertEquals(1, $columns->at(0).taggedValues->size());\n" +
+                        "   assertEquals('test', $columns->at(0).taggedValues->at(0).tag.profile.package.name);\n" +
+                        "   assertEquals('myProfile', $columns->at(0).taggedValues->at(0).tag.profile.name);\n" +
+                        "   assertEquals('myTag', $columns->at(0).taggedValues->at(0).tag.value);\n" +
+                        "   assertEquals('test tag value', $columns->at(0).taggedValues->at(0).value);\n" +
+                        "}\n" +
+                        "function getColSpec():meta::pure::metamodel::relation::ColSpec<(firstName:String)>[1]\n" +
+                        "{\n" +
+                        "   ~{test::myProfile.myTag = 'test tag value'} firstName:String[1];\n" +
+                        "}\n"
+        );
+        execute("go():Any[*]");
+    }
+
+    @Test
+    public void testColSpecArrayWithStereotype()
+    {
+        compileTestSource("testSource.pure",
+                "Profile test::myProfile\n" +
+                        "{\n" +
+                        "   stereotypes: [ignore, ignore2];\n" +
+                        "   tags: [myTag, myTag2];\n" +
+                        "}\n" +
+                        "function go():Any[*]\n" +
+                        "{\n" +
+                        "   let colSpecArray = getColSpecArray();\n" +
+                        "   let columns = $colSpecArray->genericType().typeArguments->at(0).rawType->cast(@meta::pure::metamodel::relation::RelationType<(firstName:String, lastName:String)>).columns;\n" +
+                        "   assertEquals(2, $columns->size());\n" +
+                        "   assertEquals(1, $columns->at(0).stereotypes->size());\n" +
+                        "   assertEquals('test', $columns->at(0).stereotypes->at(0).profile.package.name);\n" +
+                        "   assertEquals('myProfile', $columns->at(0).stereotypes->at(0).profile.name);\n" +
+                        "   assertEquals('ignore', $columns->at(0).stereotypes->at(0).value);\n" +
+                        "   assertEquals(1, $columns->at(1).stereotypes->size());\n" +
+                        "   assertEquals('test', $columns->at(1).stereotypes->at(0).profile.package.name);\n" +
+                        "   assertEquals('myProfile', $columns->at(1).stereotypes->at(0).profile.name);\n" +
+                        "   assertEquals('ignore2', $columns->at(1).stereotypes->at(0).value);\n" +
+                        "}\n" +
+                        "function getColSpecArray():meta::pure::metamodel::relation::ColSpecArray<(firstName:String, lastName:String)>[1]\n" +
+                        "{\n" +
+                        "   ~[<<test::myProfile.ignore>> firstName:String[1], <<test::myProfile.ignore2>> lastName:String[1]];\n" +
+                        "}\n"
+        );
+        execute("go():Any[*]");
+    }
+
+    @Test
+    public void testColSpecArrayWithTaggedValue()
+    {
+        compileTestSource("testSource.pure",
+                "Profile test::myProfile\n" +
+                        "{\n" +
+                        "   stereotypes: [ignore, ignore2];\n" +
+                        "   tags: [myTag, myTag2];\n" +
+                        "}\n" +
+                        "function go():Any[*]\n" +
+                        "{\n" +
+                        "   let colSpecArray = getColSpecArray();\n" +
+                        "   let columns = $colSpecArray->genericType().typeArguments->at(0).rawType->cast(@meta::pure::metamodel::relation::RelationType<(firstName:String, lastName:String)>).columns;\n" +
+                        "   assertEquals(2, $columns->size());\n" +
+                        "   assertEquals(1, $columns->at(0).taggedValues->size());\n" +
+                        "   assertEquals('test', $columns->at(0).taggedValues->at(0).tag.profile.package.name);\n" +
+                        "   assertEquals('myProfile', $columns->at(0).taggedValues->at(0).tag.profile.name);\n" +
+                        "   assertEquals('myTag', $columns->at(0).taggedValues->at(0).tag.value);\n" +
+                        "   assertEquals('test tag value', $columns->at(0).taggedValues->at(0).value);\n" +
+                        "   assertEquals(1, $columns->at(1).taggedValues->size());\n" +
+                        "   assertEquals('test', $columns->at(1).taggedValues->at(0).tag.profile.package.name);\n" +
+                        "   assertEquals('myProfile', $columns->at(1).taggedValues->at(0).tag.profile.name);\n" +
+                        "   assertEquals('myTag2', $columns->at(1).taggedValues->at(0).tag.value);\n" +
+                        "   assertEquals('test tag value 2', $columns->at(1).taggedValues->at(0).value);\n" +
+                        "}\n" +
+                        "function getColSpecArray():meta::pure::metamodel::relation::ColSpecArray<(firstName:String, lastName:String)>[1]\n" +
+                        "{\n" +
+                        "   ~[{test::myProfile.myTag = 'test tag value'} firstName:String[1], {test::myProfile.myTag2 = 'test tag value 2'} lastName:String[1]];\n" +
+                        "}\n"
+        );
+        execute("go():Any[*]");
+    }
 }
