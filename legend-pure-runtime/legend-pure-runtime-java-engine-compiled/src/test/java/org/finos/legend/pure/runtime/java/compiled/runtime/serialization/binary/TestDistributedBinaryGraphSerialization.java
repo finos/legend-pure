@@ -18,6 +18,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.multimap.list.ListMultimap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.tuple.Pair;
@@ -166,11 +167,11 @@ public abstract class TestDistributedBinaryGraphSerialization
             Assert.assertEquals(classifierId, instanceIds.makeString("\n"), deserializer.getClassifierInstanceIds(classifierId).toSortedList().makeString("\n"));
             if (strictForPackages || !M3Paths.Package.equals(classifierId))
             {
-                Assert.assertEquals(classifierId, instances, deserializer.getInstances(classifierId, instanceIds).toSortedListBy(Obj::getIdentifier));
+                assertClassifierObjsEqual(classifierId, instances, deserializer.getInstances(classifierId, instanceIds).toSortedListBy(Obj::getIdentifier));
             }
             else
             {
-                Assert.assertEquals(classifierId, instances.collect(this::normalizeObj), deserializer.getInstances(classifierId, instanceIds).collect(this::normalizeObj, Lists.mutable.empty()).sortThisBy(Obj::getIdentifier));
+                assertClassifierObjsEqual(classifierId, instances.collect(this::normalizeObj), deserializer.getInstances(classifierId, instanceIds).collect(this::normalizeObj, Lists.mutable.empty()).sortThisBy(Obj::getIdentifier));
             }
         }
 
@@ -189,6 +190,56 @@ public abstract class TestDistributedBinaryGraphSerialization
             {
                 Assert.assertEquals(normalizeObj(obj), normalizeObj(deserializer.getInstance(classifierId, identifier)));
             }
+        }
+    }
+
+    private void assertClassifierObjsEqual(String classifierId, MutableList<Obj> expected, MutableList<Obj> actual)
+    {
+        // we assume both expected and actual are sorted by identifier
+        if (!expected.equals(actual))
+        {
+            MutableList<Pair<Obj, Obj>> mismatches = Lists.mutable.empty();
+            MutableList<Obj> missing = Lists.mutable.empty();
+            MutableList<Obj> unexpected = Lists.mutable.empty();
+
+            MutableMap<String, Obj> actualById = actual.groupByUniqueKey(Obj::getIdentifier);
+            expected.forEach(expectedObj ->
+            {
+                Obj actualObj = actualById.remove(expectedObj.getIdentifier());
+                if (actualObj == null)
+                {
+                    missing.add(expectedObj);
+                }
+                else if (!expectedObj.equals(actualObj))
+                {
+                    mismatches.add(Tuples.pair(expectedObj, actualObj));
+                }
+            });
+            if (actualById.notEmpty())
+            {
+                unexpected.addAll(actualById.values());
+                unexpected.sortThisBy(Obj::getIdentifier);
+            }
+
+            StringBuilder builder = new StringBuilder("Objs for classifier ").append(classifierId).append(" do not match expectations\n")
+                    .append("\texpected count: ").append(expected.size()).append("\n")
+                    .append("\tactual count: ").append(actual.size()).append("\n")
+                    .append("\tmismatch count: ").append(mismatches.size()).append("\n")
+                    .append("\tmissing count: ").append(missing.size()).append("\n")
+                    .append("\tunexpected count: ").append(unexpected.size()).append('\n');
+            mismatches.forEach(pair ->
+            {
+                builder.append('\t').append(pair.getOne().getIdentifier()).append(": mismatch\n");
+                pair.getOne().writeObj(builder.append("\t\texpected: "), true).append('\n');
+                pair.getTwo().writeObj(builder.append("\t\tactual:   "), true).append('\n');
+            });
+            missing.forEach(expectedObj -> builder.append('\t').append(expectedObj.getIdentifier()).append(": missing\n"));
+            unexpected.forEach(actualObj ->
+            {
+                builder.append('\t').append(actualObj.getIdentifier()).append(": unexpected\n");
+                actualObj.writeObj(builder.append("\t\tactual:   "), true).append('\n');
+            });
+            Assert.fail(builder.toString());
         }
     }
 
