@@ -286,7 +286,7 @@ public class GenericType
 
         // Set RelationType on Generic
         return ((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) processorSupport.newGenericType(null, operation, true))
-                ._rawType(_RelationType.build(newColumnSet.collect(c -> _Column.getColumnInstance(c._name(), c._nameWildCard(), _Column.getColumnType(c), _Column.getColumnMultiplicity(c), null, false, null, c.getSourceInformation(), processorSupport)), gLeft._rawType().getSourceInformation(), processorSupport));
+                ._rawType(_RelationType.build(newColumnSet.collect(c -> _Column.getColumnInstance(c._name(), c._nameWildCard(), _Column.getColumnType(c), _Column.getColumnMultiplicity(c), c._stereotypesCoreInstance(), false, c._taggedValues(), c.getSourceInformation(), processorSupport)), gLeft._rawType().getSourceInformation(), processorSupport));
     }
 
     @Deprecated
