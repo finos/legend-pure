@@ -14,22 +14,24 @@
 
 package org.finos.legend.pure.maven.javaCompiled;
 
-import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.DependencyResolutionException;
 import org.apache.maven.project.MavenProject;
-import org.eclipse.collections.impl.utility.ListIterate;
+import org.apache.maven.project.ProjectDependenciesResolver;
+import org.eclipse.aether.RepositorySystemSession;
+import org.finos.legend.pure.maven.shared.DependencyResolutionScope;
+import org.finos.legend.pure.maven.shared.ProjectDependencyResolution;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaCodeGeneration;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.Log;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Set;
 
 import static org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaCodeGeneration.durationSinceInSeconds;
@@ -82,10 +84,85 @@ public class PureCompiledJarMojo extends AbstractMojo
     @Parameter(defaultValue = "true")
     private boolean generatePureTests;
 
+    /**
+     * <p>The scope of the dependencies to resolve from the Maven module. Use names from {@link DependencyResolutionScope}.
+     * If not specified, defaults to
+     * <ul>
+     *     <li>{@code test} if the current execution phase is a "test phase"
+     *     (see {@link ProjectDependencyResolution#inTestPhase(MojoExecution)}), or</li>
+     *     <li>{@code compile} otherwise.</li>
+     * </ul></p>
+     *
+     * @see DependencyResolutionScope
+     */
+    @Parameter
+    protected String dependencyScope;
+
+    @Parameter(readonly = true, required = true, defaultValue = "${mojoExecution}")
+    private MojoExecution mojoExecution;
+
+    @Parameter(readonly = true, required = true, defaultValue = "${repositorySystemSession}")
+    private RepositorySystemSession mavenRepoSession;
+
+    @Parameter(readonly = true, required = true, defaultValue = "${project}")
+    private MavenProject mavenProject;
+
+    @Parameter(readonly = true, required = true, defaultValue = "${project.build.outputDirectory}")
+    private File projectOutputDirectory;
+
+    @Parameter(readonly = true, required = true, defaultValue = "${project.build.testOutputDirectory}")
+    private File projectTestOutputDirectory;
+
+    @Component
+    private ProjectDependenciesResolver mavenProjectDependenciesResolver;
+
     @Override
     public void execute() throws MojoExecutionException
     {
-        Log log = new Log()
+        long start = System.nanoTime();
+
+        URL[] dependencyUrls;
+        try
+        {
+            DependencyResolutionScope dependencyResolutionScope = ProjectDependencyResolution.determineDependencyResolutionScope(this.dependencyScope, this.mojoExecution);
+            dependencyUrls = ProjectDependencyResolution.getDependencyURLs(
+                    dependencyResolutionScope,
+                    this.mavenProject,
+                    this.mojoExecution,
+                    this.mavenRepoSession,
+                    this.projectOutputDirectory,
+                    this.projectTestOutputDirectory,
+                    this.mavenProjectDependenciesResolver
+            );
+        }
+        catch (DependencyResolutionException e)
+        {
+            throw new MojoExecutionException("Error setting up classloader with project dependencies", e);
+        }
+
+        Log log = buildLog();
+
+        ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
+        try (URLClassLoader cl = new URLClassLoader(dependencyUrls, savedClassLoader))
+        {
+            Thread.currentThread().setContextClassLoader(cl);
+            JavaCodeGeneration.doIt(this.repositories, this.excludedRepositories, this.extraRepositories, this.generationType, this.skip, this.addExternalAPI, this.externalAPIPackage, this.generateMetadata, this.useSingleDir, this.generateSources, false, this.preventJavaCompilation, this.classesDirectory, this.targetDirectory, this.generatePureTests, log);
+        }
+        catch (Exception e)
+        {
+            log.error(String.format("    Error (%.9fs)", durationSinceInSeconds(start)), e);
+            log.error(String.format("    FAILURE building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
+            throw new MojoExecutionException("Error building Pure compiled mode jar", e);
+        }
+        finally
+        {
+            Thread.currentThread().setContextClassLoader(savedClassLoader);
+        }
+    }
+
+    private Log buildLog()
+    {
+        return new Log()
         {
             @Override
             public void debug(String txt)
@@ -117,44 +194,5 @@ public class PureCompiledJarMojo extends AbstractMojo
                 getLog().warn(s);
             }
         };
-
-        ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
-        long start = System.nanoTime();
-
-        try (URLClassLoader cl = this.buildClassLoader(this.project, savedClassLoader, log))
-        {
-            Thread.currentThread().setContextClassLoader(cl);
-            JavaCodeGeneration.doIt(repositories, excludedRepositories, extraRepositories, generationType, skip, addExternalAPI, externalAPIPackage, generateMetadata, useSingleDir, generateSources, false, preventJavaCompilation, classesDirectory, targetDirectory, generatePureTests, log);
-        }
-        catch (Exception e)
-        {
-            log.error(String.format("    Error (%.9fs)", durationSinceInSeconds(start)), e);
-            log.error(String.format("    FAILURE building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
-            throw new MojoExecutionException("Error building Pure compiled mode jar", e);
-        }
-        finally
-        {
-            Thread.currentThread().setContextClassLoader(savedClassLoader);
-        }
     }
-
-
-    public URLClassLoader buildClassLoader(MavenProject project, ClassLoader parent, Log log) throws DependencyResolutionRequiredException
-    {
-        // Add the project output to the plugin classloader
-        URL[] urlsForClassLoader = ListIterate.collect(project.getCompileClasspathElements(), mavenCompilePath ->
-        {
-            try
-            {
-                return Paths.get(mavenCompilePath).toUri().toURL();
-            }
-            catch (MalformedURLException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }).toArray(new URL[0]);
-        log.debug("    Project classLoader URLs " + Arrays.toString(urlsForClassLoader));
-        return new URLClassLoader(urlsForClassLoader, parent);
-    }
-
 }
