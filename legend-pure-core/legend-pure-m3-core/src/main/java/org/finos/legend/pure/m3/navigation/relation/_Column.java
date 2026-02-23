@@ -64,13 +64,19 @@ public class _Column
         return _Column.getColumnInstance(name, nameWildCard, target, multiplicity, stereotypes, assumeNoImportStubs, taggedValues, src, processorSupport);
     }
 
-    // Parameterize getColumnInstance
-    // One version does exactly what is here
-    // The other version will call ._stereotypes(stereotypes) and it's going to assume that it's not getting any import stubs
-    //      i.e., make the stereotypes param a RichIterable<Stereotype> instead of RichIterable<CoreInstance>
-    //      compiled version should assume it's not getting any import stubs
-    // OR
-    // Create 1 method and get a warning by casting to RichIterable<Stereotype>
+    /**
+     * Create a Column instance with the given parameters. The targetType is expected to be a GenericType with the raw type of Column and one type argument for the column type. The multiplicity is expected to be the multiplicity argument for the column generic type.
+     * @param name the column name, which may be a wildcard (e.g. "?") if nameWildCard is true. If the name is quoted, the quotes will be removed.
+     * @param nameWildCard indicates whether the name is a wildcard. If true, the name will be treated as a wildcard and the column will match any name. If false, the name will be treated as a literal name.
+     * @param targetType the generic type for the column.
+     * @param multiplicity the multiplicity for the column.
+     * @param stereotypes the stereotypes to apply to the column. If assumeNoImportStubs is true, the stereotypes are expected to be actual Stereotype instances. If assumeNoImportStubs is false, the stereotypes are expected to be CoreInstances that may include ImportStubs that need to be resolved.
+     * @param assumeNoImportStubs indicates whether to assume that the stereotypes do not include ImportStubs. If true (used in compiled mode), the stereotypes will be directly cast to Stereotype instances. If false, the stereotypes will be resolved as CoreInstances, which may include resolving ImportStubs.
+     * @param taggedValues the tagged values to apply to the column.
+     * @param sourceInformation the source information for the column instance, used for error reporting and debugging.
+     * @param processorSupport the processor support used for creating the column instance.
+     * @return a Column instance with the specified properties and metadata.
+     */
     public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, boolean assumeNoImportStubs, RichIterable<? extends TaggedValue> taggedValues, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         Column<?, ?> columnInstance = (Column<?, ?>) processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.Column);
