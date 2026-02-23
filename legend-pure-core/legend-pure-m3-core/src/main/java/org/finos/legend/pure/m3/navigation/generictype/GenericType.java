@@ -153,9 +153,9 @@ public class GenericType
                                     c._nameWildCard(),
                                     (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) makeTypeArgumentAsConcreteAsPossible(_Column.getColumnType(c), filteredGenericTypeByTypeParameterNames, sourceMulBinding, processorSupport),
                                     _Column.getColumnMultiplicity(c),
-                                    null,
+                                    c._stereotypesCoreInstance(),
                                     false,
-                                    null,
+                                    c._taggedValues(),
                                     c.getSourceInformation(),
                                     processorSupport
                             ),
@@ -1316,9 +1316,9 @@ public class GenericType
                                     c._nameWildCard(),
                                     (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) copyGenericType(_Column.getColumnType(c), replaceSourceInfo, newSourceInfo, processorSupport, inferred),
                                     _Column.getColumnMultiplicity(c),
-                                    null,
+                                    c._stereotypesCoreInstance(),
                                     false,
-                                    null,
+                                    c._taggedValues(),
                                     replaceSourceInfo ? newSourceInfo : src.getSourceInformation(),
                                     processorSupport
                             ),
