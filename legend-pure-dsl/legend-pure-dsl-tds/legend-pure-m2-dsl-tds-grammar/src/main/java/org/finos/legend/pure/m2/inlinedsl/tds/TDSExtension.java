@@ -155,7 +155,7 @@ public class TDSExtension implements InlineDSL
                                 }
                                 Multiplicity multiplicity = oneColSpec.multiplicity() == null ? null : processMultiplicity(oneColSpec.multiplicity().multiplicityArgument(), processorSupport);
                                 GenericType type = processType(oneColSpec.type(), processorSupport);
-                                return _Column.getColumnInstance(name.trim(), false, type, multiplicity, null, false, null, sourceInfo, processorSupport);
+                                return _Column.getColumnInstance(name.trim(), false, type, multiplicity, sourceInfo, processorSupport);
                             }
                     ), null, processorSupport));
                 }

@@ -35,6 +35,16 @@ import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class _Column
 {
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, SourceInformation src, ProcessorSupport processorSupport)
+    {
+        return getColumnInstance(name, nameWildCard, type, multiplicity, null, false, null, src, processorSupport);
+    }
+
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, Multiplicity multiplicity, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    {
+        return getColumnInstance(name, nameWildCard, targetType, multiplicity, null, false, null, sourceInformation, processorSupport);
+    }
+
     public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, boolean assumeNoImportStubs, RichIterable<? extends TaggedValue> taggedValues, SourceInformation src, ProcessorSupport processorSupport)
     {
         GenericType target = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
