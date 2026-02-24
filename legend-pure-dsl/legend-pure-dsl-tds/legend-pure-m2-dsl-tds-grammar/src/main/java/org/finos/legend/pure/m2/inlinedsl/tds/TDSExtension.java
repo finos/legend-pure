@@ -245,11 +245,11 @@ public class TDSExtension implements InlineDSL
             }
             if (columnType == null || columnType.getValueForMetaPropertyToOne("rawType") == null)
             {
-                return _Column.getColumnInstance(c.getTwo()._name(), false, convertType(c.getOne().dataType()), multiplicity, c.getTwo()._stereotypesCoreInstance(), false, c.getTwo()._taggedValues(), sourceInfo, processorSupport);
+                return _Column.getColumnInstance(c.getTwo()._name(), false, convertType(c.getOne().dataType()), multiplicity, sourceInfo, processorSupport);
             }
             else
             {
-                return _Column.getColumnInstance(c.getTwo()._name(), false, (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(columnType, sourceInfo, processorSupport), multiplicity, c.getTwo()._stereotypesCoreInstance(), false, c.getTwo()._taggedValues(), sourceInfo, processorSupport);
+                return _Column.getColumnInstance(c.getTwo()._name(), false, (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(columnType, sourceInfo, processorSupport), multiplicity, sourceInfo, processorSupport);
             }
         }), sourceInfo, processorSupport);
 
