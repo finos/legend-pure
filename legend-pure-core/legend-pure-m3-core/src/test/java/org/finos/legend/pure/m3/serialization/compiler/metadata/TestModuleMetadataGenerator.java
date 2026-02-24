@@ -21,6 +21,8 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m3.serialization.compiler.ModuleHelper;
 import org.finos.legend.pure.m3.serialization.compiler.reference.AbstractReferenceTest;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.tools.GraphTools;
 import org.junit.After;
 import org.junit.Assert;
@@ -95,7 +97,7 @@ public class TestModuleMetadataGenerator extends AbstractReferenceTest
 
     private ModuleMetadata getModuleMetadata(String moduleName)
     {
-        ModuleMetadata.Builder builder = ModuleMetadata.builder(moduleName).withReferenceIdVersion(this.generator.getReferenceIdVersion());
+        ModuleMetadata.Builder builder = newModuleMetadataBuilder(moduleName);
         ConcreteElementMetadataGenerator elementGenerator = this.generator.getElementMetadataGenerator();
         GraphTools.getTopLevelAndPackagedElements(repository).forEach(e ->
         {
@@ -113,7 +115,7 @@ public class TestModuleMetadataGenerator extends AbstractReferenceTest
     private MutableList<ModuleMetadata> getModuleMetadata(String... moduleNames)
     {
         MutableMap<String, ModuleMetadata.Builder> byModule = Maps.mutable.ofInitialCapacity(moduleNames.length);
-        ArrayIterate.forEach(moduleNames, name -> byModule.put(name, ModuleMetadata.builder(name).withReferenceIdVersion(this.generator.getReferenceIdVersion())));
+        ArrayIterate.forEach(moduleNames, name -> byModule.put(name, newModuleMetadataBuilder(name)));
         GraphTools.getTopLevelAndPackagedElements(repository).forEach(element ->
         {
             ModuleMetadata.Builder builder = byModule.get(ModuleHelper.getElementModule(element));
@@ -146,7 +148,7 @@ public class TestModuleMetadataGenerator extends AbstractReferenceTest
             String module = ModuleHelper.getElementModule(element);
             if ((module != null) && (includeRoot || ModuleHelper.isNonRootModule(module)))
             {
-                ModuleMetadata.Builder builder = byModule.getIfAbsentPut(ModuleHelper.getElementModule(element), () -> ModuleMetadata.builder(module).withReferenceIdVersion(this.generator.getReferenceIdVersion()));
+                ModuleMetadata.Builder builder = byModule.getIfAbsentPutWithKey(ModuleHelper.getElementModule(element), this::newModuleMetadataBuilder);
                 this.generator.getElementMetadataGenerator().computeMetadata(builder, element);
             }
         });
@@ -156,10 +158,21 @@ public class TestModuleMetadataGenerator extends AbstractReferenceTest
             if ((module != null) && (includeRoot || ModuleHelper.isNonRootModule(module)))
             {
                 SourceMetadata metadata = this.generator.getSourceMetadataGenerator().generateSourceMetadata(source);
-                byModule.getIfAbsentPutWithKey(module, ModuleMetadata::builder).addSource(metadata);
+                byModule.getIfAbsentPutWithKey(module, this::newModuleMetadataBuilder).addSource(metadata);
             }
         });
         return byModule.collect(ModuleMetadata.Builder::build, Lists.mutable.ofInitialCapacity(byModule.size()));
+    }
+
+    private ModuleMetadata.Builder newModuleMetadataBuilder(String moduleName)
+    {
+        ModuleMetadata.Builder builder = ModuleMetadata.builder(moduleName).withReferenceIdVersion(this.generator.getReferenceIdVersion());
+        CodeRepository repository = runtime.getCodeStorage().getRepository(moduleName);
+        if (repository instanceof GenericCodeRepository)
+        {
+            builder.withDependencies(((GenericCodeRepository) repository).getDependencies());
+        }
+        return builder;
     }
 
     private static ModuleMetadataGenerator newGenerator()

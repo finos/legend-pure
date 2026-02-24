@@ -126,6 +126,7 @@ public class ModuleExternalReferenceMetadata
         private Builder(ModuleExternalReferenceMetadata metadata)
         {
             this.moduleName = metadata.moduleName;
+            this.referenceIdVersion = metadata.referenceIdVersion;
             this.elementExternalReferences = Lists.mutable.withAll(metadata.elementExternalReferences);
         }
 

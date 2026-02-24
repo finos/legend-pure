@@ -1,1 +1,2 @@
 org.finos.legend.pure.m3.serialization.compiler.metadata.v1.ModuleMetadataSerializerV1
+org.finos.legend.pure.m3.serialization.compiler.metadata.v2.ModuleMetadataSerializerV2

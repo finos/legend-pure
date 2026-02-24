@@ -1,4 +1,4 @@
-// Copyright 2025 Goldman Sachs
+// Copyright 2026 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m3.serialization.compiler.metadata.v1;
+package org.finos.legend.pure.m3.serialization.compiler.metadata.v2;
 
 import org.eclipse.collections.api.list.ImmutableList;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReference;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceConsumer;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ConcreteElementMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementBackReferenceMetadata;
-import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementBackReferenceMetadata.InstanceBackReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementExternalReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.FunctionsByName;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleExternalReferenceMetadata;
@@ -33,7 +32,7 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.Reader;
 import org.finos.legend.pure.m4.serialization.Writer;
 
-public class ModuleMetadataSerializerV1 implements ModuleMetadataSerializerExtension
+public class ModuleMetadataSerializerV2 implements ModuleMetadataSerializerExtension
 {
     private static final int BACK_REF_TYPE_MASK = 0b1110_0000;
     private static final int BACK_REF_APPLICATION = 0b0000_0000;
@@ -55,15 +54,18 @@ public class ModuleMetadataSerializerV1 implements ModuleMetadataSerializerExten
     @Override
     public int version()
     {
-        return 1;
+        return 2;
     }
 
     @Override
     public void serializeManifest(Writer writer, ModuleManifest manifest)
     {
         writer.writeString(manifest.getModuleName());
+        ImmutableList<String> dependencies = manifest.getDependencies();
         ImmutableList<ConcreteElementMetadata> elements = manifest.getElements();
+        writer.writeInt(dependencies.size());
         writer.writeInt(elements.size());
+        dependencies.forEach(writer::writeString);
         elements.forEach(element -> writeElement(writer, element));
     }
 
@@ -71,8 +73,13 @@ public class ModuleMetadataSerializerV1 implements ModuleMetadataSerializerExten
     public ModuleManifest deserializeManifest(Reader reader)
     {
         String moduleName = reader.readString();
+        int dependencyCount = reader.readInt();
         int elementCount = reader.readInt();
-        ModuleManifest.Builder builder = ModuleManifest.builder(0, elementCount).withModuleName(moduleName);
+        ModuleManifest.Builder builder = ModuleManifest.builder(dependencyCount, elementCount).withModuleName(moduleName);
+        for (int i = 0; i < dependencyCount; i++)
+        {
+            builder.addDependency(reader.readString());
+        }
         for (int i = 0; i < elementCount; i++)
         {
             builder.addElement(readElement(reader));
@@ -135,7 +142,7 @@ public class ModuleMetadataSerializerV1 implements ModuleMetadataSerializerExten
         writer.writeString(backReferenceMetadata.getElementPath());
         writer.writeInt(backReferenceMetadata.getReferenceIdVersion());
 
-        ImmutableList<InstanceBackReferenceMetadata> instanceBackRefs = backReferenceMetadata.getInstanceBackReferenceMetadata();
+        ImmutableList<ElementBackReferenceMetadata.InstanceBackReferenceMetadata> instanceBackRefs = backReferenceMetadata.getInstanceBackReferenceMetadata();
         writer.writeInt(instanceBackRefs.size());
         BackReferenceConsumer backRefWriter = new BackReferenceConsumer()
         {

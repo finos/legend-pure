@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 public class ModuleMetadata
 {
@@ -103,8 +104,10 @@ public class ModuleMetadata
     public String toString()
     {
         StringBuilder builder = new StringBuilder("<").append(getClass().getSimpleName())
-                .append(" name='").append(getName()).append("' elements=[");
+                .append(" name='").append(getName()).append("' ");
+        this.manifest.getDependencies().appendString(builder, "dependencies=[", ", ", "] ");
         ImmutableList<ConcreteElementMetadata> elements = this.manifest.getElements();
+        builder.append("elements=[");
         if (elements.notEmpty())
         {
             elements.forEach(e -> e.appendString(builder.append('{')).append("}, "));
@@ -201,6 +204,46 @@ public class ModuleMetadata
             this.manifestBuilder.addElement(element);
         }
 
+        public void addDependency(String dependency)
+        {
+            this.manifestBuilder.addDependency(dependency);
+        }
+
+        public void addDependencies(Iterable<? extends String> dependencies)
+        {
+            this.manifestBuilder.addDependencies(dependencies);
+        }
+
+        public void addDependencies(String... dependencies)
+        {
+            this.manifestBuilder.addDependencies(dependencies);
+        }
+
+        public boolean removeDependency(String toRemove)
+        {
+            return this.manifestBuilder.removeDependency(toRemove);
+        }
+
+        public boolean removeDependencies(Iterable<? extends String> toRemove)
+        {
+            return this.manifestBuilder.removeDependencies(toRemove);
+        }
+
+        public boolean removeDependencies(String... toRemove)
+        {
+            return this.manifestBuilder.removeDependencies(toRemove);
+        }
+
+        public boolean removeDependencies(Predicate<? super String> toRemove)
+        {
+            return this.manifestBuilder.removeDependencies(toRemove);
+        }
+
+        public void clearDependencies()
+        {
+            this.manifestBuilder.clearDependencies();
+        }
+
         public void addElements(Iterable<? extends ConcreteElementMetadata> elements)
         {
             this.manifestBuilder.addElements(elements);
@@ -294,6 +337,54 @@ public class ModuleMetadata
         public Builder withElement(ConcreteElementMetadata element)
         {
             addElement(element);
+            return this;
+        }
+
+        public Builder withDependency(String dependency)
+        {
+            addDependency(dependency);
+            return this;
+        }
+
+        public Builder withDependencies(Iterable<? extends String> dependencies)
+        {
+            addDependencies(dependencies);
+            return this;
+        }
+
+        public Builder withDependencies(String... dependencies)
+        {
+            addDependencies(dependencies);
+            return this;
+        }
+
+        public Builder withoutDependency(String toRemove)
+        {
+            removeDependency(toRemove);
+            return this;
+        }
+
+        public Builder withoutDependencies(Iterable<? extends String> toRemove)
+        {
+            removeDependencies(toRemove);
+            return this;
+        }
+
+        public Builder withoutDependencies(String... toRemove)
+        {
+            removeDependencies(toRemove);
+            return this;
+        }
+
+        public Builder withoutDependencies(Predicate<? super String> toRemove)
+        {
+            removeDependencies(toRemove);
+            return this;
+        }
+
+        public Builder withNoDependencies()
+        {
+            clearDependencies();
             return this;
         }
 

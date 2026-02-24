@@ -33,6 +33,7 @@ import org.finos.legend.pure.m3.serialization.compiler.file.FileDeserializer;
 import org.finos.legend.pure.m3.serialization.compiler.file.FilePathProvider;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ConcreteElementMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.MetadataIndex;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleManifest;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolver;
 import org.finos.legend.pure.m3.serialization.compiler.strings.StringIndexer;
@@ -42,7 +43,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.Objects;
 
 public class MetadataPelt implements Metadata
@@ -250,11 +253,20 @@ public class MetadataPelt implements Metadata
                         .withSerializers(elementDeserializer, moduleMetadataSerializer)
                         .build();
 
-                MetadataIndex metadataIndex = MetadataIndex.builder()
-                        .withModules(this.repositories.asLazy().collect((this.directory == null) ?
-                                                                        r -> fileDeserializer.deserializeModuleManifest(this.classLoader, r) :
-                                                                        r -> fileDeserializer.deserializeModuleManifest(this.directory, r)))
-                        .build();
+                MutableMap<String, ModuleManifest> manifestsByModule = Maps.mutable.empty();
+                Deque<String> modulesToLoad = new ArrayDeque<>(this.repositories);
+                while (!modulesToLoad.isEmpty())
+                {
+                    manifestsByModule.getIfAbsentPutWithKey(modulesToLoad.pollFirst(), m ->
+                    {
+                        ModuleManifest manifest = (this.directory == null) ?
+                                fileDeserializer.deserializeModuleManifest(this.classLoader, m) :
+                                fileDeserializer.deserializeModuleManifest(this.directory, m);
+                        modulesToLoad.addAll(manifest.getDependencies().castToList());
+                        return manifest;
+                    });
+                }
+                MetadataIndex metadataIndex = MetadataIndex.builder().withModules(manifestsByModule.values()).build();
                 ElementLoader.Builder elementLoaderBuilder = ElementLoader.builder()
                         .withMetadataIndex(metadataIndex)
                         .withFileDeserializer(fileDeserializer)
