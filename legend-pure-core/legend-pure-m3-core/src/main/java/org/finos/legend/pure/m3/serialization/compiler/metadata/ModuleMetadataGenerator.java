@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.serialization.compiler.metadata;
 
+import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
@@ -139,24 +140,8 @@ public class ModuleMetadataGenerator
 
     public MutableList<ModuleMetadata> generateAllModuleMetadata(boolean includeRootModule)
     {
-        MutableMap<String, ModuleMetadata.Builder> buildersByModule = Maps.mutable.empty();
-        GraphTools.getTopLevelAndPackagedElements(this.runtime.getProcessorSupport()).forEach(element ->
-        {
-            String moduleName = ModuleHelper.getElementModule(element);
-            if ((moduleName != null) && (includeRootModule || ModuleHelper.isNonRootModule(moduleName)))
-            {
-                this.elementGenerator.computeMetadata(buildersByModule.getIfAbsentPutWithKey(moduleName, this::moduleMetadataBuilder), element);
-            }
-        });
-        this.runtime.getSourceRegistry().getSources().forEach(source ->
-        {
-            String moduleName = ModuleHelper.getSourceModule(source);
-            if ((moduleName != null) && (includeRootModule || ModuleHelper.isNonRootModule(moduleName)))
-            {
-                buildersByModule.getIfAbsentPutWithKey(moduleName, this::moduleMetadataBuilder).addSource(this.sourceGenerator.generateSourceMetadata(source));
-            }
-        });
-        return buildersByModule.collect(ModuleMetadata.Builder::build, Lists.mutable.ofInitialCapacity(buildersByModule.size()));
+        LazyIterable<String> repos = this.runtime.getCodeStorage().getAllRepositories().asLazy().collect(CodeRepository::getName);
+        return generateModuleMetadata(includeRootModule ? repos : repos.select(ModuleHelper::isNonRootModule));
     }
 
     int getReferenceIdVersion()

@@ -14,25 +14,44 @@
 
 package org.finos.legend.pure.m3.serialization.compiler.metadata;
 
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m3.serialization.compiler.ModuleHelper;
 import org.finos.legend.pure.m3.serialization.compiler.reference.AbstractReferenceTest;
+import org.finos.legend.pure.m3.serialization.compiler.reference.BaseReferenceTest;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.tools.GraphTools;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestModuleMetadataGenerator extends AbstractReferenceTest
+import java.util.Arrays;
+
+public class TestModuleMetadataGenerator extends BaseReferenceTest
 {
     private ModuleMetadataGenerator generator;
     private final MutableList<String> testSources = Lists.mutable.empty();
+
+    @BeforeClass
+    public static void setUpRuntime()
+    {
+        setUpRuntime(getFunctionExecution(), new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories())), getFactoryRegistryOverride(), getOptions(), getExtra(), false);
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.mutable.<CodeRepository>withAll(AbstractReferenceTest.getCodeRepositories())
+                .with(GenericCodeRepository.build("empty", "", "platform"))
+                .with(GenericCodeRepository.build("other_empty", "", "empty"));
+    }
 
     @Before
     public void setUpGenerator()
@@ -57,10 +76,23 @@ public class TestModuleMetadataGenerator extends AbstractReferenceTest
     }
 
     @Test
+    public void testNonExistentModule()
+    {
+        testEmptyModule("non_existent");
+    }
+
+    @Test
     public void testEmptyModule()
     {
-        String name = "empty";
-        Assert.assertEquals(ModuleMetadata.builder(name).withReferenceIdVersion(this.generator.getReferenceIdVersion()).build(), this.generator.generateModuleMetadata(name));
+        testEmptyModule("empty", "platform");
+        testEmptyModule("other_empty", "empty");
+    }
+
+    private void testEmptyModule(String name, String... dependencies)
+    {
+        Assert.assertEquals(
+                ModuleMetadata.builder(name).withDependencies(dependencies).withReferenceIdVersion(this.generator.getReferenceIdVersion()).build(),
+                this.generator.generateModuleMetadata(name));
     }
 
     @Test
@@ -107,15 +139,20 @@ public class TestModuleMetadataGenerator extends AbstractReferenceTest
             }
         });
         builder.addSources(runtime.getSourceRegistry().getSources().asLazy().collectIf(
-                        s -> ModuleHelper.isSourceInModule(s, moduleName),
-                        this.generator.getSourceMetadataGenerator()::generateSourceMetadata));
+                s -> ModuleHelper.isSourceInModule(s, moduleName),
+                this.generator.getSourceMetadataGenerator()::generateSourceMetadata));
         return builder.build();
     }
 
     private MutableList<ModuleMetadata> getModuleMetadata(String... moduleNames)
     {
-        MutableMap<String, ModuleMetadata.Builder> byModule = Maps.mutable.ofInitialCapacity(moduleNames.length);
-        ArrayIterate.forEach(moduleNames, name -> byModule.put(name, newModuleMetadataBuilder(name)));
+        return getModuleMetadata(Arrays.asList(moduleNames));
+    }
+
+    private MutableList<ModuleMetadata> getModuleMetadata(Iterable<String> moduleNames)
+    {
+        MutableMap<String, ModuleMetadata.Builder> byModule = Maps.mutable.empty();
+        moduleNames.forEach(name -> byModule.put(name, newModuleMetadataBuilder(name)));
         GraphTools.getTopLevelAndPackagedElements(repository).forEach(element ->
         {
             ModuleMetadata.Builder builder = byModule.get(ModuleHelper.getElementModule(element));
@@ -142,26 +179,9 @@ public class TestModuleMetadataGenerator extends AbstractReferenceTest
 
     private MutableList<ModuleMetadata> getAllModuleMetadata(boolean includeRoot)
     {
-        MutableMap<String, ModuleMetadata.Builder> byModule = Maps.mutable.empty();
-        GraphTools.getTopLevelAndPackagedElements(repository).forEach(element ->
-        {
-            String module = ModuleHelper.getElementModule(element);
-            if ((module != null) && (includeRoot || ModuleHelper.isNonRootModule(module)))
-            {
-                ModuleMetadata.Builder builder = byModule.getIfAbsentPutWithKey(ModuleHelper.getElementModule(element), this::newModuleMetadataBuilder);
-                this.generator.getElementMetadataGenerator().computeMetadata(builder, element);
-            }
-        });
-        runtime.getSourceRegistry().getSources().forEach(source ->
-        {
-            String module = ModuleHelper.getSourceModule(source);
-            if ((module != null) && (includeRoot || ModuleHelper.isNonRootModule(module)))
-            {
-                SourceMetadata metadata = this.generator.getSourceMetadataGenerator().generateSourceMetadata(source);
-                byModule.getIfAbsentPutWithKey(module, this::newModuleMetadataBuilder).addSource(metadata);
-            }
-        });
-        return byModule.collect(ModuleMetadata.Builder::build, Lists.mutable.ofInitialCapacity(byModule.size()));
+        return getModuleMetadata(runtime.getCodeStorage().getAllRepositories().asLazy()
+                .collect(CodeRepository::getName)
+                .select(m -> includeRoot || ModuleHelper.isNonRootModule(m)));
     }
 
     private ModuleMetadata.Builder newModuleMetadataBuilder(String moduleName)
