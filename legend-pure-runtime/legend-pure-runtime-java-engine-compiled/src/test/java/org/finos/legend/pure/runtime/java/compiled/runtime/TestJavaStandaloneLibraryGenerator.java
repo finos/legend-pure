@@ -69,7 +69,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
         RichIterable<? extends CodeRepository> repositories = getCodeRepositories();
         MutableRepositoryCodeStorage codeStorage = new CompositeCodeStorage(
                 new ClassLoaderCodeStorage(repositories),
-                new EmptyCodeStorage(new GenericCodeRepository("test", "test::.*", "platform", "core_functions_unclassified"), new GenericCodeRepository("other", "other::.*", "test")));
+                new EmptyCodeStorage(new GenericCodeRepository("test", "test::.*", "platform", "empty"), new GenericCodeRepository("other", "other::.*", "test"), new GenericCodeRepository("empty", "", "platform")));
 
         setUpRuntime(codeStorage, JavaModelFactoryRegistryLoader.loader());
 

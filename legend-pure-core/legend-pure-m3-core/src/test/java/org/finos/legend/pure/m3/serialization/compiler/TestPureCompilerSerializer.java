@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.m3.serialization.compiler;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MutableMap;
@@ -27,6 +29,9 @@ import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataGenerator;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.reference.AbstractReferenceTest;
+import org.finos.legend.pure.m3.serialization.compiler.reference.BaseReferenceTest;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.tools.GraphTools;
@@ -45,7 +50,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.jar.JarOutputStream;
 
-public class TestPureCompilerSerializer extends AbstractReferenceTest
+public class TestPureCompilerSerializer extends BaseReferenceTest
 {
     @ClassRule
     public static TemporaryFolder TMP = new TemporaryFolder();
@@ -71,6 +76,13 @@ public class TestPureCompilerSerializer extends AbstractReferenceTest
                 .withModuleMetadataGenerator(moduleMetadataGenerator)
                 .withProcessorSupport(processorSupport)
                 .build();
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.mutable.<CodeRepository>withAll(AbstractReferenceTest.getCodeRepositories())
+                .with(GenericCodeRepository.build("empty", "", "platform"))
+                .with(GenericCodeRepository.build("other_empty", "", "empty"));
     }
 
     @Test
@@ -299,8 +311,9 @@ public class TestPureCompilerSerializer extends AbstractReferenceTest
 
     private MutableMap<String, ModuleInfo> getAllModuleInfos()
     {
-        MutableMap<String, ModuleInfo> moduleInfos = Maps.mutable.empty();
+        MutableMap<String, ModuleInfo> moduleInfos = Maps.mutable.ofInitialCapacity(runtime.getCodeStorage().getAllRepositories().size());
         moduleMetadataGenerator.generateAllModuleMetadata().forEach(m -> moduleInfos.put(m.getName(), new ModuleInfo(m)));
+        Assert.assertEquals(Lists.fixedSize.empty(), runtime.getCodeStorage().getAllRepositories().asLazy().collect(CodeRepository::getName).reject(moduleInfos::containsKey, Lists.mutable.empty()));
         GraphTools.getTopLevelAndPackagedElements(processorSupport).forEach(element ->
         {
             ModuleInfo moduleInfo = moduleInfos.get(ModuleHelper.getElementModule(element));
