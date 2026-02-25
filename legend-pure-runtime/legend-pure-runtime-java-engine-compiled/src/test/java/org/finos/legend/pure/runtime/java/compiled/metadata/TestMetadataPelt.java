@@ -29,6 +29,7 @@ import org.finos.legend.pure.m3.serialization.compiler.reference.AbstractReferen
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProvider;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProviders;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.tools.GraphTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
@@ -88,7 +89,7 @@ public class TestMetadataPelt extends AbstractReferenceTest
     @Test
     public void testMetadataFromClassLoader()
     {
-        try (URLClassLoader classLoader = new URLClassLoader(new URL[]{serializationDir.toUri().toURL()}, Thread.currentThread().getContextClassLoader()))
+        try (URLClassLoader classLoader = new URLClassLoader(new URL[]{serializationDir.toUri().toURL()}))
         {
             testMetadata(MetadataPelt.builder()
                     .withClassLoader(classLoader)
@@ -103,6 +104,22 @@ public class TestMetadataPelt extends AbstractReferenceTest
 
     private void testMetadata(MetadataPelt metadata)
     {
+        GraphTools.getTopLevelAndPackagedElements(repository).forEach(element ->
+        {
+            String path = PackageableElement.getUserPathForPackageableElement(element);
+            String classifierPath = PackageableElement.getUserPathForPackageableElement(element.getClassifier());
+            Assert.assertTrue(path, metadata.hasElement(path));
+
+            CoreInstance loaded = metadata.getElementByPath(path);
+            Assert.assertNotNull(path, loaded);
+            Assert.assertEquals(path, PackageableElement.getUserPathForPackageableElement(loaded));
+            Assert.assertEquals(path, classifierPath, PackageableElement.getUserPathForPackageableElement(loaded.getClassifier()));
+            Assert.assertSame(path, loaded, metadata.getInstance(path));
+
+            String expectedJavaClassName = getExpectedJavaClassName(element, classifierPath);
+            Assert.assertEquals(path, expectedJavaClassName, loaded.getClass().getName());
+        });
+
         ReferenceIdProvider refIdProvider = referenceIdProviders.provider();
         GraphNodeIterable.fromModelRepository(repository)
                 .select(refIdProvider::hasReferenceId)
