@@ -18,8 +18,6 @@ import org.eclipse.collections.impl.SpreadFunctions;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 
-import java.nio.ByteBuffer;
-import java.util.Base64;
 import java.util.Objects;
 
 public class DistributedMetadataHelper
@@ -209,10 +207,8 @@ public class DistributedMetadataHelper
             hash = SpreadFunctions.longSpreadOne(hash) + (codePoint = id.codePointAt(i));
         }
 
-        // convert to base64 string
-        byte[] bytes = new byte[8];
-        ByteBuffer.wrap(bytes).putLong(hash);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        // convert to base 32 string
+        return Long.toUnsignedString(hash, 32);
     }
 
     public static IdBuilder hashIds(IdBuilder idBuilder)
