@@ -81,7 +81,7 @@ public class If extends AbstractNative
             boolean isToZero = Multiplicity.isToZero(returnMultiplicity);
             String value = FunctionProcessor.processFunctionDefinitionContent(topLevelElement, lambdaFunction, false, processorContext, processorContext.getSupport());
 
-            boolean isNullValue = "null".equals(value) || value.endsWith(")null");
+            boolean isNullValue = "null".equals(value) || value.matches(".*\\)\\s*null$");
             boolean shouldCast = (returnZeroToOne || isNullValue || ("java.lang.Number".equals(type) && !returnToMany)) && !"java.lang.Object".equals(type);
             //Handle bug with Nil[0] which creates a List so we have to unwrap the List
             value = (isToZero && returnZeroToOne) ? "CompiledSupport.makeOne(" + value + ")" : value;
