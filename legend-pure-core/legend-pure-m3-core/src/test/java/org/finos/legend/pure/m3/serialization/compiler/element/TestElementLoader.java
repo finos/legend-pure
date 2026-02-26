@@ -94,7 +94,7 @@ public class TestElementLoader extends AbstractReferenceTest
 
         PureCompilerSerializer.builder()
                 .withFileSerializer(fileSerializer)
-                .withModuleMetadataGenerator(ModuleMetadataGenerator.fromProcessorSupport(processorSupport))
+                .withModuleMetadataGenerator(ModuleMetadataGenerator.fromPureRuntime(runtime))
                 .withProcessorSupport(processorSupport)
                 .build()
                 .serializeAll(serializationDir);

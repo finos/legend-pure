@@ -64,7 +64,7 @@ public class TestModuleMetadataSerializer
     @Test
     public void testLoadingFromClassLoader()
     {
-        IntList expectedVersions = IntLists.mutable.with(1);
+        IntList expectedVersions = IntLists.mutable.with(1, 2);
         ModuleMetadataSerializer serializer = ModuleMetadataSerializer.builder().withLoadedExtensions().build();
         MutableIntList foundVersions = IntLists.mutable.empty();
         serializer.forEachVersion(foundVersions::add);

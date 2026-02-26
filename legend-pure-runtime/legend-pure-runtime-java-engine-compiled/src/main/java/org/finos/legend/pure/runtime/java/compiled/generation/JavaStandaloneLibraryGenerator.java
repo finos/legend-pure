@@ -194,7 +194,7 @@ public class JavaStandaloneLibraryGenerator
                 .build();
         return PureCompilerSerializer.builder()
                 .withFileSerializer(fileSerializer)
-                .withModuleMetadataGenerator(ModuleMetadataGenerator.fromProcessorSupport(processorSupport))
+                .withModuleMetadataGenerator(ModuleMetadataGenerator.fromPureRuntime(this.runtime))
                 .withProcessorSupport(processorSupport)
                 .build();
     }

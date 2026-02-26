@@ -1,4 +1,4 @@
-// Copyright 2025 Goldman Sachs
+// Copyright 2026 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,29 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m3.serialization.compiler.metadata.v1;
+package org.finos.legend.pure.m3.serialization.compiler.metadata.v2;
 
 import org.finos.legend.pure.m3.serialization.compiler.metadata.AbstractTestModuleMetadataSerializerExtension;
-import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializerExtension;
-import org.junit.Test;
 
-public class TestModuleMetadataSerializerV1 extends AbstractTestModuleMetadataSerializerExtension
+public class TestModuleMetadataSerializerV2 extends AbstractTestModuleMetadataSerializerExtension
 {
-    @Override
-    @Test
-    public void testSimpleModuleWithDependencies()
-    {
-        ModuleMetadata metadata = getSimpleModuleWithDependencies();
-        ModuleMetadata expectedMetadata = ModuleMetadata.builder(metadata)
-                .withNoDependencies()
-                .build();
-        testModuleMetadataSerializes(expectedMetadata, metadata);
-    }
-
     @Override
     protected ModuleMetadataSerializerExtension getExtension()
     {
-        return new ModuleMetadataSerializerV1();
+        return new ModuleMetadataSerializerV2();
     }
 }

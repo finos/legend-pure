@@ -117,6 +117,7 @@ public class ModuleBackReferenceMetadata
         private Builder(ModuleBackReferenceMetadata metadata)
         {
             this.moduleName = metadata.moduleName;
+            this.referenceIdVersion = metadata.referenceIdVersion;
             this.elementBackReferences = Maps.mutable.ofInitialCapacity(metadata.elementBackReferences.size());
             metadata.elementBackReferences.forEach(er -> this.elementBackReferences.put(er.getElementPath(), ElementBackReferenceMetadata.builder(er)));
         }

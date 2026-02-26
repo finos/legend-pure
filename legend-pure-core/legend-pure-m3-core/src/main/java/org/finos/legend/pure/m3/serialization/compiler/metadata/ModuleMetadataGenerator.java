@@ -14,16 +14,17 @@
 
 package org.finos.legend.pure.m3.serialization.compiler.metadata;
 
+import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.compiler.ModuleHelper;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProvider;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProviders;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
-import org.finos.legend.pure.m3.serialization.runtime.SourceRegistry;
 import org.finos.legend.pure.m3.tools.GraphTools;
 
 import java.util.Arrays;
@@ -31,18 +32,16 @@ import java.util.Objects;
 
 public class ModuleMetadataGenerator
 {
-    private final ProcessorSupport processorSupport;
-    private final SourceRegistry sourceRegistry;
+    private final PureRuntime runtime;
     private final ConcreteElementMetadataGenerator elementGenerator;
     private final SourceMetadataGenerator sourceGenerator;
     private final int referenceIdVersion;
 
-    private ModuleMetadataGenerator(ProcessorSupport processorSupport, SourceRegistry sourceRegistry, ReferenceIdProvider referenceIdProvider)
+    private ModuleMetadataGenerator(PureRuntime runtime, ReferenceIdProvider referenceIdProvider)
     {
-        this.processorSupport = processorSupport;
-        this.sourceRegistry = sourceRegistry;
-        this.elementGenerator = new ConcreteElementMetadataGenerator(referenceIdProvider, processorSupport);
-        this.sourceGenerator = (sourceRegistry == null) ? null : new SourceMetadataGenerator();
+        this.runtime = runtime;
+        this.elementGenerator = new ConcreteElementMetadataGenerator(referenceIdProvider, runtime.getProcessorSupport());
+        this.sourceGenerator = new SourceMetadataGenerator();
         this.referenceIdVersion = referenceIdProvider.version();
     }
 
@@ -54,23 +53,20 @@ public class ModuleMetadataGenerator
 
     private ModuleMetadata.Builder generateModuleMetadata(String moduleName, ModuleMetadata.Builder builder)
     {
-        GraphTools.getTopLevelAndPackagedElements(this.processorSupport).forEach(e ->
+        GraphTools.getTopLevelAndPackagedElements(this.runtime.getProcessorSupport()).forEach(e ->
         {
             if (ModuleHelper.isElementInModule(e, moduleName))
             {
                 this.elementGenerator.computeMetadata(builder, e);
             }
         });
-        if (this.sourceRegistry != null)
+        this.runtime.getSourceRegistry().getSources().forEach(s ->
         {
-            this.sourceRegistry.getSources().forEach(s ->
+            if (ModuleHelper.isSourceInModule(s, moduleName))
             {
-                if (ModuleHelper.isSourceInModule(s, moduleName))
-                {
-                    builder.addSource(this.sourceGenerator.generateSourceMetadata(s));
-                }
-            });
-        }
+                builder.addSource(this.sourceGenerator.generateSourceMetadata(s));
+            }
+        });
         return builder;
     }
 
@@ -90,7 +86,7 @@ public class ModuleMetadataGenerator
         {
             return Lists.mutable.with(generateModuleMetadata(buildersByModule.keysView().getAny(), buildersByModule.valuesView().getAny()).build());
         }
-        GraphTools.getTopLevelAndPackagedElements(this.processorSupport).forEach(element ->
+        GraphTools.getTopLevelAndPackagedElements(this.runtime.getProcessorSupport()).forEach(element ->
         {
             String moduleName = ModuleHelper.getElementModule(element);
             if (moduleName != null)
@@ -102,21 +98,18 @@ public class ModuleMetadataGenerator
                 }
             }
         });
-        if (this.sourceRegistry != null)
+        this.runtime.getSourceRegistry().getSources().forEach(source ->
         {
-            this.sourceRegistry.getSources().forEach(source ->
+            String moduleName = ModuleHelper.getSourceModule(source);
+            if (moduleName != null)
             {
-                String moduleName = ModuleHelper.getSourceModule(source);
-                if (moduleName != null)
+                ModuleMetadata.Builder builder = buildersByModule.get(moduleName);
+                if (builder != null)
                 {
-                    ModuleMetadata.Builder builder = buildersByModule.get(moduleName);
-                    if (builder != null)
-                    {
-                        builder.addSource(this.sourceGenerator.generateSourceMetadata(source));
-                    }
+                    builder.addSource(this.sourceGenerator.generateSourceMetadata(source));
                 }
-            });
-        }
+            }
+        });
 
         return buildersByModule.collect(ModuleMetadata.Builder::build, Lists.mutable.ofInitialCapacity(buildersByModule.size()));
     }
@@ -147,27 +140,8 @@ public class ModuleMetadataGenerator
 
     public MutableList<ModuleMetadata> generateAllModuleMetadata(boolean includeRootModule)
     {
-        MutableMap<String, ModuleMetadata.Builder> buildersByModule = Maps.mutable.empty();
-        GraphTools.getTopLevelAndPackagedElements(this.processorSupport).forEach(element ->
-        {
-            String moduleName = ModuleHelper.getElementModule(element);
-            if ((moduleName != null) && (includeRootModule || ModuleHelper.isNonRootModule(moduleName)))
-            {
-                this.elementGenerator.computeMetadata(buildersByModule.getIfAbsentPutWithKey(moduleName, this::moduleMetadataBuilder), element);
-            }
-        });
-        if (this.sourceRegistry != null)
-        {
-            this.sourceRegistry.getSources().forEach(source ->
-            {
-                String moduleName = ModuleHelper.getSourceModule(source);
-                if ((moduleName != null) && (includeRootModule || ModuleHelper.isNonRootModule(moduleName)))
-                {
-                    buildersByModule.getIfAbsentPutWithKey(moduleName, this::moduleMetadataBuilder).addSource(this.sourceGenerator.generateSourceMetadata(source));
-                }
-            });
-        }
-        return buildersByModule.collect(ModuleMetadata.Builder::build, Lists.mutable.ofInitialCapacity(buildersByModule.size()));
+        LazyIterable<String> repos = this.runtime.getCodeStorage().getAllRepositories().asLazy().collect(CodeRepository::getName);
+        return generateModuleMetadata(includeRootModule ? repos : repos.select(ModuleHelper::isNonRootModule));
     }
 
     int getReferenceIdVersion()
@@ -187,17 +161,18 @@ public class ModuleMetadataGenerator
 
     private ModuleMetadata.Builder moduleMetadataBuilder(String moduleName)
     {
-        return ModuleMetadata.builder(moduleName).withReferenceIdVersion(this.referenceIdVersion);
+        ModuleMetadata.Builder builder = ModuleMetadata.builder(moduleName).withReferenceIdVersion(this.referenceIdVersion);
+        CodeRepository repository = this.runtime.getCodeStorage().getRepository(moduleName);
+        if (repository instanceof GenericCodeRepository)
+        {
+            builder.withDependencies(((GenericCodeRepository) repository).getDependencies());
+        }
+        return builder;
     }
 
     public static ModuleMetadataGenerator fromPureRuntime(PureRuntime runtime)
     {
         return builder().withPureRuntime(runtime).build();
-    }
-
-    public static ModuleMetadataGenerator fromProcessorSupport(ProcessorSupport processorSupport)
-    {
-        return builder().withProcessorSupport(processorSupport).build();
     }
 
     public static Builder builder()
@@ -207,30 +182,17 @@ public class ModuleMetadataGenerator
 
     public static class Builder
     {
-        private ProcessorSupport processorSupport;
-        private SourceRegistry sourceRegistry;
+        private PureRuntime pureRuntime;
         private ReferenceIdProvider referenceIdProvider;
 
         private Builder()
         {
         }
 
-        public Builder withProcessorSupport(ProcessorSupport processorSupport)
-        {
-            this.processorSupport = processorSupport;
-            return this;
-        }
-
-        public Builder withSourceRegistry(SourceRegistry sourceRegistry)
-        {
-            this.sourceRegistry = sourceRegistry;
-            return this;
-        }
-
         public Builder withPureRuntime(PureRuntime pureRuntime)
         {
-            return withProcessorSupport(pureRuntime.getProcessorSupport())
-                    .withSourceRegistry(pureRuntime.getSourceRegistry());
+            this.pureRuntime = pureRuntime;
+            return this;
         }
 
         public Builder withReferenceIdProvider(ReferenceIdProvider referenceIdProvider)
@@ -241,11 +203,11 @@ public class ModuleMetadataGenerator
 
         public ModuleMetadataGenerator build()
         {
-            Objects.requireNonNull(this.processorSupport);
+            Objects.requireNonNull(this.pureRuntime, "PureRuntime is required");
             ReferenceIdProvider idProvider = (this.referenceIdProvider == null) ?
-                                             ReferenceIdProviders.builder().withProcessorSupport(this.processorSupport).withAvailableExtensions().build().provider() :
+                                             ReferenceIdProviders.builder().withProcessorSupport(this.pureRuntime.getProcessorSupport()).withAvailableExtensions().build().provider() :
                                              this.referenceIdProvider;
-            return new ModuleMetadataGenerator(this.processorSupport, this.sourceRegistry, idProvider);
+            return new ModuleMetadataGenerator(this.pureRuntime, idProvider);
         }
     }
 }

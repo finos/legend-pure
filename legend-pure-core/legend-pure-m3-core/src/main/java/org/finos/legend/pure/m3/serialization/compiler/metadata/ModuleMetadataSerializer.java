@@ -212,6 +212,7 @@ public class ModuleMetadataSerializer extends ExtensibleSerializer<ModuleMetadat
     {
         MutableSet<String> stringSet = Sets.mutable.empty();
         stringSet.add(manifest.getModuleName());
+        stringSet.addAll(manifest.getDependencies().castToList());
         manifest.forEachElement(element ->
         {
             stringSet.add(element.getPath());

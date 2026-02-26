@@ -35,17 +35,24 @@ import java.util.function.Predicate;
 public class ModuleManifest
 {
     private final String name;
+    private final ImmutableList<String> dependencies;
     private final ImmutableList<ConcreteElementMetadata> elements;
 
-    private ModuleManifest(String name, ImmutableList<ConcreteElementMetadata> elements)
+    private ModuleManifest(String name, ImmutableList<String> dependencies, ImmutableList<ConcreteElementMetadata> elements)
     {
         this.name = name;
+        this.dependencies = dependencies;
         this.elements = elements;
     }
 
     public String getModuleName()
     {
         return this.name;
+    }
+
+    public ImmutableList<String> getDependencies()
+    {
+        return this.dependencies;
     }
 
     public int getElementCount()
@@ -78,6 +85,7 @@ public class ModuleManifest
 
         ModuleManifest that = (ModuleManifest) other;
         return this.name.equals(that.name) &&
+                this.dependencies.equals(that.dependencies) &&
                 this.elements.equals(that.elements);
     }
 
@@ -91,7 +99,9 @@ public class ModuleManifest
     public String toString()
     {
         StringBuilder builder = new StringBuilder("<").append(getClass().getSimpleName())
-                .append(" moduleName='").append(this.name).append("' elements=[");
+                .append(" moduleName='").append(this.name).append("' ");
+        this.dependencies.appendString(builder, "dependencies=[", ", ", "] ");
+        builder.append("elements=[");
         if (this.elements.notEmpty())
         {
             this.elements.forEach(e -> e.appendString(builder.append('{')).append("}, "));
@@ -175,9 +185,15 @@ public class ModuleManifest
         return builder().withModuleName(name);
     }
 
+    @Deprecated
     public static Builder builder(int elementCount)
     {
-        return new Builder(elementCount);
+        return builder(0, elementCount);
+    }
+
+    public static Builder builder(int dependencyCount, int elementCount)
+    {
+        return new Builder(dependencyCount, elementCount);
     }
 
     public static Builder builder(ModuleManifest metadata)
@@ -188,27 +204,71 @@ public class ModuleManifest
     public static class Builder
     {
         private String name;
+        private final MutableList<String> dependencies;
         private final MutableList<ConcreteElementMetadata> elements;
 
         private Builder()
         {
+            this.dependencies = Lists.mutable.empty();
             this.elements = Lists.mutable.empty();
         }
 
-        private Builder(int elementCount)
+        private Builder(int dependencyCount, int elementCount)
         {
+            this.dependencies = Lists.mutable.ofInitialCapacity(dependencyCount);
             this.elements = Lists.mutable.ofInitialCapacity(elementCount);
         }
 
         private Builder(ModuleManifest metadata)
         {
             this.name = metadata.getModuleName();
+            this.dependencies = Lists.mutable.withAll(metadata.getDependencies());
             this.elements = Lists.mutable.withAll(metadata.getElements());
         }
 
         public void setModuleName(String name)
         {
             this.name = name;
+        }
+
+        public void addDependency(String dependency)
+        {
+            this.dependencies.add(Objects.requireNonNull(dependency, "dependency may not be null"));
+        }
+
+        public void addDependencies(Iterable<? extends String> dependencies)
+        {
+            dependencies.forEach(this::addDependency);
+        }
+
+        public void addDependencies(String... dependencies)
+        {
+            addDependencies(Arrays.asList(dependencies));
+        }
+
+        public boolean removeDependency(String toRemove)
+        {
+            return removeDependencies(Sets.immutable.with(toRemove));
+        }
+
+        public boolean removeDependencies(Iterable<? extends String> toRemove)
+        {
+            return removeDependencies(getRemoveDependencyPredicate(toRemove));
+        }
+
+        public boolean removeDependencies(String... toRemove)
+        {
+            return removeDependencies(Sets.immutable.with(toRemove));
+        }
+
+        public boolean removeDependencies(Predicate<? super String> toRemove)
+        {
+            return (toRemove != null) && this.dependencies.removeIf(toRemove::test);
+        }
+
+        public void clearDependencies()
+        {
+            this.dependencies.clear();
         }
 
         public void addElement(ConcreteElementMetadata element)
@@ -299,6 +359,54 @@ public class ModuleManifest
             return this;
         }
 
+        public Builder withDependency(String dependency)
+        {
+            addDependency(dependency);
+            return this;
+        }
+
+        public Builder withDependencies(Iterable<? extends String> dependencies)
+        {
+            addDependencies(dependencies);
+            return this;
+        }
+
+        public Builder withDependencies(String... dependencies)
+        {
+            addDependencies(dependencies);
+            return this;
+        }
+
+        public Builder withoutDependency(String toRemove)
+        {
+            removeDependency(toRemove);
+            return this;
+        }
+
+        public Builder withoutDependencies(Iterable<? extends String> toRemove)
+        {
+            removeDependencies(toRemove);
+            return this;
+        }
+
+        public Builder withoutDependencies(String... toRemove)
+        {
+            removeDependencies(toRemove);
+            return this;
+        }
+
+        public Builder withoutDependencies(Predicate<? super String> toRemove)
+        {
+            removeDependencies(toRemove);
+            return this;
+        }
+
+        public Builder withNoDependencies()
+        {
+            clearDependencies();
+            return this;
+        }
+
         public Builder withElement(ConcreteElementMetadata element)
         {
             return withElement(element, false);
@@ -367,6 +475,7 @@ public class ModuleManifest
         public ModuleManifest build()
         {
             Objects.requireNonNull(this.name, "module name may not be null");
+            ListHelper.sortAndRemoveDuplicates(this.dependencies);
             ListHelper.sortAndRemoveDuplicates(this.elements,
                     Comparator.comparing(PackageableElementMetadata::getPath),
                     (previous, current) ->
@@ -387,7 +496,7 @@ public class ModuleManifest
 
         private ModuleManifest buildNoValidation()
         {
-            return new ModuleManifest(this.name, this.elements.toImmutable());
+            return new ModuleManifest(this.name, this.dependencies.toImmutable(), this.elements.toImmutable());
         }
     }
 
@@ -432,6 +541,31 @@ public class ModuleManifest
             default:
             {
                 return emd -> set.contains(emd.getPath());
+            }
+        }
+    }
+
+    private static Predicate<String> getRemoveDependencyPredicate(Iterable<? extends String> toRemove)
+    {
+        if (toRemove == null)
+        {
+            return null;
+        }
+        Set<? extends String> set = (toRemove instanceof Set) ? (Set<? extends String>) toRemove : Sets.mutable.withAll(toRemove);
+        switch (set.size())
+        {
+            case 0:
+            {
+                return null;
+            }
+            case 1:
+            {
+                String dependencyToRemove = Iterate.getFirst(set);
+                return (dependencyToRemove == null) ? null : dependencyToRemove::equals;
+            }
+            default:
+            {
+                return set::contains;
             }
         }
     }

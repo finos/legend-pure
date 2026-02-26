@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.SetIterable;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
@@ -23,6 +24,7 @@ import org.finos.legend.pure.m3.serialization.compiler.PureCompilerSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.element.ConcreteElementSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.file.FilePathProvider;
 import org.finos.legend.pure.m3.serialization.compiler.file.FileSerializer;
+import org.finos.legend.pure.m3.serialization.compiler.file.ModuleMetadataNotFoundException;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataGenerator;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.reference.AbstractReferenceTest;
@@ -31,6 +33,7 @@ import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProv
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.tools.GraphTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.EnumProcessor;
@@ -54,6 +57,7 @@ public class TestMetadataPelt extends AbstractReferenceTest
     private static Path serializationDir;
     private static SetIterable<String> repositories;
     private static ReferenceIdProviders referenceIdProviders;
+    private static FilePathProvider filePathProvider;
 
     @BeforeClass
     public static void serialize() throws IOException
@@ -61,19 +65,33 @@ public class TestMetadataPelt extends AbstractReferenceTest
         serializationDir = TMP.newFolder("files").toPath();
 
         referenceIdProviders = ReferenceIdProviders.builder().withProcessorSupport(processorSupport).withAvailableExtensions().build();
+        filePathProvider = FilePathProvider.builder().withLoadedExtensions().build();
         FileSerializer fileSerializer = FileSerializer.builder()
-                .withFilePathProvider(FilePathProvider.builder().withLoadedExtensions().build())
+                .withFilePathProvider(filePathProvider)
                 .withSerializers(ConcreteElementSerializer.builder(processorSupport).withLoadedExtensions().withReferenceIdProviders(referenceIdProviders).build(), ModuleMetadataSerializer.builder().withLoadedExtensions().build())
                 .build();
 
         PureCompilerSerializer.builder()
                 .withFileSerializer(fileSerializer)
-                .withModuleMetadataGenerator(ModuleMetadataGenerator.fromProcessorSupport(processorSupport))
+                .withModuleMetadataGenerator(ModuleMetadataGenerator.fromPureRuntime(runtime))
                 .withProcessorSupport(processorSupport)
                 .build()
                 .serializeAll(serializationDir);
 
         repositories = runtime.getCodeStorage().getAllRepositories().collect(CodeRepository::getName, Sets.mutable.empty()).asUnmodifiable();
+    }
+
+    @Test
+    public void testUnknownRepository()
+    {
+        String nonExistentRepo = "non_existent_repo";
+        ModuleMetadataNotFoundException e = Assert.assertThrows(ModuleMetadataNotFoundException.class, () -> MetadataPelt.builder()
+                .withClassLoader(Thread.currentThread().getContextClassLoader())
+                .withDirectory(serializationDir)
+                .withRepository(nonExistentRepo)
+                .build());
+        Path expectedFilePath = filePathProvider.getModuleManifestFilePath(serializationDir, nonExistentRepo);
+        Assert.assertEquals("Module 'non_existent_repo' manifest not found: cannot find file " + expectedFilePath, e.getMessage());
     }
 
     @Test
@@ -83,18 +101,30 @@ public class TestMetadataPelt extends AbstractReferenceTest
                 .withClassLoader(Thread.currentThread().getContextClassLoader())
                 .withDirectory(serializationDir)
                 .withRepositories(repositories)
-                .build());
+                .build(), null);
     }
 
     @Test
     public void testMetadataFromClassLoader()
     {
+        testMetadataFromClassLoader(repositories, null);
+    }
+
+    @Test
+    public void testMetadataFromClassLoaderWithSubsetOfRepos()
+    {
+        testMetadataFromClassLoader(Lists.immutable.with("ref_test"), Sets.immutable.with("ref_test", "platform"));
+        testMetadataFromClassLoader(Lists.immutable.with("platform"), Sets.immutable.with("platform"));
+    }
+
+    private void testMetadataFromClassLoader(Iterable<String> specifiedRepos, SetIterable<String> allExpectedRepos)
+    {
         try (URLClassLoader classLoader = new URLClassLoader(new URL[]{serializationDir.toUri().toURL()}))
         {
             testMetadata(MetadataPelt.builder()
                     .withClassLoader(classLoader)
-                    .withRepositories(repositories)
-                    .build());
+                    .withRepositories(specifiedRepos)
+                    .build(), allExpectedRepos);
         }
         catch (IOException e)
         {
@@ -102,27 +132,36 @@ public class TestMetadataPelt extends AbstractReferenceTest
         }
     }
 
-    private void testMetadata(MetadataPelt metadata)
+    private void testMetadata(MetadataPelt metadata, SetIterable<String> repos)
     {
         GraphTools.getTopLevelAndPackagedElements(repository).forEach(element ->
         {
-            String path = PackageableElement.getUserPathForPackageableElement(element);
-            String classifierPath = PackageableElement.getUserPathForPackageableElement(element.getClassifier());
-            Assert.assertTrue(path, metadata.hasElement(path));
+            if ((repos == null) || ((element.getSourceInformation() != null) && repos.contains(element.getSourceInformation().getSourceId())))
+            {
+                String path = PackageableElement.getUserPathForPackageableElement(element);
+                String classifierPath = PackageableElement.getUserPathForPackageableElement(element.getClassifier());
+                Assert.assertTrue(path, metadata.hasElement(path));
 
-            CoreInstance loaded = metadata.getElementByPath(path);
-            Assert.assertNotNull(path, loaded);
-            Assert.assertEquals(path, PackageableElement.getUserPathForPackageableElement(loaded));
-            Assert.assertEquals(path, classifierPath, PackageableElement.getUserPathForPackageableElement(loaded.getClassifier()));
-            Assert.assertSame(path, loaded, metadata.getInstance(path));
+                CoreInstance loaded = metadata.getElementByPath(path);
+                Assert.assertNotNull(path, loaded);
+                Assert.assertEquals(path, PackageableElement.getUserPathForPackageableElement(loaded));
+                Assert.assertEquals(path, classifierPath, PackageableElement.getUserPathForPackageableElement(loaded.getClassifier()));
+                Assert.assertSame(path, loaded, metadata.getInstance(path));
 
-            String expectedJavaClassName = getExpectedJavaClassName(element, classifierPath);
-            Assert.assertEquals(path, expectedJavaClassName, loaded.getClass().getName());
+                String expectedJavaClassName = getExpectedJavaClassName(element, classifierPath);
+                Assert.assertEquals(path, expectedJavaClassName, loaded.getClass().getName());
+            }
         });
 
         ReferenceIdProvider refIdProvider = referenceIdProviders.provider();
         GraphNodeIterable.fromModelRepository(repository)
-                .select(refIdProvider::hasReferenceId)
+                .select((repos == null) ?
+                        refIdProvider::hasReferenceId :
+                        n ->
+                        {
+                            SourceInformation sourceInfo = n.getSourceInformation();
+                            return (sourceInfo != null) && repos.contains(sourceInfo.getSourceId()) && refIdProvider.hasReferenceId(n);
+                        })
                 .forEach(instance ->
                 {
                     String id = refIdProvider.getReferenceId(instance);
