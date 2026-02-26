@@ -78,7 +78,7 @@ public abstract class TestDistributedBinaryGraphSerialization
         PureRuntime runtime = buildRuntime(repo);
 
         DistributedBinaryGraphSerializer.newSerializer(runtime, repo).serialize(getFileWriter());
-        ListIterable<Obj> expectedObjs = getExpectedObjsFromRuntime(runtime, IdBuilder.builder(runtime.getProcessorSupport()).withDefaultIdPrefix(DistributedMetadataHelper.getMetadataIdPrefix(repo)).build());
+        ListIterable<Obj> expectedObjs = getExpectedObjsFromRuntime(runtime, DistributedMetadataHelper.possiblyHashIds(IdBuilder.builder(runtime.getProcessorSupport()).withDefaultIdPrefix(DistributedMetadataHelper.getMetadataIdPrefix(repo)).build()));
         testSerialization(expectedObjs, Lists.immutable.with(repo), false);
     }
 

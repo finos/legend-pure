@@ -54,7 +54,7 @@ public abstract class DistributedBinaryGraphSerializer
         this.metadataSpecification = metadataSpecification;
         this.runtime = runtime;
         this.processorSupport = runtime.getProcessorSupport();
-        this.idBuilder = DistributedMetadataHelper.possiblyHashIds(newIdBuilder(this.metadataSpecification, this.processorSupport));
+        this.idBuilder = newPossiblyHashedIdBuilder(this.metadataSpecification, this.processorSupport);
         this.classifierCaches = new GraphSerializer.ClassifierCaches(this.processorSupport);
     }
 
@@ -300,6 +300,12 @@ public abstract class DistributedBinaryGraphSerializer
         return IdBuilder.builder(processorSupport)
                 .withDefaultIdPrefix(DistributedMetadataHelper.getMetadataIdPrefix(metadataName))
                 .build();
+    }
+
+    private static IdBuilder newPossiblyHashedIdBuilder(DistributedMetadataSpecification metadataSpec, ProcessorSupport processorSupport)
+    {
+        IdBuilder idBuilder = newIdBuilder(metadataSpec, processorSupport);
+        return (metadataSpec == null) ? idBuilder : DistributedMetadataHelper.possiblyHashIds(idBuilder);
     }
 
     protected class SerializationCollector
