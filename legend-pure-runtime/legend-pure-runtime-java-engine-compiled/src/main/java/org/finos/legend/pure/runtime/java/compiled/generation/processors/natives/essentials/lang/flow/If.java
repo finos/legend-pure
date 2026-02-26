@@ -81,12 +81,19 @@ public class If extends AbstractNative
             boolean isToZero = Multiplicity.isToZero(returnMultiplicity);
             String value = FunctionProcessor.processFunctionDefinitionContent(topLevelElement, lambdaFunction, false, processorContext, processorContext.getSupport());
 
-            boolean shouldCast = (returnZeroToOne || "null".equals(value) || ("java.lang.Number".equals(type) && !returnToMany)) && !"java.lang.Object".equals(type);
+            boolean isNullValue = "null".equals(value) || value.matches(".*\\)\\s*null$");
+            boolean shouldCast = (returnZeroToOne || isNullValue || ("java.lang.Number".equals(type) && !returnToMany)) && !"java.lang.Object".equals(type);
             //Handle bug with Nil[0] which creates a List so we have to unwrap the List
             value = (isToZero && returnZeroToOne) ? "CompiledSupport.makeOne(" + value + ")" : value;
             String result = shouldCast ? "(" + type + ")" + value : value;
             if (returnToMany)
             {
+                // Use explicit type parameter for JDK 11+ compatibility when wrapping null values.
+                // For non-null values, let Java infer the type to avoid type mismatch errors.
+                if (isNullValue)
+                {
+                    return "CompiledSupport.<" + type + ">toPureCollection(null)";
+                }
                 return "CompiledSupport.toPureCollection(" + result + ")";
             }
             else
@@ -96,6 +103,7 @@ public class If extends AbstractNative
         }
         else
         {
+            // For multi-expression lambdas, the result is from .execute() which is never null, so no explicit type parameter needed
             return (returnToMany ? "CompiledSupport.toPureCollection(" : "") + lambdaZero(lambda, FunctionProcessor.processFunctionDefinitionContent(topLevelElement, Instance.getValueForMetaPropertyToOneResolved(lambda, M3Properties.values, processorSupport), true, processorContext, processorContext.getSupport()), processorContext.getSupport()) + ".execute()" + (returnToMany ? ")" : "");
         }
     }
