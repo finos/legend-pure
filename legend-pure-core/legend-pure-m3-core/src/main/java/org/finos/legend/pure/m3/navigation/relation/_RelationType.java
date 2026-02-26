@@ -227,7 +227,7 @@ public class _RelationType
                             org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity mergedMul = rawTypeA == null ? _Column.getColumnMultiplicity(c.getTwo()) : rawTypeB == null ? _Column.getColumnMultiplicity(c.getOne()) : (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) Multiplicity.minSubsumingMultiplicity(_Column.getColumnMultiplicity(c.getOne()), _Column.getColumnMultiplicity(c.getTwo()), processorSupport);
                             Column<?, ?> stereotypesSource = c.getOne()._stereotypesCoreInstance().notEmpty() ? c.getOne() : c.getTwo();
                             Column<?, ?> taggedValuesSource = c.getOne()._taggedValues().notEmpty() ? c.getOne() : c.getTwo();
-                            return _Column.getColumnInstance(cName, wildcard, merged, mergedMul, stereotypesSource._stereotypesCoreInstance(), false, taggedValuesSource._taggedValues(), null, processorSupport);
+                            return _Column.getColumnInstanceInterpreted(cName, wildcard, merged, mergedMul, stereotypesSource._stereotypesCoreInstance(), taggedValuesSource._taggedValues(), null, processorSupport);
                         }),
                         existingGenericType.getValueForMetaPropertyToOne(M3Properties.rawType).getSourceInformation(),
                         processorSupport
