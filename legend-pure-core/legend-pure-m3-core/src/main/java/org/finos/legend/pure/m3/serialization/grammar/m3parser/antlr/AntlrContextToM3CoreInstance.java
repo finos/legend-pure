@@ -978,7 +978,7 @@ public class AntlrContextToM3CoreInstance
                     returnType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
                     returnType._rawType(null);
                 }
-                columnInstances.add(_Column.getColumnInstance(colName, false, returnType, multiplicity, stereotypes, false, taggedValues, src, processorSupport));
+                columnInstances.add(_Column.getColumnInstanceInterpreted(colName, false, returnType, multiplicity, stereotypes, taggedValues, src, processorSupport));
             });
             RelationType<?> relationType = _RelationType.build(columnInstances, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport);
             GenericType relationTypeGenericType = (GenericType) processorSupport.type_wrapGenericType(relationType);

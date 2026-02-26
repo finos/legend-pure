@@ -1194,7 +1194,7 @@ public class CoreHelper
         ProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
         MutableList<Column<?,?>> columns = Lists.mutable.withAll(instance._columns());
         columns.withAll(Lists.mutable.withAll(((RelationType<?>)colSpecArray._classifierGenericType()._typeArguments().getFirst()._rawType())._columns()));
-        MutableList<? extends CoreInstance> newColumns = columns.collect(c -> _Column.getColumnInstance(c._name(), c._nameWildCard(), _Column.getColumnType(c), _Column.getColumnMultiplicity(c), c._stereotypes(), true, c._taggedValues(), c.getSourceInformation(), processorSupport)).toList();
+        MutableList<? extends CoreInstance> newColumns = columns.collect(c -> _Column.getColumnInstanceCompiled(c._name(), c._nameWildCard(), _Column.getColumnType(c), _Column.getColumnMultiplicity(c), c._stereotypes(), c._taggedValues(), c.getSourceInformation(), processorSupport)).toList();
         return _RelationType.build(newColumns, colSpecArray.getSourceInformation(), processorSupport);
     }
 }

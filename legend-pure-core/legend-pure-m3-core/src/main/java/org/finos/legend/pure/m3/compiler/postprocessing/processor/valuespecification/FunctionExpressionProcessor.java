@@ -407,7 +407,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             }
             else
             {
-                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, _Column.getColumnType(foundC), _Column.getColumnMultiplicity(foundC), foundC._stereotypesCoreInstance(), false, foundC._taggedValues(), functionExpression.getSourceInformation(), processorSupport)), functionExpression.getSourceInformation(), processorSupport)), ctx, observer);
+                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstanceInterpreted(foundC._name(), false, _Column.getColumnType(foundC), _Column.getColumnMultiplicity(foundC), foundC._stereotypesCoreInstance(), foundC._taggedValues(), functionExpression.getSourceInformation(), processorSupport)), functionExpression.getSourceInformation(), processorSupport)), ctx, observer);
                 columnTypeInferenceSuccess = true;
             }
         }
@@ -481,7 +481,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             }
             else
             {
-                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, _Column.getColumnType(foundC), _Column.getColumnMultiplicity(foundC), foundC._stereotypesCoreInstance(), false, foundC._taggedValues(), functionExpression.getSourceInformation(), processorSupport)), functionExpression.getSourceInformation(), processorSupport)), ctx, observer);
+                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstanceInterpreted(foundC._name(), false, _Column.getColumnType(foundC), _Column.getColumnMultiplicity(foundC), foundC._stereotypesCoreInstance(), foundC._taggedValues(), functionExpression.getSourceInformation(), processorSupport)), functionExpression.getSourceInformation(), processorSupport)), ctx, observer);
                 columnTypeInferenceSuccess = true;
             }
         }
