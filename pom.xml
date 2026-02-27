@@ -69,7 +69,7 @@
         <deephaven-csv.version>0.18.0</deephaven-csv.version>
         <eclipsecollections.version>10.2.0</eclipsecollections.version>
         <guava.version>30.0-jre</guava.version>
-        <h2.version>2.1.214</h2.version>
+        <h2.version>2.2.220</h2.version>
         <duckdb.version>1.0.0</duckdb.version>
         <jackson.version>2.10.5</jackson.version>
         <jackson.databind.version>2.10.5.1</jackson.databind.version>
