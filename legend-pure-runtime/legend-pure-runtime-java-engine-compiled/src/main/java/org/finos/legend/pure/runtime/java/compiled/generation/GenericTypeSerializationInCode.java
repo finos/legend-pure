@@ -26,6 +26,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 
@@ -97,7 +98,7 @@ public class GenericTypeSerializationInCode
 
     public static String generateColumnBuilder(Column<?, ?> column, ProcessorContext processorContext)
     {
-        return "org.finos.legend.pure.m3.navigation.relation._Column.getColumnInstance(\"" + column._name() + "\", " + column._nameWildCard() + ", " + generateGenericTypeBuilder(_Column.getColumnType(column), processorContext) + ", " + generateMultiplicityBuilder(_Column.getColumnMultiplicity(column)) + ", null, ((CompiledExecutionSupport)es).getProcessorSupport())";
+        return "org.finos.legend.pure.m3.navigation.relation._Column.getColumnInstance(\"" + column._name() + "\", " + column._nameWildCard() + ", " + generateGenericTypeBuilder(_Column.getColumnType(column), processorContext) + ", " + generateMultiplicityBuilder(_Column.getColumnMultiplicity(column)) + ", " + generateStereotypesBuilder(column) + ", " + generateTaggedValuesBuilder(column) + ", null, ((CompiledExecutionSupport)es).getProcessorSupport())";
     }
 
     public static String generateMultiplicityBuilder(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity multiplicity)
@@ -108,5 +109,42 @@ public class GenericTypeSerializationInCode
                         "._lowerBound(new Root_meta_pure_metamodel_multiplicity_MultiplicityValue_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + M3Paths.MultiplicityValue + "\"))._value(" + multiplicity._lowerBound()._value() + "L))" +
                                 "._upperBound(new Root_meta_pure_metamodel_multiplicity_MultiplicityValue_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + M3Paths.MultiplicityValue + "\"))" +
                                 (multiplicity._upperBound()._value() == null ? "" : "._value(" + multiplicity._upperBound()._value() + "L)") + ")");
+    }
+
+    public static String generateStereotypesBuilder(Column<?, ?> column)
+    {
+        if (column._stereotypes() != null && column._stereotypes().notEmpty())
+        {
+            return  column._stereotypes().collect(s ->
+                    "org.finos.legend.pure.runtime.java.compiled.CoreHelper.stereotype(" +
+                            "((CompiledExecutionSupport)es).getMetadataAccessor().getProfile(\"" +
+                            PackageableElement.getSystemPathForPackageableElement(s._profile()) +
+                            "\"), \"" + s._value() + "\")"
+            ).makeString("Lists.mutable.with(", ", ", ")");
+        }
+        else
+        {
+            return "null";
+        }
+    }
+
+    public static String generateTaggedValuesBuilder(Column<?, ?> column)
+    {
+        if (column._taggedValues() != null && column._taggedValues().notEmpty())
+        {
+            return  column._taggedValues().collect(tv ->
+                    "new Root_meta_pure_metamodel_extension_TaggedValue_Impl(\"\", null, " +
+                            "((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"Root::" + M3Paths.TaggedValue + "\"))" +
+                            "._tag(org.finos.legend.pure.runtime.java.compiled.CoreHelper.tag(" +
+                            "((CompiledExecutionSupport)es).getMetadataAccessor().getProfile(\"" +
+                            PackageableElement.getSystemPathForPackageableElement(tv._tag()._profile()) +
+                            "\"), \"" + tv._tag()._value() + "\"))" +
+                            "._value(\"" + tv._value() + "\")"
+            ).makeString("Lists.mutable.with(", ", ", ")");
+        }
+        else
+        {
+            return "null";
+        }
     }
 }
