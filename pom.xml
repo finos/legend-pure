@@ -64,7 +64,7 @@
         <commons-codec.version>1.15</commons-codec.version>
         <commons-csv.version>1.5</commons-csv.version>
         <commons-io.version>2.7</commons-io.version>
-        <commons-lang.version>3.5</commons-lang.version>
+        <commons-lang.version>3.18.0</commons-lang.version>
         <commons-text.version>1.10.0</commons-text.version>
         <deephaven-csv.version>0.18.0</deephaven-csv.version>
         <eclipsecollections.version>10.2.0</eclipsecollections.version>
