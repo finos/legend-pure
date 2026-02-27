@@ -14,25 +14,26 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.lang.creation;
 
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.stack.MutableStack;
-import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.compiler.validation.validator.PropertyValidator;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
+import org.finos.legend.pure.m3.navigation.generictype.GenericType;
+import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
@@ -66,6 +67,9 @@ public class DynamicNew extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, final Context context, final ProcessorSupport processorSupport) throws PureExecutionException
     {
         // The parameter is a Class ... but we encode the typeArguments in the ValueExpression genericType's typeArguments ...
+        // For Class variant of dynamicNew: extract type arguments from the ValueExpression's genericType
+        CoreInstance valueExpressionGenericType = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, M3Properties.typeArguments, processorSupport);
+
         CoreInstance genericType = this.isGenericType ? Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport) :
                 processorSupport.type_wrapGenericType(Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport));
         // key / value list
@@ -73,13 +77,32 @@ public class DynamicNew extends NativeFunction
 
         CoreInstance classifier = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
         CoreInstance instance = this.repository.newEphemeralAnonymousCoreInstance(functionExpressionCallStack.peek().getSourceInformation(), classifier);
-        if (this.isGenericType)
+
+        // Build and set classifierGenericType to ensure validation works properly for generic types
+        CoreInstance sourceGenericType = this.isGenericType ? genericType : valueExpressionGenericType;
+        ListIterable<? extends CoreInstance> typeArguments = Instance.getValueForMetaPropertyToManyResolved(sourceGenericType, M3Properties.typeArguments, processorSupport);
+        ListIterable<? extends CoreInstance> multiplicityArguments = Instance.getValueForMetaPropertyToManyResolved(sourceGenericType, M3Properties.multiplicityArguments, processorSupport);
+        ListIterable<? extends CoreInstance> typeVariableValues = Instance.getValueForMetaPropertyToManyResolved(sourceGenericType, M3Properties.typeVariableValues, processorSupport);
+
+        CoreInstance classifierGenericType = this.repository.newEphemeralAnonymousCoreInstance(functionExpressionCallStack.peek().getSourceInformation(), processorSupport.package_getByUserPath(M3Paths.GenericType));
+        Instance.addValueToProperty(classifierGenericType, M3Properties.rawType, classifier, processorSupport);
+        for (CoreInstance typeArgument : typeArguments)
         {
-            Instance.addValueToProperty(instance, M3Properties.classifierGenericType, genericType, processorSupport);
+            Instance.addValueToProperty(classifierGenericType, M3Properties.typeArguments, typeArgument, processorSupport);
+        }
+        for (CoreInstance multiplicityArgument : multiplicityArguments)
+        {
+            CoreInstance concreteMultiplicityArgument = Multiplicity.makeMultiplicityAsConcreteAsPossible(multiplicityArgument, resolvedMultiplicityParameters.peek().asUnmodifiable());
+            Instance.addValueToProperty(classifierGenericType, M3Properties.multiplicityArguments, concreteMultiplicityArgument, processorSupport);
+        }
+        for (CoreInstance typeVariableValue : typeVariableValues)
+        {
+            Instance.addValueToProperty(classifierGenericType, M3Properties.typeVariableValues, typeVariableValue, processorSupport);
         }
 
-        //TODO - extend to cover generics
-        boolean shouldValidate = Iterate.isEmpty(Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, processorSupport));
+        classifierGenericType = GenericType.makeTypeArgumentAsConcreteAsPossible(classifierGenericType, resolvedTypeParameters.peek().asUnmodifiable(), Maps.immutable.of(), processorSupport);
+        Instance.addValueToProperty(instance, M3Properties.classifierGenericType, classifierGenericType, processorSupport);
+
         MapIterable<String, CoreInstance> propertiesByName = processorSupport.class_getSimplePropertiesByName(classifier);
 
         // Set property values
@@ -97,17 +120,15 @@ public class DynamicNew extends NativeFunction
             ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(keyValue, M3Properties.value, processorSupport);
             Instance.setValuesForProperty(instance, key, values, processorSupport);
             setKeys.add(key);
-            if (shouldValidate)
+
+            // Validate multiplicity and types for property values
+            CoreInstance propertyGenericType = GenericType.resolvePropertyReturnType(Instance.extractGenericTypeFromInstance(instance, processorSupport), property, processorSupport);
+            CoreInstance propertyMultiplicity = Property.resolveInstancePropertyReturnMultiplicity(instance, property, processorSupport);
+            SourceInformation keySourceInfo = Instance.getValueForMetaPropertyToOneResolved(keyValue, M3Properties.key, processorSupport).getSourceInformation();
+            validateMultiplicity(instance, property, propertyMultiplicity, values.size(), keySourceInfo, functionExpressionCallStack, processorSupport);
+            for (CoreInstance val : values)
             {
-                try
-                {
-                    PropertyValidator.validateMultiplicityRange(instance, property, values, processorSupport);
-                    values.forEach(val -> PropertyValidator.validateTypeRange(instance, property, val, processorSupport));
-                }
-                catch (PureCompilationException ex)
-                {
-                    throw new PureExecutionException("Unable to create a new instance of class '" + classifier.getName() + "'. Invalid value '" + values.collect(v -> v.printWithoutDebug("", 1)).makeString(",") + "' provided for class property '" + key + "': " + ex.getInfo(), ex, functionExpressionCallStack);
-                }
+                validateType(propertyGenericType, Instance.extractGenericTypeFromInstance(val, processorSupport), val, functionExpressionCallStack, processorSupport);
             }
         }
 
@@ -128,7 +149,7 @@ public class DynamicNew extends NativeFunction
                 }
                 else
                 {
-                    New.setValuesToProperty(expression, expression, property, instance, expression.getSourceInformation(), genericType, evaluationVariableContext, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, profiler, instantiationContext, executionSupport, this.functionExecution, processorSupport);
+                    New.setValuesToProperty(expression, expression, property, instance, expression.getSourceInformation(), classifierGenericType, evaluationVariableContext, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, profiler, instantiationContext, executionSupport, this.functionExecution, processorSupport);
                 }
             }
         }
@@ -157,5 +178,44 @@ public class DynamicNew extends NativeFunction
         }
         CoreInstance value = ValueSpecificationBootstrap.wrapValueSpecification(instance, true, processorSupport);
         return DefaultConstraintHandler.handleConstraints(classifier, value, functionExpressionCallStack.peek().getSourceInformation(), this.functionExecution, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
+    }
+
+    private static void validateMultiplicity(CoreInstance instance, CoreInstance property, CoreInstance propertyMultiplicity, int valueCount, SourceInformation sourceInfoForExceptions, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport) throws PureExecutionException
+    {
+        if (!Multiplicity.isValid(propertyMultiplicity, valueCount))
+        {
+            throw new PureExecutionException(sourceInfoForExceptions, "Error instantiating the type '" + GenericType.print(Instance.extractGenericTypeFromInstance(instance, processorSupport), processorSupport) + "'. The property '" + Property.getPropertyName(property) + "' has a multiplicity range of " + Multiplicity.print(propertyMultiplicity) + " when the given list has a cardinality equal to " + valueCount, functionExpressionCallStack);
+        }
+    }
+
+    private static void validateType(CoreInstance propertyGenericType, CoreInstance valGenericType, CoreInstance expression, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport) throws PureExecutionException
+    {
+        boolean compatible;
+        try
+        {
+            compatible = GenericType.isGenericCompatibleWith(valGenericType, propertyGenericType, processorSupport);
+        }
+        catch (Exception e)
+        {
+            String valTypeString = GenericType.print(valGenericType, false, processorSupport);
+            String propertyTypeString = GenericType.print(propertyGenericType, false, processorSupport);
+            if (valTypeString.equals(propertyTypeString))
+            {
+                valTypeString = GenericType.print(valGenericType, true, processorSupport);
+                propertyTypeString = GenericType.print(propertyGenericType, true, processorSupport);
+            }
+            throw new PureExecutionException(expression.getSourceInformation(), "Error checking if value type '" + valTypeString + "' is compatible with property type '" + propertyTypeString + "'", e, functionExpressionCallStack);
+        }
+        if (!compatible)
+        {
+            String valTypeString = GenericType.print(valGenericType, false, processorSupport);
+            String propertyTypeString = GenericType.print(propertyGenericType, false, processorSupport);
+            if (valTypeString.equals(propertyTypeString))
+            {
+                valTypeString = GenericType.print(valGenericType, true, processorSupport);
+                propertyTypeString = GenericType.print(propertyGenericType, true, processorSupport);
+            }
+            throw new PureExecutionException(expression.getSourceInformation(), "Type Error: '" + valTypeString + "' not a subtype of '" + propertyTypeString + "'" + (expression.getSourceInformation() == null ? expression.print("") : ""), functionExpressionCallStack);
+        }
     }
 }

@@ -62,6 +62,16 @@ Class meta::pure::functions::lang::tests::dynamicNew::SubClassWithDefault extend
   age : Integer[1] = -1;
 }
 
+Class meta::pure::functions::lang::tests::dynamicNew::L<T>
+{
+  l : T[1];
+}
+
+Class meta::pure::functions::lang::tests::dynamicNew::M
+{
+  m : meta::pure::functions::lang::tests::dynamicNew::L<String>[1];
+}
+
 function meta::pure::functions::lang::tests::dynamicNew::getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]
 {
  [^D_D(name = $o->cast(@D_A).a + $o->getHiddenPayload()->cast(@String)->toOne()), ^D_D(name = $o->cast(@D_A).b->toOne() + $o->getHiddenPayload()->cast(@String)->toOne())]
@@ -191,6 +201,17 @@ function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testDynam
               )->cast(@D_A);
 
  testDynamicNewAssertsWithOverride($r);
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testDynamicNewNested():Boolean[1]
+{
+  let m = dynamicNew(M,
+                      [
+                        ^KeyValue(key='m', value=dynamicNew(L, [^KeyValue(key='l',value='hello'), ^KeyValue(key='classifierGenericType', value=^GenericType(rawType=L, typeArguments=^GenericType(rawType=String)))])),
+                        ^KeyValue(key='classifierGenericType', value=^GenericType(rawType=M))
+                      ])->cast(@M);
+
+  assertEquals($m.m.l, 'hello');
 }
 
 function meta::pure::functions::lang::tests::dynamicNew::testDynamicNewAssertsWithOverride(r:D_A[1]):Boolean[1]
