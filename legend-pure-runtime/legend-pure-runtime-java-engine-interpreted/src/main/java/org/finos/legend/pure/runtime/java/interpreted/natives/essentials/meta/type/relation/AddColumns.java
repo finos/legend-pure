@@ -46,7 +46,7 @@ public class AddColumns extends NativeFunction
     {
         MutableList<Column<?,?>> columns = Lists.mutable.withAll(((RelationType<?>) Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport))._columns());
         columns.withAll(Lists.mutable.withAll(((RelationType<?>)((ColSpecArrayInstance)((InstanceValueInstance)params.get(1))._values().getFirst())._classifierGenericType()._typeArguments().getFirst()._rawType())._columns()));
-        MutableList<? extends CoreInstance> newColumns = columns.collect(c -> _Column.getColumnInstanceInterpreted(c._name(), c._nameWildCard(), _Column.getColumnType(c), _Column.getColumnMultiplicity(c), c._stereotypesCoreInstance(), c._taggedValues(), c.getSourceInformation(), processorSupport)).toList();
+        MutableList<? extends CoreInstance> newColumns = columns.collect(c -> _Column.getColumnInstance(c._name(), c._nameWildCard(), _Column.getColumnType(c), _Column.getColumnMultiplicity(c), c._stereotypesCoreInstance(), false, c._taggedValues(), c.getSourceInformation(), processorSupport)).toList();
         return ValueSpecificationBootstrap.wrapValueSpecification(_RelationType.build(newColumns, functionExpressionCallStack.peek().getSourceInformation(), processorSupport), true, processorSupport);
     }
 }
