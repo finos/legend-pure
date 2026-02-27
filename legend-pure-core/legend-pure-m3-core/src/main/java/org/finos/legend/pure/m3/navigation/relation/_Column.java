@@ -37,15 +37,15 @@ public class _Column
 {
     public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, SourceInformation src, ProcessorSupport processorSupport)
     {
-        return getColumnInstanceInterpreted(name, nameWildCard, type, multiplicity, null, null, src, processorSupport);
+        return getColumnInstance(name, nameWildCard, type, multiplicity, null, false, null, src, processorSupport);
     }
 
     public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, Multiplicity multiplicity, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
-        return getColumnInstanceInterpreted(name, nameWildCard, targetType, multiplicity, null, null, sourceInformation, processorSupport);
+        return getColumnInstance(name, nameWildCard, targetType, multiplicity, null, false, null, sourceInformation, processorSupport);
     }
 
-    public static Column<?, ?> getColumnInstanceInterpreted(String name, boolean nameWildCard, String type, Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, RichIterable<? extends TaggedValue> taggedValues, SourceInformation src, ProcessorSupport processorSupport)
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, boolean assumeNoImportStubs, RichIterable<? extends TaggedValue> taggedValues, SourceInformation src, ProcessorSupport processorSupport)
     {
         GenericType target = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
         if (type == null)
@@ -61,17 +61,7 @@ public class _Column
             }
             target._rawType((Type)_type);
         }
-        return _Column.getColumnInstanceInterpreted(name, nameWildCard, target, multiplicity, stereotypes, taggedValues, src, processorSupport);
-    }
-
-    public static Column<?, ?> getColumnInstanceInterpreted(String name, boolean nameWildCard, GenericType targetType, Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, RichIterable<? extends TaggedValue> taggedValues, SourceInformation sourceInformation, ProcessorSupport processorSupport)
-    {
-        return getColumnInstance(name, nameWildCard, targetType, multiplicity, stereotypes, false, taggedValues, sourceInformation, processorSupport);
-    }
-
-    public static Column<?, ?> getColumnInstanceCompiled(String name, boolean nameWildCard, GenericType targetType, Multiplicity multiplicity, RichIterable<? extends Stereotype> stereotypes, RichIterable<? extends TaggedValue> taggedValues, SourceInformation sourceInformation, ProcessorSupport processorSupport)
-    {
-        return getColumnInstance(name, nameWildCard, targetType, multiplicity, stereotypes, true, taggedValues, sourceInformation, processorSupport);
+        return _Column.getColumnInstance(name, nameWildCard, target, multiplicity, stereotypes, assumeNoImportStubs, taggedValues, src, processorSupport);
     }
 
     /**
@@ -87,7 +77,7 @@ public class _Column
      * @param processorSupport the processor support used for creating the column instance.
      * @return a Column instance with the specified properties and metadata.
      */
-    private static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, boolean assumeNoImportStubs, RichIterable<? extends TaggedValue> taggedValues, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, boolean assumeNoImportStubs, RichIterable<? extends TaggedValue> taggedValues, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         Column<?, ?> columnInstance = (Column<?, ?>) processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.Column);
         columnInstance._name(StringEscape.unescape(removeQuotes(name)));
@@ -102,11 +92,7 @@ public class _Column
         {
             if (assumeNoImportStubs)
             {
-                if (stereotypes.anySatisfy(s -> !(s instanceof Stereotype)))
-                {
-                    throw new IllegalArgumentException("All elements in stereotypes must be instances of Stereotype");
-                }
-                columnInstance._stereotypes((RichIterable<? extends Stereotype>) stereotypes);
+                columnInstance._stereotypes(ListHelper.wrapListIterable(stereotypes).selectInstancesOf(Stereotype.class));
             }
             else
             {
