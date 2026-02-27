@@ -37,15 +37,15 @@ public class _Column
 {
     public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, SourceInformation src, ProcessorSupport processorSupport)
     {
-        return getColumnInstance(name, nameWildCard, type, multiplicity, null, false, null, src, processorSupport);
+        return getColumnInstance(name, nameWildCard, type, multiplicity, null, null, src, processorSupport);
     }
 
     public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, Multiplicity multiplicity, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
-        return getColumnInstance(name, nameWildCard, targetType, multiplicity, null, false, null, sourceInformation, processorSupport);
+        return getColumnInstance(name, nameWildCard, targetType, multiplicity, null, null, sourceInformation, processorSupport);
     }
 
-    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, boolean assumeNoImportStubs, RichIterable<? extends TaggedValue> taggedValues, SourceInformation src, ProcessorSupport processorSupport)
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, RichIterable<? extends TaggedValue> taggedValues, SourceInformation src, ProcessorSupport processorSupport)
     {
         GenericType target = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
         if (type == null)
@@ -61,7 +61,7 @@ public class _Column
             }
             target._rawType((Type)_type);
         }
-        return _Column.getColumnInstance(name, nameWildCard, target, multiplicity, stereotypes, assumeNoImportStubs, taggedValues, src, processorSupport);
+        return _Column.getColumnInstance(name, nameWildCard, target, multiplicity, stereotypes, taggedValues, src, processorSupport);
     }
 
     /**
@@ -70,14 +70,13 @@ public class _Column
      * @param nameWildCard indicates whether the name is a wildcard. If true, the name will be treated as a wildcard and the column will match any name. If false, the name will be treated as a literal name.
      * @param targetType the generic type for the column.
      * @param multiplicity the multiplicity for the column.
-     * @param stereotypes the stereotypes to apply to the column. If assumeNoImportStubs is true, the stereotypes are expected to be actual Stereotype instances. If assumeNoImportStubs is false, the stereotypes are expected to be CoreInstances that may include ImportStubs that need to be resolved.
-     * @param assumeNoImportStubs indicates whether to assume that the stereotypes do not include ImportStubs. If true (used in compiled mode), the stereotypes will be directly cast to Stereotype instances. If false, the stereotypes will be resolved as CoreInstances, which may include resolving ImportStubs.
+     * @param stereotypes the stereotypes to apply to the column.
      * @param taggedValues the tagged values to apply to the column.
      * @param sourceInformation the source information for the column instance, used for error reporting and debugging.
      * @param processorSupport the processor support used for creating the column instance.
      * @return a Column instance with the specified properties and metadata.
      */
-    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, boolean assumeNoImportStubs, RichIterable<? extends TaggedValue> taggedValues, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, Multiplicity multiplicity, RichIterable<? extends CoreInstance> stereotypes, RichIterable<? extends TaggedValue> taggedValues, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         Column<?, ?> columnInstance = (Column<?, ?>) processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.Column);
         columnInstance._name(StringEscape.unescape(removeQuotes(name)));
@@ -90,7 +89,7 @@ public class _Column
         columnInstance.setKeyValues(M3PropertyPaths.classifierGenericType, Lists.mutable.with(columnGenericType));
         if (stereotypes != null && stereotypes.notEmpty())
         {
-            if (assumeNoImportStubs)
+            if (stereotypes.allSatisfy(s -> s instanceof Stereotype))
             {
                 columnInstance._stereotypes(ListHelper.wrapListIterable(stereotypes).selectInstancesOf(Stereotype.class));
             }
