@@ -173,17 +173,9 @@ public class TestPureCompiledJarMojo
         setField(mojo, "generationType", JavaCodeGeneration.GenerationType.modular);
         mojo.execute();
 
-        // Modular generation scopes output by repository name.
-        // Bins at metadata/bin/platform/ and classifiers at metadata/classifiers/platform/.
-        File metaDir    = new File(targetDir, "metadata-distributed");
-        Assert.assertTrue("metadata-distributed directory should be created for modular generation",
-                metaDir.exists());
-        File binDir     = new File(metaDir, "metadata/bin/platform");
-        File packageIdx = new File(metaDir, "metadata/classifiers/platform/Package.idx");
-        Assert.assertTrue("modular generation should write metadata/bin/platform/ into metadata-distributed",
-                binDir.isDirectory() && binDir.list() != null && binDir.list().length > 0);
-        Assert.assertTrue("metadata/classifiers/platform/Package.idx should exist for modular platform generation",
-                packageIdx.exists() && packageIdx.length() > 0);
+        // Modular generation now uses pelt serialization, which must already exist; so there should be no metadata generation
+        File metaDir = new File(targetDir, "metadata-distributed");
+        Assert.assertFalse("metadata-distributed directory should not be created", metaDir.exists());
     }
 
     @Test
@@ -260,11 +252,9 @@ public class TestPureCompiledJarMojo
         String src = new String(java.nio.file.Files.readAllBytes(packageImpl.toPath()));
         Assert.assertTrue("Package_Impl.java should declare class Package_Impl", src.contains("class Package_Impl"));
 
-        // Metadata — modular + useSingleDir writes to classesDir/metadata/classifiers/platform/
-        File packageIdx = new File(classesDir, "metadata/classifiers/platform/Package.idx");
-        Assert.assertTrue(
-                "metadata/classifiers/platform/Package.idx should exist inside classesDirectory",
-                packageIdx.exists() && packageIdx.length() > 0);
+        // Modular generation now uses pelt serialization, which must already exist; so there should be no metadata generation
+        File metaDir = new File(targetDir, "metadata");
+        Assert.assertFalse("metadata directory should not be created", metaDir.exists());
     }
 
     // --- error path ---

@@ -161,16 +161,11 @@ public class TestJavaCodeGeneration
                 true,
                 new VoidLog());
 
-        // Modular generation writes metadata to directory/metadata-distributed.
-        // The serializer writes metadata/bin/*.bin and metadata/classifiers/*.idx inside it.
+        // Modular generation now uses pelt serialization, which must already exist; so there should be no metadata generation
         File metaDistributed = new File(directory, "metadata-distributed");
-        Assert.assertTrue("metadata-distributed directory should be created", metaDistributed.exists());
-        File binDir = new File(metaDistributed, "metadata/bin");
-        Assert.assertTrue(
-                "Modular generation should produce metadata/bin under metadata-distributed",
-                binDir.isDirectory() && binDir.list() != null && binDir.list().length > 0);
+        Assert.assertFalse("metadata-distributed directory should not be created", metaDistributed.exists());
 
-        executeDynamicNewTest(cl -> MetadataLazy.fromClassLoader(cl, "platform"), classesDirectory, metaDistributed);
+        executeDynamicNewTest(cl -> MetadataLazy.fromClassLoader(cl, "platform"), classesDirectory);
     }
 
     @Test
@@ -470,11 +465,9 @@ public class TestJavaCodeGeneration
         JavaCodeGeneration.main("platform", classesDir.getAbsolutePath(), directory.getAbsolutePath());
 
         // main() calls doIt() with: modular, useSingleDir=true, generateSources=true, generateTest=true
-        // Metadata goes to classesDir/metadata/classifiers/platform/ (useSingleDir=true + modular)
-        File packageIdx = new File(classesDir, "metadata/classifiers/platform/Package.idx");
-        Assert.assertTrue(
-                "main(repo, classesDir, targetDir) should write metadata/classifiers/platform/Package.idx into classesDir",
-                packageIdx.exists() && packageIdx.length() > 0);
+        // Modular generation now uses pelt serialization, which must already exist; so there should be no metadata generation
+        File metadataDir = new File(classesDir, "metadata");
+        Assert.assertFalse(metadataDir.exists());
 
         // Generated sources go to targetDir/generated-test-sources/ because main() passes generateTest=true
         File packageImpl = new File(directory,
@@ -501,9 +494,7 @@ public class TestJavaCodeGeneration
 
         // Package.idx still expected - verify it's produced the same as 3-arg form
         File packageIdx = new File(classesDir, "metadata/classifiers/platform/Package.idx");
-        Assert.assertTrue(
-                "Four-arg main() should still produce metadata/classifiers/platform/Package.idx",
-                packageIdx.exists() && packageIdx.length() > 0);
+        Assert.assertFalse(packageIdx.exists());
     }
 
     private static void executeDynamicNewTestWithEagerMetadata(File classesDir, String... repoNames) throws Exception

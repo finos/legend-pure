@@ -20,6 +20,7 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
@@ -30,6 +31,7 @@ import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.ParserService;
+import org.finos.legend.pure.m3.serialization.runtime.PureCompilerLoader;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m3.serialization.runtime.cache.CacheState;
@@ -412,18 +414,11 @@ public class JavaCodeGeneration
     {
         String writeMetadataStep = "writing distributed Pure metadata";
         long writeMetadataStart = startStep(writeMetadataStep, log);
-        for (String repository : repositoriesForMetadata)
+        PureCompilerLoader loader = PureCompilerLoader.newLoader(Thread.currentThread().getContextClassLoader());
+        if (!Iterate.allSatisfy(repositoriesForMetadata, loader::canLoad))
         {
-            generateModularMetadata(start, runtime, repository, distributedMetadataDirectory, log);
+            throw new RuntimeException(Iterate.reject(repositoriesForMetadata, loader::canLoad, Lists.mutable.empty()).sortThis().makeString("No modular metadata for the following repos: ", ", ", ""));
         }
-        completeStep(writeMetadataStep, writeMetadataStart, log);
-    }
-
-    private static void generateModularMetadata(long start, PureRuntime runtime, String repository, Path distributedMetadataDirectory, Log log)
-    {
-        String writeMetadataStep = "writing distributed Pure metadata for " + repository;
-        long writeMetadataStart = startStep(writeMetadataStep, log);
-        DistributedBinaryGraphSerializer.newSerializer(runtime, repository).serializeToDirectory(distributedMetadataDirectory);
         completeStep(writeMetadataStep, writeMetadataStart, log);
     }
 
