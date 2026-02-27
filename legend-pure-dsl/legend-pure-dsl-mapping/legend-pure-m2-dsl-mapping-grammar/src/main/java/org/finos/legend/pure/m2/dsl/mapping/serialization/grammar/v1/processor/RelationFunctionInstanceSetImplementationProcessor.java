@@ -85,7 +85,7 @@ public class RelationFunctionInstanceSetImplementationProcessor extends Processo
 
     private void populateColumnFromProperty(RelationFunctionPropertyMapping propertyMapping, Property<?, ?> property, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
-        RelationType<?> newRelationType = _RelationType.build(Lists.mutable.with(_Column.getColumnInstance(propertyMapping._column()._name(), false, property._genericType(), property._multiplicity(), propertyMapping._column()._stereotypesCoreInstance(), false, propertyMapping._column()._taggedValues(), sourceInformation, processorSupport)), sourceInformation, processorSupport);
+        RelationType<?> newRelationType = _RelationType.build(Lists.mutable.with(_Column.getColumnInstance(propertyMapping._column()._name(), false, property._genericType(), property._multiplicity(), propertyMapping._column()._stereotypesCoreInstance(), propertyMapping._column()._taggedValues(), sourceInformation, processorSupport)), sourceInformation, processorSupport);
         propertyMapping._column(newRelationType._columns().toList().get(0));
     }
 
