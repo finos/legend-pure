@@ -53,10 +53,20 @@ function <<PCT.test>> meta::pure::functions::math::tests::minus::testComplexMinu
 
 function <<PCT.test>> meta::pure::functions::math::tests::minus::testFloatMinus<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(1.5, $f->eval(|3 - 1.5));
-    assertEq(-1.5, $f->eval(|0 - 1.5));
-    assertEq(-1.5, $f->eval(|1.5 - 3));
-    assertEq(-4.5, $f->eval(|-1.5 - 3));
+    assertEq(1.5, $f->eval(|3.0 - 1.5));
+    assertEq(-1.5, $f->eval(|0.0 - 1.5));
+    assertEq(-1.5, $f->eval(|1.5 - 3.0));
+    assertEq(-4.5, $f->eval(|-1.5 - 3.0));
+}
+
+function <<PCT.test>> meta::pure::functions::math::tests::minus::testNumberMinus<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquivalent(1.5, $f->eval(|3 - 1.5));
+    assertEquivalent(-1.5, $f->eval(|0 - 1.5));
+    assertEquivalent(-1.5D, $f->eval(|0 - 1.5D));
+    assertEquivalent(-1.5, $f->eval(|1.5 - 3));
+    assertEquivalent(-4.5, $f->eval(|-1.5 - 3));
+    assertEquivalent(-4.5D, $f->eval(|-1.5D - 3));
 }
 
 function <<PCT.test>> meta::pure::functions::math::tests::minus::testSingleMinus<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

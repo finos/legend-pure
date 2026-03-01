@@ -82,7 +82,7 @@ function <<PCT.test>> meta::pure::functions::math::tests::plus::testPlusFloat<Z|
 
 function <<PCT.test>> meta::pure::functions::math::tests::plus::testPlusNumber<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(32.0, $f->eval(|[15,13,2.0,1,1.0]->plus()));
+    assertEquivalent(32.0, $f->eval(|[15,13,2.0,1,1.0]->plus()));
 }
 
 function <<PCT.test>> meta::pure::functions::math::tests::plus::testDecimalPlus<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
