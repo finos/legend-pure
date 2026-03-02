@@ -24,6 +24,7 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
@@ -225,9 +226,13 @@ public class _RelationType
                             Type rawTypeB = (Type) Instance.getValueForMetaPropertyToOneResolved(b, M3Properties.rawType, processorSupport);
                             GenericType merged = rawTypeA == null ? b : rawTypeB == null ? a : (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(a, b), isCovariant, false, genericTypeCopy.getSourceInformation(), processorSupport);
                             org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity mergedMul = rawTypeA == null ? _Column.getColumnMultiplicity(c.getTwo()) : rawTypeB == null ? _Column.getColumnMultiplicity(c.getOne()) : (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) Multiplicity.minSubsumingMultiplicity(_Column.getColumnMultiplicity(c.getOne()), _Column.getColumnMultiplicity(c.getTwo()), processorSupport);
-                            Column<?, ?> stereotypesSource = c.getOne()._stereotypesCoreInstance().notEmpty() ? c.getOne() : c.getTwo();
-                            Column<?, ?> taggedValuesSource = c.getOne()._taggedValues().notEmpty() ? c.getOne() : c.getTwo();
-                            return _Column.getColumnInstance(cName, wildcard, merged, mergedMul, stereotypesSource._stereotypesCoreInstance(), taggedValuesSource._taggedValues(), null, processorSupport);
+                            RichIterable<? extends CoreInstance> stereotypesA = c.getOne()._stereotypesCoreInstance() == null ? Lists.mutable.empty() : c.getOne()._stereotypesCoreInstance();
+                            RichIterable<? extends CoreInstance> stereotypesB = c.getTwo()._stereotypesCoreInstance() == null ? Lists.mutable.empty() : c.getTwo()._stereotypesCoreInstance();
+                            RichIterable<? extends CoreInstance> mergedStereotypes = Lists.mutable.<CoreInstance>withAll(stereotypesA).withAll(stereotypesB);
+                            RichIterable<? extends TaggedValue> taggedValuesA = c.getOne()._taggedValues() == null ? Lists.mutable.empty() : c.getOne()._taggedValues();
+                            RichIterable<? extends TaggedValue> taggedValuesB = c.getTwo()._taggedValues() == null ? Lists.mutable.empty() : c.getTwo()._taggedValues();
+                            RichIterable<? extends TaggedValue> mergedTaggedValues = Lists.mutable.<TaggedValue>withAll(taggedValuesA).withAll(taggedValuesB);
+                            return _Column.getColumnInstance(cName, wildcard, merged, mergedMul, mergedStereotypes, mergedTaggedValues, null, processorSupport);
                         }),
                         existingGenericType.getValueForMetaPropertyToOne(M3Properties.rawType).getSourceInformation(),
                         processorSupport
