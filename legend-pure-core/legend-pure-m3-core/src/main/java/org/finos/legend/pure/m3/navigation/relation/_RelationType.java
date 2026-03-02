@@ -228,10 +228,10 @@ public class _RelationType
                             org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity mergedMul = rawTypeA == null ? _Column.getColumnMultiplicity(c.getTwo()) : rawTypeB == null ? _Column.getColumnMultiplicity(c.getOne()) : (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) Multiplicity.minSubsumingMultiplicity(_Column.getColumnMultiplicity(c.getOne()), _Column.getColumnMultiplicity(c.getTwo()), processorSupport);
                             RichIterable<? extends CoreInstance> stereotypesA = c.getOne()._stereotypesCoreInstance() == null ? Lists.mutable.empty() : c.getOne()._stereotypesCoreInstance();
                             RichIterable<? extends CoreInstance> stereotypesB = c.getTwo()._stereotypesCoreInstance() == null ? Lists.mutable.empty() : c.getTwo()._stereotypesCoreInstance();
-                            RichIterable<? extends CoreInstance> mergedStereotypes = Lists.mutable.<CoreInstance>withAll(stereotypesA).withAll(stereotypesB);
+                            RichIterable<? extends CoreInstance> mergedStereotypes = Lists.mutable.<CoreInstance>withAll(stereotypesA).withAll(stereotypesB).distinct();
                             RichIterable<? extends TaggedValue> taggedValuesA = c.getOne()._taggedValues() == null ? Lists.mutable.empty() : c.getOne()._taggedValues();
                             RichIterable<? extends TaggedValue> taggedValuesB = c.getTwo()._taggedValues() == null ? Lists.mutable.empty() : c.getTwo()._taggedValues();
-                            RichIterable<? extends TaggedValue> mergedTaggedValues = Lists.mutable.<TaggedValue>withAll(taggedValuesA).withAll(taggedValuesB);
+                            RichIterable<? extends TaggedValue> mergedTaggedValues = Lists.mutable.<TaggedValue>withAll(taggedValuesA).withAll(taggedValuesB).distinctBy(TaggedValue::_tagCoreInstance);
                             return _Column.getColumnInstance(cName, wildcard, merged, mergedMul, mergedStereotypes, mergedTaggedValues, null, processorSupport);
                         }),
                         existingGenericType.getValueForMetaPropertyToOne(M3Properties.rawType).getSourceInformation(),
