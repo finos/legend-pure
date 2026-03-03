@@ -59,7 +59,7 @@
         <!-- Dependency version -->
         <antlr.version>4.8-1</antlr.version>
         <apache-httpcomponents.version>4.5.13</apache-httpcomponents.version>
-        <apache.maven.version>3.9.2</apache.maven.version>
+        <apache.maven.version>3.9.11</apache.maven.version>
         <bouncycastle.version>1.67</bouncycastle.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-csv.version>1.5</commons-csv.version>
