@@ -23,7 +23,7 @@ public class EnumHelper
 {
     public static Enum resolveToEnum(CoreInstance instance)
     {
-        return EnumCoreInstanceWrapper.toEnum(EnumStubHelper.fromEnumStub(instance));
+        return EnumCoreInstanceWrapper.toEnum(AnyStubHelper.fromStub(instance));
     }
 
     public static RichIterable<? extends Enum> resolveToEnums(RichIterable<? extends CoreInstance> instances)
