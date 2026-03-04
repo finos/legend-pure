@@ -645,6 +645,33 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         return "^meta::pure::metamodel::import::ImportStub " + sourceInformation.getPureSourceInformation(ctx.qualifiedName().identifier().getStart()).toM4String() + " (importGroup=system::imports::" + importId + ", idOrPath='" + ctx.qualifiedName().getText() + "@" + ctx.identifier().getText() + "')";
     }
 
+    private String visitTaggedValuesBlock(RelationalParser.TaggedValuesContext taggedValues)
+    {
+        StringBuilder sb = new StringBuilder();
+        if (taggedValues != null)
+        {
+            for (RelationalParser.TaggedValueContext tv : taggedValues.taggedValue())
+            {
+                sb.append(visitTaggedValueNew(tv));
+                sb.append(",");
+            }
+            ParsingUtils.removeLastCommaCharacterIfPresent(sb);
+        }
+        return sb.toString();
+    }
+
+    private String visitTaggedValueNew(RelationalParser.TaggedValueContext ctx)
+    {
+        StringBuilder value = new StringBuilder();
+        value.append(ctx.STRING(0).getText());
+        for (int i = 1; i < ctx.STRING().size(); i++)
+        {
+            value.append(ctx.STRING(i).getText());
+        }
+        return "^meta::pure::metamodel::extension::TaggedValue " + sourceInformation.getPureSourceInformation(ctx.qualifiedName().identifier().getStart()).toM4String() +
+               " (tag=^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + importId + ", idOrPath='" + ctx.qualifiedName().getText() + "@" + ctx.identifier().getText() + "'), value=" + value + ")";
+    }
+
     private String visitSchemasBlock(List<SchemaContext> schemas)
     {
         StringBuilder sb = new StringBuilder();
@@ -1339,7 +1366,16 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
             throw new PureParserException(sourceInformation.getPureSourceInformation(ctx.identifier().getStart()), exp.getMessage());
         }
 
-        return "^meta::relational::metamodel::Column " + sourceInformation.getPureSourceInformation(ctx.relationalIdentifier().getStart()).toM4String() + " (name='" + ctx.relationalIdentifier().getText() + "', type=" + pureType + ", nullable= " + nullable + ")";
+        String stereotypes = visitStereotypesBlock(ctx.stereotypes());
+        String taggedValues = visitTaggedValuesBlock(ctx.taggedValues());
+
+        return "^meta::relational::metamodel::Column " + sourceInformation.getPureSourceInformation(ctx.relationalIdentifier().getStart()).toM4String() +
+               " (name='" + ctx.relationalIdentifier().getText() +
+               "', type=" + pureType +
+               ", nullable= " + nullable +
+               (stereotypes.isEmpty() ? "" : ", stereotypes=[" + stereotypes + "]") +
+               (taggedValues.isEmpty() ? "" : ", taggedValues=[" + taggedValues + "]") +
+               ")";
 
     }
 

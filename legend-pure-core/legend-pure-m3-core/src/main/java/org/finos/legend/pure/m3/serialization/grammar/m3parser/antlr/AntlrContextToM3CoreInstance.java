@@ -77,6 +77,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.proper
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.MultiplicityInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.MultiplicityValueInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperationInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
@@ -950,6 +951,11 @@ public class AntlrContextToM3CoreInstance
                 columnNames.add(this.repository.newStringCoreInstance(colName));
                 GenericType returnType = null;
                 Multiplicity multiplicity = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport);
+
+                // Extract stereotypes and tagged values
+                RichIterable<? extends CoreInstance> stereotypes = (oneColSpec.stereotypes() == null) ? null : stereotypes(oneColSpec.stereotypes(), importId);
+                RichIterable<? extends TaggedValue> taggedValues = (oneColSpec.taggedValues() == null) ? null : taggedValues(oneColSpec.taggedValues(), importId);
+
                 if (oneColSpec.anyLambda() != null)
                 {
                     lambdas.add(processLambda(oneColSpec.anyLambda(), Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, importId, space, addLines, false, Lists.mutable.empty()));
@@ -972,7 +978,7 @@ public class AntlrContextToM3CoreInstance
                     returnType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
                     returnType._rawType(null);
                 }
-                columnInstances.add(_Column.getColumnInstance(colName, false, returnType, multiplicity, src, processorSupport));
+                columnInstances.add(_Column.getColumnInstance(colName, false, returnType, multiplicity, stereotypes, taggedValues, src, processorSupport));
             });
             RelationType<?> relationType = _RelationType.build(columnInstances, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport);
             GenericType relationTypeGenericType = (GenericType) processorSupport.type_wrapGenericType(relationType);
