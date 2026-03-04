@@ -355,4 +355,17 @@ public class AbstractCoreInstanceWrapper implements CoreInstance
     {
         return this.instance.hashCode();
     }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder builder = new StringBuilder(super.toString())
+                .append('{').append(this.instance);
+        SourceInformation sourceInfo = this.instance.getSourceInformation();
+        if (sourceInfo != null)
+        {
+            sourceInfo.appendMessage(builder.append(" (")).append(')');
+        }
+        return builder.append('}').toString();
+    }
 }
