@@ -26,7 +26,7 @@ import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 
 public class AbstractCoreInstanceWrapper implements CoreInstance
 {
-    protected CoreInstance instance;
+    protected final CoreInstance instance;
 
     public AbstractCoreInstanceWrapper(CoreInstance instance)
     {
