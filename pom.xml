@@ -59,7 +59,7 @@
         <!-- Dependency version -->
         <antlr.version>4.8-1</antlr.version>
         <apache-httpcomponents.version>4.5.13</apache-httpcomponents.version>
-        <apache.maven.version>3.9.2</apache.maven.version>
+        <apache.maven.version>3.9.11</apache.maven.version>
         <bouncycastle.version>1.67</bouncycastle.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-csv.version>1.5</commons-csv.version>
@@ -68,7 +68,7 @@
         <commons-text.version>1.10.0</commons-text.version>
         <deephaven-csv.version>0.18.0</deephaven-csv.version>
         <eclipsecollections.version>10.2.0</eclipsecollections.version>
-        <guava.version>30.0-jre</guava.version>
+        <guava.version>33.4.6-jre</guava.version>
         <h2.version>2.1.214</h2.version>
         <duckdb.version>1.0.0</duckdb.version>
         <jackson.version>2.10.5</jackson.version>
@@ -84,23 +84,21 @@
 
         <!-- Plugin -->
         <build-helper.maven.plugin.version>1.9.1</build-helper.maven.plugin.version>
-        <exec.maven.plugin.version>3.5.0</exec.maven.plugin.version>
-        <jacoco.maven.plugin.version>0.8.10</jacoco.maven.plugin.version>
-        <maven.antrun.plugin.version>1.8</maven.antrun.plugin.version>
-        <maven.checkstyle.plugin.version>3.3.0</maven.checkstyle.plugin.version>
-        <maven.clean.plugin.version>3.1.0</maven.clean.plugin.version>
-        <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
-        <maven.dependency.plugin.version>3.6.1</maven.dependency.plugin.version>
+        <exec.maven.plugin.version>3.6.3</exec.maven.plugin.version>
+        <jacoco.maven.plugin.version>0.8.14</jacoco.maven.plugin.version>
+        <maven.antrun.plugin.version>3.2.0</maven.antrun.plugin.version>
+        <maven.checkstyle.plugin.version>3.6.0</maven.checkstyle.plugin.version>
+        <maven.clean.plugin.version>3.5.0</maven.clean.plugin.version>
+        <maven.compiler.plugin.version>3.15.0</maven.compiler.plugin.version>
+        <maven.dependency.plugin.version>3.10.0</maven.dependency.plugin.version>
         <maven.enforcer.plugin.version>3.0.0-M1</maven.enforcer.plugin.version>
-        <maven.failsafe.plugin.version>3.1.0</maven.failsafe.plugin.version>
-        <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
-        <maven.javadoc.plugin.version>3.5.0</maven.javadoc.plugin.version>
-        <maven.plugin.plugin.version>3.9.0</maven.plugin.plugin.version>
-        <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
-        <maven.shade.plugin.version>3.4.1</maven.shade.plugin.version>
-        <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
-        <maven.surefire.plugin.version>3.1.0</maven.surefire.plugin.version>
-        <versions.maven.plugin.version>2.7</versions.maven.plugin.version>
+        <maven.failsafe.plugin.version>3.5.5</maven.failsafe.plugin.version>
+        <maven.jar.plugin.version>3.5.0</maven.jar.plugin.version>
+        <maven.javadoc.plugin.version>3.12.0</maven.javadoc.plugin.version>
+        <maven.plugin.plugin.version>3.10.2</maven.plugin.plugin.version>
+        <maven.resources.plugin.version>3.3.0</maven.resources.plugin.version>
+        <maven.surefire.plugin.version>3.5.5</maven.surefire.plugin.version>
+        <versions.maven.plugin.version>2.21.0</versions.maven.plugin.version>
     </properties>
 
 
