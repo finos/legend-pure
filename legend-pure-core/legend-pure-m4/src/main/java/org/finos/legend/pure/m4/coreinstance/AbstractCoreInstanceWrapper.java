@@ -24,11 +24,11 @@ import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 
-public class AbstractCoreInstanceWrapper implements CoreInstance
+public abstract class AbstractCoreInstanceWrapper implements CoreInstance
 {
-    protected CoreInstance instance;
+    protected final CoreInstance instance;
 
-    public AbstractCoreInstanceWrapper(CoreInstance instance)
+    protected AbstractCoreInstanceWrapper(CoreInstance instance)
     {
         this.instance = instance;
     }
@@ -354,5 +354,18 @@ public class AbstractCoreInstanceWrapper implements CoreInstance
     public int hashCode()
     {
         return this.instance.hashCode();
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder builder = new StringBuilder(super.toString())
+                .append('{').append(this.instance);
+        SourceInformation sourceInfo = this.instance.getSourceInformation();
+        if (sourceInfo != null)
+        {
+            sourceInfo.appendMessage(builder.append(" (")).append(')');
+        }
+        return builder.append('}').toString();
     }
 }
