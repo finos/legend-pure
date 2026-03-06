@@ -98,36 +98,38 @@ public class PureCompilerMojo extends AbstractMojo
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException
     {
-        ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
+        DependencyResolutionScope dependencyResolutionScope = ProjectDependencyResolution.determineDependencyResolutionScope(this.dependencyScope, this.mojoExecution);
+        URL[] dependencyUrls;
         try
         {
-            DependencyResolutionScope dependencyResolutionScope = ProjectDependencyResolution.determineDependencyResolutionScope(dependencyScope, mojoExecution);
-            URL[] dependencyUrls = ProjectDependencyResolution.getDependencyURLs(
+            dependencyUrls = ProjectDependencyResolution.getDependencyURLs(
                     dependencyResolutionScope,
-                    mavenProject,
-                    mojoExecution,
-                    mavenRepoSession,
-                    projectOutputDirectory,
-                    projectTestOutputDirectory,
-                    mavenProjectDependenciesResolver
+                    this.mavenProject,
+                    this.mojoExecution,
+                    this.mavenRepoSession,
+                    this.projectOutputDirectory,
+                    this.projectTestOutputDirectory,
+                    this.mavenProjectDependenciesResolver
             );
-            try (URLClassLoader classLoader = new URLClassLoader(dependencyUrls, Thread.currentThread().getContextClassLoader()))
-            {
-                Thread.currentThread().setContextClassLoader(classLoader);
-                this.executeWithinClassLoader(classLoader, dependencyResolutionScope);
-            }
-            catch (IOException e)
-            {
-                throw new MojoExecutionException("Error closing classloader", e);
-            }
-            finally
-            {
-                Thread.currentThread().setContextClassLoader(savedClassLoader);
-            }
         }
         catch (DependencyResolutionException e)
         {
             throw new MojoExecutionException("Error setting up classloader with project dependencies", e);
+        }
+
+        ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
+        try (URLClassLoader classLoader = new URLClassLoader(dependencyUrls, savedClassLoader))
+        {
+            Thread.currentThread().setContextClassLoader(classLoader);
+            executeWithinClassLoader(classLoader, dependencyResolutionScope);
+        }
+        catch (IOException e)
+        {
+            throw new MojoExecutionException("Error closing classloader", e);
+        }
+        finally
+        {
+            Thread.currentThread().setContextClassLoader(savedClassLoader);
         }
     }
 
