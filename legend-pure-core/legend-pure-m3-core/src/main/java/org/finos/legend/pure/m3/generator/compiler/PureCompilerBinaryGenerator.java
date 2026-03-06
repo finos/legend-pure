@@ -109,7 +109,7 @@ public class PureCompilerBinaryGenerator
 
     private static RepositoryInfo resolveRepositories(SetIterable<String> modules, Iterable<String> excludedModules, ClassLoader classLoader, FilePathProvider filePathProvider)
     {
-        MutableList<CodeRepository> foundRepos = CodeRepositoryProviderHelper.findCodeRepositories(true).toList();
+        MutableList<CodeRepository> foundRepos = CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true).toList();
         LOGGER.debug("Found repositories: {}", foundRepos.asLazy().collect(CodeRepository::getName));
         CodeRepositorySet.Builder builder = CodeRepositorySet.builder().withCodeRepositories(foundRepos);
         if (excludedModules != null)
