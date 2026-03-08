@@ -72,10 +72,20 @@ public class PureCompilerBinaryGenerator
 
     public static void serializeModules(Path outputDirectory, Iterable<String> modules)
     {
-        serializeModules(outputDirectory, null, modules, null);
+        serializeModules(outputDirectory, modules, modules == null);
+    }
+
+    public static void serializeModules(Path outputDirectory, Iterable<String> modules, boolean serializeIndividually)
+    {
+        serializeModules(outputDirectory, null, modules, null, serializeIndividually);
     }
 
     public static void serializeModules(Path outputDirectory, ClassLoader classLoader, Iterable<String> modules, Iterable<String> excludedModules)
+    {
+        serializeModules(outputDirectory, classLoader, modules, excludedModules, modules == null);
+    }
+
+    public static void serializeModules(Path outputDirectory, ClassLoader classLoader, Iterable<String> modules, Iterable<String> excludedModules, boolean serializeIndividually)
     {
         long start = System.nanoTime();
         SetIterable<String> moduleSet = (modules == null) ? Sets.immutable.empty() :
@@ -94,7 +104,7 @@ public class PureCompilerBinaryGenerator
         try
         {
             FilePathProvider filePathProvider = FilePathProvider.builder().withLoadedExtensions(currentClassLoader).build();
-            serializeModules(outputDirectory, currentClassLoader, moduleSet, excludedModules, filePathProvider);
+            serializeModules(outputDirectory, currentClassLoader, moduleSet, excludedModules, filePathProvider, serializeIndividually);
         }
         catch (Throwable t)
         {
@@ -112,7 +122,7 @@ public class PureCompilerBinaryGenerator
         }
     }
 
-    private static void serializeModules(Path outputDirectory, ClassLoader classLoader, SetIterable<String> modules, Iterable<String> excludedModules, FilePathProvider filePathProvider)
+    private static void serializeModules(Path outputDirectory, ClassLoader classLoader, SetIterable<String> modules, Iterable<String> excludedModules, FilePathProvider filePathProvider, boolean serializeIndividually)
     {
         // Build the full repository set (with exclusions applied)
         MutableList<CodeRepository> foundRepos = CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true).toList();
@@ -145,48 +155,53 @@ public class PureCompilerBinaryGenerator
         }
         CodeRepositorySet allRepositories = fullSetBuilder.build();
 
-        // Order the modules to serialize by dependency (dependencies first)
-        ListIterable<String> orderedModules;
-        if (toSerialize.size() == 1)
+        if (serializeIndividually)
         {
-            orderedModules = Lists.immutable.with(toSerialize.getAny());
+            // Order the modules to serialize by dependency (dependencies first)
+            ListIterable<String> orderedModules;
+            if (toSerialize.size() == 1)
+            {
+                orderedModules = Lists.immutable.with(toSerialize.getAny());
+            }
+            else
+            {
+                orderedModules = toSerialize.isEmpty() ?
+                                 CodeRepository.toSortedRepositoryList(allRepositories.getRepositories()).collect(CodeRepository::getName) :
+                                 toSerialize.toSortedList(new RepositoryComparator(allRepositories.getRepositories()));
+                LOGGER.debug("Serializing modules in order: {}", orderedModules);
+            }
+
+            // Create a class loader that includes the output directory so that previously serialized modules can be loaded
+            try (URLClassLoader outputClassLoader = newClassLoaderWithOutputDirectory(classLoader, outputDirectory))
+            {
+                PureCompilerLoader loader = PureCompilerLoader.newLoader(outputClassLoader);
+                orderedModules.forEach(m -> serializeModules(outputDirectory, classLoader, Sets.immutable.with(m), allRepositories, loader, filePathProvider));
+            }
+            catch (IOException e)
+            {
+                throw new UncheckedIOException("Error closing class loader", e);
+            }
         }
         else
         {
-            orderedModules = toSerialize.isEmpty() ?
-                             CodeRepository.toSortedRepositoryList(allRepositories.getRepositories()).collect(CodeRepository::getName) :
-                             toSerialize.toSortedList(new RepositoryComparator(allRepositories.getRepositories()));
-            LOGGER.info("Serializing modules in dependency order: {}", orderedModules);
+            serializeModules(outputDirectory, classLoader, toSerialize, allRepositories, PureCompilerLoader.newLoader(classLoader), filePathProvider);
         }
+    }
 
-
-        // Create a class loader that includes the output directory so that previously serialized modules can be loaded
-        try (URLClassLoader outputClassLoader = newClassLoaderWithOutputDirectory(classLoader, outputDirectory))
+    private static void serializeModules(Path outputDirectory, ClassLoader classLoader, SetIterable<String> modulesToSerialize, CodeRepositorySet modulesToCompile, PureCompilerLoader loader, FilePathProvider filePathProvider)
+    {
+        long moduleStart = System.nanoTime();
+        LOGGER.info("Starting compilation and serialization of {}", (modulesToSerialize.size() == 1) ? modulesToSerialize.getAny() : modulesToSerialize);
+        try
         {
-            PureCompilerLoader loader = PureCompilerLoader.newLoader(outputClassLoader);
-
-            // Serialize each module individually
-            for (String moduleName : orderedModules)
-            {
-                long moduleStart = System.nanoTime();
-                LOGGER.info("Starting compilation and serialization of module '{}'", moduleName);
-                try
-                {
-                    CodeRepositorySet moduleRepos = allRepositories.subset(moduleName);
-                    LOGGER.debug("Repositories for module '{}': {}", moduleName, moduleRepos.getRepositoryNames());
-                    PureRuntime runtime = compile(classLoader, loader, moduleRepos);
-                    serialize(outputDirectory, Sets.immutable.with(moduleName), runtime, filePathProvider);
-                }
-                finally
-                {
-                    long moduleEnd = System.nanoTime();
-                    LOGGER.info("Finished compilation and serialization of module '{}' in {}s", moduleName, (moduleEnd - moduleStart) / 1_000_000_000.0);
-                }
-            }
+            LOGGER.debug("Compiling modules {}", modulesToCompile.getRepositoryNames());
+            PureRuntime runtime = compile(classLoader, loader, modulesToCompile);
+            serialize(outputDirectory, modulesToSerialize, runtime, filePathProvider);
         }
-        catch (IOException e)
+        finally
         {
-            throw new UncheckedIOException("Error closing class loader", e);
+            long moduleEnd = System.nanoTime();
+            LOGGER.info("Finished compilation and serialization of {} in {}s", (modulesToSerialize.size() == 1) ? modulesToSerialize.getAny() : modulesToSerialize, (moduleEnd - moduleStart) / 1_000_000_000.0);
         }
     }
 
@@ -326,5 +341,4 @@ public class PureCompilerBinaryGenerator
             LOGGER.info("Finished serialization in {}s", (end - start) / 1_000_000_000.0);
         }
     }
-
 }
