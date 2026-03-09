@@ -64,6 +64,18 @@ public class PureCompilerMojo extends AbstractMojo
     private Set<String> excludedRepositories;
 
     /**
+     * <p>If there are multiple repositories, whether to compile them individually or all together.</p>
+     *
+     * <p>If multiple repositories are compiled individually, they will be ordered topologically based on dependencies.
+     * This means that all of a repository's dependencies will be compiled before it is.</p>
+     *
+     * <p>The default value depends on how repositories are specified: if repositories are explicitly specified, the
+     * default is false (compile them all together); otherwise, the default is true (compile them individually).</p>
+     */
+    @Parameter
+    private Boolean compileIndividually;
+
+    /**
      * <p>The scope of the dependencies to resolve from the Maven module. Use names from {@link DependencyResolutionScope}.
      * If not specified, defaults to
      * <ul>
@@ -98,36 +110,38 @@ public class PureCompilerMojo extends AbstractMojo
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException
     {
-        ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
+        DependencyResolutionScope dependencyResolutionScope = ProjectDependencyResolution.determineDependencyResolutionScope(this.dependencyScope, this.mojoExecution);
+        URL[] dependencyUrls;
         try
         {
-            DependencyResolutionScope dependencyResolutionScope = ProjectDependencyResolution.determineDependencyResolutionScope(dependencyScope, mojoExecution);
-            URL[] dependencyUrls = ProjectDependencyResolution.getDependencyURLs(
+            dependencyUrls = ProjectDependencyResolution.getDependencyURLs(
                     dependencyResolutionScope,
-                    mavenProject,
-                    mojoExecution,
-                    mavenRepoSession,
-                    projectOutputDirectory,
-                    projectTestOutputDirectory,
-                    mavenProjectDependenciesResolver
+                    this.mavenProject,
+                    this.mojoExecution,
+                    this.mavenRepoSession,
+                    this.projectOutputDirectory,
+                    this.projectTestOutputDirectory,
+                    this.mavenProjectDependenciesResolver
             );
-            try (URLClassLoader classLoader = new URLClassLoader(dependencyUrls, Thread.currentThread().getContextClassLoader()))
-            {
-                Thread.currentThread().setContextClassLoader(classLoader);
-                this.executeWithinClassLoader(classLoader, dependencyResolutionScope);
-            }
-            catch (IOException e)
-            {
-                throw new MojoExecutionException("Error closing classloader", e);
-            }
-            finally
-            {
-                Thread.currentThread().setContextClassLoader(savedClassLoader);
-            }
         }
         catch (DependencyResolutionException e)
         {
             throw new MojoExecutionException("Error setting up classloader with project dependencies", e);
+        }
+
+        ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
+        try (URLClassLoader classLoader = new URLClassLoader(dependencyUrls, savedClassLoader))
+        {
+            Thread.currentThread().setContextClassLoader(classLoader);
+            executeWithinClassLoader(classLoader, dependencyResolutionScope);
+        }
+        catch (IOException e)
+        {
+            throw new MojoExecutionException("Error closing classloader", e);
+        }
+        finally
+        {
+            Thread.currentThread().setContextClassLoader(savedClassLoader);
         }
     }
 
@@ -148,9 +162,12 @@ public class PureCompilerMojo extends AbstractMojo
         }
         getLog().debug("Resolved repositories: " + ((resolvedRepos == null) ? "<all>" : String.join(", ", resolvedRepos)));
 
+        boolean serializeReposIndividually = shouldSerializeIndividually(resolvedRepos);
+        getLog().debug("Compiling repositories individually: " + this.compileIndividually);
+
         try
         {
-            PureCompilerBinaryGenerator.serializeModules(resolvedOutputDir.toPath(), classLoader, resolvedRepos, this.excludedRepositories);
+            PureCompilerBinaryGenerator.serializeModules(resolvedOutputDir.toPath(), classLoader, resolvedRepos, this.excludedRepositories, serializeReposIndividually);
         }
         catch (PureCompilationException | PureParserException e)
         {
@@ -215,6 +232,18 @@ public class PureCompilerMojo extends AbstractMojo
             foundRepositories.removeAll(this.excludedRepositories);
         }
         return foundRepositories;
+    }
+
+    private boolean shouldSerializeIndividually(Set<String> resolvedRepos)
+    {
+        // If the user has specified whether to serialize individually, use that
+        if (this.compileIndividually != null)
+        {
+            return this.compileIndividually;
+        }
+
+        // If the user has specified repos to serialize, serialize them together; otherwise, serialize individually
+        return !isNonEmpty(resolvedRepos);
     }
 
     private void forEachRepoDefinition(File directory, Consumer<? super String> consumer)

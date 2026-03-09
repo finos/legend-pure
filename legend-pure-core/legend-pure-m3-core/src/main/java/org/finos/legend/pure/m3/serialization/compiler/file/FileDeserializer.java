@@ -1121,7 +1121,7 @@ public class FileDeserializer
         public FileDeserializer build()
         {
             Objects.requireNonNull(this.filePathProvider, "file path provider is required");
-            Objects.requireNonNull(this.elementDeserializer, "concrete element serializer is required");
+            Objects.requireNonNull(this.elementDeserializer, "concrete element deserializer is required");
             Objects.requireNonNull(this.moduleSerializer, "module serializer is required");
             return new FileDeserializer(this.filePathProvider, this.elementDeserializer, this.moduleSerializer);
         }
