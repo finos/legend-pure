@@ -64,7 +64,10 @@ class ConcreteElementMetadataGenerator
     private final ReferenceIdProvider referenceIdProvider;
     private final ContainingElementIndex containingElementIndex;
     private final ProcessorSupport processorSupport;
-    private final MapIterable<String, ImmutableList<String>> backReferenceProperties = M3PropertyPaths.BACK_REFERENCE_PROPERTY_PATHS.groupByUniqueKey(ImmutableList::getLast, Maps.mutable.ofInitialCapacity(M3PropertyPaths.BACK_REFERENCE_PROPERTY_PATHS.size()));
+    private final MapIterable<String, ImmutableList<String>> backReferenceProperties = M3PropertyPaths.BACK_REFERENCE_PROPERTY_PATHS.groupByUniqueKey(
+            ImmutableList::getLast,
+            Maps.mutable.ofInitialCapacity(M3PropertyPaths.BACK_REFERENCE_PROPERTY_PATHS.size() + 1))
+            .withKeyValue(M3PropertyPaths.children.getLast(), M3PropertyPaths.children);
     private final ConcurrentMutableMap<CoreInstance, String> elementPathCache = ConcurrentHashMap.newMap();
     private final ConcurrentMutableMap<CoreInstance, BackReferenceCollector> backRefCollectorCache = ConcurrentHashMap.newMap();
 

@@ -105,6 +105,20 @@ public class TestPureCompilerBinaryGenerator
         assertModuleNotSerialized(deserializer, outputDirectory, OTHER_TEST_REPO);
     }
 
+    @Test
+    public void testSerializeSingleVsMultiple() throws IOException
+    {
+        Path multiOutputDir = TMP.newFolder().toPath();
+        PureCompilerBinaryGenerator.serializeModules(multiOutputDir, Lists.immutable.with(PLATFORM, TEST_REPO, OTHER_TEST_REPO));
+
+        Path singleOutputDir = TMP.newFolder().toPath();
+        PureCompilerBinaryGenerator.serializeModules(singleOutputDir, Lists.immutable.with(PLATFORM));
+        PureCompilerBinaryGenerator.serializeModules(singleOutputDir, Lists.immutable.with(TEST_REPO));
+        PureCompilerBinaryGenerator.serializeModules(singleOutputDir, Lists.immutable.with(OTHER_TEST_REPO));
+
+        assertDirectoriesEquivalent(multiOutputDir, singleOutputDir);
+    }
+
     private static void assertModuleSerialized(FileDeserializer deserializer, Path outputDirectory, String moduleName)
     {
         Assert.assertTrue(moduleName + " manifest should exist", deserializer.moduleManifestExists(outputDirectory, moduleName));
