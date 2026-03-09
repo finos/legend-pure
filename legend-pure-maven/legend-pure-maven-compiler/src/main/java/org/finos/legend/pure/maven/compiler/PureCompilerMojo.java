@@ -64,6 +64,18 @@ public class PureCompilerMojo extends AbstractMojo
     private Set<String> excludedRepositories;
 
     /**
+     * <p>If there are multiple repositories, whether to compile them individually or all together.</p>
+     *
+     * <p>If multiple repositories are compiled individually, they will be ordered topologically based on dependencies.
+     * This means that all of a repository's dependencies will be compiled before it is.</p>
+     *
+     * <p>The default value depends on how repositories are specified: if repositories are explicitly specified, the
+     * default is false (compile them all together); otherwise, the default is true (compile them individually).</p>
+     */
+    @Parameter
+    private Boolean compileIndividually;
+
+    /**
      * <p>The scope of the dependencies to resolve from the Maven module. Use names from {@link DependencyResolutionScope}.
      * If not specified, defaults to
      * <ul>
@@ -150,9 +162,12 @@ public class PureCompilerMojo extends AbstractMojo
         }
         getLog().debug("Resolved repositories: " + ((resolvedRepos == null) ? "<all>" : String.join(", ", resolvedRepos)));
 
+        boolean serializeReposIndividually = shouldSerializeIndividually(resolvedRepos);
+        getLog().debug("Compiling repositories individually: " + this.compileIndividually);
+
         try
         {
-            PureCompilerBinaryGenerator.serializeModules(resolvedOutputDir.toPath(), classLoader, resolvedRepos, this.excludedRepositories);
+            PureCompilerBinaryGenerator.serializeModules(resolvedOutputDir.toPath(), classLoader, resolvedRepos, this.excludedRepositories, serializeReposIndividually);
         }
         catch (PureCompilationException | PureParserException e)
         {
@@ -217,6 +232,18 @@ public class PureCompilerMojo extends AbstractMojo
             foundRepositories.removeAll(this.excludedRepositories);
         }
         return foundRepositories;
+    }
+
+    private boolean shouldSerializeIndividually(Set<String> resolvedRepos)
+    {
+        // If the user has specified whether to serialize individually, use that
+        if (this.compileIndividually != null)
+        {
+            return this.compileIndividually;
+        }
+
+        // If the user has specified repos to serialize, serialize them together; otherwise, serialize individually
+        return !isNonEmpty(resolvedRepos);
     }
 
     private void forEachRepoDefinition(File directory, Consumer<? super String> consumer)
