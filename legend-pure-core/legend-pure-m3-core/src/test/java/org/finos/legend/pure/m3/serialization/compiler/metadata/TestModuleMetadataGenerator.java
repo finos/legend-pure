@@ -26,6 +26,8 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeReposito
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m3.tools.GraphTools;
 import org.junit.After;
 import org.junit.Assert;
@@ -123,8 +125,20 @@ public class TestModuleMetadataGenerator extends BaseReferenceTest
     {
         Assert.assertEquals(
                 getAllModuleMetadata().sortThisBy(ModuleMetadata::getName),
-                this.generator.generateAllModuleMetadata().sortThisBy(ModuleMetadata::getName)
-        );
+                this.generator.generateAllModuleMetadata().sortThisBy(ModuleMetadata::getName));
+    }
+
+    @Test
+    public void testIndividualVsMultiRepoGeneration()
+    {
+        ModuleMetadata platformFromMultiRepo = this.generator.generateModuleMetadata("platform");
+
+        CompositeCodeStorage platformOnlyStorage = new CompositeCodeStorage(
+                new ClassLoaderCodeStorage(runtime.getCodeStorage().getRepository("platform")));
+        PureRuntime platformOnlyRuntime = new PureRuntimeBuilder(platformOnlyStorage).buildAndInitialize();
+        ModuleMetadata platformFromSingleRepo = ModuleMetadataGenerator.fromPureRuntime(platformOnlyRuntime).generateModuleMetadata("platform");
+
+        Assert.assertEquals(platformFromMultiRepo, platformFromSingleRepo);
     }
 
     private ModuleMetadata getModuleMetadata(String moduleName)
