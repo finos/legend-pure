@@ -34,10 +34,15 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
+
 public class ClassProcessor
 {
     public static final Predicate<CoreInstance> IS_PLATFORM_CLASS = ClassProcessor::isPlatformClass;
-    private static final SetIterable<String> PLATFORM_FILES = getPlatformFiles();
+
+    private static final Map<ClassLoader, SetIterable<String>> PLATFORM_PATHS_BY_CLASSLOADER = Collections.synchronizedMap(new WeakHashMap<>());
 
     public static RichIterable<CoreInstance> processClass(CoreInstance classGenericType, ProcessorContext processorContext, boolean addJavaSerializationSupport, String pureExternalPackage)
     {
@@ -82,7 +87,7 @@ public class ClassProcessor
 
     public static boolean isPlatformClass(CoreInstance _class)
     {
-        return PLATFORM_FILES.contains(PackageableElement.getUserPathForPackageableElement(_class));
+        return PLATFORM_PATHS_BY_CLASSLOADER.computeIfAbsent(Thread.currentThread().getContextClassLoader(), ClassProcessor::computePlatformClasses).contains(PackageableElement.getUserPathForPackageableElement(_class));
     }
 
     public static boolean requiresCompilationImpl(ProcessorSupport processorSupport, CoreInstance _class)
@@ -114,12 +119,26 @@ public class ClassProcessor
         return (sourceId != null) && sourceId.startsWith("/platform");
     }
 
-    private static SetIterable<String> getPlatformFiles()
+    private static SetIterable<String> computePlatformClasses(ClassLoader classLoader)
     {
-        MutableSet<String> files = Sets.mutable.empty();
-        ParserService service = new ParserService();
-        service.parsers().asLazy().flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry).flatCollect(CoreInstanceFactoryRegistry::getAllPaths, files);
-        service.inlineDSLs().asLazy().flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry).flatCollect(CoreInstanceFactoryRegistry::getAllPaths, files);
-        return files;
+        MutableSet<String> paths = Sets.mutable.empty();
+        ParserService service = new ParserService(classLoader);
+        service.parsers().asLazy().flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry).flatCollect(CoreInstanceFactoryRegistry::getAllPaths, paths);
+        service.inlineDSLs().asLazy().flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry).flatCollect(CoreInstanceFactoryRegistry::getAllPaths, paths);
+        switch (paths.size())
+        {
+            case 0:
+            {
+                return Sets.immutable.empty();
+            }
+            case 1:
+            {
+                return Sets.immutable.with(paths.getAny());
+            }
+            default:
+            {
+                return paths;
+            }
+        }
     }
 }
