@@ -141,23 +141,19 @@ public class MetadataPelt implements Metadata
         return this.instanceCache.getIfAbsentPutWithKey(id, this.refIdResolver::resolveReference);
     }
 
-    /**
-     * Return whether the metadata has an element with the given package path.
-     *
-     * @param path package path
-     * @return whether there is an element with the given path
-     */
+    @Override
+    public boolean supportsElementByPath()
+    {
+        return true;
+    }
+
+    @Override
     public boolean hasElement(String path)
     {
         return this.elementLoader.elementExists(path);
     }
 
-    /**
-     * Get an element by its package path. Returns null if there is no such element.
-     *
-     * @param path package path of the element
-     * @return element with the given path, or null if there is no such element
-     */
+    @Override
     public CoreInstance getElementByPath(String path)
     {
         return this.elementLoader.loadElement(path);
