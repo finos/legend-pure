@@ -60,7 +60,6 @@ import org.finos.legend.pure.runtime.java.compiled.metadata.ClassCache;
 import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataHolder;
-import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataPelt;
 
 import java.lang.reflect.Method;
 
@@ -287,9 +286,9 @@ public class CompiledProcessorSupport implements ProcessorSupport
     @Override
     public CoreInstance package_getByUserPath(String path)
     {
-        if (this.metadata instanceof MetadataPelt)
+        if (this.metadata.supportsElementByPath())
         {
-            return ((MetadataPelt) this.metadata).getElementByPath(path);
+            return this.metadata.getElementByPath(path);
         }
 
         // Check top level elements
@@ -370,9 +369,9 @@ public class CompiledProcessorSupport implements ProcessorSupport
     @Override
     public CoreInstance repository_getTopLevel(String name)
     {
-        if ((this.metadata instanceof MetadataPelt) && GraphTools.isTopLevelName(name))
+        if (this.metadata.supportsElementByPath() && GraphTools.isTopLevelName(name))
         {
-            return ((MetadataPelt) this.metadata).getElementByPath(name);
+            return this.metadata.getElementByPath(name);
         }
 
         if (M3Paths.Root.equals(name))
@@ -505,8 +504,8 @@ public class CompiledProcessorSupport implements ProcessorSupport
     {
         if (instance instanceof ValCoreInstance)
         {
-            return (this.metadata instanceof MetadataPelt) ?
-                   ((MetadataPelt) this.metadata).getElementByPath(((ValCoreInstance) instance).getType()) :
+            return this.metadata.supportsElementByPath() ?
+                   this.metadata.getElementByPath(((ValCoreInstance) instance).getType()) :
                    this.metadataAccessor.getPrimitiveType(((ValCoreInstance) instance).getType());
         }
 
@@ -549,21 +548,17 @@ public class CompiledProcessorSupport implements ProcessorSupport
     @Override
     public CoreInstance type_BottomType()
     {
-        if (this.metadata instanceof MetadataPelt)
-        {
-            return ((MetadataPelt) this.metadata).getElementByPath(M3Paths.Nil);
-        }
-        return this.metadataAccessor.getBottomType();
+        return this.metadata.supportsElementByPath() ?
+               this.metadata.getElementByPath(M3Paths.Nil) :
+               this.metadataAccessor.getBottomType();
     }
 
     @Override
     public CoreInstance type_TopType()
     {
-        if (this.metadata instanceof MetadataPelt)
-        {
-            return ((MetadataPelt) this.metadata).getElementByPath(M3Paths.Any);
-        }
-        return this.metadataAccessor.getTopType();
+        return this.metadata.supportsElementByPath() ?
+               this.metadata.getElementByPath(M3Paths.Any) :
+               this.metadataAccessor.getTopType();
     }
 
     public Metadata getMetadata()
