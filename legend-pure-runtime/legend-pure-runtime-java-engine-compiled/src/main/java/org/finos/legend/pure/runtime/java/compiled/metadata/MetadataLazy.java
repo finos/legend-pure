@@ -30,7 +30,6 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.EnumProcessor;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphDeserializer;
-import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedMetadataSpecification;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.EnumRef;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.ObjRef;
@@ -41,338 +40,29 @@ import org.finos.legend.pure.runtime.java.compiled.serialization.model.RValueVis
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 import java.util.Objects;
 
-public class MetadataLazy implements Metadata
+public abstract class MetadataLazy implements Metadata
 {
-    private final RValueVisitor<Object> valueToObjectVisitor = new RValueVisitor<Object>()
-    {
-        @Override
-        public Object visit(Primitive primitive)
-        {
-            return primitive.getValue();
-        }
-
-        @Override
-        public Object visit(ObjRef ref)
-        {
-            return toJavaObject(ref.getClassifierId(), ref.getId());
-        }
-
-        @Override
-        public Object visit(EnumRef enumRef)
-        {
-            return getEnum(enumRef.getEnumerationId(), enumRef.getEnumName());
-        }
-    };
-
-    private final ClassLoader classLoader;
-    private final DistributedBinaryGraphDeserializer deserializer;
-    private final ConcurrentMutableMap<String, Constructor<? extends CoreInstance>> constructors = ConcurrentHashMap.newMap();
-    private final ConcurrentMutableMap<String, ConcurrentMutableMap<String, CoreInstance>> instanceCache = ConcurrentHashMap.newMap();
-
-    private volatile Constructor<? extends CoreInstance> enumConstructor = null; //NOSONAR we actually want to protect the pointer
-
-    private MetadataLazy(ClassLoader classLoader, DistributedBinaryGraphDeserializer deserializer)
-    {
-        this.classLoader = classLoader;
-        this.deserializer = deserializer;
-    }
-
-    @Override
-    public void startTransaction()
-    {
-        throw new UnsupportedOperationException("Not supported");
-    }
-
-    @Override
-    public void commitTransaction()
-    {
-        throw new UnsupportedOperationException("Not supported");
-    }
-
-    @Override
-    public void rollbackTransaction()
-    {
-        throw new UnsupportedOperationException("Not supported");
-    }
-
-    @Override
-    public CoreInstance getMetadata(String classifier, String id)
-    {
-        if (!hasClassifier(classifier))
-        {
-            return null;
-        }
-        // for backward compatibility
-        if (id.startsWith("Root::"))
-        {
-            id = id.substring(6);
-        }
-        return toJavaObject(classifier, this.deserializer.processId(id));
-    }
-
-    @Override
-    public MapIterable<String, CoreInstance> getMetadata(String classifier)
-    {
-        return hasClassifier(classifier) ? loadAllClassifierInstances(classifier).asUnmodifiable() : Maps.fixedSize.empty();
-    }
-
-    @Override
-    public RichIterable<CoreInstance> getClassifierInstances(String classifier)
-    {
-        return hasClassifier(classifier) ? loadAllClassifierInstances(classifier).valuesView() : Lists.immutable.empty();
-    }
-
-    @Override
-    public CoreInstance getEnum(String enumerationName, String enumName)
-    {
-        if (!hasClassifier(enumerationName))
-        {
-            throw new RuntimeException("Cannot find enum '" + enumName + "' in enumeration '" + enumerationName + "': unknown enumeration");
-        }
-
-        ConcurrentMutableMap<String, CoreInstance> cache = getClassifierInstanceCache(enumerationName);
-        String enumId = this.deserializer.processEnumId(enumerationName, enumName);
-        CoreInstance result = cache.get(enumId);
-        if (result == null)
-        {
-            //might not have loaded yet, so request full load and try again:
-            loadAllClassifierInstances(enumerationName);
-            result = cache.get(enumId);
-            if (result == null)
-            {
-                StringBuilder builder = new StringBuilder("Cannot find enum '").append(enumName).append("' in enumeration '").append(enumerationName).append("' unknown enum value");
-                if (cache.isEmpty())
-                {
-                    builder.append(" (no known values)");
-                }
-                else
-                {
-                    cache.keysView().appendString(builder, " (known values: '", "', '", "')");
-                }
-                throw new RuntimeException(builder.toString());
-            }
-        }
-        return result;
-    }
-
-    public Object valueToObject(RValue value)
-    {
-        return (value == null) ? null : value.visit(this.valueToObjectVisitor);
-    }
+    public abstract Object valueToObject(RValue value);
 
     public RichIterable<Object> valuesToObjects(ListIterable<RValue> values)
     {
         int size = (values == null) ? 0 : values.size();
-        if (size == 0)
+        switch (size)
         {
-            return Lists.immutable.empty();
-        }
-        if (size == 1)
-        {
-            return Lists.mutable.with(valueToObject(values.get(0)));
-        }
-
-        MutableMap<String, MutableSet<ObjRef>> objRefsByClassifier = Maps.mutable.empty();
-        Counter objRefCounter = new Counter();
-        values.forEach(new RValueConsumer()
-        {
-            @Override
-            protected void accept(Primitive primitive)
+            case 0:
             {
+                return Lists.immutable.empty();
             }
-
-            @Override
-            protected void accept(ObjRef objRef)
+            case 1:
             {
-                objRefsByClassifier.getIfAbsentPut(objRef.getClassifierId(), Sets.mutable::empty).add(objRef);
-                objRefCounter.increment();
+                return Lists.mutable.with(valueToObject(values.get(0)));
             }
-
-            @Override
-            protected void accept(EnumRef enumRef)
+            default:
             {
+                return values.collect(this::valueToObject, Lists.mutable.ofInitialCapacity(size));
             }
-        });
-        if (objRefsByClassifier.isEmpty())
-        {
-            return values.collect(this::valueToObject);
-        }
-
-        MutableMap<ObjRef, CoreInstance> objectByRef = Maps.mutable.withInitialCapacity(objRefCounter.getCount());
-        objRefsByClassifier.forEachKeyValue((classifier, objRefs) ->
-        {
-            MutableList<String> idsToDeserialize = Lists.mutable.withInitialCapacity(objRefs.size());
-            ConcurrentMutableMap<String, CoreInstance> classifierCache = getClassifierInstanceCache(classifier);
-            objRefs.forEach(objRef ->
-            {
-                String id = objRef.getId();
-                CoreInstance cachedInstance = classifierCache.get(id);
-                if (cachedInstance == null)
-                {
-                    idsToDeserialize.add(id);
-                }
-                else
-                {
-                    objectByRef.put(objRef, cachedInstance);
-                }
-            });
-            if (idsToDeserialize.notEmpty())
-            {
-                ListIterable<Obj> deserialized = getInstances(classifier, idsToDeserialize);
-                deserialized.forEach(obj ->
-                {
-                    CoreInstance cachedInstance = classifierCache.getIfAbsentPut(obj.getIdentifier(), () -> newInstance(classifier, obj));
-                    objectByRef.put(new ObjRef(obj.getClassifier(), obj.getIdentifier()), cachedInstance);
-                });
-            }
-        });
-        return values.collectWith(RValue::visit, new RValueVisitor<Object>()
-        {
-            @Override
-            public Object visit(Primitive primitive)
-            {
-                return primitive.getValue();
-            }
-
-            @Override
-            public Object visit(ObjRef objRef)
-            {
-                return objectByRef.get(objRef);
-            }
-
-            @Override
-            public Object visit(EnumRef enumRef)
-            {
-                return getEnum(enumRef.getEnumerationId(), enumRef.getEnumName());
-            }
-        });
-    }
-
-    private boolean hasClassifier(String classifier)
-    {
-        return this.deserializer.hasClassifier(classifier);
-    }
-
-    private RichIterable<String> getClassifierInstanceIds(String classifier)
-    {
-        return this.deserializer.getClassifierInstanceIds(classifier);
-    }
-
-    private Obj getInstance(String classifier, String id)
-    {
-        return this.deserializer.getInstance(classifier, id);
-    }
-
-    private ListIterable<Obj> getInstances(String classifier, Iterable<String> instanceIds)
-    {
-        return this.deserializer.getInstances(classifier, instanceIds);
-    }
-
-    private ConcurrentMutableMap<String, CoreInstance> loadAllClassifierInstances(String classifier)
-    {
-        RichIterable<String> instanceIds = getClassifierInstanceIds(classifier);
-        ConcurrentMutableMap<String, CoreInstance> classifierCache = getClassifierInstanceCache(classifier);
-        if (classifierCache.size() < instanceIds.size())
-        {
-            MutableList<String> notLoadedIds = instanceIds.reject(classifierCache::containsKey, Lists.mutable.empty());
-            if (notLoadedIds.notEmpty())
-            {
-                ListIterable<Obj> objs = getInstances(classifier, notLoadedIds);
-                objs.forEach(obj -> classifierCache.getIfAbsentPut(obj.getIdentifier(), () -> newInstance(classifier, obj)));
-            }
-        }
-        return classifierCache;
-    }
-
-    private CoreInstance toJavaObject(String classifier, String id)
-    {
-        return getClassifierInstanceCache(classifier).getIfAbsentPut(id, () -> newInstance(classifier, id));
-    }
-
-    private ConcurrentMutableMap<String, CoreInstance> getClassifierInstanceCache(String classifier)
-    {
-        return this.instanceCache.getIfAbsentPut(classifier, ConcurrentHashMap::newMap);
-    }
-
-    private CoreInstance newInstance(String classifier, String id)
-    {
-        Obj obj = getInstance(classifier, id);
-        return newInstance(classifier, obj);
-    }
-
-    private CoreInstance newInstance(String classifier, Obj obj)
-    {
-        Constructor<? extends CoreInstance> constructor = getConstructor(classifier, obj);
-        try
-        {
-            return constructor.newInstance(obj, this);
-        }
-        catch (InvocationTargetException | InstantiationException | IllegalAccessException e)
-        {
-            Throwable cause = (e instanceof InvocationTargetException) ? e.getCause() : e;
-            StringBuilder builder = new StringBuilder("Error instantiating ").append(obj).append(" (instance of ").append(classifier).append(")");
-            String eMessage = cause.getMessage();
-            if (eMessage != null)
-            {
-                builder.append(": ").append(eMessage);
-            }
-            throw new RuntimeException(builder.toString(), cause);
-        }
-    }
-
-    private Constructor<? extends CoreInstance> getConstructor(String classifier, Obj obj)
-    {
-        if (obj.isEnum())
-        {
-            Constructor<? extends CoreInstance> constructor = this.enumConstructor;
-            if (constructor == null)
-            {
-                synchronized (this)
-                {
-                    constructor = this.enumConstructor;
-                    if (constructor == null)
-                    {
-                        this.enumConstructor = constructor = getLazyImplEnumConstructor();
-                    }
-                }
-            }
-            return constructor;
-        }
-        return this.constructors.getIfAbsentPutWithKey(classifier, this::getLazyImplClassConstructor);
-    }
-
-    @SuppressWarnings("unchecked")
-    private Constructor<? extends CoreInstance> getLazyImplClassConstructor(String classifier)
-    {
-        String lazyImplClassName = JavaPackageAndImportBuilder.buildLazyImplClassReferenceFromUserPath(classifier);
-        try
-        {
-            Class<? extends CoreInstance> cls = (Class<? extends CoreInstance>) this.classLoader.loadClass(lazyImplClassName);
-            return cls.getConstructor(Obj.class, MetadataLazy.class);
-        }
-        catch (ReflectiveOperationException e)
-        {
-            throw new RuntimeException("Error getting constructor for " + classifier, e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private Constructor<? extends CoreInstance> getLazyImplEnumConstructor()
-    {
-        String lazyImplEnumName = JavaPackageAndImportBuilder.rootPackage() + '.' + EnumProcessor.ENUM_LAZY_CLASS_NAME;
-        try
-        {
-            Class<? extends CoreInstance> cls = (Class<? extends CoreInstance>) this.classLoader.loadClass(lazyImplEnumName);
-            Constructor<? extends CoreInstance> constructor = cls.getDeclaredConstructor(Obj.class, MetadataLazy.class);
-            constructor.setAccessible(true);
-            return constructor;
-        }
-        catch (ReflectiveOperationException e)
-        {
-            throw new RuntimeException("Error getting constructor for " + lazyImplEnumName);
         }
     }
 
@@ -380,7 +70,7 @@ public class MetadataLazy implements Metadata
     {
         Objects.requireNonNull(classLoader, "class loader may not be null");
         Objects.requireNonNull(deserializer, "deserializer may not be null");
-        return new MetadataLazy(classLoader, deserializer);
+        return new LegacyMetadataLazy(classLoader, deserializer);
     }
 
     public static MetadataLazy fromClassLoader(ClassLoader classLoader)
@@ -390,7 +80,7 @@ public class MetadataLazy implements Metadata
                 .withNoMetadataName()
                 .withObjValidation()
                 .build();
-        return new MetadataLazy(classLoader, deserializer);
+        return new LegacyMetadataLazy(classLoader, deserializer);
     }
 
     public static MetadataLazy fromClassLoader(ClassLoader classLoader, String metadataName)
@@ -408,15 +98,419 @@ public class MetadataLazy implements Metadata
     public static MetadataLazy fromClassLoader(ClassLoader classLoader, Iterable<String> metadataNames)
     {
         Objects.requireNonNull(classLoader, "class loader may not be null");
-        Objects.requireNonNull(classLoader, "metadataNames may not be null");
-        List<DistributedMetadataSpecification> specs = DistributedMetadataSpecification.loadSpecifications(classLoader, metadataNames);
-        if (specs.isEmpty())
+        Objects.requireNonNull(metadataNames, "metadataNames may not be null");
+        MetadataPelt metadataPelt = MetadataPelt.fromClassLoader(classLoader, metadataNames);
+        return new PeltMetadataLazy(metadataPelt);
+    }
+
+    private static class PeltMetadataLazy extends MetadataLazy
+    {
+        private final MetadataPelt metadataPelt;
+
+        private PeltMetadataLazy(MetadataPelt metadataPelt)
         {
-            throw new IllegalArgumentException("metadata names are required");
+            this.metadataPelt = metadataPelt;
         }
-        DistributedBinaryGraphDeserializer.Builder builder = DistributedBinaryGraphDeserializer.newBuilder(classLoader).withObjValidation();
-        specs.forEach(spec -> builder.withMetadataName(spec.getName()));
-        DistributedBinaryGraphDeserializer deserializer = builder.build();
-        return new MetadataLazy(classLoader, deserializer);
+
+        @Override
+        public void startTransaction()
+        {
+            this.metadataPelt.startTransaction();
+        }
+
+        @Override
+        public void commitTransaction()
+        {
+            this.metadataPelt.commitTransaction();
+        }
+
+        @Override
+        public void rollbackTransaction()
+        {
+            this.metadataPelt.rollbackTransaction();
+        }
+
+        @Override
+        public CoreInstance getMetadata(String classifier, String id)
+        {
+            return this.metadataPelt.getMetadata(classifier, id);
+        }
+
+        @Override
+        public MapIterable<String, CoreInstance> getMetadata(String classifier)
+        {
+            return this.metadataPelt.getMetadata(classifier);
+        }
+
+        @Override
+        public RichIterable<CoreInstance> getClassifierInstances(String classifier)
+        {
+            return this.metadataPelt.getClassifierInstances(classifier);
+        }
+
+        @Override
+        public CoreInstance getEnum(String enumerationName, String enumName)
+        {
+            return this.metadataPelt.getEnum(enumerationName, enumName);
+        }
+
+        @Override
+        public boolean supportsElementByPath()
+        {
+            return this.metadataPelt.supportsElementByPath();
+        }
+
+        @Override
+        public boolean hasElement(String path)
+        {
+            return this.metadataPelt.hasElement(path);
+        }
+
+        @Override
+        public CoreInstance getElementByPath(String path)
+        {
+            return this.metadataPelt.getElementByPath(path);
+        }
+
+        @Override
+        public Object valueToObject(RValue value)
+        {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class LegacyMetadataLazy extends MetadataLazy
+    {
+        private final RValueVisitor<Object> valueToObjectVisitor = new RValueVisitor<Object>()
+        {
+            @Override
+            public Object visit(Primitive primitive)
+            {
+                return primitive.getValue();
+            }
+
+            @Override
+            public Object visit(ObjRef ref)
+            {
+                return toJavaObject(ref.getClassifierId(), ref.getId());
+            }
+
+            @Override
+            public Object visit(EnumRef enumRef)
+            {
+                return getEnum(enumRef.getEnumerationId(), enumRef.getEnumName());
+            }
+        };
+
+        private final ClassLoader classLoader;
+        private final DistributedBinaryGraphDeserializer deserializer;
+        private final ConcurrentMutableMap<String, Constructor<? extends CoreInstance>> constructors = ConcurrentHashMap.newMap();
+        private final ConcurrentMutableMap<String, ConcurrentMutableMap<String, CoreInstance>> instanceCache = ConcurrentHashMap.newMap();
+
+        private volatile Constructor<? extends CoreInstance> enumConstructor = null; //NOSONAR we actually want to protect the pointer
+
+        private LegacyMetadataLazy(ClassLoader classLoader, DistributedBinaryGraphDeserializer deserializer)
+        {
+            this.classLoader = classLoader;
+            this.deserializer = deserializer;
+        }
+
+        @Override
+        public void startTransaction()
+        {
+            throw new UnsupportedOperationException("Not supported");
+        }
+
+        @Override
+        public void commitTransaction()
+        {
+            throw new UnsupportedOperationException("Not supported");
+        }
+
+        @Override
+        public void rollbackTransaction()
+        {
+            throw new UnsupportedOperationException("Not supported");
+        }
+
+        @Override
+        public CoreInstance getMetadata(String classifier, String id)
+        {
+            if (!hasClassifier(classifier))
+            {
+                return null;
+            }
+            // for backward compatibility
+            if (id.startsWith("Root::"))
+            {
+                id = id.substring(6);
+            }
+            return toJavaObject(classifier, this.deserializer.processId(id));
+        }
+
+        @Override
+        public MapIterable<String, CoreInstance> getMetadata(String classifier)
+        {
+            return hasClassifier(classifier) ? loadAllClassifierInstances(classifier).asUnmodifiable() : Maps.fixedSize.empty();
+        }
+
+        @Override
+        public RichIterable<CoreInstance> getClassifierInstances(String classifier)
+        {
+            return hasClassifier(classifier) ? loadAllClassifierInstances(classifier).valuesView() : Lists.immutable.empty();
+        }
+
+        @Override
+        public CoreInstance getEnum(String enumerationName, String enumName)
+        {
+            if (!hasClassifier(enumerationName))
+            {
+                throw new RuntimeException("Cannot find enum '" + enumName + "' in enumeration '" + enumerationName + "': unknown enumeration");
+            }
+
+            ConcurrentMutableMap<String, CoreInstance> cache = getClassifierInstanceCache(enumerationName);
+            String enumId = this.deserializer.processEnumId(enumerationName, enumName);
+            CoreInstance result = cache.get(enumId);
+            if (result == null)
+            {
+                //might not have loaded yet, so request full load and try again:
+                loadAllClassifierInstances(enumerationName);
+                result = cache.get(enumId);
+                if (result == null)
+                {
+                    StringBuilder builder = new StringBuilder("Cannot find enum '").append(enumName).append("' in enumeration '").append(enumerationName).append("' unknown enum value");
+                    if (cache.isEmpty())
+                    {
+                        builder.append(" (no known values)");
+                    }
+                    else
+                    {
+                        cache.keysView().appendString(builder, " (known values: '", "', '", "')");
+                    }
+                    throw new RuntimeException(builder.toString());
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public Object valueToObject(RValue value)
+        {
+            return (value == null) ? null : value.visit(this.valueToObjectVisitor);
+        }
+
+        @Override
+        public RichIterable<Object> valuesToObjects(ListIterable<RValue> values)
+        {
+            int size = (values == null) ? 0 : values.size();
+            if (size == 0)
+            {
+                return Lists.immutable.empty();
+            }
+            if (size == 1)
+            {
+                return Lists.mutable.with(valueToObject(values.get(0)));
+            }
+
+            MutableMap<String, MutableSet<ObjRef>> objRefsByClassifier = Maps.mutable.empty();
+            Counter objRefCounter = new Counter();
+            values.forEach(new RValueConsumer()
+            {
+                @Override
+                protected void accept(Primitive primitive)
+                {
+                }
+
+                @Override
+                protected void accept(ObjRef objRef)
+                {
+                    objRefsByClassifier.getIfAbsentPut(objRef.getClassifierId(), Sets.mutable::empty).add(objRef);
+                    objRefCounter.increment();
+                }
+
+                @Override
+                protected void accept(EnumRef enumRef)
+                {
+                }
+            });
+            if (objRefsByClassifier.isEmpty())
+            {
+                return values.collect(this::valueToObject);
+            }
+
+            MutableMap<ObjRef, CoreInstance> objectByRef = Maps.mutable.withInitialCapacity(objRefCounter.getCount());
+            objRefsByClassifier.forEachKeyValue((classifier, objRefs) ->
+            {
+                MutableList<String> idsToDeserialize = Lists.mutable.withInitialCapacity(objRefs.size());
+                ConcurrentMutableMap<String, CoreInstance> classifierCache = getClassifierInstanceCache(classifier);
+                objRefs.forEach(objRef ->
+                {
+                    String id = objRef.getId();
+                    CoreInstance cachedInstance = classifierCache.get(id);
+                    if (cachedInstance == null)
+                    {
+                        idsToDeserialize.add(id);
+                    }
+                    else
+                    {
+                        objectByRef.put(objRef, cachedInstance);
+                    }
+                });
+                if (idsToDeserialize.notEmpty())
+                {
+                    ListIterable<Obj> deserialized = getInstances(classifier, idsToDeserialize);
+                    deserialized.forEach(obj ->
+                    {
+                        CoreInstance cachedInstance = classifierCache.getIfAbsentPut(obj.getIdentifier(), () -> newInstance(classifier, obj));
+                        objectByRef.put(new ObjRef(obj.getClassifier(), obj.getIdentifier()), cachedInstance);
+                    });
+                }
+            });
+            return values.collectWith(RValue::visit, new RValueVisitor<Object>()
+            {
+                @Override
+                public Object visit(Primitive primitive)
+                {
+                    return primitive.getValue();
+                }
+
+                @Override
+                public Object visit(ObjRef objRef)
+                {
+                    return objectByRef.get(objRef);
+                }
+
+                @Override
+                public Object visit(EnumRef enumRef)
+                {
+                    return getEnum(enumRef.getEnumerationId(), enumRef.getEnumName());
+                }
+            });
+        }
+
+        private boolean hasClassifier(String classifier)
+        {
+            return this.deserializer.hasClassifier(classifier);
+        }
+
+        private RichIterable<String> getClassifierInstanceIds(String classifier)
+        {
+            return this.deserializer.getClassifierInstanceIds(classifier);
+        }
+
+        private Obj getInstance(String classifier, String id)
+        {
+            return this.deserializer.getInstance(classifier, id);
+        }
+
+        private ListIterable<Obj> getInstances(String classifier, Iterable<String> instanceIds)
+        {
+            return this.deserializer.getInstances(classifier, instanceIds);
+        }
+
+        private ConcurrentMutableMap<String, CoreInstance> loadAllClassifierInstances(String classifier)
+        {
+            RichIterable<String> instanceIds = getClassifierInstanceIds(classifier);
+            ConcurrentMutableMap<String, CoreInstance> classifierCache = getClassifierInstanceCache(classifier);
+            if (classifierCache.size() < instanceIds.size())
+            {
+                MutableList<String> notLoadedIds = instanceIds.reject(classifierCache::containsKey, Lists.mutable.empty());
+                if (notLoadedIds.notEmpty())
+                {
+                    ListIterable<Obj> objs = getInstances(classifier, notLoadedIds);
+                    objs.forEach(obj -> classifierCache.getIfAbsentPut(obj.getIdentifier(), () -> newInstance(classifier, obj)));
+                }
+            }
+            return classifierCache;
+        }
+
+        private CoreInstance toJavaObject(String classifier, String id)
+        {
+            return getClassifierInstanceCache(classifier).getIfAbsentPut(id, () -> newInstance(classifier, id));
+        }
+
+        private ConcurrentMutableMap<String, CoreInstance> getClassifierInstanceCache(String classifier)
+        {
+            return this.instanceCache.getIfAbsentPut(classifier, ConcurrentHashMap::newMap);
+        }
+
+        private CoreInstance newInstance(String classifier, String id)
+        {
+            Obj obj = getInstance(classifier, id);
+            return newInstance(classifier, obj);
+        }
+
+        private CoreInstance newInstance(String classifier, Obj obj)
+        {
+            Constructor<? extends CoreInstance> constructor = getConstructor(classifier, obj);
+            try
+            {
+                return constructor.newInstance(obj, this);
+            }
+            catch (InvocationTargetException | InstantiationException | IllegalAccessException e)
+            {
+                Throwable cause = (e instanceof InvocationTargetException) ? e.getCause() : e;
+                StringBuilder builder = new StringBuilder("Error instantiating ").append(obj).append(" (instance of ").append(classifier).append(")");
+                String eMessage = cause.getMessage();
+                if (eMessage != null)
+                {
+                    builder.append(": ").append(eMessage);
+                }
+                throw new RuntimeException(builder.toString(), cause);
+            }
+        }
+
+        private Constructor<? extends CoreInstance> getConstructor(String classifier, Obj obj)
+        {
+            if (obj.isEnum())
+            {
+                Constructor<? extends CoreInstance> constructor = this.enumConstructor;
+                if (constructor == null)
+                {
+                    synchronized (this)
+                    {
+                        constructor = this.enumConstructor;
+                        if (constructor == null)
+                        {
+                            this.enumConstructor = constructor = getLazyImplEnumConstructor();
+                        }
+                    }
+                }
+                return constructor;
+            }
+            return this.constructors.getIfAbsentPutWithKey(classifier, this::getLazyImplClassConstructor);
+        }
+
+        @SuppressWarnings("unchecked")
+        private Constructor<? extends CoreInstance> getLazyImplClassConstructor(String classifier)
+        {
+            String lazyImplClassName = JavaPackageAndImportBuilder.buildLazyImplClassReferenceFromUserPath(classifier);
+            try
+            {
+                Class<? extends CoreInstance> cls = (Class<? extends CoreInstance>) this.classLoader.loadClass(lazyImplClassName);
+                return cls.getConstructor(Obj.class, MetadataLazy.class);
+            }
+            catch (ReflectiveOperationException e)
+            {
+                throw new RuntimeException("Error getting constructor for " + classifier, e);
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        private Constructor<? extends CoreInstance> getLazyImplEnumConstructor()
+        {
+            String lazyImplEnumName = JavaPackageAndImportBuilder.rootPackage() + '.' + EnumProcessor.ENUM_LAZY_CLASS_NAME;
+            try
+            {
+                Class<? extends CoreInstance> cls = (Class<? extends CoreInstance>) this.classLoader.loadClass(lazyImplEnumName);
+                Constructor<? extends CoreInstance> constructor = cls.getDeclaredConstructor(Obj.class, MetadataLazy.class);
+                constructor.setAccessible(true);
+                return constructor;
+            }
+            catch (ReflectiveOperationException e)
+            {
+                throw new RuntimeException("Error getting constructor for " + lazyImplEnumName);
+            }
+        }
     }
 }
