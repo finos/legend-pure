@@ -27,7 +27,9 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
 import org.finos.legend.pure.m4.serialization.Reader;
+import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 
+import java.io.InputStream;
 import java.math.BigInteger;
 
 public class DeserializerV1 extends BaseV1
@@ -36,12 +38,15 @@ public class DeserializerV1 extends BaseV1
     {
     }
 
-    DeserializedConcreteElement deserialize(Reader reader, StringIndexer stringIndexer, int referenceIdVersion)
+    DeserializedConcreteElement deserialize(InputStream stream, StringIndexer stringIndexer, int referenceIdVersion)
     {
-        Reader stringIndexedReader = stringIndexer.readStringIndex(reader);
-        String path = stringIndexedReader.readString();
-        InstanceData[] nodes = deserializeNodes(stringIndexedReader);
-        return DeserializedConcreteElement.newDeserializedConcreteElement(path, referenceIdVersion, Lists.immutable.with(nodes));
+        try (Reader reader = BinaryReaders.newBinaryReader(stream, false))
+        {
+            Reader stringIndexedReader = stringIndexer.readStringIndex(reader);
+            String path = stringIndexedReader.readString();
+            InstanceData[] nodes = deserializeNodes(stringIndexedReader);
+            return DeserializedConcreteElement.newDeserializedConcreteElement(path, referenceIdVersion, Lists.immutable.with(nodes));
+        }
     }
 
     private InstanceData[] deserializeNodes(Reader reader)

@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -73,9 +74,9 @@ public class FileSerializer
         try
         {
             Files.createDirectories(filePath.getParent());
-            try (Writer writer = BinaryWriters.newBinaryWriter(new BufferedOutputStream(Files.newOutputStream(filePath))))
+            try (OutputStream stream = new BufferedOutputStream(Files.newOutputStream(filePath)))
             {
-                this.elementSerializer.serialize(writer, element, serializerVersion, referenceIdVersion);
+                this.elementSerializer.serialize(stream, element, serializerVersion, referenceIdVersion);
             }
         }
         catch (Exception e)
@@ -122,10 +123,7 @@ public class FileSerializer
         try
         {
             zipStream.putNextEntry(new ZipEntry(entryName));
-            try (Writer writer = BinaryWriters.newBinaryWriter(zipStream, false))
-            {
-                this.elementSerializer.serialize(writer, element, serializerVersion, referenceIdVersion);
-            }
+            this.elementSerializer.serialize(zipStream, element, serializerVersion, referenceIdVersion);
             zipStream.closeEntry();
         }
         catch (Exception e)

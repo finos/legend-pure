@@ -20,7 +20,9 @@ import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProv
 import org.finos.legend.pure.m3.serialization.compiler.strings.StringIndexer;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.Writer;
+import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -36,24 +38,27 @@ public class ConcreteElementSerializer extends BaseConcreteElementSerializer
         this.processorSupport = processorSupport;
     }
 
-    public void serialize(Writer writer, CoreInstance element)
+    public void serialize(OutputStream stream, CoreInstance element)
     {
-        serialize(writer, element, getDefaultExtension(), this.referenceIdProviders.provider());
+        serialize(stream, element, getDefaultExtension(), this.referenceIdProviders.provider());
     }
 
-    public void serialize(Writer writer, CoreInstance element, int serializerVersion, int referenceIdVersion)
+    public void serialize(OutputStream stream, CoreInstance element, int serializerVersion, int referenceIdVersion)
     {
         ConcreteElementSerializerExtension serializerExtension = getExtension(serializerVersion);
         ReferenceIdProvider referenceIdProvider = this.referenceIdProviders.provider(referenceIdVersion);
-        serialize(writer, element, serializerExtension, referenceIdProvider);
+        serialize(stream, element, serializerExtension, referenceIdProvider);
     }
 
-    private void serialize(Writer writer, CoreInstance element, ConcreteElementSerializerExtension serializerExtension, ReferenceIdProvider referenceIdProvider)
+    private void serialize(OutputStream stream, CoreInstance element, ConcreteElementSerializerExtension serializerExtension, ReferenceIdProvider referenceIdProvider)
     {
-        writer.writeLong(PURE_ELEMENT_SIGNATURE);
-        writer.writeInt(serializerExtension.version());
-        writer.writeInt(referenceIdProvider.version());
-        serializerExtension.serialize(writer, element, this.stringIndexer, referenceIdProvider, this.processorSupport);
+        try (Writer writer = BinaryWriters.newBinaryWriter(stream, false))
+        {
+            writer.writeLong(PURE_ELEMENT_SIGNATURE);
+            writer.writeInt(serializerExtension.version());
+            writer.writeInt(referenceIdProvider.version());
+        }
+        serializerExtension.serialize(stream, element, this.stringIndexer, referenceIdProvider, this.processorSupport);
     }
 
     public ConcreteElementDeserializer getDeserializer()

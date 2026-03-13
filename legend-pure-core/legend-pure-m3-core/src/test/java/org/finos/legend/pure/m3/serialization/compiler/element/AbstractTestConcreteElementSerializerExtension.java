@@ -47,12 +47,11 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m3.tools.GraphTools;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
-import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.function.Function;
 
@@ -183,7 +182,7 @@ public abstract class AbstractTestConcreteElementSerializerExtension extends Abs
         try
         {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            serializer.serialize(BinaryWriters.newBinaryWriter(stream), element);
+            serializer.serialize(stream, element);
             return stream.toByteArray();
         }
         catch (Exception e)
@@ -196,7 +195,7 @@ public abstract class AbstractTestConcreteElementSerializerExtension extends Abs
     {
         try
         {
-            return deserializer.deserialize(BinaryReaders.newBinaryReader(bytes));
+            return deserializer.deserialize(new ByteArrayInputStream(bytes));
         }
         catch (Exception e)
         {

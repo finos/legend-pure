@@ -29,8 +29,6 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composi
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tools.GraphTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
-import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -38,6 +36,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -133,8 +132,8 @@ public class TestFileSerializer extends AbstractPureTestWithCoreCompiled
     private DeserializedConcreteElement getExpectedDeserializedElement(CoreInstance element)
     {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        elementSerializer.serialize(BinaryWriters.newBinaryWriter(byteStream), element);
-        return elementDeserializer.deserialize(BinaryReaders.newBinaryReader(byteStream.toByteArray()));
+        elementSerializer.serialize(byteStream, element);
+        return elementDeserializer.deserialize(new ByteArrayInputStream(byteStream.toByteArray()));
     }
 
     @Test

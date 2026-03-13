@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -98,9 +99,9 @@ public class FileDeserializer
         long start = System.nanoTime();
         Path filePath = this.filePathProvider.getElementFilePath(directory, elementPath, filePathVersion);
         LOGGER.debug("Deserializing {} from {}", elementPath, filePath);
-        try (Reader reader = BinaryReaders.newBinaryReader(new BufferedInputStream(Files.newInputStream(filePath))))
+        try (InputStream stream = new BufferedInputStream(Files.newInputStream(filePath)))
         {
-            return this.elementDeserializer.deserialize(reader);
+            return this.elementDeserializer.deserialize(stream);
         }
         catch (NoSuchFileException | FileNotFoundException e)
         {
@@ -184,9 +185,9 @@ public class FileDeserializer
                 throw new ElementNotFoundException(elementPath, "cannot find resource " + resourceName);
             }
             LOGGER.debug("Deserializing {} from resource '{}': {}", elementPath, resourceName, url);
-            try (Reader reader = BinaryReaders.newBinaryReader(url.openStream()))
+            try (InputStream stream = url.openStream())
             {
-                return this.elementDeserializer.deserialize(reader);
+                return this.elementDeserializer.deserialize(stream);
             }
             catch (Exception e)
             {
