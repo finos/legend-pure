@@ -22,8 +22,6 @@ import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleFunctionNa
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleManifest;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleSourceMetadata;
-import org.finos.legend.pure.m4.serialization.Reader;
-import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -257,9 +255,9 @@ public class FileDeserializer
         long start = System.nanoTime();
         Path filePath = this.filePathProvider.getModuleManifestFilePath(directory, moduleName, filePathVersion);
         LOGGER.debug("Deserializing module {} manifest from {}", moduleName, filePath);
-        try (Reader reader = BinaryReaders.newBinaryReader(new BufferedInputStream(Files.newInputStream(filePath))))
+        try (InputStream stream = new BufferedInputStream(Files.newInputStream(filePath)))
         {
-            return this.moduleSerializer.deserializeManifest(reader);
+            return this.moduleSerializer.deserializeManifest(stream);
         }
         catch (NoSuchFileException | FileNotFoundException e)
         {
@@ -342,9 +340,9 @@ public class FileDeserializer
                 throw new ModuleMetadataNotFoundException(moduleName, "manifest", "cannot find resource " + resourceName);
             }
             LOGGER.debug("Deserializing module {} manifest from resource '{}': {}", moduleName, resourceName, url);
-            try (Reader reader = BinaryReaders.newBinaryReader(url.openStream()))
+            try (InputStream stream = url.openStream())
             {
-                return this.moduleSerializer.deserializeManifest(reader);
+                return this.moduleSerializer.deserializeManifest(stream);
             }
             catch (Exception e)
             {
@@ -414,9 +412,9 @@ public class FileDeserializer
         long start = System.nanoTime();
         Path filePath = this.filePathProvider.getModuleSourceMetadataFilePath(directory, moduleName, filePathVersion);
         LOGGER.debug("Deserializing module {} source metadata from {}", moduleName, filePath);
-        try (Reader reader = BinaryReaders.newBinaryReader(new BufferedInputStream(Files.newInputStream(filePath))))
+        try (InputStream stream = new BufferedInputStream(Files.newInputStream(filePath)))
         {
-            return this.moduleSerializer.deserializeSourceMetadata(reader);
+            return this.moduleSerializer.deserializeSourceMetadata(stream);
         }
         catch (NoSuchFileException | FileNotFoundException e)
         {
@@ -499,9 +497,9 @@ public class FileDeserializer
                 throw new ModuleMetadataNotFoundException(moduleName, "source metadata", "cannot find resource " + resourceName);
             }
             LOGGER.debug("Deserializing module {} source metadata from resource '{}': {}", moduleName, resourceName, url);
-            try (Reader reader = BinaryReaders.newBinaryReader(url.openStream()))
+            try (InputStream stream = url.openStream())
             {
-                return this.moduleSerializer.deserializeSourceMetadata(reader);
+                return this.moduleSerializer.deserializeSourceMetadata(stream);
             }
             catch (Exception e)
             {
@@ -571,9 +569,9 @@ public class FileDeserializer
         long start = System.nanoTime();
         Path filePath = this.filePathProvider.getModuleExternalReferenceMetadataFilePath(directory, moduleName, filePathVersion);
         LOGGER.debug("Deserializing module {} external reference metadata from {}", moduleName, filePath);
-        try (Reader reader = BinaryReaders.newBinaryReader(new BufferedInputStream(Files.newInputStream(filePath))))
+        try (InputStream stream = new BufferedInputStream(Files.newInputStream(filePath)))
         {
-            return this.moduleSerializer.deserializeExternalReferenceMetadata(reader);
+            return this.moduleSerializer.deserializeExternalReferenceMetadata(stream);
         }
         catch (NoSuchFileException | FileNotFoundException e)
         {
@@ -657,9 +655,9 @@ public class FileDeserializer
                 throw new ModuleMetadataNotFoundException(moduleName, "external reference metadata", "cannot find resource " + resourceName);
             }
             LOGGER.debug("Deserializing module {} external reference metadata from resource '{}': {}", moduleName, resourceName, url);
-            try (Reader reader = BinaryReaders.newBinaryReader(url.openStream()))
+            try (InputStream stream = url.openStream())
             {
-                return this.moduleSerializer.deserializeExternalReferenceMetadata(reader);
+                return this.moduleSerializer.deserializeExternalReferenceMetadata(stream);
             }
             catch (Exception e)
             {
@@ -764,9 +762,9 @@ public class FileDeserializer
         long start = System.nanoTime();
         Path filePath = this.filePathProvider.getModuleElementBackReferenceMetadataFilePath(directory, moduleName, elementPath, filePathVersion);
         LOGGER.debug("Deserializing module {} element back reference metadata from {}", moduleName, filePath);
-        try (Reader reader = BinaryReaders.newBinaryReader(new BufferedInputStream(Files.newInputStream(filePath))))
+        try (InputStream stream = new BufferedInputStream(Files.newInputStream(filePath)))
         {
-            return this.moduleSerializer.deserializeBackReferenceMetadata(reader);
+            return this.moduleSerializer.deserializeBackReferenceMetadata(stream);
         }
         catch (NoSuchFileException | FileNotFoundException e)
         {
@@ -896,9 +894,9 @@ public class FileDeserializer
                 return null;
             }
             LOGGER.debug("Deserializing module {} element {} back reference metadata from resource '{}': {}", moduleName, elementPath, resourceName, url);
-            try (Reader reader = BinaryReaders.newBinaryReader(url.openStream()))
+            try (InputStream stream = url.openStream())
             {
-                return this.moduleSerializer.deserializeBackReferenceMetadata(reader);
+                return this.moduleSerializer.deserializeBackReferenceMetadata(stream);
             }
             catch (Exception e)
             {
@@ -968,9 +966,9 @@ public class FileDeserializer
         long start = System.nanoTime();
         Path filePath = this.filePathProvider.getModuleFunctionNameMetadataFilePath(directory, moduleName, filePathVersion);
         LOGGER.debug("Deserializing module {} function name metadata from {}", moduleName, filePath);
-        try (Reader reader = BinaryReaders.newBinaryReader(new BufferedInputStream(Files.newInputStream(filePath))))
+        try (InputStream stream = new BufferedInputStream(Files.newInputStream(filePath)))
         {
-            return this.moduleSerializer.deserializeFunctionNameMetadata(reader);
+            return this.moduleSerializer.deserializeFunctionNameMetadata(stream);
         }
         catch (NoSuchFileException | FileNotFoundException e)
         {
@@ -1053,9 +1051,9 @@ public class FileDeserializer
                 throw new ModuleMetadataNotFoundException(moduleName, "function name metadata", "cannot find resource " + resourceName);
             }
             LOGGER.debug("Deserializing module {} function name metadata from resource '{}': {}", moduleName, resourceName, url);
-            try (Reader reader = BinaryReaders.newBinaryReader(url.openStream()))
+            try (InputStream stream = url.openStream())
             {
-                return this.moduleSerializer.deserializeFunctionNameMetadata(reader);
+                return this.moduleSerializer.deserializeFunctionNameMetadata(stream);
             }
             catch (Exception e)
             {

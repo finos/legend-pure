@@ -19,14 +19,13 @@ import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import org.eclipse.collections.impl.factory.primitive.IntLists;
 import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.impl.utility.LazyIterate;
-import org.finos.legend.pure.m4.serialization.Reader;
-import org.finos.legend.pure.m4.serialization.Writer;
-import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
-import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ServiceLoader;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -235,7 +234,7 @@ public abstract class AbstractTestModuleMetadataSerializerExtension extends Abst
         testSerializes(expectedResult.getFunctionNameMetadata(), metadata.getFunctionNameMetadata(), this.serializer::serializeFunctionNameMetadata, this.serializer::deserializeFunctionNameMetadata);
     }
 
-    private <M> void testSerializes(M expectedResult, M metadata, BiConsumer<Writer, M> serializer, Function<Reader, M> deserializer)
+    private <M> void testSerializes(M expectedResult, M metadata, BiConsumer<OutputStream, M> serializer, Function<InputStream, M> deserializer)
     {
         byte[] bytes = serialize(serializer, metadata);
         M deserialized = deserialize(deserializer, bytes);
@@ -245,29 +244,18 @@ public abstract class AbstractTestModuleMetadataSerializerExtension extends Abst
         Assert.assertArrayEquals("serialization instability for version " + this.extension.version() + " (" + this.extension.getClass().getName() + ")", bytes, bytes2);
 
         byte[] bytes3 = serialize(serializer, deserialized);
-        if (expectedResult.equals(metadata))
-        {
-            Assert.assertArrayEquals("serialization instability for version " + this.extension.version() + " (" + this.extension.getClass().getName() + ")", bytes, bytes3);
-        }
-        else
-        {
-            byte[] expectedBytes = serialize(serializer, expectedResult);
-            Assert.assertArrayEquals("serialization instability for version " + this.extension.version() + " (" + this.extension.getClass().getName() + ")", expectedBytes, bytes3);
-        }
+        Assert.assertArrayEquals("serialization instability for version " + this.extension.version() + " (" + this.extension.getClass().getName() + ")", bytes, bytes3);
     }
 
-    private <M> byte[] serialize(BiConsumer<Writer, M> serializer, M metadata)
+    private <M> byte[] serialize(BiConsumer<OutputStream, M> serializer, M metadata)
     {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        serializer.accept(BinaryWriters.newBinaryWriter(bytes), metadata);
+        serializer.accept(bytes, metadata);
         return bytes.toByteArray();
     }
 
-    private <M> M deserialize(Function<Reader, M> deserializer, byte[] bytes)
+    private <M> M deserialize(Function<InputStream, M> deserializer, byte[] bytes)
     {
-        try (Reader reader = BinaryReaders.newBinaryReader(bytes))
-        {
-            return deserializer.apply(reader);
-        }
+        return deserializer.apply(new ByteArrayInputStream(bytes));
     }
 }

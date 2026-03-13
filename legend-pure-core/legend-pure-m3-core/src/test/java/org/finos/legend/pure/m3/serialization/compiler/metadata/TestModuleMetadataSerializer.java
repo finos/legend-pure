@@ -19,14 +19,13 @@ import org.eclipse.collections.api.list.primitive.MutableIntList;
 import org.eclipse.collections.impl.Counter;
 import org.eclipse.collections.impl.factory.primitive.IntLists;
 import org.finos.legend.pure.m3.serialization.compiler.strings.StringIndexer;
-import org.finos.legend.pure.m4.serialization.Reader;
-import org.finos.legend.pure.m4.serialization.Writer;
-import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
-import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -83,15 +82,15 @@ public class TestModuleMetadataSerializer
         ModuleManifest emptyMetadata = ModuleMetadata.builder("empty_module").withReferenceIdVersion(1).build().getManifest();
 
         ModuleMetadataSerializerExtension v1 = newExtension(1,
-                (w, m) -> v1Serialize.increment(),
-                r ->
+                (s, m) -> v1Serialize.increment(),
+                s ->
                 {
                     v1Deserialize.increment();
                     return emptyMetadata;
                 });
         ModuleMetadataSerializerExtension v2 = newExtension(2,
-                (w, m) -> v2Serialize.increment(),
-                r ->
+                (s, m) -> v2Serialize.increment(),
+                s ->
                 {
                     v2Deserialize.increment();
                     return emptyMetadata;
@@ -108,49 +107,49 @@ public class TestModuleMetadataSerializer
         Assert.assertEquals(0, v2Deserialize.getCount());
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        serializer.serializeManifest(BinaryWriters.newBinaryWriter(stream), emptyMetadata, 1);
+        serializer.serializeManifest(stream, emptyMetadata, 1);
         Assert.assertNotEquals(0, stream.size());
         Assert.assertEquals(1, v1Serialize.getCount());
         Assert.assertEquals(0, v1Deserialize.getCount());
         Assert.assertEquals(0, v2Serialize.getCount());
         Assert.assertEquals(0, v2Deserialize.getCount());
 
-        serializer.deserializeManifest(BinaryReaders.newBinaryReader(stream.toByteArray()));
+        serializer.deserializeManifest(new ByteArrayInputStream(stream.toByteArray()));
         Assert.assertEquals(1, v1Serialize.getCount());
         Assert.assertEquals(1, v1Deserialize.getCount());
         Assert.assertEquals(0, v2Serialize.getCount());
         Assert.assertEquals(0, v2Deserialize.getCount());
 
         stream.reset();
-        serializer.serializeManifest(BinaryWriters.newBinaryWriter(stream), emptyMetadata, 2);
+        serializer.serializeManifest(stream, emptyMetadata, 2);
         Assert.assertNotEquals(0, stream.size());
         Assert.assertEquals(1, v1Serialize.getCount());
         Assert.assertEquals(1, v1Deserialize.getCount());
         Assert.assertEquals(1, v2Serialize.getCount());
         Assert.assertEquals(0, v2Deserialize.getCount());
 
-        serializer.deserializeManifest(BinaryReaders.newBinaryReader(stream.toByteArray()));
+        serializer.deserializeManifest(new ByteArrayInputStream(stream.toByteArray()));
         Assert.assertEquals(1, v1Serialize.getCount());
         Assert.assertEquals(1, v1Deserialize.getCount());
         Assert.assertEquals(1, v2Serialize.getCount());
         Assert.assertEquals(1, v2Deserialize.getCount());
 
         stream.reset();
-        serializer.serializeManifest(BinaryWriters.newBinaryWriter(stream), emptyMetadata);
+        serializer.serializeManifest(stream, emptyMetadata);
         Assert.assertNotEquals(0, stream.size());
         Assert.assertEquals(1, v1Serialize.getCount());
         Assert.assertEquals(1, v1Deserialize.getCount());
         Assert.assertEquals(2, v2Serialize.getCount());
         Assert.assertEquals(1, v2Deserialize.getCount());
 
-        serializer.deserializeManifest(BinaryReaders.newBinaryReader(stream.toByteArray()));
+        serializer.deserializeManifest(new ByteArrayInputStream(stream.toByteArray()));
         Assert.assertEquals(1, v1Serialize.getCount());
         Assert.assertEquals(1, v1Deserialize.getCount());
         Assert.assertEquals(2, v2Serialize.getCount());
         Assert.assertEquals(2, v2Deserialize.getCount());
 
         stream.reset();
-        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> serializer.serializeManifest(BinaryWriters.newBinaryWriter(stream), emptyMetadata, 3));
+        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> serializer.serializeManifest(stream, emptyMetadata, 3));
         Assert.assertEquals("Unknown extension: 3", e.getMessage());
         Assert.assertEquals(0, stream.size());
         Assert.assertEquals(1, v1Serialize.getCount());
@@ -164,7 +163,7 @@ public class TestModuleMetadataSerializer
         return newExtension(version, null, null);
     }
 
-    private ModuleMetadataSerializerExtension newExtension(int version, BiConsumer<? super Writer, ? super ModuleManifest> serializer, Function<? super Reader, ? extends ModuleManifest> deserializer)
+    private ModuleMetadataSerializerExtension newExtension(int version, BiConsumer<? super OutputStream, ? super ModuleManifest> serializer, Function<? super InputStream, ? extends ModuleManifest> deserializer)
     {
         return new ModuleMetadataSerializerExtension()
         {
@@ -175,69 +174,69 @@ public class TestModuleMetadataSerializer
             }
 
             @Override
-            public void serializeManifest(Writer writer, ModuleManifest manifest)
+            public void serializeManifest(OutputStream stream, ModuleManifest manifest, StringIndexer stringIndexer)
             {
                 if (serializer == null)
                 {
                     throw new UnsupportedOperationException();
                 }
-                serializer.accept(writer, manifest);
+                serializer.accept(stream, manifest);
             }
 
             @Override
-            public ModuleManifest deserializeManifest(Reader reader)
+            public ModuleManifest deserializeManifest(InputStream stream, StringIndexer stringIndexer)
             {
                 if (deserializer == null)
                 {
                     throw new UnsupportedOperationException();
                 }
-                return deserializer.apply(reader);
+                return deserializer.apply(stream);
             }
 
             @Override
-            public void serializeSourceMetadata(Writer writer, ModuleSourceMetadata sourceMetadata)
+            public void serializeSourceMetadata(OutputStream stream, ModuleSourceMetadata sourceMetadata, StringIndexer stringIndexer)
             {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public ModuleSourceMetadata deserializeSourceMetadata(Reader reader)
+            public ModuleSourceMetadata deserializeSourceMetadata(InputStream stream, StringIndexer stringIndexer)
             {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public void serializeExternalReferenceMetadata(Writer writer, ModuleExternalReferenceMetadata externalReferenceMetadata)
+            public void serializeExternalReferenceMetadata(OutputStream stream, ModuleExternalReferenceMetadata externalReferenceMetadata, StringIndexer stringIndexer)
             {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public ModuleExternalReferenceMetadata deserializeExternalReferenceMetadata(Reader reader)
+            public ModuleExternalReferenceMetadata deserializeExternalReferenceMetadata(InputStream stream, StringIndexer stringIndexer)
             {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public void serializeBackReferenceMetadata(Writer writer, ElementBackReferenceMetadata backReferenceMetadata)
+            public void serializeBackReferenceMetadata(OutputStream stream, ElementBackReferenceMetadata backReferenceMetadata, StringIndexer stringIndexer)
             {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public ElementBackReferenceMetadata deserializeBackReferenceMetadata(Reader reader)
+            public ElementBackReferenceMetadata deserializeBackReferenceMetadata(InputStream stream, StringIndexer stringIndexer)
             {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public void serializeFunctionNameMetadata(Writer writer, ModuleFunctionNameMetadata functionNameMetadata)
+            public void serializeFunctionNameMetadata(OutputStream stream, ModuleFunctionNameMetadata functionNameMetadata, StringIndexer stringIndexer)
             {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public ModuleFunctionNameMetadata deserializeFunctionNameMetadata(Reader reader)
+            public ModuleFunctionNameMetadata deserializeFunctionNameMetadata(InputStream stream, StringIndexer stringIndexer)
             {
                 throw new UnsupportedOperationException();
             }

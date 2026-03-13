@@ -25,8 +25,6 @@ import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSe
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleSourceMetadata;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.m4.serialization.Writer;
-import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -169,9 +167,9 @@ public class FileSerializer
         try
         {
             Files.createDirectories(filePath.getParent());
-            try (Writer writer = BinaryWriters.newBinaryWriter(new BufferedOutputStream(Files.newOutputStream(filePath))))
+            try (OutputStream stream = new BufferedOutputStream(Files.newOutputStream(filePath)))
             {
-                this.moduleSerializer.serializeManifest(writer, moduleManifest, serializerVersion);
+                this.moduleSerializer.serializeManifest(stream, moduleManifest, serializerVersion);
             }
         }
         catch (Exception e)
@@ -211,10 +209,7 @@ public class FileSerializer
         try
         {
             zipStream.putNextEntry(new ZipEntry(entryName));
-            try (Writer writer = BinaryWriters.newBinaryWriter(zipStream, false))
-            {
-                this.moduleSerializer.serializeManifest(writer, moduleManifest, serializerVersion);
-            }
+            this.moduleSerializer.serializeManifest(zipStream, moduleManifest, serializerVersion);
             zipStream.closeEntry();
         }
         catch (Exception e)
@@ -255,9 +250,9 @@ public class FileSerializer
         try
         {
             Files.createDirectories(filePath.getParent());
-            try (Writer writer = BinaryWriters.newBinaryWriter(new BufferedOutputStream(Files.newOutputStream(filePath))))
+            try (OutputStream stream = new BufferedOutputStream(Files.newOutputStream(filePath)))
             {
-                this.moduleSerializer.serializeSourceMetadata(writer, moduleSourceMetadata, serializerVersion);
+                this.moduleSerializer.serializeSourceMetadata(stream, moduleSourceMetadata, serializerVersion);
             }
         }
         catch (Exception e)
@@ -297,10 +292,7 @@ public class FileSerializer
         try
         {
             zipStream.putNextEntry(new ZipEntry(entryName));
-            try (Writer writer = BinaryWriters.newBinaryWriter(zipStream, false))
-            {
-                this.moduleSerializer.serializeSourceMetadata(writer, moduleSourceMetadata, serializerVersion);
-            }
+            this.moduleSerializer.serializeSourceMetadata(zipStream, moduleSourceMetadata, serializerVersion);
             zipStream.closeEntry();
         }
         catch (Exception e)
@@ -341,9 +333,9 @@ public class FileSerializer
         try
         {
             Files.createDirectories(filePath.getParent());
-            try (Writer writer = BinaryWriters.newBinaryWriter(new BufferedOutputStream(Files.newOutputStream(filePath))))
+            try (OutputStream stream = new BufferedOutputStream(Files.newOutputStream(filePath)))
             {
-                this.moduleSerializer.serializeExternalReferenceMetadata(writer, moduleExtRefMetadata, serializerVersion);
+                this.moduleSerializer.serializeExternalReferenceMetadata(stream, moduleExtRefMetadata, serializerVersion);
             }
         }
         catch (Exception e)
@@ -383,10 +375,7 @@ public class FileSerializer
         try
         {
             zipStream.putNextEntry(new ZipEntry(entryName));
-            try (Writer writer = BinaryWriters.newBinaryWriter(zipStream, false))
-            {
-                this.moduleSerializer.serializeExternalReferenceMetadata(writer, moduleExtRefMetadata, serializerVersion);
-            }
+            this.moduleSerializer.serializeExternalReferenceMetadata(zipStream, moduleExtRefMetadata, serializerVersion);
             zipStream.closeEntry();
         }
         catch (Exception e)
@@ -487,9 +476,9 @@ public class FileSerializer
         try
         {
             Files.createDirectories(filePath.getParent());
-            try (Writer writer = BinaryWriters.newBinaryWriter(new BufferedOutputStream(Files.newOutputStream(filePath))))
+            try (OutputStream stream = new BufferedOutputStream(Files.newOutputStream(filePath)))
             {
-                this.moduleSerializer.serializeBackReferenceMetadata(writer, elementBackRefMetadata, serializerVersion);
+                this.moduleSerializer.serializeBackReferenceMetadata(stream, elementBackRefMetadata, serializerVersion);
             }
         }
         catch (Exception e)
@@ -530,10 +519,7 @@ public class FileSerializer
         try
         {
             zipStream.putNextEntry(new ZipEntry(entryName));
-            try (Writer writer = BinaryWriters.newBinaryWriter(zipStream, false))
-            {
-                this.moduleSerializer.serializeBackReferenceMetadata(writer, elementBackRefMetadata, serializerVersion);
-            }
+            this.moduleSerializer.serializeBackReferenceMetadata(zipStream, elementBackRefMetadata, serializerVersion);
             zipStream.closeEntry();
         }
         catch (Exception e)
@@ -574,9 +560,9 @@ public class FileSerializer
         try
         {
             Files.createDirectories(filePath.getParent());
-            try (Writer writer = BinaryWriters.newBinaryWriter(new BufferedOutputStream(Files.newOutputStream(filePath))))
+            try (OutputStream stream = new BufferedOutputStream(Files.newOutputStream(filePath)))
             {
-                this.moduleSerializer.serializeFunctionNameMetadata(writer, moduleFunctionNameMetadata, serializerVersion);
+                this.moduleSerializer.serializeFunctionNameMetadata(stream, moduleFunctionNameMetadata, serializerVersion);
             }
         }
         catch (Exception e)
@@ -616,10 +602,7 @@ public class FileSerializer
         try
         {
             zipStream.putNextEntry(new ZipEntry(entryName));
-            try (Writer writer = BinaryWriters.newBinaryWriter(zipStream, false))
-            {
-                this.moduleSerializer.serializeFunctionNameMetadata(writer, moduleFunctionNameMetadata, serializerVersion);
-            }
+            this.moduleSerializer.serializeFunctionNameMetadata(zipStream, moduleFunctionNameMetadata, serializerVersion);
             zipStream.closeEntry();
         }
         catch (Exception e)
