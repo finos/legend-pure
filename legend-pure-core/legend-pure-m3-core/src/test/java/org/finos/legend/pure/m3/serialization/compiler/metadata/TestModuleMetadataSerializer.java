@@ -18,6 +18,7 @@ import org.eclipse.collections.api.list.primitive.IntList;
 import org.eclipse.collections.api.list.primitive.MutableIntList;
 import org.eclipse.collections.impl.Counter;
 import org.eclipse.collections.impl.factory.primitive.IntLists;
+import org.eclipse.collections.impl.list.primitive.IntInterval;
 import org.finos.legend.pure.m3.serialization.compiler.strings.StringIndexer;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,6 +32,8 @@ import java.util.function.Function;
 
 public class TestModuleMetadataSerializer
 {
+    private final int MAX_EXTENSION_VERSION = 3;
+
     @Test
     public void testExtensionRequired()
     {
@@ -63,7 +66,7 @@ public class TestModuleMetadataSerializer
     @Test
     public void testLoadingFromClassLoader()
     {
-        IntList expectedVersions = IntLists.mutable.with(1, 2);
+        IntList expectedVersions = IntInterval.fromTo(1, MAX_EXTENSION_VERSION).toList();
         ModuleMetadataSerializer serializer = ModuleMetadataSerializer.builder().withLoadedExtensions().build();
         MutableIntList foundVersions = IntLists.mutable.empty();
         serializer.forEachVersion(foundVersions::add);
@@ -149,8 +152,9 @@ public class TestModuleMetadataSerializer
         Assert.assertEquals(2, v2Deserialize.getCount());
 
         stream.reset();
-        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> serializer.serializeManifest(stream, emptyMetadata, 3));
-        Assert.assertEquals("Unknown extension: 3", e.getMessage());
+        int unexpectedVersion = MAX_EXTENSION_VERSION + 1;
+        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> serializer.serializeManifest(stream, emptyMetadata, unexpectedVersion));
+        Assert.assertEquals("Unknown extension: " + unexpectedVersion, e.getMessage());
         Assert.assertEquals(0, stream.size());
         Assert.assertEquals(1, v1Serialize.getCount());
         Assert.assertEquals(1, v1Deserialize.getCount());
