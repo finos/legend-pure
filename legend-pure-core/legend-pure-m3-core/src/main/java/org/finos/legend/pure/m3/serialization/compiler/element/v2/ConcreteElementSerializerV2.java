@@ -33,6 +33,8 @@ import java.util.zip.InflaterInputStream;
 
 public class ConcreteElementSerializerV2 implements ConcreteElementSerializerExtension
 {
+    private static final int COMPRESSION_LEVEL = 7;
+
     private final ConcreteElementSerializerV1 v1 = new ConcreteElementSerializerV1();
 
     @Override
@@ -44,7 +46,7 @@ public class ConcreteElementSerializerV2 implements ConcreteElementSerializerExt
     @Override
     public void serialize(OutputStream stream, CoreInstance element, StringIndexer stringIndexer, ReferenceIdProvider referenceIdProvider, ProcessorSupport processorSupport)
     {
-        Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION, true);
+        Deflater deflater = new Deflater(COMPRESSION_LEVEL, true);
         try
         {
             DeflaterOutputStream zipStream = new DeflaterOutputStream(stream, deflater);
