@@ -46,7 +46,9 @@ import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.Writer;
+import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 
+import java.io.OutputStream;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.BiConsumer;
@@ -93,12 +95,15 @@ class SerializerV1 extends BaseV1
                 .withKeyValue(this.processorSupport.package_getByUserPath(M3Paths.PropertyStub), this::validatePropertyStub);
     }
 
-    void serialize(Writer writer)
+    void serialize(OutputStream stream)
     {
-        Writer stringIndexedWriter = collectNodesAndIndexStrings(writer);
-        stringIndexedWriter.writeString(PackageableElement.getUserPathForPackageableElement(this.element));
-        stringIndexedWriter.writeString(this.element.getSourceInformation().getSourceId());
-        serializeNodes(stringIndexedWriter);
+        try (Writer writer = BinaryWriters.newBinaryWriter(stream, false))
+        {
+            Writer stringIndexedWriter = collectNodesAndIndexStrings(writer);
+            stringIndexedWriter.writeString(PackageableElement.getUserPathForPackageableElement(this.element));
+            stringIndexedWriter.writeString(this.element.getSourceInformation().getSourceId());
+            serializeNodes(stringIndexedWriter);
+        }
     }
 
     private Writer collectNodesAndIndexStrings(Writer writer)

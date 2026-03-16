@@ -17,6 +17,7 @@ package org.finos.legend.pure.m3.serialization.compiler.metadata.v2;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReference;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceConsumer;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.BaseModuleMetadataSerializerExtension;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ConcreteElementMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementBackReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementExternalReferenceMetadata;
@@ -24,15 +25,20 @@ import org.finos.legend.pure.m3.serialization.compiler.metadata.FunctionsByName;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleExternalReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleFunctionNameMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleManifest;
-import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializerExtension;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleSourceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.SourceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.SourceSectionMetadata;
+import org.finos.legend.pure.m3.serialization.compiler.strings.StringIndexer;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.Reader;
 import org.finos.legend.pure.m4.serialization.Writer;
+import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
+import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 
-public class ModuleMetadataSerializerV2 implements ModuleMetadataSerializerExtension
+import java.io.InputStream;
+import java.io.OutputStream;
+
+public class ModuleMetadataSerializerV2 extends BaseModuleMetadataSerializerExtension
 {
     private static final int BACK_REF_TYPE_MASK = 0b1110_0000;
     private static final int BACK_REF_APPLICATION = 0b0000_0000;
@@ -58,199 +64,239 @@ public class ModuleMetadataSerializerV2 implements ModuleMetadataSerializerExten
     }
 
     @Override
-    public void serializeManifest(Writer writer, ModuleManifest manifest)
+    public void serializeManifest(OutputStream stream, ModuleManifest manifest, StringIndexer stringIndexer)
     {
-        writer.writeString(manifest.getModuleName());
-        ImmutableList<String> dependencies = manifest.getDependencies();
-        ImmutableList<ConcreteElementMetadata> elements = manifest.getElements();
-        writer.writeInt(dependencies.size());
-        writer.writeInt(elements.size());
-        dependencies.forEach(writer::writeString);
-        elements.forEach(element -> writeElement(writer, element));
-    }
-
-    @Override
-    public ModuleManifest deserializeManifest(Reader reader)
-    {
-        String moduleName = reader.readString();
-        int dependencyCount = reader.readInt();
-        int elementCount = reader.readInt();
-        ModuleManifest.Builder builder = ModuleManifest.builder(dependencyCount, elementCount).withModuleName(moduleName);
-        for (int i = 0; i < dependencyCount; i++)
+        try (Writer writer = BinaryWriters.newBinaryWriter(stream, false))
         {
-            builder.addDependency(reader.readString());
+            Writer stringIndexedWriter = stringIndexer.writeStringIndex(writer, collectStrings(manifest));
+            stringIndexedWriter.writeString(manifest.getModuleName());
+            ImmutableList<String> dependencies = manifest.getDependencies();
+            ImmutableList<ConcreteElementMetadata> elements = manifest.getElements();
+            stringIndexedWriter.writeInt(dependencies.size());
+            stringIndexedWriter.writeInt(elements.size());
+            dependencies.forEach(stringIndexedWriter::writeString);
+            elements.forEach(element -> writeElement(stringIndexedWriter, element));
         }
-        for (int i = 0; i < elementCount; i++)
+    }
+
+    @Override
+    public ModuleManifest deserializeManifest(InputStream stream, StringIndexer stringIndexer)
+    {
+        try (Reader reader = BinaryReaders.newBinaryReader(stream, false))
         {
-            builder.addElement(readElement(reader));
+            Reader stringIndexedReader = stringIndexer.readStringIndex(reader);
+            String moduleName = stringIndexedReader.readString();
+            int dependencyCount = stringIndexedReader.readInt();
+            int elementCount = stringIndexedReader.readInt();
+            ModuleManifest.Builder builder = ModuleManifest.builder(dependencyCount, elementCount).withModuleName(moduleName);
+            for (int i = 0; i < dependencyCount; i++)
+            {
+                builder.addDependency(stringIndexedReader.readString());
+            }
+            for (int i = 0; i < elementCount; i++)
+            {
+                builder.addElement(readElement(stringIndexedReader));
+            }
+            return builder.build();
         }
-        return builder.build();
     }
 
     @Override
-    public void serializeSourceMetadata(Writer writer, ModuleSourceMetadata sourceMetadata)
+    public void serializeSourceMetadata(OutputStream stream, ModuleSourceMetadata sourceMetadata, StringIndexer stringIndexer)
     {
-        writer.writeString(sourceMetadata.getModuleName());
-        ImmutableList<SourceMetadata> sources = sourceMetadata.getSources();
-        writer.writeInt(sources.size());
-        sources.forEach(source -> writeSource(writer, source));
-    }
-
-    @Override
-    public ModuleSourceMetadata deserializeSourceMetadata(Reader reader)
-    {
-        String moduleName = reader.readString();
-        int sourceCount = reader.readInt();
-        ModuleSourceMetadata.Builder builder = ModuleSourceMetadata.builder(sourceCount).withModuleName(moduleName);
-        for (int i = 0; i < sourceCount; i++)
+        try (Writer writer = BinaryWriters.newBinaryWriter(stream, false))
         {
-            builder.addSource(readSource(reader));
+            Writer stringIndexedWriter = stringIndexer.writeStringIndex(writer, collectStrings(sourceMetadata));
+            stringIndexedWriter.writeString(sourceMetadata.getModuleName());
+            ImmutableList<SourceMetadata> sources = sourceMetadata.getSources();
+            stringIndexedWriter.writeInt(sources.size());
+            sources.forEach(source -> writeSource(stringIndexedWriter, source));
         }
-        return builder.build();
     }
 
     @Override
-    public void serializeExternalReferenceMetadata(Writer writer, ModuleExternalReferenceMetadata externalReferenceMetadata)
+    public ModuleSourceMetadata deserializeSourceMetadata(InputStream stream, StringIndexer stringIndexer)
     {
-        writer.writeString(externalReferenceMetadata.getModuleName());
-        writer.writeInt(externalReferenceMetadata.getReferenceIdVersion());
-
-        ImmutableList<ElementExternalReferenceMetadata> elementExternalReferences = externalReferenceMetadata.getExternalReferences();
-        writer.writeInt(elementExternalReferences.size());
-        elementExternalReferences.forEach(elementExtRef -> writeElementExternalReferenceMetadata(writer, elementExtRef));
-    }
-
-    @Override
-    public ModuleExternalReferenceMetadata deserializeExternalReferenceMetadata(Reader reader)
-    {
-        String moduleName = reader.readString();
-        int referenceIdVersion = reader.readInt();
-        int elementExtRefCount = reader.readInt();
-        ModuleExternalReferenceMetadata.Builder builder = ModuleExternalReferenceMetadata.builder(elementExtRefCount)
-                .withModuleName(moduleName)
-                .withReferenceIdVersion(referenceIdVersion);
-        for (int i = 0; i < elementExtRefCount; i++)
+        try (Reader reader = BinaryReaders.newBinaryReader(stream, false))
         {
-            builder.addElementExternalReferenceMetadata(readElementExternalReferenceMetadata(reader));
+            Reader stringIndexedReader = stringIndexer.readStringIndex(reader);
+            String moduleName = stringIndexedReader.readString();
+            int sourceCount = stringIndexedReader.readInt();
+            ModuleSourceMetadata.Builder builder = ModuleSourceMetadata.builder(sourceCount).withModuleName(moduleName);
+            for (int i = 0; i < sourceCount; i++)
+            {
+                builder.addSource(readSource(stringIndexedReader));
+            }
+            return builder.build();
         }
-        return builder.build();
     }
 
     @Override
-    public void serializeBackReferenceMetadata(Writer writer, ElementBackReferenceMetadata backReferenceMetadata)
+    public void serializeExternalReferenceMetadata(OutputStream stream, ModuleExternalReferenceMetadata externalReferenceMetadata, StringIndexer stringIndexer)
     {
-        writer.writeString(backReferenceMetadata.getElementPath());
-        writer.writeInt(backReferenceMetadata.getReferenceIdVersion());
-
-        ImmutableList<ElementBackReferenceMetadata.InstanceBackReferenceMetadata> instanceBackRefs = backReferenceMetadata.getInstanceBackReferenceMetadata();
-        writer.writeInt(instanceBackRefs.size());
-        BackReferenceConsumer backRefWriter = new BackReferenceConsumer()
+        try (Writer writer = BinaryWriters.newBinaryWriter(stream, false))
         {
-            @Override
-            protected void accept(BackReference.Application application)
-            {
-                writer.writeByte((byte) BACK_REF_APPLICATION);
-                writer.writeString(application.getFunctionExpression());
-            }
+            Writer stringIndexedWriter = stringIndexer.writeStringIndex(writer, collectStrings(externalReferenceMetadata));
+            stringIndexedWriter.writeString(externalReferenceMetadata.getModuleName());
+            stringIndexedWriter.writeInt(externalReferenceMetadata.getReferenceIdVersion());
 
-            @Override
-            protected void accept(BackReference.ModelElement modelElement)
-            {
-                writer.writeByte((byte) BACK_REF_MODEL_ELEMENT);
-                writer.writeString(modelElement.getElement());
-            }
+            ImmutableList<ElementExternalReferenceMetadata> elementExternalReferences = externalReferenceMetadata.getExternalReferences();
+            stringIndexedWriter.writeInt(elementExternalReferences.size());
+            elementExternalReferences.forEach(elementExtRef -> writeElementExternalReferenceMetadata(stringIndexedWriter, elementExtRef));
+        }
+    }
 
-            @Override
-            protected void accept(BackReference.PropertyFromAssociation propertyFromAssociation)
+    @Override
+    public ModuleExternalReferenceMetadata deserializeExternalReferenceMetadata(InputStream stream, StringIndexer stringIndexer)
+    {
+        try (Reader reader = BinaryReaders.newBinaryReader(stream, false))
+        {
+            Reader stringIndexedReader = stringIndexer.readStringIndex(reader);
+            String moduleName = stringIndexedReader.readString();
+            int referenceIdVersion = stringIndexedReader.readInt();
+            int elementExtRefCount = stringIndexedReader.readInt();
+            ModuleExternalReferenceMetadata.Builder builder = ModuleExternalReferenceMetadata.builder(elementExtRefCount)
+                    .withModuleName(moduleName)
+                    .withReferenceIdVersion(referenceIdVersion);
+            for (int i = 0; i < elementExtRefCount; i++)
             {
-                writer.writeByte((byte) BACK_REF_PROP_FROM_ASSOC);
-                writer.writeString(propertyFromAssociation.getProperty());
+                builder.addElementExternalReferenceMetadata(readElementExternalReferenceMetadata(stringIndexedReader));
             }
+            return builder.build();
+        }
+    }
 
-            @Override
-            protected void accept(BackReference.QualifiedPropertyFromAssociation qualifiedPropertyFromAssociation)
-            {
-                writer.writeByte((byte) BACK_REF_QUAL_PROP_FROM_ASSOC);
-                writer.writeString(qualifiedPropertyFromAssociation.getQualifiedProperty());
-            }
+    @Override
+    public void serializeBackReferenceMetadata(OutputStream stream, ElementBackReferenceMetadata backReferenceMetadata, StringIndexer stringIndexer)
+    {
+        try (Writer writer = BinaryWriters.newBinaryWriter(stream, false))
+        {
+            Writer stringIndexedWriter = stringIndexer.writeStringIndex(writer, collectStrings(backReferenceMetadata));
+            stringIndexedWriter.writeString(backReferenceMetadata.getElementPath());
+            stringIndexedWriter.writeInt(backReferenceMetadata.getReferenceIdVersion());
 
-            @Override
-            protected void accept(BackReference.ReferenceUsage referenceUsage)
+            ImmutableList<ElementBackReferenceMetadata.InstanceBackReferenceMetadata> instanceBackRefs = backReferenceMetadata.getInstanceBackReferenceMetadata();
+            stringIndexedWriter.writeInt(instanceBackRefs.size());
+            BackReferenceConsumer backRefWriter = new BackReferenceConsumer()
             {
-                int offset = referenceUsage.getOffset();
-                int offsetIntWidth = getIntWidth(offset);
-                SourceInformation sourceInfo = referenceUsage.getSourceInformation();
-                int hasSourceInfo = (sourceInfo == null) ? BOOLEAN_FALSE : BOOLEAN_TRUE;
-                writer.writeByte((byte) (BACK_REF_REF_USAGE | offsetIntWidth | hasSourceInfo));
-                writer.writeString(referenceUsage.getOwner());
-                writer.writeString(referenceUsage.getProperty());
-                writeIntOfWidth(writer, offset, offsetIntWidth);
-                if (sourceInfo != null)
+                @Override
+                protected void accept(BackReference.Application application)
                 {
-                    writeSourceInfo(writer, sourceInfo);
+                    stringIndexedWriter.writeByte((byte) BACK_REF_APPLICATION);
+                    stringIndexedWriter.writeString(application.getFunctionExpression());
                 }
-            }
 
-            @Override
-            protected void accept(BackReference.Specialization specialization)
+                @Override
+                protected void accept(BackReference.ModelElement modelElement)
+                {
+                    stringIndexedWriter.writeByte((byte) BACK_REF_MODEL_ELEMENT);
+                    stringIndexedWriter.writeString(modelElement.getElement());
+                }
+
+                @Override
+                protected void accept(BackReference.PropertyFromAssociation propertyFromAssociation)
+                {
+                    stringIndexedWriter.writeByte((byte) BACK_REF_PROP_FROM_ASSOC);
+                    stringIndexedWriter.writeString(propertyFromAssociation.getProperty());
+                }
+
+                @Override
+                protected void accept(BackReference.QualifiedPropertyFromAssociation qualifiedPropertyFromAssociation)
+                {
+                    stringIndexedWriter.writeByte((byte) BACK_REF_QUAL_PROP_FROM_ASSOC);
+                    stringIndexedWriter.writeString(qualifiedPropertyFromAssociation.getQualifiedProperty());
+                }
+
+                @Override
+                protected void accept(BackReference.ReferenceUsage referenceUsage)
+                {
+                    int offset = referenceUsage.getOffset();
+                    int offsetIntWidth = getIntWidth(offset);
+                    SourceInformation sourceInfo = referenceUsage.getSourceInformation();
+                    int hasSourceInfo = (sourceInfo == null) ? BOOLEAN_FALSE : BOOLEAN_TRUE;
+                    stringIndexedWriter.writeByte((byte) (BACK_REF_REF_USAGE | offsetIntWidth | hasSourceInfo));
+                    stringIndexedWriter.writeString(referenceUsage.getOwner());
+                    stringIndexedWriter.writeString(referenceUsage.getProperty());
+                    writeIntOfWidth(stringIndexedWriter, offset, offsetIntWidth);
+                    if (sourceInfo != null)
+                    {
+                        writeSourceInfo(stringIndexedWriter, sourceInfo);
+                    }
+                }
+
+                @Override
+                protected void accept(BackReference.Specialization specialization)
+                {
+                    stringIndexedWriter.writeByte((byte) BACK_REF_SPEC);
+                    stringIndexedWriter.writeString(specialization.getGeneralization());
+                }
+            };
+            instanceBackRefs.forEach(instBackRef ->
             {
-                writer.writeByte((byte) BACK_REF_SPEC);
-                writer.writeString(specialization.getGeneralization());
-            }
-        };
-        instanceBackRefs.forEach(instBackRef ->
-        {
-            writer.writeString(instBackRef.getInstanceReferenceId());
-            ImmutableList<BackReference> backRefs = instBackRef.getBackReferences();
-            writer.writeInt(backRefs.size());
-            backRefs.forEach(backRefWriter);
-        });
+                stringIndexedWriter.writeString(instBackRef.getInstanceReferenceId());
+                ImmutableList<BackReference> backRefs = instBackRef.getBackReferences();
+                stringIndexedWriter.writeInt(backRefs.size());
+                backRefs.forEach(backRefWriter);
+            });
+        }
     }
 
     @Override
-    public ElementBackReferenceMetadata deserializeBackReferenceMetadata(Reader reader)
+    public ElementBackReferenceMetadata deserializeBackReferenceMetadata(InputStream stream, StringIndexer stringIndexer)
     {
-        String elementPath = reader.readString();
-        int referenceIdVersion = reader.readInt();
-
-        int instanceBackRefCount = reader.readInt();
-        ElementBackReferenceMetadata.Builder builder = ElementBackReferenceMetadata.builder(instanceBackRefCount)
-                .withElementPath(elementPath)
-                .withReferenceIdVersion(referenceIdVersion);
-        for (int i = 0; i < instanceBackRefCount; i++)
+        try (Reader reader = BinaryReaders.newBinaryReader(stream, false))
         {
-            String instanceRefId = reader.readString();
-            int backRefCount = reader.readInt();
-            BackReference[] backRefs = new BackReference[backRefCount];
-            for (int j = 0; j < backRefCount; j++)
+            Reader stringIndexedReader = stringIndexer.readStringIndex(reader);
+            String elementPath = stringIndexedReader.readString();
+            int referenceIdVersion = stringIndexedReader.readInt();
+
+            int instanceBackRefCount = stringIndexedReader.readInt();
+            ElementBackReferenceMetadata.Builder builder = ElementBackReferenceMetadata.builder(instanceBackRefCount)
+                    .withElementPath(elementPath)
+                    .withReferenceIdVersion(referenceIdVersion);
+            for (int i = 0; i < instanceBackRefCount; i++)
             {
-                backRefs[j] = readBackReference(reader);
+                String instanceRefId = stringIndexedReader.readString();
+                int backRefCount = stringIndexedReader.readInt();
+                BackReference[] backRefs = new BackReference[backRefCount];
+                for (int j = 0; j < backRefCount; j++)
+                {
+                    backRefs[j] = readBackReference(stringIndexedReader);
+                }
+                builder.addInstanceBackReferenceMetadata(instanceRefId, backRefs);
             }
-            builder.addInstanceBackReferenceMetadata(instanceRefId, backRefs);
+            return builder.build();
         }
-        return builder.build();
     }
 
     @Override
-    public void serializeFunctionNameMetadata(Writer writer, ModuleFunctionNameMetadata functionNameMetadata)
+    public void serializeFunctionNameMetadata(OutputStream stream, ModuleFunctionNameMetadata functionNameMetadata, StringIndexer stringIndexer)
     {
-        writer.writeString(functionNameMetadata.getModuleName());
-        ImmutableList<FunctionsByName> functionsByName = functionNameMetadata.getFunctionsByName();
-        writer.writeInt(functionsByName.size());
-        functionsByName.forEach(fbn -> writeFunctionsByName(writer, fbn));
-    }
-
-    @Override
-    public ModuleFunctionNameMetadata deserializeFunctionNameMetadata(Reader reader)
-    {
-        String moduleName = reader.readString();
-        int functionCount = reader.readInt();
-        ModuleFunctionNameMetadata.Builder builder = ModuleFunctionNameMetadata.builder(functionCount).withModuleName(moduleName);
-        for (int i = 0; i < functionCount; i++)
+        try (Writer writer = BinaryWriters.newBinaryWriter(stream, false))
         {
-            builder.addFunctionsByName(readFunctionsByName(reader));
+            Writer stringIndexedWriter = stringIndexer.writeStringIndex(writer, collectStrings(functionNameMetadata));
+            stringIndexedWriter.writeString(functionNameMetadata.getModuleName());
+            ImmutableList<FunctionsByName> functionsByName = functionNameMetadata.getFunctionsByName();
+            stringIndexedWriter.writeInt(functionsByName.size());
+            functionsByName.forEach(fbn -> writeFunctionsByName(stringIndexedWriter, fbn));
         }
-        return builder.build();
+    }
+
+    @Override
+    public ModuleFunctionNameMetadata deserializeFunctionNameMetadata(InputStream stream, StringIndexer stringIndexer)
+    {
+        try (Reader reader = BinaryReaders.newBinaryReader(stream, false))
+        {
+            Reader stringIndexedReader = stringIndexer.readStringIndex(reader);
+            String moduleName = stringIndexedReader.readString();
+            int functionCount = stringIndexedReader.readInt();
+            ModuleFunctionNameMetadata.Builder builder = ModuleFunctionNameMetadata.builder(functionCount).withModuleName(moduleName);
+            for (int i = 0; i < functionCount; i++)
+            {
+                builder.addFunctionsByName(readFunctionsByName(stringIndexedReader));
+            }
+            return builder.build();
+        }
     }
 
     private void writeElement(Writer writer, ConcreteElementMetadata element)

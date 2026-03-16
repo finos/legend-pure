@@ -19,12 +19,13 @@ import org.finos.legend.pure.m3.serialization.compiler.SerializerExtension;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProvider;
 import org.finos.legend.pure.m3.serialization.compiler.strings.StringIndexer;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.serialization.Reader;
-import org.finos.legend.pure.m4.serialization.Writer;
+
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public interface ConcreteElementSerializerExtension extends SerializerExtension
 {
-    void serialize(Writer writer, CoreInstance element, StringIndexer stringIndexer, ReferenceIdProvider referenceIdProvider, ProcessorSupport processorSupport);
+    void serialize(OutputStream stream, CoreInstance element, StringIndexer stringIndexer, ReferenceIdProvider referenceIdProvider, ProcessorSupport processorSupport);
 
-    DeserializedConcreteElement deserialize(Reader reader, StringIndexer stringIndexer, int referenceIdVersion);
+    DeserializedConcreteElement deserialize(InputStream stream, StringIndexer stringIndexer, int referenceIdVersion);
 }

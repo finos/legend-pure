@@ -16,7 +16,9 @@ package org.finos.legend.pure.m3.serialization.compiler.element;
 
 import org.finos.legend.pure.m3.serialization.compiler.strings.StringIndexer;
 import org.finos.legend.pure.m4.serialization.Reader;
+import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 
+import java.io.InputStream;
 import java.util.Arrays;
 
 public class ConcreteElementDeserializer extends BaseConcreteElementSerializer
@@ -26,17 +28,22 @@ public class ConcreteElementDeserializer extends BaseConcreteElementSerializer
         super(extensions, defaultVersion, stringIndexer);
     }
 
-    public DeserializedConcreteElement deserialize(Reader reader)
+    public DeserializedConcreteElement deserialize(InputStream stream)
     {
-        long signature = reader.readLong();
-        if (signature != PURE_ELEMENT_SIGNATURE)
+        int version;
+        int referenceIdVersion;
+        try (Reader reader = BinaryReaders.newBinaryReader(stream, false))
         {
-            throw new IllegalArgumentException("Invalid file format: not a Legend concrete element file");
+            long signature = reader.readLong();
+            if (signature != PURE_ELEMENT_SIGNATURE)
+            {
+                throw new IllegalArgumentException("Invalid file format: not a Legend concrete element file");
+            }
+            version = reader.readInt();
+            referenceIdVersion = reader.readInt();
         }
-        int version = reader.readInt();
         ConcreteElementSerializerExtension extension = getExtension(version);
-        int referenceIdVersion = reader.readInt();
-        return extension.deserialize(reader, this.stringIndexer, referenceIdVersion);
+        return extension.deserialize(stream, this.stringIndexer, referenceIdVersion);
     }
 
     public static Builder builder()

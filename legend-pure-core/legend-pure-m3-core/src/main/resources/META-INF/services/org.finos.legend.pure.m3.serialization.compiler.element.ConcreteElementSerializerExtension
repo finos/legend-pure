@@ -1,1 +1,2 @@
 org.finos.legend.pure.m3.serialization.compiler.element.v1.ConcreteElementSerializerV1
+org.finos.legend.pure.m3.serialization.compiler.element.v2.ConcreteElementSerializerV2
