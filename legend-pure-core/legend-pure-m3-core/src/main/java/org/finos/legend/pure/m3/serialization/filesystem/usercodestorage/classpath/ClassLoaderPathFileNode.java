@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 
 class ClassLoaderPathFileNode extends ClassLoaderFileNode
 {
@@ -25,7 +26,8 @@ class ClassLoaderPathFileNode extends ClassLoaderFileNode
 
     ClassLoaderPathFileNode(String path, Path filePath)
     {
-        super(path);
+        super(path, filePath);
+        Objects.requireNonNull(filePath, "filePath");
         this.filePath = filePath;
     }
 

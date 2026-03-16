@@ -28,6 +28,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Set;
@@ -82,6 +83,12 @@ public class PureCompiledJarMojo extends AbstractMojo
     @Parameter(defaultValue = "true")
     private boolean generatePureTests;
 
+    @Parameter
+    private String targetDirectoryForSource;
+
+    @Parameter
+    private String targetDirectoryForMetadata;
+
     @Override
     public void execute() throws MojoExecutionException
     {
@@ -118,13 +125,37 @@ public class PureCompiledJarMojo extends AbstractMojo
             }
         };
 
+        Path targetDirectoryForSourcePath = targetDirectoryForSource != null ?
+                        Paths.get(targetDirectoryForSource) :
+                        Paths.get(targetDirectory.toString()).resolve("generated-sources");
+        Path targetDirectoryForMetadataPath = targetDirectoryForMetadata != null ?
+                Paths.get(targetDirectoryForMetadata) :
+                Paths.get(targetDirectory.toString()).resolve("metadata-distributed");
+
         ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
         long start = System.nanoTime();
 
         try (URLClassLoader cl = this.buildClassLoader(this.project, savedClassLoader, log))
         {
-            Thread.currentThread().setContextClassLoader(cl);
-            JavaCodeGeneration.doIt(repositories, excludedRepositories, extraRepositories, generationType, skip, addExternalAPI, externalAPIPackage, generateMetadata, useSingleDir, generateSources, false, preventJavaCompilation, classesDirectory, targetDirectory, generatePureTests, log);
+            Thread.currentThread().setContextClassLoader(buildClassLoader(this.project, savedClassLoader, log));
+            JavaCodeGeneration.doIt(new JavaCodeGeneration.GenerateParams(
+                    repositories,
+                    excludedRepositories,
+                    extraRepositories,
+                    generationType,
+                    skip,
+                    addExternalAPI,
+                    externalAPIPackage,
+                    generateMetadata,
+                    useSingleDir,
+                    generateSources,
+                    preventJavaCompilation,
+                    classesDirectory,
+                    targetDirectoryForSourcePath,
+                    targetDirectoryForMetadataPath,
+                    generatePureTests,
+                    log
+                ));
         }
         catch (Exception e)
         {
