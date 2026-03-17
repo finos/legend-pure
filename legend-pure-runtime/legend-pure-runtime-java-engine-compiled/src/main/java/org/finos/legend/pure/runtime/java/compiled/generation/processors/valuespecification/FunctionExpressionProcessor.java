@@ -78,13 +78,6 @@ public class FunctionExpressionProcessor
             {
                 castType = TypeProcessor.typeToJavaObjectWithMul(genericType, functionExpression.getValueForMetaPropertyToOne(M3Properties.multiplicity), support);
             }
-            boolean addCastToOne = false;
-            CoreInstance returnMultiplicity = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, support);
-            if (!Multiplicity.isMultiplicityConcrete(returnMultiplicity))
-            {
-                CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.multiplicity, support);
-                addCastToOne = Multiplicity.isToOne(multiplicity, false);
-            }
 
             String parameters = processFunctionParameterValues(topLevelElement, functionExpression, false, processorContext);
             String functionCall = function.getValueForMetaPropertyToMany(M3Properties.preConstraints).isEmpty() && function.getValueForMetaPropertyToMany(M3Properties.postConstraints).isEmpty() ?
@@ -92,15 +85,31 @@ public class FunctionExpressionProcessor
                     FunctionProcessor.functionNameToJava(function) + "_withConstraints(" + SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation()) + (parameters.isEmpty() ? "" : ",") + parameters + ")";
             String qualifiedFunctionCall = IdBuilder.sourceToId(function.getSourceInformation()) + "." + functionCall;
             String possiblyWrappedFunctionCall = new ExecWrapper(processorContext, qualifiedFunctionCall, functionExpression).withShouldCast(shouldCast).withCastType(castType).possiblyGeneratePureStackTrace();
+
+            CoreInstance returnMultiplicity = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, support);
+            CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.multiplicity, support);
+
+            if (!Multiplicity.isMultiplicityConcrete(returnMultiplicity) && Multiplicity.isToOne(multiplicity, false))
+            {
+                possiblyWrappedFunctionCall = "CompiledSupport.makeOne(" + possiblyWrappedFunctionCall + ")";
+            }
+
             if (shouldCast && GenericType.isGenericTypeFullyConcrete(genericType, true, support))
             {
+                // if we will cast, the return value is not concrete in definition, and in some rare instances Java might not be able to infer it properly,
+                // delegating to the Iterable overloads, and leading to class cast exceptions.
+                if (Multiplicity.isToOne(multiplicity, false))
+                {
+                    possiblyWrappedFunctionCall = "((Object)" + possiblyWrappedFunctionCall + ")";
+                }
+
                 castType = TypeProcessor.typeToJavaObjectSingle(genericType, true, support);
                 String interfaceString = TypeProcessor.pureTypeToJava(genericType, false, false, true, support);
                 SourceInformation sourceInformation = functionExpression.getSourceInformation();
-                return "(CompiledSupport.<" + castType + ">castWithExceptionHandling(" + (addCastToOne ? "CompiledSupport.makeOne(" : "") + possiblyWrappedFunctionCall + (addCastToOne ? ")" : "") + "," + interfaceString + ".class, "
+                return "(CompiledSupport.<" + castType + ">castWithExceptionHandling(" +  possiblyWrappedFunctionCall + "," + interfaceString + ".class, "
                         + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + "))" + maySetClassifierGenericType;
             }
-            return (shouldCast ? "((" + castType + ")" : "") + (addCastToOne ? "CompiledSupport.makeOne(" : "") + possiblyWrappedFunctionCall + (addCastToOne ? ")" : "") + (shouldCast ? ")" : "") + maySetClassifierGenericType;
+            return (shouldCast ? "((" + castType + ")" : "") + possiblyWrappedFunctionCall  + (shouldCast ? ")" : "") + maySetClassifierGenericType;
         }
         if (Property.isProperty(function, support))
         {
