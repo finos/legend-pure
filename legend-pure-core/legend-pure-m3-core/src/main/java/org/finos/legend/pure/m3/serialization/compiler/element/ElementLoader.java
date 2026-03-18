@@ -236,7 +236,7 @@ public abstract class ElementLoader
         try
         {
             MutableMap<String, MutableList<BackReference>> map = Maps.mutable.empty();
-            this.index.getAllModuleNames().forEach(moduleName ->
+            this.index.getBackReferenceModuleNames(path).forEach(moduleName ->
             {
                 ElementBackReferenceMetadata backRefMetadata = deserializeBackReferences(moduleName, path);
                 if (backRefMetadata != null)
