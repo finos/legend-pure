@@ -51,7 +51,7 @@ legend-pure            (language, compiler, runtime — Java)   ← THIS REPO
        │  inherits from ↓
 finos/finos (parent POM)
 
-```text
+```
 
 | Repo | What it is | Relationship to legend-pure |
 |------|-----------|----------------------------|
@@ -83,6 +83,8 @@ finos/finos (parent POM)
 
 ## 3. High-Level Architecture
 
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
 │                          Legend Pure — Component View                        │
 │                                                                              │
 │  ┌─────────────────────────────┐   ┌────────────────────────────────────┐   │
@@ -125,11 +127,11 @@ finos/finos (parent POM)
 │        └──────────────────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────────┘
 
-```text
+```
 
 ### Data / Compilation Flow
 
-```text
+```
 Pure source files
       │
       ▼
@@ -148,7 +150,7 @@ Pure source files
                               Compiled runtime (high performance)
                               Interpreted runtime (dev / debug)
 
-```text
+```
 
 ---
 
@@ -157,8 +159,7 @@ Pure source files
 The root POM aggregates **five top-level Maven modules**, each of which is itself an
 aggregator with leaf jar modules:
 
-```
-
+```text
 legend-pure  (root aggregator, groupId: org.finos.legend.pure, version: 5.79.1-SNAPSHOT)
 │
 ├── legend-pure-core          Core language and metamodel
@@ -213,8 +214,7 @@ legend-pure  (root aggregator, groupId: org.finos.legend.pure, version: 5.79.1-S
         ├── legend-pure-runtime-java-extension-shared-store-relational
         ├── legend-pure-runtime-java-extension-compiled-store-relational
         └── legend-pure-runtime-java-extension-interpreted-store-relational
-
-```text
+```
 
 ### Module Naming Conventions
 

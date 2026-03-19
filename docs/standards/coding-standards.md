@@ -11,7 +11,7 @@ Checkstyle runs automatically at the `verify` phase:
 ```bash
 mvn checkstyle:check          # check only (fast)
 mvn verify -DskipTests        # full verify phase including Checkstyle
-```text
+```
 
 Violations at `warning` severity **fail the build** (`<failOnViolation>true</failOnViolation>`).
 
@@ -74,7 +74,7 @@ Every new file must start with comment similar to the below:
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-```text
+```
 
 For XML and properties files the comment style must be adapted accordingly.
 Checkstyle validates the presence of `Copyright` and the Apache license URL
@@ -115,7 +115,7 @@ LOGGER.info("Compiling repository: {}", repositoryName);
 
 // Wrong — uses raw System.out or System.err
 System.out.println("Compiling...");
-```text
+```
 
 - Use `{}` placeholders instead of string concatenation in log calls.
 - Log level guidelines:
@@ -140,7 +140,7 @@ catch (Exception expected)
 
 // Wrong — empty catch without a name or comment
 try { ... } catch (Exception e) {}
-```text
+```
 
 - Do not swallow `PureCompilationException` or `PureExecutionException` without
   re-throwing or explicitly logging.
@@ -158,7 +158,7 @@ main (master)
   └── feature/<short-description>
   └── fix/<short-description>
   └── docs/<short-description>
-```text
+```
 
 ### Branch Naming
 
@@ -179,7 +179,7 @@ main (master)
 [Optional longer body explaining WHY, not WHAT]
 
 [Optional: Closes #<issue-number>]
-```text
+```
 
 **Types:** `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `perf`
 
@@ -192,7 +192,7 @@ Prevents downstream Maven plugins from re-compiling unchanged generated files,
 significantly improving incremental build times.
 
 Closes #1234
-```text
+```
 
 ---
 

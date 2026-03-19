@@ -26,7 +26,7 @@ Mapping my::mappings::MyMapping
 (
     // one or more class mappings
 )
-```pure
+```
 
 A single `Mapping` element can contain multiple class mappings, association mappings,
 enumeration mappings, and include directives. All elements are scoped within the
@@ -53,7 +53,7 @@ Mapping my::mappings::ProductMapping
         price : $src.unitPrice * $src.quantity   // expression mapping
     }
 )
-```pure
+```
 
 - `~src <ClassName>` declares the source type. `$src` refers to the current
   source instance inside property expressions.
@@ -83,7 +83,7 @@ Mapping my::mappings::PersonMapping
         age       : [myDb]PersonTable.age
     }
 )
-```pure
+```
 
 - `~mainTable [<Database>]<Table>` declares the primary table. Required when the
   mapping touches more than one table.
@@ -104,7 +104,7 @@ Person : Relational
         age       : age
     )
 }
-```pure
+```
 
 ### Navigating joins
 
@@ -120,7 +120,7 @@ Person : Relational
         firm      : [myDb]@PersonFirmJoin   // navigate the join to FirmTable
     )
 }
-```pure
+```
 
 ---
 
@@ -152,7 +152,7 @@ Mapping my::mappings::StatusMapping
         CANCELLED : 'X'
     }
 )
-```pure
+```
 
 Reference an enumeration mapping from a class mapping:
 
@@ -164,7 +164,7 @@ Trade : Relational
         status : EnumerationMapping IntStatusMapping : status_code
     )
 }
-```pure
+```
 
 ---
 
@@ -205,7 +205,7 @@ Mapping my::mappings::PersonFirmMapping
         )
     }
 )
-```pure
+```
 
 ---
 
@@ -227,7 +227,7 @@ Mapping my::mappings::ExtendedMapping
         id : $src.id
     }
 )
-```pure
+```
 
 ---
 
@@ -247,7 +247,7 @@ Mapping my::mappings::CrossStoreMapping
         firm  [$this.personId == $that.personId] : Firm
     }
 )
-```pure
+```
 
 ---
 
@@ -292,7 +292,7 @@ Mapping my::mappings::SalesMapping
         }
     }
 )
-```pure
+```
 
 The query engine uses the `~mainMapping` by default. When the query matches the
 conditions of an aggregated view (`~canAggregate`, `~groupByFunctions`,
@@ -321,7 +321,7 @@ Mapping my::PersonMapping
         )
     }
 )
-```pure
+```
 
 - The `~primaryKey` directive inside the embedded block declares which column(s)
   uniquely identify the embedded object. Required when the owning table contains
@@ -358,7 +358,7 @@ Mapping my::PersonMapping
         //              ↑ target mapping ID  ↑ join to navigate when embedded data is absent
     }
 )
-```pure
+```
 
 - `Otherwise ( [<targetMappingId>]:<database>@<Join> )` — the target mapping ID
   must refer to an existing class mapping in the same `Mapping` element (here
@@ -390,7 +390,7 @@ Mapping my::PersonMapping
         firm () Inline[firm1]        // reuse the firm1 mapping for the firm property
     }
 )
-```pure
+```
 
 - `Inline[<setId>]` refers to any class mapping ID visible in the same `Mapping`.
 - The target mapping must implement a class that is the same as or a subtype of the
@@ -414,7 +414,7 @@ When no explicit ID is given, `SetImplementationProcessor` assigns the default:
 
 ```pure
 <fully-qualified-class-name with :: replaced by _>
-```pure
+```
 
 For example, `my::model::Person` mapped without an ID gets the default set ID
 `my_model_Person`. In practice, for a class imported via `import my::model::*` and
@@ -430,7 +430,7 @@ Mapping my::M
         name : [db]PersonTable.name
     }
 )
-```pure
+```
 
 **Important:** if you map the same class twice without explicit IDs the compiler
 will assign the same default ID to both, causing a conflict. Always use explicit IDs
@@ -460,7 +460,7 @@ Mapping my::M
         )
     }
 )
-```pure
+```
 
 IDs must be unique within a `Mapping` element (including across included mappings).
 
@@ -484,7 +484,7 @@ Mapping my::M
         name : [db]employeeTable.name
     }
 )
-```pure
+```
 
 A mapping with no `*` and no other root mapping in scope is still valid; the `*` is
 only needed when multiple mappings exist for the same class and one must be the
@@ -511,7 +511,7 @@ Mapping my::M
         // otherInfo is inherited from person1 — no need to repeat it
     }
 )
-```pure
+```
 
 - The `superSetId` in `extends [superSetId]` must be the set ID of an existing
   class mapping for the **same class** within the same or an included `Mapping`.
@@ -541,7 +541,7 @@ Mapping my::M
         )
     }
 )
-```pure
+```
 
 - `employees [fir1, per1]` — navigating from the `fir1` (Firm) mapping to the
   `per1` (Person) mapping via the join.
@@ -583,7 +583,7 @@ Mapping my::OrgMapping
         children : [myDB]@OrgParentOrg
     }
 )
-```pure
+```
 
 The filter syntax is: `~filter <database>(<joinPath>)? <filterName>`
 
@@ -622,7 +622,7 @@ Mapping my::FirmMapping
         employees [f1, e]  : $this.id == $that.firmId
     }
 )
-```pure
+```
 
 Syntax: `+<propertyName> : <Type>[<multiplicity>] : <columnExpression>`
 
