@@ -22,7 +22,7 @@ Database my::stores::MyDatabase
 (
     // Tables, joins, views, filters go here
 )
-```pure
+```
 
 A `Database` element is the top-level container. Its fully-qualified name is used
 as the `[DatabaseName]` qualifier in mapping column references.
@@ -50,7 +50,7 @@ Database my::stores::TradeDatabase
         book_name VARCHAR(100)
     )
 )
-```pure
+```
 
 **Supported column types:**
 
@@ -87,7 +87,7 @@ Database my::TradeDatabase
 
     Join TradeBook (TradeTable.book_id = BookTable.book_id)
 )
-```pure
+```
 
 ### Multi-column join — `and` / `or`
 
@@ -107,7 +107,7 @@ Database my::TradeDatabase
         and TradeTable.region = BookTable.region
     )
 )
-```pure
+```
 
 `and` binds more tightly than `or`. Use parentheses to group when mixing both:
 
@@ -118,7 +118,7 @@ Join TradeBookComplex
     or
     (TradeTable.book_id = BookTable.book_id and TradeTable.region = 'NYC')
 )
-```pure
+```
 
 ### Comparison operators
 
@@ -143,7 +143,7 @@ Join PersonFirmActive
     PersonTable.firm_id = FirmTable.firm_id
     and PersonTable.firm_id is not null
 )
-```pure
+```
 
 ### Functions on columns
 
@@ -178,7 +178,7 @@ Database my::VehicleDatabase
         concat('roadVehicle_', VehicleTable.vehicleName) = SummaryTable.prefixedName
     )
 )
-```pure
+```
 
 **`in()` — column value in a list:**
 
@@ -196,7 +196,7 @@ Join FirmPersonActive
     FirmTable.id = PersonTable.firm_id
     and in(FirmTable.status_code, [1, 2, 3])
 )
-```pure
+```
 
 These are tested directly in `RelationalGraphBuilderTest` — the grammar strings
 `firmTable.ID = personTable.FIRMID and in(firmTable.ID, [2,3,4])` and
@@ -210,7 +210,7 @@ Join PersonNamePrefix
 (
     substring(PersonTable.full_name, 0, 3) = LookupTable.code
 )
-```pure
+```
 
 ### `{target}` — self-referential alias for self-joins
 
@@ -230,7 +230,7 @@ Database my::OrgDatabase
     // Self-join in the other direction
     Join OrgToChildren (OrgTable.id = {target}.parent_id)
 )
-```pure
+```
 
 `{target}` always refers to the row on the *right-hand side* of the join, which
 the engine aliases separately from the left-hand side when generating SQL.
@@ -245,7 +245,7 @@ firm : [db]@PersonFirmJoin
 
 // Multi-hop: > chains joins in sequence
 firmCity : [db]@PersonFirmJoin > @FirmCityJoin
-```pure
+```
 
 ---
 
@@ -265,7 +265,7 @@ Database my::stores::ConsolidatedDatabase
     Table AuditTable (audit_id INT PRIMARY KEY, event VARCHAR(200))
     Join PersonAudit (PersonTable.person_id = AuditTable.person_id)
 )
-```pure
+```
 
 This is the foundation of the **store substitution** pattern, where a mapping
 declared against `PersonDatabase` can be re-used with `ConsolidatedDatabase` at
@@ -291,7 +291,7 @@ Database my::stores::TradeDatabase
         ~filter  [TradeTable] status = 1
     )
 )
-```pure
+```
 
 ---
 
@@ -309,7 +309,7 @@ Database my::stores::TradeDatabase
     Filter NonDeletedFilter (TradeTable.is_deleted = 0)
     Filter LondonFilter     (TradeTable.region = 'LON')
 )
-```pure
+```
 
 ---
 
