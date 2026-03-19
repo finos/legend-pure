@@ -51,6 +51,9 @@ public class TestMetadataIndex extends AbstractMetadataTest
         Assert.assertEquals(Lists.fixedSize.empty(), Lists.mutable.withAll(index.getAllPackagePaths()));
         Assert.assertEquals(Lists.fixedSize.empty(), Lists.mutable.withAll(index.getAllPackageMetadata()));
         Assert.assertNull(index.getPackageChildren("non::existent::package"));
+
+        Assert.assertNull(index.getElementModuleName("non::existent::element"));
+        Assert.assertEquals(Lists.fixedSize.empty(), Lists.mutable.withAll(index.getBackReferenceModuleNames("non::existent::element")));
     }
 
     @Test
@@ -86,6 +89,9 @@ public class TestMetadataIndex extends AbstractMetadataTest
         Assert.assertEquals(Lists.fixedSize.empty(), Lists.mutable.withAll(index.getAllPackagePaths()));
         Assert.assertEquals(Lists.fixedSize.empty(), Lists.mutable.withAll(index.getAllPackageMetadata()));
         Assert.assertNull(index.getPackageChildren("non::existent::package"));
+
+        Assert.assertNull(index.getElementModuleName("non::existent::element"));
+        Assert.assertEquals(Lists.mutable.with(emptyModule.getModuleName()), Lists.mutable.withAll(index.getBackReferenceModuleNames("non::existent::element")).sortThis());
     }
 
     @Test
@@ -163,6 +169,15 @@ public class TestMetadataIndex extends AbstractMetadataTest
         Assert.assertEquals(Lists.immutable.with(otherToThird, simpleToOther, simpleToThird), index.getPackageChildren("model::test::associations"));
         Assert.assertEquals(Lists.immutable.with(myOtherClass, mySimpleClass, myThirdClass), index.getPackageChildren("model::test::classes"));
         Assert.assertEquals(Lists.immutable.with(myFirstEnumeration, mySecondEnumeration), index.getPackageChildren("model::test::enums"));
+
+        // Element module names
+        allElements.forEach(elt -> Assert.assertEquals(elt.getPath(), testModule.getModuleName(), index.getElementModuleName(elt.getPath())));
+        Assert.assertNull(index.getElementModuleName("non::existent::element"));
+
+        // Back-reference module names: single module with no dependencies, so every element maps to just that module
+        allElements.forEach(elt -> Assert.assertEquals(elt.getPath(), Lists.mutable.with(testModule.getModuleName()), Lists.mutable.withAll(index.getBackReferenceModuleNames(elt.getPath())).sortThis()));
+        // Virtual packages fall back to all modules
+        Assert.assertEquals(Lists.mutable.with(testModule.getModuleName()), Lists.mutable.withAll(index.getBackReferenceModuleNames("model::test")).sortThis());
     }
 
     @Test
@@ -384,6 +399,164 @@ public class TestMetadataIndex extends AbstractMetadataTest
 
         RuntimeException e = Assert.assertThrows(RuntimeException.class, MetadataIndex.builder().withModule(module1).withModule(module2)::build);
         Assert.assertEquals("Multiple elements with path model::test::classes: instance of meta::pure::metamodel::type::Class at /test_module2/model/classes.pure:1c1-5c1 and instance of Package", e.getMessage());
+    }
+
+    @Test
+    public void testElementModuleNamesMultipleModules()
+    {
+        ConcreteElementMetadata platformElement = newElement(M3Paths.Root, M3Paths.Package, "/platform/m3.pure", 1, 1, 10, 1);
+        ModuleManifest platformModule = ModuleManifest.builder("platform")
+                .withElement(platformElement)
+                .build();
+
+        ConcreteElementMetadata testElement = newClass("model::test::MyClass", "/test/classes.pure", 1, 1, 5, 1);
+        ModuleManifest testModule = ModuleManifest.builder("test")
+                .withDependency("platform")
+                .withElement(testElement)
+                .build();
+
+        MetadataIndex index = MetadataIndex.builder()
+                .withModules(platformModule, testModule)
+                .build();
+
+        Assert.assertEquals("platform", index.getElementModuleName(M3Paths.Root));
+        Assert.assertEquals("test", index.getElementModuleName("model::test::MyClass"));
+        Assert.assertNull(index.getElementModuleName("non::existent::element"));
+    }
+
+    @Test
+    public void testBackReferenceModulesWithDependencies()
+    {
+        // Dependency chain: A <- B <- C (C depends on B, B depends on A)
+        // Also: D depends on A independently
+        //
+        //    A
+        //   / \
+        //  B   D
+        //  |
+        //  C
+
+        ConcreteElementMetadata elementA = newClass("module_a::ElementA", "/a/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleA = ModuleManifest.builder("module_a")
+                .withElement(elementA)
+                .build();
+
+        ConcreteElementMetadata elementB = newClass("module_b::ElementB", "/b/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleB = ModuleManifest.builder("module_b")
+                .withDependency("module_a")
+                .withElement(elementB)
+                .build();
+
+        ConcreteElementMetadata elementC = newClass("module_c::ElementC", "/c/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleC = ModuleManifest.builder("module_c")
+                .withDependency("module_b")
+                .withElement(elementC)
+                .build();
+
+        ConcreteElementMetadata elementD = newClass("module_d::ElementD", "/d/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleD = ModuleManifest.builder("module_d")
+                .withDependency("module_a")
+                .withElement(elementD)
+                .build();
+
+        MetadataIndex index = MetadataIndex.builder()
+                .withModules(moduleA, moduleB, moduleC, moduleD)
+                .build();
+
+        // For element in A: A itself + B (depends on A) + C (transitively depends on A) + D (depends on A)
+        Assert.assertEquals(
+                Lists.mutable.with("module_a", "module_b", "module_c", "module_d"),
+                Lists.mutable.withAll(index.getBackReferenceModuleNames("module_a::ElementA")).sortThis());
+
+        // For element in B: B itself + C (depends on B)
+        Assert.assertEquals(
+                Lists.mutable.with("module_b", "module_c"),
+                Lists.mutable.withAll(index.getBackReferenceModuleNames("module_b::ElementB")).sortThis());
+
+        // For element in C: C itself only (nothing depends on C)
+        Assert.assertEquals(
+                Lists.mutable.with("module_c"),
+                Lists.mutable.withAll(index.getBackReferenceModuleNames("module_c::ElementC")).sortThis());
+
+        // For element in D: D itself only (nothing depends on D)
+        Assert.assertEquals(
+                Lists.mutable.with("module_d"),
+                Lists.mutable.withAll(index.getBackReferenceModuleNames("module_d::ElementD")).sortThis());
+
+        // Virtual package (not a concrete element): falls back to all modules
+        Assert.assertEquals(
+                Lists.mutable.with("module_a", "module_b", "module_c", "module_d"),
+                Lists.mutable.withAll(index.getBackReferenceModuleNames("module_a")).sortThis());
+    }
+
+    @Test
+    public void testBackReferenceModulesWithNoDependencies()
+    {
+        // Independent modules: A, B, C - no dependencies between them
+        ConcreteElementMetadata elementA = newClass("a::Element", "/a/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleA = ModuleManifest.builder("a").withElement(elementA).build();
+
+        ConcreteElementMetadata elementB = newClass("b::Element", "/b/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleB = ModuleManifest.builder("b").withElement(elementB).build();
+
+        ConcreteElementMetadata elementC = newClass("c::Element", "/c/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleC = ModuleManifest.builder("c").withElement(elementC).build();
+
+        MetadataIndex index = MetadataIndex.builder()
+                .withModules(moduleA, moduleB, moduleC)
+                .build();
+
+        // Each element should only map to its own module (no dependencies)
+        Assert.assertEquals(Lists.mutable.with("a"), Lists.mutable.withAll(index.getBackReferenceModuleNames("a::Element")).sortThis());
+        Assert.assertEquals(Lists.mutable.with("b"), Lists.mutable.withAll(index.getBackReferenceModuleNames("b::Element")).sortThis());
+        Assert.assertEquals(Lists.mutable.with("c"), Lists.mutable.withAll(index.getBackReferenceModuleNames("c::Element")).sortThis());
+    }
+
+    @Test
+    public void testBackReferenceModulesWithDiamondDependency()
+    {
+        // Diamond: A <- B, A <- C, B <- D, C <- D
+        //    A
+        //   / \
+        //  B   C
+        //   \ /
+        //    D
+
+        ConcreteElementMetadata elementA = newClass("a::Element", "/a/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleA = ModuleManifest.builder("a").withElement(elementA).build();
+
+        ConcreteElementMetadata elementB = newClass("b::Element", "/b/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleB = ModuleManifest.builder("b").withDependency("a").withElement(elementB).build();
+
+        ConcreteElementMetadata elementC = newClass("c::Element", "/c/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleC = ModuleManifest.builder("c").withDependency("a").withElement(elementC).build();
+
+        ConcreteElementMetadata elementD = newClass("d::Element", "/d/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleD = ModuleManifest.builder("d").withDependencies("b", "c").withElement(elementD).build();
+
+        MetadataIndex index = MetadataIndex.builder()
+                .withModules(moduleA, moduleB, moduleC, moduleD)
+                .build();
+
+        // For element in A: all modules depend on A (directly or transitively)
+        Assert.assertEquals(
+                Lists.mutable.with("a", "b", "c", "d"),
+                Lists.mutable.withAll(index.getBackReferenceModuleNames("a::Element")).sortThis());
+
+        // For element in B: B itself + D (depends on B)
+        Assert.assertEquals(
+                Lists.mutable.with("b", "d"),
+                Lists.mutable.withAll(index.getBackReferenceModuleNames("b::Element")).sortThis());
+
+        // For element in C: C itself + D (depends on C)
+        Assert.assertEquals(
+                Lists.mutable.with("c", "d"),
+                Lists.mutable.withAll(index.getBackReferenceModuleNames("c::Element")).sortThis());
+
+        // For element in D: D itself only (nothing depends on D)
+        Assert.assertEquals(
+                Lists.mutable.with("d"),
+                Lists.mutable.withAll(index.getBackReferenceModuleNames("d::Element")).sortThis());
     }
 
 }
