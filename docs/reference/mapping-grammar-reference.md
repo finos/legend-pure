@@ -12,7 +12,7 @@ For the physical database schema that mappings refer to, see the
 For the `###Pure` grammar (classes, functions, enumerations, etc.) see the
 [Pure Language Reference](pure-language-reference.md).
 For a complete worked example combining all three sections, see the
-[Legend Grammar Reference — Complete Example](legend-grammar-reference.md#7-putting-it-together-a-complete-example).
+[Legend Grammar Reference — Complete Example](legend-grammar-reference.md#3-putting-it-together--a-complete-example).
 
 ---
 
@@ -122,6 +122,44 @@ Person : Relational
 }
 ```
 
+### Chaining multiple joins
+
+You can chain multiple joins in sequence using `>`, optionally specifying the join
+type (`INNER`, `LEFT OUTER`, `RIGHT OUTER`) at each step. This is used when a
+property is reached by traversing more than one join:
+
+```pure
+###Relational
+Database myDb
+(
+    Table table1 (name VARCHAR(200) PRIMARY KEY, t2name VARCHAR(200))
+    Table table2 (name VARCHAR(200) PRIMARY KEY, t3name VARCHAR(200))
+    Table table3 (name VARCHAR(200) PRIMARY KEY)
+
+    Join T1_T2 (table1.t2name = table2.name)
+    Join T2_T3 (table2.t3name = table3.name)
+)
+
+###Mapping
+Mapping my::M
+(
+    Table1 : Relational
+    {
+        name   : [myDb]table1.name,
+        table3 : [myDb]@T1_T2 > (INNER) [myDb]@T2_T3   // two-hop join chain
+    }
+    Table3 : Relational
+    {
+        name : [myDb]table3.name
+    }
+)
+```
+
+The join-type qualifier (`INNER`, `LEFT OUTER`, `RIGHT OUTER`) is placed in
+parentheses between each `>` step. If omitted, the join type defaults to the
+type declared on the join in the `###Relational` section. Chains of any length
+are supported: `[db]@J1 > (INNER) [db]@J2 > (LEFT OUTER) [db]@J3`.
+
 ---
 
 ## 4. Enumeration mapping
@@ -154,6 +192,41 @@ Mapping my::mappings::StatusMapping
 )
 ```
 
+### Many source values mapping to one enum value
+
+Multiple source values can be collapsed to a single enum value by listing them
+in `[...]`. All source values in the mapping must be of the same type (all
+strings, all integers, or all values from the same source enum).
+
+```pure
+###Mapping
+Mapping my::mappings::StatusMapping
+(
+    // Several legacy codes all map to the same canonical status value
+    TradeStatus : EnumerationMapping LegacyStringMapping
+    {
+        PENDING   : ['P', 'PEND', 'PENDING'],   // three strings → one enum value
+        CONFIRMED : ['C', 'CONF'],
+        SETTLED   : 'S',                         // single value — no brackets needed
+        CANCELLED : ['X', 'CANC', 'CANCEL']
+    }
+
+    // Integer variant: multiple codes → one value
+    TradeStatus : EnumerationMapping LegacyIntMapping
+    {
+        PENDING   : [0, 10, 20],
+        CONFIRMED : 1,
+        SETTLED   : 2,
+        CANCELLED : [3, 4, 5]
+    }
+)
+```
+
+**Constraint:** all source values within a single enumeration mapping must share
+the same type (string, integer, or a single source enum). Mixing types (e.g.
+`['P', 1]`) causes a compile error:
+*"Only one source Type is allowed for an Enumeration Mapping"*.
+
 Reference an enumeration mapping from a class mapping:
 
 ```pure
@@ -161,7 +234,7 @@ Trade : Relational
 {
     scope([myDb]TradeTable)
     (
-        status : EnumerationMapping IntStatusMapping : status_code
+        status : EnumerationMapping LegacyStringMapping : status_code
     )
 }
 ```
@@ -229,12 +302,83 @@ Mapping my::mappings::ExtendedMapping
 )
 ```
 
+### Set IDs from included mappings
+
+All set IDs defined in the included mapping are visible in the including
+mapping. You can reference them directly in `Inline`, `Otherwise`, `extends`,
+and XStore expressions without any re-declaration:
+
+```pure
+###Mapping
+Mapping my::mappings::BaseMapping
+(
+    Person[per1] : Relational { ... }   // set ID 'per1' is defined here
+    Firm  [fir1] : Relational { ... }   // set ID 'fir1' is defined here
+)
+
+###Mapping
+Mapping my::mappings::ExtendedMapping
+(
+    include my::mappings::BaseMapping   // per1 and fir1 are now visible here
+
+    // Reference the included set IDs directly in an XStore association mapping
+    PersonFirm : XStore
+    {
+        employees [fir1, per1] : $this.id == $that.firmId,
+        firm      [per1, fir1] : $this.firmId == $that.id
+    }
+)
+```
+
+There is **no syntax for renaming or aliasing an inherited set ID**. If you
+need a different ID, define a fresh class mapping in the including mapping
+(potentially extending the inherited one via `extends [inheritedId]`).
+
+### Store substitution on include
+
+When including a relational mapping, you can swap one `Database` for another
+using the `[OriginalDb -> SubstituteDb]` syntax on the `include` directive. The
+substitute database must include (or be a superset of) the original:
+
+```pure
+###Mapping
+Mapping my::mappings::FullMapping
+(
+    include my::mappings::PersonMapping [PersonDB -> FullDB]
+    include my::mappings::FirmMapping   [FirmDB   -> FullDB]
+
+    // Association mapping now uses FullDB joins (both class mappings re-point there)
+    Employment : Relational
+    {
+        AssociationMapping
+        (
+            employer   [person, firm] : [FullDB]@PersonFirmJoin,
+            employees  [firm, person] : [FullDB]@PersonFirmJoin
+        )
+    }
+)
+```
+
+- Syntax: `include <MappingPath> [<OriginalDb> -> <SubstituteDb>]`
+- The original database must actually be used by the included mapping; the
+  compiler validates this and reports an error if it is not.
+- Multiple substitutions can be listed for a single include by comma-separating
+  them: `[Db1 -> FullDb, Db2 -> FullDb]`.
+- Store substitution only applies to relational mappings; Pure / XStore mappings
+  do not use stores and need no substitution.
+
 ---
 
 ## 7. XStore (cross-store) mapping
 
-Maps associations that span two different stores. The property expression can
-reference a key from either side:
+The **`XStore`** Association mapping allows you to define how two mapped classes relate to each other using **pure model
+property expressions** ("Pure Model Joins"), with no store joins or store columns involved. It is specifically designed
+for composing mappings where both sides are already mapped (e.g. via `Pure` / model-to-model mappings).
+
+It works at the **association level** (not the class level), and for each property of the association it takes
+a **cross-expression** lambda that receives `$this` (the source instance) and `$that` (the target instance),
+returning a `Boolean` to express the join condition using model properties only.
+
 
 ```pure
 ###Mapping
@@ -249,6 +393,40 @@ Mapping my::mappings::CrossStoreMapping
 )
 ```
 
+### Key distinction from relational association mappings
+
+| Feature | Relational `AssociationMapping` | `XStore` |
+|---|---------------------------------|---|
+| Join condition | SQL join columns from Store     | Model property expression (`$this.prop == $that.prop`) |
+| Store dependency | Requires a relational store     | Store-agnostic (model only) |
+| Composition | Less flexible across stores     | Explicitly designed for cross-store / model-only composition |
+| Lambda params | N/A                             | `$this` and `$that` bound to source/target class types |
+
+
+### Composing mappings with include + XStore
+
+XStore works seamlessly with **mapping includes**, letting you separate class mappings from association mappings:
+
+```pure
+###Mapping
+Mapping ModelMapping
+(
+   Firm[f1] : Pure  { ... }
+   Person[e] : Pure { ... }
+)
+
+###Mapping
+Mapping FirmMapping
+(
+   include ModelMapping  // re-use the class mappings
+   
+   Firm_Person : XStore
+   {
+      firm[e, f1]      : $this.firmId == $that.id,
+      employees[f1, e] : $this.id == $that.firmId
+   }
+)
+```
 ---
 
 ## 8. Aggregation-aware mapping
@@ -564,7 +742,159 @@ Mapping my::M
 
 ---
 
-## 13. Filter on a class mapping
+## 13. Mapping classes with an inheritance relationship
+
+When your domain model uses class inheritance, you have two options for the
+subclass: **reuse** the parent class mapping (via `extends`), or **override** it
+with a fresh mapping sourced from a different table.
+
+### Option A — subclass reuses the parent class mapping (`extends`)
+
+Use `extends [parentSetId]` on the subclass mapping when both the parent and the
+subclass share the same table (or when the subclass adds no new mapped properties of
+its own). The subclass mapping inherits all property mappings from the parent and can
+optionally add new ones.
+
+```pure
+###Pure
+Class my::Vehicle
+{
+    vehicleId   : Integer[1];
+    vehicleName : String[1];
+}
+
+Class my::RoadVehicle extends Vehicle
+{
+    axleCount : Integer[1];
+}
+
+###Relational
+Database my::VehicleDb
+(
+    Table VehicleTable (vehicleId INT PRIMARY KEY, vehicleName VARCHAR(20), axleCount INT)
+)
+
+###Mapping
+import my::*;
+
+Mapping my::VehicleMapping
+(
+    // Parent class mapping — defines set ID 'test_Vehicle'
+    Vehicle[test_Vehicle] : Relational
+    {
+        vehicleId   : [VehicleDb]VehicleTable.vehicleId,
+        vehicleName : [VehicleDb]VehicleTable.vehicleName
+    }
+
+    // Subclass mapping — extends the parent, adds axleCount
+    RoadVehicle extends [test_Vehicle] : Relational
+    {
+        axleCount : [VehicleDb]VehicleTable.axleCount
+        // vehicleId and vehicleName are inherited from test_Vehicle
+    }
+)
+```
+
+- `RoadVehicle extends [test_Vehicle]` inherits all property mappings from the
+  `test_Vehicle` class mapping. Only the extra `axleCount` column needs to be
+  declared.
+- The `extends [superSetId]` annotation requires that the referenced set ID maps
+  **the same class or a superclass** of the extending mapping's class. The
+  compiler enforces this with: *"Invalid extends mapping. Class ... extends more
+  than one class. Extends mappings are only currently only allowed with single
+  inheritance relationships"*.
+- The subclass mapping can have its own explicit set ID:
+  `RoadVehicle[rv1] extends [test_Vehicle] : Relational { ... }`.
+
+### Option B — subclass sourced from a different table (fresh mapping)
+
+When the subclass is stored in a separate table (joined back to the parent table),
+define a completely independent mapping for the subclass — no `extends` needed.
+Use `includes` to compose mappings that live in separate files:
+
+```pure
+###Pure
+Class my::Animal
+{
+    id   : Integer[1];
+    name : String[1];
+}
+
+Class my::Dog extends Animal
+{
+    breed : String[1];
+}
+
+###Relational
+Database my::AnimalDb
+(
+    Table AnimalTable (id INT PRIMARY KEY, name VARCHAR(50))
+    Table DogTable    (id INT PRIMARY KEY, animalId INT, breed VARCHAR(50))
+    Join AnimalDog (DogTable.animalId = AnimalTable.id)
+)
+
+###Mapping
+import my::*;
+
+Mapping my::AnimalMapping
+(
+    // Base class mapping
+    Animal[animal] : Relational
+    {
+        id   : [AnimalDb]AnimalTable.id,
+        name : [AnimalDb]AnimalTable.name
+    }
+
+    // Subclass has its own dedicated table — completely independent mapping
+    // Properties from the parent table are reached via join
+    Dog[dog] : Relational
+    {
+        ~mainTable [AnimalDb]DogTable
+        id    : [AnimalDb]@AnimalDog > [AnimalDb]AnimalTable.id,
+        name  : [AnimalDb]@AnimalDog > [AnimalDb]AnimalTable.name,
+        breed : [AnimalDb]DogTable.breed
+    }
+)
+```
+
+In this pattern:
+- Each class has its own independent set ID (`animal`, `dog`).
+- The subclass mapping navigates the join to read inherited columns from the parent
+  table.
+- There is no `extends` link between the two mappings; the mapping engine resolves
+  the correct mapping for each type at query time.
+
+### Composing with `include` — subclass in a separate mapping file
+
+If the parent class mapping lives in a different `Mapping` element (e.g. a shared
+base), include it and reference its set ID in `extends`:
+
+```pure
+###Mapping
+Mapping my::BaseMapping
+(
+    Vehicle[test_Vehicle] : Relational
+    {
+        vehicleId   : [VehicleDb]VehicleTable.vehicleId,
+        vehicleName : [VehicleDb]VehicleTable.vehicleName
+    }
+)
+
+###Mapping
+Mapping my::ExtendedMapping
+(
+    include my::BaseMapping   // test_Vehicle set ID is now visible here
+
+    RoadVehicle extends [test_Vehicle] : Relational
+    {
+        axleCount : [VehicleDb]VehicleTable.axleCount
+    }
+)
+```
+
+---
+
+## 14. Filter on a class mapping
 
 A class mapping can declare a `~filter` that restricts which rows are returned for
 that class, independently of any filter defined on the database view.
@@ -594,7 +924,7 @@ The filter syntax is: `~filter <database>(<joinPath>)? <filterName>`
 
 ---
 
-## 14. Local properties (`+`)
+## 15. Local properties (`+`)
 
 A **local property** declares a new property directly on the mapping, without adding
 it to the underlying Pure domain class. It is only visible within this mapping and
@@ -636,7 +966,7 @@ Syntax: `+<propertyName> : <Type>[<multiplicity>] : <columnExpression>`
 
 *See also: [Relational Grammar Reference](relational-grammar-reference.md) ·
 [Pure Language Reference](pure-language-reference.md) ·
-[Complete Example](legend-grammar-reference.md#7-putting-it-together-a-complete-example) ·
+[Complete Example](legend-grammar-reference.md#3-putting-it-together--a-complete-example) ·
 [Compiler Pipeline](../architecture/compiler-pipeline.md) ·
 [Contributor Workflow — Adding a new DSL](../guides/contributor-workflow.md)*
 
