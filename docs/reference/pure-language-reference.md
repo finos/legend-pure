@@ -1,13 +1,37 @@
 # The Pure Language Reference
 
-Pure is the strongly-typed, functional, expression-oriented language at the heart of
-Legend Pure. This page is a practical reference for engineers who need to read, write,
+Pure is a strongly-typed, functional, expression-oriented language designed for defining
+domain models, business logic, and data transformations. It is the heart of Legend Pure
+and is specifically built to support a multi-layered metamodel architecture where the
+language can describe itself.
+
+Pure source files use the `.pure` extension and are organised into repositories. The
+language syntax is defined using ANTLR grammars located at:
+
+- `legend-pure-core/legend-pure-m4/src/main/antlr4/…/grammar/core/` — core M4 tokens
+- `legend-pure-core/legend-pure-m3-core/src/main/antlr4/…/m3parser/antlr/core/M3CoreParser.g4` — the full M3 Pure grammar
+
+This page is a practical reference for engineers who need to read, write,
 or reason about Pure source code.
 
 For the compiler internals that process this source, see the
 [Compiler Pipeline](../architecture/compiler-pipeline.md).
 For the `###Mapping` and `###Relational` grammars, see the
 [Legend Grammar Reference](legend-grammar-reference.md).
+
+---
+
+## Quick Reference — Key Language Constructs
+
+| Construct | Syntax sketch | Purpose |
+|-----------|--------------|---------|
+| **Class** | `Class pkg::Person { name: String[1]; }` | Define a data structure with typed properties |
+| **Function** | `function pkg::greet(): String[1] { 'Hello' }` | Define named, reusable behaviour |
+| **Enumeration** | `Enum pkg::Color { Red, Green, Blue }` | Define a closed set of named values |
+| **Association** | `Association pkg::PersonAddress { person: Person[1]; address: Address[1]; }` | Define bidirectional relationships without touching either class |
+| **Profile** | `Profile pkg::MyProfile { stereotypes: [st1]; tags: [tag1]; }` | Define custom annotation stereotypes and tag keys |
+| **Mapping** | `Mapping pkg::MyMapping ( … )` | Map a domain model to a store implementation (see `###Mapping` grammar) |
+| **import** | `import meta::pure::functions::collection::*;` | Bring a package into scope so names need not be fully qualified |
 
 ---
 
@@ -225,18 +249,40 @@ Association meta::mypackage::PersonFirm
 
 ### Profile and Stereotype
 
+A `Profile` declares a set of **stereotypes** (boolean flags) and **tags**
+(key-value string annotations) that can be applied to any Pure element.
+
 ```pure
 Profile meta::mypackage::classification
 {
     stereotypes: [internal, external, deprecated];
     tags: [description, owner];
 }
+```
 
+**Applying a stereotype** — use `<<Profile.stereotype>>` before the element keyword:
+
+```pure
 Class <<meta::mypackage::classification.internal>> meta::mypackage::InternalModel
 {
     // ...
 }
 ```
+
+**Applying a tag** — use `{Profile.tag = 'value'}` after the stereotype list
+(or directly before the element keyword if there are no stereotypes):
+
+```pure
+Class <<meta::mypackage::classification.internal>>
+      {meta::mypackage::classification.description = 'Internal pricing model',
+       meta::mypackage::classification.owner = 'risk-team'}
+    meta::mypackage::InternalModel
+{
+    name : String[1];
+}
+```
+
+Both stereotypes and tags can be applied together, and multiple values are separated by commas inside the curly braces. Profiles are also the mechanism used by the built-in `meta::pure::profiles::test` and `meta::pure::profiles::temporal` profiles that drive test execution and milestoning respectively.
 
 ---
 
@@ -613,14 +659,77 @@ $p.fullName()     // 'Alice Smith'  (derived property)
 
 ## 10. Packages and Imports
 
-```pure
-// Declare the package at top of file
-package meta::mypackage;
+### Declaring a Package
 
-// Import another package (removes need to qualify names)
+Every element belongs to a package. The package is declared either inline in the
+element name (`Class my::pkg::Person { … }`) or, less commonly, at the top of the
+file with a `package` directive:
+
+```pure
+package meta::mypackage;
+```
+
+All elements in the file that do not carry an explicit package path inherit this
+package. Fully-qualified names (`meta::mypackage::Person`) always take precedence.
+
+### Import Statements
+
+Without an import, every type and function reference must be fully qualified:
+
+```pure
+// Without import — verbose
+let p: meta::mypackage::model::Person[1] = meta::mypackage::model::makePerson('Alice');
+```
+
+`import` brings an entire package into scope so the short name can be used instead.
+Only **wildcard imports** (`*`) are supported — you cannot import a single name:
+
+```pure
 import meta::pure::functions::collection::*;
 import meta::mypackage::model::*;
+
+// Now short names resolve without qualification
+let people = Person->getAll()->filter(p | $p.age > 18);
 ```
+
+#### Scope of imports
+
+Imports are **per grammar section, per file**. An `import` in one `###Pure` section
+does not affect a `###Mapping` section in the same file — each section must declare
+its own imports. Internally the compiler models this as an `ImportGroup` instance
+(defined in `platform/pure/grammar/m3.pure`) that is created for each source file
+and referenced by all elements defined within it. When the compiler resolves a short
+name it walks the import groups associated with the element's source file, trying
+each imported package in declaration order until a match is found.
+
+```pure
+###Pure
+import meta::mypackage::model::*;
+
+Class meta::mypackage::service::TradeService
+{
+    // 'Product' resolves via the import above
+    product : Product[1];
+}
+
+###Mapping
+import meta::mypackage::model::*;   // must re-import — different section
+
+Mapping meta::mypackage::mapping::TradeMapping
+(
+    // ...
+)
+```
+
+#### Common imports in the Pure standard library
+
+| What you are using | Import |
+|-------------------|--------|
+| Collection functions (`filter`, `map`, `fold`, …) | `import meta::pure::functions::collection::*;` |
+| String functions (`startsWith`, `joinStrings`, …) | `import meta::pure::functions::string::*;` |
+| Math functions | `import meta::pure::functions::math::*;` |
+| Date functions | `import meta::pure::functions::date::*;` |
+| Test stereotypes | `import meta::pure::profiles::*;` |
 
 ---
 
@@ -743,14 +852,16 @@ different runtime adapters. The Java PCT test runner (e.g.
 `Test_Interpreted_EssentialFunctions_PCT`) supplies a concrete `f` that routes
 execution through its specific engine:
 
-```text
-Java PCT runner                         Pure test function
-──────────────────────────────────────────────────────────
-PureTestBuilderInterpreted              <<PCT.test>> testSimpleIf(f)
-  └─ adapter = nativeAdapter    ──▶     $f->eval( if(true, ...) )
-                                              │
-                                              ▼
-                                        interpreted engine executes if()
+```mermaid
+sequenceDiagram
+    participant Runner as Java PCT runner<br/>(e.g. PureTestBuilderInterpreted)
+    participant Pure as Pure test function<br/>(<<PCT.test>> testSimpleIf)
+    participant Engine as Interpreted engine
+
+    Runner->>Pure: adapter = nativeAdapter<br/>call testSimpleIf(f)
+    Pure->>Engine: $f->eval( if(true, ...) )
+    Engine-->>Pure: result
+    Pure-->>Runner: assertion result
 ```
 
 A different runner (e.g. the compiled engine runner) supplies a different `f`,

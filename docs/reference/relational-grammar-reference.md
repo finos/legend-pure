@@ -10,7 +10,7 @@ refers to. It does not contain any query logic; it is a structural description o
 For how mappings consume this schema (column references, join navigation, filters),
 see the [Mapping Grammar Reference](mapping-grammar-reference.md).
 For a complete worked example combining all three sections, see the
-[Legend Grammar Reference — Complete Example](legend-grammar-reference.md#3-putting-it-together--a-complete-example).
+[Legend Grammar Reference — Complete Example](legend-grammar-reference.md#7-putting-it-together-a-complete-example).
 
 ---
 
@@ -315,7 +315,7 @@ Database my::stores::TradeDatabase
 
 *See also: [Mapping Grammar Reference](mapping-grammar-reference.md) ·
 [Pure Language Reference](pure-language-reference.md) ·
-[Complete Example](legend-grammar-reference.md#3-putting-it-together--a-complete-example) ·
+[Complete Example](legend-grammar-reference.md#7-putting-it-together-a-complete-example) ·
 [Compiler Pipeline](../architecture/compiler-pipeline.md) ·
 [Contributor Workflow — Adding a new DSL](../guides/contributor-workflow.md)*
 

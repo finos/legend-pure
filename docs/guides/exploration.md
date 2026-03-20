@@ -156,7 +156,7 @@ find . -name "*_PCT*.java" | sort
 
 ### 4.1 Read the Plugin Review Document
 
-The file [`legend-pure-maven/MAVEN_PLUGINS_REVIEW.md`](../../legend-pure-maven/MAVEN_PLUGINS_REVIEW.md)
+The [Maven Plugins Reference](../reference/maven-plugins-reference.md)
 is an authoritative guide to all five custom Maven plugins. Read sections 1 and 2 first.
 
 ### 4.2 Trace a Plugin Execution

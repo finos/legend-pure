@@ -11,30 +11,26 @@ For the Pure language constructs the compiler processes, see the
 
 ## 1. Pipeline Overview
 
-```text
-Pure source files (.pure)
-        │
-        ▼  ① Parse
-   ANTLR4 parse tree
-        │
-        ▼  ② First-pass population (symbol registration)
-   Unresolved CoreInstance graph (names registered, types not yet linked)
-        │
-        ▼  ③ Post-processing (type linking, inference, milestoning, associations)
-   Partially resolved CoreInstance graph
-        │
-        ▼  ④ Validation (type compatibility, multiplicity, visibility, constraints)
-   Fully validated CoreInstance graph
-        │
-        ├──▶  ⑤a PAR serialization   → .par archive files
-        │
-        ├──▶  ⑤b Binary serialization → binary element files (PureCompilerLoader)
-        │
-        └──▶  ⑤c Java code generation → Java source + .class files (compiled engine)
-                                              │
-                                              ▼
-                                      ⑥ Runtime execution
-                                      (compiled or interpreted)
+```mermaid
+flowchart TD
+    src["Pure source files (.pure)"]
+    parse["① Parse\nANTLR4 parse tree"]
+    firstpass["② First-pass population\nSymbol registration\nUnresolved CoreInstance graph\n(names registered, types not yet linked)"]
+    postproc["③ Post-processing\nType linking · inference · milestoning · associations\nPartially resolved CoreInstance graph"]
+    validate["④ Validation\nType compatibility · multiplicity · visibility · constraints\nFully validated CoreInstance graph"]
+    par["⑤a PAR serialization\n.par archive files"]
+    binary["⑤b Binary serialization\nbinary element files\n(PureCompilerLoader)"]
+    codegen["⑤c Java code generation\nJava source + .class files\n(compiled engine)"]
+    runtime["⑥ Runtime execution\n(compiled or interpreted)"]
+
+    src --> parse
+    parse --> firstpass
+    firstpass --> postproc
+    postproc --> validate
+    validate --> par
+    validate --> binary
+    validate --> codegen
+    codegen --> runtime
 ```
 
 ---
@@ -177,17 +173,14 @@ loaded directly from the classpath.
 
 How a function call executes in compiled mode:
 
-```text
-Pure function call (e.g. filter($list, x | $x > 0))
-        │
-        ▼
-CompiledExecutionSupport looks up the generated Java class via FunctionCache
-        │
-        ▼
-Calls the generated static Java method directly (JIT-compiled by the JVM)
-        │
-        ▼
-Result returned as a Java primitive or Eclipse Collections type
+```mermaid
+flowchart TD
+    call["Pure function call\n(e.g. filter($list, x | $x > 0))"]
+    lookup["CompiledExecutionSupport\nlooks up generated Java class via FunctionCache"]
+    invoke["Calls generated static Java method directly\n(JIT-compiled by the JVM)"]
+    result["Result returned as Java primitive\nor Eclipse Collections type"]
+
+    call --> lookup --> invoke --> result
 ```
 
 Key internal structures:
@@ -220,18 +213,16 @@ compiler and evaluates each expression node directly at runtime.
 
 How a function call executes in interpreted mode:
 
-```text
-Pure function call (e.g. filter($list, x | $x > 0))
-        │
-        ▼
-FunctionExecutionInterpreted dispatches on the CoreInstance classifier
-        │
-        ├─ NativeFunction?  →  looks up registered Java NativeFunction handler
-        │                      e.g. org.finos.legend.pure.runtime.java.interpreted
-        │                               .natives.essentials.collection.iteration.Find
-        │
-        └─ FunctionDefinition?  →  walks expression tree recursively,
-                                    evaluating each sub-expression in VariableContext
+```mermaid
+flowchart TD
+    call["Pure function call\n(e.g. filter($list, x | $x > 0))"]
+    dispatch["FunctionExecutionInterpreted\ndispatches on CoreInstance classifier"]
+    native["NativeFunction?\nLooks up registered Java NativeFunction handler\ne.g. ...natives.essentials.collection.iteration.Find"]
+    funcdef["FunctionDefinition?\nWalks expression tree recursively,\nevaluating each sub-expression in VariableContext"]
+
+    call --> dispatch
+    dispatch -->|"NativeFunction"| native
+    dispatch -->|"FunctionDefinition"| funcdef
 ```
 
 Key internal structures:
@@ -279,7 +270,7 @@ PCT (Platform Compatibility Testing) is the mechanism that prevents and detects 
 1. Standard library functions are annotated `<<PCT.function>>` in their Pure
    declaration.
 2. Tests for those functions are annotated `<<PCT.test>>` and accept an adapter
-   parameter `f` — see [Pure Language Reference — PCT tests](../reference/pure-language-reference.md#pcttest--platform-compatibility-tests).
+   parameter `f` — see [Pure Language Reference — PCT tests](../reference/pure-language-reference.md#pcttest-platform-compatibility-tests).
 3. Two Java test suites run the *same* PCT test functions — one routing through the
    compiled engine, one through the interpreted engine.
 4. The build fails if either suite reports a regression.
@@ -437,25 +428,14 @@ resolution in the `CoreInstance` graph so validation and code generation can use
 
 Resolution uses a **two-pass algorithm** per function call expression:
 
-```text
-FunctionExpression (e.g. $list->filter(x | $x > 0))
-        │
-        ▼  First pass — process all non-lambda parameters
-           PostProcessor.processElement() is called on each argument.
-           For each argument where inference succeeds (concrete type available),
-           the type parameter mapping T→Integer is registered in TypeInferenceContext.
-           Arguments that are lambdas with unresolved parameter types are collected
-           as "unsuccessful" (deferred to second pass).
-        │
-        ▼  Function matching — FunctionExpressionMatcher
-           The partially-resolved type parameter map is used to find the correct
-           overload from the function library.
-        │
-        ▼  Second pass — re-process deferred lambdas
-           Now that T is known, lambda parameters that were previously unresolvable
-           (e.g. x in x | $x > 0) are assigned their concrete types.
-           TypeInference.storeInferredTypeParametersInFunctionExpression() writes
-           the final resolved type parameters back into the FunctionExpression node.
+```mermaid
+flowchart TD
+    expr["FunctionExpression\n(e.g. $list->filter(x | $x > 0))"]
+    first["First pass — process all non-lambda parameters\nPostProcessor.processElement() on each argument.\nFor concrete-type arguments, register T→Integer\nin TypeInferenceContext.\nCollect unresolved lambda args as deferred."]
+    match["Function matching — FunctionExpressionMatcher\nUse partial type-parameter map to find\nthe correct overload from the function library."]
+    second["Second pass — re-process deferred lambdas\nWith T now known, assign concrete types to\nlambda parameters (e.g. x in x | $x > 0).\nTypeInference.storeInferredTypeParametersInFunctionExpression()\nwrites resolved types back into the FunctionExpression node."]
+
+    expr --> first --> match --> second
 ```
 
 **Key classes:**
@@ -550,4 +530,4 @@ Runtime errors during interpreted or compiled execution are reported as
 
 ---
 
-*See also: [Pure Language Reference](../reference/pure-language-reference.md) · [Module Reference](modules.md) · [Key Java Packages](domain-concepts.md#4-key-java-packages--orientation-map)*
+*See also: [Pure Language Reference](../reference/pure-language-reference.md) · [Module Reference](modules.md) · [Key Java Packages](domain-concepts.md#4-key-java-packages-orientation-map)*

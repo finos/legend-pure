@@ -12,7 +12,7 @@ For the physical database schema that mappings refer to, see the
 For the `###Pure` grammar (classes, functions, enumerations, etc.) see the
 [Pure Language Reference](pure-language-reference.md).
 For a complete worked example combining all three sections, see the
-[Legend Grammar Reference — Complete Example](legend-grammar-reference.md#3-putting-it-together--a-complete-example).
+[Legend Grammar Reference — Complete Example](legend-grammar-reference.md#7-putting-it-together-a-complete-example).
 
 ---
 
@@ -636,7 +636,7 @@ Syntax: `+<propertyName> : <Type>[<multiplicity>] : <columnExpression>`
 
 *See also: [Relational Grammar Reference](relational-grammar-reference.md) ·
 [Pure Language Reference](pure-language-reference.md) ·
-[Complete Example](legend-grammar-reference.md#3-putting-it-together--a-complete-example) ·
+[Complete Example](legend-grammar-reference.md#7-putting-it-together-a-complete-example) ·
 [Compiler Pipeline](../architecture/compiler-pipeline.md) ·
 [Contributor Workflow — Adding a new DSL](../guides/contributor-workflow.md)*
 

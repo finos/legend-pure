@@ -6,17 +6,18 @@ Legend Pure follows a **pragmatic testing pyramid**: the vast majority of tests 
 fast unit tests; integration tests exercise the compiler pipeline and runtime engines
 end-to-end; there are no UI or system-level E2E tests (this is a library project).
 
-```text
-          /\
-         /  \          PCT tests
-        / E2E\         (compiled + interpreted parity)
-       /──────\
-      / Integ. \       Compiler pipeline, PAR round-trip,
-     / Tests    \      relational store, JAX-RS endpoints
-    /────────────\
-   / Unit Tests   \    CoreInstance operations, grammar parsers,
-  /                \   Mojo parameter resolution, utility classes
- /──────────────────\
+```mermaid
+flowchart TD
+    pct["PCT Tests\nCompiled + Interpreted parity"]
+    integ["Integration Tests\nCompiler pipeline · PAR round-trip\nRelational store · JAX-RS endpoints"]
+    unit["Unit Tests\nCoreInstance operations · Grammar parsers\nMojo parameter resolution · Utility classes"]
+
+    unit -->|"built on top of"| integ
+    integ -->|"built on top of"| pct
+
+    style unit fill:#d4edda,stroke:#28a745
+    style integ fill:#fff3cd,stroke:#ffc107
+    style pct fill:#f8d7da,stroke:#dc3545
 ```
 
 ---
@@ -218,9 +219,6 @@ Key test-related CI behaviours:
 ---
 
 ## 8. Testing New Maven Plugins / Mojos
-
-See [`legend-pure-maven/TIER0_TESTING_TASKS.md`](../../legend-pure-maven/TIER0_TESTING_TASKS.md)
-for the detailed task list and decisions around testing Maven Mojo classes.
 
 ### Summary of the approach
 

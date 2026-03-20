@@ -63,18 +63,20 @@ Source files use the `.pure` extension and are organized into named **Repositori
 Legend Pure uses a four-layer metamodel architecture — the key to understanding the
 entire codebase:
 
-```text
-M4  ─  Meta-metamodel.  Defines "what is a class" at the most fundamental level.
-        Java type: CoreInstance (interface)
+```mermaid
+block-beta
+  columns 1
+  M1["**M1** — User / business domain models\nThe actual classes a domain engineer writes in Pure.\nInstances of M2/M3 types."]
+  space
+  M2["**M2** — Domain-specific metamodels\nBuilt in Pure: Mapping, Store, Database, Diagram …\nInstances of M3 types; each DSL extension lives here."]
+  space
+  M3["**M3** — Pure language metamodel\nDescribes the Pure language itself.\nClass, Function, Association, Enumeration, Package, etc."]
+  space
+  M4["**M4** — Meta-metamodel\nDefines 'what is a class' at the most fundamental level.\nKey Java type: CoreInstance (interface)"]
 
-M3  ─  The Pure language metamodel — describes the Pure language itself.
-        Class, Function, Association, Enumeration, Package, etc. are M3 elements.
-
-M2  ─  Domain-specific metamodels built in Pure: Mapping, Store, Database, Diagram …
-        These are instances of M3 types; each DSL extension lives here.
-
-M1  ─  User / business domain models: the actual classes a domain engineer writes.
-        Instances of M2/M3 types.
+  M1 --> M2
+  M2 --> M3
+  M3 --> M4
 ```
 
 > **Rule of thumb:** if you are editing `legend-pure-m4` you are working on what a
@@ -107,15 +109,18 @@ Current built-in DSLs: `diagram`, `graph`, `mapping`, `path`, `store`, `tds`.
 Pure compilation is integrated into the standard Maven lifecycle via five custom
 Maven plugins. The pipeline runs automatically during `mvn install`:
 
-```text
-Pure source (.pure)
-    │
-    ▼  legend-pure-maven-compiler      →  binary element files
-    ▼  legend-pure-maven-generation-par →  .par archive cache files
-    ▼  legend-pure-maven-generation-java → Java source + .class files
-                                              │
-                                              ▼
-                                    Compiled Java runtime
+```mermaid
+flowchart TD
+    src["Pure source (.pure)"]
+    compiler["legend-pure-maven-compiler\nbinary element files"]
+    par["legend-pure-maven-generation-par\n.par archive cache files"]
+    java["legend-pure-maven-generation-java\nJava source + .class files"]
+    runtime["Compiled Java runtime"]
+
+    src --> compiler
+    compiler --> par
+    compiler --> java
+    java --> runtime
 ```
 
 #### 6. PAR Files — The Build Cache

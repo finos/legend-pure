@@ -6,10 +6,18 @@ The build is driven by the root `pom.xml` at `legend-pure/pom.xml`. The module
 reactor order is determined by the `<modules>` declaration and inter-module
 dependencies:
 
-```text
-legend-pure-core  →  legend-pure-dsl  →  legend-pure-maven
-                                      →  legend-pure-runtime
-                                      →  legend-pure-store
+```mermaid
+flowchart LR
+    core["legend-pure-core"]
+    dsl["legend-pure-dsl"]
+    maven["legend-pure-maven"]
+    runtime["legend-pure-runtime"]
+    store["legend-pure-store"]
+
+    core --> dsl
+    dsl --> maven
+    dsl --> runtime
+    dsl --> store
 ```
 
 ### Custom Build Phases Summary
@@ -36,20 +44,18 @@ the rationale for each plugin — see the
 
 ### How the Plugins Chain Together
 
-```text
-Pure source (.pure) + definition.json
-        │
-        ▼  legend-pure-maven-compiler (compile-pure)
-  Binary element files  +  module manifests
-        │
-        ├──▶  legend-pure-maven-generation-par (build-pure-jar)
-        │         └── .par archive files (build cache)
-        │
-        └──▶  legend-pure-maven-generation-java (build-pure-compiled-jar)
-                  └── Generated Java source → maven-compiler-plugin → .class files
-                          │
-                          └── legend-pure-maven-generation-pct
-                                  └── PCT function index + reports
+```mermaid
+flowchart TD
+    src["Pure source (.pure)\n+ definition.json"]
+    compiler["legend-pure-maven-compiler\ncompile-pure\nbinary element files + module manifests"]
+    par["legend-pure-maven-generation-par\nbuild-pure-jar\n.par archive files (build cache)"]
+    java["legend-pure-maven-generation-java\nbuild-pure-compiled-jar\nGenerated Java source → .class files"]
+    pct["legend-pure-maven-generation-pct\nPCT function index + reports"]
+
+    src --> compiler
+    compiler --> par
+    compiler --> java
+    java --> pct
 ```
 
 ### Classloader Isolation
