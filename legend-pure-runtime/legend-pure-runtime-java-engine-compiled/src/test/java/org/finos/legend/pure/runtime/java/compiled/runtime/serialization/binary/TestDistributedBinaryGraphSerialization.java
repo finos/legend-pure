@@ -265,11 +265,12 @@ public abstract class TestDistributedBinaryGraphSerialization
         {
             normalizePropertyValues(normalized, referenceUsagesIndex);
         }
-        
+
         return normalized;
     }
 
-    private static void normalizePropertyValues(MutableList<PropertyValue> normalized, int propertyIndex) {
+    private static void normalizePropertyValues(MutableList<PropertyValue> normalized, int propertyIndex)
+    {
         PropertyValue propertyValue = normalized.get(propertyIndex);
         if (propertyValue instanceof PropertyValueMany)
         {
