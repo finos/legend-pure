@@ -744,14 +744,87 @@ $p.fullName()     // 'Alice Smith'  (derived property)
 
 ## 10. Packages and Imports
 
+### Declaring a Package
+
+Every element belongs to a package. The package is declared either inline in the
+element name (`Class my::pkg::Person { … }`) or, less commonly, at the top of the
+file with a `package` directive:
+
 ```pure
 // Declare the package at top of file
 package meta::mypackage;
+```
 
+### Import Statements
+
+Import statements must be at the start of the file: 
+
+```pure
 // Import another package (removes need to qualify names)
 import meta::pure::functions::collection::*;
 import meta::mypackage::model::*;
 ```
+All elements in the file that do not carry an explicit package path inherit this
+package. 
+
+Without an import, every type and function reference must be fully qualified:
+
+Fully-qualified names (`meta::mypackage::Person`) always take precedence.
+
+```pure
+// Without import — verbose
+let p: meta::mypackage::model::Person[1] = meta::mypackage::model::makePerson('Alice');
+```
+
+`import` brings an entire package into scope so the short name can be used instead.
+Only **wildcard imports** (`*`) are supported — you cannot import a single name:
+
+```pure
+import meta::pure::functions::collection::*;
+import meta::mypackage::model::*;
+
+// Now short names resolve without qualification
+let people = Person->getAll()->filter(p | $p.age > 18);
+```
+
+#### Scope of imports
+
+Imports are **per grammar section, per file**. An `import` in one `###Pure` section
+does not affect a `###Mapping` section in the same file — each section must declare
+its own imports. Internally the compiler models this as an `ImportGroup` instance
+(defined in `platform/pure/grammar/m3.pure`) that is created for each source file
+and referenced by all elements defined within it. When the compiler resolves a short
+name it walks the import groups associated with the element's source file, trying
+each imported package in declaration order until a match is found.
+
+```pure
+###Pure
+import meta::mypackage::model::*;
+
+Class meta::mypackage::service::TradeService
+{
+    // 'Product' resolves via the import above
+    product : Product[1];
+}
+
+###Mapping
+import meta::mypackage::model::*;   // must re-import — different section
+
+Mapping meta::mypackage::mapping::TradeMapping
+(
+    // ...
+)
+```
+
+#### Common imports in the Pure standard library
+
+| What you are using | Import |
+|-------------------|--------|
+| Collection functions (`filter`, `map`, `fold`, …) | `import meta::pure::functions::collection::*;` |
+| String functions (`startsWith`, `joinStrings`, …) | `import meta::pure::functions::string::*;` |
+| Math functions | `import meta::pure::functions::math::*;` |
+| Date functions | `import meta::pure::functions::date::*;` |
+| Test stereotypes | `import meta::pure::profiles::*;` |
 
 ---
 
@@ -794,6 +867,7 @@ See [Domain Concepts — Milestoning](../architecture/domain-concepts.md#milesto
 for the compiler implementation details.
 
 ---
+
 ## 12. Standard Library Overview
 
 The Pure standard library is organised under `meta::pure::functions::`:
@@ -873,14 +947,16 @@ different runtime adapters. The Java PCT test runner (e.g.
 `Test_Interpreted_EssentialFunctions_PCT`) supplies a concrete `f` that routes
 execution through its specific engine:
 
-```text
-Java PCT runner                         Pure test function
-──────────────────────────────────────────────────────────
-PureTestBuilderInterpreted              <<PCT.test>> testSimpleIf(f)
-  └─ adapter = nativeAdapter    ──▶     $f->eval( if(true, ...) )
-                                              │
-                                              ▼
-                                        interpreted engine executes if()
+```mermaid
+sequenceDiagram
+    participant Runner as Java PCT runner<br/>(e.g. PureTestBuilderInterpreted)
+    participant Pure as Pure test function<br/>(<<PCT.test>> testSimpleIf)
+    participant Engine as Interpreted engine
+
+    Runner->>Pure: adapter = nativeAdapter<br/>call testSimpleIf(f)
+    Pure->>Engine: $f->eval( if(true, ...) )
+    Engine-->>Pure: result
+    Pure-->>Runner: assertion result
 ```
 
 A different runner (e.g. the compiled engine runner) supplies a different `f`,
