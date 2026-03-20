@@ -394,26 +394,25 @@ four other plugins.  It provides two shared utilities:
 
 ## How the plugins chain together
 
-```text
-Pure source (.pure) + .definition.json files
-        │
-        ▼  legend-pure-maven-compiler  (compile → compile-pure)
-   Binary element files written to target/classes/
-        │
-        ├──▶  legend-pure-maven-generation-par  (generate-sources → build-pure-jar)
-        │         └── .par archive embedded in the module jar
-        │              (loaded by downstream modules at runtime or test time)
-        │
-        ├──▶  legend-pure-maven-generation-platform-java  (compile → generate-m3-core-instances)
-        │         └── Generated Java accessor classes in target/generated-sources/
-        │              └── compiled by maven-compiler-plugin (process-classes phase)
-        │
-        ├──▶  legend-pure-maven-generation-java  (build-pure-compiled-jar)
-        │         └── Generated Java in org/finos/legend/pure/generated/
-        │              └── compiled to .class files → compiled execution runtime
-        │
-        └──▶  legend-pure-maven-generation-pct  (generate-pct-functions / generate-pct-report)
-                  └── PCT function index JSON + HTML/JSON compatibility reports
+```mermaid
+flowchart TD
+    src["Pure source (.pure)\n+ .definition.json files"]
+
+    compiler["legend-pure-maven-compiler\ncompile → compile-pure\nbinary element files\ntarget/classes/"]
+
+    par["legend-pure-maven-generation-par\ngenerate-sources → build-pure-jar\n.par archive embedded in module jar"]
+
+    platform["legend-pure-maven-generation-platform-java\ncompile → generate-m3-core-instances\nGenerated Java accessor classes\ntarget/generated-sources/"]
+
+    java["legend-pure-maven-generation-java\nbuild-pure-compiled-jar\nGenerated Java in org/finos/legend/pure/generated/\n.class files → compiled execution runtime"]
+
+    pct["legend-pure-maven-generation-pct\ngenerate-pct-functions / generate-pct-report\nPCT function index JSON + HTML/JSON reports"]
+
+    src --> compiler
+    compiler --> par
+    compiler --> platform
+    compiler --> java
+    compiler --> pct
 ```
 
 ### Classpath isolation pattern

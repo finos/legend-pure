@@ -128,10 +128,6 @@ service, etc.). Provides the `Store`, `Binding`, and `Connection` metamodel elem
 
 ## legend-pure-maven
 
-See also the detailed internal document
-[`legend-pure-maven/MAVEN_PLUGINS_REVIEW.md`](../../legend-pure-maven/MAVEN_PLUGINS_REVIEW.md)
-for a plugin-by-plugin analysis.
-
 ### `legend-pure-maven-shared`
 
 Shared utility JAR (not a plugin). Provides:
@@ -262,19 +258,32 @@ Generates a PCT report during `process-test-classes` via `exec-maven-plugin`.
 
 ## Dependency Graph (Simplified)
 
-```text
-legend-pure-m4
-    └── legend-pure-m3-bootstrap-generator
-    └── legend-pure-m3-core
-            └── legend-pure-m3-precisePrimitives
-            └── legend-pure-m2-dsl-*-pure (all DSLs)
-            └── legend-pure-m2-dsl-*-grammar (all DSLs)
-            └── legend-pure-runtime-java-engine-shared
-                    └── legend-pure-runtime-java-engine-compiled
-                    │       └── legend-pure-runtime-java-extension-compiled-dsl-*
-                    │       └── legend-pure-runtime-java-extension-compiled-store-relational
-                    └── legend-pure-runtime-java-engine-interpreted
-                            └── legend-pure-runtime-java-extension-interpreted-store-relational
+```mermaid
+flowchart TD
+    m4["legend-pure-m4"]
+    bootstrap["legend-pure-m3-bootstrap-generator"]
+    m3core["legend-pure-m3-core"]
+    precise["legend-pure-m3-precisePrimitives"]
+    dsl_pure["legend-pure-m2-dsl-*-pure\n(all DSLs)"]
+    dsl_grammar["legend-pure-m2-dsl-*-grammar\n(all DSLs)"]
+    shared["legend-pure-runtime-java-engine-shared"]
+    compiled["legend-pure-runtime-java-engine-compiled"]
+    interpreted["legend-pure-runtime-java-engine-interpreted"]
+    ext_compiled["legend-pure-runtime-java-extension-compiled-dsl-*"]
+    ext_store_compiled["legend-pure-runtime-java-extension-compiled-store-relational"]
+    ext_store_interp["legend-pure-runtime-java-extension-interpreted-store-relational"]
+
+    m4 --> bootstrap
+    m4 --> m3core
+    m3core --> precise
+    m3core --> dsl_pure
+    m3core --> dsl_grammar
+    m3core --> shared
+    shared --> compiled
+    shared --> interpreted
+    compiled --> ext_compiled
+    compiled --> ext_store_compiled
+    interpreted --> ext_store_interp
 ```
 
 ---

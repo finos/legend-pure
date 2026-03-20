@@ -241,4 +241,3 @@ repository. API conventions apply to Java public APIs:
 ---
 
 *Back: [Build & CI Guide](../guides/build-and-ci.md) · Next: [Testing Strategy](../testing/testing-strategy.md)*
-

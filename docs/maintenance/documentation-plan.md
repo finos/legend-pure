@@ -82,7 +82,6 @@ serves as the roadmap for future documentation work.
 
 - Read `.github/workflows/build.yml` in detail.
 - Document the GitHub Actions pipeline steps and Sonar integration.
-- Review `MAVEN_PLUGINS_REVIEW.md` and `TIER0_TESTING_TASKS.md` for plugin insights.
 - Draft tribal knowledge interview questions.
 - Define CODEOWNERS integration approach.
 

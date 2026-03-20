@@ -42,15 +42,16 @@ The platform then generates the necessary connectors, validators, and transforma
 Legend Pure is the **lowest layer** of a stack of separate FINOS repositories, each
 of which depends on the one below it:
 
-```text
-legend-studio          (web IDE — TypeScript/React)
-       │  uses REST APIs exposed by ↓
-legend-engine          (execution + query engine — Java)
-       │  depends on JARs published by ↓
-legend-pure            (language, compiler, runtime — Java)   ← THIS REPO
-       │  inherits from ↓
-finos/finos (parent POM)
+```mermaid
+flowchart TD
+    studio["legend-studio\n(web IDE — TypeScript/React)"]
+    engine["legend-engine\n(execution + query engine — Java)"]
+    pure["legend-pure\n(language, compiler, runtime — Java)\n← THIS REPO"]
+    finos["finos/finos\n(parent POM)"]
 
+    studio -->|"uses REST APIs exposed by"| engine
+    engine -->|"depends on JARs published by"| pure
+    pure -->|"inherits from"| finos
 ```
 
 | Repo | What it is | Relationship to legend-pure |
@@ -83,8 +84,6 @@ finos/finos (parent POM)
 
 ## 3. High-Level Architecture
 
-```text
-┌──────────────────────────────────────────────────────────────────────────────┐
 │                          Legend Pure — Component View                        │
 │                                                                              │
 │  ┌─────────────────────────────┐   ┌────────────────────────────────────┐   │
@@ -127,11 +126,11 @@ finos/finos (parent POM)
 │        └──────────────────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────────┘
 
-```
+```text
 
 ### Data / Compilation Flow
 
-```
+```text
 Pure source files
       │
       ▼
@@ -150,7 +149,7 @@ Pure source files
                               Compiled runtime (high performance)
                               Interpreted runtime (dev / debug)
 
-```
+```text
 
 ---
 

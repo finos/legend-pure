@@ -7,42 +7,85 @@ layer stack is essential to understanding the codebase.
 
 ### Metamodel Layer Stack
 
-```text
-M4  ──  The meta-metamodel.  Defines what a "class", "property", and "instance" mean
-        at the most fundamental level.  All other layers are instances of M4 elements.
-        Key Java type: CoreInstance (interface)
+```mermaid
+block-beta
+  columns 1
+  M1["**M1** — User/application models\nThe actual classes and data a business domain engineer writes in Pure.\nThese are instances of M2/M3 types."]
+  space
+  M2["**M2** — DSL / domain-specific metamodel layer\nConcrete extensions built on M3 for specific domains:\nMapping, Store, Path, Diagram, Graph, TDS.\nEach DSL is a Pure source file and is an instance of M3 types.\nModules: legend-pure-dsl-*"]
+  space
+  M3["**M3** — Core metamodel layer\nDescribes the Pure language itself — Class, Association, Enumeration,\nFunction, Package, Property, GenericType, Multiplicity, etc.\nBootstraps from: legend-pure-m3-core/src/main/resources/platform/pure/grammar/m3.pure\nModule: legend-pure-m3-core"]
+  space
+  M4["**M4** — Foundation layer\nProvides core grammar tokens, serialization primitives,\nand parser infrastructure. Does NOT define 'class' or 'property'.\nKey Java type: CoreInstance (interface)\nModule: legend-pure-m4"]
 
-M3  ──  The Pure language metamodel (the "M3 layer").  Describes the Pure language
-        itself: Class, Association, Enumeration, Function, Package, etc.
-        These are instances of M4 types.
-
-M2  ──  Domain-specific metamodels built in Pure (DSLs, stores, mappings).
-        E.g. Mapping, Store, Database, Diagram are M2 entities.
-        These are instances of M3 types.
-
-M1  ──  User/application models — the actual classes and data a business domain
-        engineer writes in Pure.  These are instances of M2/M3 types.
+  M1 --> M2
+  M2 --> M3
+  M3 --> M4
 ```
+
+#### Quick reference — what belongs at each layer
+
+| Layer | Concrete examples | Where defined |
+|-------|------------------|---------------|
+| **M4** | Grammar tokens, `CoreInstance` interface, serialization format | `legend-pure-m4` (Java + ANTLR) |
+| **M3** | `meta::pure::metamodel::type::Class`, `Property`, `GenericType`, `Multiplicity`, `ConcreteFunctionDefinition`, `ValueSpecification`, `Association`, `Enumeration` | `m3.pure` (bootstrapped Pure) |
+| **M2 — Mapping** | `meta::pure::mapping::Mapping`, `SetImplementation`, `PropertyMapping`, `EnumerationMapping` | `legend-pure-m2-dsl-mapping-pure` |
+| **M2 — Store** | `meta::pure::store::set::SetRelation`, `RelationStoreAccessor` | `legend-pure-m2-dsl-store-pure` |
+| **M2 — Path** | `meta::pure::metamodel::path::Path`, `PropertyPathElement`, `CastPathElement` | `legend-pure-m2-dsl-path-pure` |
+| **M2 — TDS** | `meta::pure::metamodel::relation::TDS`, `TDSRelationAccessor` | `legend-pure-m2-dsl-tds-pure` |
+| **M2 — Diagram** | `meta::pure::diagram::DiagramNode`, `RectangleGeometry`, `LineStyle` | `legend-pure-m2-dsl-diagram-pure` |
+| **M2 — Graph** | `meta::pure::graphFetch::GraphFetchTree`, `RootGraphFetchTree`, `PropertyGraphFetchTree` | `legend-pure-m2-dsl-graph-pure` |
+| **M1** | `my::domain::Trade`, `my::domain::Product`, any user-written Pure class | User `.pure` files in a repository |
+
+#### Key M3 types (defined in `m3.pure`)
+
+These are the types the compiler uses to represent every element of a Pure program.
+When you navigate a `CoreInstance` graph in Java, these are the types you encounter:
+
+| M3 Type | Full path | Purpose |
+|---------|-----------|---------|
+| `Class` | `meta::pure::metamodel::type::Class` | Represents a class definition |
+| `Property` | `meta::pure::metamodel::function::property::Property` | Typed slot on a class |
+| `GenericType` | `meta::pure::metamodel::type::generics::GenericType` | Parameterised type reference |
+| `Multiplicity` | `meta::pure::metamodel::multiplicity::Multiplicity` | Cardinality constraint (`[1]`, `[*]`, …) |
+| `ConcreteFunctionDefinition` | `meta::pure::metamodel::function::ConcreteFunctionDefinition` | A Pure function with a body |
+| `ValueSpecification` | `meta::pure::metamodel::valuespecification::ValueSpecification` | Any expression / value node |
+| `Association` | `meta::pure::metamodel::relationship::Association` | Bidirectional class relationship |
+| `Enumeration` | `meta::pure::metamodel::type::Enumeration` | Finite set of named values |
+
+#### M2 DSL module pattern
+
+Every DSL in `legend-pure-dsl-*` follows the same base layout of three sub-modules,
+with some DSLs adding a fourth for interpreted-mode support:
+
+| Sub-module suffix | Present in | Contents |
+|-------------------|-----------|---------|
+| `-pure` | All DSLs | The DSL's type definitions as Pure source (`*.pure`). This is the M2 metamodel itself. |
+| `-grammar` | All DSLs | ANTLR4 grammar and Java parser for the DSL's concrete syntax (e.g. `###Mapping` sections). |
+| `-runtime-java-extension-compiled-*` | All DSLs | Java code-generation support for the compiled execution engine. |
+| `-runtime-java-extension-interpreted-*` | Path, TDS only | Native function implementations for the interpreted execution engine. |
 
 ### Key Entity Relationships
 
-```text
-CoreInstance (M4)
-    │
-    ├── Package            Container for other elements; forms the namespace tree
-    ├── Class              User-defined type with properties and generalizations
-    │     └── Property     Typed slot on a Class; has multiplicity and type
-    ├── Association        Many-to-many or one-to-many link between two Classes
-    ├── Enumeration        Finite set of named values
-    ├── Function           Named, typed, executable expression
-    │     └── FunctionDefinition  Pure function with a body expression
-    ├── Mapping            M2: maps a source model to a target model or store
-    │     ├── ClassMapping    How a Class is mapped
-    │     └── PropertyMapping How a Property is mapped
-    ├── Store              M2: abstract store type (relational, service, etc.)
-    │     └── Database        Relational store; contains Schema, Table, Join
-    ├── Binding            M2: links a model to a data format (JSON, XML, etc.)
-    └── Multiplicity       Cardinality constraint ([0..1], [1], [*], etc.)
+```mermaid
+flowchart TD
+    CI["CoreInstance (M4)"]
+
+    CI --> Package["Package\nContainer for other elements; forms the namespace tree"]
+    CI --> Class["Class\nUser-defined type with properties and generalizations"]
+    CI --> Association["Association\nMany-to-many or one-to-many link between two Classes"]
+    CI --> Enumeration["Enumeration\nFinite set of named values"]
+    CI --> Function["Function\nNamed, typed, executable expression"]
+    CI --> Mapping["Mapping\nM2: maps a source model to a target model or store"]
+    CI --> Store["Store\nM2: abstract store type (relational, service, etc.)"]
+    CI --> Binding["Binding\nM2: links a model to a data format (JSON, XML, etc.)"]
+    CI --> Multiplicity["Multiplicity\nCardinality constraint ([0..1], [1], [*], etc.)"]
+
+    Class --> Property["Property\nTyped slot on a Class; has multiplicity and type"]
+    Function --> FunctionDefinition["FunctionDefinition\nPure function with a body expression"]
+    Mapping --> ClassMapping["ClassMapping\nHow a Class is mapped"]
+    Mapping --> PropertyMapping["PropertyMapping\nHow a Property is mapped"]
+    Store --> Database["Database\nRelational store; contains Schema, Table, Join"]
 ```
 
 ### Pure Primitive Types
