@@ -1,37 +1,13 @@
 # The Pure Language Reference
 
-Pure is a strongly-typed, functional, expression-oriented language designed for defining
-domain models, business logic, and data transformations. It is the heart of Legend Pure
-and is specifically built to support a multi-layered metamodel architecture where the
-language can describe itself.
-
-Pure source files use the `.pure` extension and are organised into repositories. The
-language syntax is defined using ANTLR grammars located at:
-
-- `legend-pure-core/legend-pure-m4/src/main/antlr4/…/grammar/core/` — core M4 tokens
-- `legend-pure-core/legend-pure-m3-core/src/main/antlr4/…/m3parser/antlr/core/M3CoreParser.g4` — the full M3 Pure grammar
-
-This page is a practical reference for engineers who need to read, write,
+Pure is the strongly-typed, functional, expression-oriented language at the heart of
+Legend Pure. This page is a practical reference for engineers who need to read, write,
 or reason about Pure source code.
 
 For the compiler internals that process this source, see the
 [Compiler Pipeline](../architecture/compiler-pipeline.md).
 For the `###Mapping` and `###Relational` grammars, see the
 [Legend Grammar Reference](legend-grammar-reference.md).
-
----
-
-## Quick Reference — Key Language Constructs
-
-| Construct | Syntax sketch | Purpose |
-|-----------|--------------|---------|
-| **Class** | `Class pkg::Person { name: String[1]; }` | Define a data structure with typed properties |
-| **Function** | `function pkg::greet(): String[1] { 'Hello' }` | Define named, reusable behaviour |
-| **Enumeration** | `Enum pkg::Color { Red, Green, Blue }` | Define a closed set of named values |
-| **Association** | `Association pkg::PersonAddress { person: Person[1]; address: Address[1]; }` | Define bidirectional relationships without touching either class |
-| **Profile** | `Profile pkg::MyProfile { stereotypes: [st1]; tags: [tag1]; }` | Define custom annotation stereotypes and tag keys |
-| **Mapping** | `Mapping pkg::MyMapping ( … )` | Map a domain model to a store implementation (see `###Mapping` grammar) |
-| **import** | `import meta::pure::functions::collection::*;` | Bring a package into scope so names need not be fully qualified |
 
 ---
 
@@ -247,10 +223,7 @@ Association meta::mypackage::PersonFirm
 }
 ```
 
-### Profile and Stereotype
-
-A `Profile` declares a set of **stereotypes** (boolean flags) and **tags**
-(key-value string annotations) that can be applied to any Pure element.
+### Profile - Tag and Stereotype
 
 ```pure
 Profile meta::mypackage::classification
@@ -258,11 +231,7 @@ Profile meta::mypackage::classification
     stereotypes: [internal, external, deprecated];
     tags: [description, owner];
 }
-```
 
-**Applying a stereotype** — use `<<Profile.stereotype>>` before the element keyword:
-
-```pure
 Class <<meta::mypackage::classification.internal>> meta::mypackage::InternalModel
 {
     // ...
@@ -282,7 +251,123 @@ Class <<meta::mypackage::classification.internal>>
 }
 ```
 
-Both stereotypes and tags can be applied together, and multiple values are separated by commas inside the curly braces. Profiles are also the mechanism used by the built-in `meta::pure::profiles::test` and `meta::pure::profiles::temporal` profiles that drive test execution and milestoning respectively.
+Both stereotypes and tags can be applied together, and multiple values are separated by commas inside the curly braces.
+
+#### Built-in profiles
+
+Pure ships several profiles out of the box. Each must be imported before the short
+name can be used.
+
+##### `meta::pure::profiles::doc` — Documentation
+
+```pure
+import meta::pure::profiles::*;
+```
+
+| Annotation | Kind | Usage |
+|-----------|------|-------|
+| `<<doc.deprecated>>` | Stereotype | Marks an element as deprecated — tools and linters may warn on use |
+| `{doc.doc = '…'}` | Tag | Human-readable documentation string attached to any element |
+| `{doc.todo = '…'}` | Tag | Inline note recording outstanding work |
+
+```pure
+// Deprecated enum value with a doc string on a sibling value
+Enum meta::mypackage::GeoType
+{
+    <<doc.deprecated>> COUNTRY,
+    {doc.doc = 'A city, town, village, or other urban area.'} CITY,
+    REGION
+}
+
+// Deprecated class
+Class <<doc.deprecated>> {doc.doc = 'Use NewThing instead.'}
+    meta::mypackage::OldThing
+{
+    name : String[1];
+}
+
+// Function with a doc string
+function {doc.doc = 'Returns the full name of a person.'}
+    meta::mypackage::fullName(p: Person[1]): String[1]
+{
+    $p.firstName + ' ' + $p.lastName
+}
+
+// Property with a todo note
+Class meta::mypackage::Order
+{
+    {doc.todo = 'Add validation for negative amounts'}
+    amount : Float[1];
+}
+```
+
+##### `meta::pure::profiles::equality` — Model-Defined Equality
+
+```pure
+import meta::pure::profiles::*;
+```
+
+| Annotation | Kind | Usage |
+|-----------|------|-------|
+| `<<equality.Key>>` | Stereotype (on a **property**) | Marks the property as a key field for structural equality. Two instances are equal if all `<<equality.Key>>` properties have equal values. |
+
+```pure
+Class meta::mypackage::Product
+{
+    <<equality.Key>> sku  : String[1];   // equality is based on sku …
+    <<equality.Key>> site : String[1];   // … and site
+    description          : String[0..1]; // not part of equality
+}
+```
+
+When `equal()` (or `==`) is called on two `Product` instances, only `sku` and
+`site` are compared; `description` is ignored.
+
+##### `meta::pure::profiles::temporal` — Milestoning
+
+```pure
+import meta::pure::profiles::*;
+```
+
+| Annotation | Kind | Usage |
+|-----------|------|-------|
+| `<<temporal.businesstemporal>>` | Stereotype | Adds a single business-date dimension; generates `businessDate` property and date-aware `getAll` overload |
+| `<<temporal.processingtemporal>>` | Stereotype | Adds a single processing-date dimension |
+| `<<temporal.bitemporal>>` | Stereotype | Adds both business and processing date dimensions |
+
+See [Section 11 — Milestoning](#11-milestoning-temporal-data) for full usage detail.
+
+##### `meta::pure::profiles::access` — Visibility
+
+```pure
+import meta::pure::profiles::*;
+```
+
+| Annotation | Kind | Usage |
+|-----------|------|-------|
+| `<<access.public>>` | Stereotype | Explicitly marks an element as part of the public API |
+| `<<access.protected>>` | Stereotype | Internal to the package hierarchy |
+| `<<access.private>>` | Stereotype | Not intended for use outside the defining file/module |
+| `<<access.externalizable>>` | Stereotype | Can be exposed externally (e.g. through a service layer) |
+
+```pure
+function <<access.private>>
+    meta::mypackage::impl::computeInternal(x: Integer[1]): Integer[1]
+{
+    $x * 42
+}
+
+function <<access.public>>
+    meta::mypackage::computeResult(x: Integer[1]): Integer[1]
+{
+    computeInternal($x)
+}
+```
+
+##### `meta::pure::profiles::test` — Testing
+
+The `meta::pure::profiles::test` and `meta::pure::test::pct::PCT` profiles that
+drive test execution are covered in [Section 13 — Writing Tests in Pure](#13-writing-tests-in-pure).
 
 ---
 
@@ -666,15 +751,25 @@ element name (`Class my::pkg::Person { … }`) or, less commonly, at the top of 
 file with a `package` directive:
 
 ```pure
+// Declare the package at top of file
 package meta::mypackage;
 ```
 
-All elements in the file that do not carry an explicit package path inherit this
-package. Fully-qualified names (`meta::mypackage::Person`) always take precedence.
-
 ### Import Statements
 
+Import statements must be at the start of the file: 
+
+```pure
+// Import another package (removes need to qualify names)
+import meta::pure::functions::collection::*;
+import meta::mypackage::model::*;
+```
+All elements in the file that do not carry an explicit package path inherit this
+package. 
+
 Without an import, every type and function reference must be fully qualified:
+
+Fully-qualified names (`meta::mypackage::Person`) always take precedence.
 
 ```pure
 // Without import — verbose
@@ -921,8 +1016,11 @@ This is the established pattern throughout the Pure standard library (e.g.
 
 ### Test Annotations Reference
 
-Additional stereotypes on the `meta::pure::profiles::test` profile control
-test execution:
+#### `meta::pure::profiles::test` stereotypes and tags
+
+```pure
+import meta::pure::profiles::*;
+```
 
 | Stereotype | Effect |
 |-----------|--------|
@@ -932,16 +1030,32 @@ test execution:
 | `<<test.ExcludeAlloy>>` | Skipped when running in the Alloy/Legend Studio environment |
 | `<<test.ExcludeLazy>>` | Skipped in lazy-evaluation mode |
 | `<<test.ExcludeModular>>` | Skipped in modular compilation mode |
-| `{test.excludePlatform = 'Java compiled'}` | Tag to skip on a named platform (e.g. compiled Java) |
+| `{test.excludePlatform = '…'}` | Tag to skip on a named platform, e.g. `'Java compiled'` or `'Java interpreted'` |
+
+#### `meta::pure::test::pct::PCT` stereotypes and tags
+
+```pure
+import meta::pure::test::pct::*;
+```
+
+| Annotation | Kind | Usage |
+|-----------|------|-------|
+| `<<PCT.test>>` | Stereotype | PCT test — requires one adapter parameter `f`; run on all platforms |
+| `<<PCT.function>>` | Stereotype | Marks a function as a standard-library function that PCT tests cover |
+| `<<PCT.adapter>>` | Stereotype | Marks an adapter function that routes execution to a specific engine |
+| `<<PCT.platformOnly>>` | Stereotype | Platform-specific function; excluded from cross-platform PCT runs |
+| `{PCT.grammarDoc = '…'}` | Tag | Canonical grammar shorthand for the function (e.g. `'$first == $second'`) |
+| `{PCT.grammarCharacters = '…'}` | Tag | The operator characters (e.g. `'=='`), used by tooling |
+| `{PCT.adapterName = '…'}` | Tag | Human-readable name for a PCT adapter (e.g. `'In-Memory'`) |
 
 For PCT tests, platform-specific exclusions are declared in the Java runner:
 
 ```java
 // In Test_Interpreted_EssentialFunctions_PCT.java
 private static final MutableList<ExclusionSpecification> expectedFailures =
-    Lists.mutable.with(
-        one("meta::pure::functions::lang::tests::if::testMultiIf", "Not yet supported")
-    );
+        Lists.mutable.with(
+                one("meta::pure::functions::lang::tests::if::testMultiIf", "Not yet supported")
+        );
 ```
 
 ---
