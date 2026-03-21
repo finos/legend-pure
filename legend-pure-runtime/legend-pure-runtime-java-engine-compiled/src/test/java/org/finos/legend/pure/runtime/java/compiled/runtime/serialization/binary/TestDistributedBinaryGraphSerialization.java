@@ -257,34 +257,46 @@ public abstract class TestDistributedBinaryGraphSerialization
         int childrenIndex;
         if (M3Paths.Package.equals(obj.getClassifier()) && ((childrenIndex = normalized.detectIndex(pv -> M3Properties.children.equals(pv.getProperty()))) >= 0))
         {
-            PropertyValue children = normalized.get(childrenIndex);
-            if (children instanceof PropertyValueMany)
-            {
-                PropertyValueMany childrenMany = (PropertyValueMany) children;
-                RValueVisitor<Pair<String, String>> visitor = new RValueVisitor<Pair<String, String>>()
-                {
-                    @Override
-                    public Pair<String, String> visit(Primitive primitive)
-                    {
-                        return Tuples.pair("", primitive.toString());
-                    }
-
-                    @Override
-                    public Pair<String, String> visit(ObjRef objRef)
-                    {
-                        return Tuples.pair(objRef.getClassifierId(), objRef.toString());
-                    }
-
-                    @Override
-                    public Pair<String, String> visit(EnumRef enumRef)
-                    {
-                        return Tuples.pair(enumRef.getEnumerationId(), enumRef.getEnumName());
-                    }
-                };
-                normalized.set(childrenIndex, new PropertyValueMany(children.getProperty(), childrenMany.getValues().toSortedListBy(p -> p.visit(visitor))));
-            }
+            normalizePropertyValues(normalized, childrenIndex);
         }
+
+        int referenceUsagesIndex;
+        if (((referenceUsagesIndex = normalized.detectIndex(pv -> M3Properties.referenceUsages.equals(pv.getProperty()))) >= 0))
+        {
+            normalizePropertyValues(normalized, referenceUsagesIndex);
+        }
+
         return normalized;
+    }
+
+    private static void normalizePropertyValues(MutableList<PropertyValue> normalized, int propertyIndex)
+    {
+        PropertyValue propertyValue = normalized.get(propertyIndex);
+        if (propertyValue instanceof PropertyValueMany)
+        {
+            PropertyValueMany propertyValueMany = (PropertyValueMany) propertyValue;
+            RValueVisitor<Pair<String, String>> visitor = new RValueVisitor<Pair<String, String>>()
+            {
+                @Override
+                public Pair<String, String> visit(Primitive primitive)
+                {
+                    return Tuples.pair("", primitive.toString());
+                }
+
+                @Override
+                public Pair<String, String> visit(ObjRef objRef)
+                {
+                    return Tuples.pair(objRef.getClassifierId(), objRef.toString());
+                }
+
+                @Override
+                public Pair<String, String> visit(EnumRef enumRef)
+                {
+                    return Tuples.pair(enumRef.getEnumerationId(), enumRef.getEnumName());
+                }
+            };
+            normalized.set(propertyIndex, new PropertyValueMany(propertyValue.getProperty(), propertyValueMany.getValues().toSortedListBy(p -> p.visit(visitor))));
+        }
     }
 
     protected abstract FileWriter getFileWriter() throws IOException;
