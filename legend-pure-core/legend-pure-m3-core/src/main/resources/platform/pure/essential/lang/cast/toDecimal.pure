@@ -18,15 +18,21 @@ native function <<PCT.function>> meta::pure::functions::math::toDecimal(number: 
 
 function <<PCT.test>> meta::pure::functions::math::tests::toDecimal::testDoubleToDecimal<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(3.8D, $f->eval(|toDecimal(3.8)));
+    let r = $f->eval(|toDecimal(3.8));
+    assert($r->instanceOf(Decimal));
+    assertEquivalent(3.8D, $r);
 }
 
 function <<PCT.test>> meta::pure::functions::math::tests::toDecimal::testDecimalToDecimal<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(3.8D, $f->eval(|toDecimal(3.8D)));
+    let r = $f->eval(|toDecimal(3.8D));
+    assert($r->instanceOf(Decimal));
+    assertEquivalent(3.8D, $r);
 }
 
 function <<PCT.test>> meta::pure::functions::math::tests::toDecimal::testIntToDecimal<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(8D, $f->eval(|toDecimal(8)));
+    let r = $f->eval(|toDecimal(8));
+    assert($r->instanceOf(Decimal));
+    assertEquivalent(8D, $r);
 }

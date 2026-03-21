@@ -106,6 +106,42 @@ class DateDiff
         return Math.abs(time1 - time2);
     }
 
+    static long getDiffInMicroseconds(PureDate thisDate, PureDate otherDate)
+    {
+        return getDiffInNanoseconds(thisDate, otherDate) / 1000L;
+    }
+
+    static long getDiffInNanoseconds(PureDate thisDate, PureDate otherDate)
+    {
+        long totalNanos1 = getTotalNanos(thisDate);
+        long totalNanos2 = getTotalNanos(otherDate);
+        return Math.abs(totalNanos1 - totalNanos2);
+    }
+
+    private static long getTotalNanos(PureDate date)
+    {
+        long totalNanos = date.getCalendar().getTimeInMillis() * 1_000_000L;
+
+        if (date.hasSubsecond())
+        {
+            String subsecond = date.getSubsecond();
+            if (subsecond.length() > 3)
+            {
+                String subMilliPart = subsecond.substring(3);
+                if (subMilliPart.length() > 6)
+                {
+                    subMilliPart = subMilliPart.substring(0, 6);
+                }
+                else
+                {
+                    subMilliPart = subMilliPart + "000000".substring(subMilliPart.length());
+                }
+                totalNanos += Long.parseLong(subMilliPart);
+            }
+        }
+        return totalNanos;
+    }
+
     private static int daysUntilSunday(Calendar start, Calendar end)
     {
         if (start.before(end))

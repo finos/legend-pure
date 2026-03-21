@@ -245,6 +245,16 @@ public class DateFunctions extends TimeFunctions
                 result = DateDiff.getDiffInMilliseconds(thisDate, otherDate);
                 break;
             }
+            case "MICROSECONDS":
+            {
+                result = DateDiff.getDiffInMicroseconds(thisDate, otherDate);
+                break;
+            }
+            case "NANOSECONDS":
+            {
+                result = DateDiff.getDiffInNanoseconds(thisDate, otherDate);
+                break;
+            }
             default:
             {
                 throw new IllegalArgumentException("Unsupported duration unit: " + unit);
