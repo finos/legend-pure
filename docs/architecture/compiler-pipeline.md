@@ -175,7 +175,7 @@ How a function call executes in compiled mode:
 
 ```mermaid
 flowchart TD
-    call["Pure function call\n(e.g. filter($list, x | $x > 0))"]
+    call["Pure function call\n(e.g. filter(list, x | x &gt; 0))"]
     lookup["CompiledExecutionSupport\nlooks up generated Java class via FunctionCache"]
     invoke["Calls generated static Java method directly\n(JIT-compiled by the JVM)"]
     result["Result returned as Java primitive\nor Eclipse Collections type"]
@@ -215,7 +215,7 @@ How a function call executes in interpreted mode:
 
 ```mermaid
 flowchart TD
-    call["Pure function call\n(e.g. filter($list, x | $x > 0))"]
+    call["Pure function call\n(e.g. filter(list, x | x &gt; 0))"]
     dispatch["FunctionExecutionInterpreted\ndispatches on CoreInstance classifier"]
     native["NativeFunction?\nLooks up registered Java NativeFunction handler\ne.g. ...natives.essentials.collection.iteration.Find"]
     funcdef["FunctionDefinition?\nWalks expression tree recursively,\nevaluating each sub-expression in VariableContext"]
@@ -430,10 +430,10 @@ Resolution uses a **two-pass algorithm** per function call expression:
 
 ```mermaid
 flowchart TD
-    expr["FunctionExpression\n(e.g. $list->filter(x | $x > 0))"]
-    first["First pass — process all non-lambda parameters\nPostProcessor.processElement() on each argument.\nFor concrete-type arguments, register T→Integer\nin TypeInferenceContext.\nCollect unresolved lambda args as deferred."]
+    expr["FunctionExpression\n(e.g. list-&gt;filter(x | x &gt; 0))"]
+    first["First pass — process all non-lambda parameters\nPostProcessor.processElement() on each argument.\nFor concrete-type arguments, register T-&gt;Integer\nin TypeInferenceContext.\nCollect unresolved lambda args as deferred."]
     match["Function matching — FunctionExpressionMatcher\nUse partial type-parameter map to find\nthe correct overload from the function library."]
-    second["Second pass — re-process deferred lambdas\nWith T now known, assign concrete types to\nlambda parameters (e.g. x in x | $x > 0).\nTypeInference.storeInferredTypeParametersInFunctionExpression()\nwrites resolved types back into the FunctionExpression node."]
+    second["Second pass — re-process deferred lambdas\nWith T now known, assign concrete types to\nlambda parameters (e.g. x in x | x &gt; 0).\nTypeInference.storeInferredTypeParametersInFunctionExpression()\nwrites resolved types back into the FunctionExpression node."]
 
     expr --> first --> match --> second
 ```

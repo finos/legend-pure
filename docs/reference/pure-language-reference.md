@@ -950,11 +950,11 @@ execution through its specific engine:
 ```mermaid
 sequenceDiagram
     participant Runner as Java PCT runner<br/>(e.g. PureTestBuilderInterpreted)
-    participant Pure as Pure test function<br/>(<<PCT.test>> testSimpleIf)
+    participant Pure as Pure test function<br/>(&lt;&lt;PCT.test&gt;&gt; testSimpleIf)
     participant Engine as Interpreted engine
 
     Runner->>Pure: adapter = nativeAdapter<br/>call testSimpleIf(f)
-    Pure->>Engine: $f->eval( if(true, ...) )
+    Pure->>Engine: f-&gt;eval( if(true, ...) )
     Engine-->>Pure: result
     Pure-->>Runner: assertion result
 ```
