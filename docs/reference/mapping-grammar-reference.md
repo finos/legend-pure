@@ -924,11 +924,188 @@ The filter syntax is: `~filter <database>(<joinPath>)? <filterName>`
 
 ---
 
-## 15. Local properties (`+`)
+## 15. Relation class mapping
+
+Maps a Pure class to a **`Relation`** — the columnar, typed relation type introduced
+in `legend-pure-m3-core` (`meta::pure::metamodel::relation::Relation`). Instead of
+referencing a database table directly, you point at a zero-argument Pure function
+that returns a `Relation<Any>[1]`. The compiler resolves the column types from the
+relation's type parameter and validates each property mapping against them.
+
+**Metamodel type:** `meta::pure::mapping::relation::RelationFunctionInstanceSetImplementation`
+**Parser:** `RelationMappingParser` (`legend-pure-m2-dsl-mapping-grammar`)
+
+### Basic syntax
+
+```pure
+###Mapping
+import my::model::*;
+
+Mapping my::mappings::PersonMapping
+(
+    *Person[person]: Relation
+    {
+        ~func my::personRelation__Relation_1_   // zero-argument function returning Relation
+        firstName : FIRSTNAME,                  // property : COLUMN_NAME
+        age       : AGE
+    }
+)
+```
+
+- The keyword is `Relation` (not `Relational` — that is the database-table mapping).
+- `~func` is **required** and must be the first line inside the braces. Omitting it
+  is a compile error: `expected: '~func'`.
+- `~func` accepts **only a reference to a named Pure function** defined in a
+  `###Pure` section — either as a function descriptor
+  (`package::name__ReturnType_mult_`) or as a qualified name (`package::name`).
+- Inline lambdas and `#SQL` expressions cannot be written directly after `~func`.
+  This is an implementation constraint, not a fundamental design prohibition: the
+  compiler resolves `~func` via an `ImportStub` name lookup and then walks the
+  resolved `FunctionDefinition`'s `expressionSequence` to extract the return
+  `RelationType` for column validation. Supporting an inline expression would
+  require embedding and type-inferring it during the graph-build pass — work that
+  has not yet been implemented.
+- The referenced function **must** take zero arguments and return `Relation<Any>[1]`
+  (or a concrete `Relation<(COL:Type, ...)>[1]`). Functions with parameters are
+  rejected at compile time.
+- Column names are unquoted identifiers. Quoted names (columns whose names contain
+  spaces or special characters) use single quotes: `legalName: 'LEGAL NAME'`.
+
+### Wrapping a `#SQL` expression or store accessor
+
+The standard workaround for using a `#SQL` expression (defined in `legend-engine`)
+or any store-specific accessor is to wrap it in a named concrete function and point
+`~func` at that wrapper. The function body can contain any expression that returns
+a `Relation` — including a `#SQL` block or a call to a `native function`:
+
+```pure
+###Pure
+import meta::pure::metamodel::relation::*;
+
+// Wrapper function — the body can hold a #SQL expression, a native function
+// call, or any other Relation-producing expression
+function my::personRelation(): Relation<(FIRSTNAME:String, AGE:Integer)>[1]
+{
+    #SQL { SELECT FIRSTNAME, AGE FROM #I{my::ingestDataset::PEOPLE }#
+}
+
+###Mapping
+import my::model::*;
+
+Mapping my::mappings::PersonMapping
+(
+    *Person[person]: Relation
+    {
+        ~func my::personRelation__Relation_1_
+        firstName : FIRSTNAME,
+        age       : AGE
+    }
+)
+```
+
+The same pattern works when the underlying data source is a `native function`
+(e.g. a store accessor registered by a runtime extension):
+
+```pure
+###Pure
+import meta::pure::metamodel::relation::*;
+
+// native function declared elsewhere (e.g. in a store extension module)
+native function my::store::rawPersonTable(): Relation<(FIRSTNAME:String, AGE:Integer, FIRMID:Integer)>[1];
+
+// concrete wrapper — this is what ~func references
+function my::personRelation(): Relation<(FIRSTNAME:String, AGE:Integer)>[1]
+{
+    my::store::rawPersonTable()
+}
+
+###Mapping
+import my::model::*;
+
+Mapping my::mappings::PersonMapping
+(
+    *Person[person]: Relation
+    {
+        ~func my::personRelation__Relation_1_
+        firstName : FIRSTNAME,
+        age       : AGE
+    }
+)
+```
+
+> **Testing tip:** wrapping your data-shaping logic in a concrete named function
+> has a practical benefit beyond satisfying the `~func` constraint — you can call
+> `my::personRelation()` directly in a Pure unit test and assert on the returned
+> rows independently of the mapping. This makes the data-shaping logic separately
+> testable from the property binding.
+
+### Column-name-only property mappings
+
+When the column name matches the relation's column set, the compiler infers the
+type from the relation's type parameter and validates it against the property type:
+
+```pure
+Person[person]: Relation
+{
+    ~func my::personRelation__Relation_1_
+    firstName : FIRSTNAME,   // must exist as a column in the Relation
+    age       : AGE
+}
+```
+
+**Compile-time validations:**
+
+| Condition | Error |
+|-----------|-------|
+| Column name not found in the Relation | `The system can't find the column FOO in the Relation (...)` |
+| Column type does not match property type | `Mismatching property and relation column types. Property type is X, but relation column it is mapped to has type Y.` |
+| Property type is non-primitive (e.g. another class) | `Relation mapping is only supported for primitive properties, but the property 'address' has type Address.` |
+| Property multiplicity is `[*]` | `Properties in relation mappings can only have multiplicity 1 or 0..1` |
+
+### Local properties (`+`)
+
+Local properties work in `Relation` mappings exactly as in `Relational` mappings —
+see [§16 Local properties](#16-local-properties-) for the full description. The
+only difference is the column expression: a bare column name rather than a
+`[db]Table.column` reference.
+
+### Difference from `Relational` mapping
+
+| | `Relational` | `Relation` |
+|---|---|---|
+| Data source | `###Relational` database table / view / join | Any Pure function returning `Relation<Any>[1]` |
+| Source declaration | `~mainTable [db]Table` | `~func my::package::fn__Relation_1_` |
+| Store dependency | Requires a `Database` definition | None — store-agnostic |
+| Property mapping | Column expression `[db]Table.column` | Bare column name `COLUMN` |
+| Complex expressions | Join traversal, operation expressions | Not supported — column name only |
+| Non-primitive properties | Supported via joins | Not supported |
+
+---
+
+## 16. Local properties (`+`)
 
 A **local property** declares a new property directly on the mapping, without adding
 it to the underlying Pure domain class. It is only visible within this mapping and
 is typically used as a key for cross-store joins.
+
+`localMappingProperty` is defined on the **base `PropertyMapping` metamodel class**
+(`meta::pure::mapping::PropertyMapping`), so it is a universal concept. However, the
+`+` syntax is only implemented in the parsers for two mapping types: **`Relational`**
+and **`Relation`**.
+
+Syntax: `+<propertyName> : <Type>[<multiplicity>] : <columnExpression>`
+
+- The `+` prefix distinguishes a local property from a regular mapped property.
+- `<columnExpression>` is a column reference for `Relational` mappings or a bare
+  column name for `Relation` mappings (see below).
+- Local properties are available via `$this` and `$that` in XStore association
+  expressions.
+- They do not appear in the domain model and cannot be queried directly by
+  consumers of the mapping.
+
+### In a `Relational` mapping
+
+The column expression is a full relational column reference:
 
 ```pure
 ###Mapping
@@ -942,7 +1119,7 @@ Mapping my::FirmMapping
 
     Person[e] : Relational
     {
-        +firmId : String[1] : [db]PersonTable.firmId,  // local property
+        +firmId : String[1] : [db]PersonTable.firmId,
         lastName : [db]PersonTable.lastName
     }
 
@@ -954,13 +1131,34 @@ Mapping my::FirmMapping
 )
 ```
 
-Syntax: `+<propertyName> : <Type>[<multiplicity>] : <columnExpression>`
+### In a `Relation` mapping
 
-- The `+` prefix distinguishes a local property from a regular mapped property.
-- Local properties are available via `$this` and `$that` in XStore association
-  expressions.
-- They do not appear in the domain model and cannot be queried directly by
-  consumers of the mapping.
+The column expression is a bare column name from the relation returned by `~func`:
+
+```pure
+###Mapping
+Mapping my::FirmMapping
+(
+    Firm[f1] : Relation
+    {
+        ~func my::firmRelation():Relation<Any>[1]
+        +id       : String[1]    : ID,             // local property — not on Firm class
+        legalName : LEGALNAME
+    }
+
+    Person[e] : Relation
+    {
+        ~func my::personRelation__Relation_1_
+        +firmId : Integer[0..1] : FIRMID
+    }
+
+    Firm_Person : XStore
+    {
+        firm      [e,  f1] : $this.firmId == $that.id,
+        employees [f1, e]  : $this.id == $that.firmId
+    }
+)
+```
 
 ---
 
