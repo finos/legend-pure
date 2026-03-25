@@ -301,7 +301,36 @@ function <<test.Test>> meta::pure::functions::lang::tests::copy::testSourceInfor
    let x0 = meta::pure::functions::collection::removeDuplicates_T_MANY__T_MANY_->evaluateAndDeactivate();
    let x1 = ^$x0();
    let x2 = ^$x0(expressionSequence = $x0.expressionSequence);
- 
+
    assert($x0->sourceInformation().source == $x1->sourceInformation().source);
    assert($x0->sourceInformation().source != $x2->sourceInformation().source);
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::copy::testCopyAssociationInverseAfterDMR():Boolean[1]
+{
+   // Closes §3.3 unknown 2 in metaprogramming.md. testCopyWithAssociation
+   // (line 176) proves copy preserves bidirectional association links on
+   // a freshly-constructed object. This test exercises the same shape
+   // after a deactivate→reactivate cycle: the router routinely deactivates
+   // a VariableExpression and reactivates to recover the bound value,
+   // then copies. The reactivated value must be the SAME heap entry as
+   // the original (Rc identity), so the inverse-link cache is intact and
+   // a subsequent copy appends to the same firmX.employees collection.
+   let pierre = ^LA_Person(firstName='Pierre', lastName='Doe', firm=^LA_Firm(legalName='FirmX'));
+   let firmX = $pierre.firm->toOne();
+   assertEquals($pierre, $firmX.employees);
+
+   // deactivate's defer_param_execution captures the VariableExpression
+   // for `pierre`; reactivate re-evaluates it, returning the same Rc'd
+   // LA_Person heap entry. Casting back to LA_Person is necessary
+   // because reactivate's return type is Any[*].
+   let recovered = $pierre->deactivate()->reactivate()->toOne()->cast(@LA_Person);
+   assertIs($firmX, $recovered.firm->toOne());
+
+   // Now copy the recovered object — inverse-link maintenance must
+   // append the new copy to firmX.employees alongside the original.
+   let bob = ^$recovered(firstName='Bob', lastName='Roe');
+   assertEquals('Bob', $bob.firstName);
+   assertIs($firmX, $bob.firm->toOne());
+   assertSameElements([$bob, $pierre], $firmX.employees);
 }

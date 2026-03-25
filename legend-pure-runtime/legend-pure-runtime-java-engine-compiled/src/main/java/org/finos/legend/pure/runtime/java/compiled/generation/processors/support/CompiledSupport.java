@@ -396,6 +396,16 @@ public class CompiledSupport
         return value;
     }
 
+    public static <T> T toMultiplicityOne(RichIterable<? extends T> object, int lowerBound, int upperBound, SourceInformation sourceInformation)
+    {
+        int size = object.size();
+        if ((size == 0 && lowerBound > 0) || size > 1)
+        {
+            throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size " + size + " to multiplicity " + print(lowerBound, upperBound), Stacks.mutable.empty());
+        }
+        return object.getAny();
+    }
+
     public static <T> T toMultiplicityOne(T object, int lowerBound, int upperBound, SourceInformation sourceInformation)
     {
         if (object == null && lowerBound > 0)
@@ -405,7 +415,7 @@ public class CompiledSupport
         if (object instanceof RichIterable)
         {
             int size = ((RichIterable<?>) object).size();
-            if (size > 1)
+            if ((size == 0 && lowerBound > 0) || size > 1)
             {
                 throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size " + size + " to multiplicity " + print(lowerBound, upperBound), Stacks.mutable.empty());
             }

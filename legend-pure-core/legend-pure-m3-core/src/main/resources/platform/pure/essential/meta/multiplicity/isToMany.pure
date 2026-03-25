@@ -18,3 +18,29 @@ function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::isToMan
 {
    !$m->hasUpperBound() || ($m->getUpperBound() > 1);
 }
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::isToMany::testIsToManyNamed():Boolean[1]
+{
+    // True when upper is unbounded (ZeroMany / OneMany) or >1; false when
+    // upper is 0 or 1 (PureZero / ZeroOne / PureOne).
+    assertFalse(PureZero->isToMany());
+    assertFalse(ZeroOne->isToMany());
+    assertFalse(PureOne->isToMany());
+    assert(ZeroMany->isToMany());
+    assert(OneMany->isToMany());
+}
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::isToMany::testIsToManyArbitraryBound():Boolean[1]
+{
+    // Bounded with upper > 1: to-many. Bounded with upper = 1: not to-many.
+    let twoToFive = ^Multiplicity(
+        lowerBound = ^MultiplicityValue(value = 2),
+        upperBound = ^MultiplicityValue(value = 5)
+    );
+    assert($twoToFive->isToMany());
+    let oneToOne = ^Multiplicity(
+        lowerBound = ^MultiplicityValue(value = 1),
+        upperBound = ^MultiplicityValue(value = 1)
+    );
+    assertFalse($oneToOne->isToMany());
+}

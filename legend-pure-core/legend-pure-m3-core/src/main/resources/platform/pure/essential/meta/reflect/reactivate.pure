@@ -41,3 +41,62 @@ function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::
     let f = [CC_GeographicEntityType.CITY, CC_GeographicEntityType.COUNTRY]->deactivate();
     assertSameElements([CC_GeographicEntityType.CITY, CC_GeographicEntityType.COUNTRY],$f->reactivate());
 }
+
+// -------------------------------------------------------------------------
+// Below: tests added to lock the reactivate contract on shapes the
+// existing fixture above does not exercise — round-trip identity on
+// scalar literals, explicit open-variable map binding (the 2-arg form),
+// the deactivate-mutate-reactivate cycle that drives router/preeval, and
+// reactivation through cross-chunk ElementId references. Together these
+// close §3.3 unknown 1 (cross-chunk reactivate) and lock the canonical
+// DMR contract heavily exercised by legend-engine consumers.
+// -------------------------------------------------------------------------
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::reactivate::testReactivateRoundTripInteger():Boolean[1]
+{
+    assertEq(42, 42->deactivate()->reactivate()->toOne()->cast(@Integer));
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::reactivate::testReactivateRoundTripString():Boolean[1]
+{
+    assertEq('hello', 'hello'->deactivate()->reactivate()->toOne()->cast(@String));
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::reactivate::testReactivateClosedExpressionWithEmptyMap():Boolean[1]
+{
+    // 2-arg form with an explicitly-empty Map. Mirrors the 1-arg fallback at line 20-23
+    // but exercises the explicit Map-construction path consumers use in router/preeval.
+    let body = {| 1 + 2}->evaluateAndDeactivate().expressionSequence->toOne();
+    assertEq(3, $body->meta::pure::functions::meta::reactivate(newMap([]->cast(@Pair<String, List<Any>>)))->toOne()->cast(@Integer));
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::reactivate::testReactivateBodyWithCapturedOpenVar():Boolean[1]
+{
+    // DMR-cycle shape — deactivate a lambda body, reactivate using the
+    // lambda's captured open-variable values. This is the 286-router-call
+    // pattern (see metaprogramming.md §2). Captures are surfaced via
+    // openVariableValues and threaded explicitly to mirror what router/preeval
+    // do in real consumer code.
+    let x = 5;
+    let lambda = {| $x + 1};
+    let body = $lambda->evaluateAndDeactivate().expressionSequence->toOne();
+    let captures = $lambda->openVariableValues();
+    assertEq(6, $body->meta::pure::functions::meta::reactivate($captures)->toOne()->cast(@Integer));
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::reactivate::testReactivateNestedFunctionExpression():Boolean[1]
+{
+    // Multi-level FunctionExpression nesting — `(1 + 2) + 3` deactivated then
+    // reactivated must walk every nested SimpleFunctionExpression correctly.
+    let body = {| (1 + 2) + 3}->evaluateAndDeactivate().expressionSequence->toOne();
+    assertEq(6, $body->reactivate()->toOne()->cast(@Integer));
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::reactivate::testReactivateCrossChunkPlatformFunction():Boolean[1]
+{
+    // The deactivated body references functions defined in different platform
+    // chunks (`size`, `+`). Reactivation must resolve every ElementId across
+    // chunk boundaries — closes §3.3 unknown 1.
+    let body = {| ['a', 'b', 'c']->size() + ['x', 'y']->size()}->evaluateAndDeactivate().expressionSequence->toOne();
+    assertEq(5, $body->reactivate()->toOne()->cast(@Integer));
+}

@@ -398,3 +398,60 @@ function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNew
    assert($x.prop2->isEmpty());
 }
 
+
+Class meta::pure::functions::lang::tests::newAtRuntime::PropertyDefaultPrimitive
+{
+   name : String[1];
+   count : Integer[1] = 5;
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithPrimitivePropertyDefault():Boolean[1]
+{
+   let x = ^meta::pure::functions::lang::tests::newAtRuntime::PropertyDefaultPrimitive(name='hello');
+   assertEq('hello', $x.name);
+   assertEq(5, $x.count);
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithPrimitivePropertyDefaultOverridden():Boolean[1]
+{
+   let x = ^meta::pure::functions::lang::tests::newAtRuntime::PropertyDefaultPrimitive(name='hello', count=42);
+   assertEq('hello', $x.name);
+   assertEq(42, $x.count);
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::PropertyDefaultEnumHolder
+{
+   name : String[1];
+   kind : LA_GeographicEntityType[1] = LA_GeographicEntityType.CITY;
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithEnumPropertyDefault():Boolean[1]
+{
+   let x = ^meta::pure::functions::lang::tests::newAtRuntime::PropertyDefaultEnumHolder(name='here');
+   assertEq('here', $x.name);
+   assertEq(LA_GeographicEntityType.CITY, $x.kind);
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithEnumPropertyDefaultOverridden():Boolean[1]
+{
+   let x = ^meta::pure::functions::lang::tests::newAtRuntime::PropertyDefaultEnumHolder(name='here', kind=LA_GeographicEntityType.COUNTRY);
+   assertEq(LA_GeographicEntityType.COUNTRY, $x.kind);
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::PropertyDefaultBase
+{
+   tag : String[1] = 'base-default';
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::PropertyDefaultSub extends meta::pure::functions::lang::tests::newAtRuntime::PropertyDefaultBase
+{
+   name : String[1];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithInheritedPropertyDefault():Boolean[1]
+{
+   let x = ^meta::pure::functions::lang::tests::newAtRuntime::PropertyDefaultSub(name='child');
+   assertEq('child', $x.name);
+   assertEq('base-default', $x.tag);
+}
+

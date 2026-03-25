@@ -18,3 +18,30 @@ function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::hasToOn
 {
     $multiplicity->hasUpperBound() && eq($multiplicity->getUpperBound(), 1)
 }
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::hasToOneUpperBound::testHasToOneUpperBoundNamed():Boolean[1]
+{
+    // True only when the upper bound is a concrete 1 — ZeroOne / PureOne.
+    // PureZero is false (upper is 0, not 1); ZeroMany / OneMany are false
+    // (no upper bound at all).
+    assertFalse(PureZero->hasToOneUpperBound());
+    assert(ZeroOne->hasToOneUpperBound());
+    assert(PureOne->hasToOneUpperBound());
+    assertFalse(ZeroMany->hasToOneUpperBound());
+    assertFalse(OneMany->hasToOneUpperBound());
+}
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::hasToOneUpperBound::testHasToOneUpperBoundArbitraryBound():Boolean[1]
+{
+    // Bounded but >1: not toOne. Bounded and =1: toOne.
+    let twoToFive = ^Multiplicity(
+        lowerBound = ^MultiplicityValue(value = 2),
+        upperBound = ^MultiplicityValue(value = 5)
+    );
+    assertFalse($twoToFive->hasToOneUpperBound());
+    let oneToOne = ^Multiplicity(
+        lowerBound = ^MultiplicityValue(value = 1),
+        upperBound = ^MultiplicityValue(value = 1)
+    );
+    assert($oneToOne->hasToOneUpperBound());
+}

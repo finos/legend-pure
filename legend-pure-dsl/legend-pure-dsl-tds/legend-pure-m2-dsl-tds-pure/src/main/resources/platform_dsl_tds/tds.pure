@@ -29,3 +29,23 @@ function meta::pure::metamodel::relation::newTDSRelationAccessor<T>(tds:TDS<T>[1
 {
   ^TDSRelationAccessor<T>(sourceElement = $tds);
 }
+
+// ---------------------------------------------------------------------------
+// Tests — `stringToTDS` runtime native.
+//
+// The bare `stringToTDS('<csv>')` form returns `TDS<Any>`. Inside this
+// file we can only use the bare native form, since this file is the
+// source the `platform_dsl_tds` snapshot is built from — at snapshot-
+// build time the TDS island parser isn't yet available, so a
+// `#TDS\n…\n#` literal here would fail to parse.
+// ---------------------------------------------------------------------------
+
+function <<test.Test>> meta::pure::metamodel::relation::tests::testStringToTDSProducesCsvField():Boolean[1]
+{
+    assertEquals('a, b\n1, 2', stringToTDS('a, b\n1, 2').csv);
+}
+
+function <<test.Test>> meta::pure::metamodel::relation::tests::testStringToTDSPreservesHeaderOnlyCsv():Boolean[1]
+{
+    assertEquals('a, b', stringToTDS('a, b').csv);
+}

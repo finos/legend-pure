@@ -48,3 +48,45 @@ function <<test.Test>> meta::pure::functions::meta::tests::openVariableValues::t
     let res = meta::pure::functions::meta::tests::openVariableValues::nestedFunction($f);
     assertEmpty($res->keys());
 }
+
+// -------------------------------------------------------------------------
+// Below: tests for capture shapes the original 4 do not exercise —
+// multi-variable lets, collection captures, formal-param lambdas (which
+// must NOT surface formals as open vars), and the nested-scope pattern
+// where an outer let is captured but a shadowed inner one is not.
+// 91 router calls to openVariables make this the third-most-load-bearing
+// meta-programming primitive (see metaprogramming.md §2).
+// -------------------------------------------------------------------------
+
+function <<test.Test>> meta::pure::functions::meta::tests::openVariableValues::testMultipleCaptures():Boolean[1]
+{
+    let a = 1;
+    let b = 'two';
+    let c = [3, 4, 5];
+    let f = {| $b + $a->toString() + $c->map(x|$x->toString())->joinStrings(',')};
+    let res = meta::pure::functions::meta::tests::openVariableValues::nestedFunction($f);
+    assertSameElements(['a', 'b', 'c'], $res->keys());
+    assertEquals([1], $res->get('a').values);
+    assertEquals(['two'], $res->get('b').values);
+    assertEquals([3, 4, 5], $res->get('c').values);
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::openVariableValues::testCollectionCapture():Boolean[1]
+{
+    let xs = [10, 20, 30];
+    let f = {| $xs->size()};
+    let res = meta::pure::functions::meta::tests::openVariableValues::nestedFunction($f);
+    assertEquals(['xs'], $res->keys());
+    assertEquals([10, 20, 30], $res->get('xs').values);
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::openVariableValues::testFormalParamNotInOpenVars():Boolean[1]
+{
+    // Lambda with formal parameter `i` — `i` is a formal arg, NOT an
+    // open variable. The captured open-var should be only `outer`.
+    let outer = 100;
+    let f = {i:Integer[1] | $i + $outer};
+    let res = $f->openVariableValues();
+    assertSameElements(['outer'], $res->keys());
+    assertEquals([100], $res->get('outer').values);
+}

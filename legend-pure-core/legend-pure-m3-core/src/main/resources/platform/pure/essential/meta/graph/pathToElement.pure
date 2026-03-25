@@ -92,6 +92,20 @@ function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testTo
     assertIs(String, pathToElement('String'));
 }
 
+function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testPathElementRoundTrip():Boolean[1]
+{
+    // pathToElement(elementToPath($e)) == $e — round-trip identity over
+    // representative PackageableElement kinds. The other tests in this
+    // file exercise each direction independently; this one ensures the
+    // two compose, catching separator-escape or composition gaps the
+    // unidirectional tests would miss.
+    assertIs(CC_Person, pathToElement(elementToPath(CC_Person)));
+    assertIs(RomanLength, pathToElement(elementToPath(RomanLength)));
+    assertIs(Integer, pathToElement(elementToPath(Integer)));
+    assertIs(String, pathToElement(elementToPath(String)));
+    assertIs(meta::pure::functions::meta::tests::model, pathToElement(elementToPath(meta::pure::functions::meta::tests::model)));
+}
+
 // To be removed
 function <<test.Test, meta::pure::profiles::doc.deprecated>> meta::pure::functions::boolean::tests::testIsNativeFunctions():Boolean[1]
 {

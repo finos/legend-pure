@@ -25,3 +25,17 @@ function <<test.Test>> meta::pure::functions::multiplicity::tests::getUpperBound
     assertEq(1, ZeroOne->getUpperBound());
     assertEq(1, PureOne->getUpperBound());
 }
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::getUpperBound::testGetUpperBoundArbitraryBound():Boolean[1]
+{
+    // Arbitrary [m..n] shape — the existing testGetUpperBound covers only
+    // the three concrete-upper named multiplicities (PureZero / ZeroOne /
+    // PureOne). ZeroMany / OneMany have no upper bound and are gated by
+    // hasUpperBound() before getUpperBound() is called, so we exercise a
+    // bounded user-constructed Multiplicity here.
+    let m = ^Multiplicity(
+        lowerBound = ^MultiplicityValue(value = 3),
+        upperBound = ^MultiplicityValue(value = 7)
+    );
+    assertEq(7, $m->getUpperBound());
+}

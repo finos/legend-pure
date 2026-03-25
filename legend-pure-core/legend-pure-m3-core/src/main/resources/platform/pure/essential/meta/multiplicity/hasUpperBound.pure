@@ -33,3 +33,14 @@ function <<test.Test>> meta::pure::functions::multiplicity::tests::hasUpperBound
 {
     assertFalse(sort_T_m__T_m_->functionType().returnMultiplicity->hasUpperBound());
 }
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::hasUpperBound::testHasUpperBoundArbitraryBound():Boolean[1]
+{
+    // User-constructed bounded Multiplicity — confirms hasUpperBound walks
+    // the upperBound.value chain on a non-bootstrap Multiplicity instance.
+    let m = ^Multiplicity(
+        lowerBound = ^MultiplicityValue(value = 2),
+        upperBound = ^MultiplicityValue(value = 5)
+    );
+    assert($m->hasUpperBound());
+}
