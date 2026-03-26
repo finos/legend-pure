@@ -136,6 +136,11 @@ public class M3ToJavaGenerator
         this.stubDefs.putAll(additionalStubs);
     }
 
+    public String getFactoryNamePrefix()
+    {
+        return this.factoryNamePrefix;
+    }
+
     public void generate(ModelRepository repository, SetIterable<String> fileNames, String fileNameStartsWith)
     {
         MutableMap<String, CoreInstance> packageToCoreInstance = Maps.mutable.of();

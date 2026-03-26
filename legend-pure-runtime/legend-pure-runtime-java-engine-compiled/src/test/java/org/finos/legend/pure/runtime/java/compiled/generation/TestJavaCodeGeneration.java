@@ -38,6 +38,9 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.stream.Stream;
 
 public class TestJavaCodeGeneration
 {
@@ -128,5 +131,361 @@ public class TestJavaCodeGeneration
             Object result1 = joinWithCommas.invoke(null, Lists.immutable.with("a", "b", "c"), ", ", executionSupport);
             Assert.assertEquals("a, b, c", result1);
         }
+    }
+
+    // --- modular generation, skip flag, idempotency ---
+
+    @Test
+    public void testModularGeneration() throws Exception
+    {
+        File directory = TMP.newFolder();
+        File classesDirectory = new File(directory, "classes");
+        classesDirectory.mkdir();
+
+        JavaCodeGeneration.doIt(
+                Sets.mutable.with("platform"),
+                Sets.fixedSize.empty(),
+                Sets.fixedSize.empty(),
+                GenerationType.modular,
+                false,
+                false,
+                null,
+                true,
+                false,  // useSingleDir=false so metadata goes to target/metadata-distributed
+                false,
+                false,
+                true,   // preventJavaCompilation
+                classesDirectory,
+                directory,
+                true,
+                new VoidLog());
+
+        // Modular generation writes metadata to directory/metadata-distributed.
+        // The serializer writes metadata/bin/*.bin and metadata/classifiers/*.idx inside it.
+        File metaDistributed = new File(directory, "metadata-distributed");
+        Assert.assertTrue("metadata-distributed directory should be created", metaDistributed.exists());
+        File binDir = new File(metaDistributed, "metadata/bin");
+        Assert.assertTrue(
+                "Modular generation should produce metadata/bin under metadata-distributed",
+                binDir.isDirectory() && binDir.list() != null && binDir.list().length > 0);
+    }
+
+    @Test
+    public void testSkipFlag_preventsGeneration() throws Exception
+    {
+        File directory = TMP.newFolder();
+        File classesDirectory = new File(directory, "classes");
+        classesDirectory.mkdir();
+
+        JavaCodeGeneration.doIt(
+                Sets.mutable.with("platform"),
+                Sets.fixedSize.empty(),
+                Sets.fixedSize.empty(),
+                GenerationType.monolithic,
+                true,   // skip=true
+                false,
+                null,
+                true,
+                true,
+                false,
+                false,
+                true,
+                classesDirectory,
+                directory,
+                true,
+                new VoidLog());
+
+        try (Stream<Path> stream = Files.walk(classesDirectory.toPath()))
+        {
+            long fileCount = stream.filter(Files::isRegularFile).count();
+            Assert.assertEquals("skip=true should produce no output files", 0, fileCount);
+        }
+    }
+
+    @Test
+    public void testGenerationIsIdempotent() throws Exception
+    {
+        File dir1 = TMP.newFolder();
+        File classes1 = new File(dir1, "classes");
+        classes1.mkdir();
+
+        File dir2 = TMP.newFolder();
+        File classes2 = new File(dir2, "classes");
+        classes2.mkdir();
+
+        // Run identical generation into two separate directories
+        for (File[] pair : new File[][]{{classes1, dir1}, {classes2, dir2}})
+        {
+            JavaCodeGeneration.doIt(
+                    Sets.mutable.with("platform"),
+                    Sets.fixedSize.empty(),
+                    Sets.fixedSize.empty(),
+                    GenerationType.monolithic,
+                    false,
+                    false,
+                    null,
+                    true,
+                    true,
+                    false,
+                    false,
+                    true,
+                    pair[0],
+                    pair[1],
+                    true,
+                    new VoidLog());
+        }
+
+        // Collect all relative file paths from each output directory
+        java.util.Set<Path> paths1 = new java.util.HashSet<>();
+        java.util.Set<Path> paths2 = new java.util.HashSet<>();
+        try (Stream<Path> s1 = Files.walk(dir1.toPath());
+             Stream<Path> s2 = Files.walk(dir2.toPath()))
+        {
+            s1.filter(Files::isRegularFile).map(p -> dir1.toPath().relativize(p)).forEach(paths1::add);
+            s2.filter(Files::isRegularFile).map(p -> dir2.toPath().relativize(p)).forEach(paths2::add);
+        }
+
+        Assert.assertEquals("Idempotency: both runs should produce the same set of files", paths1, paths2);
+
+        // Verify byte-for-byte equality for each file
+        java.util.List<Path> mismatch = new java.util.ArrayList<>();
+        for (Path rel : paths1)
+        {
+            byte[] b1 = Files.readAllBytes(dir1.toPath().resolve(rel));
+            byte[] b2 = Files.readAllBytes(dir2.toPath().resolve(rel));
+            if (!java.util.Arrays.equals(b1, b2))
+            {
+                mismatch.add(rel);
+            }
+        }
+        Assert.assertEquals("Idempotency: generated files must be byte-for-byte identical across runs",
+                java.util.Collections.emptyList(), mismatch);
+    }
+
+    // --- generateSources paths ---
+
+    @Test
+    public void testGenerateSources_writesToGeneratedSourcesDirectory() throws Exception
+    {
+        File directory     = TMP.newFolder();
+        File classesDir    = new File(directory, "classes");
+        classesDir.mkdir();
+
+        JavaCodeGeneration.doIt(
+                Sets.mutable.with("platform"),
+                Sets.fixedSize.empty(),
+                Sets.fixedSize.empty(),
+                GenerationType.monolithic,
+                false,
+                false,
+                null,
+                false,   // generateMetadata=false — fastest path
+                false,
+                true,    // generateSources=true
+                false,   // generateTest=false  → generated-sources/
+                true,    // preventJavaCompilation
+                classesDir,
+                directory,
+                false,
+                new VoidLog());
+
+        File generatedSources = new File(directory, "generated-sources");
+        Assert.assertTrue(
+                "generateSources=true, generateTest=false should create generated-sources/",
+                generatedSources.exists() && generatedSources.isDirectory());
+
+        // Package_Impl.java is a stable landmark file produced for the platform repository
+        // on every monolithic generation — assert its existence and structural content.
+        File packageImpl = new File(generatedSources,
+                "org/finos/legend/pure/generated/Package_Impl.java");
+        Assert.assertTrue(
+                "Package_Impl.java should always be generated for platform repository",
+                packageImpl.exists());
+        String packageImplSrc = new String(java.nio.file.Files.readAllBytes(packageImpl.toPath()));
+        Assert.assertTrue(
+                "Package_Impl.java should declare the correct package",
+                packageImplSrc.contains("package org.finos.legend.pure.generated"));
+        Assert.assertTrue(
+                "Package_Impl.java should declare class Package_Impl",
+                packageImplSrc.contains("class Package_Impl"));
+    }
+
+    @Test
+    public void testGenerateTestSources_writesToGeneratedTestSourcesDirectory() throws Exception
+    {
+        File directory     = TMP.newFolder();
+        File classesDir    = new File(directory, "classes");
+        classesDir.mkdir();
+
+        JavaCodeGeneration.doIt(
+                Sets.mutable.with("platform"),
+                Sets.fixedSize.empty(),
+                Sets.fixedSize.empty(),
+                GenerationType.monolithic,
+                false,
+                false,
+                null,
+                false,   // generateMetadata=false
+                false,
+                true,    // generateSources=true
+                true,    // generateTest=true  → generated-test-sources/
+                true,    // preventJavaCompilation
+                classesDir,
+                directory,
+                false,
+                new VoidLog());
+
+        File generatedTestSources = new File(directory, "generated-test-sources");
+        Assert.assertTrue(
+                "generateSources=true, generateTest=true should create generated-test-sources/",
+                generatedTestSources.exists() && generatedTestSources.isDirectory());
+
+        // PureCompiledLambda.java is a stable landmark file in the test-sources output.
+        File lambdaFile = new File(generatedTestSources,
+                "org/finos/legend/pure/generated/PureCompiledLambda.java");
+        Assert.assertTrue(
+                "PureCompiledLambda.java should always be generated in test-sources for platform",
+                lambdaFile.exists());
+        String lambdaSrc = new String(java.nio.file.Files.readAllBytes(lambdaFile.toPath()));
+        Assert.assertTrue(
+                "PureCompiledLambda.java should declare the correct package",
+                lambdaSrc.contains("package org.finos.legend.pure.generated"));
+        Assert.assertTrue(
+                "PureCompiledLambda.java should declare class PureCompiledLambda",
+                lambdaSrc.contains("class PureCompiledLambda"));
+    }
+
+    // --- error / catch block ---
+
+    @Test
+    public void testDoIt_invalidRepository_wrapsException() throws Exception
+    {
+        File directory  = TMP.newFolder();
+        File classesDir = new File(directory, "classes");
+        classesDir.mkdir();
+
+        try
+        {
+            JavaCodeGeneration.doIt(
+                    Sets.mutable.with("this_repository_does_not_exist"),
+                    Sets.fixedSize.empty(),
+                    Sets.fixedSize.empty(),
+                    GenerationType.monolithic,
+                    false,
+                    false,
+                    null,
+                    false,
+                    false,
+                    false,
+                    false,
+                    true,
+                    classesDir,
+                    directory,
+                    false,
+                    new VoidLog());
+            Assert.fail("Expected RuntimeException for unknown repository");
+        }
+        catch (RuntimeException e)
+        {
+            Assert.assertTrue(
+                    "Message should contain 'Error building Pure compiled mode jar', but was: " + e.getMessage(),
+                    e.getMessage().contains("Error building Pure compiled mode jar"));
+            // The original cause must be preserved so callers can diagnose the failure
+            Assert.assertNotNull("Exception must have a cause", e.getCause());
+        }
+    }
+
+    @Test
+    public void testDoIt_unknownExtraRepository_wrapsException() throws Exception
+    {
+        File directory  = TMP.newFolder();
+        File classesDir = new File(directory, "classes");
+        classesDir.mkdir();
+
+        try
+        {
+            JavaCodeGeneration.doIt(
+                    Sets.fixedSize.empty(),
+                    Sets.fixedSize.empty(),
+                    Sets.mutable.with("org.finos.legend.does.not.ExistRepository"),
+                    GenerationType.monolithic,
+                    false,
+                    false,
+                    null,
+                    false,
+                    false,
+                    false,
+                    false,
+                    true,
+                    classesDir,
+                    directory,
+                    false,
+                    new VoidLog());
+            Assert.fail("Expected RuntimeException for unknown extra repository");
+        }
+        catch (RuntimeException e)
+        {
+            Assert.assertTrue(
+                    "Message should contain 'Error building Pure compiled mode jar', but was: " + e.getMessage(),
+                    e.getMessage().contains("Error building Pure compiled mode jar"));
+            Assert.assertNotNull("Exception must have a cause", e.getCause());
+        }
+    }
+
+    // --- main() entry point tests (exec:java invocation pattern) ---
+    // In legend-pure, JavaCodeGeneration is called directly via exec:java with positional args:
+    //   args[0] = repository name
+    //   args[1] = classesDirectory path
+    //   args[2] = targetDirectory path
+    //   args[3] = externalAPIPackage (optional)
+    // These tests verify the argument-parsing contract so a refactor cannot silently
+    // reorder args and break the 6 exec:java build executions.
+
+    @Test
+    public void testMain_threeArgs_generatesModularOutput() throws Exception
+    {
+        File directory  = TMP.newFolder();
+        File classesDir = new File(directory, "classes");
+        classesDir.mkdir();
+
+        // Mirror the exact call used in legend-pure DSL/runtime pom.xml:
+        //   args[0] = repository, args[1] = classesDir (generated-test-resources), args[2] = targetDir
+        JavaCodeGeneration.main("platform", classesDir.getAbsolutePath(), directory.getAbsolutePath());
+
+        // main() calls doIt() with: modular, useSingleDir=true, generateSources=true, generateTest=true
+        // Metadata goes to classesDir/metadata/classifiers/platform/ (useSingleDir=true + modular)
+        File packageIdx = new File(classesDir, "metadata/classifiers/platform/Package.idx");
+        Assert.assertTrue(
+                "main(repo, classesDir, targetDir) should write metadata/classifiers/platform/Package.idx into classesDir",
+                packageIdx.exists() && packageIdx.length() > 0);
+
+        // Generated sources go to targetDir/generated-test-sources/ because main() passes generateTest=true
+        File packageImpl = new File(directory,
+                "generated-test-sources/org/finos/legend/pure/generated/Package_Impl.java");
+        Assert.assertTrue(
+                "main() should write Package_Impl.java into targetDir/generated-test-sources/",
+                packageImpl.exists());
+    }
+
+    @Test
+    public void testMain_fourArgs_externalApiPackageAccepted() throws Exception
+    {
+        // Four-arg form: args[3] is the externalAPIPackage — must not throw
+        File directory  = TMP.newFolder();
+        File classesDir = new File(directory, "classes");
+        classesDir.mkdir();
+
+        String externalPkg = "org.finos.legend.pure.generated";
+        JavaCodeGeneration.main(
+                "platform",
+                classesDir.getAbsolutePath(),
+                directory.getAbsolutePath(),
+                externalPkg);
+
+        // Package.idx still expected — verify it's produced the same as 3-arg form
+        File packageIdx = new File(classesDir, "metadata/classifiers/platform/Package.idx");
+        Assert.assertTrue(
+                "Four-arg main() should still produce metadata/classifiers/platform/Package.idx",
+                packageIdx.exists() && packageIdx.length() > 0);
     }
 }

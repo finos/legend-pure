@@ -598,6 +598,14 @@
 
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-maven-shared</artifactId>
+                <type>test-jar</type>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
                 <version>${project.version}</version>
             </dependency>
