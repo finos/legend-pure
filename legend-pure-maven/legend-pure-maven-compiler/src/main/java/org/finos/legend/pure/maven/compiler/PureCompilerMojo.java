@@ -107,9 +107,17 @@ public class PureCompilerMojo extends AbstractMojo
     @Parameter(readonly = true, required = true, defaultValue = "${project}")
     private MavenProject mavenProject;
 
+    @Parameter(defaultValue = "false", property = "pure.compiler.skip")
+    private boolean skip;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException
     {
+        if (this.skip)
+        {
+            getLog().info("Skipping Pure compilation");
+            return;
+        }
         DependencyResolutionScope dependencyResolutionScope = ProjectDependencyResolution.determineDependencyResolutionScope(this.dependencyScope, this.mojoExecution);
         URL[] dependencyUrls;
         try
@@ -184,7 +192,9 @@ public class PureCompilerMojo extends AbstractMojo
         }
     }
 
-    private File resolveOutputDirectory()
+    // Methods below are package-private for testing. Do not widen to public.
+
+    File resolveOutputDirectory()
     {
         if (this.outputDirectory != null)
         {
@@ -197,7 +207,7 @@ public class PureCompilerMojo extends AbstractMojo
         return this.projectOutputDirectory;
     }
 
-    private Set<String> resolveRepositoriesToSerialize(DependencyResolutionScope resolvedDependencyScope) throws MojoExecutionException
+    Set<String> resolveRepositoriesToSerialize(DependencyResolutionScope resolvedDependencyScope) throws MojoExecutionException
     {
         // If the user has specified repositories, use them
         if (isNonEmpty(this.repositories))
@@ -234,7 +244,7 @@ public class PureCompilerMojo extends AbstractMojo
         return foundRepositories;
     }
 
-    private boolean shouldSerializeIndividually(Set<String> resolvedRepos)
+    boolean shouldSerializeIndividually(Set<String> resolvedRepos)
     {
         // If the user has specified whether to serialize individually, use that
         if (this.compileIndividually != null)
@@ -246,12 +256,12 @@ public class PureCompilerMojo extends AbstractMojo
         return !isNonEmpty(resolvedRepos);
     }
 
-    private void forEachRepoDefinition(File directory, Consumer<? super String> consumer)
+    void forEachRepoDefinition(File directory, Consumer<? super String> consumer)
     {
         forEachRepoDefinition(directory.toPath(), consumer);
     }
 
-    private void forEachRepoDefinition(Path directory, Consumer<? super String> consumer)
+    void forEachRepoDefinition(Path directory, Consumer<? super String> consumer)
     {
         try (Stream<Path> files = Files.list(directory))
         {

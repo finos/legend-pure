@@ -21,6 +21,7 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.DependencyResolutionException;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectDependenciesResolver;
 import org.eclipse.aether.RepositorySystemSession;
@@ -36,7 +37,8 @@ import java.util.Set;
 
 import static org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaCodeGeneration.durationSinceInSeconds;
 
-@Mojo(name = "build-pure-compiled-jar", threadSafe = true)
+@Mojo(name = "build-pure-compiled-jar", threadSafe = true,
+        requiresDependencyResolution = ResolutionScope.TEST)
 public class PureCompiledJarMojo extends AbstractMojo
 {
     @Parameter(defaultValue = "${project}", readonly = true, required = true)

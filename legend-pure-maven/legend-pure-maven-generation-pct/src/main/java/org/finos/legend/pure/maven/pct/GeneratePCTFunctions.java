@@ -18,6 +18,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.finos.legend.pure.m3.pct.functions.generation.FunctionsGeneration;
 
@@ -25,11 +26,15 @@ import java.net.URLClassLoader;
 
 import static org.finos.legend.pure.maven.pct.Shared.assertPresentOrNotEmpty;
 
-@Mojo(name = "generate-pct-functions", threadSafe = true)
+@Mojo(name = "generate-pct-functions", threadSafe = true,
+        requiresDependencyResolution = ResolutionScope.TEST)
 public class GeneratePCTFunctions extends AbstractMojo
 {
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     protected MavenProject project;
+
+    @Parameter(defaultValue = "false", property = "pure.pct.functions.skip")
+    private boolean skip;
 
     @Parameter()
     private String scopeProviderMethod;
@@ -37,9 +42,15 @@ public class GeneratePCTFunctions extends AbstractMojo
     @Parameter(required = true)
     private String targetDir;
 
+
     @Override
     public void execute() throws MojoExecutionException
     {
+        if (this.skip)
+        {
+            getLog().info("Skipping PCT functions generation");
+            return;
+        }
         getLog().info("Generating PCT functions");
         assertPresentOrNotEmpty("scopeProviderMethod", scopeProviderMethod);
 
@@ -52,7 +63,7 @@ public class GeneratePCTFunctions extends AbstractMojo
         catch (Exception e)
         {
             getLog().error(e);
-            throw new RuntimeException(e);
+            throw new MojoExecutionException("Error generating PCT functions: " + e.getMessage(), e);
         }
         finally
         {
