@@ -444,7 +444,7 @@ public class DateFormat
 
         // Year
         int year = -1;
-        int previous = (string.charAt(start) == '-') ? start + 1 : start;
+        int previous = (string.charAt(start) == '-' || string.charAt(start) == '+') ? start + 1 : start;
         int index = findNonDigit(string, previous, end);
         try
         {

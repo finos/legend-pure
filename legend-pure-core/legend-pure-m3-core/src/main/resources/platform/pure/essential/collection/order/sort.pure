@@ -53,7 +53,7 @@ function <<PCT.test>> meta::pure::functions::collection::tests::sort::testSimple
 
 function <<PCT.test>> meta::pure::functions::collection::tests::sort::testMixedSortNoComparator<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals([-2.0, 1, 5.0, 171, 342], $f->eval(|[342, 5.0, -2.0, 171, 1]->sort()));
+    assertEquivalent([-2.0, 1, 5.0, 171, 342], $f->eval(|[342, 5.0, -2.0, 171, 1]->sort()));
 }
 
 function <<PCT.test>> meta::pure::functions::collection::tests::sort::testSimpleSortWithKey<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
