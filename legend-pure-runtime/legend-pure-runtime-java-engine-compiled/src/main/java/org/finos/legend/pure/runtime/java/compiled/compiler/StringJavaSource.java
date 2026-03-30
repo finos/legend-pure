@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.compiled.compiler;
 
+import org.finos.legend.pure.m3.tools.CompressorPool;
+
 import javax.tools.SimpleJavaFileObject;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -26,7 +28,6 @@ import java.util.Arrays;
 import java.util.regex.Pattern;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
 public abstract class StringJavaSource extends SimpleJavaFileObject
@@ -79,8 +80,7 @@ public abstract class StringJavaSource extends SimpleJavaFileObject
 
     private static byte[] possiblyCompressCode(byte[] codeBytes)
     {
-        Deflater deflater = new Deflater(Deflater.BEST_SPEED);
-        try
+        try (CompressorPool.CloseableDeflater deflater = CompressorPool.getInstance().borrowDeflater(Deflater.BEST_SPEED))
         {
             byte[] outBytes = new byte[codeBytes.length];
             deflater.setInput(codeBytes);
@@ -96,10 +96,6 @@ public abstract class StringJavaSource extends SimpleJavaFileObject
             }
             return Arrays.copyOfRange(outBytes, 0, compressedSize);
         }
-        finally
-        {
-            deflater.end();
-        }
     }
 
     private static String decompressToString(int originalSize, byte[] compressedCode)
@@ -109,8 +105,7 @@ public abstract class StringJavaSource extends SimpleJavaFileObject
 
     private static byte[] decompressToBytes(int originalSize, byte[] compressedCode)
     {
-        Inflater inflater = new Inflater(false);
-        try
+        try (CompressorPool.CloseableInflater inflater = CompressorPool.getInstance().borrowInflater())
         {
             inflater.setInput(compressedCode);
             byte[] codeBytes = new byte[originalSize];
@@ -129,10 +124,6 @@ public abstract class StringJavaSource extends SimpleJavaFileObject
         catch (DataFormatException e)
         {
             throw new RuntimeException("Error decompressing code", e);
-        }
-        finally
-        {
-            inflater.end();
         }
     }
 

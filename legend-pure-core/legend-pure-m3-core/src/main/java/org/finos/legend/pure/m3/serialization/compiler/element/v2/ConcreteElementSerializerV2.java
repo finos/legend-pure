@@ -21,14 +21,13 @@ import org.finos.legend.pure.m3.serialization.compiler.element.v1.ConcreteElemen
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProvider;
 import org.finos.legend.pure.m3.serialization.compiler.strings.StringIndexer;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m3.tools.CompressorPool;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
-import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
 public class ConcreteElementSerializerV2 implements ConcreteElementSerializerExtension
@@ -46,8 +45,7 @@ public class ConcreteElementSerializerV2 implements ConcreteElementSerializerExt
     @Override
     public void serialize(OutputStream stream, CoreInstance element, StringIndexer stringIndexer, ReferenceIdProvider referenceIdProvider, ProcessorSupport processorSupport)
     {
-        Deflater deflater = new Deflater(COMPRESSION_LEVEL, true);
-        try
+        try (CompressorPool.CloseableDeflater deflater = CompressorPool.getInstance().borrowDeflater(COMPRESSION_LEVEL, true))
         {
             DeflaterOutputStream zipStream = new DeflaterOutputStream(stream, deflater);
             this.v1.serialize(zipStream, element, stringIndexer, referenceIdProvider, processorSupport);
@@ -57,23 +55,14 @@ public class ConcreteElementSerializerV2 implements ConcreteElementSerializerExt
         {
             throw new UncheckedIOException(e);
         }
-        finally
-        {
-            deflater.end();
-        }
     }
 
     @Override
     public DeserializedConcreteElement deserialize(InputStream stream, StringIndexer stringIndexer, int referenceIdVersion)
     {
-        Inflater inflater = new Inflater(true);
-        try
+        try (CompressorPool.CloseableInflater inflater = CompressorPool.getInstance().borrowInflater(true))
         {
             return this.v1.deserialize(new InflaterInputStream(stream, inflater), stringIndexer, referenceIdVersion);
-        }
-        finally
-        {
-            inflater.end();
         }
     }
 }
