@@ -22,6 +22,7 @@ import org.finos.legend.pure.m3.serialization.compiler.metadata.ConcreteElementM
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementBackReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementExternalReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.FunctionsByName;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleBackReferenceIndex;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleExternalReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleFunctionNameMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleManifest;
@@ -294,6 +295,36 @@ public class ModuleMetadataSerializerV2 extends BaseModuleMetadataSerializerExte
             for (int i = 0; i < functionCount; i++)
             {
                 builder.addFunctionsByName(readFunctionsByName(stringIndexedReader));
+            }
+            return builder.build();
+        }
+    }
+
+    @Override
+    public void serializeBackReferenceIndex(OutputStream stream, ModuleBackReferenceIndex backReferenceIndex, StringIndexer stringIndexer)
+    {
+        try (Writer writer = BinaryWriters.newBinaryWriter(stream, false))
+        {
+            Writer stringIndexedWriter = stringIndexer.writeStringIndex(writer, collectStrings(backReferenceIndex));
+            stringIndexedWriter.writeString(backReferenceIndex.getModuleName());
+            ImmutableList<String> elementPaths = backReferenceIndex.getElementPaths();
+            stringIndexedWriter.writeInt(elementPaths.size());
+            elementPaths.forEach(stringIndexedWriter::writeString);
+        }
+    }
+
+    @Override
+    public ModuleBackReferenceIndex deserializeBackReferenceIndex(InputStream stream, StringIndexer stringIndexer)
+    {
+        try (Reader reader = BinaryReaders.newBinaryReader(stream, false))
+        {
+            Reader stringIndexedReader = stringIndexer.readStringIndex(reader);
+            String moduleName = stringIndexedReader.readString();
+            int elementCount = stringIndexedReader.readInt();
+            ModuleBackReferenceIndex.Builder builder = ModuleBackReferenceIndex.builder(elementCount).withModuleName(moduleName);
+            for (int i = 0; i < elementCount; i++)
+            {
+                builder.addElementPath(stringIndexedReader.readString());
             }
             return builder.build();
         }

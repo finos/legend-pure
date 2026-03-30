@@ -17,6 +17,7 @@ package org.finos.legend.pure.m3.serialization.compiler.file;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.serialization.compiler.element.ConcreteElementSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementBackReferenceMetadata;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleBackReferenceIndex;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleBackReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleExternalReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleFunctionNameMetadata;
@@ -402,6 +403,7 @@ public class FileSerializer
         try
         {
             moduleBackRefMetadata.getBackReferences().forEach(br -> serializeModuleElementBackReferenceMetadata(directory, moduleBackRefMetadata.getModuleName(), br, filePathVersion, serializerVersion));
+            serializeModuleBackReferenceIndex(directory, ModuleBackReferenceIndex.fromBackReferenceMetadata(moduleBackRefMetadata), filePathVersion, serializerVersion);
         }
         catch (Exception e)
         {
@@ -432,6 +434,7 @@ public class FileSerializer
         try
         {
             moduleBackRefMetadata.getBackReferences().forEach(br -> serializeModuleElementBackReferenceMetadata(zipStream, moduleBackRefMetadata.getModuleName(), br, filePathVersion, serializerVersion));
+            serializeModuleBackReferenceIndex(zipStream, ModuleBackReferenceIndex.fromBackReferenceMetadata(moduleBackRefMetadata), filePathVersion, serializerVersion);
         }
         catch (Exception e)
         {
@@ -525,6 +528,90 @@ public class FileSerializer
         return entryName;
     }
 
+
+    // Serialize module function name metadata to directory
+
+    // Serialize module back reference index to directory
+
+    public Path serializeModuleBackReferenceIndex(Path directory, ModuleBackReferenceIndex backReferenceIndex)
+    {
+        return serializeModuleBackReferenceIndex(directory, backReferenceIndex, this.filePathProvider.getDefaultVersion(), this.moduleSerializer.getDefaultVersion());
+    }
+
+    public Path serializeModuleBackReferenceIndex(Path directory, ModuleBackReferenceIndex backReferenceIndex, int filePathVersion, int serializerVersion)
+    {
+        Objects.requireNonNull(directory, "directory is required");
+        Objects.requireNonNull(backReferenceIndex, "back reference index is required");
+
+        long start = System.nanoTime();
+        Path filePath = this.filePathProvider.getModuleBackReferenceIndexFilePath(directory, backReferenceIndex.getModuleName(), filePathVersion);
+        LOGGER.debug("Serializing module {} back reference index to {}", backReferenceIndex.getModuleName(), filePath);
+        try
+        {
+            Files.createDirectories(filePath.getParent());
+            try (OutputStream stream = new BufferedOutputStream(Files.newOutputStream(filePath)))
+            {
+                this.moduleSerializer.serializeBackReferenceIndex(stream, backReferenceIndex, serializerVersion);
+            }
+        }
+        catch (Exception e)
+        {
+            LOGGER.error("Error serializing module {} back reference index to {}", backReferenceIndex.getModuleName(), filePath, e);
+            StringBuilder builder = new StringBuilder("Error serializing back reference index for module ").append(backReferenceIndex.getModuleName()).append(" to ").append(filePath);
+            String eMessage = e.getMessage();
+            if (eMessage != null)
+            {
+                builder.append(": ").append(eMessage);
+            }
+            throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
+        }
+        finally
+        {
+            long end = System.nanoTime();
+            LOGGER.debug("Finished serializing module {} back reference index to {} in {}s", backReferenceIndex.getModuleName(), filePath, (end - start) / 1_000_000_000.0);
+        }
+        return filePath;
+    }
+
+    // Serialize module back reference index to zip
+
+    public String serializeModuleBackReferenceIndex(ZipOutputStream zipStream, ModuleBackReferenceIndex backReferenceIndex)
+    {
+        return serializeModuleBackReferenceIndex(zipStream, backReferenceIndex, this.filePathProvider.getDefaultVersion(), this.moduleSerializer.getDefaultVersion());
+    }
+
+    public String serializeModuleBackReferenceIndex(ZipOutputStream zipStream, ModuleBackReferenceIndex backReferenceIndex, int filePathVersion, int serializerVersion)
+    {
+        Objects.requireNonNull(zipStream, "zip stream is required");
+        Objects.requireNonNull(backReferenceIndex, "back reference index is required");
+
+        long start = System.nanoTime();
+        String entryName = this.filePathProvider.getModuleBackReferenceIndexFilePath(backReferenceIndex.getModuleName(), "/", filePathVersion);
+        LOGGER.debug("Serializing module {} back reference index to zip entry '{}'", backReferenceIndex.getModuleName(), entryName);
+        try
+        {
+            zipStream.putNextEntry(new ZipEntry(entryName));
+            this.moduleSerializer.serializeBackReferenceIndex(zipStream, backReferenceIndex, serializerVersion);
+            zipStream.closeEntry();
+        }
+        catch (Exception e)
+        {
+            LOGGER.error("Error serializing module {} back reference index to zip entry '{}'", backReferenceIndex.getModuleName(), entryName, e);
+            StringBuilder builder = new StringBuilder("Error serializing back reference index for module ").append(backReferenceIndex.getModuleName()).append(" to ").append(entryName);
+            String eMessage = e.getMessage();
+            if (eMessage != null)
+            {
+                builder.append(": ").append(eMessage);
+            }
+            throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
+        }
+        finally
+        {
+            long end = System.nanoTime();
+            LOGGER.debug("Finished serializing module {} back reference index to zip entry '{}' in {}s", backReferenceIndex.getModuleName(), entryName, (end - start) / 1_000_000_000.0);
+        }
+        return entryName;
+    }
 
     // Serialize module function name metadata to directory
 

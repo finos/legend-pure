@@ -80,6 +80,18 @@ public interface FilePathProviderExtension extends SerializerExtension
     String getModuleElementBackReferenceMetadataFilePath(String moduleName, String elementPath, String fsSeparator);
 
     /**
+     * Get the relative file path for the back-reference element index file for the given module. This index lists
+     * which element paths have back-reference data in the module. This should be a relative file path, and must not
+     * start with the path separator. It should never be null or empty. Each name in the path should be no longer than
+     * 255 bytes when encoded in UTF-16.
+     *
+     * @param moduleName  module name
+     * @param fsSeparator filesystem path separator
+     * @return relative file path
+     */
+    String getModuleBackReferenceIndexFilePath(String moduleName, String fsSeparator);
+
+    /**
      * Get the relative file path for the function name metadata file for the given module. This should be a relative
      * file path, and must not start with the path separator. It should never be null or empty. Each name in the path
      * should be no longer than 255 bytes when encoded in UTF-16.

@@ -22,6 +22,8 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.impl.utility.Iterate;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -37,14 +39,16 @@ public class MetadataIndex
     private final PackageIndex packages;
     private final MapIterable<String, String> elementModuleIndex;
     private final MapIterable<String, ImmutableList<String>> moduleReverseDependencyIndex;
+    private final MapIterable<String, SetIterable<String>> backReferenceIndexes;
 
-    MetadataIndex(Iterable<? extends ModuleManifest> modules)
+    MetadataIndex(Iterable<? extends ModuleManifest> modules, Iterable<? extends ModuleBackReferenceIndex> backReferenceIndexes)
     {
         this.modules = ModuleIndex.buildIndex(modules);
         this.elements = ElementIndex.buildIndex(this.modules);
         this.packages = PackageIndex.buildIndex(this.elements);
         this.elementModuleIndex = buildElementModuleIndex(this.modules);
         this.moduleReverseDependencyIndex = buildModuleReverseDependencyIndex(this.modules);
+        this.backReferenceIndexes = buildBackReferenceElementSets(backReferenceIndexes);
     }
 
     @Override
@@ -242,11 +246,26 @@ public class MetadataIndex
      * Get the module names that could have back-reference data for the given element path. For a concrete element, this
      * is the element's own module plus all modules that transitively depend on it. For a virtual package or unknown
      * element, this returns all module names.
+     * <p>
+     * If a per-module back-reference element index is available, only modules whose index contains the given element
+     * path are included. If no index is available for a module, it is included unconditionally (fallback to probing).
      *
      * @param elementPath element path
      * @return module names that could have back-reference data
      */
     public Iterable<String> getBackReferenceModuleNames(String elementPath)
+    {
+        Iterable<String> possibleModules = getPossibleBackReferenceModuleNames(elementPath);
+        return this.backReferenceIndexes.isEmpty() ?
+               possibleModules :
+               Iterate.select(possibleModules, candidate ->
+               {
+                   SetIterable<String> elementSet = this.backReferenceIndexes.get(candidate);
+                   return (elementSet == null) || elementSet.contains(elementPath);
+               }, Lists.mutable.empty());
+    }
+
+    private Iterable<String> getPossibleBackReferenceModuleNames(String elementPath)
     {
         String moduleName = this.elementModuleIndex.get(elementPath);
         if (moduleName != null)
@@ -257,7 +276,6 @@ public class MetadataIndex
                 return result;
             }
         }
-        // Fall back to all modules for virtual packages or unknown elements
         return getAllModuleNames();
     }
 
@@ -271,6 +289,7 @@ public class MetadataIndex
     public static class Builder
     {
         private final MutableList<ModuleManifest> modules = Lists.mutable.empty();
+        private final MutableList<ModuleBackReferenceIndex> backReferenceIndexes = Lists.mutable.empty();
 
         private Builder()
         {
@@ -293,9 +312,21 @@ public class MetadataIndex
             return withModules(Arrays.asList(modules));
         }
 
+        public Builder withBackReferenceIndex(ModuleBackReferenceIndex index)
+        {
+            this.backReferenceIndexes.add(Objects.requireNonNull(index));
+            return this;
+        }
+
+        public Builder withBackReferenceIndexes(Iterable<? extends ModuleBackReferenceIndex> indexes)
+        {
+            indexes.forEach(this::withBackReferenceIndex);
+            return this;
+        }
+
         public MetadataIndex build()
         {
-            return new MetadataIndex(this.modules);
+            return new MetadataIndex(this.modules, this.backReferenceIndexes);
         }
     }
 
@@ -345,5 +376,12 @@ public class MetadataIndex
         });
 
         return result;
+    }
+
+    private static MapIterable<String, SetIterable<String>> buildBackReferenceElementSets(Iterable<? extends ModuleBackReferenceIndex> indexes)
+    {
+        MutableMap<String, SetIterable<String>> map = Maps.mutable.empty();
+        indexes.forEach(index -> map.put(index.getModuleName(), Sets.immutable.withAll(index.getElementPaths())));
+        return map;
     }
 }

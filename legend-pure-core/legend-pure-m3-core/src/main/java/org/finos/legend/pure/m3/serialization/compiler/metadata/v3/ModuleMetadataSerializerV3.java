@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m3.serialization.compiler.metadata.v3;
 
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementBackReferenceMetadata;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleBackReferenceIndex;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleExternalReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleFunctionNameMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleManifest;
@@ -160,6 +161,30 @@ public class ModuleMetadataSerializerV3 implements ModuleMetadataSerializerExten
         try (CompressorPool.CloseableInflater inflater = CompressorPool.getInstance().borrowInflater(true))
         {
             return this.v2.deserializeFunctionNameMetadata(new InflaterInputStream(stream, inflater), stringIndexer);
+        }
+    }
+
+    @Override
+    public void serializeBackReferenceIndex(OutputStream stream, ModuleBackReferenceIndex backReferenceIndex, StringIndexer stringIndexer)
+    {
+        try (CompressorPool.CloseableDeflater deflater = CompressorPool.getInstance().borrowDeflater(COMPRESSION_LEVEL, true))
+        {
+            DeflaterOutputStream zipStream = new DeflaterOutputStream(stream, deflater);
+            this.v2.serializeBackReferenceIndex(zipStream, backReferenceIndex, stringIndexer);
+            zipStream.finish();
+        }
+        catch (IOException e)
+        {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public ModuleBackReferenceIndex deserializeBackReferenceIndex(InputStream stream, StringIndexer stringIndexer)
+    {
+        try (CompressorPool.CloseableInflater inflater = CompressorPool.getInstance().borrowInflater(true))
+        {
+            return this.v2.deserializeBackReferenceIndex(new InflaterInputStream(stream, inflater), stringIndexer);
         }
     }
 }

@@ -33,7 +33,7 @@ import org.finos.legend.pure.m3.serialization.compiler.file.FileDeserializer;
 import org.finos.legend.pure.m3.serialization.compiler.file.FilePathProvider;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ConcreteElementMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.MetadataIndex;
-import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleManifest;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleBackReferenceIndex;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolver;
 import org.finos.legend.pure.m3.serialization.compiler.strings.StringIndexer;
@@ -249,20 +249,7 @@ public class MetadataPelt implements Metadata
                         .withSerializers(elementDeserializer, moduleMetadataSerializer)
                         .build();
 
-                MutableMap<String, ModuleManifest> manifestsByModule = Maps.mutable.empty();
-                Deque<String> modulesToLoad = new ArrayDeque<>(this.repositories);
-                while (!modulesToLoad.isEmpty())
-                {
-                    manifestsByModule.getIfAbsentPutWithKey(modulesToLoad.pollFirst(), m ->
-                    {
-                        ModuleManifest manifest = (this.directory == null) ?
-                                fileDeserializer.deserializeModuleManifest(this.classLoader, m) :
-                                fileDeserializer.deserializeModuleManifest(this.directory, m);
-                        modulesToLoad.addAll(manifest.getDependencies().castToList());
-                        return manifest;
-                    });
-                }
-                MetadataIndex metadataIndex = MetadataIndex.builder().withModules(manifestsByModule.values()).build();
+                MetadataIndex metadataIndex = buildMetadataIndex(fileDeserializer);
                 ElementLoader.Builder elementLoaderBuilder = ElementLoader.builder()
                         .withMetadataIndex(metadataIndex)
                         .withFileDeserializer(fileDeserializer)
@@ -285,6 +272,31 @@ public class MetadataPelt implements Metadata
                 long end = System.nanoTime();
                 LOGGER.debug("Finished building metadata in {}s", (end - start) / 1_000_000_000.0);
             }
+        }
+
+        private MetadataIndex buildMetadataIndex(FileDeserializer fileDeserializer)
+        {
+            MetadataIndex.Builder metadataIndexBuilder = MetadataIndex.builder();
+            MutableSet<String> modulesFound = Sets.mutable.ofInitialCapacity(this.repositories.size());
+            Deque<String> modulesToLoad = new ArrayDeque<>(this.repositories);
+            while (!modulesToLoad.isEmpty())
+            {
+                String module = modulesToLoad.pollFirst();
+                if (modulesFound.add(module))
+                {
+                    metadataIndexBuilder.withModule((this.directory == null) ?
+                                                    fileDeserializer.deserializeModuleManifest(this.classLoader, module) :
+                                                    fileDeserializer.deserializeModuleManifest(this.directory, module));
+                    ModuleBackReferenceIndex backRefIndex = (this.directory == null) ?
+                                                            fileDeserializer.deserializeModuleBackReferenceIndexIfPresent(this.classLoader, module) :
+                                                            fileDeserializer.deserializeModuleBackReferenceIndexIfPresent(this.directory, module);
+                    if (backRefIndex != null)
+                    {
+                        metadataIndexBuilder.withBackReferenceIndex(backRefIndex);
+                    }
+                }
+            }
+            return metadataIndexBuilder.build();
         }
     }
 }

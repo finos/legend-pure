@@ -559,4 +559,117 @@ public class TestMetadataIndex extends AbstractMetadataTest
                 Lists.mutable.withAll(index.getBackReferenceModuleNames("d::Element")).sortThis());
     }
 
+    @Test
+    public void testBackReferenceModulesWithIndex()
+    {
+        // Dependency chain: A <- B <- C
+        // Back-reference indexes: B has back refs for ElementA, C does not
+        ConcreteElementMetadata elementA = newClass("a::ElementA", "/a/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleA = ModuleManifest.builder("a").withElement(elementA).build();
+
+        ConcreteElementMetadata elementB = newClass("b::ElementB", "/b/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleB = ModuleManifest.builder("b").withDependency("a").withElement(elementB).build();
+
+        ConcreteElementMetadata elementC = newClass("c::ElementC", "/c/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleC = ModuleManifest.builder("c").withDependency("b").withElement(elementC).build();
+
+        // B has back refs for ElementA only
+        ModuleBackReferenceIndex indexB = ModuleBackReferenceIndex.builder()
+                .withModuleName("b")
+                .addElementPath("a::ElementA")
+                .build();
+
+        // C has no back refs for anything
+        ModuleBackReferenceIndex indexC = ModuleBackReferenceIndex.builder()
+                .withModuleName("c")
+                .build();
+
+        // A has back refs for ElementA (itself)
+        ModuleBackReferenceIndex indexA = ModuleBackReferenceIndex.builder()
+                .withModuleName("a")
+                .addElementPath("a::ElementA")
+                .build();
+
+        MetadataIndex index = MetadataIndex.builder()
+                .withModules(moduleA, moduleB, moduleC)
+                .withBackReferenceIndex(indexA)
+                .withBackReferenceIndex(indexB)
+                .withBackReferenceIndex(indexC)
+                .build();
+
+        // For ElementA: without index would be {a, b, c}. With index, C is excluded (no back refs for ElementA in C)
+        Assert.assertEquals(
+                Lists.mutable.with("a", "b"),
+                Lists.mutable.withAll(index.getBackReferenceModuleNames("a::ElementA")).sortThis());
+
+        // For ElementB: without index would be {b, c}. B's index doesn't have ElementB, C's index doesn't have ElementB
+        Assert.assertEquals(
+                Lists.mutable.empty(),
+                Lists.mutable.withAll(index.getBackReferenceModuleNames("b::ElementB")).sortThis());
+
+        // For ElementC: without index would be {c}. C's index is empty
+        Assert.assertEquals(
+                Lists.mutable.empty(),
+                Lists.mutable.withAll(index.getBackReferenceModuleNames("c::ElementC")).sortThis());
+    }
+
+    @Test
+    public void testBackReferenceModulesWithPartialIndex()
+    {
+        // When index is only available for some modules, modules without index should be included as fallback
+        ConcreteElementMetadata elementA = newClass("a::ElementA", "/a/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleA = ModuleManifest.builder("a").withElement(elementA).build();
+
+        ConcreteElementMetadata elementB = newClass("b::ElementB", "/b/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleB = ModuleManifest.builder("b").withDependency("a").withElement(elementB).build();
+
+        ConcreteElementMetadata elementC = newClass("c::ElementC", "/c/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleC = ModuleManifest.builder("c").withDependency("a").withElement(elementC).build();
+
+        // Only module B has a back-reference index (with ElementA); modules A and C do not
+        ModuleBackReferenceIndex indexB = ModuleBackReferenceIndex.builder()
+                .withModuleName("b")
+                .addElementPath("a::ElementA")
+                .build();
+
+        MetadataIndex index = MetadataIndex.builder()
+                .withModules(moduleA, moduleB, moduleC)
+                .withBackReferenceIndex(indexB)
+                .build();
+
+        // For ElementA: candidates are {a, b, c}
+        // A has no index -> included (fallback)
+        // B has index with ElementA -> included
+        // C has no index -> included (fallback)
+        Assert.assertEquals(
+                Lists.mutable.with("a", "b", "c"),
+                Lists.mutable.withAll(index.getBackReferenceModuleNames("a::ElementA")).sortThis());
+
+        // For ElementB: candidates are {b}
+        // B has index but doesn't have ElementB -> excluded
+        Assert.assertEquals(
+                Lists.mutable.empty(),
+                Lists.mutable.withAll(index.getBackReferenceModuleNames("b::ElementB")).sortThis());
+    }
+
+    @Test
+    public void testBackReferenceModulesNoIndexFallback()
+    {
+        // When no indexes are provided at all, should behave exactly as before
+        ConcreteElementMetadata elementA = newClass("a::ElementA", "/a/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleA = ModuleManifest.builder("a").withElement(elementA).build();
+
+        ConcreteElementMetadata elementB = newClass("b::ElementB", "/b/source.pure", 1, 1, 5, 1);
+        ModuleManifest moduleB = ModuleManifest.builder("b").withDependency("a").withElement(elementB).build();
+
+        MetadataIndex index = MetadataIndex.builder()
+                .withModules(moduleA, moduleB)
+                .build();
+
+        // Same as original behavior: element in A gets {a, b}
+        Assert.assertEquals(
+                Lists.mutable.with("a", "b"),
+                Lists.mutable.withAll(index.getBackReferenceModuleNames("a::ElementA")).sortThis());
+    }
+
 }

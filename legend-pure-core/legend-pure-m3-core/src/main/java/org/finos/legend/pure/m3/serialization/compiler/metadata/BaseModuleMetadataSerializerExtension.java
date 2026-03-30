@@ -128,4 +128,12 @@ public abstract class BaseModuleMetadataSerializerExtension implements ModuleMet
         });
         return stringSet;
     }
+
+    protected static MutableSet<String> collectStrings(ModuleBackReferenceIndex backRefIndex)
+    {
+        MutableSet<String> stringSet = Sets.mutable.ofInitialCapacity(backRefIndex.size() + 1);
+        stringSet.add(backRefIndex.getModuleName());
+        stringSet.addAllIterable(backRefIndex.getElementPaths());
+        return stringSet;
+    }
 }
