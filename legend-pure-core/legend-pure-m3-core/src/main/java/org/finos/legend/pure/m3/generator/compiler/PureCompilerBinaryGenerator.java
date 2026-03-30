@@ -175,7 +175,7 @@ public class PureCompilerBinaryGenerator
             try (URLClassLoader outputClassLoader = newClassLoaderWithOutputDirectory(classLoader, outputDirectory))
             {
                 PureCompilerLoader loader = PureCompilerLoader.newLoader(outputClassLoader);
-                orderedModules.forEach(m -> serializeModules(outputDirectory, classLoader, Sets.immutable.with(m), allRepositories, loader, filePathProvider));
+                orderedModules.forEach(m -> serializeModules(outputDirectory, classLoader, Sets.immutable.with(m), allRepositories.subset(m), loader, filePathProvider));
             }
             catch (IOException e)
             {
