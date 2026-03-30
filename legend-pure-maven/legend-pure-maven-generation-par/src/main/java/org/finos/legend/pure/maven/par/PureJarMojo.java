@@ -93,12 +93,20 @@ public class PureJarMojo extends AbstractMojo
     @Parameter(readonly = true, required = true, defaultValue = "${project}")
     private MavenProject mavenProject;
 
+    @Parameter(defaultValue = "false", property = "pure.jar.skip")
+    private boolean skip;
+
     @Component
     private ProjectDependenciesResolver mavenProjectDependenciesResolver;
 
     @Override
     public void execute() throws MojoExecutionException
     {
+        if (this.skip)
+        {
+            getLog().info("Skipping Pure JAR generation");
+            return;
+        }
         ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
         try
         {

@@ -18,6 +18,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.runtime.java.compiled.testHelper.PCTReportGenerator;
@@ -28,11 +29,15 @@ import java.util.Set;
 import static org.finos.legend.pure.maven.pct.Shared.assertPresentOrNotEmpty;
 
 
-@Mojo(name = "generate-pct-report", threadSafe = true)
+@Mojo(name = "generate-pct-report", threadSafe = true,
+        requiresDependencyResolution = ResolutionScope.TEST)
 public class GeneratePCTReport extends AbstractMojo
 {
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     protected MavenProject project;
+
+    @Parameter(defaultValue = "false", property = "pure.pct.report.skip")
+    private boolean skip;
 
     @Parameter()
     private Mode mode;
@@ -46,6 +51,11 @@ public class GeneratePCTReport extends AbstractMojo
     @Override
     public void execute() throws MojoExecutionException
     {
+        if (this.skip)
+        {
+            getLog().info("Skipping PCT report generation");
+            return;
+        }
         getLog().info("Generating PCT report");
         assertPresentOrNotEmpty("mode", mode);
         assertPresentOrNotEmpty("PCTTestSuites", PCTTestSuites);
@@ -74,9 +84,13 @@ public class GeneratePCTReport extends AbstractMojo
                 org.finos.legend.pure.runtime.java.interpreted.testHelper.PCTReportGenerator.generateInterpreted(targetDir, Lists.mutable.withAll(PCTTestSuites));
             }
         }
+        catch (MojoExecutionException e)
+        {
+            throw e;
+        }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new MojoExecutionException("Error generating PCT report: " + e.getMessage(), e);
         }
         finally
         {

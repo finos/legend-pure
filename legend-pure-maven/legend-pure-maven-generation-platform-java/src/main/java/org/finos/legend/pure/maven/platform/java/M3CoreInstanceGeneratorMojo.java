@@ -150,7 +150,9 @@ public class M3CoreInstanceGeneratorMojo extends AbstractMojo
         return urls;
     }
 
-    private DependencyFilter getDependencyFilter(String resolvedDependencyScope) throws MojoExecutionException
+    // Methods below are package-private for testing. Do not widen to public.
+
+    DependencyFilter getDependencyFilter(String resolvedDependencyScope) throws MojoExecutionException
     {
         switch (resolvedDependencyScope)
         {
@@ -181,14 +183,14 @@ public class M3CoreInstanceGeneratorMojo extends AbstractMojo
         }
     }
 
-    private Path resolveOutputDirectory()
+    Path resolveOutputDirectory()
     {
         return (this.outputDir == null) ?
                this.projectBuildDirectory.toPath().resolve(inTestPhase() ? "generated-test-sources" : "generated-sources") :
                this.outputDir.toPath();
     }
 
-    private String resolveDependencyScope()
+    String resolveDependencyScope()
     {
         if (this.dependencyScope != null)
         {
@@ -201,7 +203,7 @@ public class M3CoreInstanceGeneratorMojo extends AbstractMojo
         return COMPILE_RESOLUTION_SCOPE;
     }
 
-    private boolean inTestPhase()
+    boolean inTestPhase()
     {
         switch (this.execution.getLifecyclePhase())
         {
