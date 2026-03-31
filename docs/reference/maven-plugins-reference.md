@@ -444,3 +444,12 @@ following plugins you need:
 [Build & CI Guide](../guides/build-and-ci.md) ·
 [Module Reference](../architecture/modules.md) ·
 [Compiler Pipeline](../architecture/compiler-pipeline.md)*
+
+---
+
+## Real-world usage patterns
+
+For detailed examples of how these plugins are invoked across the legend-pure
+and legend-engine codebases — including exec:java argument contracts, the
+dominant legend-engine configuration, and PCT report mode usage — see
+[Maven Plugins — Real-world Usage Patterns](maven-plugins-usage-patterns.md).
