@@ -19,7 +19,6 @@ import org.eclipse.aether.util.filter.ScopeDependencyFilter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -67,16 +66,29 @@ public enum DependencyResolutionScope
 
     public static DependencyResolutionScope fromName(String name)
     {
-        for (DependencyResolutionScope scope: DependencyResolutionScope.values())
+        if (name != null)
         {
-            if (scope.getName().equalsIgnoreCase(name))
+            for (DependencyResolutionScope scope : DependencyResolutionScope.values())
             {
-                return scope;
+                if (name.equalsIgnoreCase(scope.getName()))
+                {
+                    return scope;
+                }
             }
         }
-        throw new IllegalArgumentException(String.format("Unknown dependency resolution scope: '%s'; valid values: %s",
-                name,
-                Arrays.stream(DependencyResolutionScope.values()).map(DependencyResolutionScope::getName).collect(Collectors.joining(", ", "[", "]")))
-        );
+        StringBuilder builder = new StringBuilder("Unknown dependency resolution scope: ");
+        if (name == null)
+        {
+            builder.append("null");
+        }
+        else
+        {
+            builder.append('\'').append(name).append('\'');
+        }
+        builder.append("; valid values: [");
+        Arrays.stream(DependencyResolutionScope.values()).forEach(v -> builder.append(v.getName()).append(", "));
+        builder.setLength(builder.length() - 2);
+        builder.append(']');
+        throw new IllegalArgumentException(builder.toString());
     }
 }
