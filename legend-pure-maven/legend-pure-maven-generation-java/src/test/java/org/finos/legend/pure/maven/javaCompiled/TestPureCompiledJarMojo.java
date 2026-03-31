@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.maven.javaCompiled;
 
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.finos.legend.pure.maven.shared.MojoTestSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaCodeGeneration;
@@ -279,18 +280,11 @@ public class TestPureCompiledJarMojo
         classesDir.mkdir();
 
         PureCompiledJarMojo mojo = buildMojo(targetDir, classesDir, setOf("this_repository_does_not_exist"));
-        try
-        {
-            mojo.execute();
-            Assert.fail("Expected MojoExecutionException for unknown repository");
-        }
-        catch (org.apache.maven.plugin.MojoExecutionException e)
-        {
-            Assert.assertTrue(
-                    "Message should contain 'Error building Pure compiled mode jar', but was: " + e.getMessage(),
-                    e.getMessage().contains("Error building Pure compiled mode jar"));
-            Assert.assertNotNull("Cause must be preserved", e.getCause());
-        }
+        MojoExecutionException e = Assert.assertThrows(MojoExecutionException.class, mojo::execute);
+        Assert.assertTrue(
+                "Message should contain 'Error building Pure compiled mode jar', but was: " + e.getMessage(),
+                e.getMessage().contains("Error building Pure compiled mode jar"));
+        Assert.assertNotNull("Cause must be preserved", e.getCause());
     }
 
     // --- helpers ---
