@@ -43,6 +43,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.jar.JarOutputStream;
 
 public class TestFileSerializer extends AbstractPureTestWithCoreCompiled
@@ -127,6 +128,95 @@ public class TestFileSerializer extends AbstractPureTestWithCoreCompiled
             Assert.assertEquals(noSuchElementPath, e.getElementPath());
             Assert.assertEquals("Element '" + noSuchElementPath + "' not found: cannot find resource " + filePathProvider.getElementResourceName(noSuchElementPath), e.getMessage());
         }
+    }
+
+    /**
+     * Serialising the same element a second time into the same directory must
+     * leave the target file completely untouched: same bytes AND same
+     * last-modified timestamp.  This is the "skip-if-identical" behaviour
+     * introduced in {@code FileSerializer.writeAtomically}.
+     *
+     * <p>Note: the check is inherently non-atomic — another thread could replace
+     * the file between the content comparison and the timestamp read — but for
+     * a single-threaded test this is sufficient to verify the fast-path.</p>
+     */
+    @Test
+    public void testWriteIfModified_identicalContent_preservesTimestamp() throws IOException, InterruptedException
+    {
+        Path directory = TMP.newFolder().toPath();
+
+        // Pick any element that has source information so it will be serialized
+        CoreInstance element = GraphTools.getTopLevelAndPackagedElements(processorSupport)
+                .select(e -> e.getSourceInformation() != null)
+                .getFirst();
+        Assert.assertNotNull("No serializable element found", element);
+
+        String elementPath = PackageableElement.getUserPathForPackageableElement(element);
+        Path filePath = filePathProvider.getElementFilePath(directory, elementPath);
+
+        // First write – creates the file
+        fileSerializer.serializeElement(directory, element);
+        Assert.assertTrue("File should exist after first write", Files.exists(filePath));
+
+        FileTime timestampAfterFirstWrite = Files.getLastModifiedTime(filePath);
+
+        // Ensure the filesystem clock can advance before the second write.
+        // Most filesystems have at least 1 ms resolution; 50 ms is a safe margin.
+        Thread.sleep(50);
+
+        // Second write – same content, file must not be touched
+        fileSerializer.serializeElement(directory, element);
+
+        FileTime timestampAfterSecondWrite = Files.getLastModifiedTime(filePath);
+
+        Assert.assertEquals(
+                "Re-serialising identical content must not change the file's last-modified timestamp for " + elementPath,
+                timestampAfterFirstWrite,
+                timestampAfterSecondWrite);
+    }
+
+    /**
+     * When the on-disk file has different content from the newly serialised bytes
+     * the file must be atomically replaced.  After replacement the file's content
+     * must be correct and its timestamp must be newer than the original.
+     */
+    @Test
+    public void testWriteIfModified_differentContent_replacesFile() throws IOException, InterruptedException
+    {
+        Path directory = TMP.newFolder().toPath();
+
+        CoreInstance element = GraphTools.getTopLevelAndPackagedElements(processorSupport)
+                .select(e -> e.getSourceInformation() != null)
+                .getFirst();
+        Assert.assertNotNull("No serializable element found", element);
+
+        String elementPath = PackageableElement.getUserPathForPackageableElement(element);
+        Path filePath = filePathProvider.getElementFilePath(directory, elementPath);
+
+        // Write a known-wrong file to the target path directly
+        Files.createDirectories(filePath.getParent());
+        Files.write(filePath, new byte[]{0x00, 0x01, 0x02, 0x03});
+
+        FileTime timestampOfWrongFile = Files.getLastModifiedTime(filePath);
+
+        // Ensure the clock can advance so a new write will have a strictly later timestamp
+        Thread.sleep(50);
+
+        // Serialise the real content – must replace the stub file
+        fileSerializer.serializeElement(directory, element);
+
+        Assert.assertTrue("File should still exist after replacement", Files.exists(filePath));
+
+        FileTime timestampAfterReplacement = Files.getLastModifiedTime(filePath);
+        Assert.assertTrue(
+                "Replacing a file with different content must update the last-modified timestamp for " + elementPath,
+                timestampAfterReplacement.compareTo(timestampOfWrongFile) > 0);
+
+        // Content must now be the correctly serialised element
+        Assert.assertEquals(
+                elementPath,
+                getExpectedDeserializedElement(element),
+                fileDeserializer.deserializeElement(directory, elementPath));
     }
 
     private DeserializedConcreteElement getExpectedDeserializedElement(CoreInstance element)

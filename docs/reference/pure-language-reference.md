@@ -135,6 +135,27 @@ let doubled = $x * 2;
 | `Number` | *(abstract)* | Supertype of `Integer`, `Float`, `Decimal` |
 | `Any` | *(abstract)* | Root type; every Pure type is a subtype |
 
+### `Any` and `Nil`
+
+Two special types appear in function signatures throughout the standard library:
+
+- **`Any`** — the top type. Every type is a subtype of `Any`. Use `Any[*]` when
+  a parameter must accept values of any type. Return type `Any[1]` means the
+  caller must `cast` or `match` before using the result as anything specific.
+
+- **`Nil`** — the bottom type. `Nil` is a subtype of every type. It never appears
+  in user code directly; the compiler uses it in two places:
+  - As the parameter lower bound in `match` branch lambdas
+    (`Function<{Nil[n]->T[m]}>`) so that branches with any concrete parameter
+    type are accepted.
+  - As the type of an empty collection literal `[]` (`Nil[0]`), making it
+    assignable to any `T[*]` or `T[0..1]`.
+
+> For a full explanation of why `Nil` is needed and why `Any` cannot replace it
+> (function parameter contravariance, covariance vs contravariance, multiplicity
+> parameters in generic signatures), see the
+> [Pure Type System Reference](pure-type-system.md).
+
 ### Multiplicity (Cardinality)
 
 Every property and function parameter carries a multiplicity annotation:
@@ -152,6 +173,16 @@ name    : String[1];    // required
 nickname: String[0..1]; // optional
 aliases : String[*];    // collection
 ```
+
+### Multiplicity parameters in generic signatures
+
+Multiplicity parameters (conventionally `m`, `n`, `o`, …) appear alongside type
+parameters in signatures like `letFunction<T,m>`, `if<T,m>`, and
+`match<T,m,n>` — they allow a function to work at any cardinality. The compiler
+infers them at each call site; you never supply them explicitly.
+
+> For a full explanation with worked examples see
+> [Pure Type System Reference — Multiplicity Parameters](pure-type-system.md#multiplicity-parameters-in-generic-signatures).
 
 ---
 
@@ -384,21 +415,84 @@ function meta::mypackage::greet(name: String[1]): String[1]
 
 ### Return Values
 
-A function body is a **sequence of semicolon-separated expressions**. The value of
-the **last expression** in the sequence is the return value — there is no `return`
-keyword.
+A function body is a **sequence of semicolon-terminated expressions**. The value of
+the **last expression** is the return value — there is no `return` keyword.
 
 ```pure
 function meta::mypackage::describe(p: Person[1]): String[1]
 {
-    let greeting = 'Hello, ';           // expression 1 — binds a variable
-    let name     = $p.firstName + ' ' + $p.lastName;  // expression 2
-    $greeting + $name                  // expression 3 — last expression; this is returned
+    let greeting = 'Hello, ';                            // expression 1
+    let name     = $p.firstName + ' ' + $p.lastName;    // expression 2
+    $greeting + $name;                                   // expression 3 — returned
 }
 ```
 
-Semicolons separate expressions in a multi-expression body. The final expression
-has no trailing semicolon (though the compiler accepts one).
+### Semicolons — complete rules
+
+The rules for `;` in Pure are:
+
+| Number of expressions | Required form |
+|-----------------------|---------------|
+| 1 | `expr` — **no semicolon** |
+| 2 | `expr; expr;` |
+| 3 | `expr; expr; expr;` |
+| N | every expression terminated with `;` |
+
+The key insight: **`;` is a terminator on every expression when there are multiple
+expressions, and is absent entirely when there is only one**.
+
+#### Single expression — no semicolon
+
+When a function body or lambda body contains exactly **one** expression, no
+semicolon is written:
+
+```pure
+// Named function — one expression, no semicolon
+function meta::mypackage::double(x: Integer[1]): Integer[1]
+{
+    $x * 2
+}
+
+// Inline lambda — one expression after |, no semicolon
+[1, 2, 3]->filter(x | $x > 1)
+
+// Block lambda — one expression after |, no semicolon
+[1, 2, 3]->map(x | {
+    $x * 2
+})
+```
+
+#### Multiple expressions — every expression including the last requires `;`
+
+When there are two or more expressions, **every** expression must be terminated
+with `;`, including the final one:
+
+```pure
+function meta::mypackage::describe(p: Person[1]): String[1]
+{
+    let greeting = 'Hello, ';
+    let name     = $p.firstName + ' ' + $p.lastName;
+    $greeting + $name;    // <- trailing ';' required — this is NOT optional
+}
+
+// Block lambda — all expressions terminated
+[1, 2, 3]->map(x | {
+    let doubled = $x * 2;
+    $doubled + 1;          // <- required
+})
+```
+
+#### Empty statements / double semicolons are not permitted
+
+Pure has **no empty statement**. `;;` is a parse error:
+
+```pure
+// NOT valid Pure
+{
+    let x = 1;;   // ERROR — empty statement between the two semicolons
+    $x + 1;
+}
+```
 
 #### Why `let` returns a value — and when that matters
 
@@ -409,12 +503,12 @@ letFunction<T,m>(left: String[1], right: T[m]): T[m]
 ```
 
 It **returns the value it binds** — the same `T[m]` that was assigned. This means
-a `let` on the last line of a function *is* valid Pure:
+a `let` as the sole expression of a function *is* valid Pure:
 
 ```pure
 function meta::mypackage::double(x: Integer[1]): Integer[1]
 {
-    let result = $x * 2;   // valid — let returns Integer[1], which matches the return type
+    let result = $x * 2   // sole expression — no semicolon; let returns Integer[1]
 }
 ```
 
@@ -429,23 +523,23 @@ further use of the variable, the binding serves no purpose. Prefer returning the
 expression directly:
 
 ```pure
-// Avoid — the variable 'result' is never used after being bound
+// Avoid — sole expression is a let; works but misleading
 function meta::mypackage::double(x: Integer[1]): Integer[1]
 {
-    let result = $x * 2;
+    let result = $x * 2
 }
 
-// Prefer — intent is unambiguous
+// Prefer — intent is unambiguous; single expression, no semicolon
 function meta::mypackage::double(x: Integer[1]): Integer[1]
 {
     $x * 2
 }
 
-// Also fine — let in the middle, bare expression last
+// Multiple expressions — ALL terminated with ';', including the last
 function meta::mypackage::describeAge(p: Person[1]): String[1]
 {
     let age = $p.age->toOne();
-    'Age: ' + $age->toString()
+    'Age: ' + $age->toString();
 }
 ```
 
@@ -671,6 +765,35 @@ $value->match([
 ---
 
 ## 6. Collections
+
+### Collection Literal Syntax
+
+A collection literal is written with square brackets.
+
+`,` is strictly a **separator between elements** — there is no optional trailing
+comma and no empty slot syntax.
+
+| Form | Valid? | Reason |
+|------|:------:|--------|
+| `[]` | ✅ | Empty collection |
+| `[1]` | ✅ | Single element |
+| `[1, 2, 3]` | ✅ | Comma between each adjacent pair |
+| `[1, 2,]` | ❌ | Trailing comma — nothing follows the last `,` |
+| `[1, , 3]` | ❌ | Double comma / empty element slot |
+| `[, 1]` | ❌ | Leading comma — nothing precedes the first `,` |
+
+```pure
+// Valid
+let nums = [1, 2, 3];
+let single = [42];
+let empty = [];
+
+// NOT valid Pure — parse errors
+let bad1 = [1, 2, 3,];   // ERROR — trailing comma
+let bad2 = [1, , 3];     // ERROR — empty element (double comma)
+```
+
+### Common functions for collections
 
 All collection functions are in `meta::pure::functions::collection`. The most
 commonly used functions, available via arrow syntax:
@@ -1060,4 +1183,4 @@ private static final MutableList<ExclusionSpecification> expectedFailures =
 
 ---
 
-*See also: [Testing Strategy](../testing/testing-strategy.md) · [Compiler Pipeline](../architecture/compiler-pipeline.md)*
+*See also: [Pure Type System Reference](pure-type-system.md) · [Testing Strategy](../testing/testing-strategy.md) · [Compiler Pipeline](../architecture/compiler-pipeline.md)*
