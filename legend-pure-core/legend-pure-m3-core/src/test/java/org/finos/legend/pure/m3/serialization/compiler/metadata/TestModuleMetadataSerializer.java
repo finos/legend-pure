@@ -234,6 +234,18 @@ public class TestModuleMetadataSerializer
             }
 
             @Override
+            public void serializeBackReferenceIndex(OutputStream stream, ModuleBackReferenceIndex backReferenceIndex, StringIndexer stringIndexer)
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public ModuleBackReferenceIndex deserializeBackReferenceIndex(InputStream stream, StringIndexer stringIndexer)
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
             public void serializeFunctionNameMetadata(OutputStream stream, ModuleFunctionNameMetadata functionNameMetadata, StringIndexer stringIndexer)
             {
                 throw new UnsupportedOperationException();

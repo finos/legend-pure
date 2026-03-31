@@ -73,6 +73,12 @@ public class FilePathProviderExtensionV1 implements FilePathProviderExtension
     }
 
     @Override
+    public String getModuleBackReferenceIndexFilePath(String moduleName, String fsSeparator)
+    {
+        return getModuleMetadataFilePath(moduleName, fsSeparator, MODULE_ELEMENT_BACK_REF_FILE_EXTENSION);
+    }
+
+    @Override
     public String getModuleFunctionNameMetadataFilePath(String moduleName, String fsSeparator)
     {
         return getModuleMetadataFilePath(moduleName, fsSeparator, MODULE_FUNCTION_NAME_FILE_EXTENSION);

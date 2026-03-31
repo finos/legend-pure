@@ -226,6 +226,45 @@ public class FilePathProvider extends ExtensibleSerializer<FilePathProviderExten
     
     // Module function name metadata
 
+    public Path getModuleBackReferenceIndexFilePath(Path directory, String moduleName)
+    {
+        return directory.resolve(getModuleBackReferenceIndexFilePath(moduleName, getFSSeparator(directory)));
+    }
+
+    public Path getModuleBackReferenceIndexFilePath(Path directory, String moduleName, int version)
+    {
+        return directory.resolve(getModuleBackReferenceIndexFilePath(moduleName, getFSSeparator(directory), version));
+    }
+
+    public String getModuleBackReferenceIndexResourceName(String moduleName)
+    {
+        return getModuleBackReferenceIndexFilePath(moduleName, RESOURCE_FS_SEPARATOR);
+    }
+
+    public String getModuleBackReferenceIndexResourceName(String moduleName, int version)
+    {
+        return getModuleBackReferenceIndexFilePath(moduleName, RESOURCE_FS_SEPARATOR, version);
+    }
+
+    public String getModuleBackReferenceIndexFilePath(String moduleName, String fsSeparator)
+    {
+        return getModuleBackReferenceIndexFilePath(moduleName, fsSeparator, getDefaultExtension());
+    }
+
+    public String getModuleBackReferenceIndexFilePath(String moduleName, String fsSeparator, int version)
+    {
+        return getModuleBackReferenceIndexFilePath(moduleName, fsSeparator, getExtension(version));
+    }
+
+    private String getModuleBackReferenceIndexFilePath(String moduleName, String fsSeparator, FilePathProviderExtension extension)
+    {
+        return extension.getModuleBackReferenceIndexFilePath(
+                validateNonEmpty(moduleName, "module name"),
+                validateNonEmpty(fsSeparator, "file path separator"));
+    }
+
+    // Module function name metadata
+
     public Path getModuleFunctionNameMetadataFilePath(Path directory, String moduleName)
     {
         return directory.resolve(getModuleFunctionNameMetadataFilePath(moduleName, getFSSeparator(directory)));

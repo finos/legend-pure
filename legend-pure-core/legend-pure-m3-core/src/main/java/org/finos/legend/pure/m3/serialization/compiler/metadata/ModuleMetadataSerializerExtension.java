@@ -46,6 +46,12 @@ public interface ModuleMetadataSerializerExtension extends SerializerExtension
 
     ElementBackReferenceMetadata deserializeBackReferenceMetadata(InputStream stream, StringIndexer stringIndexer);
 
+    // Back reference index
+
+    void serializeBackReferenceIndex(OutputStream stream, ModuleBackReferenceIndex backReferenceIndex, StringIndexer stringIndexer);
+
+    ModuleBackReferenceIndex deserializeBackReferenceIndex(InputStream stream, StringIndexer stringIndexer);
+
     // Function name metadata
 
     void serializeFunctionNameMetadata(OutputStream stream, ModuleFunctionNameMetadata functionNameMetadata, StringIndexer stringIndexer);

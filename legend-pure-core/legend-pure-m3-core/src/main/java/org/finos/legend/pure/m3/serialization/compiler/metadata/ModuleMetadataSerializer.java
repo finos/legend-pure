@@ -31,6 +31,7 @@ public class ModuleMetadataSerializer extends ExtensibleSerializer<ModuleMetadat
     private static final long PURE_MODULE_SOURCE_METADATA_SIGNATURE = Long.parseLong("PureSource", 36);
     private static final long PURE_MODULE_EXT_REFS_SIGNATURE = Long.parseLong("PureExtRefs", 36);
     private static final long PURE_ELEMENT_BACK_REFS_SIGNATURE = Long.parseLong("PureBackRefs", 36);
+    private static final long PURE_BACK_REF_INDEX_SIGNATURE = Long.parseLong("PureBRIndex", 36);
     private static final long PURE_FUNCTION_NAMES_SIGNATURE = Long.parseLong("PureFuncName", 36);
 
     private final StringIndexer stringIndexer;
@@ -191,6 +192,44 @@ public class ModuleMetadataSerializer extends ExtensibleSerializer<ModuleMetadat
         }
         ModuleMetadataSerializerExtension extension = getExtension(version);
         return extension.deserializeBackReferenceMetadata(stream, this.stringIndexer);
+    }
+
+    // Back reference index
+
+    public void serializeBackReferenceIndex(OutputStream stream, ModuleBackReferenceIndex backReferenceIndex)
+    {
+        serializeBackReferenceIndex(stream, backReferenceIndex, getDefaultExtension());
+    }
+
+    public void serializeBackReferenceIndex(OutputStream stream, ModuleBackReferenceIndex backReferenceIndex, int version)
+    {
+        serializeBackReferenceIndex(stream, backReferenceIndex, getExtension(version));
+    }
+
+    private void serializeBackReferenceIndex(OutputStream stream, ModuleBackReferenceIndex backReferenceIndex, ModuleMetadataSerializerExtension extension)
+    {
+        try (Writer writer = BinaryWriters.newBinaryWriter(stream, false))
+        {
+            writer.writeLong(PURE_BACK_REF_INDEX_SIGNATURE);
+            writer.writeInt(extension.version());
+        }
+        extension.serializeBackReferenceIndex(stream, backReferenceIndex, this.stringIndexer);
+    }
+
+    public ModuleBackReferenceIndex deserializeBackReferenceIndex(InputStream stream)
+    {
+        int version;
+        try (Reader reader = BinaryReaders.newBinaryReader(stream, false))
+        {
+            long signature = reader.readLong();
+            if (signature != PURE_BACK_REF_INDEX_SIGNATURE)
+            {
+                throw new IllegalArgumentException("Invalid file format: not a Legend back reference index file");
+            }
+            version = reader.readInt();
+        }
+        ModuleMetadataSerializerExtension extension = getExtension(version);
+        return extension.deserializeBackReferenceIndex(stream, this.stringIndexer);
     }
     
     // Function name metadata

@@ -17,6 +17,7 @@ package org.finos.legend.pure.m3.serialization.compiler.file;
 import org.finos.legend.pure.m3.serialization.compiler.element.ConcreteElementDeserializer;
 import org.finos.legend.pure.m3.serialization.compiler.element.DeserializedConcreteElement;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementBackReferenceMetadata;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleBackReferenceIndex;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleExternalReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleFunctionNameMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleManifest;
@@ -919,6 +920,118 @@ public class FileDeserializer
         }
     }
 
+
+    // Deserialize module back reference index from directory
+
+    /**
+     * Deserialize module back reference index from a file in a directory. Returns null if the index file
+     * is not found (graceful fallback for older serialized data).
+     *
+     * @param directory  directory to search for the module back reference index file
+     * @param moduleName module name
+     * @return module back reference index, or null if not found
+     */
+    public ModuleBackReferenceIndex deserializeModuleBackReferenceIndexIfPresent(Path directory, String moduleName)
+    {
+        return deserializeModuleBackReferenceIndexIfPresent(directory, moduleName, this.filePathProvider.getDefaultVersion());
+    }
+
+    public ModuleBackReferenceIndex deserializeModuleBackReferenceIndexIfPresent(Path directory, String moduleName, int filePathVersion)
+    {
+        Objects.requireNonNull(directory, "directory is required");
+        Objects.requireNonNull(moduleName, "module name is required");
+
+        long start = System.nanoTime();
+        Path filePath = this.filePathProvider.getModuleBackReferenceIndexFilePath(directory, moduleName, filePathVersion);
+        LOGGER.debug("Deserializing module {} back reference index from {}", moduleName, filePath);
+        try (InputStream stream = new BufferedInputStream(Files.newInputStream(filePath)))
+        {
+            return this.moduleSerializer.deserializeBackReferenceIndex(stream);
+        }
+        catch (NoSuchFileException | FileNotFoundException e)
+        {
+            LOGGER.debug("Module {} back reference index not found at {}, will use fallback", moduleName, filePath);
+            return null;
+        }
+        catch (Exception e)
+        {
+            LOGGER.error("Error deserializing module {} back reference index from {}", moduleName, filePath, e);
+            if (Files.notExists(filePath))
+            {
+                LOGGER.debug("Module {} back reference index not found at {}, will use fallback", moduleName, filePath);
+                return null;
+            }
+            StringBuilder builder = new StringBuilder("Error deserializing back reference index for module ").append(moduleName).append(" from ").append(filePath);
+            String eMessage = e.getMessage();
+            if (eMessage != null)
+            {
+                builder.append(": ").append(eMessage);
+            }
+            throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
+        }
+        finally
+        {
+            long end = System.nanoTime();
+            LOGGER.debug("Finished deserializing module {} back reference index from {} in {}s", moduleName, filePath, (end - start) / 1_000_000_000.0);
+        }
+    }
+
+    // Deserialize module back reference index from ClassLoader
+
+    /**
+     * Deserialize module back reference index from a resource in a class loader. Returns null if the index
+     * resource is not found (graceful fallback for older serialized data).
+     *
+     * @param classLoader class loader to search for the module back reference index resource
+     * @param moduleName  module name
+     * @return module back reference index, or null if not found
+     */
+    public ModuleBackReferenceIndex deserializeModuleBackReferenceIndexIfPresent(ClassLoader classLoader, String moduleName)
+    {
+        return deserializeModuleBackReferenceIndexIfPresent(classLoader, moduleName, this.filePathProvider.getDefaultVersion());
+    }
+
+    public ModuleBackReferenceIndex deserializeModuleBackReferenceIndexIfPresent(ClassLoader classLoader, String moduleName, int filePathVersion)
+    {
+        Objects.requireNonNull(classLoader, "class loader is required");
+        Objects.requireNonNull(moduleName, "module name is required");
+
+        long start = System.nanoTime();
+        String resourceName = this.filePathProvider.getModuleBackReferenceIndexResourceName(moduleName, filePathVersion);
+        LOGGER.debug("Deserializing module {} back reference index from resource '{}'", moduleName, resourceName);
+        try
+        {
+            URL url = classLoader.getResource(resourceName);
+            if (url == null)
+            {
+                LOGGER.debug("Module {} back reference index not found at resource '{}', will use fallback", moduleName, resourceName);
+                return null;
+            }
+            LOGGER.debug("Deserializing module {} back reference index from resource '{}': {}", moduleName, resourceName, url);
+            try (InputStream stream = url.openStream())
+            {
+                return this.moduleSerializer.deserializeBackReferenceIndex(stream);
+            }
+            catch (Exception e)
+            {
+                LOGGER.error("Error deserializing module {} back reference index from resource '{}'", moduleName, resourceName, e);
+                StringBuilder builder = new StringBuilder("Error deserializing back reference index for module ").append(moduleName)
+                        .append(" from resource ").append(resourceName)
+                        .append(" (").append(url).append(")");
+                String eMessage = e.getMessage();
+                if (eMessage != null)
+                {
+                    builder.append(": ").append(eMessage);
+                }
+                throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
+            }
+        }
+        finally
+        {
+            long end = System.nanoTime();
+            LOGGER.debug("Finished deserializing module {} back reference index from resource '{}' in {}s", moduleName, resourceName, (end - start) / 1_000_000_000.0);
+        }
+    }
 
     // Deserialize module function name metadata from directory
 
