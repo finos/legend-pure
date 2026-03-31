@@ -43,28 +43,18 @@ public class TestDependencyResolutionScope
         Assert.assertSame(DependencyResolutionScope.TEST_RESOLUTION_SCOPE, DependencyResolutionScope.fromName("TEST"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testFromName_invalidName()
     {
-        DependencyResolutionScope.fromName("invalid");
+        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> DependencyResolutionScope.fromName("invalid"));
+        Assert.assertEquals("Unknown dependency resolution scope: 'invalid'; valid values: [compile, compile+runtime, runtime, runtime+system, test]", e.getMessage());
     }
 
     @Test
-    // TODO: fromName(null) currently throws NullPointerException (from equalsIgnoreCase)
-    // rather than IllegalArgumentException. Consider adding an explicit null check with
-    // a descriptive error message. See MAVEN_PLUGINS_REVIEW.md §4.4.
     public void testFromName_null()
     {
-        try
-        {
-            DependencyResolutionScope.fromName(null);
-            Assert.fail("Expected exception for null name");
-        }
-        catch (NullPointerException | IllegalArgumentException e)
-        {
-            // Current behaviour: NullPointerException is thrown.
-            // Either exception type is acceptable for documenting current behaviour.
-        }
+        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> DependencyResolutionScope.fromName(null));
+        Assert.assertEquals("Unknown dependency resolution scope: null; valid values: [compile, compile+runtime, runtime, runtime+system, test]", e.getMessage());
     }
 
     @Test
@@ -119,4 +109,3 @@ public class TestDependencyResolutionScope
         Assert.assertEquals(DependencyResolutionScope.values().length, names.size());
     }
 }
-

@@ -178,7 +178,7 @@ public class M3CoreInstanceGeneratorMojo extends AbstractMojo
             }
             default:
             {
-                throw new MojoExecutionException("Unknown scope: " + this.dependencyScope);
+                throw new MojoExecutionException("Unknown scope: " + ((this.dependencyScope == null) ? resolvedDependencyScope : this.dependencyScope));
             }
         }
     }

@@ -17,6 +17,8 @@ package org.finos.legend.pure.runtime.java.compiled.generation;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.statelistener.VoidExecutionActivityListener;
@@ -40,6 +42,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 public class TestJavaCodeGeneration
@@ -236,8 +239,8 @@ public class TestJavaCodeGeneration
         }
 
         // Collect all relative file paths from each output directory
-        java.util.Set<Path> paths1 = new java.util.HashSet<>();
-        java.util.Set<Path> paths2 = new java.util.HashSet<>();
+        MutableSet<Path> paths1 = Sets.mutable.empty();
+        MutableSet<Path> paths2 = Sets.mutable.empty();
         try (Stream<Path> s1 = Files.walk(dir1.toPath());
              Stream<Path> s2 = Files.walk(dir2.toPath()))
         {
@@ -248,18 +251,18 @@ public class TestJavaCodeGeneration
         Assert.assertEquals("Idempotency: both runs should produce the same set of files", paths1, paths2);
 
         // Verify byte-for-byte equality for each file
-        java.util.List<Path> mismatch = new java.util.ArrayList<>();
+        MutableList<Path> mismatch = Lists.mutable.empty();
         for (Path rel : paths1)
         {
             byte[] b1 = Files.readAllBytes(dir1.toPath().resolve(rel));
             byte[] b2 = Files.readAllBytes(dir2.toPath().resolve(rel));
-            if (!java.util.Arrays.equals(b1, b2))
+            if (!Arrays.equals(b1, b2))
             {
                 mismatch.add(rel);
             }
         }
         Assert.assertEquals("Idempotency: generated files must be byte-for-byte identical across runs",
-                java.util.Collections.emptyList(), mismatch);
+                Lists.fixedSize.empty(), mismatch);
     }
 
     // --- generateSources paths ---
@@ -267,8 +270,8 @@ public class TestJavaCodeGeneration
     @Test
     public void testGenerateSources_writesToGeneratedSourcesDirectory() throws Exception
     {
-        File directory     = TMP.newFolder();
-        File classesDir    = new File(directory, "classes");
+        File directory = TMP.newFolder();
+        File classesDir = new File(directory, "classes");
         classesDir.mkdir();
 
         JavaCodeGeneration.doIt(
@@ -313,8 +316,8 @@ public class TestJavaCodeGeneration
     @Test
     public void testGenerateTestSources_writesToGeneratedTestSourcesDirectory() throws Exception
     {
-        File directory     = TMP.newFolder();
-        File classesDir    = new File(directory, "classes");
+        File directory = TMP.newFolder();
+        File classesDir = new File(directory, "classes");
         classesDir.mkdir();
 
         JavaCodeGeneration.doIt(
@@ -360,76 +363,62 @@ public class TestJavaCodeGeneration
     @Test
     public void testDoIt_invalidRepository_wrapsException() throws Exception
     {
-        File directory  = TMP.newFolder();
+        File directory = TMP.newFolder();
         File classesDir = new File(directory, "classes");
         classesDir.mkdir();
 
-        try
-        {
-            JavaCodeGeneration.doIt(
-                    Sets.mutable.with("this_repository_does_not_exist"),
-                    Sets.fixedSize.empty(),
-                    Sets.fixedSize.empty(),
-                    GenerationType.monolithic,
-                    false,
-                    false,
-                    null,
-                    false,
-                    false,
-                    false,
-                    false,
-                    true,
-                    classesDir,
-                    directory,
-                    false,
-                    new VoidLog());
-            Assert.fail("Expected RuntimeException for unknown repository");
-        }
-        catch (RuntimeException e)
-        {
-            Assert.assertTrue(
-                    "Message should contain 'Error building Pure compiled mode jar', but was: " + e.getMessage(),
-                    e.getMessage().contains("Error building Pure compiled mode jar"));
-            // The original cause must be preserved so callers can diagnose the failure
-            Assert.assertNotNull("Exception must have a cause", e.getCause());
-        }
+        RuntimeException e = Assert.assertThrows(RuntimeException.class, () -> JavaCodeGeneration.doIt(
+                Sets.mutable.with("this_repository_does_not_exist"),
+                Sets.fixedSize.empty(),
+                Sets.fixedSize.empty(),
+                GenerationType.monolithic,
+                false,
+                false,
+                null,
+                false,
+                false,
+                false,
+                false,
+                true,
+                classesDir,
+                directory,
+                false,
+                new VoidLog()));
+        Assert.assertTrue(
+                "Message should contain 'Error building Pure compiled mode jar', but was: " + e.getMessage(),
+                e.getMessage().contains("Error building Pure compiled mode jar"));
+        // The original cause must be preserved so callers can diagnose the failure
+        Assert.assertNotNull("Exception must have a cause", e.getCause());
     }
 
     @Test
     public void testDoIt_unknownExtraRepository_wrapsException() throws Exception
     {
-        File directory  = TMP.newFolder();
+        File directory = TMP.newFolder();
         File classesDir = new File(directory, "classes");
         classesDir.mkdir();
 
-        try
-        {
-            JavaCodeGeneration.doIt(
-                    Sets.fixedSize.empty(),
-                    Sets.fixedSize.empty(),
-                    Sets.mutable.with("org.finos.legend.does.not.ExistRepository"),
-                    GenerationType.monolithic,
-                    false,
-                    false,
-                    null,
-                    false,
-                    false,
-                    false,
-                    false,
-                    true,
-                    classesDir,
-                    directory,
-                    false,
-                    new VoidLog());
-            Assert.fail("Expected RuntimeException for unknown extra repository");
-        }
-        catch (RuntimeException e)
-        {
-            Assert.assertTrue(
-                    "Message should contain 'Error building Pure compiled mode jar', but was: " + e.getMessage(),
-                    e.getMessage().contains("Error building Pure compiled mode jar"));
-            Assert.assertNotNull("Exception must have a cause", e.getCause());
-        }
+        RuntimeException e = Assert.assertThrows(RuntimeException.class, () -> JavaCodeGeneration.doIt(
+                Sets.fixedSize.empty(),
+                Sets.fixedSize.empty(),
+                Sets.mutable.with("org.finos.legend.does.not.ExistRepository"),
+                GenerationType.monolithic,
+                false,
+                false,
+                null,
+                false,
+                false,
+                false,
+                false,
+                true,
+                classesDir,
+                directory,
+                false,
+                new VoidLog()));
+        Assert.assertTrue(
+                "Message should contain 'Error building Pure compiled mode jar', but was: " + e.getMessage(),
+                e.getMessage().contains("Error building Pure compiled mode jar"));
+        Assert.assertNotNull("Exception must have a cause", e.getCause());
     }
 
     // --- main() entry point tests (exec:java invocation pattern) ---
@@ -444,7 +433,7 @@ public class TestJavaCodeGeneration
     @Test
     public void testMain_threeArgs_generatesModularOutput() throws Exception
     {
-        File directory  = TMP.newFolder();
+        File directory = TMP.newFolder();
         File classesDir = new File(directory, "classes");
         classesDir.mkdir();
 
@@ -471,7 +460,7 @@ public class TestJavaCodeGeneration
     public void testMain_fourArgs_externalApiPackageAccepted() throws Exception
     {
         // Four-arg form: args[3] is the externalAPIPackage — must not throw
-        File directory  = TMP.newFolder();
+        File directory = TMP.newFolder();
         File classesDir = new File(directory, "classes");
         classesDir.mkdir();
 

@@ -17,7 +17,6 @@ package org.finos.legend.pure.maven.platform.java;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.ProjectDependenciesResolver;
 import org.finos.legend.pure.maven.shared.MojoTestSupport;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -173,15 +172,14 @@ public class TestM3CoreInstanceGeneratorMojo
                 mojo.getDependencyFilter("test"));
     }
 
-    @Test(expected = MojoExecutionException.class)
+    @Test
     public void testGetDependencyFilter_unknownScope_throwsMojoExecutionException() throws Exception
     {
-        new M3CoreInstanceGeneratorMojo().getDependencyFilter("invalid");
+        MojoExecutionException e = Assert.assertThrows(MojoExecutionException.class, () -> new M3CoreInstanceGeneratorMojo().getDependencyFilter("invalid"));
+        Assert.assertEquals("Unknown scope: invalid", e.getMessage());
     }
 
     // --- execute()-level tests ---
-
-    private static final ProjectDependenciesResolver EMPTY_RESOLVER = MojoTestSupport.EMPTY_RESOLVER;
 
     @Test
     public void testExecute_skip_doesNothing() throws Exception
@@ -283,7 +281,7 @@ public class TestM3CoreInstanceGeneratorMojo
         setField(mojo, "projectBuildDirectory",           buildDir);
         setField(mojo, "projectOutputDirectory",          buildDir);
         setField(mojo, "projectTestOutputDirectory",      buildDir);
-        setField(mojo, "mavenProjectDependenciesResolver", EMPTY_RESOLVER);
+        setField(mojo, "mavenProjectDependenciesResolver", MojoTestSupport.EMPTY_RESOLVER);
         setField(mojo, "mavenRepoSession",                null);
         return mojo;
     }
@@ -305,4 +303,3 @@ public class TestM3CoreInstanceGeneratorMojo
         MojoTestSupport.setField(target, fieldName, value);
     }
 }
-

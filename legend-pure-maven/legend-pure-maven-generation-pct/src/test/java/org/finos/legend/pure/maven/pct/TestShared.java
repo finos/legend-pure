@@ -27,22 +27,25 @@ public class TestShared
 {
     // --- assertPresentOrNotEmpty ---
 
-    @Test(expected = MojoExecutionException.class)
-    public void testAssertPresentOrNotEmpty_null() throws MojoExecutionException
+    @Test
+    public void testAssertPresentOrNotEmpty_null()
     {
-        Shared.assertPresentOrNotEmpty("testParam", null);
+        MojoExecutionException e = Assert.assertThrows(MojoExecutionException.class, () -> Shared.assertPresentOrNotEmpty("testParam", null));
+        Assert.assertEquals("The property testParam must be defined", e.getMessage());
     }
 
-    @Test(expected = MojoExecutionException.class)
-    public void testAssertPresentOrNotEmpty_emptyList() throws MojoExecutionException
+    @Test
+    public void testAssertPresentOrNotEmpty_emptyList()
     {
-        Shared.assertPresentOrNotEmpty("testParam", Collections.emptyList());
+        MojoExecutionException e = Assert.assertThrows(MojoExecutionException.class, () -> Shared.assertPresentOrNotEmpty("testParam", Collections.emptyList()));
+        Assert.assertEquals("The property testParam must be defined", e.getMessage());
     }
 
-    @Test(expected = MojoExecutionException.class)
-    public void testAssertPresentOrNotEmpty_emptySet() throws MojoExecutionException
+    @Test
+    public void testAssertPresentOrNotEmpty_emptySet()
     {
-        Shared.assertPresentOrNotEmpty("testParam", Collections.emptySet());
+        MojoExecutionException e = Assert.assertThrows(MojoExecutionException.class, () -> Shared.assertPresentOrNotEmpty("testParam", Collections.emptySet()));
+        Assert.assertEquals("The property testParam must be defined", e.getMessage());
     }
 
     @Test
@@ -72,18 +75,8 @@ public class TestShared
     @Test
     public void testAssertPresentOrNotEmpty_exceptionMessage()
     {
-        try
-        {
-            Shared.assertPresentOrNotEmpty("myParamName", null);
-            Assert.fail("Expected MojoExecutionException");
-        }
-        catch (MojoExecutionException e)
-        {
-            Assert.assertTrue(
-                    "Exception message should contain parameter name, but was: " + e.getMessage(),
-                    e.getMessage().contains("myParamName")
-            );
-        }
+        MojoExecutionException e = Assert.assertThrows(MojoExecutionException.class, () -> Shared.assertPresentOrNotEmpty("myParamName", null));
+        Assert.assertEquals("The property myParamName must be defined", e.getMessage());
     }
 
     @Test
@@ -112,8 +105,7 @@ public class TestShared
         ClassLoader parent = Thread.currentThread().getContextClassLoader();
         try (URLClassLoader cl = Shared.buildClassLoader(project, parent, new SystemStreamLog()))
         {
-            Assert.assertSame("Parent classloader should be the one passed in",
-                    parent, cl.getParent());
+            Assert.assertSame("Parent classloader should be the one passed in", parent, cl.getParent());
         }
     }
 
@@ -126,8 +118,7 @@ public class TestShared
         {
             // A fresh MavenProject has no compile or test classpath elements,
             // so the classloader should have zero extra URLs of its own.
-            Assert.assertEquals("Empty project should produce zero extra classpath URLs",
-                    0, cl.getURLs().length);
+            Assert.assertEquals("Empty project should produce zero extra classpath URLs", 0, cl.getURLs().length);
         }
     }
 
@@ -154,4 +145,3 @@ public class TestShared
         Assert.assertNotNull(Mode.Interpreted);
     }
 }
-

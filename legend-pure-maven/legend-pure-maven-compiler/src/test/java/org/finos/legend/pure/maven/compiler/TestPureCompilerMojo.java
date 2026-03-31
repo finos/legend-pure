@@ -16,8 +16,6 @@ package org.finos.legend.pure.maven.compiler;
 
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.descriptor.MojoDescriptor;
-import org.apache.maven.project.DependencyResolutionResult;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectDependenciesResolver;
 import org.finos.legend.pure.m3.serialization.compiler.element.ConcreteElementDeserializer;
@@ -34,10 +32,10 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -96,7 +94,7 @@ public class TestPureCompilerMojo
         PureCompilerMojo mojo = new PureCompilerMojo();
         setField(mojo, "compileIndividually", Boolean.TRUE);
 
-        Assert.assertTrue(mojo.shouldSerializeIndividually(setOf("a", "b")));
+        Assert.assertTrue(mojo.shouldSerializeIndividually(MojoTestSupport.setOf("a", "b")));
     }
 
     @Test
@@ -105,7 +103,7 @@ public class TestPureCompilerMojo
         PureCompilerMojo mojo = new PureCompilerMojo();
         setField(mojo, "compileIndividually", Boolean.FALSE);
 
-        Assert.assertFalse(mojo.shouldSerializeIndividually(setOf("a", "b")));
+        Assert.assertFalse(mojo.shouldSerializeIndividually(MojoTestSupport.setOf("a", "b")));
     }
 
     @Test
@@ -114,7 +112,7 @@ public class TestPureCompilerMojo
         PureCompilerMojo mojo = new PureCompilerMojo();
         setField(mojo, "compileIndividually", null);
 
-        Assert.assertFalse(mojo.shouldSerializeIndividually(setOf("a", "b")));
+        Assert.assertFalse(mojo.shouldSerializeIndividually(MojoTestSupport.setOf("a", "b")));
     }
 
     @Test
@@ -132,7 +130,7 @@ public class TestPureCompilerMojo
         PureCompilerMojo mojo = new PureCompilerMojo();
         setField(mojo, "compileIndividually", null);
 
-        Assert.assertTrue(mojo.shouldSerializeIndividually(new HashSet<>()));
+        Assert.assertTrue(mojo.shouldSerializeIndividually(Collections.emptySet()));
     }
 
     // --- resolveRepositoriesToSerialize() tests ---
@@ -141,7 +139,7 @@ public class TestPureCompilerMojo
     public void testResolveRepos_explicitRepositories() throws Exception
     {
         PureCompilerMojo mojo = new PureCompilerMojo();
-        Set<String> repos = setOf("a", "b");
+        Set<String> repos = MojoTestSupport.setOf("a", "b");
         setField(mojo, "repositories", repos);
         setField(mojo, "excludedRepositories", null);
 
@@ -153,21 +151,22 @@ public class TestPureCompilerMojo
     public void testResolveRepos_explicitWithExclusion_noOverlap() throws Exception
     {
         PureCompilerMojo mojo = new PureCompilerMojo();
-        setField(mojo, "repositories", setOf("a", "b"));
-        setField(mojo, "excludedRepositories", setOf("c"));
+        setField(mojo, "repositories", MojoTestSupport.setOf("a", "b"));
+        setField(mojo, "excludedRepositories", MojoTestSupport.setOf("c"));
 
         Set<String> result = mojo.resolveRepositoriesToSerialize(DependencyResolutionScope.COMPILE_RESOLUTION_SCOPE);
-        Assert.assertEquals(setOf("a", "b"), result);
+        Assert.assertEquals(MojoTestSupport.setOf("a", "b"), result);
     }
 
-    @Test(expected = MojoExecutionException.class)
+    @Test
     public void testResolveRepos_explicitWithExclusion_overlap() throws Exception
     {
         PureCompilerMojo mojo = new PureCompilerMojo();
-        setField(mojo, "repositories", setOf("a", "b"));
-        setField(mojo, "excludedRepositories", setOf("a"));
+        setField(mojo, "repositories", MojoTestSupport.setOf("a", "b"));
+        setField(mojo, "excludedRepositories", MojoTestSupport.setOf("a"));
 
-        mojo.resolveRepositoriesToSerialize(DependencyResolutionScope.COMPILE_RESOLUTION_SCOPE);
+        MojoExecutionException e = Assert.assertThrows(MojoExecutionException.class, () -> mojo.resolveRepositoriesToSerialize(DependencyResolutionScope.COMPILE_RESOLUTION_SCOPE));
+        Assert.assertEquals("Invalid repository specification; the following are both included and excluded: a", e.getMessage());
     }
 
     @Test
@@ -201,7 +200,7 @@ public class TestPureCompilerMojo
 
         Set<String> result = mojo.resolveRepositoriesToSerialize(DependencyResolutionScope.COMPILE_RESOLUTION_SCOPE);
         Assert.assertNotNull(result);
-        Assert.assertEquals(setOf("my_repo", "other_repo"), result);
+        Assert.assertEquals(MojoTestSupport.setOf("my_repo", "other_repo"), result);
     }
 
     @Test
@@ -214,13 +213,13 @@ public class TestPureCompilerMojo
         writeDefinitionJson(outputDir, "other_repo", "other_repo", "(meta)(::.*)?", "my_repo");
 
         setField(mojo, "repositories", null);
-        setField(mojo, "excludedRepositories", setOf("other_repo"));
+        setField(mojo, "excludedRepositories", MojoTestSupport.setOf("other_repo"));
         setField(mojo, "projectOutputDirectory", outputDir);
         setField(mojo, "mojoExecution", executionWithPhase("compile"));
 
         Set<String> result = mojo.resolveRepositoriesToSerialize(DependencyResolutionScope.COMPILE_RESOLUTION_SCOPE);
         Assert.assertNotNull(result);
-        Assert.assertEquals(setOf("my_repo"), result);
+        Assert.assertEquals(MojoTestSupport.setOf("my_repo"), result);
     }
 
     // --- forEachRepoDefinition() tests ---
@@ -234,7 +233,7 @@ public class TestPureCompilerMojo
         List<String> collected = new ArrayList<>();
         mojo.forEachRepoDefinition(emptyDir, collected::add);
 
-        Assert.assertTrue("Expected no repo names from empty directory", collected.isEmpty());
+        Assert.assertEquals("Expected no repo names from empty directory", Collections.emptyList(), collected);
     }
 
     @Test
@@ -248,7 +247,7 @@ public class TestPureCompilerMojo
         List<String> collected = new ArrayList<>();
         mojo.forEachRepoDefinition(dir, collected::add);
 
-        Assert.assertTrue("Expected no repo names when no .definition.json files", collected.isEmpty());
+        Assert.assertEquals("Expected no repo names when no .definition.json files", Collections.emptyList(), collected);
     }
 
     @Test
@@ -263,10 +262,10 @@ public class TestPureCompilerMojo
         // Also add a non-.definition.json file that should be ignored
         Files.write(dir.toPath().resolve("readme.txt"), "ignore me".getBytes(StandardCharsets.UTF_8));
 
-        List<String> collected = new ArrayList<>();
+        Set<String> collected = new HashSet<>();
         mojo.forEachRepoDefinition(dir, collected::add);
 
-        Assert.assertEquals(setOf("repo_alpha", "repo_beta"), new HashSet<>(collected));
+        Assert.assertEquals(MojoTestSupport.setOf("repo_alpha", "repo_beta"), collected);
     }
 
     // --- execute()-level tests ---
@@ -276,7 +275,7 @@ public class TestPureCompilerMojo
     {
         File outputDir = tempFolder.newFolder("exec-test-repo");
         PureCompilerMojo mojo = buildExecuteMojo(outputDir);
-        setField(mojo, "repositories", setOf("test_generic_repository"));
+        setField(mojo, "repositories", MojoTestSupport.setOf("test_generic_repository"));
 
         mojo.execute();
 
@@ -292,7 +291,7 @@ public class TestPureCompilerMojo
     {
         File outputDir = tempFolder.newFolder("exec-explicit-repos");
         PureCompilerMojo mojo = buildExecuteMojo(outputDir);
-        setField(mojo, "repositories", setOf("test_generic_repository"));
+        setField(mojo, "repositories", MojoTestSupport.setOf("test_generic_repository"));
 
         mojo.execute();
 
@@ -311,7 +310,7 @@ public class TestPureCompilerMojo
         Assert.assertFalse("Pre-condition: output dir must not exist", outputDir.exists());
 
         PureCompilerMojo mojo = buildExecuteMojo(outputDir);
-        setField(mojo, "repositories", setOf("test_generic_repository"));
+        setField(mojo, "repositories", MojoTestSupport.setOf("test_generic_repository"));
 
         mojo.execute();
 
@@ -328,8 +327,8 @@ public class TestPureCompilerMojo
         // test_generic_repository and platform should be compiled; other_test_generic_repository should not.
         File outputDir = tempFolder.newFolder("exec-excluded");
         PureCompilerMojo mojo = buildExecuteMojo(outputDir);
-        setField(mojo, "repositories",        setOf("test_generic_repository"));
-        setField(mojo, "excludedRepositories", setOf("other_test_generic_repository"));
+        setField(mojo, "repositories",        MojoTestSupport.setOf("test_generic_repository"));
+        setField(mojo, "excludedRepositories", MojoTestSupport.setOf("other_test_generic_repository"));
 
         mojo.execute();
 
@@ -414,10 +413,5 @@ public class TestPureCompilerMojo
     private static void setField(Object target, String fieldName, Object value) throws Exception
     {
         MojoTestSupport.setField(target, fieldName, value);
-    }
-
-    private static Set<String> setOf(String... values)
-    {
-        return MojoTestSupport.setOf(values);
     }
 }
