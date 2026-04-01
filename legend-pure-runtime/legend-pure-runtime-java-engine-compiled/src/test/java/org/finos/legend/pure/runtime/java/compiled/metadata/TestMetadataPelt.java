@@ -31,6 +31,7 @@ import org.finos.legend.pure.m3.serialization.compiler.reference.AbstractReferen
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProvider;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProviders;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
 import org.finos.legend.pure.m3.tools.GraphTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -136,7 +137,7 @@ public class TestMetadataPelt extends AbstractReferenceTest
     {
         GraphTools.getTopLevelAndPackagedElements(repository).forEach(element ->
         {
-            if ((repos == null) || ((element.getSourceInformation() != null) && repos.contains(element.getSourceInformation().getSourceId())))
+            if ((repos == null) || ((element.getSourceInformation() != null) && repos.contains(CodeStorageTools.getInitialPathElement(element.getSourceInformation().getSourceId()))))
             {
                 String path = PackageableElement.getUserPathForPackageableElement(element);
                 String classifierPath = PackageableElement.getUserPathForPackageableElement(element.getClassifier());
