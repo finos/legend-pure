@@ -34,6 +34,7 @@ import org.finos.legend.pure.m3.serialization.compiler.file.FilePathProvider;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ConcreteElementMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.MetadataIndex;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleBackReferenceIndex;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleManifest;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolver;
 import org.finos.legend.pure.m3.serialization.compiler.strings.StringIndexer;
@@ -284,9 +285,11 @@ public class MetadataPelt implements Metadata
                 String module = modulesToLoad.pollFirst();
                 if (modulesFound.add(module))
                 {
-                    metadataIndexBuilder.withModule((this.directory == null) ?
-                                                    fileDeserializer.deserializeModuleManifest(this.classLoader, module) :
-                                                    fileDeserializer.deserializeModuleManifest(this.directory, module));
+                    ModuleManifest manifest = (this.directory == null) ?
+                                              fileDeserializer.deserializeModuleManifest(this.classLoader, module) :
+                                              fileDeserializer.deserializeModuleManifest(this.directory, module);
+                    metadataIndexBuilder.withModule(manifest);
+                    modulesToLoad.addAll(manifest.getDependencies().castToList());
                     ModuleBackReferenceIndex backRefIndex = (this.directory == null) ?
                                                             fileDeserializer.deserializeModuleBackReferenceIndexIfPresent(this.classLoader, module) :
                                                             fileDeserializer.deserializeModuleBackReferenceIndexIfPresent(this.directory, module);
