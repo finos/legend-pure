@@ -31,6 +31,8 @@ import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
@@ -162,31 +164,67 @@ public abstract class AbstractLazyConcreteElement extends AbstractLazyCoreInstan
 
     protected static class InternalIdResolver implements IntFunction<CoreInstance>
     {
-        private final CoreInstance[] index;
+        private final CoreInstance concreteElement;
+        private final AtomicReferenceArray<Object> index;
+        private Function<InstanceData, CoreInstance> builder;
+        private int unresolved;
 
         protected InternalIdResolver(CoreInstance concreteElement, DeserializedConcreteElement deserialized, BackReferenceProvider backRefProvider, ElementBuilder elementBuilder, ReferenceIdResolver referenceIdResolver)
         {
             ImmutableList<InstanceData> internalInstances = deserialized.getInstanceData();
-            LOGGER.debug("Creating {} internal instances for {}", internalInstances.size(), deserialized.getPath());
-            this.index = new CoreInstance[internalInstances.size()];
-            this.index[0] = concreteElement;
+            LOGGER.debug("{} internal instances for {}", internalInstances.size(), deserialized.getPath());
+            this.concreteElement = concreteElement;
             if (internalInstances.size() > 1)
             {
-                internalInstances.forEachWithIndex(1, internalInstances.size() - 1,
-                        (d, i) -> this.index[i] = elementBuilder.buildComponentInstance(d, backRefProvider.getBackReferences(d.getReferenceId()), referenceIdResolver, this));
+                this.index = new AtomicReferenceArray<>(internalInstances.size() - 1);
+                internalInstances.forEachWithIndex(1, internalInstances.size() - 1, (d, i) -> this.index.set(i - 1, d));
+                this.unresolved = this.index.length();
+                this.builder = d -> elementBuilder.buildComponentInstance(d, backRefProvider.getBackReferences(d.getReferenceId()), referenceIdResolver, this);
+            }
+            else
+            {
+                this.index = null;
+                this.unresolved = 0;
             }
         }
 
         @Override
         public CoreInstance apply(int id)
         {
+            if (id == 0)
+            {
+                return this.concreteElement;
+            }
+            if (this.index == null)
+            {
+                throw new IllegalArgumentException("Invalid internal id: " + id + " (valid ids are 0 only)");
+            }
             try
             {
-                return this.index[id];
+                int index = id - 1;
+                Object object = this.index.get(index);
+                if (object instanceof InstanceData)
+                {
+                    synchronized (this)
+                    {
+                        if ((object = this.index.get(index)) instanceof InstanceData)
+                        {
+                            CoreInstance instance = this.builder.apply((InstanceData) object);
+                            this.index.set(index, instance);
+                            this.unresolved--;
+                            if (this.unresolved <= 0)
+                            {
+                                this.builder = null;
+                            }
+                            return instance;
+                        }
+                    }
+                }
+                return (CoreInstance) object;
             }
             catch (IndexOutOfBoundsException e)
             {
-                throw new IllegalArgumentException("Invalid internal id: " + id + " (valid ids are 0-" + (this.index.length - 1) + ")");
+                throw new IllegalArgumentException("Invalid internal id: " + id + " (valid ids are 0-" + this.index.length() + ")");
             }
         }
     }
