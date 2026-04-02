@@ -15,6 +15,7 @@
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
 import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
@@ -69,5 +70,20 @@ public interface MetadataAccessor
     default Class<Nil> getBottomType()
     {
         return (Class<Nil>) getClass(M3Paths.Nil);
+    }
+
+    default boolean supportsGetPackageableElement()
+    {
+        return false;
+    }
+
+    default boolean hasPackageableElement(String path)
+    {
+        return getPackageableElement(path) != null;
+    }
+
+    default PackageableElement getPackageableElement(String path)
+    {
+        throw new UnsupportedOperationException(getClass().getName() + " does not support getPackageableElement");
     }
 }

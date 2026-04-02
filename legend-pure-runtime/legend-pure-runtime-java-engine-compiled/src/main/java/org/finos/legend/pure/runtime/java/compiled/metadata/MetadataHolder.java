@@ -15,6 +15,7 @@
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
 import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
@@ -111,5 +112,23 @@ public class MetadataHolder implements MetadataAccessor
     public Profile getProfile(String path)
     {
         return (Profile) this.metadata.getMetadata(M3Paths.Profile, path);
+    }
+
+    @Override
+    public boolean supportsGetPackageableElement()
+    {
+        return this.metadata.supportsElementByPath();
+    }
+
+    @Override
+    public boolean hasPackageableElement(String path)
+    {
+        return this.metadata.hasElement(path);
+    }
+
+    @Override
+    public PackageableElement getPackageableElement(String path)
+    {
+        return (PackageableElement) this.metadata.getElementByPath(path);
     }
 }
