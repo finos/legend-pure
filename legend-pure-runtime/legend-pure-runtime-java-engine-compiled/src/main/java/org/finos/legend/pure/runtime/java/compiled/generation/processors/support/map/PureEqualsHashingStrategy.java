@@ -17,7 +17,6 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.suppor
 import org.eclipse.collections.api.block.HashingStrategy;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy;
 import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
@@ -47,6 +46,6 @@ public class PureEqualsHashingStrategy implements HashingStrategy<Object>
 
     public static <K, V> MutableMap<K, V> newMutableMap()
     {
-        return new UnifiedMapWithHashingStrategy<>(HASHING_STRATEGY);
+        return VavrHamtMutableMapAdapter.withHashingStrategy(HASHING_STRATEGY);
     }
 }
