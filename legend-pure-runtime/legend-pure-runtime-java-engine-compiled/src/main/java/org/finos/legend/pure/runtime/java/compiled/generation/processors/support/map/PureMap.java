@@ -30,11 +30,6 @@ public class PureMap
 
     public PureMap(Map map)
     {
-        this(VavrHamtMutableMapAdapter.fromMap(map));
-    }
-
-    public PureMap(MutableMap map)
-    {
         if (map instanceof VavrHamtMutableMapAdapter || map instanceof PureCacheMap)
         {
             this.map = map;
