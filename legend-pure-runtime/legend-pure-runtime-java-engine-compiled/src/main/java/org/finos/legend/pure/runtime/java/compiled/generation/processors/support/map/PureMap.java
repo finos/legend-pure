@@ -32,7 +32,7 @@ public class PureMap
     {
         if (map instanceof VavrHamtMutableMapAdapter || map instanceof PureCacheMap)
         {
-            this.map = map;
+            this.map = (MutableMap) map;
         }
         else
         {
