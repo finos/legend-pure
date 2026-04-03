@@ -16,7 +16,6 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.suppor
 
 import org.finos.legend.pure.runtime.java.shared.map.PureMapStats;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.map.mutable.MapAdapter;
 
 import java.util.Map;
 import java.util.Objects;
@@ -31,12 +30,19 @@ public class PureMap
 
     public PureMap(Map map)
     {
-        this(MapAdapter.adapt(map));
+        this(VavrHamtMutableMapAdapter.fromMap(map));
     }
 
     public PureMap(MutableMap map)
     {
-        this.map = map;
+        if (map instanceof VavrHamtMutableMapAdapter || map instanceof PureCacheMap)
+        {
+            this.map = map;
+        }
+        else
+        {
+            this.map = VavrHamtMutableMapAdapter.fromMap(map);
+        }
         this.stats = new PureMapStats();
     }
 

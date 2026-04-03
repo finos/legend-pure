@@ -19,17 +19,13 @@ import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.HashingStrategy;
 import org.eclipse.collections.api.block.predicate.Predicate;
-import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.ordered.ReversibleIterable;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
-import org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.TreeNode;
@@ -64,16 +60,13 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureEqualsHashingStrategy;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.VavrHamtMutableMapAdapter;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.TimeZone;
-import java.util.function.Consumer;
 
 public class CoreHelper
 {
@@ -178,7 +171,6 @@ public class CoreHelper
         return result;
     }
     // TRIGO ------------------------------------------------------------------
-
 
     // DATE-TIME --------------------------------------------------------------
     private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
@@ -830,14 +822,54 @@ public class CoreHelper
         result._childrenData(newChildren);
     }
 
+    /**
+     * Creates a copy of the given map, preserving the hashing strategy if applicable.
+     * For HAMT-backed maps this is O(1) — the immutable trie is shared via structural sharing.
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static MutableMap<Object, Object> copyMap(MutableMap map)
+    {
+        if (map instanceof VavrHamtMutableMapAdapter)
+        {
+            // O(1): shares the immutable trie reference — this is the whole point of HAMT
+            return ((VavrHamtMutableMapAdapter<Object, Object>) map).clone();
+        }
+        return VavrHamtMutableMapAdapter.fromMap(map);
+    }
+
+    /**
+     * Creates a new empty map with the same hashing strategy as the source.
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static MutableMap<Object, Object> newEmptyLike(MutableMap map)
+    {
+        if (map instanceof VavrHamtMutableMapAdapter)
+        {
+            HashingStrategy strategy = ((VavrHamtMutableMapAdapter<Object, Object>) map).hashingStrategy();
+            return strategy != null
+                    ? VavrHamtMutableMapAdapter.withHashingStrategy(strategy)
+                    : new VavrHamtMutableMapAdapter<>();
+        }
+        return new VavrHamtMutableMapAdapter<>();
+    }
+
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static PureMap putAllPairs(PureMap pureMap, RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs)
     {
         if (!pairs.isEmpty())
         {
-            Map map = pureMap.getMap();
-            MutableMap<Object, Object> newOne = (map instanceof UnifiedMapWithHashingStrategy) ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
-            pairs.forEach(p -> newOne.put(p._first(), p._second()));
+            MutableMap map = pureMap.getMap();
+            MutableMap<Object, Object> newOne = copyMap(map);
+            if (newOne instanceof VavrHamtMutableMapAdapter)
+            {
+                VavrHamtMutableMapAdapter<Object, Object> adapter = (VavrHamtMutableMapAdapter<Object, Object>) newOne;
+                pairs.forEach(p -> adapter.putNoReturn(p._first(), p._second()));
+            }
+            else
+            {
+                pairs.forEach(p -> newOne.put(p._first(), p._second()));
+            }
+
             return new PureMap(newOne);
         }
         else
@@ -851,9 +883,17 @@ public class CoreHelper
     {
         if (pair != null)
         {
-            Map map = pureMap.getMap();
-            MutableMap<Object, Object> newOne = (map instanceof UnifiedMapWithHashingStrategy) ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
-            newOne.put(pair._first(), pair._second());
+            MutableMap map = pureMap.getMap();
+            MutableMap<Object, Object> newOne = copyMap(map);
+            if (newOne instanceof VavrHamtMutableMapAdapter)
+            {
+                ((VavrHamtMutableMapAdapter<Object, Object>) newOne).putNoReturn(pair._first(), pair._second());
+            }
+            else
+            {
+                newOne.put(pair._first(), pair._second());
+            }
+
             return new PureMap(newOne);
         }
         else
@@ -865,45 +905,66 @@ public class CoreHelper
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static PureMap putAllMaps(PureMap pureMap, PureMap other)
     {
-        Map map = pureMap.getMap();
-        MutableMap<Object, Object> newOne = (map instanceof UnifiedMapWithHashingStrategy) ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
+        MutableMap map = pureMap.getMap();
+        MutableMap<Object, Object> newOne = copyMap(map);
         newOne.putAll(other.getMap());
+
         return new PureMap(newOne);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static PureMap replaceAll(PureMap pureMap, RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs)
     {
-        Map map = pureMap.getMap();
-        MutableMap<Object, Object> newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy()) : Maps.mutable.empty();
-        pairs.forEach(p -> newOne.put(p._first(), p._second()));
+        MutableMap map = pureMap.getMap();
+        MutableMap<Object, Object> newOne = newEmptyLike(map);
+        if (newOne instanceof VavrHamtMutableMapAdapter)
+        {
+            VavrHamtMutableMapAdapter<Object, Object> adapter = (VavrHamtMutableMapAdapter<Object, Object>) newOne;
+            pairs.forEach(p -> adapter.putNoReturn(p._first(), p._second()));
+        }
+        else
+        {
+            pairs.forEach(p -> newOne.put(p._first(), p._second()));
+        }
         return new PureMap(newOne);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static PureMap replaceAll(PureMap pureMap, org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?> pair)
     {
-        Map map = pureMap.getMap();
-        MutableMap<Object, Object> newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy()) : Maps.mutable.empty();
-        newOne.put(pair._first(), pair._second());
+        MutableMap map = pureMap.getMap();
+        MutableMap<Object, Object> newOne = newEmptyLike(map);
+        if (newOne instanceof VavrHamtMutableMapAdapter)
+        {
+            ((VavrHamtMutableMapAdapter<Object, Object>) newOne).putNoReturn(pair._first(), pair._second());
+        }
+        else
+        {
+            newOne.put(pair._first(), pair._second());
+        }
         return new PureMap(newOne);
     }
 
     public static PureMap newMap(RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs, ExecutionSupport es)
     {
-        MutableMap<Object, Object> map = PureEqualsHashingStrategy.newMutableMap();
-        pairs.forEach(p -> map.put(p._first(), p._second()));
+        HashingStrategy<Object> strategy = PureEqualsHashingStrategy.HASHING_STRATEGY;
+        // Batch build: collect into java.util.HashMap, then bulk-construct HAMT
+        java.util.HashMap<VavrHamtMutableMapAdapter.HamtKey<Object>, Object> temp = new java.util.HashMap<>();
+        pairs.forEach(p -> temp.put(new VavrHamtMutableMapAdapter.HamtKey<>(p._first(), strategy), p._second()));
+        MutableMap<Object, Object> map = VavrHamtMutableMapAdapter.fromJavaMap(temp, strategy);
+
         return new PureMap(map);
     }
 
     public static PureMap newMap(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?> p, ExecutionSupport es)
     {
-        MutableMap<Object, Object> map = PureEqualsHashingStrategy.newMutableMap();
+        VavrHamtMutableMapAdapter<Object, Object> map = VavrHamtMutableMapAdapter.withHashingStrategy(PureEqualsHashingStrategy.HASHING_STRATEGY);
         if (p != null)
         {
-            map.put(p._first(), p._second());
+            map.putNoReturn(p._first(), p._second());
         }
-        return new PureMap(map);
+
+       return new PureMap(map);
     }
 
     private static class PropertyHashingStrategy implements HashingStrategy<Object>
@@ -949,33 +1010,41 @@ public class CoreHelper
 
     public static PureMap newMap(RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs, Property<?, ?> property, ExecutionSupport es)
     {
-        MutableMap<Object, Object> map = UnifiedMapWithHashingStrategy.newMap(new PropertyHashingStrategy(property, es));
-        pairs.forEach(p -> map.put(p._first(), p._second()));
+        VavrHamtMutableMapAdapter<Object, Object> map = VavrHamtMutableMapAdapter.withHashingStrategy(new PropertyHashingStrategy(property, es));
+        pairs.forEach(p -> map.putNoReturn(p._first(), p._second()));
         return new PureMap(map);
     }
 
     public static PureMap newMap(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?> pair, Property<?, ?> property, ExecutionSupport es)
     {
-        MutableMap<Object, Object> map = UnifiedMapWithHashingStrategy.newMap(new PropertyHashingStrategy(property, es));
+        VavrHamtMutableMapAdapter<Object, Object> map = VavrHamtMutableMapAdapter.withHashingStrategy(new PropertyHashingStrategy(property, es));
         if (pair != null)
         {
-            map.put(pair._first(), pair._second());
+            map.putNoReturn(pair._first(), pair._second());
         }
         return new PureMap(map);
     }
 
     public static PureMap newMap(RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs, RichIterable<? extends Property<?, ?>> properties, Bridge bridge, ExecutionSupport es)
     {
-        MutableMap<Object, Object> map = UnifiedMapWithHashingStrategy.newMap(new PropertyHashingStrategy(properties, bridge, es));
-        pairs.forEach(p -> map.put(p._first(), p._second()));
+        VavrHamtMutableMapAdapter<Object, Object> map = VavrHamtMutableMapAdapter.withHashingStrategy(new PropertyHashingStrategy(properties, bridge, es));
+        pairs.forEach(p -> map.putNoReturn(p._first(), p._second()));
         return new PureMap(map);
     }
 
     public static PureMap put(PureMap pureMap, Object key, Object val)
     {
-        Map map = pureMap.getMap();
-        MutableMap<Object, Object> newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy<?, ?>) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
-        newOne.put(key, val);
+        MutableMap map = pureMap.getMap();
+        MutableMap<Object, Object> newOne = copyMap(map);
+        if (newOne instanceof VavrHamtMutableMapAdapter)
+        {
+            ((VavrHamtMutableMapAdapter<Object, Object>) newOne).putNoReturn(key, val);
+        }
+        else
+        {
+            newOne.put(key, val);
+        }
+
         return new PureMap(newOne);
     }
 

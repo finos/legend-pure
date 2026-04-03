@@ -69,6 +69,7 @@
         <deephaven-csv.version>0.18.0</deephaven-csv.version>
         <eclipsecollections.version>10.2.0</eclipsecollections.version>
         <guava.version>33.4.6-jre</guava.version>
+        <vavr.version>1.0.1</vavr.version>
         <h2.version>2.1.214</h2.version>
         <duckdb.version>1.0.0</duckdb.version>
         <jackson.version>2.10.5</jackson.version>
@@ -664,6 +665,11 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.vavr</groupId>
+                <artifactId>vavr</artifactId>
+                <version>${vavr.version}</version>
             </dependency>
 
             <dependency>
