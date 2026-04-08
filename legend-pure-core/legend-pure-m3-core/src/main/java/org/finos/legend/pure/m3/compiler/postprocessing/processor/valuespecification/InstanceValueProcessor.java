@@ -119,7 +119,7 @@ public class InstanceValueProcessor extends Processor<InstanceValue>
 
     public static void updateInstanceValue(CoreInstance instanceValue, CoreInstance knownMostGeneralGenericTypeBound, ProcessorSupport processorSupport)
     {
-        boolean isExecutable = org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification.isExecutable(instanceValue, processorSupport);
+        boolean isExecutable = !org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification.isNonExecutableValueSpecification(instanceValue, processorSupport);
         ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(instanceValue, M3Properties.values, processorSupport);
         if (values.size() == 1)
         {

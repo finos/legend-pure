@@ -20,6 +20,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.DataType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -97,6 +98,19 @@ public class Type
             return true;
         }
         return (!(type instanceof Any) || (type instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(type, M3Paths.PrimitiveType);
+    }
+
+    public static boolean isDataType(CoreInstance type, ProcessorSupport processorSupport)
+    {
+        if (type == null)
+        {
+            return false;
+        }
+        if (type instanceof DataType)
+        {
+            return true;
+        }
+        return (!(type instanceof Any) || (type instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(type, M3Paths.DataType);
     }
 
     /**

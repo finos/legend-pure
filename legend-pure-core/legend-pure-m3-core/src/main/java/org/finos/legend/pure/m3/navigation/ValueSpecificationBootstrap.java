@@ -16,7 +16,6 @@ package org.finos.legend.pure.m3.navigation;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate2;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.utility.Iterate;
@@ -35,22 +34,11 @@ import java.math.BigInteger;
 
 public class ValueSpecificationBootstrap
 {
-
-    private static final Predicate2<CoreInstance, ProcessorSupport> IS_NON_EXECUTABLE_VAL_SPEC = (coreInstance, processorSupport) -> processorSupport.instance_instanceOf(coreInstance, M3Paths.ValueSpecification) && !ValueSpecification.isExecutable(coreInstance, processorSupport);
-
     private static final Function<CoreInstance, ListIterable<CoreInstance>> EXTRACT_CORE_INSTANCE_VALUES = o -> (ListIterable<CoreInstance>) o.getValueForMetaPropertyToMany(M3Properties.values);
 
     public static CoreInstance wrapValueSpecification(CoreInstance value, boolean executable, ProcessorSupport processorSupport)
     {
-        if (value != null && processorSupport.instance_instanceOf(value, M3Paths.ValueSpecification) && !ValueSpecification.isExecutable(value, processorSupport))
-        {
-            return value;
-        }
-        else if (Measure.isUnitOrMeasureInstance(value, processorSupport))
-        {
-            return value;
-        }
-        return wrap(value, getTypeForWrapping(executable), processorSupport);
+        return (ValueSpecification.isNonExecutableValueSpecification(value, processorSupport) || Measure.isUnitOrMeasureInstance(value, processorSupport)) ? value :  wrap(value, getTypeForWrapping(executable), processorSupport);
     }
 
     public static CoreInstance wrapValueSpecification(RichIterable<? extends CoreInstance> values, boolean executable, final ProcessorSupport processorSupport)
@@ -64,7 +52,7 @@ public class ValueSpecificationBootstrap
         {
             return values.getFirst();
         }
-        if (values.notEmpty() && values.allSatisfyWith(IS_NON_EXECUTABLE_VAL_SPEC, processorSupport))
+        if (values.notEmpty() && values.allSatisfyWith(ValueSpecification::isNonExecutableValueSpecification, processorSupport))
         {
             return wrapInstanceMany(values.flatCollect(EXTRACT_CORE_INSTANCE_VALUES), null, knownMostGeneralGenericTypeBound, getTypeForWrapping(false), processorSupport);
         }
@@ -111,7 +99,7 @@ public class ValueSpecificationBootstrap
 
     public static CoreInstance wrapValueSpecification_ResultGenericTypeIsKnown(RichIterable<? extends CoreInstance> values, CoreInstance genericType, boolean executable, final ProcessorSupport processorSupport)
     {
-        if (values.notEmpty() && values.allSatisfyWith(IS_NON_EXECUTABLE_VAL_SPEC, processorSupport))
+        if (values.notEmpty() && values.allSatisfyWith(ValueSpecification::isNonExecutableValueSpecification, processorSupport))
         {
             return wrapInstanceMany(values.flatCollect(EXTRACT_CORE_INSTANCE_VALUES), genericType, null, getTypeForWrapping(false), processorSupport);
         }
