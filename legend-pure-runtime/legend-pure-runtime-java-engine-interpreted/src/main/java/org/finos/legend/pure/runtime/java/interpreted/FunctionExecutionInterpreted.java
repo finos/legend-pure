@@ -39,7 +39,6 @@ import org.finos.legend.pure.m3.execution.ExecutionPlatform;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.execution.OutputWriter;
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
@@ -1024,27 +1023,27 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         {
             throw new PureExecutionException("Execution cancelled!", functionExpressionCallStack);
         }
-        if (ValueSpecification.isNonExecutableValueSpecification(instance, processorSupport))
+        if (NonExecutableValueSpecificationExecutor.INSTANCE.canExecute(instance, processorSupport))
         {
             return NonExecutableValueSpecificationExecutor.INSTANCE;
         }
-        if (ValueSpecification.isFunctionExpression(instance, processorSupport))
+        if (FunctionExpressionExecutor.INSTANCE.canExecute(instance, processorSupport))
         {
             return FunctionExpressionExecutor.INSTANCE;
         }
-        if (ValueSpecification.isVariableExpression(instance, processorSupport))
+        if (VariableExpressionExecutor.INSTANCE.canExecute(instance, processorSupport))
         {
             return VariableExpressionExecutor.INSTANCE;
         }
-        if (ValueSpecification.isInstanceValue(instance, processorSupport))
+        if (InstanceValueExecutor.INSTANCE.canExecute(instance, processorSupport))
         {
             return InstanceValueExecutor.INSTANCE;
         }
-        if (Instance.instanceOf(instance, M3Paths.ClusteredValueSpecification, processorSupport))
+        if (ClusteredValueSpecificationExecutor.INSTANCE.canExecute(instance, processorSupport))
         {
             return ClusteredValueSpecificationExecutor.INSTANCE;
         }
-        if (Instance.instanceOf(instance, M3Paths.RoutedValueSpecification, processorSupport))
+        if (RoutedValueSpecificationExecutor.INSTANCE.canExecute(instance, processorSupport))
         {
             return RoutedValueSpecificationExecutor.INSTANCE;
         }
