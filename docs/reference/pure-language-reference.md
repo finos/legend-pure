@@ -332,6 +332,45 @@ Class meta::mypackage::Order
 }
 ```
 
+Both `{doc.doc = '…'}` tags and `<<doc.deprecated>>` stereotypes, along with other tags / stereotypes, can be applied
+to individual **columns** inside a `###Relational` store definition.
+
+> **⚠ Column annotation order is the reverse of `###Pure` properties.**
+> In a `###Pure` class, annotations precede the property name.
+> In a `###Relational` table, annotations are placed **after** the column name
+> but **before** the SQL type:
+> `ColumnName <<stereotype>> {tag = 'value'} SQLTYPE`
+
+```pure
+###Relational
+import meta::pure::profiles::*;
+
+Database meta::mypackage::TradeDatabase
+(
+    Table TradeTable
+    (
+        trade_id   INT         PRIMARY KEY,
+        trade_date DATE,
+
+        // tag only — doc string on the column
+        amount     {doc.doc = 'Net notional value of the trade in USD.'} FLOAT,
+
+        // stereotype only — column is deprecated
+        old_ref    <<doc.deprecated>> VARCHAR(20),
+
+        // stereotype + tag together — deprecated with an explanation
+        book_code  <<doc.deprecated>>
+                   {doc.doc = 'Replaced by trade_id. Will be removed in v3.'}
+                   VARCHAR(20),
+
+        // multiple tags in one brace block
+        currency   {doc.doc = 'ISO 4217 three-letter currency code.',
+                    doc.todo = 'Validate against reference-data table.'}
+                   CHAR(3)
+    )
+)
+```
+
 ##### `meta::pure::profiles::equality` — Model-Defined Equality
 
 ```pure
