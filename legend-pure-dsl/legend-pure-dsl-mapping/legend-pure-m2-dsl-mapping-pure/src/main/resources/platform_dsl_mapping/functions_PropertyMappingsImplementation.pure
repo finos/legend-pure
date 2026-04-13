@@ -56,7 +56,15 @@ function meta::pure::mapping::inlineEmbeddedProperty(_this:InlineEmbeddedSetImpl
 
 function meta::pure::mapping::_propertyMappingsByPropertyName(i:PropertyMappingsImplementation[1], s:String[1]):PropertyMapping[*]
 {
-    $i->allPropertyMappings()->filter(pm|$pm.property.name == $s)
+    let direct = $i.propertyMappings->filter(pm|$pm.property.name == $s);
+    if($direct->isNotEmpty(),
+        | $direct,
+        | let superImpl = $i->superMapping();
+          if($superImpl->isEmpty(),
+              | [],
+              | $superImpl->toOne()->_propertyMappingsByPropertyName($s)
+          );
+    );
 }
 
 function meta::pure::mapping::propertyMappingsByPropertyName(_this:PropertyMappingsImplementation[1], s:String[1]):PropertyMapping[*]
@@ -121,7 +129,7 @@ function meta::pure::mapping::propertyMappingsByPropertyName(i:EmbeddedSetImplem
 
 function meta::pure::mapping::propertyMappingByPropertyNameAndTargetId(_this:PropertyMappingsImplementation[1], s:String[1], targetId:String[1]):PropertyMapping[0..1]
 {
-    $_this->allPropertyMappings()->filter(pm|$pm.property.name == $s && $pm.targetSetImplementationId == $targetId)->first()
+    $_this->>_propertyMappingsByPropertyName($s)->filter(pm|$pm.targetSetImplementationId == $targetId)->first()
 }
 
 function meta::pure::mapping::propertyMappingByPropertyNameAndTargetIdWithInlineResolution(i:InstanceSetImplementation[1], s:String[1], targetId:String[1]):meta::pure::mapping::PropertyMapping[0..1]
