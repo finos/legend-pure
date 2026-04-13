@@ -21,6 +21,6 @@ public class TestCoreFunctions
 {
     public static Test suite()
     {
-        return PureTestBuilderCompiled.buildSuite("meta::pure::functions");
+        return PureTestBuilderCompiled.buildSurveyorSuite("meta::pure::functions");
     }
 }

@@ -138,20 +138,25 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
     @Override
     public RichIterable<String> getFileOrFiles(String path)
     {
+        RichIterable<String> results;
         ClassLoaderCodeStorageNode node = findNodeOrThrow(path);
         if (!node.isDirectory())
         {
-            return Lists.immutable.with(node.getPath());
+            results = Lists.immutable.with(node.getPath());
+        }
+        else
+        {
+            ClassLoaderDirectoryNode dirNode = (ClassLoaderDirectoryNode) node;
+            RichIterable<ClassLoaderCodeStorageNode> descendents = dirNode.getDescendants();
+            if (descendents == null)
+            {
+                dirNode.initializeDescendants(getRepoNodesByPath(CodeStorageTools.getInitialPathElement(node.getPath())));
+                descendents = dirNode.getDescendants();
+            }
+            results = descendents.asLazy().collectIf(n -> !n.isDirectory(), CodeStorageNode::getPath);
         }
 
-        ClassLoaderDirectoryNode dirNode = (ClassLoaderDirectoryNode) node;
-        RichIterable<ClassLoaderCodeStorageNode> descendents = dirNode.getDescendants();
-        if (descendents == null)
-        {
-            dirNode.initializeDescendants(getRepoNodesByPath(CodeStorageTools.getInitialPathElement(node.getPath())));
-            descendents = dirNode.getDescendants();
-        }
-        return descendents.collectIf(n -> !n.isDirectory(), CodeStorageNode::getPath);
+        return results.select(CodeStorageTools::isPureFilePath);
     }
 
     @Override
