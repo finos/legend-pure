@@ -129,7 +129,7 @@ function meta::pure::mapping::propertyMappingsByPropertyName(i:EmbeddedSetImplem
 
 function meta::pure::mapping::propertyMappingByPropertyNameAndTargetId(_this:PropertyMappingsImplementation[1], s:String[1], targetId:String[1]):PropertyMapping[0..1]
 {
-    $_this->>_propertyMappingsByPropertyName($s)->filter(pm|$pm.targetSetImplementationId == $targetId)->first()
+    $_this->_propertyMappingsByPropertyName($s)->filter(pm|$pm.targetSetImplementationId == $targetId)->first()
 }
 
 function meta::pure::mapping::propertyMappingByPropertyNameAndTargetIdWithInlineResolution(i:InstanceSetImplementation[1], s:String[1], targetId:String[1]):meta::pure::mapping::PropertyMapping[0..1]
