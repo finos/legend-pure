@@ -20,6 +20,7 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
@@ -32,6 +33,12 @@ class VariableExpressionExecutor implements Executor
 
     private VariableExpressionExecutor()
     {
+    }
+
+    @Override
+    public boolean canExecute(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        return ValueSpecification.isVariableExpression(instance, processorSupport);
     }
 
     @Override

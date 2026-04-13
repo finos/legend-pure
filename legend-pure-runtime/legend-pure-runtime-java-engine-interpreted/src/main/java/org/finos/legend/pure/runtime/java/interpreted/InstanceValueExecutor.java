@@ -14,18 +14,19 @@
 
 package org.finos.legend.pure.runtime.java.interpreted;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.stack.MutableStack;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.measure.Measure;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
@@ -41,16 +42,22 @@ class InstanceValueExecutor implements Executor
     }
 
     @Override
+    public boolean canExecute(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        return ValueSpecification.isInstanceValue(instance, processorSupport);
+    }
+
+    @Override
     public CoreInstance execute(CoreInstance instance, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, MutableStack<CoreInstance> functionExpressionCallStack, VariableContext variableContext, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, FunctionExecutionInterpreted functionExecutionInterpreted, ProcessorSupport processorSupport) throws PureExecutionException
     {
         CoreInstance newInstanceValue = processorSupport.newEphemeralAnonymousCoreInstance(M3Paths.InstanceValue);
         Instance.addValueToProperty(newInstanceValue, M3Properties.genericType, Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.genericType, processorSupport), processorSupport);
         Instance.addValueToProperty(newInstanceValue, M3Properties.multiplicity, Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.multiplicity, processorSupport), processorSupport);
         ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(instance, M3Properties.values, processorSupport);
-        MutableList<CoreInstance> processedValues = FastList.newList(values.size());
+        MutableList<CoreInstance> processedValues = Lists.mutable.ofInitialCapacity(values.size());
         for (CoreInstance value : values)
         {
-            if (Instance.instanceOf(value, M3Paths.ValueSpecification, processorSupport))
+            if (ValueSpecification.isValueSpecification(value, processorSupport))
             {
                 Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(value, functionExpressionCallStack, processorSupport, functionExecutionInterpreted);
                 CoreInstance result = executor.execute(value, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, variableContext, profiler, instantiationContext, executionSupport, functionExecutionInterpreted, processorSupport);

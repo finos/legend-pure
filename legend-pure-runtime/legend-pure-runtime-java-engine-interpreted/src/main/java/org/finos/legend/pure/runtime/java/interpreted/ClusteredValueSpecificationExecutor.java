@@ -16,6 +16,8 @@ package org.finos.legend.pure.runtime.java.interpreted;
 
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.stack.MutableStack;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -31,6 +33,12 @@ public class ClusteredValueSpecificationExecutor implements Executor
 
     private ClusteredValueSpecificationExecutor()
     {
+    }
+
+    @Override
+    public boolean canExecute(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        return Instance.instanceOf(instance, M3Paths.ClusteredValueSpecification, processorSupport);
     }
 
     @Override

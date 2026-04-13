@@ -18,6 +18,7 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
@@ -30,6 +31,12 @@ class NonExecutableValueSpecificationExecutor implements Executor
 
     private NonExecutableValueSpecificationExecutor()
     {
+    }
+
+    @Override
+    public boolean canExecute(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        return ValueSpecification.isNonExecutableValueSpecification(instance, processorSupport);
     }
 
     @Override

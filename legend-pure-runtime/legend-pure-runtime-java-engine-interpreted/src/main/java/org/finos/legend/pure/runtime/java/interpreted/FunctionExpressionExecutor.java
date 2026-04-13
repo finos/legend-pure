@@ -51,6 +51,12 @@ class FunctionExpressionExecutor implements Executor
     }
 
     @Override
+    public boolean canExecute(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        return org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification.isFunctionExpression(instance, processorSupport);
+    }
+
+    @Override
     public CoreInstance execute(CoreInstance instance, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, MutableStack<CoreInstance> functionExpressionCallStack, VariableContext variableContext, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, FunctionExecutionInterpreted functionExecutionInterpreted, ProcessorSupport processorSupport) throws PureExecutionException
     {
         profiler.startExecutingFunctionExpression(instance, functionExpressionCallStack.isEmpty() ? null : functionExpressionCallStack.peek());
