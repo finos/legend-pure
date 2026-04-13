@@ -292,11 +292,6 @@ public abstract class DistributedBinaryGraphSerializer
 
     private static IdBuilder newIdBuilder_internal(String metadataName, ProcessorSupport processorSupport)
     {
-        if (metadataName == null)
-        {
-            // if metadata name is not present, we are serializing the full graph; in this case, use legacy ids
-            return IdBuilder.legacyBuilder(processorSupport).build();
-        }
         return IdBuilder.builder(processorSupport)
                 .withDefaultIdPrefix(DistributedMetadataHelper.getMetadataIdPrefix(metadataName))
                 .build();
@@ -304,8 +299,7 @@ public abstract class DistributedBinaryGraphSerializer
 
     private static IdBuilder newPossiblyHashedIdBuilder(DistributedMetadataSpecification metadataSpec, ProcessorSupport processorSupport)
     {
-        IdBuilder idBuilder = newIdBuilder(metadataSpec, processorSupport);
-        return (metadataSpec == null) ? idBuilder : DistributedMetadataHelper.possiblyHashIds(idBuilder);
+        return DistributedMetadataHelper.possiblyHashIds(newIdBuilder(metadataSpec, processorSupport));
     }
 
     protected class SerializationCollector

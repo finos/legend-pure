@@ -469,18 +469,6 @@ public abstract class DistributedBinaryGraphDeserializer
         }
 
         @Override
-        public String processId(String id)
-        {
-            return (this.metadataName == null) ? id : super.processId(id);
-        }
-
-        @Override
-        public String processEnumId(String enumerationName, String enumName)
-        {
-            return (this.metadataName == null) ? processId(enumName) : super.processEnumId(enumerationName, enumName);
-        }
-
-        @Override
         protected Obj getInstance(String classifierId, String instanceId, boolean throwIfNotFound)
         {
             ClassifierIndex classifierIndex = getClassifierIndex(classifierId);

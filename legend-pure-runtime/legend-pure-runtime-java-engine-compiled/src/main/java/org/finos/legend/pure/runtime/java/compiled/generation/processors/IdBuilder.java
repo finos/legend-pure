@@ -111,6 +111,7 @@ public abstract class IdBuilder
         }
     }
 
+    @Deprecated
     public static class LegacyBuilder extends AbstractBuilder
     {
         private LegacyBuilder(ProcessorSupport processorSupport)
@@ -136,6 +137,7 @@ public abstract class IdBuilder
         return new Builder(processorSupport);
     }
 
+    @Deprecated
     public static LegacyBuilder legacyBuilder(ProcessorSupport processorSupport)
     {
         return new LegacyBuilder(processorSupport);
