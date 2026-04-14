@@ -337,7 +337,7 @@ public class JavaCodeGeneration
         {
             case monolithic:
             {
-                generate = generator.generateOnly(false, generateSources, codegenDirectory);
+                generate = generator.generateOnly(!generateMetadata, generateSources, codegenDirectory);
                 break;
             }
             case modular:
