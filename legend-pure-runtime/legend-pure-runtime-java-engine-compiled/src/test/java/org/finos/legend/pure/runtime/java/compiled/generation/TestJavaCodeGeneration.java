@@ -20,16 +20,26 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
+import org.finos.legend.pure.m3.serialization.runtime.cache.ClassLoaderPureGraphCache;
 import org.finos.legend.pure.m3.statelistener.VoidExecutionActivityListener;
 import org.finos.legend.pure.runtime.java.compiled.compiler.JavaCompilerState;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledProcessorSupport;
 import org.finos.legend.pure.runtime.java.compiled.execution.ConsoleCompiled;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaCodeGeneration;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaCodeGeneration.GenerationType;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.VoidLog;
+import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
+import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataEager;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -37,12 +47,17 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public class TestJavaCodeGeneration
@@ -73,28 +88,7 @@ public class TestJavaCodeGeneration
                 directory,
                 true,
                 new VoidLog());
-        try (URLClassLoader classLoader = new URLClassLoader(new URL[]{classesDirectory.toURI().toURL()}, Thread.currentThread().getContextClassLoader()))
-        {
-            CompiledExecutionSupport executionSupport = new CompiledExecutionSupport(
-                    new JavaCompilerState(null, classLoader),
-                    new CompiledProcessorSupport(classLoader, MetadataLazy.fromClassLoader(classLoader)),
-                    null,
-                    new ClassLoaderCodeStorage(classLoader),
-                    null,
-                    VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER,
-                    new ConsoleCompiled(),
-                    null,
-                    null,
-                    CompiledExtensionLoader.extensions()
-            );
-
-            String className = JavaPackageAndImportBuilder.getRootPackage() + ".platform_pure_essential_string_toString_joinStrings";
-            Class<?> testClass = classLoader.loadClass(className);
-
-            Method joinWithCommas = testClass.getMethod("Root_meta_pure_functions_string_joinStrings_String_MANY__String_1__String_1_", RichIterable.class, String.class, ExecutionSupport.class);
-            Object result1 = joinWithCommas.invoke(null, Lists.immutable.with("a", "b", "c"), ", ", executionSupport);
-            Assert.assertEquals("a, b, c", result1);
-        }
+        executeDynamicNewTest(MetadataLazy::fromClassLoader, classesDirectory);
     }
 
     @Test
@@ -121,22 +115,26 @@ public class TestJavaCodeGeneration
                 directory,
                 true,
                 new VoidLog());
-        try (URLClassLoader classLoader = new URLClassLoader(new URL[]{classesDirectory.toURI().toURL()}, Thread.currentThread().getContextClassLoader()))
+        String externalClassName = externalPackage + ".PureExternal";
+        ClassLoader previousClassLoader = Thread.currentThread().getContextClassLoader();
+        try (TestClassLoader classLoader = new TestClassLoader(previousClassLoader, n -> externalClassName.equals(n) || n.startsWith(JavaPackageAndImportBuilder.rootPackage()), null, toURL(classesDirectory)))
         {
-            Class<?> pureExternal = classLoader.loadClass(externalPackage + ".PureExternal");
+            Thread.currentThread().setContextClassLoader(classLoader);
+            Class<?> pureExternal = classLoader.loadClass(externalClassName);
             Method getExecutionSupport = pureExternal.getMethod("_getExecutionSupport");
             CompiledExecutionSupport executionSupport = (CompiledExecutionSupport) getExecutionSupport.invoke(null);
 
-            String className = JavaPackageAndImportBuilder.getRootPackage() + ".platform_pure_essential_string_toString_joinStrings";
-            Class<?> testClass = classLoader.loadClass(className);
+            Method testNewUnitIndirectUnit = getTestNewUnitIndirectUnit(classLoader);
+            Assert.assertEquals(Boolean.TRUE, testNewUnitIndirectUnit.invoke(null, executionSupport));
 
-            Method joinWithCommas = testClass.getMethod("Root_meta_pure_functions_string_joinStrings_String_MANY__String_1__String_1_", RichIterable.class, String.class, ExecutionSupport.class);
-            Object result1 = joinWithCommas.invoke(null, Lists.immutable.with("a", "b", "c"), ", ", executionSupport);
-            Assert.assertEquals("a, b, c", result1);
+            Method joinStrings = getJoinStrings(classLoader);
+            Assert.assertEquals("a, b, c", joinStrings.invoke(null, Lists.immutable.with("a", "b", "c"), ", ", executionSupport));
+        }
+        finally
+        {
+            Thread.currentThread().setContextClassLoader(previousClassLoader);
         }
     }
-
-    // --- modular generation, skip flag, idempotency ---
 
     @Test
     public void testModularGeneration() throws Exception
@@ -157,7 +155,7 @@ public class TestJavaCodeGeneration
                 false,  // useSingleDir=false so metadata goes to target/metadata-distributed
                 false,
                 false,
-                true,   // preventJavaCompilation
+                false,
                 classesDirectory,
                 directory,
                 true,
@@ -171,6 +169,36 @@ public class TestJavaCodeGeneration
         Assert.assertTrue(
                 "Modular generation should produce metadata/bin under metadata-distributed",
                 binDir.isDirectory() && binDir.list() != null && binDir.list().length > 0);
+
+        executeDynamicNewTest(cl -> MetadataLazy.fromClassLoader(cl, "platform"), classesDirectory, metaDistributed);
+    }
+
+    @Test
+    public void testNoMetadataGenerated() throws Exception
+    {
+        File directory = TMP.newFolder();
+        File classesDirectory = new File(directory, "classes");
+        classesDirectory.mkdir();
+
+        JavaCodeGeneration.doIt(
+                Sets.mutable.with("platform"),
+                Sets.fixedSize.empty(),
+                Sets.fixedSize.empty(),
+                GenerationType.monolithic,
+                false,
+                false,
+                null,
+                false,
+                true,
+                false,
+                false,
+                false,
+                classesDirectory,
+                directory,
+                true,
+                new VoidLog());
+
+        executeDynamicNewTestWithEagerMetadata(classesDirectory, "platform");
     }
 
     @Test
@@ -282,10 +310,10 @@ public class TestJavaCodeGeneration
                 false,
                 false,
                 null,
-                false,   // generateMetadata=false — fastest path
+                false,   // generateMetadata=false - fastest path
                 false,
                 true,    // generateSources=true
-                false,   // generateTest=false  → generated-sources/
+                false,   // generateTest=false: generated-sources/
                 true,    // preventJavaCompilation
                 classesDir,
                 directory,
@@ -298,7 +326,7 @@ public class TestJavaCodeGeneration
                 generatedSources.exists() && generatedSources.isDirectory());
 
         // Package_Impl.java is a stable landmark file produced for the platform repository
-        // on every monolithic generation — assert its existence and structural content.
+        // on every monolithic generation - assert its existence and structural content.
         File packageImpl = new File(generatedSources,
                 "org/finos/legend/pure/generated/Package_Impl.java");
         Assert.assertTrue(
@@ -331,7 +359,7 @@ public class TestJavaCodeGeneration
                 false,   // generateMetadata=false
                 false,
                 true,    // generateSources=true
-                true,    // generateTest=true  → generated-test-sources/
+                true,    // generateTest=true: generated-test-sources/
                 true,    // preventJavaCompilation
                 classesDir,
                 directory,
@@ -459,7 +487,7 @@ public class TestJavaCodeGeneration
     @Test
     public void testMain_fourArgs_externalApiPackageAccepted() throws Exception
     {
-        // Four-arg form: args[3] is the externalAPIPackage — must not throw
+        // Four-arg form: args[3] is the externalAPIPackage - must not throw
         File directory = TMP.newFolder();
         File classesDir = new File(directory, "classes");
         classesDir.mkdir();
@@ -471,10 +499,134 @@ public class TestJavaCodeGeneration
                 directory.getAbsolutePath(),
                 externalPkg);
 
-        // Package.idx still expected — verify it's produced the same as 3-arg form
+        // Package.idx still expected - verify it's produced the same as 3-arg form
         File packageIdx = new File(classesDir, "metadata/classifiers/platform/Package.idx");
         Assert.assertTrue(
                 "Four-arg main() should still produce metadata/classifiers/platform/Package.idx",
                 packageIdx.exists() && packageIdx.length() > 0);
+    }
+
+    private static void executeDynamicNewTestWithEagerMetadata(File classesDir, String... repoNames) throws Exception
+    {
+        ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+        RichIterable<CodeRepository> repos = CodeRepositorySet.newBuilder()
+                .withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(currentClassLoader))
+                .build()
+                .subset(repoNames)
+                .getRepositories();
+        CompositeCodeStorage codeStorage = new CompositeCodeStorage(new ClassLoaderCodeStorage(currentClassLoader, repos));
+        PureRuntime runtime = new PureRuntimeBuilder(codeStorage)
+                .withCache(new ClassLoaderPureGraphCache(currentClassLoader))
+                .withFactoryRegistryOverride(JavaModelFactoryRegistryLoader.loader())
+                .buildAndInitialize();
+        Assert.assertTrue("PureRuntime should be initialized", runtime.isInitialized());
+        executeDynamicNewTest(cl -> new MetadataEager(runtime.getProcessorSupport()), classesDir);
+    }
+
+    private static void executeDynamicNewTest(Function<? super ClassLoader, ? extends Metadata> metadataBuilder, File... classpath) throws Exception
+    {
+        ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+        try (TestClassLoader classLoader = new TestClassLoader(currentClassLoader, Arrays.stream(classpath).map(TestJavaCodeGeneration::toURL).toArray(URL[]::new)))
+        {
+            Thread.currentThread().setContextClassLoader(classLoader);
+            Metadata metadata = metadataBuilder.apply(classLoader);
+            CompiledExecutionSupport executionSupport = new CompiledExecutionSupport(
+                    new JavaCompilerState(null, classLoader),
+                    new CompiledProcessorSupport(classLoader, metadata),
+                    null,
+                    new ClassLoaderCodeStorage(classLoader),
+                    null,
+                    VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER,
+                    new ConsoleCompiled(),
+                    null,
+                    null,
+                    CompiledExtensionLoader.extensions()
+            );
+            Method testNewUnitIndirectUnit = getTestNewUnitIndirectUnit(classLoader);
+            Assert.assertEquals(Boolean.TRUE, testNewUnitIndirectUnit.invoke(null, executionSupport));
+
+            Method joinStrings = getJoinStrings(classLoader);
+            Assert.assertEquals("a, b, c", joinStrings.invoke(null, Lists.immutable.with("a", "b", "c"), ", ", executionSupport));
+        }
+        finally
+        {
+            Thread.currentThread().setContextClassLoader(currentClassLoader);
+        }
+    }
+
+    private static Method getTestNewUnitIndirectUnit(ClassLoader classLoader) throws ReflectiveOperationException
+    {
+        return classLoader.loadClass(JavaPackageAndImportBuilder.getRootPackage() + ".platform_pure_essential_lang_unit_newUnit")
+                .getMethod("Root_meta_pure_functions_meta_tests_newUnit_testNewUnitIndirectUnit__Boolean_1_", ExecutionSupport.class);
+    }
+
+    private static Method getJoinStrings(ClassLoader classLoader) throws ReflectiveOperationException
+    {
+        return classLoader.loadClass(JavaPackageAndImportBuilder.getRootPackage() + ".platform_pure_essential_string_toString_joinStrings")
+                .getMethod("Root_meta_pure_functions_string_joinStrings_String_MANY__String_1__String_1_", RichIterable.class, String.class, ExecutionSupport.class);
+    }
+
+    private static URL toURL(File path)
+    {
+        try
+        {
+            return path.toURI().toURL();
+        }
+        catch (MalformedURLException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static class TestClassLoader extends URLClassLoader
+    {
+        private final Predicate<? super String> classFilter;
+        private final Predicate<? super String> resourceFilter;
+
+        private TestClassLoader(ClassLoader parent, Predicate<? super String> classFilter, Predicate<? super String> resourceFilter, URL... urls)
+        {
+            super(urls, parent);
+            this.classFilter = (classFilter == null) ? n -> n.startsWith(JavaPackageAndImportBuilder.rootPackage()) : classFilter;
+            this.resourceFilter = (resourceFilter == null) ? n -> n.startsWith("metadata/") || n.startsWith("/metadata/") : resourceFilter;
+        }
+
+        private TestClassLoader(ClassLoader parent, URL... urls)
+        {
+            this(parent, null, null, urls);
+        }
+
+        @Override
+        protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException
+        {
+            if (!this.classFilter.test(name))
+            {
+                return super.loadClass(name, resolve);
+            }
+            synchronized (getClassLoadingLock(name))
+            {
+                Class<?> c = findLoadedClass(name);
+                if (c == null)
+                {
+                    c = findClass(name);
+                }
+                if (resolve)
+                {
+                    resolveClass(c);
+                }
+                return c;
+            }
+        }
+
+        @Override
+        public URL getResource(String name)
+        {
+            return this.resourceFilter.test(name) ? findResource(name) : super.getResource(name);
+        }
+
+        @Override
+        public Enumeration<URL> getResources(String name) throws IOException
+        {
+            return this.resourceFilter.test(name) ? findResources(name) : super.getResources(name);
+        }
     }
 }
