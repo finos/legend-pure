@@ -46,7 +46,7 @@ function
 Class meta::pure::test::pct::PCTManifest
 {
     adapter    : Function<Any>[1];                 // resolved adapter function
-    exclusions : Map<Function<Any>,String>[1];     // test function → expected error message
+    exclusions : Map<Function<Any>,String>[1];     // test function to expected error message
 }
 
 // Loads a PCT manifest JSON file from the given resource path.

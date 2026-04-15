@@ -30,6 +30,7 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.enumeration.Enumeration;
+import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
@@ -50,10 +51,10 @@ import java.util.Stack;
  *
  * <h3>Behavior</h3>
  * <ul>
- *   <li>{@code <<test.ToFix>>} stereotype → {@code SKIP} (not executed)</li>
- *   <li>Clean return → {@code PASS}</li>
- *   <li>{@link PureAssertFailException} → {@code FAIL} with message + Pure stack trace</li>
- *   <li>Any other exception → {@code ERROR} with message + Pure stack trace</li>
+ *   <li>{@code <<test.ToFix>>} stereotype: {@code SKIP} (not executed)</li>
+ *   <li>Clean return: {@code PASS}</li>
+ *   <li>{@link PureAssertFailException}: {@code FAIL} with message + Pure stack trace</li>
+ *   <li>Any other exception: {@code ERROR} with message + Pure stack trace</li>
  * </ul>
  *
  * <p>Progress is printed to the console as each test executes.
@@ -78,7 +79,7 @@ public class ExecuteTest extends NativeFunction
         // 2. Compute FQN
         String fqn = PackageableElement.getUserPathForPackageableElement(testFn);
 
-        // 3. Check for <<test.ToFix>> stereotype → SKIP
+        // 3. Check for <<test.ToFix>> stereotype: SKIP
         if (TestTools.hasToFixStereotype(testFn, processorSupport))
         {
             printToConsole("  SKIP  " + fqn + " (ToFix)\n");
@@ -87,11 +88,11 @@ public class ExecuteTest extends NativeFunction
 
         // 4. Execute with timing + exception handling
         String runPrefix = "TEST  ";
-        if (org.finos.legend.pure.m3.navigation.profile.Profile.hasStereotype(testFn, "meta::pure::profiles::test", "BeforePackage", processorSupport))
+        if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "BeforePackage", processorSupport))
         {
             runPrefix = "BEFORE";
         }
-        else if (org.finos.legend.pure.m3.navigation.profile.Profile.hasStereotype(testFn, "meta::pure::profiles::test", "AfterPackage", processorSupport))
+        else if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "AfterPackage", processorSupport))
         {
             runPrefix = "AFTER ";
         }
@@ -148,7 +149,7 @@ public class ExecuteTest extends NativeFunction
 
         // 5. Print result to console
         printToConsole(status + " (" + elapsedMs + "ms)\n");
-        if (message != null && !"PASS".equals(status))
+        if (message != null)
         {
             printToConsole("        " + message + "\n");
         }
@@ -167,33 +168,22 @@ public class ExecuteTest extends NativeFunction
         CoreInstance testStatusEnum = processorSupport.package_getByUserPath("meta::pure::test::surveyor::TestStatus");
 
         // Create TestResult instance
-        CoreInstance instance = this.repository.newEphemeralAnonymousCoreInstance(
-                functionExpressionCallStack.peek().getSourceInformation(),
-                testResultClass
-        );
+        CoreInstance instance = this.repository.newEphemeralAnonymousCoreInstance(functionExpressionCallStack.peek().getSourceInformation(), testResultClass);
 
         // Set fqn
-        Instance.setValuesForProperty(instance, "fqn",
-                Lists.mutable.with(this.repository.newStringCoreInstance(fqn)),
-                processorSupport);
+        Instance.setValueForProperty(instance, "fqn", this.repository.newStringCoreInstance(fqn), processorSupport);
 
         // Set status (resolve enum value)
         CoreInstance enumValue = Enumeration.findEnum(testStatusEnum, statusName);
-        Instance.setValuesForProperty(instance, "status",
-                Lists.mutable.with(enumValue),
-                processorSupport);
+        Instance.setValueForProperty(instance, "status", enumValue, processorSupport);
 
         // Set elapsed
-        Instance.setValuesForProperty(instance, "elapsed",
-                Lists.mutable.with(this.repository.newIntegerCoreInstance(elapsedMs)),
-                processorSupport);
+        Instance.setValueForProperty(instance, "elapsed", this.repository.newIntegerCoreInstance(elapsedMs), processorSupport);
 
         // Set message (optional)
         if (message != null)
         {
-            Instance.setValuesForProperty(instance, "message",
-                    Lists.mutable.with(this.repository.newStringCoreInstance(message)),
-                    processorSupport);
+            Instance.setValueForProperty(instance, "message", this.repository.newStringCoreInstance(message), processorSupport);
         }
 
         return ValueSpecificationBootstrap.wrapValueSpecification(instance, true, processorSupport);

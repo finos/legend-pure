@@ -50,7 +50,7 @@ public class PCTManifest
     }
 
     /**
-     * Build a flat {@code Map<String, String>} from test FQN → expected error message.
+     * Build a flat {@code Map<String, String>} from test FQN: expected error message.
      *
      * @return exclusions as a mutable map (empty if no exclusions defined)
      */

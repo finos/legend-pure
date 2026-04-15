@@ -39,6 +39,7 @@ import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.lazy.AbstractLazyCoreInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.ElementWithConstraintsAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.GeneralizationAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
@@ -49,11 +50,16 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.m3.execution.test.TestTools;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.profile.Profile;
+import org.finos.legend.pure.m3.pct.shared.PCTManifestLoader;
+import org.finos.legend.pure.m3.pct.shared.PCTTools;
+import org.finos.legend.pure.m3.pct.shared.model.PCTManifest;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -88,6 +94,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._c
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 import org.finos.legend.pure.runtime.java.compiled.metadata.JavaMethodWithParamsSharedPureFunction;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;
+import org.finos.legend.pure.runtime.java.compiled.testHelper.PureTestBuilderCompiled;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -111,6 +118,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 public class CompiledSupport
@@ -2284,34 +2292,35 @@ public class CompiledSupport
 
     public static Object executeTest(SharedPureFunction sharedTestFn, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> testFn, ExecutionSupport es)
     {
-        org.finos.legend.pure.runtime.java.compiled.execution.ConsoleCompiled console = ((CompiledExecutionSupport) es).getConsole();
+        ConsoleCompiled console = ((CompiledExecutionSupport) es).getConsole();
         long start = System.nanoTime();
         String status;
         String message = null;
-        String fqn = org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.getUserPathForPackageableElement(testFn, "::");
+        String fqn = PackageableElement.getUserPathForPackageableElement(testFn, "::");
+
+        CompiledProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
 
         try
         {
-            org.finos.legend.pure.m3.navigation.ProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
             String skipReason = null;
 
-            if (org.finos.legend.pure.m3.execution.test.TestTools.hasToFixStereotype(testFn, processorSupport))
+            if (TestTools.hasToFixStereotype(testFn, processorSupport))
             {
                 skipReason = "ToFix";
-            }
-            else if (org.finos.legend.pure.m3.navigation.profile.Profile.hasStereotype(testFn, "meta::pure::profiles::test", "AlloyOnly", processorSupport))
+            } 
+            else if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "AlloyOnly", processorSupport))
             {
                 skipReason = "AlloyOnly";
-            }
-            else if (org.finos.legend.pure.m3.navigation.profile.Profile.hasStereotype(testFn, "meta::pure::profiles::test", "ExcludeModular", processorSupport))
+            } 
+            else if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "ExcludeModular", processorSupport))
             {
                 skipReason = "ExcludeModular";
-            }
-            else if (org.finos.legend.pure.m3.navigation.profile.Profile.hasStereotype(testFn, "meta::pure::profiles::temporaryLazyExclusion", "exclude", processorSupport))
+            } 
+            else if (Profile.hasStereotype(testFn, "meta::pure::profiles::temporaryLazyExclusion", "exclude", processorSupport))
             {
                 skipReason = "temporaryLazyExclusion";
-            }
-            else if (org.finos.legend.pure.m3.navigation.profile.Profile.hasTaggedValue(testFn, "meta::pure::profiles::test", "excludePlatform", "Java compiled", processorSupport))
+            } 
+            else if (Profile.hasTaggedValue(testFn, "meta::pure::profiles::test", "excludePlatform", "Java compiled", processorSupport))
             {
                 skipReason = "excludePlatform: Java compiled";
             }
@@ -2323,17 +2332,17 @@ public class CompiledSupport
                 {
                     console.print("  SKIP  " + fqn + " (" + skipReason + ")\n");
                 }
-            }
+            } 
             else
             {
                 if (console.isEnabled())
                 {
                     String runPrefix = "TEST  ";
-                    if (org.finos.legend.pure.m3.navigation.profile.Profile.hasStereotype(testFn, "meta::pure::profiles::test", "BeforePackage", processorSupport))
+                    if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "BeforePackage", processorSupport))
                     {
                         runPrefix = "BEFORE";
-                    }
-                    else if (org.finos.legend.pure.m3.navigation.profile.Profile.hasStereotype(testFn, "meta::pure::profiles::test", "AfterPackage", processorSupport))
+                    } 
+                    else if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "AfterPackage", processorSupport))
                     {
                         runPrefix = "AFTER ";
                     }
@@ -2342,10 +2351,10 @@ public class CompiledSupport
                 if (sharedTestFn != null)
                 {
                     sharedTestFn.execute(Lists.mutable.empty(), es);
-                }
+                } 
                 else
                 {
-                    org.finos.legend.pure.runtime.java.compiled.testHelper.PureTestBuilderCompiled.executeFn(testFn, null, Maps.mutable.empty(), es, Lists.mutable.empty());
+                    PureTestBuilderCompiled.executeFn(testFn, null, Maps.mutable.empty(), es, Lists.mutable.empty());
                 }
                 status = "PASS";
             }
@@ -2358,11 +2367,7 @@ public class CompiledSupport
         catch (Throwable e)
         {
             status = "ERROR";
-            message = org.finos.legend.pure.m3.pct.shared.PCTTools.getMessageFromError(e);
-            if (message == null)
-            {
-                message = e.toString();
-            }
+            message = PCTTools.getMessageFromError(e);
         }
 
         long timeNanos = System.nanoTime() - start;
@@ -2371,35 +2376,13 @@ public class CompiledSupport
         if (!"SKIP".equals(status) && console.isEnabled())
         {
             console.print(status + " (" + elapsedMs + "ms)\n");
-            if (message != null && !"PASS".equals(status))
+            if (message != null)
             {
                 console.print("        " + message + "\n");
             }
         }
 
-        try
-        {
-            Class<?> testResultClass = Class.forName("org.finos.legend.pure.generated.Root_meta_pure_test_surveyor_TestResult_Impl");
-            Object testResult = testResultClass.getConstructor(String.class).newInstance("Anonymous_NoProfile");
-
-            testResultClass.getMethod("_fqn", String.class).invoke(testResult, fqn);
-
-            testResultClass.getMethod("_elapsed", long.class).invoke(testResult, timeNanos / 1000000);
-
-            Object enumVal = ((CompiledExecutionSupport) es).getMetadata().getEnum("meta::pure::test::surveyor::TestStatus", status);
-            testResultClass.getMethod("_status", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum.class).invoke(testResult, enumVal);
-
-            if (message != null)
-            {
-                testResultClass.getMethod("_message", String.class).invoke(testResult, message);
-            }
-
-            return testResult;
-        }
-        catch (Exception ex)
-        {
-            throw new RuntimeException("Error instantiating TestResult", ex);
-        }
+        return buildCompiledTestResult(fqn, status, elapsedMs, message, es);
     }
 
     // ---------------------------------------------------------------
@@ -2408,27 +2391,18 @@ public class CompiledSupport
 
     /**
      * Executes a PCT test dynamically.
-     * @param sharedTestFn Shared function.
-     * @param testFn Test function.
+     *
+     * @param sharedTestFn    Shared function.
+     * @param testFn          Test function.
      * @param sharedAdapterFn Shared adapter function.
-     * @param adapterFn Adapter function.
-     * @param exclusionsMap Map of exclusions.
-     * @param es Execution support.
+     * @param adapterFn       Adapter function.
+     * @param exclusionsMap   Map of exclusions.
+     * @param es              Execution support.
      * @return Execution test result.
      */
-    public static Object executePCTTest(
-            final SharedPureFunction sharedTestFn,
-            final org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel
-                    .function.Function<?> testFn,
-            final SharedPureFunction sharedAdapterFn,
-            final org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel
-                    .function.Function<?> adapterFn,
-            final Object exclusionsMap,
-            final ExecutionSupport es)
+    public static Object executePCTTest(SharedPureFunction sharedTestFn, Function<?> testFn, SharedPureFunction sharedAdapterFn, Function<?> adapterFn, Object exclusionsMap, ExecutionSupport es)
     {
-        org.finos.legend.pure.runtime.java.compiled.execution
-                .ConsoleCompiled console =
-                ((CompiledExecutionSupport) es).getConsole();
+        ConsoleCompiled console = ((CompiledExecutionSupport) es).getConsole();
         long start = System.nanoTime();
         String status;
         String message = null;
@@ -2436,19 +2410,15 @@ public class CompiledSupport
 
         try
         {
-            ProcessorSupport processorSupport =
-                    ((CompiledExecutionSupport) es).getProcessorSupport();
-            fqn = PackageableElement
-                    .getUserPathForPackageableElement(testFn, "::");
+            ProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
+            fqn = PackageableElement.getUserPathForPackageableElement(testFn, "::");
 
             // Look up exclusion for this test
-            String expectedError =
-                    lookupExclusionCompiled(exclusionsMap, testFn, fqn);
+            String expectedError = lookupExclusionCompiled(exclusionsMap, testFn, fqn);
 
             // Check skip stereotypes
             String skipReason = null;
-            if (org.finos.legend.pure.m3.execution.test.TestTools
-                    .hasToFixStereotype(testFn, processorSupport))
+            if (TestTools.hasToFixStereotype(testFn, processorSupport))
             {
                 skipReason = "ToFix";
             }
@@ -2460,7 +2430,7 @@ public class CompiledSupport
                 {
                     console.print("  SKIP  " + fqn + " (" + skipReason + ")\n");
                 }
-            }
+            } 
             else
             {
                 if (console.isEnabled())
@@ -2472,24 +2442,18 @@ public class CompiledSupport
                 if (sharedTestFn != null)
                 {
                     sharedTestFn.execute(Lists.mutable.with(adapterFn), es);
-                }
+                } 
                 else
                 {
-                    org.finos.legend.pure.runtime.java.compiled.testHelper
-                            .PureTestBuilderCompiled.executeFn(
-                            testFn, null, Maps.mutable.empty(), es,
-                            Lists.mutable.with(adapterFn));
+                    PureTestBuilderCompiled.executeFn(testFn, null, Maps.mutable.empty(), es, Lists.mutable.with(adapterFn));
                 }
 
                 // Test passed
                 if (expectedError != null)
                 {
                     status = "FAIL";
-                    message = "Test was expected to fail with \""
-                            + expectedError
-                            + "\" but now passes — run with rebase to update "
-                            + "the manifest.";
-                }
+                    message = "Test was expected to fail with \"" + expectedError + "\" but now passes — run with rebase to update " + "the manifest.";
+                } 
                 else
                 {
                     status = "PASS";
@@ -2498,10 +2462,8 @@ public class CompiledSupport
         }
         catch (PureAssertFailException e)
         {
-            String expectedError =
-                    lookupExclusionCompiled(exclusionsMap, testFn, fqn);
-            String errorMsg =
-                    e.getInfo() != null ? e.getInfo() : e.getMessage();
+            String expectedError = lookupExclusionCompiled(exclusionsMap, testFn, fqn);
+            String errorMsg = e.getInfo() != null ? e.getInfo() : e.getMessage();
             boolean match = false;
             if (expectedError != null)
             {
@@ -2509,13 +2471,11 @@ public class CompiledSupport
                 {
                     match = true;
                 }
-                else if (e.getExceptionName() != null
-                        && e.getExceptionName().contains(expectedError))
+                else if (e.getExceptionName() != null && e.getExceptionName().contains(expectedError))
                 {
                     match = true;
                 }
-                else if (e.getMessage() != null
-                        && e.getMessage().contains(expectedError))
+                else if (e.getMessage() != null && e.getMessage().contains(expectedError))
                 {
                     match = true;
                 }
@@ -2533,19 +2493,16 @@ public class CompiledSupport
         }
         catch (Throwable e)
         {
-            String expectedError =
-                    lookupExclusionCompiled(exclusionsMap, testFn, fqn);
-            String errorMsg = org.finos.legend.pure.m3.pct.shared.PCTTools
-                    .getMessageFromError(e);
+            String expectedError = lookupExclusionCompiled(exclusionsMap, testFn, fqn);
+            String errorMsg = PCTTools.getMessageFromError(e);
             boolean match = false;
             if (expectedError != null)
             {
-                if (errorMsg != null && errorMsg.contains(expectedError))
+                if (errorMsg.contains(expectedError))
                 {
                     match = true;
                 }
-                else if (e instanceof AssertionError
-                        && "Assert failure".equals(expectedError))
+                else if (e instanceof AssertionError && "Assert failure".equals(expectedError))
                 {
                     match = true;
                 }
@@ -2558,12 +2515,11 @@ public class CompiledSupport
             else
             {
                 status = "ERROR";
-                message = errorMsg != null ? errorMsg : e.toString();
+                message = errorMsg;
             }
         }
 
-        long elapsedMs = java.util.concurrent.TimeUnit.NANOSECONDS
-                .toMillis(System.nanoTime() - start);
+        long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
 
         if (!"SKIP".equals(status) && console.isEnabled())
         {
@@ -2583,84 +2539,54 @@ public class CompiledSupport
 
     /**
      * Loads a PCT manifest.
+     *
      * @param manifestPath Manifest path.
-     * @param es Execution support.
+     * @param es           Execution support.
      * @return Manifest.
      */
-    public static Object loadPCTManifest(
-            final String manifestPath,
-            final ExecutionSupport es)
+    public static Object loadPCTManifest(String manifestPath, ExecutionSupport es)
     {
         try
         {
             // Delegate JSON parsing to shared loader
-            org.finos.legend.pure.m3.pct.shared.model.PCTManifest manifest =
-                    org.finos.legend.pure.m3.pct.shared.PCTManifestLoader
-                            .loadFromClasspath(manifestPath);
+            PCTManifest manifest = PCTManifestLoader.loadFromClasspath(manifestPath);
 
             // Resolve adapter path to a Function
-            ProcessorSupport processorSupport =
-                    ((CompiledExecutionSupport) es).getProcessorSupport();
-            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function
-                    .Function<?> adapterFunction =
-                    (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel
-                            .function.Function<?>)
-                            processorSupport.package_getByUserPath(
-                                    manifest.adapter);
+            ProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
+            Function<?> adapterFunction = (Function<?>) processorSupport.package_getByUserPath(manifest.adapter);
+
             if (adapterFunction == null)
             {
-                throw new RuntimeException(
-                        "PCT manifest adapter function not found: "
-                        + manifest.adapter);
+                throw new RuntimeException("PCT manifest adapter function not found: " + manifest.adapter);
             }
 
             // Convert exclusions to PureMap (Function -> String)
-            org.eclipse.collections.api.map.MutableMap<String, String>
-                    rawExclusions = manifest.toExclusionMap();
-            org.eclipse.collections.api.map.MutableMap<Object, String>
-                    exclusionMap =
-                    org.eclipse.collections.impl.factory.Maps.mutable.empty();
+            MutableMap<String, String> rawExclusions = manifest.toExclusionMap();
+            MutableMap<Object, String> exclusionMap = Maps.mutable.empty();
+
             for (String testFqn : rawExclusions.keysView())
             {
-                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel
-                        .function.Function<?> testFunction =
-                        (org.finos.legend.pure.m3.coreinstance.meta.pure
-                                .metamodel.function.Function<?>)
-                                processorSupport.package_getByUserPath(testFqn);
+                Function<?> testFunction = (Function<?>) processorSupport.package_getByUserPath(testFqn);
+
                 if (testFunction == null)
                 {
-                    throw new RuntimeException(
-                            "PCT manifest test function not found: " + testFqn);
+                    throw new RuntimeException("PCT manifest test function not found: " + testFqn);
                 }
                 exclusionMap.put(testFunction, rawExclusions.get(testFqn));
             }
-            org.finos.legend.pure.runtime.java.compiled.generation.processors
-                    .support.map.PureMap pureMap =
-                    new org.finos.legend.pure.runtime.java.compiled.generation
-                            .processors.support.map.PureMap(exclusionMap);
 
-            // Build PCTManifest Pure instance — adapter is a Function
-            Class<?> manifestClass =
-                    Class.forName(
-                            "org.finos.legend.pure.generated"
-                            + ".Root_meta_pure_test_pct_PCTManifest_Impl");
-            Object pureManifest = manifestClass.getConstructor(String.class)
-                    .newInstance("Anonymous_NoProfile");
-            manifestClass.getMethod("_adapter",
-                    org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel
-                            .function.Function.class)
-                    .invoke(pureManifest, adapterFunction);
-            manifestClass.getMethod("_exclusions",
-                    org.finos.legend.pure.runtime.java.compiled.generation
-                            .processors.support.map.PureMap.class)
-                    .invoke(pureManifest, pureMap);
+            PureMap pureMap = new PureMap(exclusionMap);
+
+            CoreInstance pureManifest = processorSupport.newCoreInstance("Anonymous_NoProfile", "meta::pure::test::pct::PCTManifest", null);
+
+            Instance.setValueForProperty(pureManifest, "adapter", adapterFunction, processorSupport);
+            pureManifest.getClass().getDeclaredMethod("_exclusions", PureMap.class).invoke(pureManifest, pureMap);
 
             return pureManifest;
         }
         catch (Exception e)
         {
-            throw new RuntimeException(
-                    "Error loading PCT manifest from " + manifestPath, e);
+            throw new RuntimeException("Error loading PCT manifest from " + manifestPath, e);
         }
     }
 
@@ -2680,14 +2606,10 @@ public class CompiledSupport
         try
         {
             // map wrapping MutableMap<Object, String> (Function -> String)
-            if (exclusionsMap instanceof org.finos.legend.pure.runtime.java
-                    .compiled.generation.processors.support.map.PureMap)
+            if (exclusionsMap instanceof PureMap)
             {
-                org.eclipse.collections.api.map.MutableMap<?, ?> internalMap =
-                        ((org.finos.legend.pure.runtime.java.compiled.generation
-                                .processors.support.map.PureMap) exclusionsMap)
-                                .getMap();
-                
+                MutableMap<?, ?> internalMap = ((PureMap) exclusionsMap).getMap();
+
                 Object directLookup = internalMap.get(testFn);
                 if (directLookup != null)
                 {
@@ -2696,32 +2618,24 @@ public class CompiledSupport
 
                 for (Object key : internalMap.keySet())
                 {
-                    if (key == testFn || (key != null && key.equals(testFn)))
+                    if (Objects.equals(key, testFn))
                     {
                         Object value = internalMap.get(key);
                         return value != null ? value.toString() : null;
                     }
-                    else if (key instanceof org.finos.legend.pure.m4.coreinstance
-                            .CoreInstance)
+                    else if (key instanceof CoreInstance)
                     {
-                        String keyFqn = org.finos.legend.pure.m3.navigation
-                                .PackageableElement.PackageableElement
-                                .getUserPathForPackageableElement((org.finos
-                                        .legend.pure.m4.coreinstance
-                                        .CoreInstance) key, "::");
+                        String keyFqn = PackageableElement.getUserPathForPackageableElement((CoreInstance) key, "::");
                         if (testFqn != null && testFqn.equals(keyFqn))
                         {
                             Object value = internalMap.get(key);
                             return value != null ? value.toString() : null;
                         }
                     }
-                    else if (key instanceof String)
+                    else if (testFqn != null && testFqn.equals(key))
                     {
-                        if (testFqn != null && testFqn.equals(key))
-                        {
-                            Object value = internalMap.get(key);
-                            return value != null ? value.toString() : null;
-                        }
+                        Object value = internalMap.get(key);
+                        return value != null ? value.toString() : null;
                     }
                 }
             }
@@ -2740,39 +2654,21 @@ public class CompiledSupport
             final String message,
             final ExecutionSupport es)
     {
-        try
+        CompiledProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
+
+        CoreInstance testResult = processorSupport.newCoreInstance("Anonymous_NoProfile", "meta::pure::test::surveyor::TestResult", null);
+
+        Instance.setValueForProperty(testResult, "fqn", ValCoreInstance.toCoreInstance(fqn), processorSupport);
+        Instance.setValueForProperty(testResult, "elapsed", ValCoreInstance.toCoreInstance(elapsedMs / 1000000), processorSupport);
+
+        CoreInstance enumVal = ((CompiledExecutionSupport) es).getMetadata().getEnum("meta::pure::test::surveyor::TestStatus", status);
+        Instance.setValueForProperty(testResult, "status", enumVal, processorSupport);
+
+        if (message != null)
         {
-            Class<?> testResultClass =
-                    Class.forName("org.finos.legend.pure.generated"
-                            + ".Root_meta_pure_test_surveyor_TestResult_Impl");
-            Object testResult = testResultClass.getConstructor(String.class)
-                    .newInstance("Anonymous_NoProfile");
-
-            testResultClass.getMethod("_fqn", String.class)
-                    .invoke(testResult, fqn);
-            testResultClass.getMethod("_elapsed", long.class)
-                    .invoke(testResult, elapsedMs);
-
-            Object enumVal = ((org.finos.legend.pure.runtime.java.compiled
-                    .execution.CompiledExecutionSupport) es)
-                    .getMetadata().getEnum(
-                            "meta::pure::test::surveyor::TestStatus", status);
-            testResultClass.getMethod("_status",
-                    org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel
-                            .type.Enum.class)
-                    .invoke(testResult, enumVal);
-
-            if (message != null)
-            {
-                testResultClass.getMethod("_message", String.class)
-                        .invoke(testResult, message);
-            }
-
-            return testResult;
+            Instance.setValueForProperty(testResult, "message", ValCoreInstance.toCoreInstance(message), processorSupport);
         }
-        catch (Exception e)
-        {
-            throw new RuntimeException("Error building TestResult", e);
-        }
+
+        return testResult;
     }
 }

@@ -15,31 +15,25 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.tests;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
 
 public class ExecutePCTTest extends AbstractNativeFunctionGeneric
 {
     public ExecutePCTTest()
     {
-        super(getMethod(CompiledSupport.class, "executePCTTest",
-                        org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction.class,
-                        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function.class,
-                        org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction.class,
-                        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function.class,
-                        Object.class,
-                        org.finos.legend.pure.m3.execution.ExecutionSupport.class),
+        super(getMethod(CompiledSupport.class, "executePCTTest", SharedPureFunction.class, Function.class, SharedPureFunction.class, Function.class, Object.class, ExecutionSupport.class),
                 true, true, false, "executePCTTest_Function_1__Function_1__Map_1__TestResult_1_");
     }
 
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "((org.finos.legend.pure.generated.Root_meta_pure_test_surveyor_TestResult) CompiledSupport.executePCTTest(" +
-                "CoreGen.getSharedPureFunction(" + transformedParams.get(0) + ", es), " + transformedParams.get(0) + ", " +
-                "CoreGen.getSharedPureFunction(" + transformedParams.get(1) + ", es), " + transformedParams.get(1) + ", " +
-                transformedParams.get(2) + ", es))";
+        return "((org.finos.legend.pure.generated.Root_meta_pure_test_surveyor_TestResult) CompiledSupport.executePCTTest(CoreGen.getSharedPureFunction(" + transformedParams.get(0) + ", es), " + transformedParams.get(0) + ", CoreGen.getSharedPureFunction(" + transformedParams.get(1) + ", es), " + transformedParams.get(1) + ", " + transformedParams.get(2) + ", es))";
     }
 }

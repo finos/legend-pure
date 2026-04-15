@@ -39,6 +39,7 @@ import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.MapCoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
@@ -50,8 +51,8 @@ import java.util.Stack;
  * <p>Executes a single PCT test function with an adapter injected as the first
  * parameter.  Handles exclusions:
  * <ul>
- *   <li>If error matches exclusion entry → PASS (expected failure)</li>
- *   <li>If test passes but was in exclusions → FAIL (needs rebase)</li>
+ *   <li>If error matches exclusion entry: PASS (expected failure)</li>
+ *   <li>If test passes but was in exclusions: FAIL (needs rebase)</li>
  * </ul>
  */
 public class ExecutePCTTest extends NativeFunction
@@ -77,9 +78,9 @@ public class ExecutePCTTest extends NativeFunction
         String fqn = PackageableElement.getUserPathForPackageableElement(testFn);
 
         // 3. Look up exclusion for this test
-        String expectedError = lookupExclusion(exclusionsMap, testFn, processorSupport);
+        String expectedError = lookupExclusion((MapCoreInstance) exclusionsMap, testFn);
 
-        // 4. Check for <<test.ToFix>> stereotype → SKIP
+        // 4. Check for <<test.ToFix>> stereotype: SKIP
         if (TestTools.hasToFixStereotype(testFn, processorSupport))
         {
             printToConsole("  SKIP  " + fqn + " (ToFix)\n");
@@ -114,7 +115,7 @@ public class ExecutePCTTest extends NativeFunction
             // Test passed
             if (expectedError != null)
             {
-                // Was expected to fail but passed → needs rebase
+                // Was expected to fail but passed: needs rebase
                 status = "FAIL";
                 message = "Test was expected to fail with \"" + expectedError + "\" but now passes — run with rebase to update the manifest.";
             }
@@ -145,7 +146,7 @@ public class ExecutePCTTest extends NativeFunction
         catch (Exception e)
         {
             String errorMsg = PCTTools.getMessageFromError(e);
-            if (expectedError != null && errorMsg != null && errorMsg.contains(expectedError))
+            if (expectedError != null && errorMsg.contains(expectedError))
             {
                 // Expected failure with matching error
                 status = "PASS";
@@ -187,31 +188,12 @@ public class ExecutePCTTest extends NativeFunction
      * Look up the exclusion message for a given test FQN from the Pure Map instance.
      * Returns null if the test is not in the exclusions.
      */
-    private String lookupExclusion(CoreInstance mapInstance, CoreInstance testFn, ProcessorSupport processorSupport)
+    private String lookupExclusion(MapCoreInstance mapCoreInstance, CoreInstance testFn)
     {
-        if (mapInstance instanceof org.finos.legend.pure.runtime.java.interpreted.natives.MapCoreInstance)
+        CoreInstance val = mapCoreInstance.getMap().get(testFn);
+        if (val != null)
         {
-            org.finos.legend.pure.runtime.java.interpreted.natives.MapCoreInstance mapCoreInstance = (org.finos.legend.pure.runtime.java.interpreted.natives.MapCoreInstance) mapInstance;
-            CoreInstance val = mapCoreInstance.getMap().get(testFn);
-            if (val != null)
-            {
-                return val.getName();
-            }
-        }
-        // Pure Map stores key-value pairs — navigate the internal structure
-        // The Map has a property 'keyValues' which is a list of Pair<K,V>
-        ListIterable<? extends CoreInstance> keyValues = Instance.getValueForMetaPropertyToManyResolved(mapInstance, "keyValues", processorSupport);
-        if (keyValues != null)
-        {
-            for (CoreInstance pair : keyValues)
-            {
-                CoreInstance first = Instance.getValueForMetaPropertyToOneResolved(pair, "first", processorSupport);
-                if (first == testFn || (first != null && first.equals(testFn)))
-                {
-                    CoreInstance second = Instance.getValueForMetaPropertyToOneResolved(pair, "second", processorSupport);
-                    return second != null ? second.getName() : "";
-                }
-            }
+            return val.getName();
         }
         return null;
     }
@@ -224,29 +206,17 @@ public class ExecutePCTTest extends NativeFunction
         CoreInstance testResultClass = processorSupport.package_getByUserPath("meta::pure::test::surveyor::TestResult");
         CoreInstance testStatusEnum = processorSupport.package_getByUserPath("meta::pure::test::surveyor::TestStatus");
 
-        CoreInstance instance = this.repository.newEphemeralAnonymousCoreInstance(
-                functionExpressionCallStack.peek().getSourceInformation(),
-                testResultClass
-        );
+        CoreInstance instance = this.repository.newEphemeralAnonymousCoreInstance(functionExpressionCallStack.peek().getSourceInformation(), testResultClass);
 
-        Instance.setValuesForProperty(instance, "fqn",
-                Lists.mutable.with(this.repository.newStringCoreInstance(fqn)),
-                processorSupport);
+        Instance.setValueForProperty(instance, "fqn", this.repository.newStringCoreInstance(fqn), processorSupport);
 
         CoreInstance enumValue = Enumeration.findEnum(testStatusEnum, statusName);
-        Instance.setValuesForProperty(instance, "status",
-                Lists.mutable.with(enumValue),
-                processorSupport);
-
-        Instance.setValuesForProperty(instance, "elapsed",
-                Lists.mutable.with(this.repository.newIntegerCoreInstance(elapsedMs)),
-                processorSupport);
+        Instance.setValueForProperty(instance, "status", enumValue, processorSupport);
+        Instance.setValueForProperty(instance, "elapsed", this.repository.newIntegerCoreInstance(elapsedMs), processorSupport);
 
         if (message != null)
         {
-            Instance.setValuesForProperty(instance, "message",
-                    Lists.mutable.with(this.repository.newStringCoreInstance(message)),
-                    processorSupport);
+            Instance.setValueForProperty(instance, "message", this.repository.newStringCoreInstance(message), processorSupport);
         }
 
         return ValueSpecificationBootstrap.wrapValueSpecification(instance, true, processorSupport);

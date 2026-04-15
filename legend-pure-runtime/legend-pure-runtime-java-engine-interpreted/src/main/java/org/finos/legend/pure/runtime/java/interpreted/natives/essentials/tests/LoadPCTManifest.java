@@ -16,7 +16,6 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.tests;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
@@ -33,6 +32,7 @@ import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.MapCoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
@@ -64,37 +64,22 @@ public class LoadPCTManifest extends NativeFunction
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
-        // 1. Extract the manifest path string
         CoreInstance pathValue = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
         String manifestPath = pathValue.getName();
 
-        // 2. Load via shared loader (try classpath first, then code storage)
-        PCTManifest manifest;
-        try
+        InputStream is = this.functionExecution.getPureRuntime().getCodeStorage().getContent(manifestPath);
+        if (is == null)
         {
-            manifest = PCTManifestLoader.loadFromClasspath(manifestPath);
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "PCT manifest file not found: " + manifestPath);
         }
-        catch (IllegalArgumentException e)
-        {
-            // Fall back to code storage (Pure IDE)
-            InputStream is = this.functionExecution.getPureRuntime().getCodeStorage().getContent(manifestPath);
-            if (is == null)
-            {
-                throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(),
-                        "PCT manifest file not found: " + manifestPath, e);
-            }
-            manifest = PCTManifestLoader.loadFromStream(is, manifestPath);
-        }
+        PCTManifest manifest = PCTManifestLoader.loadFromStream(is, manifestPath);
 
-        // 3. Resolve adapter string to a Function
         CoreInstance adapterFunction = processorSupport.package_getByUserPath(manifest.adapter);
         if (adapterFunction == null)
         {
-            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(),
-                    "PCT manifest adapter function not found: " + manifest.adapter);
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "PCT manifest adapter function not found: " + manifest.adapter);
         }
 
-        // 4. Convert the shared POJO into Pure instances
         return toPureManifest(manifest, adapterFunction, functionExpressionCallStack, processorSupport);
     }
 
@@ -102,33 +87,27 @@ public class LoadPCTManifest extends NativeFunction
     {
         CoreInstance mapClass = processorSupport.package_getByUserPath("meta::pure::functions::collection::Map");
         // Build Map instance using interpreted MapCoreInstance
-        org.finos.legend.pure.runtime.java.interpreted.natives.MapCoreInstance mapInstance = new org.finos.legend.pure.runtime.java.interpreted.natives.MapCoreInstance(
-                org.eclipse.collections.impl.factory.Lists.immutable.empty(), "Anonymous_NoProfile",
-                functionExpressionCallStack.peek().getSourceInformation(), mapClass, -1, this.repository, false, processorSupport);
+        MapCoreInstance mapInstance = new MapCoreInstance(Lists.immutable.empty(), "Anonymous_NoProfile", functionExpressionCallStack.peek().getSourceInformation(), mapClass, -1, this.repository, false, processorSupport);
 
         // Populate MapCoreInstance internal map directly mapping Function -> String
         MutableMap<String, String> exclusionMap = manifest.toExclusionMap();
-        org.eclipse.collections.api.map.MutableMap<CoreInstance, CoreInstance> internalMap = mapInstance.getMap();
+        MutableMap<CoreInstance, CoreInstance> internalMap = mapInstance.getMap();
         for (String testFqn : exclusionMap.keysView())
         {
             CoreInstance testFunction = processorSupport.package_getByUserPath(testFqn);
             if (testFunction == null)
             {
-                throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(),
-                        "PCT manifest test function not found: " + testFqn);
+                throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "PCT manifest test function not found: " + testFqn);
             }
             internalMap.put(testFunction, this.repository.newStringCoreInstance(exclusionMap.get(testFqn)));
         }
 
         // Build PCTManifest instance — adapter is now a Function, not a String
         CoreInstance manifestClass = processorSupport.package_getByUserPath("meta::pure::test::pct::PCTManifest");
-        CoreInstance pureManifest = this.repository.newEphemeralAnonymousCoreInstance(
-                functionExpressionCallStack.peek().getSourceInformation(), manifestClass);
+        CoreInstance pureManifest = this.repository.newEphemeralAnonymousCoreInstance(functionExpressionCallStack.peek().getSourceInformation(), manifestClass);
 
-        Instance.setValuesForProperty(pureManifest, "adapter",
-                Lists.mutable.with(adapterFunction), processorSupport);
-        Instance.setValuesForProperty(pureManifest, "exclusions",
-                Lists.mutable.with(mapInstance), processorSupport);
+        Instance.setValueForProperty(pureManifest, "adapter", adapterFunction, processorSupport);
+        Instance.setValueForProperty(pureManifest, "exclusions", mapInstance, processorSupport);
 
         return ValueSpecificationBootstrap.wrapValueSpecification(pureManifest, true, processorSupport);
     }

@@ -35,7 +35,7 @@ Enum meta::pure::test::surveyor::TestStatus
 Class meta::pure::test::surveyor::TestReport
 {
     results       : meta::pure::test::surveyor::TestResult[*];
-    totalElapsed  : Integer[1];    // milliseconds — sum of individual test elapsed times
+    totalElapsed  : Integer[1];    // milliseconds - sum of individual test elapsed times
     passCount     : Integer[1];
     failCount     : Integer[1];
     errorCount    : Integer[1];
@@ -53,8 +53,8 @@ native function <<access.private>> meta::pure::test::surveyor::executeTest(testF
 // -------------------------------------------------------------
 // Private native: executes a single PCT test function with an
 // adapter injected as the first parameter.  Handles exclusions:
-//   - If error matches exclusion entry → PASS (expected failure)
-//   - If test passes but was in exclusions → FAIL (needs rebase)
+//   - If error matches exclusion entry: PASS (expected failure)
+//   - If test passes but was in exclusions: FAIL (needs rebase)
 // -------------------------------------------------------------
 
 native function <<access.private>> meta::pure::test::surveyor::executePCTTest(testFn:Function<Any>[1], adapter:Function<Any>[1], exclusions:Map<Function<Any>,String>[1]): TestResult[1];

@@ -15,34 +15,25 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.tests;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
 
 public class ExecuteTest extends AbstractNativeFunctionGeneric
 {
     public ExecuteTest()
     {
-        super(getMethod(CompiledSupport.class, "executeTest", org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction.class, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function.class, org.finos.legend.pure.m3.execution.ExecutionSupport.class), true, true, false, "executeTest_Function_1__TestResult_1_");
+        super(getMethod(CompiledSupport.class, "executeTest", SharedPureFunction.class, Function.class, ExecutionSupport.class),
+                true, true, false, "executeTest_Function_1__TestResult_1_");
     }
 
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
         return "((org.finos.legend.pure.generated.Root_meta_pure_test_surveyor_TestResult) CompiledSupport.executeTest(CoreGen.getSharedPureFunction(" + transformedParams.get(0) + ", es), " + transformedParams.get(0) + ", es))";
-    }
-
-    @Override
-    public String buildBody()
-    {
-        return "new org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.DefendedPureFunction1<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function, Object>()\n" +
-                "        {\n" +
-                "            @Override\n" +
-                "            public Object value(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function func, org.finos.legend.pure.m3.execution.ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return ((org.finos.legend.pure.generated.Root_meta_pure_test_surveyor_TestResult) CompiledSupport.executeTest(CoreGen.getSharedPureFunction(func, es), func, es));\n" +
-                "            }\n" +
-                "        }";
     }
 }
