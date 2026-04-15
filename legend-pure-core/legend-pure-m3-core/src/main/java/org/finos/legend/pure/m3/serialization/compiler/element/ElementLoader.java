@@ -58,18 +58,11 @@ public abstract class ElementLoader
         this.referenceIds = referenceIdsBuilder.withPackagePathResolver(this::loadElement).build();
         this.backRefFilter = backRefFilter;
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0;
         LOGGER.debug("Initializing element builder");
-        try
-        {
-            this.builder.initialize(this);
-        }
-        catch (Throwable t)
-        {
-            LOGGER.error("Error initializing element builder", t);
-            throw t;
-        }
-        finally
+        this.builder.initialize(this);
+        if (debug)
         {
             long end = System.nanoTime();
             LOGGER.debug("Finished initializing element builder in {}s", (end - start) / 1_000_000_000.0);
@@ -118,7 +111,7 @@ public abstract class ElementLoader
      * Load an element. If errorIfNotFound is true, throws an exception if the element does not exist; otherwise, it
      * returns null. This method is thread safe, and a given element will be loaded at most once.
      *
-     * @param path package path of the element
+     * @param path            package path of the element
      * @param errorIfNotFound whether to throw an exception if the element does not exist
      * @return the loaded element, or null if it does not exist and errorIfNotFound is false
      * @throws IllegalArgumentException if errorIfNotFound is true and path is null or the element does not exist
@@ -173,7 +166,8 @@ public abstract class ElementLoader
 
     private CoreInstance load(String path)
     {
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         try
         {
             ConcreteElementMetadata elementMetadata = this.index.getElement(path);
@@ -197,84 +191,69 @@ public abstract class ElementLoader
             // This should not be possible, but just in case ...
             throw new IllegalStateException(path + " is neither a concrete element nor a virtual package");
         }
-        catch (Throwable t)
-        {
-            LOGGER.error("Error loading {}", path, t);
-            throw t;
-        }
         finally
         {
-            long end = System.nanoTime();
-            LOGGER.debug("Finished loading {} in {}ns", path, end - start);
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished loading {} in {}ns", path, end - start);
+            }
         }
     }
 
     private DeserializedConcreteElement deserialize(String path)
     {
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         LOGGER.debug("Deserializing {}", path);
-        try
-        {
-            return deserializeConcreteElement(path);
-        }
-        catch (Throwable t)
-        {
-            LOGGER.error("Error deserializing {}", path, t);
-            throw t;
-        }
-        finally
+        DeserializedConcreteElement deserialized = deserializeConcreteElement(path);
+        if (debug)
         {
             long end = System.nanoTime();
             LOGGER.debug("Finished deserializing {} in {}ns", path, end - start);
         }
+        return deserialized;
     }
 
     private BackReferenceProvider deserializeBackReferences(String path)
     {
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         LOGGER.debug("Deserializing back references for {}", path);
-        try
+        MutableMap<String, MutableList<BackReference>> map = Maps.mutable.empty();
+        this.index.getBackReferenceModuleNames(path).forEach(moduleName ->
         {
-            MutableMap<String, MutableList<BackReference>> map = Maps.mutable.empty();
-            this.index.getBackReferenceModuleNames(path).forEach(moduleName ->
+            ElementBackReferenceMetadata backRefMetadata = deserializeBackReferences(moduleName, path);
+            if (backRefMetadata != null)
             {
-                ElementBackReferenceMetadata backRefMetadata = deserializeBackReferences(moduleName, path);
-                if (backRefMetadata != null)
+                backRefMetadata.getInstanceBackReferenceMetadata().forEach(ibr ->
                 {
-                    backRefMetadata.getInstanceBackReferenceMetadata().forEach(ibr ->
+                    String instanceRefId = ibr.getInstanceReferenceId();
+                    MutableList<BackReference> list = map.getIfAbsentPut(instanceRefId, Lists.mutable::empty);
+                    if (this.backRefFilter == null)
                     {
-                        String instanceRefId = ibr.getInstanceReferenceId();
-                        MutableList<BackReference> list = map.getIfAbsentPut(instanceRefId, Lists.mutable::empty);
-                        if (this.backRefFilter == null)
-                        {
-                            list.addAll(ibr.getBackReferences().castToList());
-                        }
-                        else
-                        {
-                            ibr.getBackReferences().select(new BackReferenceFilterPredicate(this.backRefFilter, moduleName, path, instanceRefId), list);
-                        }
-                    });
-                }
-            });
-
-            if (map.isEmpty())
-            {
-                return id -> Lists.fixedSize.empty();
+                        list.addAll(ibr.getBackReferences().castToList());
+                    }
+                    else
+                    {
+                        ibr.getBackReferences().select(new BackReferenceFilterPredicate(this.backRefFilter, moduleName, path, instanceRefId), list);
+                    }
+                });
             }
+        });
 
-            map.forEachValue(ListHelper::sortAndRemoveDuplicates);
-            return id -> map.getIfAbsentValue(id, Lists.fixedSize.empty());
-        }
-        catch (Throwable t)
+        if (map.isEmpty())
         {
-            LOGGER.error("Error deserializing back references for {}", path, t);
-            throw t;
+            return id -> Lists.fixedSize.empty();
         }
-        finally
+
+        map.forEachValue(ListHelper::sortAndRemoveDuplicates);
+        if (debug)
         {
             long end = System.nanoTime();
             LOGGER.debug("Finished deserializing back references for {} in {}ns", path, end - start);
         }
+        return id -> map.getIfAbsentValue(id, Lists.fixedSize.empty());
     }
 
     abstract DeserializedConcreteElement deserializeConcreteElement(String path);

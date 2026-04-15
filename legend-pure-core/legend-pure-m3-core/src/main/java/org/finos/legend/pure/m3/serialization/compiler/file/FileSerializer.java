@@ -70,17 +70,23 @@ public class FileSerializer
         Objects.requireNonNull(directory, "directory is required");
         Objects.requireNonNull(element, "element is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         String elementPath = PackageableElement.getUserPathForPackageableElement(element);
         Path filePath = this.filePathProvider.getElementFilePath(directory, elementPath, filePathVersion);
         LOGGER.debug("Serializing {} to {}", elementPath, filePath);
         try
         {
             writeIfModified(filePath, stream -> this.elementSerializer.serialize(stream, element, serializerVersion, referenceIdVersion));
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished serializing {} to {} in {}s", elementPath, filePath, (end - start) / 1_000_000_000.0);
+            }
+            return filePath;
         }
         catch (Exception e)
         {
-            LOGGER.error("Error serializing {} to {}", elementPath, filePath, e);
             StringBuilder builder = new StringBuilder("Error serializing element ").append(elementPath);
             SourceInformation sourceInfo = element.getSourceInformation();
             if (sourceInfo != null)
@@ -95,12 +101,6 @@ public class FileSerializer
             }
             throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
         }
-        finally
-        {
-            long end = System.nanoTime();
-            LOGGER.debug("Finished serializing {} to {} in {}s", elementPath, filePath, (end - start) / 1_000_000_000.0);
-        }
-        return filePath;
     }
 
     // Serialize element to zip
@@ -115,7 +115,8 @@ public class FileSerializer
         Objects.requireNonNull(zipStream, "directory is required");
         Objects.requireNonNull(element, "element is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         String elementPath = PackageableElement.getUserPathForPackageableElement(element);
         String entryName = this.filePathProvider.getElementFilePath(elementPath, "/", filePathVersion);
         LOGGER.debug("Serializing {} to zip entry '{}'", elementPath, entryName);
@@ -124,10 +125,15 @@ public class FileSerializer
             zipStream.putNextEntry(new ZipEntry(entryName));
             this.elementSerializer.serialize(zipStream, element, serializerVersion, referenceIdVersion);
             zipStream.closeEntry();
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished serializing {} to zip entry '{}' in {}s", elementPath, entryName, (end - start) / 1_000_000_000.0);
+            }
+            return entryName;
         }
         catch (Exception e)
         {
-            LOGGER.error("Error serializing {} to zip entry '{}'", elementPath, entryName, e);
             StringBuilder builder = new StringBuilder("Error serializing element ").append(elementPath);
             SourceInformation sourceInfo = element.getSourceInformation();
             if (sourceInfo != null)
@@ -142,12 +148,6 @@ public class FileSerializer
             }
             throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
         }
-        finally
-        {
-            long end = System.nanoTime();
-            LOGGER.debug("Finished serializing {} to zip entry '{}' in {}s", elementPath, entryName, (end - start) / 1_000_000_000.0);
-        }
-        return entryName;
     }
 
     // Serialize module manifest to directory
@@ -162,16 +162,22 @@ public class FileSerializer
         Objects.requireNonNull(directory, "directory is required");
         Objects.requireNonNull(moduleManifest, "module manifest is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         Path filePath = this.filePathProvider.getModuleManifestFilePath(directory, moduleManifest.getModuleName(), filePathVersion);
         LOGGER.debug("Serializing module {} manifest to {}", moduleManifest.getModuleName(), filePath);
         try
         {
             writeIfModified(filePath, stream -> this.moduleSerializer.serializeManifest(stream, moduleManifest, serializerVersion));
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished serializing module {} manifest to {} in {}s", moduleManifest.getModuleName(), filePath, (end - start) / 1_000_000_000.0);
+            }
+            return filePath;
         }
         catch (Exception e)
         {
-            LOGGER.error("Error serializing module {} manifest to {}", moduleManifest.getModuleName(), filePath, e);
             StringBuilder builder = new StringBuilder("Error serializing manifest for module ").append(moduleManifest.getModuleName()).append(" to ").append(filePath);
             String eMessage = e.getMessage();
             if (eMessage != null)
@@ -180,12 +186,6 @@ public class FileSerializer
             }
             throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
         }
-        finally
-        {
-            long end = System.nanoTime();
-            LOGGER.debug("Finished serializing module {} manifest to {} in {}s", moduleManifest.getModuleName(), filePath, (end - start) / 1_000_000_000.0);
-        }
-        return filePath;
     }
 
     // Serialize module manifest to zip
@@ -200,7 +200,8 @@ public class FileSerializer
         Objects.requireNonNull(zipStream, "zip stream is required");
         Objects.requireNonNull(moduleManifest, "module manifest is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         String entryName = this.filePathProvider.getModuleManifestFilePath(moduleManifest.getModuleName(), "/", filePathVersion);
         LOGGER.debug("Serializing module {} manifest to zip entry '{}'", moduleManifest.getModuleName(), entryName);
         try
@@ -208,10 +209,15 @@ public class FileSerializer
             zipStream.putNextEntry(new ZipEntry(entryName));
             this.moduleSerializer.serializeManifest(zipStream, moduleManifest, serializerVersion);
             zipStream.closeEntry();
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished serializing module {} manifest to zip entry '{}' in {}s", moduleManifest.getModuleName(), entryName, (end - start) / 1_000_000_000.0);
+            }
+            return entryName;
         }
         catch (Exception e)
         {
-            LOGGER.error("Error serializing module {} manifest to zip entry '{}'", moduleManifest.getModuleName(), entryName, e);
             StringBuilder builder = new StringBuilder("Error serializing manifest for module ").append(moduleManifest.getModuleName()).append(" to ").append(entryName);
             String eMessage = e.getMessage();
             if (eMessage != null)
@@ -220,12 +226,6 @@ public class FileSerializer
             }
             throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
         }
-        finally
-        {
-            long end = System.nanoTime();
-            LOGGER.debug("Finished serializing module {} manifest to zip entry '{}' in {}s", moduleManifest.getModuleName(), entryName, (end - start) / 1_000_000_000.0);
-        }
-        return entryName;
     }
 
 
@@ -241,16 +241,22 @@ public class FileSerializer
         Objects.requireNonNull(directory, "directory is required");
         Objects.requireNonNull(moduleSourceMetadata, "module source metadata is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         Path filePath = this.filePathProvider.getModuleSourceMetadataFilePath(directory, moduleSourceMetadata.getModuleName(), filePathVersion);
         LOGGER.debug("Serializing module {} source metadata to {}", moduleSourceMetadata.getModuleName(), filePath);
         try
         {
             writeIfModified(filePath, stream -> this.moduleSerializer.serializeSourceMetadata(stream, moduleSourceMetadata, serializerVersion));
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished serializing module {} source metadata to {} in {}s", moduleSourceMetadata.getModuleName(), filePath, (end - start) / 1_000_000_000.0);
+            }
+            return filePath;
         }
         catch (Exception e)
         {
-            LOGGER.error("Error serializing module {} source metadata to {}", moduleSourceMetadata.getModuleName(), filePath, e);
             StringBuilder builder = new StringBuilder("Error serializing source metadata for module ").append(moduleSourceMetadata.getModuleName()).append(" to ").append(filePath);
             String eMessage = e.getMessage();
             if (eMessage != null)
@@ -259,12 +265,6 @@ public class FileSerializer
             }
             throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
         }
-        finally
-        {
-            long end = System.nanoTime();
-            LOGGER.debug("Finished serializing module {} source metadata to {} in {}s", moduleSourceMetadata.getModuleName(), filePath, (end - start) / 1_000_000_000.0);
-        }
-        return filePath;
     }
 
     // Serialize module source metadata to zip
@@ -279,7 +279,8 @@ public class FileSerializer
         Objects.requireNonNull(zipStream, "zip stream is required");
         Objects.requireNonNull(moduleSourceMetadata, "module source metadata is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         String entryName = this.filePathProvider.getModuleSourceMetadataFilePath(moduleSourceMetadata.getModuleName(), "/", filePathVersion);
         LOGGER.debug("Serializing module {} source metadata to zip entry '{}'", moduleSourceMetadata.getModuleName(), entryName);
         try
@@ -287,10 +288,15 @@ public class FileSerializer
             zipStream.putNextEntry(new ZipEntry(entryName));
             this.moduleSerializer.serializeSourceMetadata(zipStream, moduleSourceMetadata, serializerVersion);
             zipStream.closeEntry();
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished serializing module {} source metadata to zip entry '{}' in {}s", moduleSourceMetadata.getModuleName(), entryName, (end - start) / 1_000_000_000.0);
+            }
+            return entryName;
         }
         catch (Exception e)
         {
-            LOGGER.error("Error serializing module {} source metadata to zip entry '{}'", moduleSourceMetadata.getModuleName(), entryName, e);
             StringBuilder builder = new StringBuilder("Error serializing source metadata for module ").append(moduleSourceMetadata.getModuleName()).append(" to ").append(entryName);
             String eMessage = e.getMessage();
             if (eMessage != null)
@@ -299,12 +305,6 @@ public class FileSerializer
             }
             throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
         }
-        finally
-        {
-            long end = System.nanoTime();
-            LOGGER.debug("Finished serializing module {} source metadata to zip entry '{}' in {}s", moduleSourceMetadata.getModuleName(), entryName, (end - start) / 1_000_000_000.0);
-        }
-        return entryName;
     }
 
     
@@ -320,16 +320,22 @@ public class FileSerializer
         Objects.requireNonNull(directory, "directory is required");
         Objects.requireNonNull(moduleExtRefMetadata, "module external reference metadata is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         Path filePath = this.filePathProvider.getModuleExternalReferenceMetadataFilePath(directory, moduleExtRefMetadata.getModuleName(), filePathVersion);
         LOGGER.debug("Serializing module {} external reference metadata to {}", moduleExtRefMetadata.getModuleName(), filePath);
         try
         {
             writeIfModified(filePath, stream -> this.moduleSerializer.serializeExternalReferenceMetadata(stream, moduleExtRefMetadata, serializerVersion));
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished serializing module {} external reference metadata to {} in {}s", moduleExtRefMetadata.getModuleName(), filePath, (end - start) / 1_000_000_000.0);
+            }
+            return filePath;
         }
         catch (Exception e)
         {
-            LOGGER.error("Error serializing module {} external reference metadata to {}", moduleExtRefMetadata.getModuleName(), filePath, e);
             StringBuilder builder = new StringBuilder("Error serializing external reference metadata for module ").append(moduleExtRefMetadata.getModuleName()).append(" to ").append(filePath);
             String eMessage = e.getMessage();
             if (eMessage != null)
@@ -338,12 +344,6 @@ public class FileSerializer
             }
             throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
         }
-        finally
-        {
-            long end = System.nanoTime();
-            LOGGER.debug("Finished serializing module {} external reference metadata to {} in {}s", moduleExtRefMetadata.getModuleName(), filePath, (end - start) / 1_000_000_000.0);
-        }
-        return filePath;
     }
 
     // Serialize module external reference metadata to zip
@@ -358,7 +358,8 @@ public class FileSerializer
         Objects.requireNonNull(zipStream, "zip stream is required");
         Objects.requireNonNull(moduleExtRefMetadata, "module external reference metadata is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         String entryName = this.filePathProvider.getModuleExternalReferenceMetadataFilePath(moduleExtRefMetadata.getModuleName(), "/", filePathVersion);
         LOGGER.debug("Serializing module {} external reference metadata to zip entry '{}'", moduleExtRefMetadata.getModuleName(), entryName);
         try
@@ -366,10 +367,15 @@ public class FileSerializer
             zipStream.putNextEntry(new ZipEntry(entryName));
             this.moduleSerializer.serializeExternalReferenceMetadata(zipStream, moduleExtRefMetadata, serializerVersion);
             zipStream.closeEntry();
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished serializing module {} external reference metadata to zip entry '{}' in {}s", moduleExtRefMetadata.getModuleName(), entryName, (end - start) / 1_000_000_000.0);
+            }
+            return entryName;
         }
         catch (Exception e)
         {
-            LOGGER.error("Error serializing module {} external reference metadata to zip entry '{}'", moduleExtRefMetadata.getModuleName(), entryName, e);
             StringBuilder builder = new StringBuilder("Error serializing external reference metadata for module ").append(moduleExtRefMetadata.getModuleName()).append(" to ").append(entryName);
             String eMessage = e.getMessage();
             if (eMessage != null)
@@ -378,12 +384,6 @@ public class FileSerializer
             }
             throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
         }
-        finally
-        {
-            long end = System.nanoTime();
-            LOGGER.debug("Finished serializing module {} external reference metadata to zip entry '{}' in {}s", moduleExtRefMetadata.getModuleName(), entryName, (end - start) / 1_000_000_000.0);
-        }
-        return entryName;
     }
 
     // Serialize module element back reference metadata to directory
@@ -398,19 +398,12 @@ public class FileSerializer
         Objects.requireNonNull(directory, "directory is required");
         Objects.requireNonNull(moduleBackRefMetadata, "module back reference metadata is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         LOGGER.debug("Serializing module {} back reference metadata", moduleBackRefMetadata.getModuleName());
-        try
-        {
-            moduleBackRefMetadata.getBackReferences().forEach(br -> serializeModuleElementBackReferenceMetadata(directory, moduleBackRefMetadata.getModuleName(), br, filePathVersion, serializerVersion));
-            serializeModuleBackReferenceIndex(directory, ModuleBackReferenceIndex.fromBackReferenceMetadata(moduleBackRefMetadata), filePathVersion, serializerVersion);
-        }
-        catch (Exception e)
-        {
-            LOGGER.error("Error serializing module {} back reference metadata", moduleBackRefMetadata.getModuleName(), e);
-            throw e;
-        }
-        finally
+        moduleBackRefMetadata.getBackReferences().forEach(br -> serializeModuleElementBackReferenceMetadata(directory, moduleBackRefMetadata.getModuleName(), br, filePathVersion, serializerVersion));
+        serializeModuleBackReferenceIndex(directory, ModuleBackReferenceIndex.fromBackReferenceMetadata(moduleBackRefMetadata), filePathVersion, serializerVersion);
+        if (debug)
         {
             long end = System.nanoTime();
             LOGGER.debug("Finished serializing module {} back reference metadata in {}s", moduleBackRefMetadata.getModuleName(), (end - start) / 1_000_000_000.0);
@@ -429,19 +422,12 @@ public class FileSerializer
         Objects.requireNonNull(zipStream, "zip stream is required");
         Objects.requireNonNull(moduleBackRefMetadata, "module back reference metadata is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         LOGGER.debug("Serializing module {} back reference metadata", moduleBackRefMetadata.getModuleName());
-        try
-        {
-            moduleBackRefMetadata.getBackReferences().forEach(br -> serializeModuleElementBackReferenceMetadata(zipStream, moduleBackRefMetadata.getModuleName(), br, filePathVersion, serializerVersion));
-            serializeModuleBackReferenceIndex(zipStream, ModuleBackReferenceIndex.fromBackReferenceMetadata(moduleBackRefMetadata), filePathVersion, serializerVersion);
-        }
-        catch (Exception e)
-        {
-            LOGGER.error("Error serializing module {} back reference metadata", moduleBackRefMetadata.getModuleName(), e);
-            throw e;
-        }
-        finally
+        moduleBackRefMetadata.getBackReferences().forEach(br -> serializeModuleElementBackReferenceMetadata(zipStream, moduleBackRefMetadata.getModuleName(), br, filePathVersion, serializerVersion));
+        serializeModuleBackReferenceIndex(zipStream, ModuleBackReferenceIndex.fromBackReferenceMetadata(moduleBackRefMetadata), filePathVersion, serializerVersion);
+        if (debug)
         {
             long end = System.nanoTime();
             LOGGER.debug("Finished serializing module {} back reference metadata in {}s", moduleBackRefMetadata.getModuleName(), (end - start) / 1_000_000_000.0);
@@ -461,16 +447,22 @@ public class FileSerializer
         Objects.requireNonNull(moduleName, "module name is required");
         Objects.requireNonNull(elementBackRefMetadata, "element back reference metadata is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         Path filePath = this.filePathProvider.getModuleElementBackReferenceMetadataFilePath(directory, moduleName, elementBackRefMetadata.getElementPath(), filePathVersion);
         LOGGER.debug("Serializing module {} element {} back reference metadata to {}", moduleName, elementBackRefMetadata.getElementPath(), filePath);
         try
         {
             writeIfModified(filePath, stream -> this.moduleSerializer.serializeBackReferenceMetadata(stream, elementBackRefMetadata, serializerVersion));
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished serializing module {} element {} back reference metadata to {} in {}s", moduleName, elementBackRefMetadata.getElementPath(), filePath, (end - start) / 1_000_000_000.0);
+            }
+            return filePath;
         }
         catch (Exception e)
         {
-            LOGGER.error("Error serializing module {} element {} back reference metadata to {}", moduleName, elementBackRefMetadata.getElementPath(), filePath, e);
             StringBuilder builder = new StringBuilder("Error serializing ").append(elementBackRefMetadata.getElementPath()).append(" back reference metadata for module ").append(moduleName).append(" to ").append(filePath);
             String eMessage = e.getMessage();
             if (eMessage != null)
@@ -479,12 +471,6 @@ public class FileSerializer
             }
             throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
         }
-        finally
-        {
-            long end = System.nanoTime();
-            LOGGER.debug("Finished serializing module {} element {} back reference metadata to {} in {}s", moduleName, elementBackRefMetadata.getElementPath(), filePath, (end - start) / 1_000_000_000.0);
-        }
-        return filePath;
     }
 
     // Serialize element back reference metadata to zip
@@ -500,7 +486,8 @@ public class FileSerializer
         Objects.requireNonNull(moduleName, "module name is required");
         Objects.requireNonNull(elementBackRefMetadata, "module source metadata is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         String entryName = this.filePathProvider.getModuleElementBackReferenceMetadataFilePath(moduleName, elementBackRefMetadata.getElementPath(), "/", filePathVersion);
         LOGGER.debug("Serializing module {} element {} back reference metadata to zip entry '{}'", moduleName, elementBackRefMetadata.getElementPath(), entryName);
         try
@@ -508,10 +495,15 @@ public class FileSerializer
             zipStream.putNextEntry(new ZipEntry(entryName));
             this.moduleSerializer.serializeBackReferenceMetadata(zipStream, elementBackRefMetadata, serializerVersion);
             zipStream.closeEntry();
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished serializing module {} element {} back reference metadata to zip entry '{}' in {}s", moduleName, elementBackRefMetadata.getElementPath(), entryName, (end - start) / 1_000_000_000.0);
+            }
+            return entryName;
         }
         catch (Exception e)
         {
-            LOGGER.error("Error serializing module {} element {} back reference metadata to zip entry '{}'", moduleName, elementBackRefMetadata.getElementPath(), entryName, e);
             StringBuilder builder = new StringBuilder("Error serializing ").append(elementBackRefMetadata.getElementPath()).append(" back reference metadata for module ").append(moduleName).append(" to ").append(entryName);
             String eMessage = e.getMessage();
             if (eMessage != null)
@@ -520,12 +512,6 @@ public class FileSerializer
             }
             throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
         }
-        finally
-        {
-            long end = System.nanoTime();
-            LOGGER.debug("Finished serializing module {} element {} back reference metadata to zip entry '{}' in {}s", moduleName, elementBackRefMetadata.getElementPath(), entryName, (end - start) / 1_000_000_000.0);
-        }
-        return entryName;
     }
 
 
@@ -543,7 +529,8 @@ public class FileSerializer
         Objects.requireNonNull(directory, "directory is required");
         Objects.requireNonNull(backReferenceIndex, "back reference index is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         Path filePath = this.filePathProvider.getModuleBackReferenceIndexFilePath(directory, backReferenceIndex.getModuleName(), filePathVersion);
         LOGGER.debug("Serializing module {} back reference index to {}", backReferenceIndex.getModuleName(), filePath);
         try
@@ -553,10 +540,15 @@ public class FileSerializer
             {
                 this.moduleSerializer.serializeBackReferenceIndex(stream, backReferenceIndex, serializerVersion);
             }
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished serializing module {} back reference index to {} in {}s", backReferenceIndex.getModuleName(), filePath, (end - start) / 1_000_000_000.0);
+            }
+            return filePath;
         }
         catch (Exception e)
         {
-            LOGGER.error("Error serializing module {} back reference index to {}", backReferenceIndex.getModuleName(), filePath, e);
             StringBuilder builder = new StringBuilder("Error serializing back reference index for module ").append(backReferenceIndex.getModuleName()).append(" to ").append(filePath);
             String eMessage = e.getMessage();
             if (eMessage != null)
@@ -565,12 +557,6 @@ public class FileSerializer
             }
             throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
         }
-        finally
-        {
-            long end = System.nanoTime();
-            LOGGER.debug("Finished serializing module {} back reference index to {} in {}s", backReferenceIndex.getModuleName(), filePath, (end - start) / 1_000_000_000.0);
-        }
-        return filePath;
     }
 
     // Serialize module back reference index to zip
@@ -585,7 +571,8 @@ public class FileSerializer
         Objects.requireNonNull(zipStream, "zip stream is required");
         Objects.requireNonNull(backReferenceIndex, "back reference index is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         String entryName = this.filePathProvider.getModuleBackReferenceIndexFilePath(backReferenceIndex.getModuleName(), "/", filePathVersion);
         LOGGER.debug("Serializing module {} back reference index to zip entry '{}'", backReferenceIndex.getModuleName(), entryName);
         try
@@ -593,10 +580,15 @@ public class FileSerializer
             zipStream.putNextEntry(new ZipEntry(entryName));
             this.moduleSerializer.serializeBackReferenceIndex(zipStream, backReferenceIndex, serializerVersion);
             zipStream.closeEntry();
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished serializing module {} back reference index to zip entry '{}' in {}s", backReferenceIndex.getModuleName(), entryName, (end - start) / 1_000_000_000.0);
+            }
+            return entryName;
         }
         catch (Exception e)
         {
-            LOGGER.error("Error serializing module {} back reference index to zip entry '{}'", backReferenceIndex.getModuleName(), entryName, e);
             StringBuilder builder = new StringBuilder("Error serializing back reference index for module ").append(backReferenceIndex.getModuleName()).append(" to ").append(entryName);
             String eMessage = e.getMessage();
             if (eMessage != null)
@@ -605,12 +597,6 @@ public class FileSerializer
             }
             throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
         }
-        finally
-        {
-            long end = System.nanoTime();
-            LOGGER.debug("Finished serializing module {} back reference index to zip entry '{}' in {}s", backReferenceIndex.getModuleName(), entryName, (end - start) / 1_000_000_000.0);
-        }
-        return entryName;
     }
 
     // Serialize module function name metadata to directory
@@ -625,16 +611,22 @@ public class FileSerializer
         Objects.requireNonNull(directory, "directory is required");
         Objects.requireNonNull(moduleFunctionNameMetadata, "module function name metadata is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         Path filePath = this.filePathProvider.getModuleFunctionNameMetadataFilePath(directory, moduleFunctionNameMetadata.getModuleName(), filePathVersion);
         LOGGER.debug("Serializing module {} function name metadata to {}", moduleFunctionNameMetadata.getModuleName(), filePath);
         try
         {
             writeIfModified(filePath, stream -> this.moduleSerializer.serializeFunctionNameMetadata(stream, moduleFunctionNameMetadata, serializerVersion));
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished serializing module {} function name metadata to {} in {}s", moduleFunctionNameMetadata.getModuleName(), filePath, (end - start) / 1_000_000_000.0);
+            }
+            return filePath;
         }
         catch (Exception e)
         {
-            LOGGER.error("Error serializing module {} function name metadata to {}", moduleFunctionNameMetadata.getModuleName(), filePath, e);
             StringBuilder builder = new StringBuilder("Error serializing function name metadata for module ").append(moduleFunctionNameMetadata.getModuleName()).append(" to ").append(filePath);
             String eMessage = e.getMessage();
             if (eMessage != null)
@@ -643,12 +635,6 @@ public class FileSerializer
             }
             throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
         }
-        finally
-        {
-            long end = System.nanoTime();
-            LOGGER.debug("Finished serializing module {} function name metadata to {} in {}s", moduleFunctionNameMetadata.getModuleName(), filePath, (end - start) / 1_000_000_000.0);
-        }
-        return filePath;
     }
 
     // Serialize module function name metadata to zip
@@ -663,7 +649,8 @@ public class FileSerializer
         Objects.requireNonNull(zipStream, "zip stream is required");
         Objects.requireNonNull(moduleFunctionNameMetadata, "module function name metadata is required");
 
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         String entryName = this.filePathProvider.getModuleFunctionNameMetadataFilePath(moduleFunctionNameMetadata.getModuleName(), "/", filePathVersion);
         LOGGER.debug("Serializing module {} function name metadata to zip entry '{}'", moduleFunctionNameMetadata.getModuleName(), entryName);
         try
@@ -671,10 +658,15 @@ public class FileSerializer
             zipStream.putNextEntry(new ZipEntry(entryName));
             this.moduleSerializer.serializeFunctionNameMetadata(zipStream, moduleFunctionNameMetadata, serializerVersion);
             zipStream.closeEntry();
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished serializing module {} function name metadata to zip entry '{}' in {}s", moduleFunctionNameMetadata.getModuleName(), entryName, (end - start) / 1_000_000_000.0);
+            }
+            return entryName;
         }
         catch (Exception e)
         {
-            LOGGER.error("Error serializing module {} function name metadata to zip entry '{}'", moduleFunctionNameMetadata.getModuleName(), entryName, e);
             StringBuilder builder = new StringBuilder("Error serializing function name metadata for module ").append(moduleFunctionNameMetadata.getModuleName()).append(" to ").append(entryName);
             String eMessage = e.getMessage();
             if (eMessage != null)
@@ -683,12 +675,6 @@ public class FileSerializer
             }
             throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
         }
-        finally
-        {
-            long end = System.nanoTime();
-            LOGGER.debug("Finished serializing module {} function name metadata to zip entry '{}' in {}s", moduleFunctionNameMetadata.getModuleName(), entryName, (end - start) / 1_000_000_000.0);
-        }
-        return entryName;
     }
 
     // Atomic file write helper

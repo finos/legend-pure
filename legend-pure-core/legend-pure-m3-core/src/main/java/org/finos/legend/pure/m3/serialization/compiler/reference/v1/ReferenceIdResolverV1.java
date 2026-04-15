@@ -42,7 +42,8 @@ class ReferenceIdResolverV1 extends AbstractReferenceIdResolver
     @Override
     public CoreInstance resolveReference(String referenceId)
     {
-        long start = System.nanoTime();
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
         if (referenceId == null)
         {
             throw new InvalidReferenceIdException(null);
@@ -55,22 +56,21 @@ class ReferenceIdResolverV1 extends AbstractReferenceIdResolver
         }
         catch (Exception e)
         {
-            long end = System.nanoTime();
-            LOGGER.error("Error resolving {} in {}s", referenceId, (end - start) / 1_000_000_000.0, e);
             throw new InvalidReferenceIdException(referenceId, e);
         }
 
         try
         {
             CoreInstance result = graphPath.resolve(this.packagePathResolver);
-            long end = System.nanoTime();
-            LOGGER.debug("Resolved {} in {}s", referenceId, (end - start) / 1_000_000_000.0);
+            if (debug)
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Resolved {} in {}s", referenceId, (end - start) / 1_000_000_000.0);
+            }
             return result;
         }
         catch (Exception e)
         {
-            long end = System.nanoTime();
-            LOGGER.error("Error resolving {} in {}s", referenceId, (end - start) / 1_000_000_000.0, e);
             throw new UnresolvableReferenceIdException(referenceId, e);
         }
     }
