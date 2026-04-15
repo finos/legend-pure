@@ -31,6 +31,8 @@ import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
@@ -162,32 +164,122 @@ public abstract class AbstractLazyConcreteElement extends AbstractLazyCoreInstan
 
     protected static class InternalIdResolver implements IntFunction<CoreInstance>
     {
-        private final CoreInstance[] index;
+        private static final int LAZY_THRESHOLD = 100;
+
+        private final CoreInstance concreteElement;
+        private final InternalIdResolverData data;
 
         protected InternalIdResolver(CoreInstance concreteElement, DeserializedConcreteElement deserialized, BackReferenceProvider backRefProvider, ElementBuilder elementBuilder, ReferenceIdResolver referenceIdResolver)
         {
             ImmutableList<InstanceData> internalInstances = deserialized.getInstanceData();
-            LOGGER.debug("Creating {} internal instances for {}", internalInstances.size(), deserialized.getPath());
-            this.index = new CoreInstance[internalInstances.size()];
-            this.index[0] = concreteElement;
-            if (internalInstances.size() > 1)
+            LOGGER.debug("{} internal instances for {}", internalInstances.size(), deserialized.getPath());
+            this.concreteElement = concreteElement;
+            if (internalInstances.size() == 1)
             {
-                internalInstances.forEachWithIndex(1, internalInstances.size() - 1,
-                        (d, i) -> this.index[i] = elementBuilder.buildComponentInstance(d, backRefProvider.getBackReferences(d.getReferenceId()), referenceIdResolver, this));
+                this.data = null;
+            }
+            else if (internalInstances.size() < LAZY_THRESHOLD)
+            {
+                CoreInstance[] index = new CoreInstance[internalInstances.size() - 1];
+                internalInstances.forEachWithIndex(1, internalInstances.size() - 1, (d, i) -> index[i - 1] = elementBuilder.buildComponentInstance(d, backRefProvider.getBackReferences(d.getReferenceId()), referenceIdResolver, this));
+                this.data = new SimpleInternalIdResolverData(index);
+            }
+            else
+            {
+                AtomicReferenceArray<Object> index = new AtomicReferenceArray<>(internalInstances.size() - 1);
+                internalInstances.forEachWithIndex(1, internalInstances.size() - 1, (d, i) -> index.set(i - 1, d));
+                this.data = new LazyInternalIdResolverData(index, d -> elementBuilder.buildComponentInstance(d, backRefProvider.getBackReferences(d.getReferenceId()), referenceIdResolver, this));
             }
         }
 
         @Override
         public CoreInstance apply(int id)
         {
-            try
+            if (id == 0)
             {
-                return this.index[id];
+                return this.concreteElement;
             }
-            catch (IndexOutOfBoundsException e)
+            if (this.data == null)
             {
-                throw new IllegalArgumentException("Invalid internal id: " + id + " (valid ids are 0-" + (this.index.length - 1) + ")");
+                throw new IllegalArgumentException("Invalid internal id: " + id + " (valid ids are 0 only)");
             }
+            int maxId = this.data.length();
+            if (id > maxId)
+            {
+                throw new IllegalArgumentException("Invalid internal id: " + id + " (valid ids are 0-" + maxId + ")");
+            }
+            return this.data.apply(id - 1);
+        }
+    }
+
+    private interface InternalIdResolverData extends IntFunction<CoreInstance>
+    {
+        int length();
+    }
+
+    private static class SimpleInternalIdResolverData implements InternalIdResolverData
+    {
+        private final CoreInstance[] index;
+
+        private SimpleInternalIdResolverData(CoreInstance[] index)
+        {
+            this.index = index;
+        }
+
+        @Override
+        public int length()
+        {
+            return this.index.length;
+        }
+
+        @Override
+        public CoreInstance apply(int index)
+        {
+            return this.index[index];
+        }
+    }
+
+    private static class LazyInternalIdResolverData implements InternalIdResolverData
+    {
+        private final AtomicReferenceArray<Object> index;
+        private Function<InstanceData, CoreInstance> builder;
+        private int unresolved;
+
+        private LazyInternalIdResolverData(AtomicReferenceArray<Object> index, Function<InstanceData, CoreInstance> builder)
+        {
+            this.index = index;
+            this.unresolved = index.length();
+            this.builder = builder;
+        }
+
+        @Override
+        public int length()
+        {
+            return this.index.length();
+        }
+
+        @Override
+        public CoreInstance apply(int index)
+        {
+            Object object = this.index.get(index);
+            if (object instanceof InstanceData)
+            {
+                synchronized (this)
+                {
+                    if ((object = this.index.get(index)) instanceof InstanceData)
+                    {
+                        CoreInstance instance = this.builder.apply((InstanceData) object);
+                        this.index.set(index, instance);
+                        this.unresolved--;
+                        if (this.unresolved <= 0)
+                        {
+                            this.builder = null;
+                        }
+                        return instance;
+                    }
+                }
+            }
+            return (CoreInstance) object;
         }
     }
 }
