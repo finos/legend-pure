@@ -305,7 +305,7 @@ public class PureTestBuilderCompiled extends TestSuite
             {
                 String fqn = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(result, "fqn", processorSupport));
                 String statusName = Instance.getValueForMetaPropertyToOneResolved(result, "status", processorSupport).getName();
-                String message = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(result, "message", processorSupport));
+                String message = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(result, "message", processorSupport), "Unknown Error");
 
                 suite.addTest(new junit.framework.TestCase(fqn)
                 {
@@ -319,7 +319,7 @@ public class PureTestBuilderCompiled extends TestSuite
                         }
                         else if ("ERROR".equals(statusName))
                         {
-                            throw new Exception(message == null ? "Unknown Error" : message);
+                            throw new Exception(message);
                         }
                         else if ("FAIL".equals(statusName))
                         {
