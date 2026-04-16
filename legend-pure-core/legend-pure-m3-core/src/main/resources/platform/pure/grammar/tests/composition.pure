@@ -18,3 +18,28 @@ function <<PCT.test>> meta::pure::grammar::tests::composition::boolean::testBasi
 {
     assertEq(true, $f->eval(|true == true || false && false || false));
 }
+
+function <<PCT.test>> meta::pure::grammar::tests::composition::arithmetic::testMultiplicationPrecedesAddition<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(14, $f->eval(|2+3*4));
+}
+
+function <<PCT.test>> meta::pure::grammar::tests::composition::arithmetic::testMultiplicationPrecedesAdditionWithParentheses<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(32, $f->eval(|(2+3*4) + 3*2*2 + 1*6));
+}
+
+function <<PCT.test>> meta::pure::grammar::tests::composition::arithmetic::testMultiplicationAndDivisionPrecedeAddition<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(12.0, $f->eval(|(2+3*4/2) + 12/2/2/3 + 1*6/2));
+}
+
+function <<PCT.test>> meta::pure::grammar::tests::composition::arithmetic::testArithmeticPrecedesRelationalOperations<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertFalse($f->eval(|1 + 2 * 3 > 4 * 5 + 6));
+}
+
+function <<PCT.test>> meta::pure::grammar::tests::composition::arithmetic::testComplexArithmeticPrecedesRelationalOperations<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertFalse($f->eval(|1 + 2 + 3*4/5 -9 > 1 + 2*2));
+}

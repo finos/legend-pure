@@ -97,3 +97,7 @@ function <<PCT.test>> meta::pure::functions::math::tests::round::testFloatRoundW
     assertEq(17.0, $f->eval(|round(17.3, 0)));
     assertEq(-17.4, $f->eval(|round(-17.36, 1)));
 }
+function <<PCT.test>> meta::pure::functions::math::tests::round::testRoundEval<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(2, $f->eval(|round_Number_1__Integer_1_->eval(1.9)));
+}

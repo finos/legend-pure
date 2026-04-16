@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::pure::test::pct::*;
+import meta::pure::functions::asserts::*;
 
 native function <<PCT.function>> meta::pure::functions::math::acos(number:Number[1]):Float[1];
 
@@ -26,4 +27,8 @@ function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testArcC
 function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testArcCosineEval<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
    assertEqWithinTolerance(1.047197551196, $f->eval(|acos_Number_1__Float_1_->eval(0.5)), 0.000000000001);
+}
+function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testArcCosineError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    meta::pure::functions::asserts::assertError(| $f->eval(|2.0->acos()), 'Unable to compute acos of 2.0');
 }

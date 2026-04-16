@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::pure::test::pct::*;
+import meta::pure::functions::asserts::*;
 
 native function <<PCT.function>> meta::pure::functions::math::sqrt(number:Number[1]):Float[1];
 
@@ -26,4 +27,9 @@ function <<PCT.test>> meta::pure::functions::math::tests::testSquareRoot<Z|y>(f:
 function <<PCT.test>> meta::pure::functions::math::tests::testSquareRootEval<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
    assertEq(3.0, $f->eval(|sqrt_Number_1__Float_1_->eval(9)));
+}
+
+function <<PCT.test>> meta::pure::functions::math::tests::testSquareRootError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    meta::pure::functions::asserts::assertError(| $f->eval(|sqrt(-1.0)), 'Unable to compute sqrt of -1.0');
 }
