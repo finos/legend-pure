@@ -36,3 +36,8 @@ function <<PCT.test>> meta::pure::functions::collection::tests::tail::testTailOn
 {
     assertEquals([], $f->eval(|[]->tail()));
 }
+
+function <<PCT.test>> meta::pure::functions::collection::tests::tail::testEvalParse<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals([2,3], $f->eval(|tail_T_MANY__T_MANY_->eval([1,2,3])));
+}
