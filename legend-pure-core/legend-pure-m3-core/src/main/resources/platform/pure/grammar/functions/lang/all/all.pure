@@ -25,3 +25,13 @@ native function
     meta::pure::functions::collection::getAll<T>(type:Class<T>[1]):T[*];
 
 
+
+function <<PCT.test>> meta::pure::functions::collection::tests::getAll::testEvalParse<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertFalse($f->eval(|getAll_Class_1__T_MANY_->eval(Class)->isEmpty()));
+}
+
+function <<PCT.test>> meta::pure::functions::collection::tests::getAll::testBasic<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertFalse($f->eval(|Class.all()->isEmpty()));
+}

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::pure::test::pct::*;
+import meta::pure::functions::asserts::*;
 
 native function
     <<PCT.function>>
@@ -123,4 +124,9 @@ function <<PCT.test>> meta::pure::functions::collection::tests::range::testRange
 {
     assertEquals([], $f->eval(|range(5, 5)));
     assertEquals([], $f->eval(|[5:5]));
+}
+
+function <<PCT.test>> meta::pure::functions::math::tests::range::testRangeStepError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    meta::pure::functions::asserts::assertError(| $f->eval(|range(0, 5, 0)), 'range step must not be 0');
 }
