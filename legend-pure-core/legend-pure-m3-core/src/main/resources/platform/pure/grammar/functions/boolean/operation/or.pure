@@ -81,3 +81,19 @@ function <<test.Test>> meta::pure::functions::boolean::tests::conjunctions::or::
     let lambda2 = ^LambdaFunction<{->Boolean[1]}>(expressionSequence = $fn2.expressionSequence);
     assertEquals(true, $lambda2->evaluate([]));
 }
+
+function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::or::testEvalParse<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(true, $f->eval(|or_Boolean_1__Boolean_1__Boolean_1_->eval(true, true)));
+    assertEq(true, $f->eval(|or_Boolean_1__Boolean_1__Boolean_1_->eval(false, true)));
+    assertEq(true, $f->eval(|or_Boolean_1__Boolean_1__Boolean_1_->eval(true, false)));
+    assertEq(false, $f->eval(|or_Boolean_1__Boolean_1__Boolean_1_->eval(false, false)));
+}
+
+function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::or::testBasicParse<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(true, $f->eval(|or(true, true)));
+    assertEq(true, $f->eval(|or(false, true)));
+    assertEq(true, $f->eval(|or(true, false)));
+    assertEq(false, $f->eval(|or(false, false)));
+}
