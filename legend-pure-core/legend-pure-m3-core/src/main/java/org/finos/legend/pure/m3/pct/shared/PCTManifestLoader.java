@@ -19,6 +19,7 @@ import org.finos.legend.pure.m3.pct.shared.model.PCTManifest;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 
 /**
  * Loads a {@link PCTManifest} from a JSON resource.
@@ -46,12 +47,18 @@ public class PCTManifestLoader
     public static PCTManifest loadFromClasspath(String manifestPath)
     {
         String resourcePath = manifestPath.startsWith("/") ? manifestPath.substring(1) : manifestPath;
-        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath);
-        if (is == null)
+        try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath))
         {
-            throw new IllegalArgumentException("PCT manifest file not found on classpath: " + manifestPath);
+            if (is == null)
+            {
+                throw new IllegalArgumentException("PCT manifest file not found on classpath: " + manifestPath);
+            }
+            return loadFromStream(is, manifestPath);
         }
-        return loadFromStream(is, manifestPath);
+        catch (IOException e)
+        {
+            throw new UncheckedIOException("IO error while processing PCT manifest: " + manifestPath, e);
+        }
     }
 
     /**
@@ -65,19 +72,11 @@ public class PCTManifestLoader
      * @return parsed and validated manifest
      * @throws IllegalArgumentException if the content is malformed
      */
-    public static PCTManifest loadFromStream(InputStream inputStream, String displayPath)
+    public static PCTManifest loadFromStream(InputStream inputStream, String displayPath) throws IOException
     {
-        try
-        {
-            PCTManifest manifest = MAPPER.readValue(inputStream, PCTManifest.class);
-            inputStream.close();
-            validate(manifest, displayPath);
-            return manifest;
-        }
-        catch (IOException e)
-        {
-            throw new IllegalArgumentException("Failed to parse PCT manifest from '" + displayPath + "': " + e.getMessage(), e);
-        }
+        PCTManifest manifest = MAPPER.readValue(inputStream, PCTManifest.class);
+        validate(manifest, displayPath);
+        return manifest;
     }
 
     private static void validate(PCTManifest manifest, String displayPath)

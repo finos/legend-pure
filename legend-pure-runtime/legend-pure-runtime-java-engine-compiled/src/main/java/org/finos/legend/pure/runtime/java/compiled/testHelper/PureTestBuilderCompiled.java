@@ -20,15 +20,19 @@ import junit.framework.TestSuite;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.utility.ArrayIterate;
+import org.finos.legend.pure.m3.coreinstance.helper.PrimitiveHelper;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.execution.test.PureTestBuilder;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.pct.reports.config.PCTReportConfiguration;
@@ -291,18 +295,17 @@ public class PureTestBuilderCompiled extends TestSuite
 
         try
         {
-            Object report = executeFn(surveyorFn, null, Maps.mutable.empty(), executionSupport, Lists.mutable.with(packagePath, sourceFilter));
+            CoreInstance report = (CoreInstance) executeFn(surveyorFn, null, Maps.mutable.empty(), executionSupport, Lists.mutable.with(packagePath, sourceFilter));
 
             TestSuite suite = new TestSuite("Surveyor Tests for " + packagePath);
 
-            org.eclipse.collections.api.RichIterable<?> results = (org.eclipse.collections.api.RichIterable<?>) report.getClass().getMethod("_results").invoke(report);
+            ListIterable<? extends CoreInstance> results = Instance.getValueForMetaPropertyToManyResolved(report, "results", processorSupport);
 
-            for (Object result : results)
+            for (CoreInstance result : results)
             {
-                String fqn = (String) result.getClass().getMethod("_fqn").invoke(result);
-                Object statusEnum = result.getClass().getMethod("_status").invoke(result);
-                String statusName = (String) statusEnum.getClass().getMethod("getName").invoke(statusEnum);
-                String message = (String) result.getClass().getMethod("_message").invoke(result);
+                String fqn = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(result, "fqn", processorSupport));
+                String statusName = Instance.getValueForMetaPropertyToOneResolved(result, "status", processorSupport).getName();
+                String message = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(result, "message", processorSupport));
 
                 suite.addTest(new junit.framework.TestCase(fqn)
                 {

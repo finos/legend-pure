@@ -2400,7 +2400,7 @@ public class CompiledSupport
      * @param es              Execution support.
      * @return Execution test result.
      */
-    public static Object executePCTTest(SharedPureFunction sharedTestFn, Function<?> testFn, SharedPureFunction sharedAdapterFn, Function<?> adapterFn, Object exclusionsMap, ExecutionSupport es)
+    public static Object executePCTTest(SharedPureFunction sharedTestFn, Function<?> testFn, SharedPureFunction sharedAdapterFn, Function<?> adapterFn, PureMap exclusionsMap, ExecutionSupport es)
     {
         ConsoleCompiled console = ((CompiledExecutionSupport) es).getConsole();
         long start = System.nanoTime();
@@ -2414,7 +2414,7 @@ public class CompiledSupport
             fqn = PackageableElement.getUserPathForPackageableElement(testFn, "::");
 
             // Look up exclusion for this test
-            String expectedError = lookupExclusionCompiled(exclusionsMap, testFn, fqn);
+            String expectedError = lookupExclusionCompiled(exclusionsMap, testFn);
 
             // Check skip stereotypes
             String skipReason = null;
@@ -2462,7 +2462,7 @@ public class CompiledSupport
         }
         catch (PureAssertFailException e)
         {
-            String expectedError = lookupExclusionCompiled(exclusionsMap, testFn, fqn);
+            String expectedError = lookupExclusionCompiled(exclusionsMap, testFn);
             String errorMsg = e.getInfo() != null ? e.getInfo() : e.getMessage();
             boolean match = false;
             if (expectedError != null)
@@ -2493,7 +2493,7 @@ public class CompiledSupport
         }
         catch (Throwable e)
         {
-            String expectedError = lookupExclusionCompiled(exclusionsMap, testFn, fqn);
+            String expectedError = lookupExclusionCompiled(exclusionsMap, testFn);
             String errorMsg = PCTTools.getMessageFromError(e);
             boolean match = false;
             if (expectedError != null)
@@ -2594,57 +2594,15 @@ public class CompiledSupport
     // Helpers
     // ---------------------------------------------------------------
 
-    private static String lookupExclusionCompiled(
-            final Object exclusionsMap,
-            final Object testFn,
-            final String testFqn)
+    private static String lookupExclusionCompiled(PureMap exclusionsMap, Function<?> testFn)
     {
         if (exclusionsMap == null)
         {
             return null;
         }
-        try
-        {
-            // map wrapping MutableMap<Object, String> (Function -> String)
-            if (exclusionsMap instanceof PureMap)
-            {
-                MutableMap<?, ?> internalMap = ((PureMap) exclusionsMap).getMap();
 
-                Object directLookup = internalMap.get(testFn);
-                if (directLookup != null)
-                {
-                    return directLookup.toString();
-                }
-
-                for (Object key : internalMap.keySet())
-                {
-                    if (Objects.equals(key, testFn))
-                    {
-                        Object value = internalMap.get(key);
-                        return value != null ? value.toString() : null;
-                    }
-                    else if (key instanceof CoreInstance)
-                    {
-                        String keyFqn = PackageableElement.getUserPathForPackageableElement((CoreInstance) key, "::");
-                        if (testFqn != null && testFqn.equals(keyFqn))
-                        {
-                            Object value = internalMap.get(key);
-                            return value != null ? value.toString() : null;
-                        }
-                    }
-                    else if (testFqn != null && testFqn.equals(key))
-                    {
-                        Object value = internalMap.get(key);
-                        return value != null ? value.toString() : null;
-                    }
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            // Ignore lookup errors
-        }
-        return null;
+        MutableMap internalMap = exclusionsMap.getMap();
+        return (String) internalMap.get(testFn);
     }
 
     private static Object buildCompiledTestResult(

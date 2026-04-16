@@ -22,12 +22,13 @@ import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
 
 public class ExecutePCTTest extends AbstractNativeFunctionGeneric
 {
     public ExecutePCTTest()
     {
-        super(getMethod(CompiledSupport.class, "executePCTTest", SharedPureFunction.class, Function.class, SharedPureFunction.class, Function.class, Object.class, ExecutionSupport.class),
+        super(getMethod(CompiledSupport.class, "executePCTTest", SharedPureFunction.class, Function.class, SharedPureFunction.class, Function.class, PureMap.class, ExecutionSupport.class),
                 true, true, false, "executePCTTest_Function_1__Function_1__Map_1__TestResult_1_");
     }
 

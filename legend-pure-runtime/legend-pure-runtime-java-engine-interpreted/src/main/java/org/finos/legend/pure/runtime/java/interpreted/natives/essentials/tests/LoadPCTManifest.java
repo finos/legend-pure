@@ -36,6 +36,7 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.MapCoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Stack;
 
@@ -67,12 +68,19 @@ public class LoadPCTManifest extends NativeFunction
         CoreInstance pathValue = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
         String manifestPath = pathValue.getName();
 
-        InputStream is = this.functionExecution.getPureRuntime().getCodeStorage().getContent(manifestPath);
-        if (is == null)
+        PCTManifest manifest;
+        try (InputStream is = this.functionExecution.getPureRuntime().getCodeStorage().getContent(manifestPath))
         {
-            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "PCT manifest file not found: " + manifestPath);
+            if (is == null)
+            {
+                throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "PCT manifest file not found: " + manifestPath);
+            }
+            manifest = PCTManifestLoader.loadFromStream(is, manifestPath);
         }
-        PCTManifest manifest = PCTManifestLoader.loadFromStream(is, manifestPath);
+        catch (IOException e)
+        {
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "IO error while processing PCT manifest: " + manifestPath, e);
+        }
 
         CoreInstance adapterFunction = processorSupport.package_getByUserPath(manifest.adapter);
         if (adapterFunction == null)

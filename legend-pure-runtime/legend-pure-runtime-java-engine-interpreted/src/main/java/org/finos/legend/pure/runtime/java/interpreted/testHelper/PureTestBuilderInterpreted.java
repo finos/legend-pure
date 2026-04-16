@@ -15,6 +15,8 @@
 package org.finos.legend.pure.runtime.java.interpreted.testHelper;
 
 import java.nio.file.Paths;
+
+import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
@@ -26,6 +28,7 @@ import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.execution.test.PureTestBuilder;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
+import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.pct.reports.model.Adapter;
 import org.finos.legend.pure.m3.pct.shared.PCTTools;
 import org.finos.legend.pure.m3.pct.reports.config.PCTReportConfiguration;
@@ -248,14 +251,8 @@ public class PureTestBuilderInterpreted
     public static TestSuite buildSurveyorSuite(String packagePath, String sourceFilter)
     {
         FunctionExecutionInterpreted fe = getFunctionExecutionInterpreted();
-        CoreInstance report = executeSurveyorTests(fe, packagePath, sourceFilter);
         ProcessorSupport processorSupport = fe.getProcessorSupport();
-
-        // Unwrap the actual TestReport instance from the returned InstanceValue envelope
-        if ("InstanceValue".equals(report.getClassifier().getName()))
-        {
-            report = Instance.getValueForMetaPropertyToOneResolved(report, "values", processorSupport);
-        }
+        CoreInstance report = ValueSpecification.getValue(executeSurveyorTests(fe, packagePath, sourceFilter), processorSupport);
 
         TestSuite suite = new TestSuite("Surveyor Tests for " + packagePath);
 
@@ -264,11 +261,9 @@ public class PureTestBuilderInterpreted
         {
             String fqn = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(result, "fqn", processorSupport));
             String status = Instance.getValueForMetaPropertyToOneResolved(result, "status", processorSupport).getName();
+            String message = PrimitiveUtilities.getStringValue(result.getValueForMetaPropertyToOne("message"), "No message");
 
-            CoreInstance messageNode = Instance.getValueForMetaPropertyToOneResolved(result, "message", processorSupport);
-            String message = (messageNode == null) ? "No message" : PrimitiveUtilities.getStringValue(messageNode);
-
-            suite.addTest(new junit.framework.TestCase(fqn)
+            suite.addTest(new TestCase(fqn)
             {
                 @Override
                 protected void runTest() throws Throwable
