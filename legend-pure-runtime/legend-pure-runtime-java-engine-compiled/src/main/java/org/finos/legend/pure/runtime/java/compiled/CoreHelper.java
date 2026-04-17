@@ -834,7 +834,7 @@ public class CoreHelper
             // O(1): shares the immutable trie reference — this is the whole point of HAMT
             return ((VavrHamtMutableMapAdapter<Object, Object>) map).clone();
         }
-        return VavrHamtMutableMapAdapter.fromMap(map);
+        return map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy<?, ?>) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
     }
 
     /**
@@ -850,7 +850,7 @@ public class CoreHelper
                     ? VavrHamtMutableMapAdapter.withHashingStrategy(strategy)
                     : new VavrHamtMutableMapAdapter<>();
         }
-        return new VavrHamtMutableMapAdapter<>();
+        return map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy()) : Maps.mutable.empty();
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
