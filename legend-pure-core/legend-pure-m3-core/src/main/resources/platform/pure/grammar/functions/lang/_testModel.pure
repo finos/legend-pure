@@ -108,7 +108,7 @@ Class meta::pure::functions::lang::tests::model::LA_Car
 Association meta::pure::functions::lang::tests::model::LA_Person_LA_Car
 {
     owner : LA_Person[1];
-    cars  : LA_Car[1..*];
+    cars  : LA_Car[*];
 }
 
 Class meta::pure::functions::lang::tests::model::LA_GenericPair<T1, T2>
