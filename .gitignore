@@ -13,6 +13,7 @@
 **/lib
 **/surefire-reports-aggregate
 **/dependency-reduced-pom.xml
+**/.flattened-pom.xml
 /.h2Start.sh.swp
 
 **/.DS_Store
