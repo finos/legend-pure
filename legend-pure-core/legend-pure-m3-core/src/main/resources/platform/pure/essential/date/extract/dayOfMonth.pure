@@ -27,5 +27,5 @@ function <<PCT.test>> meta::pure::functions::date::tests::testDayOfMonth<Z|y>(f:
 
 function <<PCT.test>> meta::pure::functions::date::tests::testDayOfMonthError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    meta::pure::functions::asserts::assertError(| $f->eval(|%2017->dayOfMonth()), 'Cannot get day of month for 2017', 30, 68);
+    assertError(| $f->eval(|%2017->dayOfMonth()), 'Cannot get day of month for 2017', 30, 68);
 }

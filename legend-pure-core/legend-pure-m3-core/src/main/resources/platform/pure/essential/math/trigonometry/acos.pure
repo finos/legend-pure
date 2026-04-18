@@ -30,5 +30,5 @@ function <<test.Test>> meta::pure::functions::math::tests::trigonometry::testArc
 }
 function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testArcCosineError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    meta::pure::functions::asserts::assertError(| $f->eval(|2.0->acos()), 'Unable to compute acos of 2.0');
+    assertError(| $f->eval(|2.0->acos()), 'Unable to compute acos of 2.0');
 }

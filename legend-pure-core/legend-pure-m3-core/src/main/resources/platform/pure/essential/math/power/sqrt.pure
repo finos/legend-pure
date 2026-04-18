@@ -31,5 +31,5 @@ function <<test.Test>> meta::pure::functions::math::tests::testSquareRootEval():
 
 function <<PCT.test>> meta::pure::functions::math::tests::testSquareRootError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    meta::pure::functions::asserts::assertError(| $f->eval(|sqrt(-1.0)), 'Unable to compute sqrt of -1.0');
+    assertError(| $f->eval(|sqrt(-1.0)), 'Unable to compute sqrt of -1.0');
 }

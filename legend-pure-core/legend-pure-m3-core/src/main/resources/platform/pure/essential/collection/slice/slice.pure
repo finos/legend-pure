@@ -50,5 +50,5 @@ function <<PCT.test>> meta::pure::functions::collection::tests::slice::testSlice
 
 function <<PCT.test>> meta::pure::functions::collection::tests::slice::testSliceError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    meta::pure::functions::asserts::assertError(| $f->eval(|[1,2,3,4,5]->slice(3, 2)), 'The low bound (3) can\'t be higher than the high bound (2) in a slice operation');
+    assertError(| $f->eval(|[1,2,3,4,5]->slice(3, 2)), 'The low bound (3) can\'t be higher than the high bound (2) in a slice operation');
 }

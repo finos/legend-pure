@@ -99,7 +99,7 @@ function <<PCT.test>> meta::pure::functions::lang::tests::compare::testCompareMi
 
 }
 
-function <<PCT.test>> meta::pure::functions::lang::tests::compare::testDecimalLongCompare<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::lang::tests::compare::testCompareDecimalAndLongTypes<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
      assert($f->eval(|compare(9999999999999992d, 9999999999999992) == 0));
      assert($f->eval(|compare(9999999999999992d, 9999999999999991) > 0));

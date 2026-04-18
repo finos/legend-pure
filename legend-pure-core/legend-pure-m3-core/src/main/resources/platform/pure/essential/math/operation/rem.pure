@@ -91,5 +91,5 @@ function <<PCT.test>> meta::pure::functions::math::tests::rem::testRemWithDecima
 
 function <<PCT.test>> meta::pure::functions::math::tests::rem::testRemError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    meta::pure::functions::asserts::assertError(| $f->eval(|5->rem(0)), 'Cannot divide 5 by zero');
+    assertError(| $f->eval(|5->rem(0)), 'Cannot divide 5 by zero');
 }
