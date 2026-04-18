@@ -18,8 +18,8 @@ import meta::pure::test::pct::*;
 
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::instanceOf(instance:Any[1], type:Type[1]):Boolean[1];
 
-Enum meta::pure::functions::meta::tests::instanceOf::TestEnum1 { VALUE1, VALUE2 }
-Enum meta::pure::functions::meta::tests::instanceOf::TestEnum2 { VALUE3, VALUE4 }
+Enum meta::pure::functions::meta::tests::instanceOf::InstanceOfEnumA { VALUE1, VALUE2 }
+Enum meta::pure::functions::meta::tests::instanceOf::InstanceOfEnumB { VALUE3, VALUE4 }
 Class meta::pure::functions::meta::tests::instanceOf::TestMyClass {}
 
 function meta::pure::functions::meta::tests::instanceOf::indirectInstanceOf(val:Any[1], type:Type[1]):Boolean[1]
@@ -107,47 +107,47 @@ function <<test.Test>> meta::pure::functions::meta::tests::instanceOf::testInsta
 function <<test.Test>> meta::pure::functions::meta::tests::instanceOf::testInstanceOfEnumeration():Boolean[1]
 {
     // Enum
-    assert(TestEnum1.VALUE1->instanceOf(TestEnum1));
-    assertFalse(TestEnum1.VALUE1->instanceOf(TestEnum2));
-    assert(TestEnum1.VALUE2->instanceOf(TestEnum1));
-    assertFalse(TestEnum1.VALUE2->instanceOf(TestEnum2));
-    assertFalse(TestEnum2.VALUE3->instanceOf(TestEnum1));
-    assert(TestEnum2.VALUE3->instanceOf(TestEnum2));
-    assertFalse(TestEnum2.VALUE4->instanceOf(TestEnum1));
-    assert(TestEnum2.VALUE4->instanceOf(TestEnum2));
+    assert(InstanceOfEnumA.VALUE1->instanceOf(InstanceOfEnumA));
+    assertFalse(InstanceOfEnumA.VALUE1->instanceOf(InstanceOfEnumB));
+    assert(InstanceOfEnumA.VALUE2->instanceOf(InstanceOfEnumA));
+    assertFalse(InstanceOfEnumA.VALUE2->instanceOf(InstanceOfEnumB));
+    assertFalse(InstanceOfEnumB.VALUE3->instanceOf(InstanceOfEnumA));
+    assert(InstanceOfEnumB.VALUE3->instanceOf(InstanceOfEnumB));
+    assertFalse(InstanceOfEnumB.VALUE4->instanceOf(InstanceOfEnumA));
+    assert(InstanceOfEnumB.VALUE4->instanceOf(InstanceOfEnumB));
 
     // Primitive
-    assertFalse('a string'->instanceOf(TestEnum1));
-    assertFalse(7->instanceOf(TestEnum2));
-    assertFalse(3.14->instanceOf(TestEnum1));
-    assertFalse(false->instanceOf(TestEnum2));
-    assertFalse(%2018-01-17->instanceOf(TestEnum2));
+    assertFalse('a string'->instanceOf(InstanceOfEnumA));
+    assertFalse(7->instanceOf(InstanceOfEnumB));
+    assertFalse(3.14->instanceOf(InstanceOfEnumA));
+    assertFalse(false->instanceOf(InstanceOfEnumB));
+    assertFalse(%2018-01-17->instanceOf(InstanceOfEnumB));
 
     // Class instance
-    assertFalse(^TestMyClass()->instanceOf(TestEnum1));
-    assertFalse(^TestMyClass()->instanceOf(TestEnum2));
+    assertFalse(^TestMyClass()->instanceOf(InstanceOfEnumA));
+    assertFalse(^TestMyClass()->instanceOf(InstanceOfEnumB));
 }
 
 function <<test.Test>> meta::pure::functions::meta::tests::instanceOf::testIndirectInstanceOfEnumeration():Boolean[1]
 {
     // Enum
-    assert(TestEnum1.VALUE1->indirectInstanceOf(TestEnum1));
-    assertFalse(TestEnum1.VALUE1->indirectInstanceOf(TestEnum2));
-    assert(TestEnum1.VALUE2->indirectInstanceOf(TestEnum1));
-    assertFalse(TestEnum1.VALUE2->indirectInstanceOf(TestEnum2));
-    assertFalse(TestEnum2.VALUE3->indirectInstanceOf(TestEnum1));
-    assert(TestEnum2.VALUE3->indirectInstanceOf(TestEnum2));
-    assertFalse(TestEnum2.VALUE4->indirectInstanceOf(TestEnum1));
-    assert(TestEnum2.VALUE4->indirectInstanceOf(TestEnum2));
+    assert(InstanceOfEnumA.VALUE1->indirectInstanceOf(InstanceOfEnumA));
+    assertFalse(InstanceOfEnumA.VALUE1->indirectInstanceOf(InstanceOfEnumB));
+    assert(InstanceOfEnumA.VALUE2->indirectInstanceOf(InstanceOfEnumA));
+    assertFalse(InstanceOfEnumA.VALUE2->indirectInstanceOf(InstanceOfEnumB));
+    assertFalse(InstanceOfEnumB.VALUE3->indirectInstanceOf(InstanceOfEnumA));
+    assert(InstanceOfEnumB.VALUE3->indirectInstanceOf(InstanceOfEnumB));
+    assertFalse(InstanceOfEnumB.VALUE4->indirectInstanceOf(InstanceOfEnumA));
+    assert(InstanceOfEnumB.VALUE4->indirectInstanceOf(InstanceOfEnumB));
 
     // Primitive
-    assertFalse('a string'->indirectInstanceOf(TestEnum1));
-    assertFalse(7->indirectInstanceOf(TestEnum2));
-    assertFalse(3.14->indirectInstanceOf(TestEnum1));
-    assertFalse(false->indirectInstanceOf(TestEnum2));
-    assertFalse(%2018-01-17->indirectInstanceOf(TestEnum2));
+    assertFalse('a string'->indirectInstanceOf(InstanceOfEnumA));
+    assertFalse(7->indirectInstanceOf(InstanceOfEnumB));
+    assertFalse(3.14->indirectInstanceOf(InstanceOfEnumA));
+    assertFalse(false->indirectInstanceOf(InstanceOfEnumB));
+    assertFalse(%2018-01-17->indirectInstanceOf(InstanceOfEnumB));
 
     // Class instance
-    assertFalse(^TestMyClass()->indirectInstanceOf(TestEnum1));
-    assertFalse(^TestMyClass()->indirectInstanceOf(TestEnum2));
+    assertFalse(^TestMyClass()->indirectInstanceOf(InstanceOfEnumA));
+    assertFalse(^TestMyClass()->indirectInstanceOf(InstanceOfEnumB));
 }
