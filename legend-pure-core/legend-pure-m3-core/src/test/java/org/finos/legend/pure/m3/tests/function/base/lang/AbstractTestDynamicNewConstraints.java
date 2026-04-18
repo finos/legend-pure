@@ -316,26 +316,6 @@ public abstract class AbstractTestDynamicNewConstraints extends AbstractPureTest
     }
 
     @Test
-    public void testConstraintWithDynamicNewNoOverrides()
-    {
-        compileTestSource("fromString.pure", "Class EmployeeWithError" +
-                "[" +
-                "   rule1 : $this.lastName->toOne()->length() < 10" +
-                "]" +
-                "{" +
-                "   lastName:String[0..1];" +
-                "}\n" +
-                "function testNew():Any[*] {\n" +
-                "  let r = dynamicNew(EmployeeWithError,\n" +
-                "                   [\n" +
-                "                      ^KeyValue(key='lastName',value='1234567891000')\n" +
-                "                   ])->cast(@EmployeeWithError);\n" +
-                "}\n");
-        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
-        assertPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class EmployeeWithError", 3, 11, e);
-    }
-
-    @Test
     public void testExtendedConstraintExecutionCanEvaluateConstraint()
     {
         compileTestSource("fromString.pure", "Class Position\n" +

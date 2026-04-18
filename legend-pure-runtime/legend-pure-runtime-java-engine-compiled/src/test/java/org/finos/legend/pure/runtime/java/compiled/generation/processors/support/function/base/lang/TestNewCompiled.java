@@ -14,21 +14,21 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.base.lang;
 
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.tests.function.base.lang.AbstractTestNewAtRuntime;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Test;
 
-public class TestNewCompiled extends AbstractTestNewAtRuntime
+public class TestNewCompiled extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
     {
-        AbstractPureTestWithCoreCompiled.setUpRuntime(getFunctionExecution(), AbstractTestNewAtRuntime.getCodeStorage(), JavaModelFactoryRegistryLoader.loader());
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     public static FunctionExecution getFunctionExecution()
@@ -36,16 +36,17 @@ public class TestNewCompiled extends AbstractTestNewAtRuntime
         return new FunctionExecutionCompiledBuilder().build();
     }
 
-    @Override
-    protected void assertNewNilException(Exception e)
+    @After
+    public void cleanRuntime()
     {
-        assertOriginatingPureException(PureExecutionException.class, "Cannot instantiate meta::pure::metamodel::type::Nil", e);
+        runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
-    @Override
+    @Test
     public void testNewWithInheritenceAndOverriddenAssociationEndWithReverseOneToOneProperty()
     {
-        AbstractPureTestWithCoreCompiled.compileTestSource("fromString.pure", "function test(): Any[*]\n" +
+        compileTestSource("fromString.pure", "function test(): Any[*]\n" +
                 "{\n" +
                 "   let car = ^test::FastCar(name='Bugatti', owner= ^test::Owner(firstName='John', lastName='Roe'));\n" +
                 "   print($car.owner.car->size()->toString(), 1);\n" +
@@ -79,19 +80,19 @@ public class TestNewCompiled extends AbstractTestNewAtRuntime
         try
         {
             execute("test():Any[*]");
-            String result = AbstractPureTestWithCoreCompiled.functionExecution.getConsole().getLine(0);
+            String result = functionExecution.getConsole().getLine(0);
             Assert.assertEquals("'0'", result);
         }
         catch (Exception e)
         {
-            Assert.fail("Failed to set the reverse properties for a one-to-one association.");
+            Assert.fail("Failed to set the reverse properties for a one-to-one association: " + e.getMessage());
         }
     }
 
-    @Override
+    @Test
     public void testNewWithInheritenceAndOverriddenAssociationEndWithReverseOneToManyProperty()
     {
-        AbstractPureTestWithCoreCompiled.compileTestSource("fromString.pure", "function test(): Any[*]\n" +
+        compileTestSource("fromString.pure", "function test(): Any[*]\n" +
                 "{\n" +
                 "   let car = ^test::FastCar(name='Bugatti', owner= ^test::Owner(firstName='John', lastName='Roe'));\n" +
                 "   print($car.owner.cars->size()->toString(), 1);\n" +
@@ -125,12 +126,12 @@ public class TestNewCompiled extends AbstractTestNewAtRuntime
         try
         {
             execute("test():Any[*]");
-            String result = AbstractPureTestWithCoreCompiled.functionExecution.getConsole().getLine(0);
+            String result = functionExecution.getConsole().getLine(0);
             Assert.assertEquals("'0'", result);
         }
         catch (Exception e)
         {
-            Assert.fail("Failed to set the reverse properties for a one-to-one association.");
+            Assert.fail("Failed to set the reverse properties for a one-to-one association: " + e.getMessage());
         }
     }
 }

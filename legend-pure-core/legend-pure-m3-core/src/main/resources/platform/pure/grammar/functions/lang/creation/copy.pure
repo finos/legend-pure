@@ -287,3 +287,27 @@ function <<test.Test>> meta::pure::functions::lang::tests::copy::testCopySubClas
     assertEquals('Somewhere', $upCastCopy->cast(@LA_Address).name);
     assertIs(LA_GeographicEntityType.REGION, $upCastCopy.type);
 }
+
+function <<test.Test>> meta::pure::functions::lang::tests::copy::testCopyParametrizedClassWithEmptyPropertiesSet():Boolean[1]
+{
+    let a = ^meta::pure::functions::lang::tests::copy::A<String, Integer>(prop1='string', prop2=[1,2]);
+    let a1 = ^$a(prop2=[]);
+    let b = ^meta::pure::functions::lang::tests::copy::B<Integer>(prop1='Hello', prop2=[]);
+    assert($a1.prop2->isEmpty());
+}
+
+Class meta::pure::functions::lang::tests::copy::A<T1, T2> 
+{ prop1:T1[*]; prop2:T2[*]; }
+
+Class meta::pure::functions::lang::tests::copy::B<T> 
+{ prop1:String[*]; prop2:T[*]; }
+
+function <<test.Test>> meta::pure::functions::lang::tests::copy::testSourceInformationCopy():Boolean[1]
+{
+   let x0 = meta::pure::functions::collection::removeDuplicates_T_MANY__T_MANY_->evaluateAndDeactivate();
+   let x1 = ^$x0();
+   let x2 = ^$x0(expressionSequence = $x0.expressionSequence);
+ 
+   assert($x0->sourceInformation().source == $x1->sourceInformation().source);
+   assert($x0->sourceInformation().source != $x2->sourceInformation().source);
+}

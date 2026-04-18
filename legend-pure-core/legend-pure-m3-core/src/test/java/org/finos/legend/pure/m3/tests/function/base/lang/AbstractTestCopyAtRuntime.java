@@ -370,30 +370,4 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
         }
     }
 
-    @Test
-    public void testCopyParametrizedClassWithEmptyPropertiesSet()
-    {
-        String source =
-                "Class A<T1, T2> \n{ prop1:T1[*];\n prop2:T2[*]; }\n" +
-                        "Class B<T> \n{ prop1:String[*];\n prop2:T[*]; }\n" +
-                        "function test::testFn():Any[*] { let a = ^A<String, Integer>(prop1='string', prop2=[1,2]); let a1 = ^$a(prop2=[]); ^B<Integer>(prop1='Hello', prop2=[]);}\n";
-        compileTestSource("fromString.pure",source);
-        this.compileAndExecute("test::testFn():Any[*]");
-    }
-
-    @Test
-    public void testSourceInformationCopy()
-    {
-        String source =
-                        "function test::testFn():Any[*] {" +
-                                "   let x0 = meta::pure::functions::collection::removeDuplicates_T_MANY__T_MANY_->evaluateAndDeactivate();\n" +
-                                "   let x1 = ^$x0();\n" +
-                                "   let x2 = ^$x0(expressionSequence = $x0.expressionSequence);\n" +
-                                " \n" +
-                                "   assert($x0->sourceInformation().source == $x1->sourceInformation().source, |'');\n" +
-                                "   assert($x0->sourceInformation().source != $x2->sourceInformation().source, |'');" +
-                                "}\n";
-        compileTestSource("fromString.pure",source);
-        this.compileAndExecute("test::testFn():Any[*]");
-    }
 }

@@ -12,10 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::functions::meta::tests::instanceOf::*;
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::instanceOf(instance:Any[1], type:Type[1]):Boolean[1];
+
+Enum meta::pure::functions::meta::tests::instanceOf::TestEnum1 { VALUE1, VALUE2 }
+Enum meta::pure::functions::meta::tests::instanceOf::TestEnum2 { VALUE3, VALUE4 }
+Class meta::pure::functions::meta::tests::instanceOf::TestMyClass {}
+
+function meta::pure::functions::meta::tests::instanceOf::indirectInstanceOf(val:Any[1], type:Type[1]):Boolean[1]
+{
+    $val->instanceOf($type);
+}
 
 function <<test.Test>> meta::pure::functions::meta::tests::instanceOf::testInstanceOfPrimitive():Boolean[1]
 {
@@ -92,4 +102,52 @@ function <<test.Test>> meta::pure::functions::meta::tests::instanceOf::testInsta
     assertFalse(CC_GeographicEntityType.CITY->instanceOf(Enumeration));
     assertFalse(CC_GeographicEntityType.CITY->instanceOf(Type));
     assertFalse(CC_GeographicEntityType.CITY->instanceOf(Integer));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::instanceOf::testInstanceOfEnumeration():Boolean[1]
+{
+    // Enum
+    assert(TestEnum1.VALUE1->instanceOf(TestEnum1));
+    assertFalse(TestEnum1.VALUE1->instanceOf(TestEnum2));
+    assert(TestEnum1.VALUE2->instanceOf(TestEnum1));
+    assertFalse(TestEnum1.VALUE2->instanceOf(TestEnum2));
+    assertFalse(TestEnum2.VALUE3->instanceOf(TestEnum1));
+    assert(TestEnum2.VALUE3->instanceOf(TestEnum2));
+    assertFalse(TestEnum2.VALUE4->instanceOf(TestEnum1));
+    assert(TestEnum2.VALUE4->instanceOf(TestEnum2));
+
+    // Primitive
+    assertFalse('a string'->instanceOf(TestEnum1));
+    assertFalse(7->instanceOf(TestEnum2));
+    assertFalse(3.14->instanceOf(TestEnum1));
+    assertFalse(false->instanceOf(TestEnum2));
+    assertFalse(%2018-01-17->instanceOf(TestEnum2));
+
+    // Class instance
+    assertFalse(^TestMyClass()->instanceOf(TestEnum1));
+    assertFalse(^TestMyClass()->instanceOf(TestEnum2));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::instanceOf::testIndirectInstanceOfEnumeration():Boolean[1]
+{
+    // Enum
+    assert(TestEnum1.VALUE1->indirectInstanceOf(TestEnum1));
+    assertFalse(TestEnum1.VALUE1->indirectInstanceOf(TestEnum2));
+    assert(TestEnum1.VALUE2->indirectInstanceOf(TestEnum1));
+    assertFalse(TestEnum1.VALUE2->indirectInstanceOf(TestEnum2));
+    assertFalse(TestEnum2.VALUE3->indirectInstanceOf(TestEnum1));
+    assert(TestEnum2.VALUE3->indirectInstanceOf(TestEnum2));
+    assertFalse(TestEnum2.VALUE4->indirectInstanceOf(TestEnum1));
+    assert(TestEnum2.VALUE4->indirectInstanceOf(TestEnum2));
+
+    // Primitive
+    assertFalse('a string'->indirectInstanceOf(TestEnum1));
+    assertFalse(7->indirectInstanceOf(TestEnum2));
+    assertFalse(3.14->indirectInstanceOf(TestEnum1));
+    assertFalse(false->indirectInstanceOf(TestEnum2));
+    assertFalse(%2018-01-17->indirectInstanceOf(TestEnum2));
+
+    // Class instance
+    assertFalse(^TestMyClass()->indirectInstanceOf(TestEnum1));
+    assertFalse(^TestMyClass()->indirectInstanceOf(TestEnum2));
 }

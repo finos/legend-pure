@@ -262,3 +262,98 @@ function meta::pure::functions::lang::tests::dynamicNew::getProperty(class:Class
 {
     $class.properties->filter(p | $p.name == $name)->first()
 }
+
+Class meta::pure::functions::lang::tests::dynamicNew::EmployeeWithError
+[
+   rule1 : $this.lastName->toOne()->length() < 10
+]
+{
+   lastName:String[0..1];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testConstraintWithDynamicNewNoOverrides():Boolean[1]
+{
+    assertError(|dynamicNew(meta::pure::functions::lang::tests::dynamicNew::EmployeeWithError, [^KeyValue(key='lastName',value='1234567891000')])->cast(@meta::pure::functions::lang::tests::dynamicNew::EmployeeWithError), 'Constraint :[rule1] violated in the Class EmployeeWithError');
+}
+
+Class meta::pure::functions::lang::tests::dynamicNew::CyclicalF 
+{            
+   str : String[1]; 
+   g : meta::pure::functions::lang::tests::dynamicNew::CyclicalG[1]; 
+}            
+Class meta::pure::functions::lang::tests::dynamicNew::CyclicalG      
+{            
+   f : meta::pure::functions::lang::tests::dynamicNew::CyclicalF[1]; 
+}      
+
+function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testCyclicalReferencesAreNotImplicit():Boolean[1]
+{
+   let f1 = dynamicNew(meta::pure::functions::lang::tests::dynamicNew::CyclicalF, [ ^KeyValue(key='str',value='foo') ] ) -> cast(@meta::pure::functions::lang::tests::dynamicNew::CyclicalF);
+   let g1 = dynamicNew(meta::pure::functions::lang::tests::dynamicNew::CyclicalG, [ ^KeyValue(key='f',value=$f1) ]) -> cast(@meta::pure::functions::lang::tests::dynamicNew::CyclicalG);
+   assert($f1.g == []);
+   assert($g1.f == $f1);
+}
+
+
+Class meta::pure::functions::lang::tests::dynamicNew::EmployeeWithHandler
+[
+   rule1 : $this.lastName->toOne()->length() < 10
+]
+{
+   lastName:String[0..1];
+}
+
+function meta::pure::functions::lang::tests::dynamicNew::constraintManager(o:Any[1]):Any[1]
+{
+  let failed = evaluate(meta::pure::functions::lang::tests::dynamicNew::EmployeeWithHandler.constraints->at(0).functionDefinition,^List<Any>(values=$o))->toOne()->cast(@Boolean);
+  ^Pair<Boolean,Any>(first=$failed,second=$o);
+}
+
+Class meta::pure::functions::lang::tests::dynamicNew::DNZeroToOneA
+{
+  name : String[1];
+}
+
+Class meta::pure::functions::lang::tests::dynamicNew::DNZeroToOneB
+{
+}
+
+Association meta::pure::functions::lang::tests::dynamicNew::DNZeroToOneAssoc
+{
+  toB : meta::pure::functions::lang::tests::dynamicNew::DNZeroToOneB[0..1];
+  toA : meta::pure::functions::lang::tests::dynamicNew::DNZeroToOneA[1];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testDynamicNewWithZeroToOneAssociationExplicitNull():Boolean[1]
+{
+  let a = dynamicNew(meta::pure::functions::lang::tests::dynamicNew::DNZeroToOneA,
+                     [^KeyValue(key='name', value='A'), ^KeyValue(key='toB', value=[])])
+            ->cast(@meta::pure::functions::lang::tests::dynamicNew::DNZeroToOneA);
+  assert('A' == $a.name);
+  assert($a.toB->isEmpty());
+}
+
+Class meta::pure::functions::lang::tests::dynamicNew::DNZeroToManyA
+{
+  name : String[1];
+}
+
+Class meta::pure::functions::lang::tests::dynamicNew::DNZeroToManyB
+{
+}
+
+Association meta::pure::functions::lang::tests::dynamicNew::DNZeroToManyAssoc
+{
+  toB : meta::pure::functions::lang::tests::dynamicNew::DNZeroToManyB[*];
+  toA : meta::pure::functions::lang::tests::dynamicNew::DNZeroToManyA[1];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testDynamicNewWithZeroToManyAssociationExplicitNull():Boolean[1]
+{
+  let a = dynamicNew(meta::pure::functions::lang::tests::dynamicNew::DNZeroToManyA,
+                     [^KeyValue(key='name', value='A'), ^KeyValue(key='toB', value=[])])
+            ->cast(@meta::pure::functions::lang::tests::dynamicNew::DNZeroToManyA);
+  assert('A' == $a.name);
+  assert($a.toB->isEmpty());
+}
+

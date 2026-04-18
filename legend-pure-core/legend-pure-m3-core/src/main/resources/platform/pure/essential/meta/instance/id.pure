@@ -29,3 +29,12 @@ function <<test.Test>> meta::pure::functions::meta::tests::id::testPrimitives():
     assertEq('CC_Person', 'CC_Person'->id());
     assertEq('1', 1->id());
 }
+function <<test.Test>> meta::pure::functions::meta::tests::id::testBasic():Boolean[1]
+{
+    assert(!(1->id()->isEmpty()));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::id::testEval():Boolean[1]
+{
+    assert(!id_Any_1__String_1_->eval(1)->isEmpty());
+}

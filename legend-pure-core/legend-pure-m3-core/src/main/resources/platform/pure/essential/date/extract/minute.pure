@@ -22,3 +22,8 @@ function <<PCT.test>> meta::pure::functions::date::tests::testMinute<Z|y>(f:Func
     assertEquals(9, $f->eval(|%2015-04-15T17:09:21->minute()));
     assertEquals(9, $f->eval(|%2015-04-15T17:09:21.398->minute()));
 }
+
+function <<PCT.test>> meta::pure::functions::date::tests::testMinuteError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    meta::pure::functions::asserts::assertError(| $f->eval(|%2017->minute()), 'Cannot get minute for 2017', 28, 68);
+}

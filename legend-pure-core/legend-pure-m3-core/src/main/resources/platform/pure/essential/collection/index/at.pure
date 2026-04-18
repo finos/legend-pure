@@ -49,5 +49,5 @@ function <<PCT.test>> meta::pure::functions::collection::tests::at::testAtWithVa
 }
 function <<PCT.test>> meta::pure::functions::collection::tests::at::testAtError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertError(| $f->eval(|[1, 2]->at(2)), 'The system is trying to get an element at offset 2 where the collection is of size 2');
+    assertError(| $f->eval(|[1, 2]->at(2)), 'The system is trying to get an element at offset 2 where the collection is of size 2', 52, 37);
 }

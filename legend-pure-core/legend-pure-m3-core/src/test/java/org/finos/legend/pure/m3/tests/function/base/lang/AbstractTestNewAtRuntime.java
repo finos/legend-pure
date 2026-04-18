@@ -249,82 +249,6 @@ public abstract class AbstractTestNewAtRuntime extends AbstractPureTestWithCoreC
     }
 
     @Test
-    public void testNewWithChildWithReverseOneToManyProperty()
-    {
-        compileTestSource("fromString.pure", "function test(): Any[*]\n" +
-                "{\n" +
-                "   let car = ^test::Car(name='Bugatti', owner= ^test::Owner(firstName='John', lastName='Roe', cars=[^test::Car(name='Audi')]));\n" +
-                "   print($car.owner.cars->size()->toString(), 1);\n" +
-                "   print($car.owner.cars->sortBy(c|$c.name)->at(0).name, 1);\n" +
-                "   print($car.owner.cars->sortBy(c|$c.name)->at(1).name, 1);\n" +
-                "   $car;" +
-                "}\n" +
-                "function meta::pure::functions::collection::sortBy<T,U|m>(col:T[m], key:Function<{T[1]->U[1]}>[0..1]):T[m]\n" +
-                "{\n" +
-                "    sort($col, $key, [])\n" +
-                "}\n" +
-                "Class\n" +
-                "test::Car\n" +
-                "{\n" +
-                "   name : String[1];\n" +
-                "}\n" +
-                "\n" +
-                "Class\n" +
-                "test::Owner\n" +
-                "{\n" +
-                "   firstName: String[1];\n" +
-                "   lastName: String[1];\n" +
-                "}\n" +
-                "\n" +
-                "Association test::Car_Owner\n" +
-                "{\n" +
-                "   owner : test::Owner[1];\n" +
-                "   cars  : test::Car[1..*];\n" +
-                "}");
-        try
-        {
-            execute("test():Any[*]");
-            Assert.assertEquals("'2'", functionExecution.getConsole().getLine(0));
-            Assert.assertEquals("'Audi'", functionExecution.getConsole().getLine(1));
-            Assert.assertEquals("'Bugatti'", functionExecution.getConsole().getLine(2));
-        }
-        catch (Exception e)
-        {
-            Assert.fail("Failed to set the reverse property of a child for a one-to-many association.");
-        }
-    }
-
-    @Test
-    public void testNewWithZeroToOneAssociationExplicitNull()
-    {
-        compileTestSource("/test/testModel.pure",
-                "import test::*;\n" +
-                        "Class test::TestClassA\n" +
-                        "{\n" +
-                        "  name : String[1];\n" +
-                        "}\n" +
-                        "\n" +
-                        "Class test::TestClassB\n" +
-                        "{\n" +
-                        "}\n" +
-                        "\n" +
-                        "Association test::TestAssocAB\n" +
-                        "{\n" +
-                        "  toB : TestClassB[0..1];\n" +
-                        "  toA : TestClassA[1];\n" +
-                        "}\n" +
-                        "\n" +
-                        "function test::testFn():Any[*]\n" +
-                        "{\n" +
-                        "  let a = ^TestClassA(name='A', toB=[]);\n" +
-                        "  assert('A' == $a.name, |'');\n" +
-                        "  assert($a.toB->isEmpty(), |'');\n" +
-                        "}\n");
-        CoreInstance func = runtime.getFunction("test::testFn():Any[*]");
-        functionExecution.start(func, Lists.immutable.empty());
-    }
-
-    @Test
     public void testNewWithZeroToManyAssociationExplicitNull()
     {
         compileTestSource("/test/testModel.pure",
@@ -366,39 +290,6 @@ public abstract class AbstractTestNewAtRuntime extends AbstractPureTestWithCoreC
         compileAndExecute("test::testFn():Any[*]");
         // TODO should this be allowed?
 //        this.compileAndExecute("test::testGenericFn():Any[*]");
-    }
-
-    @Test
-    public void testNewWithoutKeyExpressions()
-    {
-        String source =
-                "Class A\n" +
-                "{" +
-                "   prop1:String[*];\n" +
-                "}\n" +
-                "function test::testFn():Any[*] " +
-                "{" +
-                "   let lambda = {| ^A()};\n" +
-                "   $lambda.expressionSequence->toOne()->meta::pure::functions::meta::reactivate(meta::pure::functions::collection::newMap([])->cast(@Map<String, List<Any>>));" +
-                "}\n";
-        compileTestSource("fromString.pure", source);
-        compileAndExecute("test::testFn():Any[*]");
-    }
-
-    @Test
-    public void testNewWithTypeVariable()
-    {
-        String source =
-                "Class A(x:Integer[1])\n" +
-                        "{" +
-                        "   prop1(){$x}:Integer[1];\n" +
-                        "}\n" +
-                        "function test::testFn():Any[*] " +
-                        "{" +
-                        "   ^A(1)()" +
-                        "}\n";
-        compileTestSource("fromString.pure", source);
-        compileAndExecute("test::testFn():Any[*]");
     }
 
     @Test

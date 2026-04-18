@@ -20,28 +20,6 @@ import org.junit.Test;
 public abstract class AbstractTestNewInferenceAtRuntime extends AbstractPureTestWithCoreCompiled
 {
     @Test
-    public void testSimple() throws Exception
-    {
-        compileTestSource("fromString.pure", "Class Structure<Z,K>" +
-                "{" +
-                "     a:Z[1];" +
-                "     b:K[1];" +
-                "}" +
-                "" +
-                "function func<U,V>(p:Structure<U,V>[1]):String[1]" +
-                "{" +
-                "     ^Structure<U,V>(a = $p.a, b = $p.b);" +
-                "     'ok';" +
-                "}" +
-                "" +
-                "function test():Any[*]\n" +
-                "{" +
-                "   func(^Structure<Integer,String>(a=1,b='eeee'));\n" +
-                "}");
-        this.compileAndExecute("test():Any[*]");
-    }
-
-    @Test
     public void deeper() throws Exception
     {
         compileTestSource("fromString.pure", "Class Structure<Z,K>" +
