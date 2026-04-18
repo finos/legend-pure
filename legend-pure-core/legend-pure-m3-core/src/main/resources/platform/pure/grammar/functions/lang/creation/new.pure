@@ -131,39 +131,17 @@ function <<test.Test>> meta::pure::functions::lang::tests::new::testNewWithTypeV
    assertError(|^MyClassWithTypeVariables(1)(text = ['a', 'b']).res('z'), 'Constraint :[wx] violated in the Class MyClassWithTypeVariables, Message: Error 2 >= 1');
 }
 
-Class meta::pure::functions::lang::tests::newAtRuntime::Car
-{
-   name : String[1];
-}
-
-Class meta::pure::functions::lang::tests::newAtRuntime::Owner
-{
-   firstName: String[1];
-   lastName: String[1];
-}
-
-Association meta::pure::functions::lang::tests::newAtRuntime::Car_Owner
-{
-   owner : meta::pure::functions::lang::tests::newAtRuntime::Owner[1];
-   cars  : meta::pure::functions::lang::tests::newAtRuntime::Car[1..*];
-}
-
 function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithChildWithReverseOneToManyProperty():Boolean[1]
 {
-   let car = ^meta::pure::functions::lang::tests::newAtRuntime::Car(name='Bugatti', owner= ^meta::pure::functions::lang::tests::newAtRuntime::Owner(firstName='John', lastName='Roe', cars=[^meta::pure::functions::lang::tests::newAtRuntime::Car(name='Audi')]));
+   let car = ^LA_Car(name='Bugatti', owner=^LA_Person(firstName='John', lastName='Roe', cars=[^LA_Car(name='Audi')]));
    assert($car.owner.cars->size() == 2);
    assert($car.owner.cars->filter(c | $c.name == 'Audi')->isNotEmpty());
    assert($car.owner.cars->filter(c | $c.name == 'Bugatti')->isNotEmpty());
 }
 
-Class meta::pure::functions::lang::tests::newAtRuntime::A
-{
-   prop1:String[*];
-}
-
 function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithoutKeyExpressions():Boolean[1]
 {
-   let lambda = {| ^meta::pure::functions::lang::tests::newAtRuntime::A()};
+   let lambda = {| ^LA_List<String>()};
    assert($lambda.expressionSequence->toOne()->meta::pure::functions::meta::reactivate(meta::pure::functions::collection::newMap([]->cast(@Pair<String, List<Any>>)))->isNotEmpty());
 }
 
@@ -177,26 +155,26 @@ function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::func
    assertEq(1, ^meta::pure::functions::lang::tests::newAtRuntime::ClassWithExplicitType(1)().prop1());
 }
 
-Class meta::pure::functions::lang::tests::newAtRuntime::TestClassA
+Class meta::pure::functions::lang::tests::newAtRuntime::ZeroToOneSource
 {
   name : String[1];
 }
 
-Class meta::pure::functions::lang::tests::newAtRuntime::TestClassB
+Class meta::pure::functions::lang::tests::newAtRuntime::ZeroToOneTarget
 {
 }
 
-Association meta::pure::functions::lang::tests::newAtRuntime::TestAssocAB
+Association meta::pure::functions::lang::tests::newAtRuntime::ZeroToOneSource_ZeroToOneTarget
 {
-  toB : meta::pure::functions::lang::tests::newAtRuntime::TestClassB[0..1];
-  toA : meta::pure::functions::lang::tests::newAtRuntime::TestClassA[1];
+  toTarget : meta::pure::functions::lang::tests::newAtRuntime::ZeroToOneTarget[0..1];
+  toSource : meta::pure::functions::lang::tests::newAtRuntime::ZeroToOneSource[1];
 }
 
 function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithZeroToOneAssociationExplicitNull():Boolean[1]
 {
-  let a = ^meta::pure::functions::lang::tests::newAtRuntime::TestClassA(name='A', toB=[]);
+  let a = ^meta::pure::functions::lang::tests::newAtRuntime::ZeroToOneSource(name='A', toTarget=[]);
   assert('A' == $a.name);
-  assert($a.toB->isEmpty());
+  assert($a.toTarget->isEmpty());
 }
 
 
@@ -305,14 +283,14 @@ Association meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyCar
    cars  : meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyCarMany[1..*];
 }
 
-Class meta::pure::functions::lang::tests::newAtRuntime::MyClass<|m>
+Class meta::pure::functions::lang::tests::newAtRuntime::MultiplicityParameterizedHolder<|m>
 {
   value:String[m];
 }
 
 function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithMultiplicityParameter():Boolean[1]
 {
-   let result = ^meta::pure::functions::lang::tests::newAtRuntime::MyClass<|1>(value='hello');
+   let result = ^meta::pure::functions::lang::tests::newAtRuntime::MultiplicityParameterizedHolder<|1>(value='hello');
    assertEq('hello', $result.value);
 }
 
