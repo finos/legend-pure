@@ -24,9 +24,9 @@ function <<PCT.test>> meta::pure::functions::math::tests::testSquareRoot<Z|y>(f:
    assertEq(0.1, $f->eval(|sqrt(0.01)));
 }
 
-function <<PCT.test>> meta::pure::functions::math::tests::testSquareRootEval<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::math::tests::testSquareRootEval():Boolean[1]
 {
-   assertEq(3.0, $f->eval(|sqrt_Number_1__Float_1_->eval(9)));
+   assertEq(3.0, sqrt_Number_1__Float_1_->eval(9));
 }
 
 function <<PCT.test>> meta::pure::functions::math::tests::testSquareRootError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

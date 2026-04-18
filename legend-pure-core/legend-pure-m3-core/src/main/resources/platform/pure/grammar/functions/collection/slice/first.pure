@@ -50,8 +50,8 @@ function <<PCT.test>> meta::pure::functions::collection::tests::first::testFirst
     assertEquals($firm1, $f->eval(|$set->first()));
     assertEquals($doe, $f->eval(|$set->at(1).employees->first()));
 }
-function <<PCT.test>> meta::pure::functions::collection::tests::first::testEvalParse<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::collection::tests::first::testEvalParse():Boolean[1]
 {
-    assertEquals(1, $f->eval(|first_T_MANY__T_$0_1$_->eval([1,2,3])));
-    assertEquals(1, $f->eval(|first_T_MANY__T_$0_1$_->eval(1)));
+    assertEquals(1, first_T_MANY__T_$0_1$_->eval([1,2,3]));
+    assertEquals(1, first_T_MANY__T_$0_1$_->eval(1));
 }

@@ -22,7 +22,7 @@ function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testTang
    assertEqWithinTolerance(-2.185039863262, $f->eval(|tan(2)), 0.000000000001);
 }
 
-function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testTangentEval<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::math::tests::trigonometry::testTangentEval():Boolean[1]
 {
-   assertEqWithinTolerance(-2.185039863262, $f->eval(|tan_Number_1__Float_1_->eval(2)), 0.000000000001);
+   assertEqWithinTolerance(-2.185039863262, tan_Number_1__Float_1_->eval(2), 0.000000000001);
 }

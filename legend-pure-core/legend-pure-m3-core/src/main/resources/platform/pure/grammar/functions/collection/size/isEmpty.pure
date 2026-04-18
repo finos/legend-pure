@@ -44,7 +44,7 @@ function <<PCT.test, PCTCoreQualifier.variant>> meta::pure::functions::collectio
     assertFalse($f->eval(|['a', 'b']->isEmpty()));
     assertFalse($f->eval(|[1, 2, 3]->isEmpty()));
 }
-function <<PCT.test>> meta::pure::functions::collection::tests::isEmpty::testEvalParse<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::collection::tests::isEmpty::testEvalParse():Boolean[1]
 {
-    assertEquals(false, $f->eval(|isEmpty_Any_MANY__Boolean_1_->eval([1,2,3])));
+    assertEquals(false, isEmpty_Any_MANY__Boolean_1_->eval([1,2,3]));
 }

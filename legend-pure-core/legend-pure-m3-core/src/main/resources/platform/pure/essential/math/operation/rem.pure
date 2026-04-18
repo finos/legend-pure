@@ -48,40 +48,40 @@ function <<PCT.test>> meta::pure::functions::math::tests::rem::testRemWithNegati
     assertEq(1.0, $f->eval(|rem(5.5, -1.5)));
 }
 
-function <<PCT.test>> meta::pure::functions::math::tests::rem::testRemInEval<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::math::tests::rem::testRemInEval():Boolean[1]
 {
     let dividend = 12;
     let divisor = 5;
-    assertEquals(2, $f->eval(|rem_Number_1__Number_1__Number_1_->eval(12, 5)));
-    assertEquals(-2, $f->eval(|rem_Number_1__Number_1__Number_1_->eval(-12, 5)));
-    assertEquals(2, $f->eval(|rem_Number_1__Number_1__Number_1_->eval($dividend, $divisor)));
+    assertEquals(2, rem_Number_1__Number_1__Number_1_->eval(12, 5));
+    assertEquals(-2, rem_Number_1__Number_1__Number_1_->eval(-12, 5));
+    assertEquals(2, rem_Number_1__Number_1__Number_1_->eval($dividend, $divisor));
 }
 
-function <<PCT.test>> meta::pure::functions::math::tests::rem::testRemInEvalWithFloat<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::math::tests::rem::testRemInEvalWithFloat():Boolean[1]
 {
     let dividend = 5;
     let divisor = 1.5;
-    assertEquals(0.5, $f->eval(|rem_Number_1__Number_1__Number_1_->eval(5, 1.5)));
-    assertEquals(2.5, $f->eval(|rem_Number_1__Number_1__Number_1_->eval(7.5, 5)));
-    assertEquals(0.5, $f->eval(|rem_Number_1__Number_1__Number_1_->eval($dividend, $divisor)));
+    assertEquals(0.5, rem_Number_1__Number_1__Number_1_->eval(5, 1.5));
+    assertEquals(2.5, rem_Number_1__Number_1__Number_1_->eval(7.5, 5));
+    assertEquals(0.5, rem_Number_1__Number_1__Number_1_->eval($dividend, $divisor));
 }
 
-function <<PCT.test>> meta::pure::functions::math::tests::rem::testRemInEvalWithMixedIntegersAndFloats<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::math::tests::rem::testRemInEvalWithMixedIntegersAndFloats():Boolean[1]
 {
     let dividend = 7.5;
     let divisor = 5;
-    assertEquals(0.0, $f->eval(|rem_Number_1__Number_1__Number_1_->eval(5, 2.5)));
-    assertEquals(1.0, $f->eval(|rem_Number_1__Number_1__Number_1_->eval(5.5, 1.5)));
-    assertEquals(2.5, $f->eval(|rem_Number_1__Number_1__Number_1_->eval($dividend, $divisor)));
+    assertEquals(0.0, rem_Number_1__Number_1__Number_1_->eval(5, 2.5));
+    assertEquals(1.0, rem_Number_1__Number_1__Number_1_->eval(5.5, 1.5));
+    assertEquals(2.5, rem_Number_1__Number_1__Number_1_->eval($dividend, $divisor));
 }
 
-function <<PCT.test>> meta::pure::functions::math::tests::rem::testRemInEvalWithNegativeNumbers<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::math::tests::rem::testRemInEvalWithNegativeNumbers():Boolean[1]
 {
     let dividend = -5;
     let divisor = 1.5;
-    assertEquals(0.5, $f->eval(|rem_Number_1__Number_1__Number_1_->eval(5, -1.5)));
-    assertEquals(1.0, $f->eval(|rem_Number_1__Number_1__Number_1_->eval(5.5, -1.5)));
-    assertEquals(-0.5, $f->eval(|rem_Number_1__Number_1__Number_1_->eval($dividend, $divisor)));
+    assertEquals(0.5, rem_Number_1__Number_1__Number_1_->eval(5, -1.5));
+    assertEquals(1.0, rem_Number_1__Number_1__Number_1_->eval(5.5, -1.5));
+    assertEquals(-0.5, rem_Number_1__Number_1__Number_1_->eval($dividend, $divisor));
 }
 
 function <<PCT.test>> meta::pure::functions::math::tests::rem::testRemWithDecimals<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

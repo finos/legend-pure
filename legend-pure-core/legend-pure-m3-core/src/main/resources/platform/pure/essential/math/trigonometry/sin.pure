@@ -23,8 +23,8 @@ function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testSine
    assertEqWithinTolerance(0.997494986604, $f->eval(|sin(1.5)), 0.000000000001);
 }
 
-function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testSineEval<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::math::tests::trigonometry::testSineEval():Boolean[1]
 {
-   assertEqWithinTolerance(0.841470984807, $f->eval(|sin_Number_1__Float_1_->eval(1)), 0.000000000001);
+   assertEqWithinTolerance(0.841470984807, sin_Number_1__Float_1_->eval(1), 0.000000000001);
 }
 

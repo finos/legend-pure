@@ -27,10 +27,10 @@ function <<PCT.test>> meta::pure::functions::date::tests::testAdjustByYears<Z|y>
     assertEquals(%2016-02-29, $f->eval(|%2012-02-29->adjust(4, DurationUnit.YEARS)));
 }
 
-function <<PCT.test>> meta::pure::functions::date::tests::testAdjustReflectiveEvaluation<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::date::tests::testAdjustReflectiveEvaluation():Boolean[1]
 {
-    assertEquals(%2016-02-28, $f->eval(|meta::pure::functions::date::adjust_Date_1__Integer_1__DurationUnit_1__Date_1_->eval(%2015-02-28, 1, DurationUnit.YEARS)));
-    assertEquals(%2016-02-28, $f->eval(|meta::pure::functions::date::adjust_Date_1__Integer_1__DurationUnit_1__Date_1_->evaluate([^List<Any>(values=%2015-02-28), ^List<Any>(values=1), ^List<Any>(values=DurationUnit.YEARS)])));
+    assertEquals(%2016-02-28, meta::pure::functions::date::adjust_Date_1__Integer_1__DurationUnit_1__Date_1_->eval(%2015-02-28, 1, DurationUnit.YEARS));
+    assertEquals(%2016-02-28, meta::pure::functions::date::adjust_Date_1__Integer_1__DurationUnit_1__Date_1_->evaluate([^List<Any>(values=%2015-02-28), ^List<Any>(values=1), ^List<Any>(values=DurationUnit.YEARS)]));
 }
 
 function <<PCT.test>> meta::pure::functions::date::tests::testAdjustByMonths<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

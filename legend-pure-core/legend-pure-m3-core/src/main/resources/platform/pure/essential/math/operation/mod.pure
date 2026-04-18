@@ -28,11 +28,11 @@ function <<PCT.test>> meta::pure::functions::math::tests::mod::testModWithNegati
     assertEq(7, $f->eval(|mod(-5, 12)));
 }
 
-function <<PCT.test>> meta::pure::functions::math::tests::mod::testModInEval<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::math::tests::mod::testModInEval():Boolean[1]
 {
     let dividend = 12;
     let divisor = 5;
-    assertEquals(2, $f->eval(|mod_Integer_1__Integer_1__Integer_1_->eval(12, 5)));
-    assertEquals(3, $f->eval(|mod_Integer_1__Integer_1__Integer_1_->eval(-12, 5)));
-    assertEquals(2, $f->eval(|mod_Integer_1__Integer_1__Integer_1_->eval($dividend, $divisor)));
+    assertEquals(2, mod_Integer_1__Integer_1__Integer_1_->eval(12, 5));
+    assertEquals(3, mod_Integer_1__Integer_1__Integer_1_->eval(-12, 5));
+    assertEquals(2, mod_Integer_1__Integer_1__Integer_1_->eval($dividend, $divisor));
 }

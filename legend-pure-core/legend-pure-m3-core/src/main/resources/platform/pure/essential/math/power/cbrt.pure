@@ -23,7 +23,7 @@ function <<PCT.test>> {test.excludePlatform = 'Java compiled'} meta::pure::funct
    assertEqWithinTolerance(0.1, $f->eval(|cbrt(0.001)), 0.000000000000001);
 }
 
-function <<PCT.test>> meta::pure::functions::math::tests::testCubeRootEval<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::math::tests::testCubeRootEval():Boolean[1]
 {
-   assertEqWithinTolerance(3.0, $f->eval(|cbrt_Number_1__Float_1_->eval(27)), 0.000000000000001);
+   assertEqWithinTolerance(3.0, cbrt_Number_1__Float_1_->eval(27), 0.000000000000001);
 }

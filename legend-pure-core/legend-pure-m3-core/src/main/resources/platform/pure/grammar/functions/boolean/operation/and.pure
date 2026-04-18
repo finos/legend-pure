@@ -83,12 +83,12 @@ function <<test.Test>> meta::pure::functions::boolean::tests::conjunctions::and:
     assertEquals(false, $lambda2->evaluate([]));
 }
 
-function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::and::testEvalParse<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::boolean::tests::conjunctions::and::testEvalParse():Boolean[1]
 {
-    assertEq(true, $f->eval(|and_Boolean_1__Boolean_1__Boolean_1_->eval(true, true)));
-    assertEq(false, $f->eval(|and_Boolean_1__Boolean_1__Boolean_1_->eval(false, true)));
-    assertEq(false, $f->eval(|and_Boolean_1__Boolean_1__Boolean_1_->eval(true, false)));
-    assertEq(false, $f->eval(|and_Boolean_1__Boolean_1__Boolean_1_->eval(false, false)));
+    assertEq(true, and_Boolean_1__Boolean_1__Boolean_1_->eval(true, true));
+    assertEq(false, and_Boolean_1__Boolean_1__Boolean_1_->eval(false, true));
+    assertEq(false, and_Boolean_1__Boolean_1__Boolean_1_->eval(true, false));
+    assertEq(false, and_Boolean_1__Boolean_1__Boolean_1_->eval(false, false));
 }
 
 
