@@ -25,5 +25,5 @@ function <<PCT.test>> meta::pure::functions::date::tests::testMinute<Z|y>(f:Func
 
 function <<PCT.test>> meta::pure::functions::date::tests::testMinuteError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertError(| $f->eval(|%2017->minute()), 'Cannot get minute for 2017', 28, 68);
+    assertError(| $f->eval(|%2017->minute()), 'Cannot get minute for 2017', 28, 36);
 }
