@@ -295,20 +295,6 @@ function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testCycli
 }
 
 
-Class meta::pure::functions::lang::tests::dynamicNew::EmployeeWithHandler
-[
-   rule1 : $this.lastName->toOne()->length() < 10
-]
-{
-   lastName:String[0..1];
-}
-
-function meta::pure::functions::lang::tests::dynamicNew::constraintManager(o:Any[1]):Any[1]
-{
-  let failed = evaluate(meta::pure::functions::lang::tests::dynamicNew::EmployeeWithHandler.constraints->at(0).functionDefinition,^List<Any>(values=$o))->toOne()->cast(@Boolean);
-  ^Pair<Boolean,Any>(first=$failed,second=$o);
-}
-
 Class meta::pure::functions::lang::tests::dynamicNew::DNZeroToOneA
 {
   name : String[1];
