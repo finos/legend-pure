@@ -67,8 +67,8 @@ function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessWithMes
 
 function <<test.Test>> meta::pure::functions::asserts::tests::testFailWithMessageFunction():Boolean[1]
 {
-    assertError(| assert(false, |format('Test message: %d', 2 + 3)), 'Test message: 5', 70, 51);
-    assertError(| assert(1 == 2, |format('Test message: %d', 2 + 3)), 'Test message: 5', 71, 51);
+    assertError(| assert(false, |format('Test message: %d', 2 + 3)), 'Test message: 5', 70, 19);
+    assertError(| assert(1 == 2, |format('Test message: %d', 2 + 3)), 'Test message: 5', 71, 19);
 }
 
 function <<test.Test>> meta::pure::functions::asserts::tests::testEval():Boolean[1]

@@ -315,4 +315,86 @@ function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::func
    );
 }
 
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewNil():Boolean[1]
+{
+   assertError(|^meta::pure::metamodel::type::Nil(), 'Cannot instantiate meta::pure::metamodel::type::Nil');
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToOneCar { name:String[1]; }
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToOneOwner { firstName:String[1]; lastName:String[1]; }
+Association meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToOneCar_Owner
+{
+   owner : meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToOneOwner[1];
+   car : meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToOneCar[0..1];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithReverseZeroToOneProperty():Boolean[1]
+{
+   let car = ^meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToOneCar(name='Bugatti', owner=^meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToOneOwner(firstName='John', lastName='Roe'));
+   assertEq(1, $car.owner.car->size());
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToManyCar { name:String[1]; }
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToManyOwner { firstName:String[1]; lastName:String[1]; }
+Association meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToManyCar_Owner
+{
+   owner : meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToManyOwner[1];
+   cars : meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToManyCar[0..*];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithReverseZeroToManyProperty():Boolean[1]
+{
+   let car = ^meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToManyCar(name='Bugatti', owner=^meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToManyOwner(firstName='John', lastName='Roe'));
+   assertEq(1, $car.owner.cars->size());
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToOneCar { name:String[1]; }
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToOneOwner { firstName:String[1]; lastName:String[1]; }
+Association meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToOneCar_Owner
+{
+   owner : meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToOneOwner[1];
+   car : meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToOneCar[1];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithReverseOneToOneProperty():Boolean[1]
+{
+   let car = ^meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToOneCar(name='Bugatti', owner=^meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToOneOwner(firstName='John', lastName='Roe'));
+   assertEq(1, $car.owner.car->size());
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToManyCar { name:String[1]; }
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToManyOwner { firstName:String[1]; lastName:String[1]; }
+Association meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToManyCar_Owner
+{
+   owner : meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToManyOwner[1];
+   cars : meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToManyCar[1..*];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithReverseOneToManyProperty():Boolean[1]
+{
+   let car = ^meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToManyCar(name='Bugatti', owner=^meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToManyOwner(firstName='John', lastName='Roe'));
+   assertEq(1, $car.owner.cars->size());
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::ExplicitNullManyA { name:String[1]; }
+Class meta::pure::functions::lang::tests::newAtRuntime::ExplicitNullManyB {}
+Association meta::pure::functions::lang::tests::newAtRuntime::ExplicitNullManyAssoc
+{
+   toB : meta::pure::functions::lang::tests::newAtRuntime::ExplicitNullManyB[*];
+   toA : meta::pure::functions::lang::tests::newAtRuntime::ExplicitNullManyA[1];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithZeroToManyAssociationExplicitNull():Boolean[1]
+{
+   let a = ^meta::pure::functions::lang::tests::newAtRuntime::ExplicitNullManyA(name='A', toB=[]);
+   assertEq('A', $a.name);
+   assert($a.toB->isEmpty());
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewParametrizedClassWithEmptyPropertiesSet():Boolean[1]
+{
+   let x = ^meta::pure::functions::lang::tests::model::LA_GenericPair<String, Integer>(prop1=[], prop2=[]);
+   assert($x.prop1->isEmpty());
+   assert($x.prop2->isEmpty());
+}
 
