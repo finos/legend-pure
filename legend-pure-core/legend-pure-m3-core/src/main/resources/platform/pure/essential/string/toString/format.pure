@@ -125,3 +125,13 @@ function <<test.Test>> meta::pure::functions::string::tests::format::testFormatI
 {
     assertEquals('the quick brown fox jumps over the lazy dog', format_String_1__Any_MANY__String_1_->evaluate([^List<String>(values='the quick brown %s jumps over the lazy %s'), ^List<Any>(values=['fox', 'dog'])]));
 }
+
+function <<test.Test>> meta::pure::functions::string::tests::format::testFormatTooFewInputs():Boolean[1]
+{
+    assertError(|format('Hello %s %s', ['Catherine']), 'Too few arguments passed to format function. Format expression "Hello %s %s", number of arguments [1]');
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::format::testFormatTooManyInputs():Boolean[1]
+{
+    assertError(|format('Hello %s %s', ['Catherine', 'Joe', 'Katie']), 'Unused format args. [3] arguments provided to expression "Hello %s %s"');
+}
