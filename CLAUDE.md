@@ -70,7 +70,7 @@ Both modes compile from the same `CoreInstance` graph produced by the M3 compile
 - **Compiled** (`legend-pure-runtime-java-engine-compiled`) — ahead-of-time codegen to Java during Maven build. Production path.
 - **Interpreted** (`legend-pure-runtime-java-engine-interpreted`) — tree-walking interpreter at runtime. Dev/IDE path.
 
-**PCT (Platform Compatibility Testing)** is the integration contract that keeps these engines identical: Pure functions annotated `@PCT` run on *both* engines every build; divergent results fail CI. Tests follow `Test_<Mode>_<Suite>_PCT` naming. The current branch (`pct-refactor`) is migrating Java-side abstract test classes into native Pure PCT — recent commits named `test(grammar): PCT … migration` are deleting `AbstractTest*.java` under `legend-pure-m3-core/src/test/java/.../function/base/` and replacing them with Pure PCT functions in `legend-pure-m3-core/src/main/resources/platform/pure/`.
+**PCT (Platform Compatibility Testing)** is the integration contract that keeps these engines identical: Pure functions carrying the `<<PCT.function>>` stereotype (with `<<PCT.test>>` tests) run on *both* engines every build; divergent results fail CI. Tests follow `Test_<Mode>_<Suite>_PCT` naming. The current branch (`pct-refactor`) is migrating Java-side abstract test classes into native Pure PCT — recent commits named `test(grammar): PCT … migration` are deleting `AbstractTest*.java` under `legend-pure-m3-core/src/test/java/.../function/base/` and replacing them with Pure PCT functions in `legend-pure-m3-core/src/main/resources/platform/pure/`.
 
 ### Maven plugin pipeline (driven by `legend-pure-maven/*`)
 
