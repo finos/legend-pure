@@ -25,7 +25,6 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.utility.ArrayIterate;
-import org.finos.legend.pure.m3.coreinstance.helper.PrimitiveHelper;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.execution.test.PureTestBuilder;
@@ -154,7 +153,7 @@ public class PureTestBuilderCompiled extends TestSuite
             if (message != null)
             {
                 PCTTools.displayExpectedErrorFailMessage(message, coreInstance, PCTExecutor);
-                org.junit.Assert.fail("Test was expected to fail with \"" + message + "\" but now passes \u2014 run with rebase to update the manifest.");
+                org.junit.Assert.fail("Test was expected to fail with \"" + message + "\" but now passes — run with rebase to update the manifest.");
             }
             return res;
         }
@@ -375,18 +374,17 @@ public class PureTestBuilderCompiled extends TestSuite
 
         try
         {
-            Object report = executeFn(surveyorFn, null, Maps.mutable.empty(), executionSupport, Lists.mutable.with(packagePath, sourceFilter, manifestPath));
+            CoreInstance report = (CoreInstance) executeFn(surveyorFn, null, Maps.mutable.empty(), executionSupport, Lists.mutable.with(packagePath, sourceFilter, manifestPath));
 
             TestSuite suite = new TestSuite("Surveyor PCT Tests for " + packagePath);
 
-            org.eclipse.collections.api.RichIterable<?> results = (org.eclipse.collections.api.RichIterable<?>) report.getClass().getMethod("_results").invoke(report);
+            ListIterable<? extends CoreInstance> results = Instance.getValueForMetaPropertyToManyResolved(report, "results", processorSupport);
 
-            for (Object result : results)
+            for (CoreInstance result : results)
             {
-                String fqn = (String) result.getClass().getMethod("_fqn").invoke(result);
-                Object statusEnum = result.getClass().getMethod("_status").invoke(result);
-                String statusName = (String) statusEnum.getClass().getMethod("getName").invoke(statusEnum);
-                String message = (String) result.getClass().getMethod("_message").invoke(result);
+                String fqn = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(result, "fqn", processorSupport));
+                String statusName = Instance.getValueForMetaPropertyToOneResolved(result, "status", processorSupport).getName();
+                String message = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(result, "message", processorSupport), "Unknown Error");
 
                 suite.addTest(new junit.framework.TestCase(fqn)
                 {
