@@ -70,13 +70,15 @@ public class DynamicPureFunctionImpl<T> implements SharedPureFunction<T>
         Objects.requireNonNull(vars, "vars");
         Objects.requireNonNull(es, "es");
 
-        MutableMap<String, List<?>> executionOpenVars = Maps.mutable.ofInitialCapacity(this.openVariables.size());
+
+        PureMap executionOpenVarsPureMap = new PureMap(Maps.mutable.ofInitialCapacity(this.openVariables.size()));
+        MutableMap<String, List<?>> executionOpenVars = executionOpenVarsPureMap.getMap();
+        
         this.openVariables.forEachKeyValue((key, value) -> executionOpenVars.put(key, toPureList(value)));
 
         FunctionType ft = (FunctionType) this.func._classifierGenericType()._typeArguments().getFirst()._rawType();
         ListHelper.wrapListIterable(ft._parameters()).forEachWithIndex((var, i) -> executionOpenVars.put(var._name(), toPureList(vars.get(i))));
 
-        PureMap executionOpenVarsPureMap = new PureMap(executionOpenVars);
         return (T) this.func._expressionSequence().injectInto(null, (previousResult, expression) ->
         {
             Object result = Reactivator.reactivateWithoutJavaCompilation(this.bridge, expression, executionOpenVarsPureMap, es);
