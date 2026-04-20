@@ -45,6 +45,20 @@ public abstract class PCTReportConfiguration
         return new ExclusionPackageTests(_package, message, adapterQualifiers);
     }
 
+    protected static MutableList<ExclusionSpecification> buildExpectedFailures(String manifestPath)
+    {
+        org.finos.legend.pure.m3.pct.shared.model.PCTManifest manifest = org.finos.legend.pure.m3.pct.shared.PCTManifestLoader.loadFromClasspath(manifestPath);
+        MutableList<ExclusionSpecification> exclusions = org.eclipse.collections.impl.factory.Lists.mutable.empty();
+        if (manifest.exclusions != null)
+        {
+            for (org.finos.legend.pure.m3.pct.shared.model.PCTManifest.PCTManifestExclusion exclusion : manifest.exclusions)
+            {
+                exclusions.add(one(exclusion.test, exclusion.expectedError));
+            }
+        }
+        return exclusions;
+    }
+
     public static MutableMap<String, String> explodeExpectedFailures(MutableList<ExclusionSpecification> expectedFailures, ProcessorSupport processorSupport)
     {
         MutableMap<String, String> result = org.eclipse.collections.impl.factory.Maps.mutable.empty();

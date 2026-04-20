@@ -15,16 +15,20 @@
 package org.finos.legend.pure.runtime.java.interpreted.testHelper;
 
 import java.nio.file.Paths;
+
+import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.execution.test.PureTestBuilder;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
+import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.pct.reports.model.Adapter;
 import org.finos.legend.pure.m3.pct.shared.PCTTools;
 import org.finos.legend.pure.m3.pct.reports.config.PCTReportConfiguration;
@@ -44,6 +48,10 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJarLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.binary.SimplePureRepositoryJarLibrary;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
@@ -112,6 +120,7 @@ public class PureTestBuilderInterpreted
                 if (message != null)
                 {
                     PCTTools.displayExpectedErrorFailMessage(message, a, PCTExecutor);
+                    org.junit.Assert.fail("Test was expected to fail with \"" + message + "\" but now passes \u2014 run with rebase to update the manifest.");
                 }
 
                 return ret;
@@ -170,6 +179,203 @@ public class PureTestBuilderInterpreted
         GraphLoader loader = new GraphLoader(runtime.getModelRepository(), runtime.getContext(), runtime.getIncrementalCompiler().getParserLibrary(), runtime.getIncrementalCompiler().getDslLibrary(), runtime.getSourceRegistry(), runtime.getURLPatternLibrary(), jarLibrary);
         loader.loadAll(message);
         return functionExecution;
+    }
+
+    // -----------------------------------------------------------------------
+    // Surveyor-based test execution
+    // -----------------------------------------------------------------------
+
+    /**
+     * Execute tests using the Pure-native surveyor ({@code meta::pure::test::surveyor}).
+     *
+     * <p>This calls {@code runTestsFromPath(path, filter)} in the Pure model,
+     * which recursively discovers {@code <<test.Test>>} functions, executes
+     * each via the {@code executeTest} native, and returns a {@code TestReport}.
+     *
+     * @param functionExecution an initialized interpreted function execution
+     * @param packagePath      the Pure package path to scan (e.g. {@code "meta::pure::functions::meta::tests"}).
+     *                         Use {@code "Root"} for all packages.
+     * @param sourceFilter     source path prefix to scope tests to a repo (e.g. {@code "/platform/"}).
+     *                         Use {@code ""} (empty string) to match all sources.
+     * @return the {@code TestReport} CoreInstance result from the surveyor
+     */
+    public static CoreInstance executeSurveyorTests(FunctionExecutionInterpreted functionExecution, String packagePath, String sourceFilter)
+    {
+        ProcessorSupport processorSupport = functionExecution.getProcessorSupport();
+        ModelRepository repository = functionExecution.getPureRuntime().getModelRepository();
+
+        // Look up the surveyor function: runTestsFromPath_String_1__String_1__TestReport_1_
+        CoreInstance surveyorFn = _Package.getByUserPath(
+                "meta::pure::test::surveyor::runTestsFromPath_String_1__String_1__TestReport_1_",
+                processorSupport
+        );
+        if (surveyorFn == null)
+        {
+            throw new RuntimeException("Surveyor function meta::pure::test::surveyor::runTestsFromPath not found in the model. " +
+                    "Ensure the platform Pure code (essential/tests/surveyor.pure) is loaded.");
+        }
+
+        // Build arguments: path:String[1], filter:String[1]
+        CoreInstance pathArg = ValueSpecificationBootstrap.newStringLiteral(repository, packagePath, processorSupport);
+        CoreInstance filterArg = ValueSpecificationBootstrap.newStringLiteral(repository, sourceFilter, processorSupport);
+
+        // Enable console for progress output
+        functionExecution.getConsole().enable();
+
+        // Execute
+        return functionExecution.start(surveyorFn, Lists.mutable.with(pathArg, filterArg));
+    }
+
+    /**
+     * Execute tests using the Pure-native surveyor with no source filter.
+     *
+     * @param functionExecution an initialized interpreted function execution
+     * @param packagePath      the Pure package path to scan
+     * @return the {@code TestReport} CoreInstance
+     * @see #executeSurveyorTests(FunctionExecutionInterpreted, String, String)
+     */
+    public static CoreInstance executeSurveyorTests(FunctionExecutionInterpreted functionExecution, String packagePath)
+    {
+        return executeSurveyorTests(functionExecution, packagePath, "");
+    }
+
+    /**
+     * Builds a standard JUnit TestSuite from the Pure surveyor's TestReport.
+     * Each test discovered by the surveyor is appended as a dynamic JUnit TestCase.
+     * The results (PASS, FAIL, ERROR, SKIP) are pre-computed by the surveyor.
+     *
+     * @param packagePath the Pure package path to scan
+     * @param sourceFilter source path prefix to scope tests to a repo
+     * @return a TestSuite ready to be returned by a static suite() method
+     */
+    public static TestSuite buildSurveyorSuite(String packagePath, String sourceFilter)
+    {
+        FunctionExecutionInterpreted fe = getFunctionExecutionInterpreted();
+        ProcessorSupport processorSupport = fe.getProcessorSupport();
+        CoreInstance report = ValueSpecification.getValue(executeSurveyorTests(fe, packagePath, sourceFilter), processorSupport);
+
+        TestSuite suite = new TestSuite("Surveyor Tests for " + packagePath);
+
+        ListIterable<? extends CoreInstance> results = Instance.getValueForMetaPropertyToManyResolved(report, "results", processorSupport);
+        for (CoreInstance result : results)
+        {
+            String fqn = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(result, "fqn", processorSupport));
+            String status = Instance.getValueForMetaPropertyToOneResolved(result, "status", processorSupport).getName();
+            String message = PrimitiveUtilities.getStringValue(result.getValueForMetaPropertyToOne("message"), "No message");
+
+            suite.addTest(new TestCase(fqn)
+            {
+                @Override
+                protected void runTest() throws Throwable
+                {
+                    if ("FAIL".equals(status))
+                    {
+                        org.junit.Assert.fail(message);
+                    }
+                    else if ("ERROR".equals(status))
+                    {
+                        throw new Exception(message);
+                    }
+                    else if ("SKIP".equals(status))
+                    {
+                        // JUnit3 does not have ways to skip... uncomment once we move to Jnuit4 or 5
+                        // org.junit.Assume.assumeTrue("Skipped: " + message, false);
+                    }
+                }
+            });
+        }
+        return suite;
+    }
+
+    /**
+     * @see #buildSurveyorSuite(String, String)
+     */
+    public static TestSuite buildSurveyorSuite(String packagePath)
+    {
+        return buildSurveyorSuite(packagePath, "");
+    }
+
+    /**
+     * Build a JUnit TestSuite for PCT tests using the surveyor framework.
+     *
+     * @param reportScope      the report scope (provides package path and source filter)
+     * @param manifestPath     classpath resource path to the PCT manifest JSON
+     * @return a TestSuite ready to be returned by a static suite() method
+     */
+    public static TestSuite buildPCTSurveyorSuite(ReportScope reportScope, String manifestPath)
+    {
+        return buildPCTSurveyorSuite(reportScope._package, reportScope.filePath, manifestPath);
+    }
+
+    /**
+     * Build a JUnit TestSuite for PCT tests using the surveyor framework.
+     *
+     * @param packagePath      the Pure package path to scan for PCT tests
+     * @param sourceFilter     source path prefix to scope test execution
+     * @param manifestPath     classpath resource path to the PCT manifest JSON
+     * @return a TestSuite ready to be returned by a static suite() method
+     */
+    public static TestSuite buildPCTSurveyorSuite(String packagePath, String sourceFilter, String manifestPath)
+    {
+        FunctionExecutionInterpreted fe = getFunctionExecutionInterpreted();
+        ProcessorSupport processorSupport = fe.getProcessorSupport();
+        ModelRepository repository = fe.getPureRuntime().getModelRepository();
+
+        CoreInstance surveyorFn = _Package.getByUserPath(
+                "meta::pure::test::surveyor::runPCTTestsFromPath_String_1__String_1__String_1__TestReport_1_",
+                processorSupport
+        );
+        if (surveyorFn == null)
+        {
+            throw new RuntimeException("Surveyor PCT function meta::pure::test::surveyor::runPCTTestsFromPath not found in the model.");
+        }
+
+        CoreInstance pathArg = ValueSpecificationBootstrap.newStringLiteral(repository, packagePath, processorSupport);
+        CoreInstance filterArg = ValueSpecificationBootstrap.newStringLiteral(repository, sourceFilter, processorSupport);
+        CoreInstance manifestArg = ValueSpecificationBootstrap.newStringLiteral(repository, manifestPath, processorSupport);
+
+        fe.getConsole().enable();
+
+        CoreInstance report = fe.start(surveyorFn, Lists.mutable.with(pathArg, filterArg, manifestArg));
+
+        // Unwrap InstanceValue envelope
+        if ("InstanceValue".equals(report.getClassifier().getName()))
+        {
+            report = Instance.getValueForMetaPropertyToOneResolved(report, "values", processorSupport);
+        }
+
+        TestSuite suite = new TestSuite("Surveyor PCT Tests for " + packagePath);
+
+        ListIterable<? extends CoreInstance> results = Instance.getValueForMetaPropertyToManyResolved(report, "results", processorSupport);
+        for (CoreInstance result : results)
+        {
+            String fqn = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(result, "fqn", processorSupport));
+            String status = Instance.getValueForMetaPropertyToOneResolved(result, "status", processorSupport).getName();
+
+            CoreInstance messageNode = Instance.getValueForMetaPropertyToOneResolved(result, "message", processorSupport);
+            String message = (messageNode == null) ? "No message" : PrimitiveUtilities.getStringValue(messageNode);
+
+            suite.addTest(new junit.framework.TestCase(fqn)
+            {
+                @Override
+                protected void runTest() throws Throwable
+                {
+                    if ("FAIL".equals(status))
+                    {
+                        org.junit.Assert.fail(message);
+                    }
+                    else if ("ERROR".equals(status))
+                    {
+                        throw new Exception(message);
+                    }
+                    else if ("SKIP".equals(status))
+                    {
+                        // JUnit3 does not have ways to skip
+                    }
+                }
+            });
+        }
+        return suite;
     }
 
 }

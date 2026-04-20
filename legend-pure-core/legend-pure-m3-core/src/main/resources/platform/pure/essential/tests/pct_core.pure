@@ -35,3 +35,21 @@ function
 {
   $f->eval();
 }
+
+// ----------------------------------------------------------------------------------
+// PCT Manifest — portable, JSON-driven test configuration
+// ----------------------------------------------------------------------------------
+
+// Loaded from a JSON file co-located with test sources.
+// The native resolves string paths to actual functions, ensuring the manifest
+// references valid Pure elements at load time.
+Class meta::pure::test::pct::PCTManifest
+{
+    adapter    : Function<Any>[1];                 // resolved adapter function
+    exclusions : Map<Function<Any>,String>[1];     // test function to expected error message
+}
+
+// Loads a PCT manifest JSON file from the given resource path.
+// Resolves the adapter path to a Function and validates exclusion test paths.
+// Fails with a clear error if the file is missing or malformed.
+native function meta::pure::test::pct::loadPCTManifest(manifestPath:String[1]): PCTManifest[1];

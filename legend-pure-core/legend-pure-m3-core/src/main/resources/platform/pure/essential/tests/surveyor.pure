@@ -1,0 +1,239 @@
+// Copyright 2026 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::test::surveyor::*;
+import meta::pure::test::pct::*;
+
+// Test result for a single test execution
+Class meta::pure::test::surveyor::TestResult
+{
+    fqn       : String[1];
+    status    : meta::pure::test::surveyor::TestStatus[1];
+    elapsed   : Integer[1];        // milliseconds — measured internally by executeTest
+    message   : String[0..1];      // error message on failure
+}
+
+Enum meta::pure::test::surveyor::TestStatus
+{
+    PASS,
+    FAIL,
+    ERROR,
+    SKIP
+}
+
+Class meta::pure::test::surveyor::TestReport
+{
+    results       : meta::pure::test::surveyor::TestResult[*];
+    totalElapsed  : Integer[1];    // milliseconds - sum of individual test elapsed times
+    passCount     : Integer[1];
+    failCount     : Integer[1];
+    errorCount    : Integer[1];
+    skipCount     : Integer[1];
+}
+
+// -------------------------------------------------------------
+// Private native: executes a single test function in a sandbox,
+// catches exceptions, and measures elapsed time internally.
+// Returns a fully-populated TestResult with elapsed set.
+// -------------------------------------------------------------
+
+native function <<access.private>> meta::pure::test::surveyor::executeTest(testFn:Function<{->Any[*]}>[1]): TestResult[1];
+
+// -------------------------------------------------------------
+// Private native: executes a single PCT test function with an
+// adapter injected as the first parameter.  Handles exclusions:
+//   - If error matches exclusion entry: PASS (expected failure)
+//   - If test passes but was in exclusions: FAIL (needs rebase)
+// -------------------------------------------------------------
+
+native function <<access.private>> meta::pure::test::surveyor::executePCTTest(testFn:Function<Any>[1], adapter:Function<Any>[1], exclusions:Map<Function<Any>,String>[1]): TestResult[1];
+
+// -------------------------------------------------------------
+// Public API
+// -------------------------------------------------------------
+
+function meta::pure::test::surveyor::runTests(pkg:PackageableElement[1], filter:String[1]): TestReport[1]
+{
+    // todo print timestamp and elapsed time when we port now/today to the core platform
+    // todo find a more performant way to navigate and collect...
+    println('Discovering tests in "%s" with filter "%s"'->format([$pkg->elementToPath(), $filter]));
+
+    // first discover test cases to execute
+    let tests = $pkg->getTestFunctions($filter);
+    // navigate up to the packages to find any before or after on the non-included packages
+    let allRelevantPkgs = $tests->map(t | $t.package->toOne()->meta::pure::test::surveyor::getUpstreamPackages())->removeDuplicates();
+    let rootGroup = meta::pure::test::surveyor::buildTestGroup(::, $allRelevantPkgs, $tests);
+    let flatExecutionPlan = $rootGroup->toOne()->meta::pure::test::surveyor::flattenTestGroup();
+
+    println('Discovered %d functions to execute!'->format($flatExecutionPlan->size()));
+
+    let results = $flatExecutionPlan->map(t |
+         executeTest($t->cast(@Function<{->Any[*]}>))
+    );
+
+    // Total elapsed is the sum of all individual test times
+    let totalElapsed = $results->map(r | $r.elapsed)->plus();
+
+    let passCount = $results->filter(r | $r.status == TestStatus.PASS)->size();
+    let failCount = $results->filter(r | $r.status == TestStatus.FAIL)->size();
+    let errorCount = $results->filter(r | $r.status == TestStatus.ERROR)->size();
+    let skipCount = $results->filter(r | $r.status == TestStatus.SKIP)->size();
+
+    let summary = '\nSurveyor Suite completed\n' +
+                  '  Tests   : ' + $results->size()->toString() + '\n' +
+                  '  Passed  : ' + $passCount->toString() + '\n' +
+                  '  Failed  : ' + $failCount->toString() + '\n' +
+                  '  Errors  : ' + $errorCount->toString() + '\n' +
+                  '  Skipped : ' + $skipCount->toString() + '\n' +
+                  '  Time    : ' + $totalElapsed->toString() + 'ms\n';
+
+    println($summary);
+
+    ^TestReport(
+        results = $results,
+        totalElapsed = $totalElapsed,
+        passCount = $passCount,
+        failCount = $failCount,
+        errorCount = $errorCount,
+        skipCount = $skipCount
+    );
+}
+
+function meta::pure::test::surveyor::runTestsFromPath(path:String[1], filter:String[1]):TestReport[1]
+{
+    // pathToElement returns PackageableElement[1] — 'Root' resolves to the root package (::)
+    $path->pathToElement()->runTests($filter);
+}
+
+// ----------------------------------------------------------------------------------
+// PCT Test Support
+// ----------------------------------------------------------------------------------
+
+// PCT test runner — discovers <<PCT.test>> functions, injects adapter, handles exclusions
+function meta::pure::test::surveyor::runPCTTests(pkg:PackageableElement[1], filter:String[1], adapter:Function<Any>[1], exclusions:Map<Function<Any>,String>[1]): TestReport[1]
+{
+    println('Discovering PCT tests in "%s" with filter "%s"...'->
+            format([$pkg->elementToPath(), $filter]));
+
+    let tests = $pkg->getPCTTestFunctions($filter);
+
+    println('Discovered %d PCT tests to execute!'->
+            format($tests->size()));
+
+    let results = $tests->map(t |
+         executePCTTest($t->cast(@Function<Any>), $adapter, $exclusions)
+    );
+
+    let totalElapsed = $results->map(r | $r.elapsed)->plus();
+
+    let passCount = $results->filter(r | $r.status == TestStatus.PASS)->size();
+    let failCount = $results->filter(r | $r.status == TestStatus.FAIL)->size();
+    let errorCount = $results->filter(r | $r.status == TestStatus.ERROR)->size();
+    let skipCount = $results->filter(r | $r.status == TestStatus.SKIP)->size();
+
+    let summary = '\nSurveyor PCT Suite completed\n' +
+                  '  Tests   : ' + $results->size()->toString() + '\n' +
+                  '  Passed  : ' + $passCount->toString() + '\n' +
+                  '  Failed  : ' + $failCount->toString() + '\n' +
+                  '  Errors  : ' + $errorCount->toString() + '\n' +
+                  '  Skipped : ' + $skipCount->toString() + '\n' +
+                  '  Time    : ' + $totalElapsed->toString() + 'ms\n';
+
+    println($summary);
+
+    ^TestReport(
+        results = $results,
+        totalElapsed = $totalElapsed,
+        passCount = $passCount,
+        failCount = $failCount,
+        errorCount = $errorCount,
+        skipCount = $skipCount
+    );
+}
+
+// Primary developer-facing entry point — loads the manifest and runs
+// The manifest's adapter is already resolved to a Function by loadPCTManifest
+function meta::pure::test::surveyor::runPCTTestsFromPath(path:String[1], filter:String[1], manifestPath:String[1]):TestReport[1]
+{
+    let manifest = loadPCTManifest($manifestPath);
+    $path->pathToElement()->runPCTTests($filter, $manifest.adapter, $manifest.exclusions);
+}
+
+// Recursively walk a package's children collecting functions with the <<test.Test>> stereotype,
+// filtered by source path prefix (e.g. a repo root) to scope test execution to a particular repo.
+// Pass '' (empty string) to match all sources.
+function meta::pure::test::surveyor::getTestFunctions(pkg:PackageableElement[1], filter:String[1]):ConcreteFunctionDefinition<Any>[*]
+{
+   $pkg->match([
+      p : Package[1] | $p.children->map(pc | $pc->getTestFunctions($filter)),
+      f : ConcreteFunctionDefinition<Any>[1] | if($f.stereotypes->exists(s | $s.value == 'Test' && $s.profile == meta::pure::profiles::test)
+                                                  && ($filter == '' || $f->sourceInformation()->filter(s | $s.source->startsWith($filter))->isNotEmpty()),
+                                                  | $f,
+                                                  | []
+                                               ),
+      a : Any[1]                             | []
+   ])
+}
+
+// Recursively walk a package's children collecting functions with the <<PCT.test>> stereotype.
+function meta::pure::test::surveyor::getPCTTestFunctions(pkg:PackageableElement[1], filter:String[1]):ConcreteFunctionDefinition<Any>[*]
+{
+   $pkg->match([
+      p : Package[1] | $p.children->map(pc | $pc->getPCTTestFunctions($filter)),
+      f : ConcreteFunctionDefinition<Any>[1] | if($f.stereotypes->exists(s | $s.value == 'test' && $s.profile == meta::pure::test::pct::PCT)
+                                                  && ($filter == '' || $f->sourceInformation()->filter(s | $s.source->startsWith($filter))->isNotEmpty()),
+                                                  | $f,
+                                                  | []
+                                               ),
+      a : Any[1]                             | []
+   ])
+}
+
+Class meta::pure::test::surveyor::TestGroup
+{
+    pkg     : Package[1];
+    before  : ConcreteFunctionDefinition<Any>[*];
+    tests   : ConcreteFunctionDefinition<Any>[*];
+    after   : ConcreteFunctionDefinition<Any>[*];
+    subGroups : meta::pure::test::surveyor::TestGroup[*];
+}
+
+function meta::pure::test::surveyor::getUpstreamPackages(p:Package[1]):Package[*]
+{
+    $p->concatenate($p.package->map(p|$p->meta::pure::test::surveyor::getUpstreamPackages()))
+}
+
+function meta::pure::test::surveyor::buildTestGroup(pkg:Package[1], allRelevantPkgs:Package[*], allTests:ConcreteFunctionDefinition<Any>[*]): TestGroup[1]
+{
+      let expectedBefores = $pkg.children->filter(c | $c->instanceOf(ConcreteFunctionDefinition))->cast(@ConcreteFunctionDefinition<Any>)->filter(f | $f.stereotypes->exists(s | $s.value == 'BeforePackage' && $s.profile == meta::pure::profiles::test));
+      let expectedAfters = $pkg.children->filter(c | $c->instanceOf(ConcreteFunctionDefinition))->cast(@ConcreteFunctionDefinition<Any>)->filter(f | $f.stereotypes->exists(s | $s.value == 'AfterPackage' && $s.profile == meta::pure::profiles::test));
+      let rawTests = $allTests->filter(t | $t.package == $pkg);
+      let subGroups = $pkg.children->filter(c | $c->instanceOf(Package))->cast(@Package)->map(p | $p->meta::pure::test::surveyor::buildTestGroup($allRelevantPkgs, $allTests));
+
+      ^meta::pure::test::surveyor::TestGroup(
+          pkg = $pkg,
+          before = $expectedBefores,
+          tests = $rawTests,
+          after = $expectedAfters,
+          subGroups = $subGroups
+      );
+}
+
+function meta::pure::test::surveyor::flattenTestGroup(tg:meta::pure::test::surveyor::TestGroup[1]):ConcreteFunctionDefinition<Any>[*]
+{
+    $tg.before
+       ->concatenate($tg.subGroups->map(sg | $sg->meta::pure::test::surveyor::flattenTestGroup()))
+       ->concatenate($tg.tests)
+       ->concatenate($tg.after)
+}

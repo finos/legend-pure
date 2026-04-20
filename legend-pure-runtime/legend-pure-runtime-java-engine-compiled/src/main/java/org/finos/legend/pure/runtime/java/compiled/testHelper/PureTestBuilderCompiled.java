@@ -20,6 +20,7 @@ import junit.framework.TestSuite;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
@@ -28,7 +29,9 @@ import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.execution.test.PureTestBuilder;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.pct.reports.config.PCTReportConfiguration;
@@ -150,6 +153,7 @@ public class PureTestBuilderCompiled extends TestSuite
             if (message != null)
             {
                 PCTTools.displayExpectedErrorFailMessage(message, coreInstance, PCTExecutor);
+                org.junit.Assert.fail("Test was expected to fail with \"" + message + "\" but now passes — run with rebase to update the manifest.");
             }
             return res;
         }
@@ -274,5 +278,148 @@ public class PureTestBuilderCompiled extends TestSuite
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    public static TestSuite buildSurveyorSuite(String packagePath)
+    {
+        return buildSurveyorSuite(packagePath, "");
+    }
+
+    public static TestSuite buildSurveyorSuite(String packagePath, String sourceFilter)
+    {
+        CompiledExecutionSupport executionSupport = getClassLoaderExecutionSupport();
+        ProcessorSupport processorSupport = executionSupport.getProcessorSupport();
+
+        CoreInstance surveyorFn = processorSupport.package_getByUserPath("meta::pure::test::surveyor::runTestsFromPath_String_1__String_1__TestReport_1_");
+
+        try
+        {
+            CoreInstance report = (CoreInstance) executeFn(surveyorFn, null, Maps.mutable.empty(), executionSupport, Lists.mutable.with(packagePath, sourceFilter));
+
+            TestSuite suite = new TestSuite("Surveyor Tests for " + packagePath);
+
+            ListIterable<? extends CoreInstance> results = Instance.getValueForMetaPropertyToManyResolved(report, "results", processorSupport);
+
+            for (CoreInstance result : results)
+            {
+                String fqn = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(result, "fqn", processorSupport));
+                String statusName = Instance.getValueForMetaPropertyToOneResolved(result, "status", processorSupport).getName();
+                String message = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(result, "message", processorSupport), "Unknown Error");
+
+                suite.addTest(new junit.framework.TestCase(fqn)
+                {
+                    @Override
+                    protected void runTest() throws Throwable
+                    {
+                        if ("SKIP".equals(statusName))
+                        {
+                            // JUnit3 does not have ways to skip... uncomment once we move to Jnuit4 or 5
+                            // org.junit.Assume.assumeTrue("Skipped ToFix", false);
+                        }
+                        else if ("ERROR".equals(statusName))
+                        {
+                            throw new Exception(message);
+                        }
+                        else if ("FAIL".equals(statusName))
+                        {
+                            org.junit.Assert.fail(message);
+                        }
+                        else if ("PASS".equals(statusName))
+                        {
+                            // PASS
+                        }
+                        else
+                        {
+                            org.junit.Assert.fail("Unknown status: " + statusName);
+                        }
+                    }
+                });
+            }
+
+            return suite;
+        }
+        catch (Throwable t)
+        {
+            throw new RuntimeException("Error building surveyor suite", t);
+        }
+    }
+
+    /**
+     * Build a JUnit TestSuite for PCT tests using the surveyor framework.
+     * The manifest JSON file contains the adapter function path and exclusions.
+     *
+     * @param reportScope      the report scope (provides package path and source filter)
+     * @param manifestPath     classpath resource path to the PCT manifest JSON
+     * @return a TestSuite ready to be returned by a static suite() method
+     */
+    public static TestSuite buildPCTSurveyorSuite(ReportScope reportScope, String manifestPath)
+    {
+        return buildPCTSurveyorSuite(reportScope._package, reportScope.filePath, manifestPath);
+    }
+
+    /**
+     * Build a JUnit TestSuite for PCT tests using the surveyor framework.
+     *
+     * @param packagePath      the Pure package path to scan for PCT tests
+     * @param sourceFilter     source path prefix to scope test execution
+     * @param manifestPath     classpath resource path to the PCT manifest JSON
+     * @return a TestSuite ready to be returned by a static suite() method
+     */
+    public static TestSuite buildPCTSurveyorSuite(String packagePath, String sourceFilter, String manifestPath)
+    {
+        CompiledExecutionSupport executionSupport = getClassLoaderExecutionSupport();
+        ProcessorSupport processorSupport = executionSupport.getProcessorSupport();
+
+        CoreInstance surveyorFn = processorSupport.package_getByUserPath("meta::pure::test::surveyor::runPCTTestsFromPath_String_1__String_1__String_1__TestReport_1_");
+
+        try
+        {
+            CoreInstance report = (CoreInstance) executeFn(surveyorFn, null, Maps.mutable.empty(), executionSupport, Lists.mutable.with(packagePath, sourceFilter, manifestPath));
+
+            TestSuite suite = new TestSuite("Surveyor PCT Tests for " + packagePath);
+
+            ListIterable<? extends CoreInstance> results = Instance.getValueForMetaPropertyToManyResolved(report, "results", processorSupport);
+
+            for (CoreInstance result : results)
+            {
+                String fqn = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(result, "fqn", processorSupport));
+                String statusName = Instance.getValueForMetaPropertyToOneResolved(result, "status", processorSupport).getName();
+                String message = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(result, "message", processorSupport), "Unknown Error");
+
+                suite.addTest(new junit.framework.TestCase(fqn)
+                {
+                    @Override
+                    protected void runTest() throws Throwable
+                    {
+                        if ("SKIP".equals(statusName))
+                        {
+                            // JUnit3 does not have ways to skip
+                        }
+                        else if ("ERROR".equals(statusName))
+                        {
+                            throw new Exception(message == null ? "Unknown Error" : message);
+                        }
+                        else if ("FAIL".equals(statusName))
+                        {
+                            org.junit.Assert.fail(message);
+                        }
+                        else if ("PASS".equals(statusName))
+                        {
+                            // PASS
+                        }
+                        else
+                        {
+                            org.junit.Assert.fail("Unknown status: " + statusName);
+                        }
+                    }
+                });
+            }
+
+            return suite;
+        }
+        catch (Throwable t)
+        {
+            throw new RuntimeException("Error building PCT surveyor suite", t);
+        }
     }
 }

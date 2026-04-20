@@ -39,6 +39,7 @@ import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.lazy.AbstractLazyCoreInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.ElementWithConstraintsAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.GeneralizationAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
@@ -49,11 +50,16 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.m3.execution.test.TestTools;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.profile.Profile;
+import org.finos.legend.pure.m3.pct.shared.PCTManifestLoader;
+import org.finos.legend.pure.m3.pct.shared.PCTTools;
+import org.finos.legend.pure.m3.pct.shared.model.PCTManifest;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -88,6 +94,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._c
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 import org.finos.legend.pure.runtime.java.compiled.metadata.JavaMethodWithParamsSharedPureFunction;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;
+import org.finos.legend.pure.runtime.java.compiled.testHelper.PureTestBuilderCompiled;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -111,6 +118,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 public class CompiledSupport
@@ -2280,5 +2288,345 @@ public class CompiledSupport
             }
             throw new PureExecutionException(builder.toString(), (e instanceof InvocationTargetException) ? e.getCause() : e, Stacks.mutable.empty());
         }
+    }
+
+    public static Object executeTest(SharedPureFunction sharedTestFn, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> testFn, ExecutionSupport es)
+    {
+        ConsoleCompiled console = ((CompiledExecutionSupport) es).getConsole();
+        long start = System.nanoTime();
+        String status;
+        String message = null;
+        String fqn = PackageableElement.getUserPathForPackageableElement(testFn, "::");
+
+        CompiledProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
+
+        try
+        {
+            String skipReason = null;
+
+            if (TestTools.hasToFixStereotype(testFn, processorSupport))
+            {
+                skipReason = "ToFix";
+            } 
+            else if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "AlloyOnly", processorSupport))
+            {
+                skipReason = "AlloyOnly";
+            } 
+            else if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "ExcludeModular", processorSupport))
+            {
+                skipReason = "ExcludeModular";
+            } 
+            else if (Profile.hasStereotype(testFn, "meta::pure::profiles::temporaryLazyExclusion", "exclude", processorSupport))
+            {
+                skipReason = "temporaryLazyExclusion";
+            } 
+            else if (Profile.hasTaggedValue(testFn, "meta::pure::profiles::test", "excludePlatform", "Java compiled", processorSupport))
+            {
+                skipReason = "excludePlatform: Java compiled";
+            }
+
+            if (skipReason != null)
+            {
+                status = "SKIP";
+                if (console.isEnabled())
+                {
+                    console.print("  SKIP  " + fqn + " (" + skipReason + ")\n");
+                }
+            } 
+            else
+            {
+                if (console.isEnabled())
+                {
+                    String runPrefix = "TEST  ";
+                    if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "BeforePackage", processorSupport))
+                    {
+                        runPrefix = "BEFORE";
+                    } 
+                    else if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "AfterPackage", processorSupport))
+                    {
+                        runPrefix = "AFTER ";
+                    }
+                    console.print("  " + runPrefix + " " + fqn + " ... ");
+                }
+                if (sharedTestFn != null)
+                {
+                    sharedTestFn.execute(Lists.mutable.empty(), es);
+                } 
+                else
+                {
+                    PureTestBuilderCompiled.executeFn(testFn, null, Maps.mutable.empty(), es, Lists.mutable.empty());
+                }
+                status = "PASS";
+            }
+        }
+        catch (PureAssertFailException e)
+        {
+            status = "FAIL";
+            message = e.getInfo() != null ? e.getInfo() : e.getMessage();
+        }
+        catch (Throwable e)
+        {
+            status = "ERROR";
+            message = PCTTools.getMessageFromError(e);
+        }
+
+        long timeNanos = System.nanoTime() - start;
+        long elapsedMs = timeNanos / 1000000;
+
+        if (!"SKIP".equals(status) && console.isEnabled())
+        {
+            console.print(status + " (" + elapsedMs + "ms)\n");
+            if (message != null)
+            {
+                console.print("        " + message + "\n");
+            }
+        }
+
+        return buildCompiledTestResult(fqn, status, elapsedMs, message, es);
+    }
+
+    // ---------------------------------------------------------------
+    // PCT Test Execution
+    // ---------------------------------------------------------------
+
+    /**
+     * Executes a PCT test dynamically.
+     *
+     * @param sharedTestFn    Shared function.
+     * @param testFn          Test function.
+     * @param sharedAdapterFn Shared adapter function.
+     * @param adapterFn       Adapter function.
+     * @param exclusionsMap   Map of exclusions.
+     * @param es              Execution support.
+     * @return Execution test result.
+     */
+    public static Object executePCTTest(SharedPureFunction sharedTestFn, Function<?> testFn, SharedPureFunction sharedAdapterFn, Function<?> adapterFn, PureMap exclusionsMap, ExecutionSupport es)
+    {
+        ConsoleCompiled console = ((CompiledExecutionSupport) es).getConsole();
+        long start = System.nanoTime();
+        String status;
+        String message = null;
+        String fqn = "";
+
+        try
+        {
+            ProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
+            fqn = PackageableElement.getUserPathForPackageableElement(testFn, "::");
+
+            // Look up exclusion for this test
+            String expectedError = lookupExclusionCompiled(exclusionsMap, testFn);
+
+            // Check skip stereotypes
+            String skipReason = null;
+            if (TestTools.hasToFixStereotype(testFn, processorSupport))
+            {
+                skipReason = "ToFix";
+            }
+
+            if (skipReason != null)
+            {
+                status = "SKIP";
+                if (console.isEnabled())
+                {
+                    console.print("  SKIP  " + fqn + " (" + skipReason + ")\n");
+                }
+            } 
+            else
+            {
+                if (console.isEnabled())
+                {
+                    console.print("  PCT   " + fqn + " ... ");
+                }
+
+                // Execute with adapter injected as first parameter
+                if (sharedTestFn != null)
+                {
+                    sharedTestFn.execute(Lists.mutable.with(adapterFn), es);
+                } 
+                else
+                {
+                    PureTestBuilderCompiled.executeFn(testFn, null, Maps.mutable.empty(), es, Lists.mutable.with(adapterFn));
+                }
+
+                // Test passed
+                if (expectedError != null)
+                {
+                    status = "FAIL";
+                    message = "Test was expected to fail with \"" + expectedError + "\" but now passes — run with rebase to update " + "the manifest.";
+                } 
+                else
+                {
+                    status = "PASS";
+                }
+            }
+        }
+        catch (PureAssertFailException e)
+        {
+            String expectedError = lookupExclusionCompiled(exclusionsMap, testFn);
+            String errorMsg = e.getInfo() != null ? e.getInfo() : e.getMessage();
+            boolean match = false;
+            if (expectedError != null)
+            {
+                if (errorMsg != null && errorMsg.contains(expectedError))
+                {
+                    match = true;
+                }
+                else if (e.getExceptionName() != null && e.getExceptionName().contains(expectedError))
+                {
+                    match = true;
+                }
+                else if (e.getMessage() != null && e.getMessage().contains(expectedError))
+                {
+                    match = true;
+                }
+            }
+            if (match)
+            {
+                status = "PASS";
+                message = "Expected failure: " + errorMsg;
+            }
+            else
+            {
+                status = "FAIL";
+                message = errorMsg;
+            }
+        }
+        catch (Throwable e)
+        {
+            String expectedError = lookupExclusionCompiled(exclusionsMap, testFn);
+            String errorMsg = PCTTools.getMessageFromError(e);
+            boolean match = false;
+            if (expectedError != null)
+            {
+                if (errorMsg.contains(expectedError))
+                {
+                    match = true;
+                }
+                else if (e instanceof AssertionError && "Assert failure".equals(expectedError))
+                {
+                    match = true;
+                }
+            }
+            if (match)
+            {
+                status = "PASS";
+                message = "Expected failure: " + errorMsg;
+            }
+            else
+            {
+                status = "ERROR";
+                message = errorMsg;
+            }
+        }
+
+        long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+
+        if (!"SKIP".equals(status) && console.isEnabled())
+        {
+            console.print(status + " (" + elapsedMs + "ms)\n");
+            if (message != null && !"PASS".equals(status))
+            {
+                console.print("        " + message + "\n");
+            }
+        }
+
+        return buildCompiledTestResult(fqn, status, elapsedMs, message, es);
+    }
+
+    // ---------------------------------------------------------------
+    // PCT Manifest Loading
+    // ---------------------------------------------------------------
+
+    /**
+     * Loads a PCT manifest.
+     *
+     * @param manifestPath Manifest path.
+     * @param es           Execution support.
+     * @return Manifest.
+     */
+    public static Object loadPCTManifest(String manifestPath, ExecutionSupport es)
+    {
+        try
+        {
+            // Delegate JSON parsing to shared loader
+            PCTManifest manifest = PCTManifestLoader.loadFromClasspath(manifestPath);
+
+            // Resolve adapter path to a Function
+            ProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
+            Function<?> adapterFunction = (Function<?>) processorSupport.package_getByUserPath(manifest.adapter);
+
+            if (adapterFunction == null)
+            {
+                throw new RuntimeException("PCT manifest adapter function not found: " + manifest.adapter);
+            }
+
+            // Convert exclusions to PureMap (Function -> String)
+            MutableMap<String, String> rawExclusions = manifest.toExclusionMap();
+            MutableMap<Object, String> exclusionMap = Maps.mutable.empty();
+
+            for (String testFqn : rawExclusions.keysView())
+            {
+                Function<?> testFunction = (Function<?>) processorSupport.package_getByUserPath(testFqn);
+
+                if (testFunction == null)
+                {
+                    throw new RuntimeException("PCT manifest test function not found: " + testFqn);
+                }
+                exclusionMap.put(testFunction, rawExclusions.get(testFqn));
+            }
+
+            PureMap pureMap = new PureMap(exclusionMap);
+
+            CoreInstance pureManifest = processorSupport.newCoreInstance("Anonymous_NoProfile", "meta::pure::test::pct::PCTManifest", null);
+
+            Instance.setValueForProperty(pureManifest, "adapter", adapterFunction, processorSupport);
+            pureManifest.getClass().getDeclaredMethod("_exclusions", PureMap.class).invoke(pureManifest, pureMap);
+
+            return pureManifest;
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Error loading PCT manifest from " + manifestPath, e);
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------
+
+    private static String lookupExclusionCompiled(PureMap exclusionsMap, Function<?> testFn)
+    {
+        if (exclusionsMap == null)
+        {
+            return null;
+        }
+
+        MutableMap internalMap = exclusionsMap.getMap();
+        return (String) internalMap.get(testFn);
+    }
+
+    private static Object buildCompiledTestResult(
+            final String fqn,
+            final String status,
+            final long elapsedMs,
+            final String message,
+            final ExecutionSupport es)
+    {
+        CompiledProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
+
+        CoreInstance testResult = processorSupport.newCoreInstance("Anonymous_NoProfile", "meta::pure::test::surveyor::TestResult", null);
+
+        Instance.setValueForProperty(testResult, "fqn", ValCoreInstance.toCoreInstance(fqn), processorSupport);
+        Instance.setValueForProperty(testResult, "elapsed", ValCoreInstance.toCoreInstance(elapsedMs / 1000000), processorSupport);
+
+        CoreInstance enumVal = ((CompiledExecutionSupport) es).getMetadata().getEnum("meta::pure::test::surveyor::TestStatus", status);
+        Instance.setValueForProperty(testResult, "status", enumVal, processorSupport);
+
+        if (message != null)
+        {
+            Instance.setValueForProperty(testResult, "message", ValCoreInstance.toCoreInstance(message), processorSupport);
+        }
+
+        return testResult;
     }
 }

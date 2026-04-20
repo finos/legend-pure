@@ -7,6 +7,7 @@
 **/*.iml
 **/pom.xml.versionsBackup
 **/.develocity/**
+.mvn/**
 
 # Build
 **/target
