@@ -39,3 +39,38 @@ function <<PCT.test>> meta::pure::functions::collection::tests::put::testPut_ove
 {
     assertEquals(newMap(pair('key1', 1)), $f->eval(|newMap(pair('key1', 0))->put('key1', 1)));
 }
+
+
+Class meta::pure::functions::collection::tests::put::Class1
+{
+   <<equality.Key>> a:Integer[1];
+   b:Integer[0..1];
+}
+
+function <<test.Test>> meta::pure::functions::collection::tests::put::testPut():Boolean[1]
+{
+   let m = newMap([pair(^meta::pure::functions::collection::tests::put::Class1(a = 1),'_1'), pair(^meta::pure::functions::collection::tests::put::Class1(a = 2),'_2')]);
+   let m2 = $m->put(^meta::pure::functions::collection::tests::put::Class1(a = 3), '_3');
+   let m3 = $m->put(^meta::pure::functions::collection::tests::put::Class1(a = 4), '_4');
+   let m4 = $m3->put(^meta::pure::functions::collection::tests::put::Class1(a = 1, b = 1), '_1_1'); //put in a replacement
+
+   assert($m->keyValues()->size() == 2);
+   assert($m2->keyValues()->size() == 3);
+   assert($m3->keyValues()->size() == 3);
+   assert($m4->keyValues()->size() == 3);
+
+   assert($m->get(^meta::pure::functions::collection::tests::put::Class1(a = 1, b = 1)) == '_1');
+   assert($m->get(^meta::pure::functions::collection::tests::put::Class1(a = 2, b = 1)) == '_2');
+
+   assert($m2->get(^meta::pure::functions::collection::tests::put::Class1(a = 1, b = 1)) == '_1');
+   assert($m2->get(^meta::pure::functions::collection::tests::put::Class1(a = 2, b = 1)) == '_2');
+   assert($m2->get(^meta::pure::functions::collection::tests::put::Class1(a = 3, b = 1)) == '_3');
+
+   assert($m3->get(^meta::pure::functions::collection::tests::put::Class1(a = 1, b = 1)) == '_1');
+   assert($m3->get(^meta::pure::functions::collection::tests::put::Class1(a = 2, b = 1)) == '_2');
+   assert($m3->get(^meta::pure::functions::collection::tests::put::Class1(a = 4, b = 1)) == '_4');
+
+   assert($m4->get(^meta::pure::functions::collection::tests::put::Class1(a = 1)) == '_1_1');
+   assert($m4->get(^meta::pure::functions::collection::tests::put::Class1(a = 2)) == '_2');
+   assert($m4->get(^meta::pure::functions::collection::tests::put::Class1(a = 4)) == '_4');
+}
