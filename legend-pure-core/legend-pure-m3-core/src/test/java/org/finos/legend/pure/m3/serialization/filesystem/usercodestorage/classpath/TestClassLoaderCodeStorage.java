@@ -103,7 +103,7 @@ public class TestClassLoaderCodeStorage
         Assert.assertEquals(
                 Lists.mutable.with("/test/codestorage/fake.pure", "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure", "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level2/level2.pure"),
                 this.testCodeStorage.getUserFiles().toSortedList());
-        Assert.assertEquals(239, this.combinedCodeStorage.getUserFiles().toSet().size());
+        Assert.assertEquals(240, this.combinedCodeStorage.getUserFiles().toSet().size());
     }
 
     @Test
