@@ -104,18 +104,8 @@ public class ExecuteTest extends NativeFunction
 
         try
         {
-            this.functionExecution.executeFunction(
-                    false,
-                    FunctionCoreInstanceWrapper.toFunction(testFn),
-                    Lists.mutable.empty(),
-                    resolvedTypeParameters,
-                    resolvedMultiplicityParameters,
-                    getParentOrEmptyVariableContext(variableContext),
-                    functionExpressionCallStack,
-                    profiler,
-                    instantiationContext,
-                    executionSupport
-            );
+            // emulate test case as entry point
+            this.functionExecution.start(FunctionCoreInstanceWrapper.toFunction(testFn), Lists.mutable.empty());
             status = "PASS";
         }
         catch (PureAssertFailException e)
