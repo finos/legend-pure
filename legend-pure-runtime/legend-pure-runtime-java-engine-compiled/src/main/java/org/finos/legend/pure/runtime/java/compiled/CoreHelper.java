@@ -947,6 +947,15 @@ public class CoreHelper
         return new PureMap(newOne);
     }
 
+    public static PureMap newMap()
+    {
+        HashingStrategy<Object> strategy = PureEqualsHashingStrategy.HASHING_STRATEGY;
+        MutableMap<Object, Object> map = VavrHamtMutableMapAdapter.withHashingStrategy(strategy);
+
+        return new PureMap(map);
+    }
+
+
     public static PureMap newMap(RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs, ExecutionSupport es)
     {
         HashingStrategy<Object> strategy = PureEqualsHashingStrategy.HASHING_STRATEGY;
