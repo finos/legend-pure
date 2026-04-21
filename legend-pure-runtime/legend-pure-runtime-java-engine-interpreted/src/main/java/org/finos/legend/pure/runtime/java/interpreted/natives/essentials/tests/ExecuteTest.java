@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.tests;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
@@ -38,6 +39,7 @@ import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.MapCoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
@@ -46,18 +48,14 @@ import java.util.Stack;
 /**
  * Native implementation of {@code meta::pure::test::surveyor::executeTest}.
  *
- * <p>Executes a single test function in a sandbox, catches exceptions,
- * measures elapsed time, and returns a fully-populated {@code TestResult}.
+ * <p>Unified handler for both plain {@code <<test.Test>>} and PCT ({@code <<PCT.test>>}) tests.
  *
- * <h3>Behavior</h3>
- * <ul>
- *   <li>{@code <<test.ToFix>>} stereotype: {@code SKIP} (not executed)</li>
- *   <li>Clean return: {@code PASS}</li>
- *   <li>{@link PureAssertFailException}: {@code FAIL} with message + Pure stack trace</li>
- *   <li>Any other exception: {@code ERROR} with message + Pure stack trace</li>
- * </ul>
- *
- * <p>Progress is printed to the console as each test executes.
+ * <h3>Parameters</h3>
+ * <ol>
+ *   <li>{@code testFn} — the test function to execute</li>
+ *   <li>{@code adapter : Function[0..1]} — present for PCT; absent (empty) for plain tests</li>
+ *   <li>{@code exclusions : Map[0..1]} — present for PCT; absent (empty) for plain tests</li>
+ * </ol>
  */
 public class ExecuteTest extends NativeFunction
 {
@@ -73,104 +71,168 @@ public class ExecuteTest extends NativeFunction
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
-        // 1. Extract the test function
+        // 1. Extract parameters — adapter and exclusions are [0..1] and null when absent
         CoreInstance testFn = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
+        CoreInstance adapter = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
+        CoreInstance exclusionsRaw = Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport);
+        MapCoreInstance exclusionsMap = exclusionsRaw instanceof MapCoreInstance ? (MapCoreInstance) exclusionsRaw : null;
 
         // 2. Compute FQN
         String fqn = PackageableElement.getUserPathForPackageableElement(testFn);
 
-        // 3. Check for <<test.ToFix>> stereotype: SKIP
+        // 3. PCT tests carry a non-null adapter; plain tests do not
+        boolean isPCT = adapter != null;
+
+        // 4. Look up exclusion (PCT only)
+        String expectedError = isPCT ? lookupExclusion(exclusionsMap, testFn) : null;
+
+        // 5. Check skip conditions (only ToFix in interpreted — plain and PCT alike)
         if (TestTools.hasToFixStereotype(testFn, processorSupport))
         {
             printToConsole("  SKIP  " + fqn + " (ToFix)\n");
             return buildTestResult(fqn, "SKIP", 0, "Marked as ToFix", functionExpressionCallStack, processorSupport);
         }
 
-        // 4. Execute with timing + exception handling
-        String runPrefix = "TEST  ";
-        if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "BeforePackage", processorSupport))
+        // 6. Print console prefix and build argument list
+        MutableList<CoreInstance> fnArgs = Lists.mutable.empty();
+        if (isPCT)
         {
-            runPrefix = "BEFORE";
+            printToConsole("  PCT   " + fqn + " ... ");
+            fnArgs.add(ValueSpecificationBootstrap.wrapValueSpecification(adapter, true, processorSupport));
         }
-        else if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "AfterPackage", processorSupport))
+        else
         {
-            runPrefix = "AFTER ";
+            String runPrefix = "TEST  ";
+            if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "BeforePackage", processorSupport))
+            {
+                runPrefix = "BEFORE";
+            }
+            else if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "AfterPackage", processorSupport))
+            {
+                runPrefix = "AFTER ";
+            }
+            printToConsole("  " + runPrefix + " " + fqn + " ... ");
         }
-        printToConsole("  " + runPrefix + " " + fqn + " ... ");
 
+        // 7. Execute with timing + exception handling
         long startNs = System.nanoTime();
         String status;
         String message = null;
 
         try
         {
-            // emulate test case as entry point
-            this.functionExecution.start(FunctionCoreInstanceWrapper.toFunction(testFn), Lists.mutable.empty());
-            status = "PASS";
+            if (isPCT)
+            {
+                this.functionExecution.executeFunction(
+                        false,
+                        FunctionCoreInstanceWrapper.toFunction(testFn),
+                        fnArgs,
+                        resolvedTypeParameters,
+                        resolvedMultiplicityParameters,
+                        getParentOrEmptyVariableContext(variableContext),
+                        functionExpressionCallStack,
+                        profiler,
+                        instantiationContext,
+                        executionSupport
+                );
+            }
+            else
+            {
+                // emulate test case as entry point — isolates from framework context
+                this.functionExecution.start(FunctionCoreInstanceWrapper.toFunction(testFn), Lists.mutable.empty());
+            }
+
+            if (expectedError != null)
+            {
+                status = "FAIL";
+                message = "Test was expected to fail with \"" + expectedError + "\" but now passes — run with rebase to update the manifest.";
+            }
+            else
+            {
+                status = "PASS";
+            }
         }
         catch (PureAssertFailException e)
         {
-            status = "FAIL";
-            message = e.getInfo();
-            if (e.hasPureStackTrace())
+            String errorMsg = e.getInfo();
+            if (expectedError != null && errorMsg != null && errorMsg.contains(expectedError))
             {
-                message += "\n" + e.getPureStackTrace("        ");
+                status = "PASS";
+                message = "Expected failure: " + errorMsg;
+            }
+            else
+            {
+                status = "FAIL";
+                message = errorMsg;
+                if (e.hasPureStackTrace())
+                {
+                    message += "\n" + e.getPureStackTrace("        ");
+                }
             }
         }
         catch (Exception e)
         {
-            status = "ERROR";
             PureException pe = PureException.findPureException(e);
-            if (pe != null)
+            String errorMsg = pe != null ? pe.getInfo() : e.getMessage();
+            if (expectedError != null && errorMsg != null && errorMsg.contains(expectedError))
             {
-                message = pe.getInfo();
-                if (pe.hasPureStackTrace())
-                {
-                    message += "\n" + pe.getPureStackTrace("        ");
-                }
+                status = "PASS";
+                message = "Expected failure: " + errorMsg;
             }
             else
             {
-                message = e.getMessage();
+                status = "ERROR";
+                if (pe != null)
+                {
+                    message = pe.getInfo();
+                    if (pe.hasPureStackTrace())
+                    {
+                        message += "\n" + pe.getPureStackTrace("        ");
+                    }
+                }
+                else
+                {
+                    message = e.getMessage();
+                }
             }
         }
 
         long elapsedMs = (System.nanoTime() - startNs) / 1_000_000;
 
-        // 5. Print result to console
+        // 8. Print result
         printToConsole(status + " (" + elapsedMs + "ms)\n");
-        if (message != null)
+        if (message != null && !"PASS".equals(status))
         {
             printToConsole("        " + message + "\n");
         }
 
-        // 6. Construct and return TestResult
+        // 9. Construct and return TestResult
         return buildTestResult(fqn, status, elapsedMs, message, functionExpressionCallStack, processorSupport);
     }
 
-    /**
-     * Build a {@code meta::pure::test::surveyor::TestResult} instance.
-     */
+    private String lookupExclusion(MapCoreInstance exclusionsMap, CoreInstance testFn)
+    {
+        if (exclusionsMap == null)
+        {
+            return null;
+        }
+        CoreInstance val = exclusionsMap.getMap().get(testFn);
+        return val != null ? val.getName() : null;
+    }
+
     private CoreInstance buildTestResult(String fqn, String statusName, long elapsedMs, String message, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport)
     {
-        // Resolve TestResult class and TestStatus enum from the model
         CoreInstance testResultClass = processorSupport.package_getByUserPath("meta::pure::test::surveyor::TestResult");
         CoreInstance testStatusEnum = processorSupport.package_getByUserPath("meta::pure::test::surveyor::TestStatus");
 
-        // Create TestResult instance
         CoreInstance instance = this.repository.newEphemeralAnonymousCoreInstance(functionExpressionCallStack.peek().getSourceInformation(), testResultClass);
 
-        // Set fqn
         Instance.setValueForProperty(instance, "fqn", this.repository.newStringCoreInstance(fqn), processorSupport);
 
-        // Set status (resolve enum value)
         CoreInstance enumValue = Enumeration.findEnum(testStatusEnum, statusName);
         Instance.setValueForProperty(instance, "status", enumValue, processorSupport);
-
-        // Set elapsed
         Instance.setValueForProperty(instance, "elapsed", this.repository.newIntegerCoreInstance(elapsedMs), processorSupport);
 
-        // Set message (optional)
         if (message != null)
         {
             Instance.setValueForProperty(instance, "message", this.repository.newStringCoreInstance(message), processorSupport);
@@ -179,9 +241,6 @@ public class ExecuteTest extends NativeFunction
         return ValueSpecificationBootstrap.wrapValueSpecification(instance, true, processorSupport);
     }
 
-    /**
-     * Print to the console if enabled.
-     */
     private void printToConsole(String text)
     {
         Console console = this.functionExecution.getConsole();
