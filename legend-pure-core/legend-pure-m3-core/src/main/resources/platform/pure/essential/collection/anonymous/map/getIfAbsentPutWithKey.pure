@@ -23,4 +23,6 @@ function <<test.Test>> meta::pure::functions::collection::tests::map::testGetIfA
    assert($m->get(3)->isEmpty(), |'');
    assertEquals('_3', $m->getIfAbsentPutWithKey(3, {k:Integer[1]|'_'+$k->toString()}));
    assertEquals('_3', $m->get(3));
+   assertEquals('_3', $m->getIfAbsentPutWithKey(3, {k:Integer[1]|'something else'}));
+   assertEquals('_3', $m->get(3));
 }

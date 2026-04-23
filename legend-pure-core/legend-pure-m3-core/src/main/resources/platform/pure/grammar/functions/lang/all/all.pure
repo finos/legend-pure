@@ -26,7 +26,7 @@ native function
 
 
 
-function <<test.Test>> meta::pure::functions::collection::tests::getAll::testEvalParse():Boolean[1]
+function <<test.Test>> meta::pure::functions::collection::tests::getAll::testEvalGetAll():Boolean[1]
 {
     assertFalse(getAll_Class_1__T_MANY_->eval(Class)->isEmpty());
 }

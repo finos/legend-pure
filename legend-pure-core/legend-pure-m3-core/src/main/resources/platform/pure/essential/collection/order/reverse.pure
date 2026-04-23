@@ -25,7 +25,7 @@ function <<PCT.test>> meta::pure::functions::collection::tests::reverse::testRev
 {
     assertEmpty($f->eval(|[]->reverse()));
 }
-function <<test.Test>> meta::pure::functions::collection::tests::reverse::testEvalParse():Boolean[1]
+function <<test.Test>> meta::pure::functions::collection::tests::reverse::testEvalReverse():Boolean[1]
 {
     assertEquals([3,2,1], reverse_T_m__T_m_->eval([1,2,3]));
 }
