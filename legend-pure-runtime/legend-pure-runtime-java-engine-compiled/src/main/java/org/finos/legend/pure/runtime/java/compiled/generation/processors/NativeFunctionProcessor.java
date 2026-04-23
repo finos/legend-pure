@@ -161,7 +161,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.tests.Assert;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.tests.AssertError;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.tests.ExecuteTest;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.tests.ExecutePCTTest;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.tests.LoadPCTManifest;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.operation.And;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.operation.Not;
@@ -549,7 +548,6 @@ public class NativeFunctionProcessor
         registerNative(map, new Assert());
         registerNative(map, new AssertError());
         registerNative(map, new ExecuteTest());
-        registerNative(map, new ExecutePCTTest());
         registerNative(map, new LoadPCTManifest());
     }
 }

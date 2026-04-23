@@ -2290,7 +2290,7 @@ public class CompiledSupport
         }
     }
 
-    public static Object executeTest(SharedPureFunction sharedTestFn, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> testFn, ExecutionSupport es)
+    public static Object executeTest(SharedPureFunction sharedTestFn, Function<?> testFn, Function<?> adapterFn, PureMap exclusionsMap, ExecutionSupport es)
     {
         ConsoleCompiled console = ((CompiledExecutionSupport) es).getConsole();
         long start = System.nanoTime();
@@ -2302,27 +2302,33 @@ public class CompiledSupport
 
         try
         {
-            String skipReason = null;
+            // PCT tests carry a non-null adapter; plain tests do not
+            boolean isPCT = adapterFn != null;
 
+            // Determine skip conditions (plain tests check all stereotypes; PCT only ToFix)
+            String skipReason = null;
             if (TestTools.hasToFixStereotype(testFn, processorSupport))
             {
                 skipReason = "ToFix";
-            } 
-            else if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "AlloyOnly", processorSupport))
+            }
+            else if (!isPCT)
             {
-                skipReason = "AlloyOnly";
-            } 
-            else if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "ExcludeModular", processorSupport))
-            {
-                skipReason = "ExcludeModular";
-            } 
-            else if (Profile.hasStereotype(testFn, "meta::pure::profiles::temporaryLazyExclusion", "exclude", processorSupport))
-            {
-                skipReason = "temporaryLazyExclusion";
-            } 
-            else if (Profile.hasTaggedValue(testFn, "meta::pure::profiles::test", "excludePlatform", "Java compiled", processorSupport))
-            {
-                skipReason = "excludePlatform: Java compiled";
+                if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "AlloyOnly", processorSupport))
+                {
+                    skipReason = "AlloyOnly";
+                }
+                else if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "ExcludeModular", processorSupport))
+                {
+                    skipReason = "ExcludeModular";
+                }
+                else if (Profile.hasStereotype(testFn, "meta::pure::profiles::temporaryLazyExclusion", "exclude", processorSupport))
+                {
+                    skipReason = "temporaryLazyExclusion";
+                }
+                else if (Profile.hasTaggedValue(testFn, "meta::pure::profiles::test", "excludePlatform", "Java compiled", processorSupport))
+                {
+                    skipReason = "excludePlatform: Java compiled";
+                }
             }
 
             if (skipReason != null)
@@ -2332,128 +2338,49 @@ public class CompiledSupport
                 {
                     console.print("  SKIP  " + fqn + " (" + skipReason + ")\n");
                 }
-            } 
+            }
             else
             {
+                // Print console prefix
                 if (console.isEnabled())
                 {
-                    String runPrefix = "TEST  ";
-                    if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "BeforePackage", processorSupport))
+                    if (isPCT)
                     {
-                        runPrefix = "BEFORE";
-                    } 
-                    else if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "AfterPackage", processorSupport))
-                    {
-                        runPrefix = "AFTER ";
+                        console.print("  PCT   " + fqn + " ... ");
                     }
-                    console.print("  " + runPrefix + " " + fqn + " ... ");
+                    else
+                    {
+                        String runPrefix = "TEST  ";
+                        if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "BeforePackage", processorSupport))
+                        {
+                            runPrefix = "BEFORE";
+                        }
+                        else if (Profile.hasStereotype(testFn, "meta::pure::profiles::test", "AfterPackage", processorSupport))
+                        {
+                            runPrefix = "AFTER ";
+                        }
+                        console.print("  " + runPrefix + " " + fqn + " ... ");
+                    }
                 }
+
+                // Execute with adapter injected when present
+                MutableList<Object> fnArgs = isPCT ? Lists.mutable.with(adapterFn) : Lists.mutable.empty();
                 if (sharedTestFn != null)
                 {
-                    sharedTestFn.execute(Lists.mutable.empty(), es);
-                } 
+                    sharedTestFn.execute(fnArgs, es);
+                }
                 else
                 {
-                    PureTestBuilderCompiled.executeFn(testFn, null, Maps.mutable.empty(), es, Lists.mutable.empty());
-                }
-                status = "PASS";
-            }
-        }
-        catch (PureAssertFailException e)
-        {
-            status = "FAIL";
-            message = e.getInfo() != null ? e.getInfo() : e.getMessage();
-        }
-        catch (Throwable e)
-        {
-            status = "ERROR";
-            message = PCTTools.getMessageFromError(e);
-        }
-
-        long timeNanos = System.nanoTime() - start;
-        long elapsedMs = timeNanos / 1000000;
-
-        if (!"SKIP".equals(status) && console.isEnabled())
-        {
-            console.print(status + " (" + elapsedMs + "ms)\n");
-            if (message != null)
-            {
-                console.print("        " + message + "\n");
-            }
-        }
-
-        return buildCompiledTestResult(fqn, status, elapsedMs, message, es);
-    }
-
-    // ---------------------------------------------------------------
-    // PCT Test Execution
-    // ---------------------------------------------------------------
-
-    /**
-     * Executes a PCT test dynamically.
-     *
-     * @param sharedTestFn    Shared function.
-     * @param testFn          Test function.
-     * @param sharedAdapterFn Shared adapter function.
-     * @param adapterFn       Adapter function.
-     * @param exclusionsMap   Map of exclusions.
-     * @param es              Execution support.
-     * @return Execution test result.
-     */
-    public static Object executePCTTest(SharedPureFunction sharedTestFn, Function<?> testFn, SharedPureFunction sharedAdapterFn, Function<?> adapterFn, PureMap exclusionsMap, ExecutionSupport es)
-    {
-        ConsoleCompiled console = ((CompiledExecutionSupport) es).getConsole();
-        long start = System.nanoTime();
-        String status;
-        String message = null;
-        String fqn = "";
-
-        try
-        {
-            ProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
-            fqn = PackageableElement.getUserPathForPackageableElement(testFn, "::");
-
-            // Look up exclusion for this test
-            String expectedError = lookupExclusionCompiled(exclusionsMap, testFn);
-
-            // Check skip stereotypes
-            String skipReason = null;
-            if (TestTools.hasToFixStereotype(testFn, processorSupport))
-            {
-                skipReason = "ToFix";
-            }
-
-            if (skipReason != null)
-            {
-                status = "SKIP";
-                if (console.isEnabled())
-                {
-                    console.print("  SKIP  " + fqn + " (" + skipReason + ")\n");
-                }
-            } 
-            else
-            {
-                if (console.isEnabled())
-                {
-                    console.print("  PCT   " + fqn + " ... ");
+                    PureTestBuilderCompiled.executeFn(testFn, null, Maps.mutable.empty(), es, fnArgs);
                 }
 
-                // Execute with adapter injected as first parameter
-                if (sharedTestFn != null)
-                {
-                    sharedTestFn.execute(Lists.mutable.with(adapterFn), es);
-                } 
-                else
-                {
-                    PureTestBuilderCompiled.executeFn(testFn, null, Maps.mutable.empty(), es, Lists.mutable.with(adapterFn));
-                }
-
-                // Test passed
+                // Check exclusions (PCT only — exclusionsMap is null for plain tests)
+                String expectedError = lookupExclusionCompiled(exclusionsMap, testFn);
                 if (expectedError != null)
                 {
                     status = "FAIL";
-                    message = "Test was expected to fail with \"" + expectedError + "\" but now passes — run with rebase to update " + "the manifest.";
-                } 
+                    message = "Test was expected to fail with \"" + expectedError + "\" but now passes — run with rebase to update the manifest.";
+                }
                 else
                 {
                     status = "PASS";
