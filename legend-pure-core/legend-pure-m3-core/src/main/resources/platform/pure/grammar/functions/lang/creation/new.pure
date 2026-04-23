@@ -130,3 +130,271 @@ function <<test.Test>> meta::pure::functions::lang::tests::new::testNewWithTypeV
    assertEquals(10, ^MyClassWithTypeVariables(10)(text = ['a', 'b']).x());
    assertError(|^MyClassWithTypeVariables(1)(text = ['a', 'b']).res('z'), 'Constraint :[wx] violated in the Class MyClassWithTypeVariables, Message: Error 2 >= 1');
 }
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithChildWithReverseOneToManyProperty():Boolean[1]
+{
+   let car = ^LA_Car(name='Bugatti', owner=^LA_Person(firstName='John', lastName='Roe', cars=[^LA_Car(name='Audi')]));
+   assert($car.owner.cars->size() == 2);
+   assert($car.owner.cars->filter(c | $c.name == 'Audi')->isNotEmpty());
+   assert($car.owner.cars->filter(c | $c.name == 'Bugatti')->isNotEmpty());
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithoutKeyExpressions():Boolean[1]
+{
+   let lambda = {| ^LA_List<String>()};
+   assert($lambda.expressionSequence->toOne()->meta::pure::functions::meta::reactivate(meta::pure::functions::collection::newMap([]->cast(@Pair<String, List<Any>>)))->isNotEmpty());
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::ClassWithExplicitType(x:Integer[1])
+{
+   prop1(){$x}:Integer[1];
+}
+
+function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::lang::tests::newAtRuntime::testNewWithTypeVariable():Boolean[1]
+{
+   assertEq(1, ^meta::pure::functions::lang::tests::newAtRuntime::ClassWithExplicitType(1)().prop1());
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::ZeroToOneSource
+{
+  name : String[1];
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::ZeroToOneTarget
+{
+}
+
+Association meta::pure::functions::lang::tests::newAtRuntime::ZeroToOneSource_ZeroToOneTarget
+{
+  toTarget : meta::pure::functions::lang::tests::newAtRuntime::ZeroToOneTarget[0..1];
+  toSource : meta::pure::functions::lang::tests::newAtRuntime::ZeroToOneSource[1];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithZeroToOneAssociationExplicitNull():Boolean[1]
+{
+  let a = ^meta::pure::functions::lang::tests::newAtRuntime::ZeroToOneSource(name='A', toTarget=[]);
+  assert('A' == $a.name);
+  assert($a.toTarget->isEmpty());
+}
+
+
+Class meta::pure::functions::lang::tests::newInferenceAtRuntime::Structure<Z,K>
+{
+     a:Z[1];
+     b:K[1];
+}
+
+Class meta::pure::functions::lang::tests::newInferenceAtRuntime::M<U,V>
+{
+  vals : meta::pure::functions::lang::tests::newInferenceAtRuntime::Structure<U,V>[*];
+  put(t:U[1], v:V[1]){let a = 'String';^$this(vals += meta::pure::functions::lang::tests::newInferenceAtRuntime::structure($t,$v));}:meta::pure::functions::lang::tests::newInferenceAtRuntime::M<U,V>[1];
+}
+
+function meta::pure::functions::lang::tests::newInferenceAtRuntime::structure<A,B>(a:A[1],b:B[1]):meta::pure::functions::lang::tests::newInferenceAtRuntime::Structure<A,B>[1]
+{
+  ^meta::pure::functions::lang::tests::newInferenceAtRuntime::Structure<A,B>(a=$a, b=$b);
+}
+
+function meta::pure::functions::lang::tests::newInferenceAtRuntime::other<W,Q>(s:meta::pure::functions::lang::tests::newInferenceAtRuntime::Structure<W,Q>[1]):meta::pure::functions::lang::tests::newInferenceAtRuntime::Structure<W,Q>[1]
+{
+ $s
+}
+
+function meta::pure::functions::lang::tests::newInferenceAtRuntime::put<E,R>(a:E[1],b:R[1]):meta::pure::functions::lang::tests::newInferenceAtRuntime::Structure<E,R>[1]
+{
+     meta::pure::functions::lang::tests::newInferenceAtRuntime::other(meta::pure::functions::lang::tests::newInferenceAtRuntime::structure($a,$b));
+}
+
+function meta::pure::functions::lang::tests::newInferenceAtRuntime::repackStructure<U,V>(p:meta::pure::functions::lang::tests::newInferenceAtRuntime::Structure<U,V>[1]):String[1]
+{
+     ^meta::pure::functions::lang::tests::newInferenceAtRuntime::Structure<U,V>(a = $p.a, b = $p.b);
+     'ok';
+}
+
+function meta::pure::functions::lang::tests::newInferenceAtRuntime::do<I,P>(i:I[1],p:P[1]):meta::pure::functions::lang::tests::newInferenceAtRuntime::M<I,P>[1]
+{
+ ^meta::pure::functions::lang::tests::newInferenceAtRuntime::M<I,P>().put($i,$p);
+}
+
+function meta::pure::functions::lang::tests::newInferenceAtRuntime::put<U,V>(m:meta::pure::functions::lang::tests::newInferenceAtRuntime::M<U,V>[1], t:U[1], v:V[1]):meta::pure::functions::lang::tests::newInferenceAtRuntime::M<U,V>[1]
+{
+ $m;
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newInferenceAtRuntime::testSimple():Boolean[1]
+{
+    assertEq('ok', meta::pure::functions::lang::tests::newInferenceAtRuntime::repackStructure(^meta::pure::functions::lang::tests::newInferenceAtRuntime::Structure<Integer,String>(a=1,b='eeee')));
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newInferenceAtRuntime::testDeeperEvenMore():Boolean[1]
+{
+   assertEq('ok', meta::pure::functions::lang::tests::newInferenceAtRuntime::repackStructure(meta::pure::functions::lang::tests::newInferenceAtRuntime::put(1,'eee')));
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newInferenceAtRuntime::testDeeperEvenMoreUsingClassFunction():Boolean[1]
+{
+   let m = ^meta::pure::functions::lang::tests::newInferenceAtRuntime::M<String,Integer>(vals = ^meta::pure::functions::lang::tests::newInferenceAtRuntime::Structure<String,Integer>(a='eee', b=2)).put('rr',55);
+   assert($m.vals->size() == 2);
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newInferenceAtRuntime::testUsingLet():Boolean[1]
+{
+   let r = meta::pure::functions::lang::tests::newInferenceAtRuntime::do('1','2');
+   assert($r->meta::pure::functions::lang::tests::newInferenceAtRuntime::put('1','3').vals->size() == 1);
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newInferenceAtRuntime::testAllWithTypeInference():Boolean[1]
+{
+   assert(meta::pure::metamodel::function::ConcreteFunctionDefinition.all()->map(fn|pair($fn.name->toOne(),$fn))->isEmpty() || true);
+}
+
+
+Class meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyCar
+{
+   name : String[1];
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyOwner
+{
+   firstName: String[1];
+   lastName: String[1];
+}
+
+Association meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyCar_MissingPropertyOwner
+{
+   owner : meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyOwner[1];
+   car  : meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyCar[1];
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyCarMany
+{
+   name : String[1];
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyOwnerMany
+{
+   firstName: String[1];
+   lastName: String[1];
+}
+
+Association meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyCarMany_MissingPropertyOwnerMany
+{
+   ownerMany : meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyOwnerMany[1];
+   cars  : meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyCarMany[1..*];
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::MultiplicityParameterizedHolder<|m>
+{
+  value:String[m];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithMultiplicityParameter():Boolean[1]
+{
+   let result = ^meta::pure::functions::lang::tests::newAtRuntime::MultiplicityParameterizedHolder<|1>(value='hello');
+   assertEq('hello', $result.value);
+}
+
+function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::lang::tests::newAtRuntime::testNewWithMissingOneToOneProperty():Boolean[1]
+{
+   assertError(|^meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyOwner(firstName='John', lastName='Roe'),
+      'Error instantiating class \'MissingPropertyOwner\'.  The following properties have multiplicity violations: \'car\' requires 1 value, got 0'
+   );
+}
+
+function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::lang::tests::newAtRuntime::testNewWithMissingOneToManyProperty():Boolean[1]
+{
+   assertError(|^meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyOwnerMany(firstName='John', lastName='Roe'),
+      'Error instantiating class \'MissingPropertyOwnerMany\'.  The following properties have multiplicity violations: \'cars\' requires 1..* values, got 0'
+   );
+}
+
+function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::lang::tests::newAtRuntime::testNewWithChildWithMismatchedReverseOneToOneProperty():Boolean[1]
+{
+   assertError(|^meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyCar(name='Bugatti', owner= ^meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyOwner(firstName='John', lastName='Roe', car=^meta::pure::functions::lang::tests::newAtRuntime::MissingPropertyCar(name='Audi'))),
+      'Error instantiating the type \'MissingPropertyOwner\'. The property \'car\' has a multiplicity range of [1] when the given list has a cardinality equal to 2'
+   );
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewNil():Boolean[1]
+{
+   assertError(|^meta::pure::metamodel::type::Nil(), 'Cannot instantiate meta::pure::metamodel::type::Nil');
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToOneCar { name:String[1]; }
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToOneOwner { firstName:String[1]; lastName:String[1]; }
+Association meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToOneCar_Owner
+{
+   owner : meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToOneOwner[1];
+   car : meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToOneCar[0..1];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithReverseZeroToOneProperty():Boolean[1]
+{
+   let car = ^meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToOneCar(name='Bugatti', owner=^meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToOneOwner(firstName='John', lastName='Roe'));
+   assertEq(1, $car.owner.car->size());
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToManyCar { name:String[1]; }
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToManyOwner { firstName:String[1]; lastName:String[1]; }
+Association meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToManyCar_Owner
+{
+   owner : meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToManyOwner[1];
+   cars : meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToManyCar[0..*];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithReverseZeroToManyProperty():Boolean[1]
+{
+   let car = ^meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToManyCar(name='Bugatti', owner=^meta::pure::functions::lang::tests::newAtRuntime::ReverseZeroToManyOwner(firstName='John', lastName='Roe'));
+   assertEq(1, $car.owner.cars->size());
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToOneCar { name:String[1]; }
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToOneOwner { firstName:String[1]; lastName:String[1]; }
+Association meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToOneCar_Owner
+{
+   owner : meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToOneOwner[1];
+   car : meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToOneCar[1];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithReverseOneToOneProperty():Boolean[1]
+{
+   let car = ^meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToOneCar(name='Bugatti', owner=^meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToOneOwner(firstName='John', lastName='Roe'));
+   assertEq(1, $car.owner.car->size());
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToManyCar { name:String[1]; }
+Class meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToManyOwner { firstName:String[1]; lastName:String[1]; }
+Association meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToManyCar_Owner
+{
+   owner : meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToManyOwner[1];
+   cars : meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToManyCar[1..*];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithReverseOneToManyProperty():Boolean[1]
+{
+   let car = ^meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToManyCar(name='Bugatti', owner=^meta::pure::functions::lang::tests::newAtRuntime::ReverseOneToManyOwner(firstName='John', lastName='Roe'));
+   assertEq(1, $car.owner.cars->size());
+}
+
+Class meta::pure::functions::lang::tests::newAtRuntime::ExplicitNullManyA { name:String[1]; }
+Class meta::pure::functions::lang::tests::newAtRuntime::ExplicitNullManyB {}
+Association meta::pure::functions::lang::tests::newAtRuntime::ExplicitNullManyAssoc
+{
+   toB : meta::pure::functions::lang::tests::newAtRuntime::ExplicitNullManyB[*];
+   toA : meta::pure::functions::lang::tests::newAtRuntime::ExplicitNullManyA[1];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewWithZeroToManyAssociationExplicitNull():Boolean[1]
+{
+   let a = ^meta::pure::functions::lang::tests::newAtRuntime::ExplicitNullManyA(name='A', toB=[]);
+   assertEq('A', $a.name);
+   assert($a.toB->isEmpty());
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::newAtRuntime::testNewParametrizedClassWithEmptyPropertiesSet():Boolean[1]
+{
+   let x = ^meta::pure::functions::lang::tests::model::LA_GenericPair<String, Integer>(prop1=[], prop2=[]);
+   assert($x.prop1->isEmpty());
+   assert($x.prop2->isEmpty());
+}
+

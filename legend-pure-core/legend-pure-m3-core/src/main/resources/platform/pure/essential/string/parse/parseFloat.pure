@@ -28,3 +28,7 @@ function <<PCT.test>> meta::pure::functions::string::tests::parseFloat::testPars
     assertEq(0.0, $f->eval(|parseFloat('0.0')));
     assertEq(0.0, $f->eval(|parseFloat('-000.000')));
 }
+function <<test.Test>> meta::pure::functions::string::tests::parseFloat::testParseFloatEval():Boolean[1]
+{
+    assertEq(1.5, parseFloat_String_1__Float_1_->eval('1.5'));
+}

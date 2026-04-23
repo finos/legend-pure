@@ -24,3 +24,7 @@ function <<PCT.test>> meta::pure::functions::string::tests::parseInteger::testPa
 
     assertEq(9999999999999992, $f->eval(|parseInteger('9999999999999992')));
 }
+function <<test.Test>> meta::pure::functions::string::tests::parseInteger::testParseIntegerEval():Boolean[1]
+{
+    assertEq(1, parseInteger_String_1__Integer_1_->eval('1'));
+}

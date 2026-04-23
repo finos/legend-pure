@@ -27,7 +27,7 @@ function <<PCT.test>> meta::pure::functions::date::tests::testHasMonth<Z|y>(f:Fu
     assertFalse($f->eval(|%2015->hasMonth()));
 }
 
-function <<PCT.test>> meta::pure::functions::date::tests::testHasMonthReflect<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::date::tests::testHasMonthReflect():Boolean[1]
 {
-    assert($f->eval(|meta::pure::functions::date::hasMonth_Date_1__Boolean_1_->eval(%2015-04)));
+    assert(meta::pure::functions::date::hasMonth_Date_1__Boolean_1_->eval(%2015-04));
 }

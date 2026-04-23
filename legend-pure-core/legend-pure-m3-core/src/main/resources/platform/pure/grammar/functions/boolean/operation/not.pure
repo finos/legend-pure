@@ -59,3 +59,14 @@ function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::not::
 {
     assert($f->eval(|[false, !false]->at(1)));
 }
+function <<test.Test>> meta::pure::functions::boolean::tests::conjunctions::not::testEvalNot():Boolean[1]
+{
+    assertEq(true, not_Boolean_1__Boolean_1_->eval(false));
+    assertEq(false, not_Boolean_1__Boolean_1_->eval(true));
+}
+
+function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::not::testBasicNot<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(true, $f->eval(|not(false)));
+    assertEq(false, $f->eval(|not(true)));
+}

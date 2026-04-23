@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::pure::test::pct::*;
+import meta::pure::functions::asserts::*;
 
 native function
     <<PCT.function>>
@@ -45,4 +46,8 @@ function <<PCT.test>> meta::pure::functions::collection::tests::at::testAtWithVa
     let collection = ['a', 'b', 'c'];
     let index = 1;
     assertEq('b', $f->eval(|$collection->at($index)));
+}
+function <<PCT.test>> meta::pure::functions::collection::tests::at::testAtError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertError(| $f->eval(|[1, 2]->at(2)), 'The system is trying to get an element at offset 2 where the collection is of size 2', 52, 37);
 }

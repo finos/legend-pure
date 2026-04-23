@@ -42,3 +42,10 @@ function <<PCT.test>> meta::pure::functions::string::tests::substring::testStart
     assertEquals(' quick brown fox jumps over the lazy ', $f->eval(|substring($string, 3, 40)));
     assertEquals('quick brown fox jumps over the lazy', $f->eval(|substring($string, 4, 39)));
 }
+
+function <<test.Test>> meta::pure::functions::string::tests::substring::testSubstringEval():Boolean[1]
+{
+    let string = 'the quick brown fox jumps over the lazy dog';
+    assertEq('the quick brown fox jumps over the lazy dog', substring_String_1__Integer_1__String_1_->eval($string, 0));
+    assertEq('the quick brown fox jumps over the lazy dog', substring_String_1__Integer_1__Integer_1__String_1_->eval($string, 0, 43));
+}

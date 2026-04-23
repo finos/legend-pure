@@ -226,66 +226,6 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
     }
 
     @Test
-    public void testDynamicNewWithZeroToOneAssociationExplicitNull()
-    {
-        compileTestSource("/test/testModel.pure",
-                "import test::*;\n" +
-                        "Class test::TestClassA\n" +
-                        "{\n" +
-                        "  name : String[1];\n" +
-                        "}\n" +
-                        "\n" +
-                        "Class test::TestClassB\n" +
-                        "{\n" +
-                        "}\n" +
-                        "\n" +
-                        "Association test::TestAssocAB\n" +
-                        "{\n" +
-                        "  toB : TestClassB[0..1];\n" +
-                        "  toA : TestClassA[1];\n" +
-                        "}\n" +
-                        "\n" +
-                        "function test::testFn():Any[*]\n" +
-                        "{\n" +
-                        "  let a = dynamicNew(TestClassA, [^KeyValue(key='name', value='A'), ^KeyValue(key='toB', value=[])])->cast(@TestClassA);\n" +
-                        "  assert('A' == $a.name, |'');\n" +
-                        "  assert($a.toB->isEmpty(), |'');\n" +
-                        "}\n");
-        CoreInstance func = runtime.getFunction("test::testFn():Any[*]");
-        functionExecution.start(func, Lists.immutable.empty());
-    }
-
-    @Test
-    public void testDynamicNewWithZeroToManyAssociationExplicitNull()
-    {
-        compileTestSource("/test/testModel.pure",
-                "import test::*;\n" +
-                        "Class test::TestClassA\n" +
-                        "{\n" +
-                        "  name : String[1];\n" +
-                        "}\n" +
-                        "\n" +
-                        "Class test::TestClassB\n" +
-                        "{\n" +
-                        "}\n" +
-                        "\n" +
-                        "Association test::TestAssocAB\n" +
-                        "{\n" +
-                        "  toB : TestClassB[*];\n" +
-                        "  toA : TestClassA[1];\n" +
-                        "}\n" +
-                        "\n" +
-                        "function test::testFn():Any[*]\n" +
-                        "{\n" +
-                        "  let a = dynamicNew(TestClassA, [^KeyValue(key='name', value='A'), ^KeyValue(key='toB', value=[])])->cast(@TestClassA);\n" +
-                        "  assert('A' == $a.name, |'');\n" +
-                        "  assert($a.toB->isEmpty(), |'');\n" +
-                        "}\n");
-        CoreInstance func = runtime.getFunction("test::testFn():Any[*]");
-        functionExecution.start(func, Lists.immutable.empty());
-    }
-
-    @Test
     public void testDefaultValueWithDynamicNew()
     {
         compileTestSource("testSource.pure", AbstractTestDefaultValue.DECLARATION

@@ -28,8 +28,7 @@ function <<PCT.test>> meta::pure::functions::date::tests::testYear<Z|y>(f:Functi
 
 }
 
-function <<PCT.test>> meta::pure::functions::date::tests::testYeaReflect<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::date::tests::testYeaReflect():Boolean[1]
 {
-    assertEquals(2015, $f->eval(|meta::pure::functions::date::year_Date_1__Integer_1_->eval(%2015-04-15)));
-    //assertEquals(2015, meta::pure::functions::date::year_Date_1__Integer_1_->evaluate(^List<Date>(values=%2015-04-15)));
+    assertEquals(2015, meta::pure::functions::date::year_Date_1__Integer_1_->eval(%2015-04-15));
 }

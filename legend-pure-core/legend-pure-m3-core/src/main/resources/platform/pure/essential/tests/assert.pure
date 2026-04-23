@@ -51,3 +51,27 @@ function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessWithFor
    assert(2 == 2, 'Test message: %s', [true]);
    assert((1 + 2) == 3, 'Test message: %s', [true]);
 }
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessWithMessageString():Boolean[1]
+{
+    assert(true, 'Test message');
+    assert(2 == 2, 'Test message');
+    assert((1 + 2) == 3, 'Test message');
+}
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessWithMessageFunction():Boolean[1]
+{
+    assert(true, |'Test message');
+    assert(2 == 2, |format('Test message %s', [true]));
+    assert((1 + 2) == 3, |format('Test message: %s', [true]));
+}
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testFailWithMessageFunction():Boolean[1]
+{
+    assertError(| assert(false, |format('Test message: %d', 2 + 3)), 'Test message: 5', 70, 19);
+    assertError(| assert(1 == 2, |format('Test message: %d', 2 + 3)), 'Test message: 5', 71, 19);
+}
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testEval():Boolean[1]
+{
+    assert(assert_Boolean_1__Function_1__Boolean_1_->eval(true, {|'hello'}));
+}

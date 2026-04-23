@@ -23,3 +23,8 @@ function <<PCT.test>> meta::pure::functions::date::tests::testHour<Z|y>(f:Functi
     assertEquals(17, $f->eval(|%2015-04-15T17:09:21->hour()));
     assertEquals(17, $f->eval(|%2015-04-15T17:09:21.398->hour()));
 }
+
+function <<PCT.test>> meta::pure::functions::date::tests::testHourError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertError(| $f->eval(|%2017->hour()), 'Cannot get hour for 2017', 29, 36);
+}

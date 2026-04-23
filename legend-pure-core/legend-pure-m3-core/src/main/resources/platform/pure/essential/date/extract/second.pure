@@ -21,3 +21,8 @@ function <<PCT.test>> meta::pure::functions::date::tests::testSecond<Z|y>(f:Func
     assertEquals(21, $f->eval(|%2015-04-15T17:09:21->second()));
     assertEquals(21, $f->eval(|%2015-04-15T17:09:21.398->second()));
 }
+
+function <<PCT.test>> meta::pure::functions::date::tests::testSecondError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertError(| $f->eval(|%2017->second()), 'Cannot get second for 2017', 27, 36);
+}

@@ -116,12 +116,22 @@ function <<PCT.test>> meta::pure::functions::string::tests::format::testFormatRe
     assertEq('the quick brown fox jumps over the lazy %2014-01-01T00:00:00.000+0000', $f->eval(|format('the quick brown %s jumps over the lazy %r', ['fox', %2014-01-01T00:00:00.000])));
 }
 
-function <<PCT.test>> meta::pure::functions::string::tests::format::testFormatInEval<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::string::tests::format::testFormatInEval():Boolean[1]
 {
-    assertEq('the quick brown fox jumps over the lazy dog', $f->eval(|format_String_1__Any_MANY__String_1_->eval('the quick brown %s jumps over the lazy %s', ['fox', 'dog'])));
+    assertEq('the quick brown fox jumps over the lazy dog', format_String_1__Any_MANY__String_1_->eval('the quick brown %s jumps over the lazy %s', ['fox', 'dog']));
 }
 
-function <<PCT.test>> meta::pure::functions::string::tests::format::testFormatInEvaluate<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::string::tests::format::testFormatInEvaluate():Boolean[1]
 {
-    assertEquals('the quick brown fox jumps over the lazy dog', $f->eval(|format_String_1__Any_MANY__String_1_->evaluate([^List<String>(values='the quick brown %s jumps over the lazy %s'), ^List<Any>(values=['fox', 'dog'])])));
+    assertEquals('the quick brown fox jumps over the lazy dog', format_String_1__Any_MANY__String_1_->evaluate([^List<String>(values='the quick brown %s jumps over the lazy %s'), ^List<Any>(values=['fox', 'dog'])]));
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::format::testFormatTooFewInputs():Boolean[1]
+{
+    assertError(|format('Hello %s %s', ['Catherine']), 'Too few arguments passed to format function. Format expression "Hello %s %s", number of arguments [1]');
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::format::testFormatTooManyInputs():Boolean[1]
+{
+    assertError(|format('Hello %s %s', ['Catherine', 'Joe', 'Katie']), 'Unused format args. [3] arguments provided to expression "Hello %s %s"');
 }

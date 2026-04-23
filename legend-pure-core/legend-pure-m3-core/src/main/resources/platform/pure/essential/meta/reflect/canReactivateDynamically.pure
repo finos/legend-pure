@@ -15,3 +15,18 @@
 import meta::pure::test::pct::*;
 
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::canReactivateDynamically(vs:ValueSpecification[1]):Boolean[1];
+
+function <<test.Test>> meta::pure::functions::meta::tests::canReactivateDynamically::testBasicInstanceValue():Boolean[1]
+{
+    assert(canReactivateDynamically({|1}->evaluateAndDeactivate().expressionSequence->toOne()));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::canReactivateDynamically::testSimpleFuncExpressionParams():Boolean[1]
+{
+    assert(canReactivateDynamically({|1->map(s|$s->toString())->joinStrings('')->map(x|'*' + $x + '*')}->evaluateAndDeactivate().expressionSequence->toOne()));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::canReactivateDynamically::testEval():Boolean[1]
+{
+    assert(canReactivateDynamically_ValueSpecification_1__Boolean_1_->eval({|1}->evaluateAndDeactivate().expressionSequence->toOne()));
+}

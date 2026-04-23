@@ -21,3 +21,7 @@ function <<PCT.test>> meta::pure::functions::string::tests::trim::testTrim<Z|y>(
     assertEquals('A Simple Text To Trim', $f->eval(|' A Simple Text To Trim    '->trim()));
     assertEquals('A Simple Text To Trim', $f->eval(|' A Simple Text To Trim'->trim()));
 }
+function <<test.Test>> meta::pure::functions::string::tests::trim::testTrimEval():Boolean[1]
+{
+    assertEq('hello', trim_String_1__String_1_->eval(' hello '));
+}

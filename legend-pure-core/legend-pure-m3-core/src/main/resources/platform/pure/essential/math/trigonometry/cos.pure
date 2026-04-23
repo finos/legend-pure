@@ -23,7 +23,7 @@ function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testCosi
    assertEqWithinTolerance(0.070737201667, $f->eval(|cos(-1.5)), 0.000000000001);
 }
 
-function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testCosEval<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::math::tests::trigonometry::testCosEval():Boolean[1]
 {
-   assertEqWithinTolerance(0.540302305868, $f->eval(|cos_Number_1__Float_1_->eval(1)), 0.000000000001);
+   assertEqWithinTolerance(0.540302305868, cos_Number_1__Float_1_->eval(1), 0.000000000001);
 }

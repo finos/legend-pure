@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::pure::test::pct::*;
+import meta::pure::functions::asserts::*;
 
 native function <<PCT.function>> meta::pure::functions::collection::slice<T>(set:T[*], start:Integer[1], end:Integer[1]):T[*];
 
@@ -45,4 +46,9 @@ function <<PCT.test>> meta::pure::functions::collection::tests::slice::testSlice
 function <<PCT.test>> meta::pure::functions::collection::tests::slice::testSliceInList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
   assertEquals(list([2, 3]), $f->eval(|list([1, 2, 3, 4]->slice(1, 3))));
+}
+
+function <<PCT.test>> meta::pure::functions::collection::tests::slice::testSliceError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertError(| $f->eval(|[1,2,3,4,5]->slice(3, 2)), 'The low bound (3) can\'t be higher than the high bound (2) in a slice operation');
 }

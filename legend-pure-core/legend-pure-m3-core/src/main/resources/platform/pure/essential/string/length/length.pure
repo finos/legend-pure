@@ -30,3 +30,7 @@ function <<PCT.test>> meta::pure::functions::string::tests::length::testEmptyLen
 {
     assertEquals(0, $f->eval(|length('')));
 }
+function <<test.Test>> meta::pure::functions::string::tests::length::testLengthEval():Boolean[1]
+{
+    assertEq(5, length_String_1__Integer_1_->eval('hello'));
+}

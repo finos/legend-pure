@@ -64,3 +64,7 @@ function <<PCT.test>> {test.excludePlatform = 'Java compiled'} meta::pure::funct
     assertEq(18446744073709551614, $f->eval(|2 * 9223372036854775807));
     assertEq(18446744073709551614, $f->eval(|9223372036854775807 * 2));
 }
+function <<test.Test>> meta::pure::functions::math::tests::times::testTimesEval():Boolean[1]
+{
+    assertEq(6, times_Number_MANY__Number_1_->eval([1,2,3]));
+}

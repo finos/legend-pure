@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.pct.functions.moveToPCT;
 
-import org.finos.legend.pure.m3.tests.function.base.lang.AbstractTestNewInferenceAtRuntime;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestNewInferenceInterpreted extends AbstractTestNewInferenceAtRuntime
+public class TestNewInferenceInterpreted extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -40,6 +40,8 @@ public class TestNewInferenceInterpreted extends AbstractTestNewInferenceAtRunti
         return new FunctionExecutionInterpreted();
     }
 
+    // Compiled engine's codegen does not expose _classifierGenericType() on PureMap, so this
+    // runtime-reflection check only runs on the interpreted engine.
     @Test
     public void newMapRuntimeResolution() throws Exception
     {

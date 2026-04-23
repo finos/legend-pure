@@ -13,10 +13,22 @@
 // limitations under the License.
 
 import meta::pure::test::pct::*;
+import meta::pure::functions::asserts::*;
 
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::getMapStats<U,V>(m:Map<U,V>[1]):MapStats[0..1];
 
 Class meta::pure::functions::collection::MapStats
 {
    getIfAbsentCounter : Integer[1];
+}
+
+function <<test.Test>> meta::pure::functions::collection::tests::map::testGetMapStats():Boolean[1]
+{
+   let m = newMap([pair(1,'_1'), pair(2,'_2')]);
+   assert($m->get(3)->isEmpty(), |'');
+   assertEquals(0, $m->getMapStats().getIfAbsentCounter);
+   assertEquals('_3', $m->getIfAbsentPutWithKey(3, {k:Integer[1]|'_'+$k->toString()}));
+   assertEquals(1, $m->getMapStats().getIfAbsentCounter);
+   assertEquals('_3', $m->get(3));
+   assertEquals(1, $m->getMapStats().getIfAbsentCounter);
 }
