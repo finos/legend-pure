@@ -52,23 +52,17 @@ function <<PCT.test>> meta::pure::functions::collection::tests::fold::testFoldWi
     assertEquals([1, 2, 3], $f->eval(|fold([1, 2, 3], {val, acc| add($acc, $val)}, [])));
 }
 
-function <<PCT.test>>
-{meta::pure::profiles::test.excludePlatform = 'Java compiled'}
-meta::pure::functions::collection::tests::fold::testFoldEmptyListAndEmptyIdentity<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::fold::testFoldEmptyListAndEmptyIdentity<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals([], $f->eval(|fold([]->cast(@Integer), {val, acc| add($acc, $val)}, []->cast(@Any))));
 }
 
-function <<PCT.test>>
-{meta::pure::profiles::test.excludePlatform = 'Java compiled'}
-meta::pure::functions::collection::tests::fold::testFoldEmptyListAndNonEmptyIdentity<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::fold::testFoldEmptyListAndNonEmptyIdentity<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals(1, $f->eval(|fold([]->cast(@Integer), {val, acc| $acc + $val}, 1)));
 }
 
-function <<PCT.test>>
-{meta::pure::profiles::test.excludePlatform = 'Java compiled'}
-meta::pure::functions::collection::tests::fold::testFoldMixedAccumulatorTypes<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::fold::testFoldMixedAccumulatorTypes<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals(7, $f->eval(|fold(['one', 'two'], {val, acc| $acc + $val->length()}, 1)));
 }
