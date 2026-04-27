@@ -72,7 +72,7 @@ function <<test.Test>> meta::pure::functions::lang::tests::evaluate::testEvaluat
     assertEquals([2], [1, 2, 3]->filter(i | eq($f->eval($i), 'p2')));
 }
 
-function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::lang::tests::evaluate::copy::testFunctionDefinitionCopy():Boolean[1]
+function <<test.Test>> meta::pure::functions::lang::tests::evaluate::copy::testFunctionDefinitionCopy():Boolean[1]
 {
     let f1 = 'meta::pure::functions::lang::tests::copy::testFunctionDefinitionCopy__Boolean_1_'->pathToElement();
     let type = $f1->genericType();
@@ -85,7 +85,7 @@ function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::func
     assertEmpty($type->properties()->filter(p | $p->eval($f1) != $p->eval($f2)));
 }
 
-function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::lang::tests::evaluate::copy::testFunctionDefinitionWithInstanceCopy():Boolean[1]
+function <<test.Test>> meta::pure::functions::lang::tests::evaluate::copy::testFunctionDefinitionWithInstanceCopy():Boolean[1]
 {
     let f1 = 'meta::pure::functions::lang::tests::copy::testFlatCopyToOne__Boolean_1_'->pathToElement();
     let type = $f1->genericType();

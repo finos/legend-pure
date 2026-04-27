@@ -16,13 +16,13 @@ import meta::pure::test::pct::*;
 
 native function <<PCT.function>> meta::pure::functions::math::cot(number:Number[1]):Float[1];
 
-function <<PCT.test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::math::tests::trigonometry::testCoTangent<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testCoTangent<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
    assertEqWithinTolerance(0.642092615934, $f->eval(|cot(1)), 0.000000000001);
    assertEqWithinTolerance(0.070914844302, $f->eval(|cot(1.5)), 0.000000000001);
 }
 
-function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::math::tests::trigonometry::testCoTangentEval():Boolean[1]
+function <<test.Test>> meta::pure::functions::math::tests::trigonometry::testCoTangentEval():Boolean[1]
 {
    assertEqWithinTolerance(0.070914844302, cot_Number_1__Float_1_->eval(1.5), 0.000000000001);
 }

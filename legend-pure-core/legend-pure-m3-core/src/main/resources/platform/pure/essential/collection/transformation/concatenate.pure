@@ -32,7 +32,7 @@ function <<PCT.test>> meta::pure::functions::collection::tests::concatenate::tes
     assertEquals([1, 2, 3, 'a', 'b'], $f->eval(|concatenate([1, 2, 3], ['a', 'b'])));
 }
 
-function <<PCT.test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::collection::tests::concatenate::testConcatenateTypeInference<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::concatenate::testConcatenateTypeInference<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let a = $f->eval(|concatenate([1, 2, 3], [4, 5]));
     assertIs(Integer, $a->type()->toOne());

@@ -59,7 +59,7 @@ function <<PCT.test>> meta::pure::functions::date::tests::testDateFromSecond<Z|y
     assertEquals(%2015-04-16T14:51:59, $f->eval(|date(2015, 4, 16, 14, 51, 59)));
 }
 
-function <<PCT.test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::date::tests::testDateFromSubSecond<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::date::tests::testDateFromSubSecond<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals(%1973-11-13T23:09:11.0, $f->eval(|date(1973, 11, 13, 23, 9, 11.0)));
     assertEquals(%2015-04-16T14:51:59.999, $f->eval(|date(2015, 4, 16, 14, 51, 59.999)));

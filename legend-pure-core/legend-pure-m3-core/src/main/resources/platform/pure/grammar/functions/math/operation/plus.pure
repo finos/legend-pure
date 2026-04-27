@@ -92,7 +92,7 @@ function <<PCT.test>> meta::pure::functions::math::tests::plus::testDecimalPlus<
     assertEq(-1.0d, $f->eval(|-4.0d+2.0d+1));
 }
 
-function <<PCT.test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::math::tests::plus::testLargePlus<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::plus::testLargePlus<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEq(9223372036854775826, $f->eval(|9223372036854775807 + 3 + (4 + 5) + 7));
     assertEq(18446744073709551621, $f->eval(|4 + 9223372036854775807 + 9223372036854775807 + 3));
