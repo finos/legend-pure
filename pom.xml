@@ -35,6 +35,7 @@
         <module>legend-pure-maven</module>
         <module>legend-pure-runtime</module>
         <module>legend-pure-store</module>
+        <module>legend-pure-docs</module>
     </modules>
 
     <properties>
