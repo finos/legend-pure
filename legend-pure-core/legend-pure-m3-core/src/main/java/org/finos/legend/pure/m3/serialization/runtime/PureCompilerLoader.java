@@ -360,10 +360,18 @@ public abstract class PureCompilerLoader
             long srcRegEnd = System.nanoTime();
             LOGGER.debug("Finished initializing the source registry in {}ns", srcRegEnd - srcRegStart);
 
+            // register instances by classifier
+            long instancesByClassifierStart = System.nanoTime();
+            LOGGER.debug("Registering instances by classifier");
+            Context context = runtime.getContext();
+            metadataIndex.forEachElement(e -> context.registerInstanceByClassifier(elementLoader.loadElementStrict(e.getPath())));
+            metadataIndex.forEachVirtualPackage(p -> context.registerInstanceByClassifier(elementLoader.loadElementStrict(p.getPath())));
+            long instancesByClassifierEnd = System.nanoTime();
+            LOGGER.debug("Finished registering instances by classifier in {}ns", instancesByClassifierEnd - instancesByClassifierStart);
+
             // load functions by name
             long fnsByNameStart = System.nanoTime();
             LOGGER.debug("Loading functions by name");
-            Context context = runtime.getContext();
             repositories.forEach(repo -> loadModuleFunctionsByName(repo).getFunctionsByName().forEach(fbn ->
             {
                 String funcName = fbn.getFunctionName();
