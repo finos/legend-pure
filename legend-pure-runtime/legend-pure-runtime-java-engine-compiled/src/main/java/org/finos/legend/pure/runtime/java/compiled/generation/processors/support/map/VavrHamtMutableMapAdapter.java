@@ -15,6 +15,7 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map;
 
 import io.vavr.collection.HashMap;
+import io.vavr.control.Option;
 import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.HashingStrategy;
@@ -31,9 +32,10 @@ import org.eclipse.collections.impl.tuple.ImmutableEntry;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.LazyIterate;
 
+import java.util.AbstractCollection;
+import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -202,7 +204,7 @@ public class VavrHamtMutableMapAdapter<K, V> extends AbstractMutableMap<K, V>
     @Override
     public V get(Object key)
     {
-        return this.hamtMap.get(wrapObject(key)).getOrElse((V) null);
+        return this.hamtMap.getOrElse(wrapObject(key), null);
     }
 
     @Override
@@ -212,10 +214,9 @@ public class VavrHamtMutableMapAdapter<K, V> extends AbstractMutableMap<K, V>
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public boolean containsValue(Object value)
     {
-        return this.hamtMap.containsValue((V) value);
+        return this.hamtMap.iterator().exists(tuple -> Objects.equals(tuple._2, value));
     }
 
     @Override
@@ -393,7 +394,7 @@ public class VavrHamtMutableMapAdapter<K, V> extends AbstractMutableMap<K, V>
     @Override
     public Iterator<V> iterator()
     {
-        return this.hamtMap.values().iterator();
+        return this.hamtMap.valuesIterator();
     }
 
     // ---- View operations ----------------------------------------------------
@@ -401,23 +402,19 @@ public class VavrHamtMutableMapAdapter<K, V> extends AbstractMutableMap<K, V>
     @Override
     public Set<K> keySet()
     {
-        Set<K> result = new LinkedHashSet<>(this.hamtMap.size());
-        this.hamtMap.forEach(tuple -> result.add(tuple._1.key));
-        return result;
+        return new KeySet();
     }
 
     @Override
     public Collection<V> values()
     {
-        return this.hamtMap.values().toJavaList();
+        return new ValuesCollection();
     }
 
     @Override
     public Set<Map.Entry<K, V>> entrySet()
     {
-        Set<Map.Entry<K, V>> result = new LinkedHashSet<>(this.hamtMap.size());
-        this.hamtMap.forEach(tuple -> result.add(ImmutableEntry.of(tuple._1.key, tuple._2)));
-        return result;
+        return new EntrySet();
     }
 
     @Override
@@ -530,5 +527,92 @@ public class VavrHamtMutableMapAdapter<K, V> extends AbstractMutableMap<K, V>
         }
         sb.append("}");
         return sb.toString();
+    }
+
+    private class KeySet extends AbstractSet<K>
+    {
+        @Override
+        public int size()
+        {
+            return VavrHamtMutableMapAdapter.this.size();
+        }
+
+        @Override
+        public boolean isEmpty()
+        {
+            return VavrHamtMutableMapAdapter.this.isEmpty();
+        }
+
+        @Override
+        public boolean contains(Object o)
+        {
+            return VavrHamtMutableMapAdapter.this.containsKey(o);
+        }
+
+        @Override
+        public Iterator<K> iterator()
+        {
+            return VavrHamtMutableMapAdapter.this.hamtMap.keysIterator().map(k -> k.key);
+        }
+    }
+
+    private class ValuesCollection extends AbstractCollection<V>
+    {
+        @Override
+        public int size()
+        {
+            return VavrHamtMutableMapAdapter.this.size();
+        }
+
+        @Override
+        public boolean isEmpty()
+        {
+            return VavrHamtMutableMapAdapter.this.isEmpty();
+        }
+
+        @Override
+        public boolean contains(Object o)
+        {
+            return VavrHamtMutableMapAdapter.this.containsValue(o);
+        }
+
+        @Override
+        public Iterator<V> iterator()
+        {
+            return VavrHamtMutableMapAdapter.this.hamtMap.valuesIterator();
+        }
+    }
+
+    private class EntrySet extends AbstractSet<Map.Entry<K, V>>
+    {
+        @Override
+        public int size()
+        {
+            return VavrHamtMutableMapAdapter.this.size();
+        }
+
+        @Override
+        public boolean isEmpty()
+        {
+            return VavrHamtMutableMapAdapter.this.isEmpty();
+        }
+
+        @Override
+        public boolean contains(Object o)
+        {
+            if (!(o instanceof Map.Entry))
+            {
+                return false;
+            }
+            Map.Entry<?, ?> entry = (Map.Entry<?, ?>) o;
+            Option<V> value = VavrHamtMutableMapAdapter.this.hamtMap.get(wrapObject(entry.getKey()));
+            return value.isDefined() && Objects.equals(value.get(), entry.getValue());
+        }
+
+        @Override
+        public Iterator<Map.Entry<K, V>> iterator()
+        {
+            return VavrHamtMutableMapAdapter.this.hamtMap.iterator().map(t -> ImmutableEntry.of(t._1.key, t._2));
+        }
     }
 }

@@ -16,20 +16,23 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.suppor
 
 import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.block.HashingStrategy;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.Counter;
 import org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestVavrHamtMutableMapAdapter
 {
@@ -84,7 +87,7 @@ public class TestVavrHamtMutableMapAdapter
     @Test
     public void testFromMapWithJavaMap()
     {
-        HashMap<String, Integer> source = new HashMap<>();
+        MutableMap<String, Integer> source = Maps.mutable.empty();
         source.put("a", 1);
         source.put("b", 2);
 
@@ -145,7 +148,7 @@ public class TestVavrHamtMutableMapAdapter
     @Test
     public void testWithHashingStrategyAndSource()
     {
-        HashMap<String, Integer> source = new HashMap<>();
+        MutableMap<String, Integer> source = Maps.mutable.empty();
         source.put("Abc", 1);
         source.put("Def", 2);
 
@@ -158,7 +161,7 @@ public class TestVavrHamtMutableMapAdapter
     @Test
     public void testFromJavaMap()
     {
-        java.util.HashMap<VavrHamtMutableMapAdapter.HamtKey<String>, Integer> javaMap = new java.util.HashMap<>();
+        MutableMap<VavrHamtMutableMapAdapter.HamtKey<String>, Integer> javaMap = Maps.mutable.empty();
         VavrHamtMutableMapAdapter<String, Integer> temp = new VavrHamtMutableMapAdapter<>();
         javaMap.put(temp.wrapKey("a"), 1);
         javaMap.put(temp.wrapKey("b"), 2);
@@ -172,7 +175,7 @@ public class TestVavrHamtMutableMapAdapter
     @Test
     public void testFromJavaMapWithStrategy()
     {
-        java.util.HashMap<VavrHamtMutableMapAdapter.HamtKey<String>, Integer> javaMap = new java.util.HashMap<>();
+        MutableMap<VavrHamtMutableMapAdapter.HamtKey<String>, Integer> javaMap = Maps.mutable.empty();
         VavrHamtMutableMapAdapter<String, Integer> temp = new VavrHamtMutableMapAdapter<>(CASE_INSENSITIVE_STRATEGY);
         javaMap.put(temp.wrapKey("Hello"), 1);
 
@@ -273,7 +276,7 @@ public class TestVavrHamtMutableMapAdapter
     @Test
     public void testPutAllFromJavaMap()
     {
-        HashMap<String, Integer> source = new HashMap<>();
+        MutableMap<String, Integer> source = Maps.mutable.empty();
         source.put("x", 10);
         source.put("y", 20);
 
@@ -359,14 +362,14 @@ public class TestVavrHamtMutableMapAdapter
     @Test
     public void testGetIfAbsentPutWithFunction0_absent()
     {
-        AtomicInteger callCount = new AtomicInteger(0);
+        Counter callCount = new Counter(0);
         Integer result = map.getIfAbsentPut("key", () ->
         {
-            callCount.incrementAndGet();
+            callCount.increment();
             return 42;
         });
         Assert.assertEquals(Integer.valueOf(42), result);
-        Assert.assertEquals(1, callCount.get());
+        Assert.assertEquals(1, callCount.getCount());
         Assert.assertEquals(Integer.valueOf(42), map.get("key"));
     }
 
@@ -374,14 +377,14 @@ public class TestVavrHamtMutableMapAdapter
     public void testGetIfAbsentPutWithFunction0_present()
     {
         map.put("key", 10);
-        AtomicInteger callCount = new AtomicInteger(0);
+        Counter callCount = new Counter(0);
         Integer result = map.getIfAbsentPut("key", () ->
         {
-            callCount.incrementAndGet();
+            callCount.increment();
             return 42;
         });
         Assert.assertEquals(Integer.valueOf(10), result);
-        Assert.assertEquals(0, callCount.get());
+        Assert.assertEquals(0, callCount.getCount());
     }
 
     @Test
@@ -440,7 +443,7 @@ public class TestVavrHamtMutableMapAdapter
         map.put("a", 1);
         map.put("b", 2);
 
-        HashMap<String, Integer> collected = new HashMap<>();
+        MutableMap<String, Integer> collected = Maps.mutable.empty();
         map.forEachKeyValue(collected::put);
 
         Assert.assertEquals(2, collected.size());
@@ -451,8 +454,7 @@ public class TestVavrHamtMutableMapAdapter
     @Test
     public void testCollectKeysAndValues()
     {
-        java.util.List<String> items = java.util.Arrays.asList("abc", "de", "fghi");
-        map.collectKeysAndValues(items, s -> s, String::length);
+        map.collectKeysAndValues(Lists.mutable.with("abc", "de", "fghi"), s -> s, String::length);
 
         Assert.assertEquals(3, map.size());
         Assert.assertEquals(Integer.valueOf(3), map.get("abc"));
@@ -466,13 +468,13 @@ public class TestVavrHamtMutableMapAdapter
         map.put("a", 1);
         map.put("b", 2);
 
-        java.util.Set<Integer> values = new java.util.HashSet<>();
+        MutableSet<Integer> values = Sets.mutable.empty();
         Iterator<Integer> it = map.iterator();
         while (it.hasNext())
         {
             values.add(it.next());
         }
-        Assert.assertEquals(new java.util.HashSet<>(java.util.Arrays.asList(1, 2)), values);
+        Assert.assertEquals(Sets.mutable.with(1, 2), values);
     }
 
     // ---- View operations ----------------------------------------------------
@@ -510,7 +512,7 @@ public class TestVavrHamtMutableMapAdapter
         Set<Map.Entry<String, Integer>> entries = map.entrySet();
         Assert.assertEquals(2, entries.size());
 
-        HashMap<String, Integer> fromEntries = new HashMap<>();
+        MutableMap<String, Integer> fromEntries = Maps.mutable.empty();
         for (Map.Entry<String, Integer> e : entries)
         {
             fromEntries.put(e.getKey(), e.getValue());
@@ -526,9 +528,9 @@ public class TestVavrHamtMutableMapAdapter
         map.put("b", 2);
 
         LazyIterable<Integer> view = map.valuesView();
-        java.util.Set<Integer> collected = new java.util.HashSet<>();
+        MutableSet<Integer> collected = Sets.mutable.empty();
         view.forEach(collected::add);
-        Assert.assertEquals(new java.util.HashSet<>(java.util.Arrays.asList(1, 2)), collected);
+        Assert.assertEquals(Sets.mutable.with(1, 2), collected);
     }
 
     @Test
@@ -538,7 +540,7 @@ public class TestVavrHamtMutableMapAdapter
         map.put("b", 2);
 
         LazyIterable<Pair<String, Integer>> view = map.keyValuesView();
-        HashMap<String, Integer> collected = new HashMap<>();
+        MutableMap<String, Integer> collected = Maps.mutable.empty();
         view.forEach(p -> collected.put(p.getOne(), p.getTwo()));
 
         Assert.assertEquals(Integer.valueOf(1), collected.get("a"));
@@ -552,9 +554,9 @@ public class TestVavrHamtMutableMapAdapter
         map.put("b", 2);
 
         LazyIterable<String> view = map.keysView();
-        java.util.Set<String> collected = new java.util.HashSet<>();
+        MutableSet<String> collected = Sets.mutable.empty();
         view.forEach(collected::add);
-        Assert.assertEquals(new java.util.HashSet<>(java.util.Arrays.asList("a", "b")), collected);
+        Assert.assertEquals(Sets.mutable.with("a", "b"), collected);
     }
 
     @Test
@@ -563,9 +565,9 @@ public class TestVavrHamtMutableMapAdapter
         map.put("a", 1);
         map.put("b", 2);
 
-        java.util.Set<String> collected = new java.util.HashSet<>();
+        MutableSet<String> collected = Sets.mutable.empty();
         map.keysWithDuplicates().forEach(collected::add);
-        Assert.assertEquals(new java.util.HashSet<>(java.util.Arrays.asList("a", "b")), collected);
+        Assert.assertEquals(Sets.mutable.with("a", "b"), collected);
     }
 
     // ---- Copy / Clone -------------------------------------------------------
@@ -639,7 +641,7 @@ public class TestVavrHamtMutableMapAdapter
         map.put("a", 1);
         map.put("b", 2);
 
-        HashMap<String, Integer> javaMap = new HashMap<>();
+        MutableMap<String, Integer> javaMap = Maps.mutable.empty();
         javaMap.put("a", 1);
         javaMap.put("b", 2);
 
@@ -652,7 +654,7 @@ public class TestVavrHamtMutableMapAdapter
     {
         map.put("a", 1);
 
-        HashMap<String, Integer> javaMap = new HashMap<>();
+        MutableMap<String, Integer> javaMap = Maps.mutable.empty();
         javaMap.put("a", 2);
 
         Assert.assertNotEquals(map, javaMap);
@@ -663,7 +665,7 @@ public class TestVavrHamtMutableMapAdapter
     {
         map.put("a", 1);
 
-        HashMap<String, Integer> javaMap = new HashMap<>();
+        MutableMap<String, Integer> javaMap = Maps.mutable.empty();
         javaMap.put("a", 1);
         javaMap.put("b", 2);
 
@@ -681,7 +683,7 @@ public class TestVavrHamtMutableMapAdapter
     {
         map.put("a", 1);
 
-        HashMap<String, Integer> javaMap = new HashMap<>();
+        MutableMap<String, Integer> javaMap = Maps.mutable.empty();
         javaMap.put("b", 1);
 
         Assert.assertNotEquals(map, javaMap);
@@ -693,7 +695,7 @@ public class TestVavrHamtMutableMapAdapter
         map.put("a", 1);
         map.put("b", 2);
 
-        HashMap<String, Integer> javaMap = new HashMap<>();
+        MutableMap<String, Integer> javaMap = Maps.mutable.empty();
         javaMap.put("a", 1);
         javaMap.put("b", 2);
 
