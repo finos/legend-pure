@@ -36,7 +36,7 @@ public class MapCoreInstance extends SimpleCoreInstance
     {
         super(name, sourceInformation, classifier, internalSyntheticId, repository, persistent);
         this.map = UnifiedMapWithHashingStrategy.newMap(EqualityUtilities.newCoreInstanceHashingStrategy(params, processorSupport));
-        this.stats = new PureMapStats();
+        this.stats = new PureMapStats(this.map);
     }
 
     public MapCoreInstance(MapCoreInstance map, boolean copyData, ProcessorSupport processorSupport)
@@ -44,7 +44,7 @@ public class MapCoreInstance extends SimpleCoreInstance
         super(map.getName(), null, processorSupport.getClassifier(map), -1, map.getRepository(), false);
         Instance.addValueToProperty(this, M3Properties.classifierGenericType, map.getValueForMetaPropertyToOne(M3Properties.classifierGenericType), processorSupport);
         this.map = copyData ? map.map.clone() : map.map.newEmpty();
-        this.stats = copyData ? new PureMapStats(map.getStats()) : new PureMapStats();
+        this.stats = copyData ? new PureMapStats(map.getStats()) : new PureMapStats(this.map);
     }
 
     public MutableMap<CoreInstance, CoreInstance> getMap()

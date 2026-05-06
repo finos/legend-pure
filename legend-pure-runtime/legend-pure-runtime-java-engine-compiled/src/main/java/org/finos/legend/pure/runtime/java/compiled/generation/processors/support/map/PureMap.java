@@ -37,7 +37,7 @@ public class PureMap
     public PureMap(MutableMap map)
     {
         this.map = map;
-        this.stats = new PureMapStats();
+        this.stats = new PureMapStats(map);
     }
 
     public MutableMap getMap()
