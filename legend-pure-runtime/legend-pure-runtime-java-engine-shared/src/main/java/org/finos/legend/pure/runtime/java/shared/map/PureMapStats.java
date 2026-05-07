@@ -14,17 +14,22 @@
 
 package org.finos.legend.pure.runtime.java.shared.map;
 
+import org.eclipse.collections.api.map.MutableMap;
+
 public class PureMapStats
 {
+    private final MutableMap map;
     private long getIfAbsentCounter;
 
     public PureMapStats(PureMapStats pureMapStats)
     {
         this.getIfAbsentCounter = pureMapStats.getIfAbsentCounter();
+        this.map = pureMapStats.map;
     }
 
-    public PureMapStats()
+    public PureMapStats(MutableMap map)
     {
+        this.map = map;
     }
 
     public long getIfAbsentCounter()
@@ -35,5 +40,10 @@ public class PureMapStats
     public void incrementGetIfAbsentCounter()
     {
         this.getIfAbsentCounter++;
+    }
+
+    public long getSize()
+    {
+        return this.map.size();
     }
 }

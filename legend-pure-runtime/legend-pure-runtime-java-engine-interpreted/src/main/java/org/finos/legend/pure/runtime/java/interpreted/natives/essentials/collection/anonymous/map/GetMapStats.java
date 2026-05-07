@@ -54,7 +54,9 @@ public class GetMapStats extends NativeFunction
 
         CoreInstance mapStatsCi = processorSupport.newCoreInstance("", M3Paths.MapStats, functionExpressionCallStack.peek().getSourceInformation());
         CoreInstance absentCounterValue = this.repository.newIntegerCoreInstance(stats.getIfAbsentCounter());
+        CoreInstance size = this.repository.newIntegerCoreInstance(stats.getSize());
         Instance.setValueForProperty(mapStatsCi, "getIfAbsentCounter", absentCounterValue, processorSupport);
+        Instance.setValueForProperty(mapStatsCi, "size", size, processorSupport);
 
         return ValueSpecificationBootstrap.wrapValueSpecification(mapStatsCi, true, processorSupport);
     }
