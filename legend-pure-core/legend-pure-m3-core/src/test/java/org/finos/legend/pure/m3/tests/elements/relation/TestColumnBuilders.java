@@ -14,6 +14,10 @@
 
 package org.finos.legend.pure.m3.tests.elements.relation;
 
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
@@ -516,5 +520,22 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "   ~<<meta::pure::profiles::doc.deprecated>> {meta::pure::profiles::doc.doc='test tagged value'} name:String[1];\n" +
                         "}");
+    }
+
+    @Test
+    public void testGetColumnInstance_PlainNameWithTrailingSpace_Preserved()
+    {
+        Multiplicity one = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(1, 1, processorSupport);
+        Column<?, ?> col = _Column.getColumnInstance("datastream_utc ", false, M3Paths.String, one, null, processorSupport);
+        Assert.assertEquals("datastream_utc ", col._name());
+        Assert.assertEquals("column:datastream_utc ", col._functionName());
+    }
+
+    @Test
+    public void testGetColumnInstance_DoubleQuotedNameWithTrailingSpace_QuotesStrippedTrailingSpacePreserved()
+    {
+        Multiplicity one = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(1, 1, processorSupport);
+        Column<?, ?> col = _Column.getColumnInstance("\"datastream_utc \"", false, M3Paths.String, one, null, processorSupport);
+        Assert.assertEquals("datastream_utc ", col._name());
     }
 }

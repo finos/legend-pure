@@ -107,7 +107,6 @@ public class _Column
 
     private static String removeQuotes(String name)
     {
-        name = name.trim();
         return name.startsWith("\"") ? name.substring(1, name.length() - 1) : name;
     }
 
