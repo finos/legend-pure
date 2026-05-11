@@ -1,4 +1,4 @@
-// Copyright 2024 Goldman Sachs
+// Copyright 2026 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,18 +22,19 @@ import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
 
 public class ExecuteTest extends AbstractNativeFunctionGeneric
 {
     public ExecuteTest()
     {
-        super(getMethod(CompiledSupport.class, "executeTest", SharedPureFunction.class, Function.class, ExecutionSupport.class),
-                true, true, false, "executeTest_Function_1__TestResult_1_");
+        super(getMethod(CompiledSupport.class, "executeTest", SharedPureFunction.class, Function.class, Function.class, PureMap.class, ExecutionSupport.class),
+                true, true, false, "executeTest_Function_1__Function_$0_1$__Map_$0_1$__TestResult_1_");
     }
 
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "((org.finos.legend.pure.generated.Root_meta_pure_test_surveyor_TestResult) CompiledSupport.executeTest(CoreGen.getSharedPureFunction(" + transformedParams.get(0) + ", es), " + transformedParams.get(0) + ", es))";
+        return "((org.finos.legend.pure.generated.Root_meta_pure_test_surveyor_TestResult) CompiledSupport.executeTest(CoreGen.getSharedPureFunction(" + transformedParams.get(0) + ", es), " + transformedParams.get(0) + ", " + transformedParams.get(1) + ", " + transformedParams.get(2) + ", es))";
     }
 }
