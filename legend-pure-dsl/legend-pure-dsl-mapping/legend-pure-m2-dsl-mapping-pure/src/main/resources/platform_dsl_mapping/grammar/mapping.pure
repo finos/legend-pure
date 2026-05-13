@@ -224,6 +224,7 @@ Class meta::pure::mapping::aggregationAware::AggregateSpecificationValueSpecific
 Class meta::pure::mapping::relation::RelationFunctionInstanceSetImplementation extends InstanceSetImplementation
 {
   relationFunction: FunctionDefinition<{->Relation<Any>[1]}>[1];
+  primaryKey: meta::pure::metamodel::relation::Column<Nil,Any|*>[*];
 }
 
 Class meta::pure::mapping::relation::RelationFunctionPropertyMapping extends PropertyMapping
