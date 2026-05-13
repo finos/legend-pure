@@ -1,0 +1,95 @@
+// Copyright 2026 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+function meta::pure::functions::string::lastIndexOf(str:String[1], toFind:String[1]):Integer[1]
+{
+    $str->lastIndexOf($toFind, $str->length() - $toFind->length());
+}
+
+native function meta::pure::functions::string::lastIndexOf(str:String[1], toFind:String[1], fromIndex:Integer[1]):Integer[1];
+
+function <<test.Test>> meta::pure::functions::string::tests::lastIndexOf::testEmptyString():Boolean[1]
+{
+    assertEquals(-1, ''->lastIndexOf('a'));
+    assertEquals(-1, ''->lastIndexOf('a', 0));
+    assertEquals(-1, ''->lastIndexOf('ab'));
+    assertEquals(-1, ''->lastIndexOf('ab', 0));
+    assertEquals(-1, ''->lastIndexOf('ab', 1));
+
+    assertEquals(0, ''->lastIndexOf(''));
+    assertEquals(0, ''->lastIndexOf('', 0));
+    assertEquals(1, 'a'->lastIndexOf(''));
+    assertEquals(0, 'a'->lastIndexOf('', 0));
+    assertEquals(1, 'a'->lastIndexOf('', 1));
+    assertEquals(2, 'ab'->lastIndexOf(''));
+    assertEquals(0, 'ab'->lastIndexOf('', 0));
+    assertEquals(1, 'ab'->lastIndexOf('', 1));
+    assertEquals(2, 'ab'->lastIndexOf('', 2));
+    assertEquals(3, 'abc'->lastIndexOf(''));
+    assertEquals(0, 'abc'->lastIndexOf('', 0));
+    assertEquals(1, 'abc'->lastIndexOf('', 1));
+    assertEquals(2, 'abc'->lastIndexOf('', 2));
+    assertEquals(3, 'abc'->lastIndexOf('', 3));
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::lastIndexOf::testSimple():Boolean[1]
+{
+    let string = 'the quick brown fox jumps over the lazy dog';
+
+    assertEquals(4, $string->lastIndexOf('quick'));
+    assertEquals(16, $string->lastIndexOf('fox'));
+    assertEquals(-1, $string->lastIndexOf('happy'));
+
+    assertEquals(-1, 'abc'->lastIndexOf('d'));
+    assertEquals(1, 'abc'->lastIndexOf('b'));
+    assertEquals(3, 'abcbc'->lastIndexOf('b'));
+    assertEquals(0, 'abcdef'->lastIndexOf('ab'));
+    assertEquals(6, 'abcdefabcdef'->lastIndexOf('ab'));
+    assertEquals(12, 'abcdefabcdefabcdef'->lastIndexOf('ab'));
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::lastIndexOf::testFromIndex():Boolean[1]
+{
+    let string = 'the the';
+
+    assertEquals(5, $string->lastIndexOf('h', 7));
+    assertEquals(1, $string->lastIndexOf('h', 3));
+
+    assertEquals(-1, 'abc'->lastIndexOf('d', 3));
+    assertEquals(1, 'abc'->lastIndexOf('b', 3));
+    assertEquals(3, 'abcbc'->lastIndexOf('b', 5));
+    assertEquals(3, 'abcbc'->lastIndexOf('b', 3));
+    assertEquals(1, 'abcbc'->lastIndexOf('b', 2));
+    assertEquals(0, 'abcdef'->lastIndexOf('ab', 6));
+    assertEquals(6, 'abcdefabcdef'->lastIndexOf('ab', 12));
+    assertEquals(6, 'abcdefabcdef'->lastIndexOf('ab', 6));
+    assertEquals(0, 'abcdefabcdef'->lastIndexOf('ab', 5));
+    assertEquals(12, 'abcdefabcdefabcdef'->lastIndexOf('ab', 18));
+    assertEquals(12, 'abcdefabcdefabcdef'->lastIndexOf('ab', 15));
+    assertEquals(12, 'abcdefabcdefabcdef'->lastIndexOf('ab', 12));
+    assertEquals(6, 'abcdefabcdefabcdef'->lastIndexOf('ab', 11));
+    assertEquals(6, 'abcdefabcdefabcdef'->lastIndexOf('ab', 9));
+    assertEquals(6, 'abcdefabcdefabcdef'->lastIndexOf('ab', 6));
+    assertEquals(0, 'abcdefabcdefabcdef'->lastIndexOf('ab', 5));
+    assertEquals(0, 'abcdefabcdefabcdef'->lastIndexOf('ab', 3));
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::lastIndexOf::testSubstringWithLastIndexOf():Boolean[1]
+{
+    let text = 'Pure is <awesome>';
+    let endIndex = $text->lastIndexOf('>') + 1;
+    let first = $text->substring($text->lastIndexOf('<'), $endIndex);
+
+    assertEquals('<awesome>', $first);
+}

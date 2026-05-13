@@ -173,6 +173,7 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string._boolean.EndsWith;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string._boolean.StartsWith;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.index.IndexOfString;
+import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.index.LastIndexOf;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.index.Length;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.operation.Replace;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.operation.ReverseString;
@@ -551,8 +552,9 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("endsWith_String_1__String_1__Boolean_1_", new EndsWith(this, repository));
         this.nativeFunctions.put("startsWith_String_1__String_1__Boolean_1_", new StartsWith(repository));
         //  Index
-        this.nativeFunctions.put("indexOf_String_1__String_1__Integer_1_", new IndexOfString(this, repository));
-        this.nativeFunctions.put("indexOf_String_1__String_1__Integer_1__Integer_1_", new IndexOfString(this, repository));
+        this.nativeFunctions.put("indexOf_String_1__String_1__Integer_1_", new IndexOfString(repository));
+        this.nativeFunctions.put("indexOf_String_1__String_1__Integer_1__Integer_1_", new IndexOfString(repository));
+        this.nativeFunctions.put("lastIndexOf_String_1__String_1__Integer_1__Integer_1_", new LastIndexOf(repository));
         this.nativeFunctions.put("length_String_1__Integer_1_", new Length(repository));
         //  Operation
         this.nativeFunctions.put("toLower_String_1__String_1_", new ToLower(this, repository));

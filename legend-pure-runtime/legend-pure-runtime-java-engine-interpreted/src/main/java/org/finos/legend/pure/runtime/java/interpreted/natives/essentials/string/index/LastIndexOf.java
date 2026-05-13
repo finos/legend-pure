@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2026 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,11 +34,11 @@ import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
 
-public class IndexOfString extends NativeFunction
+public class LastIndexOf extends NativeFunction
 {
     private final ModelRepository repository;
 
-    public IndexOfString(ModelRepository repository)
+    public LastIndexOf(ModelRepository repository)
     {
         this.repository = repository;
     }
@@ -49,16 +49,8 @@ public class IndexOfString extends NativeFunction
         String string = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport).getName();
         String stringToFind = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport).getName();
 
-        int indexOf;
-        if (params.size() == 2)
-        {
-            indexOf = string.indexOf(stringToFind);
-        }
-        else
-        {
-            int fromIndex = PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport)).intValue();
-            indexOf = string.indexOf(stringToFind, fromIndex);
-        }
+        int fromIndex = PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport)).intValue();
+        int indexOf = string.lastIndexOf(stringToFind, fromIndex);
 
         return ValueSpecificationBootstrap.newIntegerLiteral(this.repository, indexOf, processorSupport);
     }
