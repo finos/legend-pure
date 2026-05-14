@@ -49,3 +49,15 @@ function <<test.Test>> meta::pure::metamodel::relation::tests::testStringToTDSPr
 {
     assertEquals('a, b', stringToTDS('a, b').csv);
 }
+
+function <<test.Test>> meta::pure::metamodel::relation::tests::testFunction():Boolean[1]
+{
+    let tds = stringToTDS('a:Integer[1]\n1');
+    assertNotEmpty($tds->toString());
+}
+
+function <<test.Test>> meta::pure::metamodel::relation::tests::testStringToTDSWithEmpty():Boolean[1]
+{
+    let tds = stringToTDS('a,b,c\n2,c,true\n,,\nnull,null,null\n');
+    assertEquals('TDS<(a:Integer, b:String, c:Boolean)>', $tds->genericType()->meta::pure::functions::meta::printGenericType());
+}
