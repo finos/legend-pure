@@ -179,6 +179,17 @@ Class meta::pure::mapping::xStore::XStorePropertyMapping extends PropertyMapping
     crossExpression : LambdaFunction<{Nil[1],Nil[1]->Boolean[1]}>[1];
 }
 
+// ModelJoin
+
+Class meta::pure::mapping::modelJoin::ModelJoinAssociationImplementation extends AssociationImplementation
+{
+}
+
+Class meta::pure::mapping::modelJoin::ModelJoinPropertyMapping extends PropertyMapping
+{
+    joinCondition : LambdaFunction<{Nil[1],Nil[1]->Boolean[1]}>[1];
+}
+
 // Aggregation Aware
 
 Class meta::pure::mapping::aggregationAware::AggregationAwareSetImplementation extends InstanceSetImplementation
