@@ -39,3 +39,8 @@ function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertN
 {
    assertNotEmpty([1, 2, 3]);
 }
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testFailureAssertNotEmpty():Boolean[1]
+{
+   assertError(|assertNotEmpty([1, 2, 3]->filter(x | $x == 5)), 'Expected non-empty collection');
+}
