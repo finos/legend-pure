@@ -63,7 +63,7 @@ public class AssertError extends NativeFunction
         }
         catch (PureExecutionException e)
         {
-            if (!message.equals(e.getInfo()))
+            if (message.startsWith("^") && message.endsWith("$") ? !java.util.regex.Pattern.matches(message, e.getInfo() == null ? "" : e.getInfo()) : !message.equals(e.getInfo()))
             {
                 throw new PureAssertFailException(functionExpressionCallStack.peek().getSourceInformation(), "Execution error message mismatch.\nThe actual message was \"" + e.getInfo() + "\"\nwhere the expected message was:\"" + message + "\"", functionExpressionCallStack);
             }

@@ -350,7 +350,7 @@ public class CoreGen extends CoreHelper
         }
         catch (PureExecutionException e)
         {
-            if ((message != null) && !message.equals(e.getInfo()))
+            if ((message != null) && (message.startsWith("^") && message.endsWith("$") ? !java.util.regex.Pattern.matches(message, e.getInfo() == null ? "" : e.getInfo()) : !message.equals(e.getInfo())))
             {
                 throw new PureAssertFailException(sourceInformation, "Execution error message mismatch.\nThe actual message was \"" + e.getInfo() + "\"\nwhere the expected message was:\"" + message + "\"");
             }
