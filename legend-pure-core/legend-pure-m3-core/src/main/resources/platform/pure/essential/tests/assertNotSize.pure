@@ -39,3 +39,8 @@ function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertN
     assertNotSize([1, 2, 3], 1);
     assertNotSize(['a', 'b'], 5);
 }
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testFailureAssertNotSize():Boolean[1]
+{
+    assertError(|assertNotSize([1, 2], 2), 'size should not equal: 2');
+}
