@@ -184,3 +184,42 @@ function <<PCT.test>> meta::pure::functions::lang::tests::match::testMatchWithMi
     let z = $f->eval(|^LA_Location(place='Hoboken, NJ', type=LA_GeographicEntityType.CITY)->match([a:LA_Address[1] | 'address', l:LA_Location[1] | 1, a:Any[1] | 'Any1'])->deactivate());
     assertIs(Any, $z.genericType.rawType->toOne());
 }
+
+Enum meta::pure::functions::lang::tests::match::Enum1 { VALUE1, VALUE2 }
+Enum meta::pure::functions::lang::tests::match::Enum2 { VALUE3, VALUE4 }
+Enum meta::pure::functions::lang::tests::match::Enum3 { VALUE5 }
+
+function <<test.Test>> meta::pure::functions::lang::tests::match::testMatchIntegerFail():Boolean[1]
+{
+    assertError(|42->match([i:Float[1] | $i]), '^Match failure: 42\\(?\\d*\\)? instanceOf Integer$');
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::match::testMatchPrimitiveTypeFail():Boolean[1]
+{
+    assertError(|42.01->match([i:Integer[1] | $i]), '^Match failure: 42.01\\(?\\d*\\)? instanceOf Float$');
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::match::testMatchEnumTypeFail():Boolean[1]
+{
+    assertError(|Month.January->match([i:Integer[1] | $i]), '^Match failure: January\\(?\\d*\\)? instanceOf Month$');
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::match::testMatchIndividualFail():Boolean[1]
+{
+    assertError(|'test string'->match([i:Integer[1] | $i]), '^Match failure: test string\\(?\\d*\\)? instanceOf String$');
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::match::testMatchCollectionFail():Boolean[1]
+{
+    assertError(|['test string', 'test string 2']->match([i:Integer[1] | $i]), '^Match failure: \\[test string\\(?\\d*\\)? instanceOf String, test string 2\\(?\\d*\\)? instanceOf String\\]$');
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::match::testMatchEnum():Boolean[1]
+{
+    assert(meta::pure::functions::lang::tests::match::Enum1.VALUE1->match([e:meta::pure::functions::lang::tests::match::Enum1[1] | true, e:meta::pure::functions::lang::tests::match::Enum2[1] | false]));
+    assert(meta::pure::functions::lang::tests::match::Enum1.VALUE2->match([e:meta::pure::functions::lang::tests::match::Enum1[1] | true, e:meta::pure::functions::lang::tests::match::Enum2[1] | false]));
+    assert(!meta::pure::functions::lang::tests::match::Enum2.VALUE3->match([e:meta::pure::functions::lang::tests::match::Enum1[1] | true, e:meta::pure::functions::lang::tests::match::Enum2[1] | false]));
+    assert(!meta::pure::functions::lang::tests::match::Enum2.VALUE4->match([e:meta::pure::functions::lang::tests::match::Enum1[1] | true, e:meta::pure::functions::lang::tests::match::Enum2[1] | false]));
+
+    assertError(|meta::pure::functions::lang::tests::match::Enum3.VALUE5->match([e:meta::pure::functions::lang::tests::match::Enum1[1] | true, e:meta::pure::functions::lang::tests::match::Enum2[1] | false]), '^Match failure: VALUE5\\(\\d+\\)? instanceOf Enum3$');
+}
