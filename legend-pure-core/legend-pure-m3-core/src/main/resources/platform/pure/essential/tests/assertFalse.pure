@@ -78,7 +78,7 @@ function <<test.Test>> meta::pure::functions::asserts::tests::testFailWithFormat
     assertError(|assertFalse(2 == 2, 'Test message: %d', 2 + 3), 'Test message: 5');
 }
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testFailWithMessageFunction():Boolean[1]
+function <<test.Test>> meta::pure::functions::asserts::tests::testAssertFalseFailWithMessageFunction():Boolean[1]
 {
     assertError(|assertFalse(true, |format('Test message: %d', 2 + 3)), 'Test message: 5');
     assertError(|assertFalse(2 == 2, |format('Test message: %d', 2 + 3)), 'Test message: 5');
