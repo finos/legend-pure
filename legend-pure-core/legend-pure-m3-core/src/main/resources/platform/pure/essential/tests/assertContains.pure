@@ -42,3 +42,8 @@ function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertC
     assertContains([1, 2, 5, 2, 'a', true, %2014-02-01, 'c'], true);
     assertContains([1, 2, 5, 2, 'a', true, %2014-02-01, 'c'], %2014-02-01);
 }
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testFailureAssertContains():Boolean[1]
+{
+    assertError(|assertContains([1, 2, 5, 2, 'a', true, %2014-02-01, 'c'], false), '[1, 2, 5, 2, \'a\', true, %2014-02-01, \'c\'] does not contain false');
+}
