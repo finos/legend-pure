@@ -50,3 +50,15 @@ function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertN
     assertNotEquals([1, 2], [2, 1]);
     assertNotEquals(['aaa', 2], [2, 'aaa']);
 }
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testFailureAssertNotEquals():Boolean[1]
+{
+    assertError(|assertNotEquals(1, 1), '1 should not equal 1');
+}
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testFailureAssertNotEqualsWithCollections():Boolean[1]
+{
+    assertError(|assertNotEquals([1, 2], [1, 2]), '[1, 2] should not equal [1, 2]');
+    assertError(|assertNotEquals(['aaa', 'bb'], ['aaa', 'bb']), '[\'aaa\', \'bb\'] should not equal [\'aaa\', \'bb\']');
+    assertError(|assertNotEquals(['aaa', 2], ['aaa', 2]), '[\'aaa\', 2] should not equal [\'aaa\', 2]');
+}
