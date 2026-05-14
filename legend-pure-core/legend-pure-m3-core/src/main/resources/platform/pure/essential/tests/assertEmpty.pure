@@ -42,3 +42,8 @@ function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertE
    assertEmpty([]);
    assertEmpty([1, 2, 3]->filter(x | $x == 5));
 }
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testFailureAssertEmpty():Boolean[1]
+{
+   assertError(|assertEmpty([1, 2]), '[1, 2] is not empty');
+}
