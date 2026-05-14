@@ -39,3 +39,13 @@ function <<test.Test>> meta::pure::functions::multiplicity::tests::getUpperBound
     );
     assertEq(7, $m->getUpperBound());
 }
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::getUpperBound::testGetUpperBoundZeroManyError():Boolean[1]
+{
+    assertError(|ZeroMany->getUpperBound(), 'Cannot cast a collection of size 0 to multiplicity [1]');
+}
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::getUpperBound::testGetUpperBoundOneManyError():Boolean[1]
+{
+    assertError(|OneMany->getUpperBound(), 'Cannot cast a collection of size 0 to multiplicity [1]');
+}
