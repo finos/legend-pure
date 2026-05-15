@@ -37,11 +37,41 @@ function <<access.private>> meta::relational::tests::table():Table[1]
 }
 
 // Insert two rows via loadValuesToDbTable and verify the count.
-function <<test.Test>>
-meta::relational::tests::testLoadValuesToDbTableInsertsRows(): Boolean[1]
+function <<test.ToFix>>
+meta::relational::tests::testLoadValuesToDbTableInsertsRows_duckDb(): Boolean[1]
 {
    let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
-   executeInDb('CREATE TABLE lv(a INTEGER, b VARCHAR)', $db, 0, 1000);
+   $db->meta::relational::tests::testLoadValuesToDbTableInsertsRows();
+}
+
+function <<test.ToFix>>
+meta::relational::tests::testLoadValuesToDbTableInsertsRows_h2(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.H2);
+   executeInDb('CREATE SCHEMA MAIN', $db, 0, 1000);
+   $db->meta::relational::tests::testLoadValuesToDbTableInsertsRows();
+}
+
+function <<test.AfterPackage, test.ToFix>>
+meta::relational::tests::afterLoad_duckdb(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
+   executeInDb('DROP TABLE main.lv', $db, 0, 1000);
+   true;
+}
+
+
+function <<test.AfterPackage, test.ToFix>>
+meta::relational::tests::afterLoad_h2(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.H2);
+   executeInDb('DROP SCHEMA MAIN CASCADE', $db, 0, 1000);
+   true;
+}
+
+function <<access.private>> meta::relational::tests::testLoadValuesToDbTableInsertsRows(db: TestDatabaseConnection[1]): Boolean[1]
+{
+   executeInDb('CREATE TABLE main.lv(a INTEGER, b VARCHAR)', $db, 0, 1000);
 
    let row1 = ^List<Any>(values = [1, 'foo']);
    let row2 = ^List<Any>(values = [2, 'bar']);
@@ -49,8 +79,6 @@ meta::relational::tests::testLoadValuesToDbTableInsertsRows(): Boolean[1]
    let tbl = meta::relational::tests::table();
    loadValuesToDbTable($outer, $tbl, $db);
 
-   let rs = executeInDb('SELECT count(*) FROM lv', $db, 0, 1000);
-   let ok = assertEquals(2, $rs.rows->at(0).values->at(0));
-   executeInDb('DROP TABLE lv', $db, 0, 1000);
-   $ok;
+   let rs = executeInDb('SELECT count(*) FROM main.lv', $db, 0, 1000);
+   assertEquals(2, $rs.rows->at(0).values->at(0));
 }

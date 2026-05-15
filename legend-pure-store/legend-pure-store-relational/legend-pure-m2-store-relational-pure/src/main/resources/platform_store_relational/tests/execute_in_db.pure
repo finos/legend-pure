@@ -53,11 +53,3 @@ meta::relational::tests::testExecuteInDbVarcharRoundtrip(): Boolean[1]
    let res = executeInDb('select \'hello\' as s', $db, 0, 1000);
    assertEquals('hello', $res.rows->at(0).values->at(0));
 }
-
-// Note: the Rust port currently routes only DatabaseType.DuckDB to a
-// real backend (every other enum member returns a clear not-implemented
-// error). That contract is **Rust-port-specific** — the Java stack
-// supports H2, Postgres, etc. — so the regression test for it lives in
-// the Rust crate's integration suite
-// (`crates/store-relational-runtime/tests/duckdb_smoke.rs`) rather than
-// as a Pure `<<test.Test>>` that both surveyors would run.
