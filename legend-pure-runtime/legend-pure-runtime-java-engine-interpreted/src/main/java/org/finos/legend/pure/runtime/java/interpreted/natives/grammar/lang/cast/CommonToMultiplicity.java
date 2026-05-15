@@ -26,6 +26,7 @@ import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
@@ -35,12 +36,14 @@ import java.util.Stack;
 
 public abstract class CommonToMultiplicity extends NativeFunction
 {
+    private final FunctionExecutionInterpreted functionExecution;
     protected final ModelRepository repository;
 
     private final boolean supportsErrorMessage;
 
-    protected CommonToMultiplicity(ModelRepository repository, boolean supportsErrorMessage)
+    protected CommonToMultiplicity(FunctionExecutionInterpreted functionExecution, ModelRepository repository, boolean supportsErrorMessage)
     {
+        this.functionExecution = functionExecution;
         this.repository = repository;
         this.supportsErrorMessage = supportsErrorMessage;
     }
@@ -51,6 +54,10 @@ public abstract class CommonToMultiplicity extends NativeFunction
         CoreInstance returnMultiplicity = getReturnMultiplicity(params, resolvedMultiplicityParameters, processorSupport);
 
         CoreInstance param = params.get(0);
+        if (this.deferParameterExecution())
+        {
+            param = this.functionExecution.executeValueSpecification(param, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, variableContext.getParent(), profiler, instantiationContext, executionSupport);
+        }
         if (Multiplicity.multiplicitiesEqual(returnMultiplicity, Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.multiplicity, processorSupport)))
         {
             return param;

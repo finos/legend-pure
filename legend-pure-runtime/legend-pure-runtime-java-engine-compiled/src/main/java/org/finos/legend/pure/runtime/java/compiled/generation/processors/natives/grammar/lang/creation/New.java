@@ -61,7 +61,7 @@ public class New extends AbstractNative
                     + _class.getValueForMetaPropertyToMany(M3Properties.typeVariables).zip(genericType.getValueForMetaPropertyToMany(M3Properties.typeVariableValues)).collect(x -> "._" + PrimitiveUtilities.getStringValue(x.getOne().getValueForMetaPropertyToOne(M3Properties.name)) + "(" + ValueSpecificationProcessor.processValueSpecification(x.getTwo(), processorContext) + ")").makeString("")
                     + (addGenericType ? "._classifierGenericType(" + InstantiationHelpers.buildGenericType(genericType, processorContext) + ")" : "")
                     + (_Class.computeConstraintsInHierarchy(_class, processorSupport).isEmpty() ? "" : "._validate(false, " + SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation()) + ", es)")
-                    + DefaultValue.manageDefaultValues(this::formatDefaultValueString, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), false, processorContext).makeString("");
+                    + DefaultValue.manageDefaultValues(this::formatDefaultValueString, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), false, true, processorContext).makeString("");
         }
     }
 

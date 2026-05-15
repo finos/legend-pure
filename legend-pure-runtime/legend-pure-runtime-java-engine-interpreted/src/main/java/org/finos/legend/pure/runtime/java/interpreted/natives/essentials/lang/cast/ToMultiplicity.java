@@ -30,7 +30,13 @@ public class ToMultiplicity extends CommonToMultiplicity
 {
     public ToMultiplicity(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
     {
-        super(repository, false);
+        super(functionExecution, repository, false);
+    }
+
+    @Override
+    public boolean deferParameterExecution()
+    {
+        return true; // deferred to read the defined expression mult, not the value
     }
 
     @Override

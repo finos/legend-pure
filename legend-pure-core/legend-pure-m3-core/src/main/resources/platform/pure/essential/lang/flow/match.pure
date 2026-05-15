@@ -218,8 +218,8 @@ function <<test.Test>> meta::pure::functions::lang::tests::match::testMatchEnum(
 {
     assert(meta::pure::functions::lang::tests::match::Enum1.VALUE1->match([e:meta::pure::functions::lang::tests::match::Enum1[1] | true, e:meta::pure::functions::lang::tests::match::Enum2[1] | false]));
     assert(meta::pure::functions::lang::tests::match::Enum1.VALUE2->match([e:meta::pure::functions::lang::tests::match::Enum1[1] | true, e:meta::pure::functions::lang::tests::match::Enum2[1] | false]));
-    assert(!meta::pure::functions::lang::tests::match::Enum2.VALUE3->match([e:meta::pure::functions::lang::tests::match::Enum1[1] | true, e:meta::pure::functions::lang::tests::match::Enum2[1] | false]));
-    assert(!meta::pure::functions::lang::tests::match::Enum2.VALUE4->match([e:meta::pure::functions::lang::tests::match::Enum1[1] | true, e:meta::pure::functions::lang::tests::match::Enum2[1] | false]));
+    assertFalse(meta::pure::functions::lang::tests::match::Enum2.VALUE3->match([e:meta::pure::functions::lang::tests::match::Enum1[1] | true, e:meta::pure::functions::lang::tests::match::Enum2[1] | false]));
+    assertFalse(meta::pure::functions::lang::tests::match::Enum2.VALUE4->match([e:meta::pure::functions::lang::tests::match::Enum1[1] | true, e:meta::pure::functions::lang::tests::match::Enum2[1] | false]));
 
-    assertError(|meta::pure::functions::lang::tests::match::Enum3.VALUE5->match([e:meta::pure::functions::lang::tests::match::Enum1[1] | true, e:meta::pure::functions::lang::tests::match::Enum2[1] | false]), '^Match failure: VALUE5\\(\\d+\\)? instanceOf Enum3$');
+    assertError(|meta::pure::functions::lang::tests::match::Enum3.VALUE5->match([e:meta::pure::functions::lang::tests::match::Enum1[1] | true, e:meta::pure::functions::lang::tests::match::Enum2[1] | false]), '^Match failure: VALUE5(\\(\\d+\\))? instanceOf Enum3$');
 }

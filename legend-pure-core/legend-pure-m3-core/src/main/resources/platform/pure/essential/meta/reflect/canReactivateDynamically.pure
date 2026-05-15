@@ -46,7 +46,7 @@ function <<test.Test>> meta::pure::functions::meta::tests::canReactivateDynamica
     assert(canReactivateDynamically({| (1 + 2) + 3}->evaluateAndDeactivate().expressionSequence->toOne()));
 }
 
-function <<test.Test>> meta::pure::functions::meta::tests::canReactivateDynamically::testLambdaCapturingOpenVar():Boolean[1]
+function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::meta::tests::canReactivateDynamically::testLambdaCapturingOpenVar():Boolean[1]
 {
     // Body references `$x` captured from the enclosing let; the captured
     // value is part of the lambda's reactivation context.

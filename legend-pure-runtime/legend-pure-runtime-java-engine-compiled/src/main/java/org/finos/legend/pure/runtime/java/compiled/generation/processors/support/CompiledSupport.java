@@ -398,29 +398,22 @@ public class CompiledSupport
 
     public static <T> T toMultiplicityOne(RichIterable<? extends T> object, int lowerBound, int upperBound, SourceInformation sourceInformation)
     {
-        int size = object.size();
-        if ((size == 0 && lowerBound > 0) || size > 1)
+        long size = safeSize(object);
+        if (size >= lowerBound && size <= upperBound)
         {
-            throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size " + size + " to multiplicity " + print(lowerBound, upperBound), Stacks.mutable.empty());
+            return makeOne(object);
         }
-        return object.getAny();
+        throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size " + size + " to multiplicity " + print(lowerBound, upperBound), Stacks.mutable.empty());
     }
 
     public static <T> T toMultiplicityOne(T object, int lowerBound, int upperBound, SourceInformation sourceInformation)
     {
-        if (object == null && lowerBound > 0)
+        long size = safeSize(object);
+        if (size >= lowerBound && size <= upperBound)
         {
-            throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size 0 to multiplicity " + print(lowerBound, upperBound), Stacks.mutable.empty());
+            return object;
         }
-        if (object instanceof RichIterable)
-        {
-            int size = ((RichIterable<?>) object).size();
-            if ((size == 0 && lowerBound > 0) || size > 1)
-            {
-                throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size " + size + " to multiplicity " + print(lowerBound, upperBound), Stacks.mutable.empty());
-            }
-        }
-        return object;
+        throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size " + size + " to multiplicity " + print(lowerBound, upperBound), Stacks.mutable.empty());
     }
 
     public static <T> RichIterable<T> toMultiplicityMany(T object, int lowerBound, int upperBound, SourceInformation sourceInformation)
@@ -2378,11 +2371,13 @@ public class CompiledSupport
         {
             status = "FAIL";
             message = e.getInfo() != null ? e.getInfo() : e.getMessage();
+            e.printPureStackTrace();
         }
         catch (Throwable e)
         {
             status = "ERROR";
             message = PCTTools.getMessageFromError(e);
+            e.printStackTrace();
         }
 
         long timeNanos = System.nanoTime() - start;

@@ -358,10 +358,10 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("times_Number_MANY__Number_1_", times);
 
         // Multiplicity
-        this.nativeFunctions.put("toOne_T_MANY__T_1_", new ToOne(repository));
-        this.nativeFunctions.put("toOne_T_MANY__String_1__T_1_", new ToOne(repository));
-        this.nativeFunctions.put("toOneMany_T_MANY__T_$1_MANY$_", new ToOneMany(repository));
-        this.nativeFunctions.put("toOneMany_T_MANY__String_1__T_$1_MANY$_", new ToOneMany(repository));
+        this.nativeFunctions.put("toOne_T_MANY__T_1_", new ToOne(this, repository));
+        this.nativeFunctions.put("toOne_T_MANY__String_1__T_1_", new ToOne(this, repository));
+        this.nativeFunctions.put("toOneMany_T_MANY__T_$1_MANY$_", new ToOneMany(this, repository));
+        this.nativeFunctions.put("toOneMany_T_MANY__String_1__T_$1_MANY$_", new ToOneMany(this, repository));
 
         // String
         this.nativeFunctions.put("joinStrings_String_MANY__String_1__String_1__String_1__String_1_", new JoinStrings(repository));
