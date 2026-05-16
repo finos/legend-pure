@@ -15,7 +15,17 @@
 import meta::pure::functions::asserts::*;
 import meta::pure::test::pct::*;
 
-native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::asserts::assertError(f:Function<{->Any[*]}>[1], message:String[1], line:Integer[0..1], column:Integer[0..1]):Boolean[1];
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::asserts::assertError(f:Function<{->Any[*]}>[1], errorMessageMatcher:Function<{String[1], SourceInformation[0..1]->Any[*]}>[1]):Boolean[1];
+
+
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::asserts::assertError(f:Function<{->Any[*]}>[1], message:String[1], line:Integer[0..1], column:Integer[0..1]):Boolean[1]
+{
+    $f->assertError({msg, si |
+        assertEquals($message, $msg, 'Execution error message mismatch.\nThe actual message was "%s"\nwhere the expected message was:"%s"', [$msg, $message]);
+        let _1 = $line->isNotEmpty() && assertEquals($line->toOne(), $si.line->toOne(), 'Execution error line mismatch. Actual: %d where expected: %d', [$si.line->toOne(), $line->toOne()]);
+        let _2 = $column->isNotEmpty() && assertEquals($column->toOne(), $si.column->toOne(), 'Execution error column mismatch. Actual: %d where expected: %d', [$si.column->toOne(), $column->toOne()]);
+    });
+}
 
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::asserts::assertError(f:Function<{->Any[*]}>[1], message:String[1]):Boolean[1]
 {
@@ -29,12 +39,12 @@ function <<test.Test>> meta::pure::functions::asserts::testSimpleAssertError():B
 
 function <<test.Test>> meta::pure::functions::asserts::testSimpleAssertErrorLine():Boolean[1]
 {
-    assertError(|[1,2]->at(3),'The system is trying to get an element at offset 3 where the collection is of size 2', 32, []);
+    assertError(|[1,2]->at(3),'The system is trying to get an element at offset 3 where the collection is of size 2', 42, []);
 }
 
 function <<test.Test>> meta::pure::functions::asserts::testSimpleAssertErrorLineColumn():Boolean[1]
 {
-    assertError(|[1,2]->at(3),'The system is trying to get an element at offset 3 where the collection is of size 2', 37, 25);
+    assertError(|[1,2]->at(3),'The system is trying to get an element at offset 3 where the collection is of size 2', 47, 25);
 }
 
 function <<test.Test>> meta::pure::functions::asserts::testSimpleAssertErrorColumn():Boolean[1]

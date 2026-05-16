@@ -403,7 +403,7 @@ public class CompiledSupport
         {
             return makeOne(object);
         }
-        throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size " + size + " to multiplicity " + print(lowerBound, upperBound), Stacks.mutable.empty());
+        throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size " + size + " to multiplicity " + print(lowerBound, upperBound));
     }
 
     public static <T> T toMultiplicityOne(T object, int lowerBound, int upperBound, SourceInformation sourceInformation)
@@ -413,14 +413,14 @@ public class CompiledSupport
         {
             return object;
         }
-        throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size " + size + " to multiplicity " + print(lowerBound, upperBound), Stacks.mutable.empty());
+        throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size " + size + " to multiplicity " + print(lowerBound, upperBound));
     }
 
     public static <T> RichIterable<T> toMultiplicityMany(T object, int lowerBound, int upperBound, SourceInformation sourceInformation)
     {
         if (object == null && lowerBound > 0)
         {
-            throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size 0 to multiplicity " + print(lowerBound, upperBound), Stacks.mutable.empty());
+            throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size 0 to multiplicity " + print(lowerBound, upperBound));
         }
         if (object instanceof RichIterable)
         {
@@ -457,14 +457,14 @@ public class CompiledSupport
     {
         if (object == null)
         {
-            throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size 0 to multiplicity [1..*]", Stacks.mutable.empty());
+            throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size 0 to multiplicity [1..*]");
         }
         // TODO remove this hack
         if (object instanceof RichIterable)
         {
             if (((RichIterable<?>) object).isEmpty())
             {
-                throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size 0 to multiplicity [1..*]", Stacks.mutable.empty());
+                throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size 0 to multiplicity [1..*]");
             }
             return (RichIterable<T>) object;
         }
@@ -473,7 +473,7 @@ public class CompiledSupport
         {
             if (Iterate.isEmpty((Iterable<?>) object))
             {
-                throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size 0 to multiplicity [1..*]", Stacks.mutable.empty());
+                throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size 0 to multiplicity [1..*]");
             }
             return toPureCollection((Iterable<T>) object);
         }
@@ -484,7 +484,7 @@ public class CompiledSupport
     {
         if (Iterate.isEmpty(objects))
         {
-            throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size 0 to multiplicity [1..*]", Stacks.mutable.empty());
+            throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size 0 to multiplicity [1..*]");
         }
         return objects;
     }
@@ -711,7 +711,7 @@ public class CompiledSupport
     {
         if (step == 0)
         {
-            throw new PureExecutionException(sourceInformation, "range step must not be 0", Stacks.mutable.empty());
+            throw new PureExecutionException(sourceInformation, "range step must not be 0");
         }
 
         if ((step > 0) ? (start >= stop) : (start <= stop))
@@ -722,7 +722,7 @@ public class CompiledSupport
         long longSize = ((stop - start - Long.signum(step)) / step) + 1L;
         if (longSize > Integer.MAX_VALUE)
         {
-            throw new PureExecutionException(sourceInformation, "range [" + start + ":" + stop + ":" + step + "] too long: " + longSize, Stacks.mutable.empty());
+            throw new PureExecutionException(sourceInformation, "range [" + start + ":" + stop + ":" + step + "] too long: " + longSize);
         }
         MutableList<Long> result = Lists.mutable.ofInitialCapacity((int) longSize);
         for (long i = start; (step > 0) ? (i < stop) : (i > stop); i += step)
@@ -1127,7 +1127,7 @@ public class CompiledSupport
         }
         catch (ParseException parseException)
         {
-            throw new PureExecutionException(sourceInformation, "Failed to parse JSON string. Invalid JSON string. " + parseException.toString(), parseException, Stacks.mutable.empty());
+            throw new PureExecutionException(sourceInformation, "Failed to parse JSON string. Invalid JSON string. " + parseException.toString(), parseException);
         }
     }
 
@@ -1482,7 +1482,7 @@ public class CompiledSupport
     {
         if (right.doubleValue() == 0)
         {
-            throw new PureExecutionException(sourceInformation, "Cannot divide " + right + " by zero", Stacks.mutable.empty());
+            throw new PureExecutionException(sourceInformation, "Cannot divide " + right + " by zero");
         }
 
         if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
@@ -1577,7 +1577,7 @@ public class CompiledSupport
         if (!condition)
         {
             String message = function.execute(Lists.immutable.empty(), es);
-            throw new PureAssertFailException(sourceInformation, message, Stacks.mutable.empty());
+            throw new PureAssertFailException(sourceInformation, message);
         }
         return true;
     }
@@ -1585,7 +1585,7 @@ public class CompiledSupport
     public static Object matchFailure(Object obj, SourceInformation sourceInformation)
     {
         throw new PureExecutionException(sourceInformation,
-                "Match failure: " + (obj == null ? null : ((obj instanceof RichIterable) ? ((RichIterable<?>) obj).collect(o -> o == null ? null : getErrorMessageForMatchFunctionBasedOnObjectType(o)).makeString("[", ", ", "]") : getErrorMessageForMatchFunctionBasedOnObjectType(obj))), Stacks.mutable.empty());
+                "Match failure: " + (obj == null ? null : ((obj instanceof RichIterable) ? ((RichIterable<?>) obj).collect(o -> o == null ? null : getErrorMessageForMatchFunctionBasedOnObjectType(o)).makeString("[", ", ", "]") : getErrorMessageForMatchFunctionBasedOnObjectType(obj))));
     }
 
     private static String getErrorMessageForMatchFunctionBasedOnObjectType(Object obj)
@@ -1936,7 +1936,7 @@ public class CompiledSupport
             }
             catch (ClassNotFoundException e)
             {
-                throw new PureExecutionException("Unable to execute " + uniqueFunctionId, e, Stacks.mutable.empty());
+                throw new PureExecutionException("Unable to execute " + uniqueFunctionId, e);
             }
         });
 
@@ -1960,7 +1960,7 @@ public class CompiledSupport
         }
         catch (NoSuchMethodException e)
         {
-            throw new PureExecutionException(buildFunctionExecutionErrorMessage(functionDefinition, params, "Function was not found.", executionSupport), e, Stacks.mutable.empty());
+            throw new PureExecutionException(buildFunctionExecutionErrorMessage(functionDefinition, params, "Function was not found.", executionSupport), e);
         }
     }
 
@@ -1983,11 +1983,11 @@ public class CompiledSupport
         }
         catch (IllegalArgumentException iae)
         {
-            throw new PureExecutionException(buildFunctionExecutionErrorMessage(functionDefinition, params, "Input parameters are invalid.", executionSupport), iae, Stacks.mutable.empty());
+            throw new PureExecutionException(buildFunctionExecutionErrorMessage(functionDefinition, params, "Input parameters are invalid.", executionSupport), iae);
         }
         catch (IllegalAccessException ex)
         {
-            throw new PureExecutionException(buildFunctionExecutionErrorMessage(functionDefinition, params, "Failed to invoke java function.", executionSupport), ex, Stacks.mutable.empty());
+            throw new PureExecutionException(buildFunctionExecutionErrorMessage(functionDefinition, params, "Failed to invoke java function.", executionSupport), ex);
         }
         catch (InvocationTargetException ex)
         {
@@ -2016,7 +2016,7 @@ public class CompiledSupport
         }
         catch (IllegalAccessException | IllegalArgumentException ex)
         {
-            throw new PureExecutionException("Failed to invoke _validate function.", ex, Stacks.mutable.empty());
+            throw new PureExecutionException("Failed to invoke _validate function.", ex);
         }
         catch (InvocationTargetException ex)
         {
@@ -2154,7 +2154,7 @@ public class CompiledSupport
     {
         if (sourceObject != null && !targetType.isInstance(sourceObject))
         {
-            throw new PureExecutionException(sourceInformation, "Cast exception: " + getPureClassName(sourceObject) + " cannot be cast to " + typeName, Stacks.mutable.empty());
+            throw new PureExecutionException(sourceInformation, "Cast exception: " + getPureClassName(sourceObject) + " cannot be cast to " + typeName);
         }
         return run.get();
     }
@@ -2168,7 +2168,7 @@ public class CompiledSupport
             String castTypeClassName = targetSimpleName.substring(targetSimpleName.lastIndexOf('_') + 1);
 
             String errorMessage = "Cast exception: " + getPureClassName(sourceObject) + " cannot be cast to " + castTypeClassName;
-            throw new PureExecutionException(sourceInformation, errorMessage, Stacks.mutable.empty());
+            throw new PureExecutionException(sourceInformation, errorMessage);
         }
         return (T) sourceObject;
     }
@@ -2266,7 +2266,7 @@ public class CompiledSupport
         {
             StringBuilder builder = new StringBuilder("Could not find Java class for unit ");
             PackageableElement.writeUserPathForPackageableElement(builder, unit);
-            throw new PureExecutionException(builder.toString(), e, Stacks.mutable.empty());
+            throw new PureExecutionException(builder.toString(), e);
         }
         catch (Exception e)
         {
@@ -2277,7 +2277,7 @@ public class CompiledSupport
             {
                 builder.append(": ").append(eMessage);
             }
-            throw new PureExecutionException(builder.toString(), e, Stacks.mutable.empty());
+            throw new PureExecutionException(builder.toString(), e);
         }
 
         try
@@ -2294,7 +2294,7 @@ public class CompiledSupport
             {
                 builder.append(": ").append(eMessage);
             }
-            throw new PureExecutionException(builder.toString(), (e instanceof InvocationTargetException) ? e.getCause() : e, Stacks.mutable.empty());
+            throw new PureExecutionException(builder.toString(), (e instanceof InvocationTargetException) ? e.getCause() : e);
         }
     }
 
@@ -2371,13 +2371,11 @@ public class CompiledSupport
         {
             status = "FAIL";
             message = e.getInfo() != null ? e.getInfo() : e.getMessage();
-            e.printPureStackTrace();
         }
         catch (Throwable e)
         {
             status = "ERROR";
             message = PCTTools.getMessageFromError(e);
-            e.printStackTrace();
         }
 
         long timeNanos = System.nanoTime() - start;
