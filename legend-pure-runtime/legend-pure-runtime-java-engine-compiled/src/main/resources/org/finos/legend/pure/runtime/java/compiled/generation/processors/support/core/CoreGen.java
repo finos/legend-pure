@@ -351,7 +351,7 @@ public class CoreGen extends CoreHelper
         }
         catch (PureExecutionException e)
         {
-            Pure.evaluate(es, messageMatcher, bridge, e.getInfo() == null ? "" : e.getInfo(), Optional.ofNullable(e.getSourceInformation()).map(x -> CoreGen.buildSourceInformation(x, ((CompiledExecutionSupport)es).getClassLoader())).orElse(null));
+            Pure.evaluate(es, messageMatcher, bridge, e.getInfo() == null ? "" : e.getInfo(), e.getSourceInformation() != null ? CoreGen.buildSourceInformation(e.getSourceInformation(), ((CompiledExecutionSupport)es).getClassLoader()) : null);
         }
         return true;
     }
