@@ -57,5 +57,27 @@ public class RelationMappingShared
             "{\n" +
             "  1;\n" +
             "}\n" +
-            "native function filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];\n";
+            "native function filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];\n" +
+            "function my::addressFunction(): Relation<Any>[1]\n" +
+            "{\n" +
+            "  1->cast(@Relation<(CITY:String)>);\n" +
+            "}\n";
+
+    public static final String RELATION_MAPPING_CLASS_ENUMERATION_SOURCE = "###Pure\n" +
+            "Enum my::Gender\n" +
+            "{\n" +
+            "  MALE, FEMALE\n" +
+            "}\n" +
+            "Class my::PersonWithGender\n" +
+            "{\n" +
+            "  firstName: String[1];\n" +
+            "  gender: my::Gender[1];\n" +
+            "}\n";
+
+    public static final String RELATION_MAPPING_CLASS_ENUMERATION_FUNCTION_SOURCE = "###Pure\n" +
+            "import meta::pure::metamodel::relation::*;\n" +
+            "function my::personWithGenderFunction(): Relation<Any>[1]\n" +
+            "{\n" +
+            "  1->cast(@Relation<(FIRSTNAME:String, GENDER:String)>);\n" +
+            "}\n";
 }

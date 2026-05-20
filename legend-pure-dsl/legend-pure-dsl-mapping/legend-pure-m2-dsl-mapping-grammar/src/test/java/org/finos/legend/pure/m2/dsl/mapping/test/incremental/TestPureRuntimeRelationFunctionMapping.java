@@ -29,6 +29,8 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.finos.legend.pure.m2.dsl.mapping.test.RelationMappingShared.RELATION_MAPPING_CLASS_ENUMERATION_FUNCTION_SOURCE;
+import static org.finos.legend.pure.m2.dsl.mapping.test.RelationMappingShared.RELATION_MAPPING_CLASS_ENUMERATION_SOURCE;
 import static org.finos.legend.pure.m2.dsl.mapping.test.RelationMappingShared.RELATION_MAPPING_CLASS_SOURCE;
 import static org.finos.legend.pure.m2.dsl.mapping.test.RelationMappingShared.RELATION_MAPPING_FUNCTION_SOURCE;
 
@@ -367,6 +369,144 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
         catch (Exception e)
         {
             assertPureException(PureCompilationException.class, "Relation mapping function expecting arguments is not supported!", "3.pure", 3, 14, 6, 1, e);
+        }
+    }
+
+    @Test
+    public void testDeleteAndReloadEachSourceWithRelationMappingContainingEmbedded()
+    {
+        String mappingSource = "###Mapping\n" +
+                "Mapping my::testMapping\n" +
+                "(\n" +
+                "  *my::Person[person]: Relation\n" +
+                "  {\n" +
+                "    ~func my::personFunction__Relation_1_\n" +
+                "    firstName: FIRSTNAME,\n" +
+                "    address\n" +
+                "    (\n" +
+                "      city: CITY\n" +
+                "    )\n" +
+                "  }\n" +
+                ")\n";
+
+        this.testDeleteAndReloadEachSource(Maps.immutable.of(
+                "1.pure", RELATION_MAPPING_CLASS_SOURCE,
+                "2.pure", RELATION_MAPPING_FUNCTION_SOURCE,
+                "3.pure", mappingSource),
+                "###Pure\n function test():Boolean[1]{assert(1 == my::testMapping.classMappings->filter(c | $c.id == 'person')->size(), |'');}");
+    }
+
+    @Test
+    public void testDeleteAndReloadEachSourceWithRelationMappingContainingInlineEmbedded()
+    {
+        String mappingSource = "###Mapping\n" +
+                "Mapping my::testMapping\n" +
+                "(\n" +
+                "  my::Address[addr]: Relation\n" +
+                "  {\n" +
+                "    ~func my::addressFunction__Relation_1_\n" +
+                "    city: CITY\n" +
+                "  }\n" +
+                "  *my::Person[person]: Relation\n" +
+                "  {\n" +
+                "    ~func my::personFunction__Relation_1_\n" +
+                "    firstName: FIRSTNAME,\n" +
+                "    address() Inline[addr]\n" +
+                "  }\n" +
+                ")\n";
+
+        this.testDeleteAndReloadEachSource(Maps.immutable.of(
+                "1.pure", RELATION_MAPPING_CLASS_SOURCE,
+                "2.pure", RELATION_MAPPING_FUNCTION_SOURCE,
+                "3.pure", mappingSource),
+                "###Pure\n function test():Boolean[1]{assert(my::testMapping.classMappings->filter(c | $c.id == 'person')->size() == 1, |'');}");
+    }
+
+    @Test
+    public void testDeleteAndReloadEachSourceWithRelationMappingContainingEnumerationTransformer()
+    {
+        String mappingSource = "###Mapping\n" +
+                "Mapping my::testMapping\n" +
+                "(\n" +
+                "  my::Gender: EnumerationMapping GenderMapping\n" +
+                "  {\n" +
+                "    MALE: ['M'],\n" +
+                "    FEMALE: ['F']\n" +
+                "  }\n" +
+                "  *my::PersonWithGender[person]: Relation\n" +
+                "  {\n" +
+                "    ~func my::personWithGenderFunction__Relation_1_\n" +
+                "    firstName: FIRSTNAME,\n" +
+                "    gender: EnumerationMapping GenderMapping: GENDER\n" +
+                "  }\n" +
+                ")\n";
+
+        this.testDeleteAndReloadEachSource(Maps.immutable.of(
+                "1.pure", RELATION_MAPPING_CLASS_ENUMERATION_SOURCE,
+                "2.pure", RELATION_MAPPING_CLASS_ENUMERATION_FUNCTION_SOURCE,
+                "3.pure", mappingSource),
+                "###Pure\n function test():Boolean[1]{assert(my::testMapping.classMappings->filter(c | $c.id == 'person')->size() == 1, |'');}");
+    }
+
+    @Test
+    public void testRelationMappingWithEmbeddedInvalidColumn()
+    {
+        try
+        {
+            String mappingSource = "###Mapping\n" +
+                    "Mapping my::testMapping\n" +
+                    "(\n" +
+                    "  *my::Person[person]: Relation\n" +
+                    "  {\n" +
+                    "    ~func my::personFunction__Relation_1_\n" +
+                    "    address\n" +
+                    "    (\n" +
+                    "      city: FOO\n" +
+                    "    )\n" +
+                    "  }\n" +
+                    ")\n";
+
+            new RuntimeTestScriptBuilder().createInMemorySources(Maps.immutable.of(
+                    "1.pure", RELATION_MAPPING_CLASS_SOURCE,
+                    "2.pure", RELATION_MAPPING_FUNCTION_SOURCE,
+                    "3.pure", mappingSource))
+                    .compile().run(runtime, functionExecution);
+
+            Assert.fail("Expected compilation exception");
+        }
+        catch (Exception e)
+        {
+            assertPureException(PureCompilationException.class, "The system can't find the column FOO in the Relation (FIRSTNAME:String, AGE:Integer, FIRMID:Integer, CITY:String)", "3.pure", 9, 7, 9, 10, e);
+        }
+    }
+
+    @Test
+    public void testRelationMappingWithEnumerationTransformerInvalidEnumerationMapping()
+    {
+        try
+        {
+            String mappingSource = "###Mapping\n" +
+                    "Mapping my::testMapping\n" +
+                    "(\n" +
+                    "  *my::PersonWithGender[person]: Relation\n" +
+                    "  {\n" +
+                    "    ~func my::personWithGenderFunction__Relation_1_\n" +
+                    "    firstName: FIRSTNAME,\n" +
+                    "    gender: EnumerationMapping MissingGenderMapping: GENDER\n" +
+                    "  }\n" +
+                    ")\n";
+
+            new RuntimeTestScriptBuilder().createInMemorySources(Maps.immutable.of(
+                    "1.pure", RELATION_MAPPING_CLASS_ENUMERATION_SOURCE,
+                    "2.pure", RELATION_MAPPING_CLASS_ENUMERATION_FUNCTION_SOURCE,
+                    "3.pure", mappingSource))
+                    .compile().run(runtime, functionExecution);
+
+            Assert.fail("Expected compilation exception");
+        }
+        catch (Exception e)
+        {
+            assertPureException(PureCompilationException.class, "The transformer 'MissingGenderMapping' is unknown or is not of type EnumerationMapping in the Mapping 'my::testMapping' for property gender", e);
         }
     }
 

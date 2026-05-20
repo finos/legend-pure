@@ -22,13 +22,16 @@ import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.Processor;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.EmbeddedRelationFunctionSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMapping;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMappingsImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionPropertyMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.tools.GrammarInfoStub;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -56,29 +59,56 @@ public class RelationFunctionInstanceSetImplementationProcessor extends Processo
 
     private void processPropertyMapping(RelationFunctionInstanceSetImplementation classMapping, RelationType<?> relationType, ProcessorSupport processorSupport)
     {
-        for (PropertyMapping propertyMapping : classMapping._propertyMappings())
-        {
-            SourceInformation sourceInfo = propertyMapping.getSourceInformation();
-            RelationFunctionPropertyMapping relationFunctionPropertyMapping = (RelationFunctionPropertyMapping) propertyMapping;
-            Property<?, ?> property = relationFunctionPropertyMapping._property();
+        processPropertyMappings(classMapping._propertyMappings(), classMapping, relationType, processorSupport);
+    }
 
-            // TODO: This is to workaround bugs with type inference. Using the property's type information when the RelationType/Column type is not inferred correctly from the mapping function.
-            if (relationType != null)
+    private void processPropertyMappings(Iterable<? extends PropertyMapping> propertyMappings, RelationFunctionInstanceSetImplementation owner, RelationType<?> relationType, ProcessorSupport processorSupport)
+    {
+        for (PropertyMapping propertyMapping : propertyMappings)
+        {
+            if (propertyMapping instanceof RelationFunctionPropertyMapping)
             {
-                Column<?, ?> column = (Column<?, ?>) _RelationType.findColumn(relationType, relationFunctionPropertyMapping._column()._name(), propertyMapping.getSourceInformation(), processorSupport);
-                if (_Column.getColumnType(column)._rawType() == null)
+                SourceInformation sourceInfo = propertyMapping.getSourceInformation();
+                RelationFunctionPropertyMapping relationFunctionPropertyMapping = (RelationFunctionPropertyMapping) propertyMapping;
+                Property<?, ?> property = relationFunctionPropertyMapping._property();
+
+                if (relationFunctionPropertyMapping._transformerCoreInstance() != null)
                 {
-                    populateColumnFromProperty(relationFunctionPropertyMapping, property, sourceInfo, processorSupport);
+                    GrammarInfoStub transformerStub = (GrammarInfoStub) relationFunctionPropertyMapping._transformerCoreInstance();
+                    EnumerationMappingProcessor.processsEnumerationTransformer(transformerStub, propertyMapping, processorSupport);
+                }
+
+                // TODO: This is to workaround bugs with type inference. Using the property's type information when the RelationType/Column type is not inferred correctly from the mapping function.
+                if (relationType != null)
+                {
+                    Column<?, ?> column = (Column<?, ?>) _RelationType.findColumn(relationType, relationFunctionPropertyMapping._column()._name(), propertyMapping.getSourceInformation(), processorSupport);
+                    if (_Column.getColumnType(column)._rawType() == null)
+                    {
+                        populateColumnFromProperty(relationFunctionPropertyMapping, property, sourceInfo, processorSupport);
+                    }
+                    else
+                    {
+                        GenericType genericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(column._classifierGenericType(), processorSupport);
+                        relationFunctionPropertyMapping._column()._classifierGenericType(genericType);
+                    }
                 }
                 else
                 {
-                    GenericType genericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(column._classifierGenericType(), processorSupport);
-                    relationFunctionPropertyMapping._column()._classifierGenericType(genericType);
+                    populateColumnFromProperty(relationFunctionPropertyMapping, property, sourceInfo, processorSupport);
                 }
             }
-            else
+            else if (propertyMapping instanceof EmbeddedRelationFunctionSetImplementation)
             {
-                populateColumnFromProperty(relationFunctionPropertyMapping, property, sourceInfo, processorSupport);
+                EmbeddedRelationFunctionSetImplementation embeddedSet = (EmbeddedRelationFunctionSetImplementation) propertyMapping;
+                Property<?, ?> property = (Property<?, ?>) ImportStub.withImportStubByPass(embeddedSet._propertyCoreInstance(), processorSupport);
+                CoreInstance targetClass = property._classifierGenericType() == null ||
+                        property._classifierGenericType()._typeArguments() == null ||
+                        property._classifierGenericType()._typeArguments().size() < 2 ||
+                        property._classifierGenericType()._typeArguments().toList().get(1) == null ? null : ImportStub.withImportStubByPass(property._classifierGenericType()._typeArguments().toList().get(1)._rawTypeCoreInstance(), processorSupport);
+                embeddedSet._classCoreInstance(targetClass);
+                embeddedSet._relationFunctionCoreInstance(owner._relationFunctionCoreInstance());
+
+                processPropertyMappings(((PropertyMappingsImplementation) embeddedSet)._propertyMappings(), embeddedSet, relationType, processorSupport);
             }
         }
     }

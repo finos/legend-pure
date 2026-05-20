@@ -18,6 +18,7 @@ import meta::pure::store::*;
 import meta::pure::tools::*;
 import meta::pure::functions::collection::*;
 import meta::pure::mapping::aggregationAware::*;
+import meta::pure::mapping::relation::*;
 import meta::pure::metamodel::testable::*;
 import meta::pure::metamodel::relation::*;
 
@@ -230,4 +231,12 @@ Class meta::pure::mapping::relation::RelationFunctionPropertyMapping extends Pro
 {
   column: meta::pure::metamodel::relation::Column<Nil,Any|*>[1];
   transformer: ValueTransformer<Any>[0..1];
+}
+
+Class meta::pure::mapping::relation::EmbeddedRelationFunctionSetImplementation extends RelationFunctionInstanceSetImplementation, EmbeddedSetImplementation
+{
+}
+
+Class meta::pure::mapping::relation::InlineEmbeddedRelationFunctionSetImplementation extends EmbeddedRelationFunctionSetImplementation, InlineEmbeddedSetImplementation
+{
 }

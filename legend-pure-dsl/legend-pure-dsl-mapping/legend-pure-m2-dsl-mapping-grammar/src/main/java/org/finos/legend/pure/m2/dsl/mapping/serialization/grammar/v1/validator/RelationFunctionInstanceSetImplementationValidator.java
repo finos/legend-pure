@@ -16,7 +16,9 @@ package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.validator;
 
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.EnumerationMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMapping;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.EmbeddedRelationFunctionSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionPropertyMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
@@ -40,16 +42,28 @@ public class RelationFunctionInstanceSetImplementationValidator implements Match
     @Override
     public void run(RelationFunctionInstanceSetImplementation instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        for (PropertyMapping propertyMapping : instance._propertyMappings())
+        validatePropertyMappings(instance._propertyMappings(), state.getProcessorSupport());
+    }
+
+    private void validatePropertyMappings(Iterable<? extends PropertyMapping> propertyMappings, ProcessorSupport processorSupport) throws PureCompilationException
+    {
+        for (PropertyMapping propertyMapping : propertyMappings)
         {
-            RelationFunctionPropertyMapping relationFunctionPropertyMapping = (RelationFunctionPropertyMapping) propertyMapping;
-            Property<?, ?> property = relationFunctionPropertyMapping._property();
-            Column<?, ?> column = relationFunctionPropertyMapping._column();
-            validateProperty(property, column, propertyMapping.getSourceInformation(), state.getProcessorSupport());
+            if (propertyMapping instanceof RelationFunctionPropertyMapping)
+            {
+                RelationFunctionPropertyMapping relationFunctionPropertyMapping = (RelationFunctionPropertyMapping) propertyMapping;
+                Property<?, ?> property = relationFunctionPropertyMapping._property();
+                Column<?, ?> column = relationFunctionPropertyMapping._column();
+                validateProperty(property, column, relationFunctionPropertyMapping._transformer() instanceof EnumerationMapping, propertyMapping.getSourceInformation(), processorSupport);
+            }
+            else if (propertyMapping instanceof EmbeddedRelationFunctionSetImplementation)
+            {
+                validatePropertyMappings(((EmbeddedRelationFunctionSetImplementation) propertyMapping)._propertyMappings(), processorSupport);
+            }
         }
     }
 
-    private void validateProperty(Property<?, ?> property, Column<?, ?> column, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    private void validateProperty(Property<?, ?> property, Column<?, ?> column, boolean hasEnumTransformer, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         Multiplicity propertyMultiplicity = property._multiplicity();
         if (!org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isToOne(propertyMultiplicity) && !org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isZeroToOne(propertyMultiplicity))
@@ -58,13 +72,13 @@ public class RelationFunctionInstanceSetImplementationValidator implements Match
         }
 
         Type propertyType = property._genericType()._rawType();
-        if (!processorSupport.type_isPrimitiveType(propertyType))
+        if (!processorSupport.type_isPrimitiveType(propertyType) && !hasEnumTransformer)
         {
             throw new PureCompilationException(sourceInformation, "Relation mapping is only supported for primitive properties, but the property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property) + "' has type " + propertyType._name() + ".");
         }
 
         Type columnType = _Column.getColumnType(column)._rawType();
-        if (!processorSupport.type_subTypeOf(columnType, propertyType))
+        if (!processorSupport.type_subTypeOf(columnType, propertyType) && !hasEnumTransformer)
         {
             throw new PureCompilationException(sourceInformation, "Mismatching property and relation column types. Property type is " + propertyType._name() + ", but relation column it is mapped to has type " + columnType._name() + ".");
         }
