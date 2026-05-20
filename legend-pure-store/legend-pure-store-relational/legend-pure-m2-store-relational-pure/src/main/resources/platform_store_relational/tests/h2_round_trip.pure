@@ -30,7 +30,7 @@ import meta::relational::metamodel::execute::*;
 
 // Smoke test against H2 — equivalent to `testExecuteInDbHugeInt` for
 // DuckDB. `1+1` round-trips via PG-wire as INT8 → Pure Integer.
-function <<test.Test>> {test.excludePlatform = 'Java compiled'}
+function <<test.Test>>
 meta::relational::tests::testExecuteInH2(): Boolean[1]
 {
    let db = ^TestDatabaseConnection(type = DatabaseType.H2);
@@ -48,7 +48,7 @@ meta::relational::tests::testExecuteInH2(): Boolean[1]
 // know their type at projection time and round-trip cleanly. This
 // path is what users actually hit; the literal-only flow is fixed by
 // the PG-compat work tracked in BACKLOG.
-function <<test.Test>> {test.excludePlatform = 'Java compiled'}
+function <<test.Test>>
 meta::relational::tests::testExecuteInH2VarcharRoundtrip(): Boolean[1]
 {
    let db = ^TestDatabaseConnection(type = DatabaseType.H2);
@@ -63,7 +63,7 @@ meta::relational::tests::testExecuteInH2VarcharRoundtrip(): Boolean[1]
 // Full temp-table lifecycle on H2 with a DDL-builder lambda that
 // branches on the engine. Locks the `createTempTable` → lambda →
 // `executeInDb` → `dropTempTable` chain against the H2 backend.
-function <<test.Test>> {test.excludePlatform = 'Java compiled'}
+function <<test.Test>>
 meta::relational::tests::testCreateTempTableInH2(): Boolean[1]
 {
    let db = ^TestDatabaseConnection(type = DatabaseType.H2);

@@ -28,7 +28,7 @@ import meta::relational::metamodel::execute::*;
 // `AbstractTestPureDBFunction.java:170`. DuckDB implicitly widens
 // integer-sum results to HUGEINT; this verifies the Rust native demotes
 // HUGEINT back into Pure's Integer when the value fits in i64.
-function <<test.Test>> {test.excludePlatform = 'Java compiled'}
+function <<test.Test>>
 meta::relational::tests::testExecuteInDbHugeInt(): Boolean[1]
 {
    let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
@@ -37,7 +37,7 @@ meta::relational::tests::testExecuteInDbHugeInt(): Boolean[1]
 }
 
 // Trivial column-aliased projection — locks the columnNames slot.
-function <<test.Test>> {test.excludePlatform = 'Java compiled'}
+function <<test.Test>>
 meta::relational::tests::testExecuteInDbExposesColumnName(): Boolean[1]
 {
    let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
@@ -46,7 +46,7 @@ meta::relational::tests::testExecuteInDbExposesColumnName(): Boolean[1]
 }
 
 // VARCHAR round-trip: literal 'hello' must surface as Pure String.
-function <<test.Test>> {test.excludePlatform = 'Java compiled'}
+function <<test.Test>>
 meta::relational::tests::testExecuteInDbVarcharRoundtrip(): Boolean[1]
 {
    let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
