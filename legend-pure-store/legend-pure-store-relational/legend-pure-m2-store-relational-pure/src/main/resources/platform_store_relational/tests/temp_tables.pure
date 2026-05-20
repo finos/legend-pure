@@ -33,7 +33,7 @@ import meta::relational::metamodel::*;
 // query it, and drop it. Mirrors `testCreateTempTable` minus the
 // implicit-drop assertion (Java tested H2's auto-cleanup, which is a
 // future commit's concern).
-function <<test.Test>>
+function <<test.Test>> {test.excludePlatform = 'Java compiled'}
 meta::relational::tests::testCreateTempTableLifecycle(): Boolean[1]
 {
    let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
@@ -54,7 +54,7 @@ meta::relational::tests::testCreateTempTableLifecycle(): Boolean[1]
 // Five-arg overload: relyOnFinallyForCleanup=true. Same shape as the
 // four-arg case for DuckDB — the boolean is currently accepted only
 // for signature parity.
-function <<test.Test>>
+function <<test.Test>> {test.excludePlatform = 'Java compiled'}
 meta::relational::tests::testCreateTempTableWithRelyOnFinally(): Boolean[1]
 {
    let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);

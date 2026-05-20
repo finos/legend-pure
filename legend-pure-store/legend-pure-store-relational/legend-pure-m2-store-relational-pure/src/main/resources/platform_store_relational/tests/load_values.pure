@@ -26,7 +26,7 @@ import meta::relational::metamodel::execute::*;
 import meta::relational::metamodel::relation::*;
 import meta::relational::metamodel::datatype::*;
 
-function <<access.private>> meta::relational::tests::table():Table[1]
+function <<access.private>> meta::relational::tests::loadValues::table():Table[1]
 {
    let schema = ^Schema(database = ^Database(name = 'db'), name = 'main');
    ^Table(schema = $schema, name = 'lv', columns = [
@@ -38,22 +38,22 @@ function <<access.private>> meta::relational::tests::table():Table[1]
 
 // Insert two rows via loadValuesToDbTable and verify the count.
 function <<test.ToFix>>
-meta::relational::tests::testLoadValuesToDbTableInsertsRows_duckDb(): Boolean[1]
+meta::relational::tests::loadValues::testLoadValuesToDbTableInsertsRows_duckDb(): Boolean[1]
 {
    let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
-   $db->meta::relational::tests::testLoadValuesToDbTableInsertsRows();
+   $db->meta::relational::tests::loadValues::testLoadValuesToDbTableInsertsRows();
 }
 
 function <<test.ToFix>>
-meta::relational::tests::testLoadValuesToDbTableInsertsRows_h2(): Boolean[1]
+meta::relational::tests::loadValues::testLoadValuesToDbTableInsertsRows_h2(): Boolean[1]
 {
    let db = ^TestDatabaseConnection(type = DatabaseType.H2);
    executeInDb('CREATE SCHEMA MAIN', $db, 0, 1000);
-   $db->meta::relational::tests::testLoadValuesToDbTableInsertsRows();
+   $db->meta::relational::tests::loadValues::testLoadValuesToDbTableInsertsRows();
 }
 
 function <<test.AfterPackage, test.ToFix>>
-meta::relational::tests::afterLoad_duckdb(): Boolean[1]
+meta::relational::tests::loadValues::afterLoad_duckdb(): Boolean[1]
 {
    let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
    executeInDb('DROP TABLE main.lv', $db, 0, 1000);
@@ -62,21 +62,21 @@ meta::relational::tests::afterLoad_duckdb(): Boolean[1]
 
 
 function <<test.AfterPackage, test.ToFix>>
-meta::relational::tests::afterLoad_h2(): Boolean[1]
+meta::relational::tests::loadValues::afterLoad_h2(): Boolean[1]
 {
    let db = ^TestDatabaseConnection(type = DatabaseType.H2);
    executeInDb('DROP SCHEMA MAIN CASCADE', $db, 0, 1000);
    true;
 }
 
-function <<access.private>> meta::relational::tests::testLoadValuesToDbTableInsertsRows(db: TestDatabaseConnection[1]): Boolean[1]
+function <<access.private>> meta::relational::tests::loadValues::testLoadValuesToDbTableInsertsRows(db: TestDatabaseConnection[1]): Boolean[1]
 {
    executeInDb('CREATE TABLE main.lv(a INTEGER, b VARCHAR)', $db, 0, 1000);
 
    let row1 = ^List<Any>(values = [1, 'foo']);
    let row2 = ^List<Any>(values = [2, 'bar']);
    let outer = ^List<List<Any>>(values = [$row1, $row2]);
-   let tbl = meta::relational::tests::table();
+   let tbl = meta::relational::tests::loadValues::table();
    loadValuesToDbTable($outer, $tbl, $db);
 
    let rs = executeInDb('SELECT count(*) FROM main.lv', $db, 0, 1000);
