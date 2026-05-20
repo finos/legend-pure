@@ -1525,14 +1525,19 @@ public class CompiledSupport
         return left.doubleValue() <= right.doubleValue();
     }
 
-    public static Long indexOf(String str, String toFind)
+    public static long indexOf(String str, String toFind)
     {
-        return (long) str.indexOf(toFind);
+        return str.indexOf(toFind);
     }
 
-    public static Long indexOf(String str, String toFind, Number from)
+    public static long indexOf(String str, String toFind, Number from)
     {
-        return (long) str.indexOf(toFind, from.intValue());
+        return str.indexOf(toFind, from.intValue());
+    }
+
+    public static long lastIndexOf(String str, String toFind, Number from)
+    {
+        return str.lastIndexOf(toFind, from.intValue());
     }
 
     public static String substring(String str, Number start)

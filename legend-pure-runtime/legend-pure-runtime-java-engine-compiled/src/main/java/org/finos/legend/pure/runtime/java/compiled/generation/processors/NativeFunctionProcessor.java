@@ -138,6 +138,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string._boolean.Contains;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string._boolean.EndsWith;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.index.IndexOfWithFrom;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.index.LastIndexOf;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.operation.ReverseString;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.operation.ToLower;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.operation.ToUpper;
@@ -520,6 +521,7 @@ public class NativeFunctionProcessor
         //  Index
         registerNative(map, new org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.index.IndexOf());
         registerNative(map, new IndexOfWithFrom());
+        registerNative(map, new LastIndexOf());
         registerNative(map, new Length());
         //  Operation
         registerNative(map, new Replace());
