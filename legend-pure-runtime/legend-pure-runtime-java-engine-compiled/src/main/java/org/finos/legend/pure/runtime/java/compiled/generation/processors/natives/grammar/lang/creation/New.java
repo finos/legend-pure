@@ -51,7 +51,7 @@ public class New extends AbstractNative
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
         if (_class.equals(processorSupport.package_getByUserPath(M3Paths.Map)))
         {
-            return "CoreGen.newMap()";
+            return "CoreGen.newMap(es)";
         }
         else
         {

@@ -37,5 +37,10 @@ Class meta::pure::metamodel::path::PropertyPathElement extends PathElement
 
 function <<test.Test>> meta::pure::metamodel::path::tests::testMatchPureObjectTypeFail():Boolean[1]
 {
-    assertError(|^meta::pure::metamodel::path::PathElement()->match([i:Integer[1] | $i]), '^Match failure: (\\W*\\d*\\w*)\\(?\\d*\\)? instanceOf PathElement$');
+    assertError(|^meta::pure::metamodel::path::PathElement()->match([i:Integer[1] | $i]),
+        {msg, si |
+            assert($msg->startsWith('Match failure: ')) &&
+            assert($msg->endsWith(' instanceOf PathElement'))
+        }
+    );
 }

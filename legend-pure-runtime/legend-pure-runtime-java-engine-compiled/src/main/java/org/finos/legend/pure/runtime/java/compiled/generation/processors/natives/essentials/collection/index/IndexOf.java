@@ -14,12 +14,13 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.index;
 
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 
 public class IndexOf extends AbstractNativeFunctionGeneric
 {
     public IndexOf()
     {
-        super("CoreGen.indexOf", new Class[]{Iterable.class, Object.class}, "indexOf_T_MANY__T_1__Integer_1_");
+        super("CoreGen.indexOf", new Class[]{Iterable.class, Object.class, ExecutionSupport.class}, false, true, false, "indexOf_T_MANY__T_1__Integer_1_");
     }
 }

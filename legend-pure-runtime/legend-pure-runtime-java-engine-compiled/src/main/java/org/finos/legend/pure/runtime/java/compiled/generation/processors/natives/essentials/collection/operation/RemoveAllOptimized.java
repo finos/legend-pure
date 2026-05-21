@@ -15,12 +15,13 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.operation;
 
 import org.eclipse.collections.api.RichIterable;
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 
 public class RemoveAllOptimized extends AbstractNativeFunctionGeneric
 {
     public RemoveAllOptimized()
     {
-        super("CoreGen.removeAllOptimized", new Class[]{RichIterable.class, RichIterable.class}, "removeAllOptimized_T_MANY__T_MANY__T_MANY_");
+        super("CoreGen.removeAllOptimized", new Class[]{RichIterable.class, RichIterable.class, ExecutionSupport.class}, false, true, false, "removeAllOptimized_T_MANY__T_MANY__T_MANY_");
     }
 }

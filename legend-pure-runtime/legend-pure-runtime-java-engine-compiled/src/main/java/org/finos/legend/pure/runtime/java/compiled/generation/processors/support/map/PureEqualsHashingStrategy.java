@@ -18,6 +18,7 @@ import org.eclipse.collections.api.block.HashingStrategy;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 /**
@@ -25,7 +26,12 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
  */
 public class PureEqualsHashingStrategy implements HashingStrategy<Object>
 {
-    public static final HashingStrategy<Object> HASHING_STRATEGY = new PureEqualsHashingStrategy();
+    private final ExecutionSupport es;
+
+    public PureEqualsHashingStrategy(ExecutionSupport es)
+    {
+        this.es = es;
+    }
 
     @Override
     public int computeHashCode(Object object)
@@ -36,16 +42,16 @@ public class PureEqualsHashingStrategy implements HashingStrategy<Object>
     @Override
     public boolean equals(Object object1, Object object2)
     {
-        return CompiledSupport.equal(object1, object2);
+        return CompiledSupport.equal(object1, object2, es);
     }
 
-    public static <T> MutableSet<T> newMutableSet()
+    public static <T> MutableSet<T> newMutableSet(ExecutionSupport es)
     {
-        return new UnifiedSetWithHashingStrategy<>(HASHING_STRATEGY);
+        return new UnifiedSetWithHashingStrategy<>(new PureEqualsHashingStrategy(es));
     }
 
-    public static <K, V> MutableMap<K, V> newMutableMap()
+    public static <K, V> MutableMap<K, V> newMutableMap(ExecutionSupport es)
     {
-        return VavrHamtMutableMapAdapter.withHashingStrategy(HASHING_STRATEGY);
+        return VavrHamtMutableMapAdapter.withHashingStrategy(new PureEqualsHashingStrategy(es));
     }
 }

@@ -1052,7 +1052,7 @@ public class ClassPeltImplProcessor
             }
             else
             {
-                builder.append("CompiledSupport.equal(this._").append(p.name).append("(), that._").append(p.name).append("())");
+                builder.append("CompiledSupport.equal(this._").append(p.name).append("(), that._").append(p.name).append("(), null)");
             }
         });
         builder.append(";\n");

@@ -683,7 +683,7 @@ public class ClassImplProcessor
                             Lists.immutable.with(M3Paths.Boolean, M3Paths.Float, M3Paths.Integer).contains(PackageableElement.getUserPathForPackageableElement(returnType))) ?
                            // Java primitive
                            " &&\n                this._" + property.getName() + "() == that._" + property.getName() + "()" :
-                           " &&\n                CompiledSupport.equal(this._" + property.getName() + "(), that._" + property.getName() + "())";
+                           " &&\n                CompiledSupport.equal(this._" + property.getName() + "(), that._" + property.getName() + "(), null)";
                 }).makeString("") + ";\n" +
                 "    }\n" +
                 "\n" +

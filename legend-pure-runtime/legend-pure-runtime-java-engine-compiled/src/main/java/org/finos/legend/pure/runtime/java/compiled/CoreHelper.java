@@ -770,7 +770,7 @@ public class CoreHelper
         return result;
     }
 
-    public static long indexOf(Object instances, Object object)
+    public static long indexOf(Object instances, Object object, ExecutionSupport es)
     {
         if (instances == null)
         {
@@ -778,19 +778,19 @@ public class CoreHelper
         }
         if (!(instances instanceof Iterable))
         {
-            return CompiledSupport.equal(object, instances) ? 0L : -1L;
+            return CompiledSupport.equal(object, instances, es) ? 0L : -1L;
         }
-        return indexOf((Iterable<?>) instances, object);
+        return indexOf((Iterable<?>) instances, object, es);
     }
 
-    public static long indexOf(Iterable<?> instances, Object object)
+    public static long indexOf(Iterable<?> instances, Object object, ExecutionSupport es)
     {
-        return (instances == null) ? -1L : Iterate.detectIndex(instances, i -> CompiledSupport.equal(object, i));
+        return (instances == null) ? -1L : Iterate.detectIndex(instances, i -> CompiledSupport.equal(object, i, es));
     }
 
-    public static <T> RichIterable<? extends T> removeAllOptimized(RichIterable<? extends T> main, RichIterable<? extends T> other)
+    public static <T> RichIterable<? extends T> removeAllOptimized(RichIterable<? extends T> main, RichIterable<? extends T> other, ExecutionSupport es)
     {
-        MutableSet<Object> toRemove = PureEqualsHashingStrategy.newMutableSet().withAll(other);
+        MutableSet<Object> toRemove = PureEqualsHashingStrategy.newMutableSet(es).withAll(other);
         return main.reject(toRemove::contains);
     }
 
@@ -947,9 +947,9 @@ public class CoreHelper
         return new PureMap(newOne);
     }
 
-    public static PureMap newMap()
+    public static PureMap newMap(ExecutionSupport es)
     {
-        HashingStrategy<Object> strategy = PureEqualsHashingStrategy.HASHING_STRATEGY;
+        HashingStrategy<Object> strategy = new PureEqualsHashingStrategy(es);
         MutableMap<Object, Object> map = VavrHamtMutableMapAdapter.withHashingStrategy(strategy);
 
         return new PureMap(map);
@@ -958,7 +958,7 @@ public class CoreHelper
 
     public static PureMap newMap(RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs, ExecutionSupport es)
     {
-        HashingStrategy<Object> strategy = PureEqualsHashingStrategy.HASHING_STRATEGY;
+        HashingStrategy<Object> strategy = new PureEqualsHashingStrategy(es);
         // Batch build: collect into java.util.HashMap, then bulk-construct HAMT
         java.util.HashMap<VavrHamtMutableMapAdapter.HamtKey<Object>, Object> temp = new java.util.HashMap<>();
         pairs.forEach(p -> temp.put(new VavrHamtMutableMapAdapter.HamtKey<>(p._first(), strategy), p._second()));
@@ -969,7 +969,7 @@ public class CoreHelper
 
     public static PureMap newMap(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?> p, ExecutionSupport es)
     {
-        VavrHamtMutableMapAdapter<Object, Object> map = VavrHamtMutableMapAdapter.withHashingStrategy(PureEqualsHashingStrategy.HASHING_STRATEGY);
+        VavrHamtMutableMapAdapter<Object, Object> map = VavrHamtMutableMapAdapter.withHashingStrategy(new PureEqualsHashingStrategy(es));
         if (p != null)
         {
             map.putNoReturn(p._first(), p._second());
@@ -1010,7 +1010,7 @@ public class CoreHelper
         @Override
         public boolean equals(Object obj1, Object obj2)
         {
-            return this.properties.allSatisfy(p -> CompiledSupport.equal(evaluateProperty(p, obj1), evaluateProperty(p, obj2)));
+            return this.properties.allSatisfy(p -> CompiledSupport.equal(evaluateProperty(p, obj1), evaluateProperty(p, obj2), es));
         }
 
         private Object evaluateProperty(Property<?, ?> property, Object obj)

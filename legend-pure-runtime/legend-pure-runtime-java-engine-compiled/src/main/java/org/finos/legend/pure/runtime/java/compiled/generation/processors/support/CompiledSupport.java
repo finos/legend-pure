@@ -1025,7 +1025,7 @@ public class CompiledSupport
         return left == right;
     }
 
-    public static boolean equal(Object left, Object right) //NOSONAR Function signature avoids confusion
+    public static boolean equal(Object left, Object right, ExecutionSupport es) //NOSONAR Function signature avoids confusion
     {
         if (left == right)
         {
@@ -1044,28 +1044,28 @@ public class CompiledSupport
             Iterator<?> leftIterator = ((Iterable<?>) left).iterator();
             if (right instanceof Iterable)
             {
-                return iteratorsEqual(leftIterator, ((Iterable<?>) right).iterator());
+                return iteratorsEqual(leftIterator, ((Iterable<?>) right).iterator(), es);
             }
             if (!leftIterator.hasNext())
             {
                 return false;
             }
             Object leftFirst = leftIterator.next();
-            return !leftIterator.hasNext() && equal(leftFirst, right);
+            return !leftIterator.hasNext() && equal(leftFirst, right, es);
         }
         if (right instanceof LazyIterable)
         {
             Iterator<?> rightIterator = ((Iterable<?>) right).iterator();
             if (left instanceof Iterable)
             {
-                return iteratorsEqual(((Iterable<?>) left).iterator(), rightIterator);
+                return iteratorsEqual(((Iterable<?>) left).iterator(), rightIterator, es);
             }
             if (!rightIterator.hasNext())
             {
                 return false;
             }
             Object rightFirst = rightIterator.next();
-            return !rightIterator.hasNext() && equal(left, rightFirst);
+            return !rightIterator.hasNext() && equal(left, rightFirst, es);
         }
         if (left instanceof RichIterable)
         {
@@ -1074,14 +1074,14 @@ public class CompiledSupport
             if (right instanceof RichIterable)
             {
                 RichIterable<?> rightList = (RichIterable<?>) right;
-                return (size == rightList.size()) && iteratorsEqual(leftList.iterator(), rightList.iterator());
+                return (size == rightList.size()) && iteratorsEqual(leftList.iterator(), rightList.iterator(), es);
             }
-            return (size == 1) && equal(leftList.getAny(), right);
+            return (size == 1) && equal(leftList.getAny(), right, es);
         }
         if (right instanceof RichIterable)
         {
             RichIterable<?> rightList = (RichIterable<?>) right;
-            return (rightList.size() == 1) && equal(left, rightList.getAny());
+            return (rightList.size() == 1) && equal(left, rightList.getAny(), es);
         }
         if (left instanceof Number)
         {
@@ -1090,6 +1090,11 @@ public class CompiledSupport
         if (right instanceof Number)
         {
             return false;
+        }
+
+        if (left instanceof GenericType && right instanceof GenericType && es != null)
+        {
+            return org.finos.legend.pure.m3.navigation.generictype.GenericType.genericTypesEqual((GenericType) left, (GenericType) right, ((CompiledExecutionSupport) es).getProcessorSupport());
         }
 
         if (left instanceof JavaCompiledCoreInstance)
@@ -1104,11 +1109,11 @@ public class CompiledSupport
         return left.equals(right);
     }
 
-    private static boolean iteratorsEqual(Iterator<?> leftIterator, Iterator<?> rightIterator)
+    private static boolean iteratorsEqual(Iterator<?> leftIterator, Iterator<?> rightIterator, ExecutionSupport es)
     {
         while (leftIterator.hasNext() && rightIterator.hasNext())
         {
-            if (!equal(leftIterator.next(), rightIterator.next()))
+            if (!equal(leftIterator.next(), rightIterator.next(), es))
             {
                 return false;
             }

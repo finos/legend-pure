@@ -1037,7 +1037,7 @@ public class Pure
 
         if (eqlFn == null)
         {
-            MutableSet<Object> set = PureEqualsHashingStrategy.newMutableSet();
+            MutableSet<Object> set = PureEqualsHashingStrategy.newMutableSet(es);
             return list.select((keyFn == null) ? set::add : i -> set.add(evaluate(es, keyFn, bridge, i)), Lists.mutable.empty());
         }
 
