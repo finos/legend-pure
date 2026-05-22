@@ -138,15 +138,14 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
         String embeddedId = parentId + "_" + propertyName;
         String inlineId = ctx.identifier().getText();
 
-        return "^meta::pure::mapping::relation::InlineEmbeddedRelationFunctionSetImplementation" + sourceInfo.toM4String() + "(" +
+        return "^meta::pure::mapping::relation::EmbeddedRelationFunctionSetImplementation" + sourceInfo.toM4String() + "(" +
             "id = '" + embeddedId + "'," +
             "root = false," +
             "property = '" + propertyName + "'," +
             "sourceSetImplementationId = '" + parentId + "'," +
-            "targetSetImplementationId = '" + embeddedId + "'," +
+            "targetSetImplementationId = '" + inlineId + "'," +
             "parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + this.importId + ", idOrPath='" + mappingPath + "')," +
-            "propertyMappings = []," +
-            "inlineSetImplementationId = '" + inlineId + "'" +
+            "propertyMappings = []" +
             ")";
     }
 

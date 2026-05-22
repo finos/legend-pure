@@ -236,7 +236,3 @@ Class meta::pure::mapping::relation::RelationFunctionPropertyMapping extends Pro
 Class meta::pure::mapping::relation::EmbeddedRelationFunctionSetImplementation extends RelationFunctionInstanceSetImplementation, EmbeddedSetImplementation
 {
 }
-
-Class meta::pure::mapping::relation::InlineEmbeddedRelationFunctionSetImplementation extends EmbeddedRelationFunctionSetImplementation, InlineEmbeddedSetImplementation
-{
-}

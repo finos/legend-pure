@@ -22,7 +22,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.EmbeddedRelationFunctionSetImplementation;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.InlineEmbeddedRelationFunctionSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionPropertyMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
@@ -137,7 +136,6 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
 
         PropertyMapping addressMapping = propertyMappings.toList().get(1);
         Assert.assertTrue(addressMapping instanceof EmbeddedRelationFunctionSetImplementation);
-        Assert.assertFalse(addressMapping instanceof InlineEmbeddedRelationFunctionSetImplementation);
         EmbeddedRelationFunctionSetImplementation embedded = (EmbeddedRelationFunctionSetImplementation) addressMapping;
         Assert.assertEquals("person_address", embedded._id());
         Assert.assertEquals("person", embedded._sourceSetImplementationId());
@@ -179,13 +177,12 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
         Mapping mapping = (Mapping) runtime.getCoreInstance("my::testMapping");
         RelationFunctionInstanceSetImplementation personSetImpl = (RelationFunctionInstanceSetImplementation) mapping._classMappings().detect(s -> "person".equals(s._id()));
         PropertyMapping addressMapping = personSetImpl._propertyMappings().toList().get(1);
-        Assert.assertTrue(addressMapping instanceof InlineEmbeddedRelationFunctionSetImplementation);
-        Assert.assertTrue("Inline embedded relation function set impl must implement InlineEmbeddedSetImplementation marker so the property-mapping resolver routes through inlineEmbeddedProperty", addressMapping instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.InlineEmbeddedSetImplementation);
-        InlineEmbeddedRelationFunctionSetImplementation inline = (InlineEmbeddedRelationFunctionSetImplementation) addressMapping;
-        Assert.assertEquals("person_address", inline._id());
-        Assert.assertEquals("person", inline._sourceSetImplementationId());
-        Assert.assertEquals("addr", inline._inlineSetImplementationId());
-        Assert.assertTrue(inline._propertyMappings().isEmpty());
+        Assert.assertTrue(addressMapping instanceof EmbeddedRelationFunctionSetImplementation);
+        EmbeddedRelationFunctionSetImplementation embedded = (EmbeddedRelationFunctionSetImplementation) addressMapping;
+        Assert.assertEquals("person_address", embedded._id());
+        Assert.assertEquals("person", embedded._sourceSetImplementationId());
+        Assert.assertEquals("addr", embedded._targetSetImplementationId());
+        Assert.assertTrue(embedded._propertyMappings().isEmpty());
     }
 
     @Test
