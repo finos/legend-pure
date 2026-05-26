@@ -12,5 +12,32 @@ mapping:                                    RELATION_FUNCTION (functionDescripto
                                             EOF
 ;
 
-singlePropertyMapping:                      ((PLUS qualifiedName COLON qualifiedName multiplicity) | qualifiedName) COLON columnName
+singlePropertyMapping:                      singleLocalPropertyMapping | singleNonLocalPropertyMapping
+;
+
+singleLocalPropertyMapping:                 PLUS qualifiedName COLON qualifiedName multiplicity relationFunctionPropertyMapping
+;
+
+singleNonLocalPropertyMapping:              qualifiedName
+                                            (
+                                                relationFunctionPropertyMapping
+                                                | inlineRelationFunctionEmbeddedPropertyMapping
+                                                | relationFunctionEmbeddedPropertyMapping
+                                            )
+;
+
+relationFunctionPropertyMapping:            COLON (transformer)? columnName
+;
+
+transformer:                                ENUMERATION_MAPPING identifier COLON
+;
+
+// -------------------------------------- EMBEDDED PROPERTY MAPPING --------------------------------------
+
+relationFunctionEmbeddedPropertyMapping:    GROUP_OPEN
+                                                (singlePropertyMapping (COMMA singlePropertyMapping)*)?
+                                            GROUP_CLOSE
+;
+
+inlineRelationFunctionEmbeddedPropertyMapping:  GROUP_OPEN GROUP_CLOSE INLINE BRACKET_OPEN identifier BRACKET_CLOSE
 ;

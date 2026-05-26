@@ -18,8 +18,10 @@ import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.unload.unbind.Shared;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMapping;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.EmbeddedRelationFunctionSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionPropertyMapping;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.tools.GrammarInfoStub;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
@@ -35,15 +37,28 @@ public class RelationFunctionInstanceSetImplementationUnbind implements MatchRun
         CoreInstance relationFunction = instance._relationFunctionCoreInstance();
         Shared.cleanUpReferenceUsage(relationFunction, instance, state.getProcessorSupport());
         Shared.cleanImportStub(relationFunction, state.getProcessorSupport());
-        cleanPropertyMappings(instance);
+        cleanPropertyMappings(instance._propertyMappings());
     }
 
-    private static void cleanPropertyMappings(RelationFunctionInstanceSetImplementation setImplementation) throws PureCompilationException
+    private static void cleanPropertyMappings(Iterable<? extends PropertyMapping> propertyMappings) throws PureCompilationException
     {
-        for (PropertyMapping propertyMapping: setImplementation._propertyMappings())
+        for (PropertyMapping propertyMapping : propertyMappings)
         {
-            RelationFunctionPropertyMapping relationFunctionPropertyMapping = (RelationFunctionPropertyMapping) propertyMapping;
-            relationFunctionPropertyMapping._column()._classifierGenericTypeRemove();
+            if (propertyMapping instanceof RelationFunctionPropertyMapping)
+            {
+                RelationFunctionPropertyMapping relationFunctionPropertyMapping = (RelationFunctionPropertyMapping) propertyMapping;
+                relationFunctionPropertyMapping._column()._classifierGenericTypeRemove();
+                if (relationFunctionPropertyMapping._transformerCoreInstance() != null)
+                {
+                    GrammarInfoStub transformerStub = (GrammarInfoStub) relationFunctionPropertyMapping._transformerCoreInstance();
+                    transformerStub._value(transformerStub._original());
+                    transformerStub._originalRemove();
+                }
+            }
+            else if (propertyMapping instanceof EmbeddedRelationFunctionSetImplementation)
+            {
+                cleanPropertyMappings(((EmbeddedRelationFunctionSetImplementation) propertyMapping)._propertyMappings());
+            }
         }
     }
 

@@ -33,6 +33,7 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
     private final ModelRepository repository;
     private final ProcessorSupport processorSupport;
     private final AntlrSourceInformation sourceInformation;
+    private String mappingPath;
 
     public RelationMappingGraphBuilder(String importId, ModelRepository repository, ProcessorSupport processorSupport, AntlrSourceInformation sourceInformation)
     {
@@ -41,9 +42,10 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
         this.processorSupport = processorSupport;
         this.sourceInformation = sourceInformation;
     }
-    
+
     public String visitMapping(RelationMappingParser.MappingContext ctx, String id, String extendsId, String setSourceInfo, boolean root, String classPath, String classSourceInfo, String mappingPath)
     {
+        this.mappingPath = mappingPath;
         Token functionStartToken = ctx.functionDescriptor() != null ? ctx.functionDescriptor().getStart() : ctx.qualifiedName().getStart();
         Token functionEndToken = ctx.functionDescriptor() != null ? ctx.functionDescriptor().getStop() : ctx.qualifiedName().getStop();
         try
@@ -69,26 +71,81 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
 
     private String visitPropertyMapping(RelationMappingParser.SinglePropertyMappingContext ctx, String id)
     {
-        if (ctx.PLUS() != null)
+        if (ctx.singleLocalPropertyMapping() != null)
         {
-            return visitPropertyMapping(ctx, id, ctx.qualifiedName(1).getText(), buildMultiplicity(ctx.multiplicity().multiplicityArgument()));
+            RelationMappingParser.SingleLocalPropertyMappingContext localCtx = ctx.singleLocalPropertyMapping();
+            String localPropertyType = localCtx.qualifiedName(1).getText();
+            String localPropertyMultiplicity = buildMultiplicity(localCtx.multiplicity().multiplicityArgument());
+            String propertyName = localCtx.qualifiedName(0).getText();
+            SourceInformation sourceInfo = sourceInformation.getPureSourceInformation(localCtx.qualifiedName(0).start);
+            return buildRelationFunctionPropertyMapping(localCtx.relationFunctionPropertyMapping(), id, propertyName, sourceInfo, localPropertyType, localPropertyMultiplicity);
         }
-        return visitPropertyMapping(ctx, id, null, null);
+
+        RelationMappingParser.SingleNonLocalPropertyMappingContext nonLocalCtx = ctx.singleNonLocalPropertyMapping();
+        String propertyName = nonLocalCtx.qualifiedName().getText();
+        SourceInformation sourceInfo = sourceInformation.getPureSourceInformation(nonLocalCtx.qualifiedName().start);
+
+        if (nonLocalCtx.relationFunctionEmbeddedPropertyMapping() != null)
+        {
+            return visitRelationFunctionEmbeddedPropertyMapping(nonLocalCtx.relationFunctionEmbeddedPropertyMapping(), id, propertyName, sourceInfo);
+        }
+        if (nonLocalCtx.inlineRelationFunctionEmbeddedPropertyMapping() != null)
+        {
+            return visitInlineRelationFunctionEmbeddedPropertyMapping(nonLocalCtx.inlineRelationFunctionEmbeddedPropertyMapping(), id, propertyName, sourceInfo);
+        }
+        return buildRelationFunctionPropertyMapping(nonLocalCtx.relationFunctionPropertyMapping(), id, propertyName, sourceInfo, null, null);
     }
-    
-    private String visitPropertyMapping(RelationMappingParser.SinglePropertyMappingContext ctx, String classMappingId, String localPropertyType, String localPropertyMultiplicity)
+
+    private String buildRelationFunctionPropertyMapping(RelationMappingParser.RelationFunctionPropertyMappingContext ctx, String classMappingId, String propertyName, SourceInformation sourceInfo, String localPropertyType, String localPropertyMultiplicity)
     {
-        SourceInformation sourceInfo = sourceInformation.getPureSourceInformation(ctx.qualifiedName(0).start);
         String columnName = AntlrContextToM3CoreInstance.removeQuotes(ctx.columnName().getText());
-        String propertyName = ctx.qualifiedName(0).getText();
-        
+        String transformer = ctx.transformer() != null ? visitTransformerBlock(ctx.transformer()) : null;
+
         return "^meta::pure::mapping::relation::RelationFunctionPropertyMapping" + sourceInfo.toM4String() + "(" +
             "        localMappingProperty = " + (localPropertyType != null) + "," +
             (localPropertyType == null ? "" : "        localMappingPropertyType = " + localPropertyType + ",") +
             (localPropertyMultiplicity == null ? "" : "localMappingPropertyMultiplicity = " + localPropertyMultiplicity + ",") +
             "        property = '" + propertyName + "'," +
             (classMappingId == null ? "" : "        sourceSetImplementationId = '" + classMappingId + "', ") +
+            (transformer == null ? "" : "        transformer = " + transformer + ",") +
             "        column=^meta::pure::metamodel::relation::Column(name = '" + columnName + "', nameWildCard = false)" +
+            ")";
+    }
+
+    private String visitTransformerBlock(RelationMappingParser.TransformerContext ctx)
+    {
+        return "^meta::pure::tools::GrammarInfoStub" + sourceInformation.getPureSourceInformation(ctx.identifier().getStart()).toM4String() + "(value='" + mappingPath + "," + ctx.identifier().getText() + "')";
+    }
+
+    private String visitRelationFunctionEmbeddedPropertyMapping(RelationMappingParser.RelationFunctionEmbeddedPropertyMappingContext ctx, String parentId, String propertyName, SourceInformation sourceInfo)
+    {
+        String embeddedId = parentId + "_" + propertyName;
+        String subPropertyMappings = ctx.singlePropertyMapping() == null ? "" : ListIterate.collect(ctx.singlePropertyMapping(), c -> visitPropertyMapping(c, embeddedId)).makeString(",");
+
+        return "^meta::pure::mapping::relation::EmbeddedRelationFunctionSetImplementation" + sourceInfo.toM4String() + "(" +
+            "id = '" + embeddedId + "'," +
+            "root = false," +
+            "property = '" + propertyName + "'," +
+            "sourceSetImplementationId = '" + parentId + "'," +
+            "targetSetImplementationId = '" + embeddedId + "'," +
+            "parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + this.importId + ", idOrPath='" + mappingPath + "')," +
+            "propertyMappings = [" + subPropertyMappings + "]" +
+            ")";
+    }
+
+    private String visitInlineRelationFunctionEmbeddedPropertyMapping(RelationMappingParser.InlineRelationFunctionEmbeddedPropertyMappingContext ctx, String parentId, String propertyName, SourceInformation sourceInfo)
+    {
+        String embeddedId = parentId + "_" + propertyName;
+        String inlineId = ctx.identifier().getText();
+
+        return "^meta::pure::mapping::relation::EmbeddedRelationFunctionSetImplementation" + sourceInfo.toM4String() + "(" +
+            "id = '" + embeddedId + "'," +
+            "root = false," +
+            "property = '" + propertyName + "'," +
+            "sourceSetImplementationId = '" + parentId + "'," +
+            "targetSetImplementationId = '" + inlineId + "'," +
+            "parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + this.importId + ", idOrPath='" + mappingPath + "')," +
+            "propertyMappings = []" +
             ")";
     }
 
