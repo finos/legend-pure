@@ -146,9 +146,9 @@ Release commits (messages containing `[maven-release-plugin]`) are skipped.
 
 | Step | Command |
 |------|---------|
-| Checkout | `actions/checkout@v4` |
-| Cache Maven deps | `actions/cache@v4` |
-| Setup JDK 17 | `actions/setup-java@v4` |
+| Checkout | `actions/checkout@v6` |
+| Cache Maven deps | `actions/cache@v5` |
+| Setup JDK 17 | `actions/setup-java@v5` |
 | Configure Git | Sets committer identity for release plugin |
 | Pre-fetch deps | `mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies` |
 | Build + Test (non-master) | `mvn -B -e install -DforkCount=3 -DreuseForks=true ...` |
