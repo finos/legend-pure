@@ -23,7 +23,6 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy;
 import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
 import org.eclipse.collections.impl.utility.Iterate;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -113,11 +112,6 @@ public class EqualityUtilities
         if (left instanceof MapCoreInstance && right instanceof MapCoreInstance)
         {
             return mapEquals((MapCoreInstance) left, (MapCoreInstance) right, processorSupport);
-        }
-
-        if (left instanceof GenericType && right instanceof GenericType)
-        {
-            return org.finos.legend.pure.m3.navigation.generictype.GenericType.genericTypesEqual(left, right, processorSupport);
         }
 
         if (Instance.instanceOf(left, M3Paths.InstanceValue, processorSupport))

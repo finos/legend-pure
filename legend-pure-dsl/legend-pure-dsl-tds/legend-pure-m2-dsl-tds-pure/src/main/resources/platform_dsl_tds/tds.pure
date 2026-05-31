@@ -58,6 +58,6 @@ function <<test.Test>> meta::pure::metamodel::relation::tests::testFunction():Bo
 
 function <<test.Test>> meta::pure::metamodel::relation::tests::testStringToTDSWithEmpty():Boolean[1]
 {
-    let tds = stringToTDS('a,b,c\n2,c,true\n,,\nnull,null,null\n');
-    assertEquals(@TDS<(a:Integer, b:String, c:Boolean)>->genericType(), $tds->genericType());
+    let tds = stringToTDS('a,b,c\n2,c,true\n,,\nnull,null,null\n')->cast(@TDS<(a:Integer, b:String, c:Boolean)>);
+    assertEquals('a, b, c\n2,c,true\n,,\nnull,null,null\n', $tds.csv);
 }

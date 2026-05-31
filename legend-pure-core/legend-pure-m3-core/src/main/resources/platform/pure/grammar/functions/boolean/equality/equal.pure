@@ -319,6 +319,6 @@ function <<test.Test>> meta::pure::functions::boolean::tests::equality::equal::t
 
 function <<test.Test>> meta::pure::functions::boolean::tests::equality::equal::testEqualGenericType():Boolean[1]
 {
-    assert(equal(@Integer->genericType(), 1->genericType()));
+    assertFalse(equal(@Integer->genericType(), 1->genericType()));
     assertFalse(equal(@Float->genericType(), @Integer->genericType()));
 }

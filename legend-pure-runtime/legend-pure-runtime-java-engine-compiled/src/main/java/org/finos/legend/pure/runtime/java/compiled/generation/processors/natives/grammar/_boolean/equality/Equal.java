@@ -14,13 +14,13 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.equality;
 
-import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Equal extends AbstractNativeFunctionGeneric
 {
     public Equal()
     {
-        super("CompiledSupport.equal", new Class[]{Object.class, Object.class, ExecutionSupport.class}, false, true, false, "equal_Any_MANY__Any_MANY__Boolean_1_");
+        super(getMethod(CompiledSupport.class, "equal"), "equal_Any_MANY__Any_MANY__Boolean_1_");
     }
 }
