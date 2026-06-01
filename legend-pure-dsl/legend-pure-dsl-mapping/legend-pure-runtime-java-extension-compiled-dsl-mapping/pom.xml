@@ -80,7 +80,8 @@
                                     org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.OperationParser,
                                     org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.EnumerationMappingParser,
                                     org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.AggregationAwareParser,
-                                    org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.XStoreParser
+                                    org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.XStoreParser,
+                                    org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.ModelJoinParser
                                 </argument>
                                 <argument>${project.build.directory}/generated-sources/</argument>
                             </arguments>
