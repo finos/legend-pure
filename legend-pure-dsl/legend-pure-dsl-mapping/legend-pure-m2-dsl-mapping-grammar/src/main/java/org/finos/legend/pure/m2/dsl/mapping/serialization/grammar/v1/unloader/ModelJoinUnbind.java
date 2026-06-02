@@ -69,6 +69,13 @@ public class ModelJoinUnbind implements MatchRunner<ModelJoinAssociationImplemen
             // Association no longer resolvable — source was deleted
         }
 
+        // Capture each PM's bound property name BEFORE cleanPropertyStub runs.
+        MutableList<String> pmPropertyNames = Lists.mutable.empty();
+        for (PropertyMapping propertyMapping : instance._propertyMappings())
+        {
+            pmPropertyNames.add(resolvePmPropertyName((ModelJoinPropertyMapping) propertyMapping, processorSupport));
+        }
+
         Shared.cleanImportStub(instance._associationCoreInstance(), processorSupport);
         Shared.cleanImportStub(instance._parentCoreInstance(), processorSupport);
 
@@ -83,26 +90,58 @@ public class ModelJoinUnbind implements MatchRunner<ModelJoinAssociationImplemen
             }
         }
 
-        // Keep only the original 2 template PMs (first PM per distinct property stub).
+        // Keep only the original 2 template PMs (first PM per distinct property stub) — and
+        // align the captured property-name list to those kept PMs by index.
         MutableList<PropertyMapping> originals = Lists.mutable.empty();
+        MutableList<String> originalPropertyNames = Lists.mutable.empty();
         MutableSet<CoreInstance> seenProperties = Sets.mutable.empty();
+        int i = 0;
         for (PropertyMapping pm : instance._propertyMappings())
         {
             if (seenProperties.add(pm._propertyCoreInstance()))
             {
                 originals.add(pm);
+                originalPropertyNames.add(pmPropertyNames.get(i));
             }
+            i++;
         }
         instance._propertyMappings(originals);
 
         if (propName1 != null && propName2 != null)
         {
-            for (PropertyMapping pm : originals)
+            for (int j = 0; j < originals.size(); j++)
             {
-                ModelJoinPropertyMapping mjPm = (ModelJoinPropertyMapping) pm;
-                restoreParamNames(mjPm, propName1, propName2, processorSupport);
+                ModelJoinPropertyMapping mjPm = (ModelJoinPropertyMapping) originals.get(j);
+                restoreParamNames(mjPm, originalPropertyNames.get(j), propName1, propName2, processorSupport);
             }
         }
+    }
+
+    /**
+     * Reads the bound property name off a PM's still-live property stub. Returns null if
+     * the stub is missing or already cleaned (in which case the caller falls back to
+     * positional restore).
+     */
+    private String resolvePmPropertyName(ModelJoinPropertyMapping pm, ProcessorSupport processorSupport)
+    {
+        CoreInstance pmPropertyCI = pm._propertyCoreInstance();
+        if (pmPropertyCI == null)
+        {
+            return null;
+        }
+        try
+        {
+            CoreInstance resolved = ImportStub.withImportStubByPass(pmPropertyCI, processorSupport);
+            if (resolved instanceof Property)
+            {
+                return ((Property<?, ?>) resolved)._name();
+            }
+        }
+        catch (Exception ignored)
+        {
+            // Stub already cleaned or unresolvable — fall through to null.
+        }
+        return null;
     }
 
     /**
@@ -111,25 +150,20 @@ public class ModelJoinUnbind implements MatchRunner<ModelJoinAssociationImplemen
      * is the association property name corresponding to this PM) and {@code _mj_src}
      * back to the other association property's name. Generic types are cleared.
      */
-    private void restoreParamNames(ModelJoinPropertyMapping pm, String propName1, String propName2, ProcessorSupport processorSupport)
+    private void restoreParamNames(ModelJoinPropertyMapping pm, String pmPropName, String propName1, String propName2, ProcessorSupport processorSupport)
     {
         LambdaFunction<?> lambda = pm._joinCondition();
 
-        // Determine which association property name is the target side for THIS PM.
-        // Convention: the PM's own _propertyCoreInstance is the property mapped to the
-        // target side. The other association property is the source side.
+        // Convention: the PM's own property is the target side; the other association
+        // property is the source side.
         String tgtName;
         String srcName;
-        CoreInstance pmPropertyCI = pm._propertyCoreInstance();
-        Property<?, ?> pmProperty = pmPropertyCI == null
-                ? null
-                : (Property<?, ?>) ImportStub.withImportStubByPass(pmPropertyCI, processorSupport);
-        if (pmProperty != null && propName1.equals(pmProperty._name()))
+        if (pmPropName != null && propName1.equals(pmPropName))
         {
             tgtName = propName1;
             srcName = propName2;
         }
-        else if (pmProperty != null && propName2.equals(pmProperty._name()))
+        else if (pmPropName != null && propName2.equals(pmPropName))
         {
             tgtName = propName2;
             srcName = propName1;

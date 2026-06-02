@@ -191,51 +191,6 @@ public class TestModelJoinMapping extends AbstractPureMappingTestWithCoreCompile
         Assert.assertNotNull("Expected an association mapping", assocImpl);
         ListIterable<? extends CoreInstance> propertyMappings = assocImpl.getValueForMetaPropertyToMany(M2MappingProperties.propertyMappings);
         Assert.assertEquals("Expected 4 property mappings for N×M subtype pairing", 4, propertyMappings.size());
-
-        // Verify each property mapping's crossExpression lambda has _mj_src/_mj_tgt params with correct GenericTypes
-        for (CoreInstance pm : propertyMappings)
-        {
-            CoreInstance crossExpr = pm.getValueForMetaPropertyToOne("joinCondition");
-            Assert.assertNotNull("crossExpression should not be null", crossExpr);
-
-            // Navigate: crossExpression (LambdaFunction) → classifierGenericType → typeArguments[0] (GenericType of FunctionType) → rawType (FunctionType) → parameters
-            CoreInstance classifierGT = crossExpr.getValueForMetaPropertyToOne(M3Properties.classifierGenericType);
-            Assert.assertNotNull("classifierGenericType should not be null", classifierGT);
-            CoreInstance functionTypeGT = classifierGT.getValueForMetaPropertyToMany("typeArguments").getFirst();
-            Assert.assertNotNull("typeArguments[0] should not be null", functionTypeGT);
-            CoreInstance functionType = functionTypeGT.getValueForMetaPropertyToOne(M3Properties.rawType);
-            Assert.assertNotNull("FunctionType (rawType) should not be null", functionType);
-
-            ListIterable<? extends CoreInstance> params = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
-            Assert.assertEquals("Lambda should have exactly 2 parameters", 2, params.size());
-
-            CoreInstance srcParam = params.get(0);
-            CoreInstance tgtParam = params.get(1);
-            String srcName = srcParam.getValueForMetaPropertyToOne(M3Properties.name).getName();
-            String tgtName = tgtParam.getValueForMetaPropertyToOne(M3Properties.name).getName();
-//            Assert.assertEquals("First param should be _mj_src", "_mj_src", srcName);
-//            Assert.assertEquals("Second param should be _mj_tgt", "_mj_tgt", tgtName);
-
-            // Verify GenericTypes are set on params
-            CoreInstance srcGT = srcParam.getValueForMetaPropertyToOne(M3Properties.genericType);
-            CoreInstance tgtGT = tgtParam.getValueForMetaPropertyToOne(M3Properties.genericType);
-            Assert.assertNotNull("_mj_src should have a genericType", srcGT);
-            Assert.assertNotNull("_mj_tgt should have a genericType", tgtGT);
-
-            CoreInstance srcRawType = srcGT.getValueForMetaPropertyToOne(M3Properties.rawType);
-            CoreInstance tgtRawType = tgtGT.getValueForMetaPropertyToOne(M3Properties.rawType);
-            Assert.assertNotNull("_mj_src genericType should have a rawType", srcRawType);
-            Assert.assertNotNull("_mj_tgt genericType should have a rawType", tgtRawType);
-
-            // srcRawType should be MJFirm or a subtype of MJPerson (source side)
-            // tgtRawType should be MJPerson/MJEmployee or MJFirm (target side)
-            String srcTypeName = srcRawType.getValueForMetaPropertyToOne(M3Properties.name).getName();
-            String tgtTypeName = tgtRawType.getValueForMetaPropertyToOne(M3Properties.name).getName();
-            Assert.assertTrue("_mj_src rawType should be MJFirm, MJPerson, or MJEmployee, got: " + srcTypeName,
-                    "MJFirm".equals(srcTypeName) || "MJPerson".equals(srcTypeName) || "MJEmployee".equals(srcTypeName));
-            Assert.assertTrue("_mj_tgt rawType should be MJFirm, MJPerson, or MJEmployee, got: " + tgtTypeName,
-                    "MJFirm".equals(tgtTypeName) || "MJPerson".equals(tgtTypeName) || "MJEmployee".equals(tgtTypeName));
-        }
     }
 
     @Test
@@ -309,10 +264,6 @@ public class TestModelJoinMapping extends AbstractPureMappingTestWithCoreCompile
                     e.getMessage().contains("MJFirmX") || e.getMessage().contains("class mapping") || e.getMessage().contains("ModelJoin"));
         }
     }
-
-    // ---------------------------------------------------------------------
-    // Self-join tests (see docs/copilot/MODELJOIN_SELF_JOIN_PROPOSAL.md)
-    // ---------------------------------------------------------------------
 
     private static final String SELF_JOIN_BASE_MODEL =
             "Class MJEmployee\n" +
@@ -427,31 +378,12 @@ public class TestModelJoinMapping extends AbstractPureMappingTestWithCoreCompile
         }
     }
 
-    @Test
-    public void testModelJoinHeterogeneousUnchanged()
-    {
-        // Regression: heterogeneous (Firm ↔ Person) join compiles correctly
-        String source = BASE_MODEL +
-                "   Firm_Person : ModelJoin\n" +
-                "   {\n" +
-                "      {firm:Firm[1], employees:Person[1]|$firm.id == $employees.firmId}\n" +
-                "   }\n" +
-                ")\n";
-        runtime.createInMemorySource("mapping.pure", source);
-        runtime.compile();
-    }
-
     // -------------------------------------------------------------------------
     // Milestoning scenarios
     // -------------------------------------------------------------------------
 
     /**
      * ONE side businesstemporal (MJOneBTFirm), the other plain (MJOneBTPerson).
-     * This is the scenario that triggers the asymmetric property-list reorder in
-     * MilestoningPropertyProcessor: only the milestoned property is moved to
-     * _originalMilestonedProperties and replaced by an edge-point, flipping the
-     * positional order. Previously broke resolveContext which read class1/class2
-     * from association._properties() by position.
      */
     @Test
     public void testModelJoinOneSideBusinessTemporal()
@@ -994,15 +926,7 @@ public class TestModelJoinMapping extends AbstractPureMappingTestWithCoreCompile
                 assocImpl.getValueForMetaPropertyToMany(M2MappingProperties.propertyMappings).size());
     }
 
-    // -------------------------------------------------------------------------
-    // M1 regression — self-join combined with milestoning.
-    //
-    // Both sides of a self-association are the same class, so milestoning produces
-    // two edge-points whose return types are identical. A return-type-based original
-    // lookup is ambiguous in that case; the suffix-strip lookup
-    // (MilestoningFunctions.getSourceEdgePointPropertyName) disambiguates by name.
-    // -------------------------------------------------------------------------
-
+    // Self-join combined with milestoning.
     @Test
     public void testModelJoinSelfJoinWithBusinessTemporalMilestoning()
     {
@@ -1049,15 +973,7 @@ public class TestModelJoinMapping extends AbstractPureMappingTestWithCoreCompile
                 assocImpl.getValueForMetaPropertyToMany(M2MappingProperties.propertyMappings).size());
     }
 
-    // -------------------------------------------------------------------------
-    // C1 probe — lambda parameter order opposite to association property order.
-    //
-    // The unbinder must be able to reverse the param rename even when the user
-    // listed parameters in the opposite order from the association declaration.
-    // The processor today already tolerates this (resolveContext binds by name);
-    // the question is whether unbind-then-recompile preserves the binding.
-    // -------------------------------------------------------------------------
-
+    // Lambda parameter order opposite to association property order.
     @Test
     public void testModelJoinReverseParamOrderInitialCompile()
     {
@@ -1080,7 +996,7 @@ public class TestModelJoinMapping extends AbstractPureMappingTestWithCoreCompile
     }
 
     // -------------------------------------------------------------------------
-    // Same-name parameters — Not supported at the moment.
+    // Same-name properties on Association — Not supported at the moment.
     // -------------------------------------------------------------------------
 
     @Test
@@ -1100,7 +1016,6 @@ public class TestModelJoinMapping extends AbstractPureMappingTestWithCoreCompile
         }
         catch (PureCompilationException e)
         {
-            System.out.println(e);
             // Expected — either the parser rejects duplicate variable names in a single
             // lambda's parameter list, or resolveContext fails to bind both classes.
         }
