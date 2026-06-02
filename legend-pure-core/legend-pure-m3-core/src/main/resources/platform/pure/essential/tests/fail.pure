@@ -33,3 +33,13 @@ function meta::pure::functions::asserts::fail(message:Function<{->String[1]}>[1]
 {
     assert(false, $message);
 }
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testFail():Boolean[1]
+{
+    assertError(|fail(), 'Assert failed');
+}
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testFailWithMessage():Boolean[1]
+{
+    assertError(|fail('Error Here'), 'Error Here');
+}

@@ -14,15 +14,27 @@
 
 package org.finos.legend.pure.runtime.java.extension.store.relational.interpreted.natives.test;
 
-import org.finos.legend.pure.m2.relational.AbstractTestPureDBFunction;
-import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.BeforeClass;
+import junit.framework.TestSuite;
+import org.finos.legend.pure.runtime.java.interpreted.testHelper.PureTestBuilderInterpreted;
+import org.junit.runner.RunWith;
+import org.junit.runners.AllTests;
 
-public class TestPureDBFunction extends AbstractTestPureDBFunction
+/**
+ * Runs every Pure {@code <<test.Test>>} function under
+ * {@code meta::relational::tests::*} through the Pure-native surveyor.
+ *
+ * <p>The tests themselves ship inside the {@code platform_store_relational}
+ * repo under {@code legend-pure-m2-store-relational-pure/src/main/resources/
+ * platform_store_relational/tests/}. Both this (interpreted) shim and the
+ * sibling compiled shim hand off to the surveyor, so a single Pure-source
+ * change covers both runtimes — there's no Java-side test logic to drift
+ * between stacks.
+ */
+@RunWith(AllTests.class)
+public class TestPureDBFunction
 {
-    @BeforeClass
-    public static void setUp()
+    public static TestSuite suite()
     {
-        setUpRuntime(new FunctionExecutionInterpreted());
+        return PureTestBuilderInterpreted.buildSurveyorSuite("meta::relational::tests", "");
     }
 }

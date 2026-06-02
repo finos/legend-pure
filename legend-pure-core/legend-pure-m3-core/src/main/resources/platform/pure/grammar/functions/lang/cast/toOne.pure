@@ -39,3 +39,26 @@ function <<test.Test>> meta::pure::functions::multiplicity::tests::toOne::testTo
     assertEquals(1, [1, 2, 3]->first()->toOne());
     assertEquals(1, [1, 2, 3]->filter(x | $x == 1)->toOne());
 }
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::toOne::testToOneError():Boolean[1]
+{
+    assertError(|[]->toOne(), 'Cannot cast a collection of size 0 to multiplicity [1]');
+    assertError(|['a', 'b', 'c']->toOne(), 'Cannot cast a collection of size 3 to multiplicity [1]');
+    assertError(|[]->toOne('Something wrong'), 'Something wrong');
+    assertError(|['a', 'b', 'c']->toOne('Something wrong'), 'Something wrong');
+}
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::toOne::testBasic():Boolean[1]
+{
+    assert(1 == [1]->toOne());
+}
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::toOne::testEval():Boolean[1]
+{
+    assert(1 == toOne_T_MANY__T_1_->eval([1]));
+}
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::toOne::testWithMessage():Boolean[1]
+{
+    assert(1 == [1]->toOne('Something wrong'));
+}

@@ -40,3 +40,8 @@ function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertS
     assertSize([1, 2, 3], 3);
     assertSize(['a', 'b'], 2);
 }
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testFailureAssertSize():Boolean[1]
+{
+    assertError(|assertSize([1, 2], 3), 'expected size: 3, actual size: 2');
+}

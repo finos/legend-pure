@@ -1,0 +1,88 @@
+// Copyright 2026 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Pure-native tests for the H2 backend of the relational native
+// functions. Companion to `execute_in_db.pure` (DuckDB-only basics)
+// and `temp_tables.pure` (DuckDB temp-table lifecycle).
+//
+// Running these requires an H2 jar reachable at runtime:
+//   * Rust stack — set `LEGEND_PURE_H2_JAR` env var, OR populate the
+//     `[extension.relational.h2]` section in legend-pure-classpath.toml.
+//   * Java stack — H2 ships as a Maven dep, so this is automatic.
+//
+// No skip-when-unavailable conditional: the surveyor strict-pass
+// gate requires the H2 jar to be configured for this repo.
+
+import meta::external::store::relational::runtime::*;
+import meta::relational::runtime::*;
+import meta::relational::metamodel::execute::*;
+
+// Smoke test against H2 — equivalent to `testExecuteInDbHugeInt` for
+// DuckDB. `1+1` round-trips via PG-wire as INT8 → Pure Integer.
+function <<test.Test>>
+meta::relational::tests::testExecuteInH2(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.H2);
+   let res = executeInDb('select 1+1', $db, 0, 1000);
+   assertEquals(2, $res.rows->at(0).values->at(0));
+}
+
+// VARCHAR round-trip on H2 — covers the BPCHAR/VARCHAR/TEXT cell
+// mapping in `cell_to_value_pg`.
+//
+// Goes through a real `CREATE TABLE … VARCHAR(50)` column rather
+// than a bare `SELECT 'lit' as s` literal: H2's PG-wire mode can't
+// serialise untyped string literals in binary format ("output binary
+// format is undefined" — a documented H2 PG-compat gap). Real columns
+// know their type at projection time and round-trip cleanly. This
+// path is what users actually hit; the literal-only flow is fixed by
+// the PG-compat work tracked in BACKLOG.
+function <<test.Test>>
+meta::relational::tests::testExecuteInH2VarcharRoundtrip(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.H2);
+   executeInDb('CREATE LOCAL TEMPORARY TABLE varchar_probe (s VARCHAR(50))', $db, 0, 1000);
+   executeInDb('INSERT INTO varchar_probe VALUES (\'hello\')', $db, 0, 1000);
+   let res = executeInDb('SELECT s FROM varchar_probe', $db, 0, 1000);
+   let ok = assertEquals('hello', $res.rows->at(0).values->at(0));
+   executeInDb('DROP TABLE varchar_probe', $db, 0, 1000);
+   $ok;
+}
+
+// Full temp-table lifecycle on H2 with a DDL-builder lambda that
+// branches on the engine. Locks the `createTempTable` → lambda →
+// `executeInDb` → `dropTempTable` chain against the H2 backend.
+function <<test.Test>>
+meta::relational::tests::testCreateTempTableInH2(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.H2);
+   createTempTable(
+      'tt_h2',
+      [],
+      {n: String[1], cs: meta::relational::metamodel::Column[*], t: DatabaseType[1] |
+         // The lambda receives the actual resolved `DatabaseType`, so
+         // engine-specific DDL can branch here.
+         if($t == DatabaseType.H2,
+            | 'CREATE LOCAL TEMPORARY TABLE ' + $n + ' (x INTEGER)',
+            | 'CREATE TABLE ' + $n + ' (x INTEGER)'
+         )
+      },
+      $db
+   );
+   executeInDb('INSERT INTO tt_h2 VALUES (42)', $db, 0, 1000);
+   let res = executeInDb('SELECT count(*) FROM tt_h2', $db, 0, 1000);
+   let ok = assertEquals(1, $res.rows->at(0).values->at(0));
+   dropTempTable('tt_h2', $db);
+   $ok;
+}

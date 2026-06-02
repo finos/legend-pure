@@ -1,0 +1,55 @@
+// Copyright 2026 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Pure-native tests for the executeInDb relational native function.
+//
+// Ported from the original JUnit `AbstractTestPureDBFunction.java`. They
+// target DuckDB because DuckDB is the only backend wired across both
+// stacks today; assertions about *which* backends each stack supports
+// are runtime-specific and live in each stack's integration suite
+// rather than here.
+
+import meta::external::store::relational::runtime::*;
+import meta::relational::runtime::*;
+import meta::relational::metamodel::execute::*;
+
+// Ported from `testExecuteInb_DuckDB_HugeInt` in
+// `AbstractTestPureDBFunction.java:170`. DuckDB implicitly widens
+// integer-sum results to HUGEINT; this verifies the Rust native demotes
+// HUGEINT back into Pure's Integer when the value fits in i64.
+function <<test.Test>>
+meta::relational::tests::testExecuteInDbHugeInt(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
+   let res = executeInDb('select 1+1', $db, 0, 1000);
+   assertEquals(2, $res.rows->at(0).values->at(0));
+}
+
+// Trivial column-aliased projection — locks the columnNames slot.
+function <<test.Test>>
+meta::relational::tests::testExecuteInDbExposesColumnName(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
+   let res = executeInDb('select 1 as alpha', $db, 0, 1000);
+   assertEquals('alpha', $res.columnNames->at(0));
+}
+
+// VARCHAR round-trip: literal 'hello' must surface as Pure String.
+function <<test.Test>>
+meta::relational::tests::testExecuteInDbVarcharRoundtrip(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
+   let res = executeInDb('select \'hello\' as s', $db, 0, 1000);
+   assertEquals('hello', $res.rows->at(0).values->at(0));
+}

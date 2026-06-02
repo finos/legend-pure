@@ -343,3 +343,133 @@ function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testDynam
   assert($a.toB->isEmpty());
 }
 
+// =========================================================================
+// Below: fixtures for the 6-arg `constraintsManager` overloads. Ported from
+// Java `AbstractTestDynamicNewConstraintsHandler`. Pin the contract:
+//   - When a constraintsManager is provided, it is invoked with the
+//     populated instance; its return value replaces the dynamicNew result.
+//   - The default class-constraint pass is SKIPPED in that branch (parity
+//     with Java `DefaultConstraintHandler.handleConstraints`).
+//   - Both Class- and GenericType-receiver forms accept the manager.
+//   - The metamodel class `ConstraintsOverride` is constructible directly
+//     via `^ConstraintsOverride(constraintsManager=...)` and exposes
+//     `.constraintsManager` for reflection.
+// =========================================================================
+
+Class meta::pure::functions::lang::tests::dynamicNew::Employee_ConstraintsTest
+[
+   rule1 : $this.lastName->toOne()->length() < 10
+]
+{
+   lastName: String[0..1];
+}
+
+Class meta::pure::functions::lang::tests::dynamicNew::ConstraintResult_Test
+{
+   instance: Any[1];
+}
+
+function meta::pure::functions::lang::tests::dynamicNew::gtoOne_ConstraintsTest(o:Any[1], property:Property<Nil,Any|0..1>[1]):Any[0..1]
+{
+   [];
+}
+
+function meta::pure::functions::lang::tests::dynamicNew::gtoMany_ConstraintsTest(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]
+{
+   [];
+}
+
+function meta::pure::functions::lang::tests::dynamicNew::cm_Replace(o:Any[1]):Any[1]
+{
+   ^meta::pure::functions::lang::tests::dynamicNew::Employee_ConstraintsTest(lastName='new');
+}
+
+function meta::pure::functions::lang::tests::dynamicNew::cm_PassThrough(o:Any[1]):Any[1]
+{
+   $o;
+}
+
+function meta::pure::functions::lang::tests::dynamicNew::cm_Wrap(o:Any[1]):Any[1]
+{
+   ^meta::pure::functions::lang::tests::dynamicNew::ConstraintResult_Test(instance=$o);
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testDynamicNewConstraintManagerTransform():Boolean[1]
+{
+   // Manager replaces the constructed object — the KV would violate rule1
+   // (length >= 10) but the manager returns a fresh Employee with a valid
+   // lastName, so dynamicNew returns that replacement. Default constraint
+   // pass is SKIPPED when a manager is present.
+   let r = dynamicNew(
+      meta::pure::functions::lang::tests::dynamicNew::Employee_ConstraintsTest,
+      [^KeyValue(key='lastName', value='1234567891000')],
+      meta::pure::functions::lang::tests::dynamicNew::gtoOne_ConstraintsTest_Any_1__Property_1__Any_$0_1$_,
+      meta::pure::functions::lang::tests::dynamicNew::gtoMany_ConstraintsTest_Any_1__Property_1__Any_MANY_,
+      '2',
+      meta::pure::functions::lang::tests::dynamicNew::cm_Replace_Any_1__Any_1_
+   )->cast(@meta::pure::functions::lang::tests::dynamicNew::Employee_ConstraintsTest);
+   assertEquals('new', $r.lastName);
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testDynamicNewConstraintManagerSkipsDefaultCheck():Boolean[1]
+{
+   // Manager returns $o unchanged. The KV value would violate rule1
+   // (length 11 > 10) but the default-constraint pass is skipped because
+   // the manager is set. dynamicNew returns the original instance.
+   let r = dynamicNew(
+      meta::pure::functions::lang::tests::dynamicNew::Employee_ConstraintsTest,
+      [^KeyValue(key='lastName', value='12345678901')],
+      meta::pure::functions::lang::tests::dynamicNew::gtoOne_ConstraintsTest_Any_1__Property_1__Any_$0_1$_,
+      meta::pure::functions::lang::tests::dynamicNew::gtoMany_ConstraintsTest_Any_1__Property_1__Any_MANY_,
+      '2',
+      meta::pure::functions::lang::tests::dynamicNew::cm_PassThrough_Any_1__Any_1_
+   )->cast(@meta::pure::functions::lang::tests::dynamicNew::Employee_ConstraintsTest);
+   assertEquals('12345678901', $r.lastName);
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testDynamicNewConstraintManagerWrap():Boolean[1]
+{
+   // Manager wraps the instance in a ConstraintResult_Test; dynamicNew
+   // returns the wrapper, not the original Employee. Walks the
+   // wrap-and-introspect pattern legend-engine uses to expose constraint
+   // failures structurally instead of via exceptions.
+   let r = dynamicNew(
+      meta::pure::functions::lang::tests::dynamicNew::Employee_ConstraintsTest,
+      [^KeyValue(key='lastName', value='ok')],
+      meta::pure::functions::lang::tests::dynamicNew::gtoOne_ConstraintsTest_Any_1__Property_1__Any_$0_1$_,
+      meta::pure::functions::lang::tests::dynamicNew::gtoMany_ConstraintsTest_Any_1__Property_1__Any_MANY_,
+      '2',
+      meta::pure::functions::lang::tests::dynamicNew::cm_Wrap_Any_1__Any_1_
+   );
+   assert($r->instanceOf(meta::pure::functions::lang::tests::dynamicNew::ConstraintResult_Test));
+   let unwrapped = $r->cast(@meta::pure::functions::lang::tests::dynamicNew::ConstraintResult_Test).instance->cast(@meta::pure::functions::lang::tests::dynamicNew::Employee_ConstraintsTest);
+   assertEquals('ok', $unwrapped.lastName);
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testDynamicNewConstraintManagerGenericType():Boolean[1]
+{
+   // Same manager-replace path through the GenericType receiver overload.
+   let r = dynamicNew(
+      ^GenericType(rawType=meta::pure::functions::lang::tests::dynamicNew::Employee_ConstraintsTest),
+      [^KeyValue(key='lastName', value='1234567891000')],
+      meta::pure::functions::lang::tests::dynamicNew::gtoOne_ConstraintsTest_Any_1__Property_1__Any_$0_1$_,
+      meta::pure::functions::lang::tests::dynamicNew::gtoMany_ConstraintsTest_Any_1__Property_1__Any_MANY_,
+      '2',
+      meta::pure::functions::lang::tests::dynamicNew::cm_Replace_Any_1__Any_1_
+   )->cast(@meta::pure::functions::lang::tests::dynamicNew::Employee_ConstraintsTest);
+   assertEquals('new', $r.lastName);
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testConstraintsOverrideClassShape():Boolean[1]
+{
+   // The `ConstraintsOverride` metamodel class is directly constructible
+   // and its `constraintsManager` field is readable — locks the contract
+   // tested by Java `testClassConstraintHandlerSignature`. Independent of
+   // dynamicNew dispatch; just confirms the m3.pure class definition is
+   // visible from user Pure code.
+   let r = ^ConstraintsOverride(
+      constraintsManager=meta::pure::functions::lang::tests::dynamicNew::cm_PassThrough_Any_1__Any_1_
+   );
+   assert(meta::pure::functions::lang::tests::dynamicNew::cm_PassThrough_Any_1__Any_1_ == $r.constraintsManager);
+}
+

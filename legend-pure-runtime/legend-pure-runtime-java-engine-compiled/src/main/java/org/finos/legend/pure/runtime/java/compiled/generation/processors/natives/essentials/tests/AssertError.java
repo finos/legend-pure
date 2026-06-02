@@ -25,7 +25,7 @@ public class AssertError extends AbstractNative
 {
     public AssertError()
     {
-        super("assertError_Function_1__String_1__Integer_$0_1$__Integer_$0_1$__Boolean_1_");
+        super("assertError_Function_1__Function_1__Boolean_1_");
     }
 
     @Override
@@ -34,8 +34,6 @@ public class AssertError extends AbstractNative
         SourceInformation sourceInformation = functionExpression.getSourceInformation();
         return "CoreGen.assertError(es, " + transformedParams.get(0) + ", " +
                 transformedParams.get(1) + ", " +
-                (transformedParams.get(2).equals("null") ? "-1" : transformedParams.get(2)) + ", " +
-                (transformedParams.get(3).equals("null") ? "-1" : transformedParams.get(3)) + ", " +
                 NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) +
                 ")";
     }

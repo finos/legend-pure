@@ -12,7 +12,74 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::router::*;
+import meta::pure::test::pct::*;
+
 Class meta::pure::router::RoutedValueSpecification extends ValueSpecification
 {
     value : ValueSpecification[1];
+}
+
+// -------------------------------------------------------------------------
+// Tests for the platform-side RoutedValueSpecification class. legend-engine
+// router/preeval wraps every routed ValueSpecification in this class and
+// unwraps via `byPassRouterInfo()` (defined in legend-engine consumer
+// code, not platform). The tests below prove the platform mechanism —
+// construction, .value access, and reactivate-through-wrapper — without
+// depending on legend-engine. Once Engine ports load, these are the
+// shadow that catches RoutedValueSpecification regressions before
+// `byPassRouterInfo` consumers do.
+// -------------------------------------------------------------------------
+
+function <<test.Test>> meta::pure::router::tests::testRoutedValueSpecificationConstruction():Boolean[1]
+{
+    // Construct a wrapper around a deactivated lambda body; assert `.value`
+    // resolves to a ValueSpecification subtype. genericType/multiplicity
+    // are required-PureOne properties inherited from ValueSpecification,
+    // so they must be supplied at construction (mirrors `^InstanceValue(
+    // values=..., genericType=^GenericType(rawType=...), multiplicity=...)`
+    // patterns elsewhere in the platform). We pass explicit Integer/PureOne
+    // here rather than reading from the body because the runtime does not
+    // necessarily materialize `.genericType` on deactivated bodies.
+    let body = {| 1 + 2}->evaluateAndDeactivate().expressionSequence->toOne();
+    let wrapped = ^RoutedValueSpecification(
+        value = $body,
+        genericType = ^GenericType(rawType = Integer),
+        multiplicity = PureOne
+    );
+    assert($wrapped.value->instanceOf(ValueSpecification));
+}
+
+function <<test.Test>> meta::pure::router::tests::testRoutedValueSpecificationReactivateThrough():Boolean[1]
+{
+    // Mirror what `byPassRouterInfo()` does in legend-engine: take a
+    // RoutedValueSpecification, navigate `.value` to get the inner VS,
+    // reactivate the body and assert the result. Proves the canonical
+    // unwrap-and-evaluate shape works through the platform-side class.
+    let body = {| 1 + 2}->evaluateAndDeactivate().expressionSequence->toOne();
+    let wrapped = ^RoutedValueSpecification(
+        value = $body,
+        genericType = ^GenericType(rawType = Integer),
+        multiplicity = PureOne
+    );
+    assertEq(3, $wrapped.value->reactivate()->toOne()->cast(@Integer));
+}
+
+function <<test.Test>> meta::pure::router::tests::testRoutedValueSpecificationNested():Boolean[1]
+{
+    // Two levels of RoutedValueSpecification nesting — exercises that
+    // `.value` access composes correctly when wrappers stack (the router
+    // sometimes routes already-routed specs and re-wraps).
+    let body = {| 4 + 5}->evaluateAndDeactivate().expressionSequence->toOne();
+    let inner = ^RoutedValueSpecification(
+        value = $body,
+        genericType = ^GenericType(rawType = Integer),
+        multiplicity = PureOne
+    );
+    let outer = ^RoutedValueSpecification(
+        value = $inner,
+        genericType = ^GenericType(rawType = Integer),
+        multiplicity = PureOne
+    );
+    assertEq(9, $outer.value->cast(@RoutedValueSpecification).value->reactivate()->toOne()->cast(@Integer));
 }

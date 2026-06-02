@@ -27,3 +27,15 @@ function <<test.Test>> meta::pure::functions::multiplicity::tests::getLowerBound
     assertEq(0, ZeroMany->getLowerBound());
     assertEq(1, OneMany->getLowerBound());
 }
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::getLowerBound::testGetLowerBoundArbitraryBound():Boolean[1]
+{
+    // Arbitrary [m..n] shape constructed directly via ^Multiplicity —
+    // proves the reader walks the heap-property chain on a non-named
+    // Multiplicity instance, not only the bootstrapped PureZero/ZeroOne/…
+    let m = ^Multiplicity(
+        lowerBound = ^MultiplicityValue(value = 3),
+        upperBound = ^MultiplicityValue(value = 7)
+    );
+    assertEq(3, $m->getLowerBound());
+}

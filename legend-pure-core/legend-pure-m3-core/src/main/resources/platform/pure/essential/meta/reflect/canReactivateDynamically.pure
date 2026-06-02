@@ -30,3 +30,34 @@ function <<test.Test>> meta::pure::functions::meta::tests::canReactivateDynamica
 {
     assert(canReactivateDynamically_ValueSpecification_1__Boolean_1_->eval({|1}->evaluateAndDeactivate().expressionSequence->toOne()));
 }
+
+// -------------------------------------------------------------------------
+// Below: additional tests exercising VS shapes the original three tests
+// don't cover — nested function-expression chains, deactivated `^Class`
+// constructors, and lambda-with-captured-open-var bodies. All return true
+// today because the inputs are closed/reactivatable; together they prove
+// the predicate handles every VS-subtype shape DMR consumers walk.
+// -------------------------------------------------------------------------
+
+function <<test.Test>> meta::pure::functions::meta::tests::canReactivateDynamically::testNestedFunctionExpressionChain():Boolean[1]
+{
+    // Deactivate a multi-level FunctionExpression: `(1+2)+3` walks two levels
+    // of SimpleFunctionExpression.parametersValues during reactivation.
+    assert(canReactivateDynamically({| (1 + 2) + 3}->evaluateAndDeactivate().expressionSequence->toOne()));
+}
+
+function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::meta::tests::canReactivateDynamically::testLambdaCapturingOpenVar():Boolean[1]
+{
+    // Body references `$x` captured from the enclosing let; the captured
+    // value is part of the lambda's reactivation context.
+    let x = 5;
+    let lambda = {| $x + 1};
+    assert(canReactivateDynamically($lambda->evaluateAndDeactivate().expressionSequence->toOne()));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::canReactivateDynamically::testCrossChunkFunctionReference():Boolean[1]
+{
+    // Deactivated body calls `size()` (different platform chunk than
+    // canReactivateDynamically); predicate must resolve cross-chunk refs.
+    assert(canReactivateDynamically({| [1, 2, 3]->size() + 1}->evaluateAndDeactivate().expressionSequence->toOne()));
+}

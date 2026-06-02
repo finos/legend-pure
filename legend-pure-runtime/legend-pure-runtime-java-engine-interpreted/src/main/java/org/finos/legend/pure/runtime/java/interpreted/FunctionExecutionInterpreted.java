@@ -358,10 +358,10 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("times_Number_MANY__Number_1_", times);
 
         // Multiplicity
-        this.nativeFunctions.put("toOne_T_MANY__T_1_", new ToOne(repository));
-        this.nativeFunctions.put("toOne_T_MANY__String_1__T_1_", new ToOne(repository));
-        this.nativeFunctions.put("toOneMany_T_MANY__T_$1_MANY$_", new ToOneMany(repository));
-        this.nativeFunctions.put("toOneMany_T_MANY__String_1__T_$1_MANY$_", new ToOneMany(repository));
+        this.nativeFunctions.put("toOne_T_MANY__T_1_", new ToOne(this, repository));
+        this.nativeFunctions.put("toOne_T_MANY__String_1__T_1_", new ToOne(this, repository));
+        this.nativeFunctions.put("toOneMany_T_MANY__T_$1_MANY$_", new ToOneMany(this, repository));
+        this.nativeFunctions.put("toOneMany_T_MANY__String_1__T_$1_MANY$_", new ToOneMany(this, repository));
 
         // String
         this.nativeFunctions.put("joinStrings_String_MANY__String_1__String_1__String_1__String_1_", new JoinStrings(repository));
@@ -583,7 +583,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
 
         // Tests
         this.nativeFunctions.put("assert_Boolean_1__Function_1__Boolean_1_", new Assert(this));
-        this.nativeFunctions.put("assertError_Function_1__String_1__Integer_$0_1$__Integer_$0_1$__Boolean_1_", new AssertError(this, repository));
+        this.nativeFunctions.put("assertError_Function_1__Function_1__Boolean_1_", new AssertError(this, repository));
         this.nativeFunctions.put("executeTest_Function_1__TestResult_1_", new ExecuteTest(this, repository));
         this.nativeFunctions.put("executePCTTest_Function_1__Function_1__Map_1__TestResult_1_", new ExecutePCTTest(this, repository));
         this.nativeFunctions.put("loadPCTManifest_String_1__PCTManifest_1_", new LoadPCTManifest(this, repository));

@@ -301,7 +301,7 @@ function <<test.Test>> meta::pure::functions::lang::tests::copy::testSourceInfor
    let x0 = meta::pure::functions::collection::removeDuplicates_T_MANY__T_MANY_->evaluateAndDeactivate();
    let x1 = ^$x0();
    let x2 = ^$x0(expressionSequence = $x0.expressionSequence);
- 
+
    assert($x0->sourceInformation().source == $x1->sourceInformation().source);
    assert($x0->sourceInformation().source != $x2->sourceInformation().source);
 }

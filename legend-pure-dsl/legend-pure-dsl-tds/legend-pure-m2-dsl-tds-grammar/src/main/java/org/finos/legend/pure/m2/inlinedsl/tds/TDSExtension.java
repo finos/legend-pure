@@ -213,17 +213,23 @@ public class TDSExtension implements InlineDSL
     public static Pair<String, GenericType> extractBodyAndType(String text, Function<String, GenericType> res)
     {
         int headerHead = text.indexOf("\n");
-        headerHead = headerHead == -1 ? text.length() - 1 : headerHead;
-        String header = text.substring(0, headerHead);
-        String body = text.substring(headerHead + 1);
-        return Tuples.pair(body, res.apply(header));
+        if (headerHead == -1)
+        {
+            return Tuples.pair(null, res.apply(text));
+        }
+        else
+        {
+            String header = text.substring(0, headerHead);
+            String body = text.substring(headerHead + 1);
+            return Tuples.pair(body, res.apply(header));
+        }
     }
 
     public static TDS<?> parse(GenericType headerType, String body, SourceInformation sourceInfo, ProcessorSupport processorSupport)
     {
         RelationType<?> givenRelationType = ((RelationType<?>) headerType._rawType());
 
-        String fullText = givenRelationType._columns().collect(FunctionAccessor::_name).makeString(", ") + "\n" + body;
+        String fullText = givenRelationType._columns().collect(FunctionAccessor::_name).makeString(", ") + ((body != null) ? "\n" + body : "");
 
         CsvReader.Result result;
         try

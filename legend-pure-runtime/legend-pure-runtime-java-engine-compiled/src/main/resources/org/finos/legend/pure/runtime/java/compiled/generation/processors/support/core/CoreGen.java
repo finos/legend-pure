@@ -63,6 +63,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.util.Optional;
 
 public class CoreGen extends CoreHelper
 {
@@ -341,7 +342,7 @@ public class CoreGen extends CoreHelper
         return random.nextDouble();
     }
 
-    public static boolean assertError(ExecutionSupport es, Function<?> func, String message, long line, long column, SourceInformation sourceInformation)
+    public static boolean assertError(ExecutionSupport es, Function<?> func, Function<?> messageMatcher, SourceInformation sourceInformation)
     {
         try
         {
@@ -350,18 +351,7 @@ public class CoreGen extends CoreHelper
         }
         catch (PureExecutionException e)
         {
-            if ((message != null) && !message.equals(e.getInfo()))
-            {
-                throw new PureAssertFailException(sourceInformation, "Execution error message mismatch.\nThe actual message was \"" + e.getInfo() + "\"\nwhere the expected message was:\"" + message + "\"");
-            }
-            if ((line != -1) && (e.getSourceInformation().getLine() != line))
-            {
-                throw new PureAssertFailException(sourceInformation, "Execution error line mismatch. Actual: " + e.getSourceInformation().getLine() + " where expected: " + line);
-            }
-            if ((column != -1) && (e.getSourceInformation().getColumn() != column))
-            {
-                throw new PureAssertFailException(sourceInformation, "Execution error column mismatch. Actual: " + e.getSourceInformation().getColumn() + " where expected: " + column);
-            }
+            Pure.evaluate(es, messageMatcher, bridge, e.getInfo() == null ? "" : e.getInfo(), e.getSourceInformation() != null ? CoreGen.buildSourceInformation(e.getSourceInformation(), ((CompiledExecutionSupport)es).getClassLoader()) : null);
         }
         return true;
     }

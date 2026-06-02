@@ -59,3 +59,27 @@ function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertF
     assertFalse(2 == 3, | format('Test message %s', [true]));
     assertFalse((1 + 2) == 4, | format('Test message: %s', [true]));
 }
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testFailWithoutMessage():Boolean[1]
+{
+    assertError(|assertFalse(true), 'Assert failed');
+    assertError(|assertFalse(2 == 2), 'Assert failed');
+}
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testFailWithMessageString():Boolean[1]
+{
+    assertError(|assertFalse(true, 'Test message'), 'Test message');
+    assertError(|assertFalse(2 == 2, 'Test message'), 'Test message');
+}
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testFailWithFormattedMessage():Boolean[1]
+{
+    assertError(|assertFalse(true, 'Test message: %d', 2 + 3), 'Test message: 5');
+    assertError(|assertFalse(2 == 2, 'Test message: %d', 2 + 3), 'Test message: 5');
+}
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testAssertFalseFailWithMessageFunction():Boolean[1]
+{
+    assertError(|assertFalse(true, |format('Test message: %d', 2 + 3)), 'Test message: 5');
+    assertError(|assertFalse(2 == 2, |format('Test message: %d', 2 + 3)), 'Test message: 5');
+}

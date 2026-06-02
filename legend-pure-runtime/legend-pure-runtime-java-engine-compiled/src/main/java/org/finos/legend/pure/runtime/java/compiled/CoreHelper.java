@@ -1085,32 +1085,39 @@ public class CoreHelper
 
     public static Object buildSourceInformation(Object obj, ClassLoader globalClassLoader)
     {
-        Object result = null;
         if (obj instanceof CoreInstance)
         {
             CoreInstance coreInstance = (CoreInstance) obj;
             SourceInformation sourceInfo = coreInstance.getSourceInformation();
             if (sourceInfo != null)
             {
-                try
-                {
-                    Class<?> sourceInfoClass = globalClassLoader.loadClass(FullJavaPaths.SourceInformation_Impl);
-                    result = sourceInfoClass.getConstructor(String.class).newInstance("NOID");
-                    sourceInfoClass.getField("_source").set(result, sourceInfo.getSourceId());
-                    sourceInfoClass.getField("_startLine").set(result, sourceInfo.getStartLine());
-                    sourceInfoClass.getField("_startColumn").set(result, sourceInfo.getStartColumn());
-                    sourceInfoClass.getField("_line").set(result, sourceInfo.getLine());
-                    sourceInfoClass.getField("_column").set(result, sourceInfo.getColumn());
-                    sourceInfoClass.getField("_endLine").set(result, sourceInfo.getEndLine());
-                    sourceInfoClass.getField("_endColumn").set(result, sourceInfo.getEndColumn());
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException("Error getting source information for " + obj, e);
-                }
+                return buildSourceInformation(sourceInfo, globalClassLoader);
             }
         }
-        return result;
+        return null;
+    }
+
+    public static Object buildSourceInformation(SourceInformation sourceInfo, ClassLoader globalClassLoader)
+    {
+        try
+        {
+            Class<?> sourceInfoClass = globalClassLoader.loadClass(FullJavaPaths.SourceInformation_Impl);
+            Object result = sourceInfoClass.getConstructor(String.class).newInstance("NOID");
+            sourceInfoClass.getField("_source").set(result, sourceInfo.getSourceId());
+            sourceInfoClass.getField("_startLine").set(result, sourceInfo.getStartLine());
+            sourceInfoClass.getField("_startColumn").set(result, sourceInfo.getStartColumn());
+            sourceInfoClass.getField("_line").set(result, sourceInfo.getLine());
+            sourceInfoClass.getField("_column").set(result, sourceInfo.getColumn());
+            sourceInfoClass.getField("_endLine").set(result, sourceInfo.getEndLine());
+            sourceInfoClass.getField("_endColumn").set(result, sourceInfo.getEndColumn());
+
+            return result;
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Error getting source information", e);
+        }
+
     }
 
     public static RichIterable<Type> getGeneralizations(Type type, ExecutionSupport es)

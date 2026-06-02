@@ -1,0 +1,74 @@
+// Copyright 2026 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Pure-native tests for createTempTable / dropTempTable.
+//
+// Ported from `AbstractTestTempTableLifecycle.java`. The Java tests
+// targeted H2 and asserted on H2-specific error strings; these
+// versions target DuckDB, the only backend the Rust runtime
+// currently implements.
+//
+// `testTempTableDroppedInFinally` from the Java suite is *not* ported
+// — its semantic (auto-drop on enclosing function exit) needs a
+// function-call teardown hook that doesn't yet exist on either stack.
+// Tracked as a follow-up.
+
+import meta::external::store::relational::runtime::*;
+import meta::relational::runtime::*;
+import meta::relational::metamodel::execute::*;
+import meta::relational::metamodel::*;
+
+// Create a temp table via the user-supplied DDL lambda, populate it,
+// query it, and drop it. Mirrors `testCreateTempTable` minus the
+// implicit-drop assertion (Java tested H2's auto-cleanup, which is a
+// future commit's concern).
+function <<test.Test>>
+meta::relational::tests::testCreateTempTableLifecycle(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
+   createTempTable(
+      'tt',
+      [],
+      {n: String[1], cs: meta::relational::metamodel::Column[*], t: DatabaseType[1] |
+         'CREATE TABLE ' + $n + ' (x INTEGER)'},
+      $db
+   );
+   executeInDb('INSERT INTO tt VALUES (7), (8), (9)', $db, 0, 1000);
+   let res = executeInDb('SELECT count(*) FROM tt', $db, 0, 1000);
+   let ok = assertEquals(3, $res.rows->at(0).values->at(0));
+   dropTempTable('tt', $db);
+   $ok;
+}
+
+// Five-arg overload: relyOnFinallyForCleanup=true. Same shape as the
+// four-arg case for DuckDB — the boolean is currently accepted only
+// for signature parity.
+function <<test.Test>>
+meta::relational::tests::testCreateTempTableWithRelyOnFinally(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
+   createTempTable(
+      'tt_rof',
+      [],
+      {n: String[1], cs: meta::relational::metamodel::Column[*], t: DatabaseType[1] |
+         'CREATE TABLE ' + $n + ' (x INTEGER)'},
+      true,
+      $db
+   );
+   executeInDb('INSERT INTO tt_rof VALUES (1)', $db, 0, 1000);
+   let res = executeInDb('SELECT count(*) FROM tt_rof', $db, 0, 1000);
+   let ok = assertEquals(1, $res.rows->at(0).values->at(0));
+   dropTempTable('tt_rof', $db);
+   $ok;
+}

@@ -75,3 +75,65 @@ function <<test.Test, test.ExcludeModular>> meta::pure::functions::collection::t
             ->map(p | $p.locations.place)->deactivate()->cast(@FunctionExpression);
     assertSameElements(['Paris', 'Hoboken', 'San Francisco'], $f.func->evaluate($f.parametersValues->map(v | ^List<Any>(values=$v->reactivate()))));
 }
+
+// -------------------------------------------------------------------------
+// Below: tests added to lock the deactivate contract on shapes the
+// existing fixture above does not exercise — primitive literals,
+// `^Class()` constructors, nested lambda bodies, and the
+// deactivate→reactivate round-trip identity. Together they cover the
+// `Value::Integer`/`String`/`Boolean` paths and the InstanceValue/
+// LambdaFunction discrimination that the DMR cycle (router + preeval)
+// depends on.
+// -------------------------------------------------------------------------
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::deactivate::testDeactivateLiteralInteger():Boolean[1]
+{
+    let v = 42->deactivate();
+    assertEquals('InstanceValue', $v->type()->toOne()->id());
+    assertEquals([42], $v->cast(@InstanceValue).values);
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::deactivate::testDeactivateLiteralString():Boolean[1]
+{
+    let v = 'hello'->deactivate();
+    assertEquals('InstanceValue', $v->type()->toOne()->id());
+    assertEquals(['hello'], $v->cast(@InstanceValue).values);
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::deactivate::testDeactivateLiteralBoolean():Boolean[1]
+{
+    let v = true->deactivate();
+    assertEquals('InstanceValue', $v->type()->toOne()->id());
+    assertEquals([true], $v->cast(@InstanceValue).values);
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::deactivate::testDeactivateLambdaPreservesShape():Boolean[1]
+{
+    // `{|1+2}` is itself a value of type LambdaFunction; deactivate wraps it
+    // as an InstanceValue whose `values` slot carries the original lambda.
+    let f = {| 1 + 2}->deactivate();
+    assertEquals('InstanceValue', $f->type()->toOne()->id());
+    let lambda = $f->cast(@InstanceValue).values->toOne()->cast(@LambdaFunction<Any>);
+    assertEq(1, $lambda.expressionSequence->size());
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::deactivate::testDeactivateNestedLambdaOuterShape():Boolean[1]
+{
+    // Outer lambda whose body is itself a lambda — confirms the outer wrap
+    // preserves the LambdaFunction shape and a single-element expressionSequence
+    // body. (Inner-VS shape is exercised in DMR-cycle tests in reactivate.pure.)
+    let outer = {| {| 1 + 2}}->deactivate();
+    assertEquals('InstanceValue', $outer->type()->toOne()->id());
+    let outerLambda = $outer->cast(@InstanceValue).values->toOne()->cast(@LambdaFunction<Any>);
+    assertEq(1, $outerLambda.expressionSequence->size());
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::deactivate::testDeactivateReactivateIdentityInteger():Boolean[1]
+{
+    assertEq(7, 7->deactivate()->reactivate()->toOne()->cast(@Integer));
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::deactivate::testDeactivateReactivateIdentityCollection():Boolean[1]
+{
+    assertSameElements([1, 2, 3], [1, 2, 3]->deactivate()->reactivate());
+}

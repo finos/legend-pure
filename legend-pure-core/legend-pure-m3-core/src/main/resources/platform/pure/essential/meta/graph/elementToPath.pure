@@ -210,3 +210,17 @@ function <<test.Test>> meta::pure::functions::meta::tests::elementPath::testEphe
     assertEquals([$otherRootPkg, $otherPkgPkg], $otherPkgPkg->elementPath());
     assertEquals([$otherRootPkg, $otherPkgPkg, $otherElement], $otherElement->elementPath());
 }
+
+function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testElementToPathRoundTrip():Boolean[1]
+{
+    // elementToPath($e) round-trips with the default `::` separator and
+    // the `.` separator — both are unambiguous because no identifier
+    // contains them. (`_` is NOT round-trip safe: identifiers like
+    // `CC_Person` contain underscores that collide with the separator,
+    // so pathToElement(...,'_') re-splits incorrectly. Excluded
+    // intentionally.)
+    assertEquals('meta::pure::functions::meta::tests::model::CC_Person', elementToPath(CC_Person));
+    assertEquals('meta.pure.functions.meta.tests.model.CC_Person', elementToPath(CC_Person, '.'));
+    assertIs(CC_Person, pathToElement(elementToPath(CC_Person)));
+    assertIs(CC_Person, pathToElement(elementToPath(CC_Person, '.'), '.'));
+}

@@ -53,7 +53,7 @@ public class NewWithKeyExpr extends AbstractNative
                 + "(\"" + newId + "\")"
                 + _class.getValueForMetaPropertyToMany(M3Properties.typeVariables).zip(genericType.getValueForMetaPropertyToMany(M3Properties.typeVariableValues)).collect(x -> "._" + x.getOne().getValueForMetaPropertyToOne(M3Properties.name).getName() + "(" + ValueSpecificationProcessor.processValueSpecification(x.getTwo(), processorContext) + ")").makeString("")
                 + (addGenericType ? "._classifierGenericType(" + InstantiationHelpers.buildGenericType(genericType, processorContext) + ")" : "")
-                + DefaultValue.manageDefaultValues(this::formatDefaultValueString, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), false, processorContext).makeString("")
+                + DefaultValue.manageDefaultValues(this::formatDefaultValueString, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), false, true, processorContext).makeString("")
                 + InstantiationHelpers.manageKeyValues(genericType, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), keyValues, processorContext)
                 + (_Class.computeConstraintsInHierarchy(_class, processorSupport).isEmpty() ? "" : "._validate(false, " + SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation()) + ", es)");
     }

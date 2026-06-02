@@ -20,14 +20,15 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 
 import java.util.Stack;
 
 public class ToOne extends CommonToMultiplicity
 {
-    public ToOne(ModelRepository repository)
+    public ToOne(FunctionExecutionInterpreted functionExecutionInterpreted, ModelRepository repository)
     {
-        super(repository, true);
+        super(functionExecutionInterpreted, repository, true);
     }
 
     @Override

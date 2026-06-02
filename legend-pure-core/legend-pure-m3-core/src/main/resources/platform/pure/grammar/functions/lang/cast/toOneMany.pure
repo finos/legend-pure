@@ -40,3 +40,27 @@ function <<test.Test>> meta::pure::functions::multiplicity::tests::toOneMany::te
     assertEquals(1, [1, 2, 3]->first()->toOneMany());
     assertEquals([2, 3], [1, 2, 3]->filter(x | $x > 1)->toOneMany());
 }
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::toOneMany::testToOneManyError():Boolean[1]
+{
+    assertError(|[]->toOneMany(); 1;, 'Cannot cast a collection of size 0 to multiplicity [1..*]');
+    assertError(|[]->toOneMany('Something wrong'); 1;, 'Something wrong');
+}
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::toOneMany::testBasic():Boolean[1]
+{
+    assert([1] == [1]->toOneMany());
+    assert([1,2,3] == [1,2,3]->toOneMany());
+}
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::toOneMany::testEval():Boolean[1]
+{
+    assert([1] == toOneMany_T_MANY__T_$1_MANY$_->eval([1]));
+    assert([1,2,3] == toOneMany_T_MANY__T_$1_MANY$_->eval([1,2,3]));
+}
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::toOneMany::testWithMessage():Boolean[1]
+{
+    assert([1] == [1]->toOneMany());
+    assert([1,2,3] == [1,2,3]->toOneMany('Something wrong'));
+}

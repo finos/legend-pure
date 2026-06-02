@@ -27,3 +27,19 @@ function <<test.Test>> meta::pure::functions::multiplicity::tests::isToOne::test
     assertFalse(ZeroMany->isToOne());
     assertFalse(OneMany->isToOne());
 }
+
+function <<test.Test>> meta::pure::functions::multiplicity::tests::isToOne::testIsToOneArbitraryBound():Boolean[1]
+{
+    // True only when lower=upper=1; user-constructed [1..1] is equivalent
+    // to PureOne semantically and must pass the predicate.
+    let oneToOne = ^Multiplicity(
+        lowerBound = ^MultiplicityValue(value = 1),
+        upperBound = ^MultiplicityValue(value = 1)
+    );
+    assert($oneToOne->isToOne());
+    let twoToFive = ^Multiplicity(
+        lowerBound = ^MultiplicityValue(value = 2),
+        upperBound = ^MultiplicityValue(value = 5)
+    );
+    assertFalse($twoToFive->isToOne());
+}

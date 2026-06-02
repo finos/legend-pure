@@ -14,4 +14,116 @@
 
 import meta::pure::test::pct::*;
 
-native function <<PCT.function>> meta::pure::functions::lang::toMultiplicity<T|m>(source:T[*], object:Any[z]):T[z];
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::toMultiplicity<T|z>(source:T[*], object:Any[z]):T[z];
+
+// ----------------------------------------------------------------------------
+// Platform tests — canonical Java-parity calling form `@[m]`.
+//
+// `@[m]` is the bare multiplicity literal: a single value whose *static
+// multiplicity* is `m` and whose static type is `Any`. The function's
+// `Any[z]` arg slot binds `z := m`, narrowing the source `T[*]` to `T[z]`.
+//
+// Error text matches Java parity from
+// `AbstractTestToMultiplicity.java:27/28/34`:
+//   "Cannot cast a collection of size N to multiplicity [BOUNDS]"
+// ----------------------------------------------------------------------------
+
+function <<test.Test>>
+    meta::pure::functions::lang::tests::toMultiplicity::testToMultiplicityToOne():Boolean[1]
+{
+    assertEquals('a', ['a']->toMultiplicity(@[1]));
+    assertEquals(1, [1]->toMultiplicity(@[1]));
+}
+
+function <<test.Test>>
+    meta::pure::functions::lang::tests::toMultiplicity::testToMultiplicityToZeroOne():Boolean[1]
+{
+    assertEquals('a', ['a']->toMultiplicity(@[0..1]));
+    assertEmpty([]->toMultiplicity(@[0..1]));
+}
+
+function <<test.Test>>
+    meta::pure::functions::lang::tests::toMultiplicity::testToMultiplicityToOneMany():Boolean[1]
+{
+    assertEquals(['a', 'b'], ['a', 'b']->toMultiplicity(@[1..*]));
+    assertEquals(['a'], ['a']->toMultiplicity(@[1..*]));
+}
+
+function <<test.Test>>
+    meta::pure::functions::lang::tests::toMultiplicity::testToMultiplicityIdentityZeroMany():Boolean[1]
+{
+    assertEquals(['a', 'b', 'c'], ['a', 'b', 'c']->toMultiplicity(@[*]));
+    assertEmpty([]->toMultiplicity(@[*]));
+}
+
+// `@[o]` with `o` a declared multiplicity parameter — the binding form
+// closest to Java's `AbstractTestToMultiplicity.testMatchExact`. Calling
+// `narrow<|o>` from a context that statically pins `o := [1]` lets the
+// parametric mult flow from the outer call's hint into the inner
+// `toMultiplicity`.
+function meta::pure::functions::lang::tests::toMultiplicity::narrow<|o>(xs:String[*], hint:Any[o]):String[o]
+{
+    $xs->toMultiplicity(@[o])
+}
+
+function <<test.Test>>
+    meta::pure::functions::lang::tests::toMultiplicity::testToMultiplicityParametricBindsAtCallSite():Boolean[1]
+{
+    assertEquals('a',
+        meta::pure::functions::lang::tests::toMultiplicity::narrow(['a'], 'x'));
+}
+
+// ----- "value-at-mult" calling form ----------------------------------------
+//
+// `toMultiplicity`'s second arg is typed `Any[z]`, so *any* expression
+// whose static multiplicity is `m` is a valid hint — the dispatcher
+// binds `z := m` regardless of the source AST shape (literal or
+// computed). These tests pin the equivalence: `@[1]` ≡ any singleton,
+// `@[0..1]` ≡ any optional, `@[0]` ≡ any zero-cardinality expression
+// (the empty literal `[]` is statically `[0]`).
+
+function <<test.Test>>
+    meta::pure::functions::lang::tests::toMultiplicity::testToMultiplicityValueAtMultSingleton():Boolean[1]
+{
+    // 'hint' has static type String[1]; equivalent to @[1].
+    assertEquals('a', ['a']->toMultiplicity('hint'));
+}
+
+function <<test.Test>>
+    meta::pure::functions::lang::tests::toMultiplicity::testToMultiplicityValueAtMultZeroOrOne():Boolean[1]
+{
+    // [1,2,3]->first() has static type Integer[0..1]; equivalent to @[0..1].
+    assertEquals('a', ['a']->toMultiplicity([1, 2, 3]->first()));
+    assertEmpty([]->toMultiplicity([1, 2, 3]->first()));
+}
+
+function <<test.Test>>
+    meta::pure::functions::lang::tests::toMultiplicity::testToMultiplicityValueAtMultZeroFailsOnNonempty():Boolean[1]
+{
+    // [] has static multiplicity [0]; source of size 1 violates.
+    assertError(|['a']->toMultiplicity([]),
+                'Cannot cast a collection of size 1 to multiplicity [0]');
+}
+
+// ----- negative tests: cardinality mismatch raises the canonical error -----
+
+function <<test.Test>>
+    meta::pure::functions::lang::tests::toMultiplicity::testToMultiplicityFailsFromEmptyToOne():Boolean[1]
+{
+    assertError(|[]->toMultiplicity(@[1]),
+                'Cannot cast a collection of size 0 to multiplicity [1]');
+}
+
+function <<test.Test>>
+    meta::pure::functions::lang::tests::toMultiplicity::testToMultiplicityFailsFromManyToOne():Boolean[1]
+{
+    assertError(|['a', 'b', 'c']->toMultiplicity(@[1]),
+                'Cannot cast a collection of size 3 to multiplicity [1]');
+}
+
+function <<test.Test>>
+    meta::pure::functions::lang::tests::toMultiplicity::testToMultiplicityFailsFromEmptyToOneMany():Boolean[1]
+{
+    assertError(|[]->toMultiplicity(@[1..*]),
+                'Cannot cast a collection of size 0 to multiplicity [1..*]');
+}

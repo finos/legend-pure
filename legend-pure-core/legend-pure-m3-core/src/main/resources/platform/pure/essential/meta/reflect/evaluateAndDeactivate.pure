@@ -32,3 +32,37 @@ function meta::pure::functions::meta::tests::evaluateAndDeactivate::f(i:Integer[
 {
    $i;
 }
+
+// -------------------------------------------------------------------------
+// Below: additional tests covering lambda-body shape preservation through
+// the evaluateAndDeactivate boundary. The two existing tests cover
+// FunctionType parameter access and a literal-body lambda; the additions
+// below exercise non-trivial bodies (arithmetic chains, captures) so
+// regressions in expressionSequence wrapping surface immediately.
+// -------------------------------------------------------------------------
+
+function <<test.Test>> meta::pure::functions::meta::tests::evaluateAndDeactivate::testEvaluateAndDeactivateClosedLambdaSize():Boolean[1]
+{
+    // The closed lambda `{| 1 + 2}` survives the wrap and produces a single
+    // body-element expressionSequence.
+    let f = {| 1 + 2}->evaluateAndDeactivate();
+    assertEq(1, $f.expressionSequence->size());
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::evaluateAndDeactivate::testEvaluateAndDeactivateCapturingLambdaSize():Boolean[1]
+{
+    // A capturing lambda still produces a single-element expressionSequence;
+    // open variables don't add body elements.
+    let n = 7;
+    let f = {| $n + 1}->evaluateAndDeactivate();
+    assertEq(1, $f.expressionSequence->size());
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::evaluateAndDeactivate::testEvaluateAndDeactivateChainedArithmetic():Boolean[1]
+{
+    // Nested arithmetic — the outer body is a SimpleFunctionExpression that
+    // wraps another SimpleFunctionExpression. Walking via expressionSequence
+    // must surface the outer call.
+    let f = {| (1 + 2) + 3}->evaluateAndDeactivate();
+    assertEq(1, $f.expressionSequence->size());
+}

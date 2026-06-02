@@ -49,3 +49,8 @@ function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertI
     assertInstanceOf(%2015-03-14, Any);
     assertInstanceOf(%2015-03-14T23:59:00, DateTime);
 }
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testFailureAssertInstanceOf():Boolean[1]
+{
+    assertError(|assertInstanceOf(3, Boolean), 'expected 3 to be an instance of Boolean, actual: Integer');
+}
