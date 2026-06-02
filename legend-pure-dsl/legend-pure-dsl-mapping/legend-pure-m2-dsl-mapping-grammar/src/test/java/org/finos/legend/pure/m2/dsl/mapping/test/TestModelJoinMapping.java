@@ -1,4 +1,4 @@
-// Copyright 2024 Goldman Sachs
+// Copyright 2026 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -992,5 +992,117 @@ public class TestModelJoinMapping extends AbstractPureMappingTestWithCoreCompile
         // 1 Firm set × 2 Division sets in each direction → 4 total property mappings
         Assert.assertEquals("Expected 4 property mappings for milestoned N×M subtype pairing", 4,
                 assocImpl.getValueForMetaPropertyToMany(M2MappingProperties.propertyMappings).size());
+    }
+
+    // -------------------------------------------------------------------------
+    // M1 regression — self-join combined with milestoning.
+    //
+    // Both sides of a self-association are the same class, so milestoning produces
+    // two edge-points whose return types are identical. A return-type-based original
+    // lookup is ambiguous in that case; the suffix-strip lookup
+    // (MilestoningFunctions.getSourceEdgePointPropertyName) disambiguates by name.
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void testModelJoinSelfJoinWithBusinessTemporalMilestoning()
+    {
+        String source =
+                "import meta::pure::profiles::*;\n" +
+                "Class <<temporal.businesstemporal>> MJBTSelfEmployee\n" +
+                "{\n" +
+                "   id : String[1];\n" +
+                "   managerId : String[1];\n" +
+                "}\n" +
+                "Association MJBTSelfEmployee_Manager\n" +
+                "{\n" +
+                "   manager : MJBTSelfEmployee[0..1];\n" +
+                "   reports : MJBTSelfEmployee[*];\n" +
+                "}\n" +
+                "Class SrcMJBTSelfEmployee\n" +
+                "{\n" +
+                "   _id : String[1];\n" +
+                "   _managerId : String[1];\n" +
+                "}\n" +
+                "###Mapping\n" +
+                "Mapping MJBTSelfMapping\n" +
+                "(\n" +
+                "   MJBTSelfEmployee[mjbtself1] : Pure\n" +
+                "   {\n" +
+                "      ~src SrcMJBTSelfEmployee\n" +
+                "      id : $src._id,\n" +
+                "      managerId : $src._managerId\n" +
+                "   }\n" +
+                "   MJBTSelfEmployee_Manager : ModelJoin\n" +
+                "   {\n" +
+                "      {manager:MJBTSelfEmployee[1], reports:MJBTSelfEmployee[1]|$reports.managerId == $manager.id}\n" +
+                "   }\n" +
+                ")\n";
+        runtime.createInMemorySource("mapping.pure", source);
+        runtime.compile();
+
+        CoreInstance mapping = runtime.getCoreInstance("MJBTSelfMapping");
+        Assert.assertNotNull(mapping);
+        CoreInstance assocImpl = mapping.getValueForMetaPropertyToMany(M2MappingProperties.associationMappings).getFirst();
+        Assert.assertNotNull("Expected an association mapping for self-join + businesstemporal", assocImpl);
+        // 1 set × 1 set in each direction = 2 total PMs
+        Assert.assertEquals("Expected 2 property mappings for milestoned self-join", 2,
+                assocImpl.getValueForMetaPropertyToMany(M2MappingProperties.propertyMappings).size());
+    }
+
+    // -------------------------------------------------------------------------
+    // C1 probe — lambda parameter order opposite to association property order.
+    //
+    // The unbinder must be able to reverse the param rename even when the user
+    // listed parameters in the opposite order from the association declaration.
+    // The processor today already tolerates this (resolveContext binds by name);
+    // the question is whether unbind-then-recompile preserves the binding.
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void testModelJoinReverseParamOrderInitialCompile()
+    {
+        // First-pass compile only — does not exercise the unbinder.
+        String source = BASE_MODEL +
+                "   Firm_Person : ModelJoin\n" +
+                "   {\n" +
+                "      {employees:Person[1], firm:Firm[1]|$firm.id == $employees.firmId}\n" +
+                "   }\n" +
+                ")\n";
+        runtime.createInMemorySource("mapping.pure", source);
+        runtime.compile();
+
+        CoreInstance mapping = runtime.getCoreInstance("FirmMapping");
+        Assert.assertNotNull(mapping);
+        CoreInstance assocImpl = mapping.getValueForMetaPropertyToMany(M2MappingProperties.associationMappings).getFirst();
+        Assert.assertNotNull("Expected an association mapping when params are listed in reverse order", assocImpl);
+        Assert.assertEquals("Expected 2 property mappings for reverse-order heterogeneous join", 2,
+                assocImpl.getValueForMetaPropertyToMany(M2MappingProperties.propertyMappings).size());
+    }
+
+    // -------------------------------------------------------------------------
+    // Same-name parameters — Not supported at the moment.
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void testModelJoinDuplicateLambdaParamNameRejected()
+    {
+        String source = BASE_MODEL +
+                "   Firm_Person : ModelJoin\n" +
+                "   {\n" +
+                "      {firm:Firm[1], firm:Person[1]|$firm.id == $firm.firmId}\n" +
+                "   }\n" +
+                ")\n";
+        runtime.createInMemorySource("mapping.pure", source);
+        try
+        {
+            runtime.compile();
+            Assert.fail("Expected compilation failure for duplicate lambda parameter name");
+        }
+        catch (PureCompilationException e)
+        {
+            System.out.println(e);
+            // Expected — either the parser rejects duplicate variable names in a single
+            // lambda's parameter list, or resolveContext fails to bind both classes.
+        }
     }
 }

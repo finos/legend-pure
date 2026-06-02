@@ -1,4 +1,4 @@
-// Copyright 2024 Goldman Sachs
+// Copyright 2026 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@ package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.RichIterable;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState.VariableContextScope;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.Processor;
+import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.InstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.MappingInclude;
@@ -50,15 +52,10 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 public class ModelJoinProcessor extends Processor<ModelJoinAssociationImplementation>
 {
     /**
-     * Canonical variable name for the source-side parameter in compiled ModelJoin lambdas.
+     * Canonical variable name for the source/target-side parameter in compiled ModelJoin lambdas.
      * Aligns with legend-engine's HelperMappingBuilder.MODEL_JOIN_SOURCE_VAR.
      */
     public static final String MJ_SOURCE_VAR = "_mj_src";
-
-    /**
-     * Canonical variable name for the target-side parameter in compiled ModelJoin lambdas.
-     * Aligns with legend-engine's HelperMappingBuilder.MODEL_JOIN_TARGET_VAR.
-     */
     public static final String MJ_TARGET_VAR = "_mj_tgt";
 
     @Override
@@ -83,10 +80,6 @@ public class ModelJoinProcessor extends Processor<ModelJoinAssociationImplementa
     private ModelJoinContext resolveContext(ModelJoinAssociationImplementation instance, ProcessorSupport processorSupport)
     {
         Association association = (Association) ImportStub.withImportStubByPass(instance._associationCoreInstance(), processorSupport);
-        if (association == null)
-        {
-            throw new PureCompilationException(instance.getSourceInformation(), "ModelJoin mapping missing association");
-        }
         Mapping mapping = (Mapping) ImportStub.withImportStubByPass(instance._parentCoreInstance(), processorSupport);
 
         if (instance._id() == null)
@@ -95,24 +88,12 @@ public class ModelJoinProcessor extends Processor<ModelJoinAssociationImplementa
         }
 
         ListIterable<? extends Property<?, ?>> properties = association._properties().toList();
-        if (properties.size() != 2)
-        {
-            throw new PureCompilationException(instance.getSourceInformation(),
-                    "ModelJoin requires an association with exactly 2 properties, found " + properties.size());
-        }
         Property<?, ?> prop1 = properties.get(0);
         Property<?, ?> prop2 = properties.get(1);
 
         MutableList<PropertyMapping> originalPMs = Lists.mutable.withAll(instance._propertyMappings());
-        if (originalPMs.size() != 2)
-        {
-            throw new PureCompilationException(instance.getSourceInformation(),
-                    "ModelJoin expected 2 property mappings from parser, found " + originalPMs.size());
-        }
 
         LambdaFunction<?> joinCondition = ((ModelJoinPropertyMapping) originalPMs.get(0))._joinCondition();
-
-        // Extract lambda parameter names (parser enforces they match association property names).
         FunctionType joinFunctionType = (FunctionType) ImportStub.withImportStubByPass(
                 joinCondition._classifierGenericType()._typeArguments().getOnly()._rawTypeCoreInstance(), processorSupport);
         ListIterable<? extends VariableExpression> lambdaParams = joinFunctionType._parameters().toList();
@@ -120,13 +101,22 @@ public class ModelJoinProcessor extends Processor<ModelJoinAssociationImplementa
         String param1Name = lambdaParams.get(0)._name();
         String param2Name = lambdaParams.get(1)._name();
 
+        // Same-name lambda params are not yet supported.
+        if (param1Name.equals(param2Name))
+        {
+            throw new PureCompilationException(instance.getSourceInformation(),
+                    "ModelJoin: lambda parameters share the same name '" + param1Name
+                            + "'. Same-name parameters are not supported; rename one of them"
+                            + " to match an association property name.");
+        }
+
         // Resolve classes from association properties by matching param names.
         // When milestoning is active, we compare against the original (pre-milestoning) name.
         CoreInstance class1 = null;
         CoreInstance class2 = null;
         for (Property<?, ?> prop : properties)
         {
-            String originalName = getOriginalPropertyName(prop, association, processorSupport);
+            String originalName = getOriginalPropertyName(prop, association);
             CoreInstance propReturnType = ImportStub.withImportStubByPass(
                     prop._genericType()._rawTypeCoreInstance(), processorSupport);
             if (originalName.equals(param1Name))
@@ -146,7 +136,6 @@ public class ModelJoinProcessor extends Processor<ModelJoinAssociationImplementa
                             + prop1._name() + ", " + prop2._name()
                             + "}. Lambda parameters must be named after the association properties.");
         }
-
 
         return new ModelJoinContext(instance, association, mapping, prop1, prop2, class1, class2,
                 (ModelJoinPropertyMapping) originalPMs.get(0),
@@ -209,25 +198,28 @@ public class ModelJoinProcessor extends Processor<ModelJoinAssociationImplementa
     private String resolveOriginalPropertyName(ModelJoinPropertyMapping pm, Association association, ProcessorSupport processorSupport)
     {
         Property<?, ?> resolvedProp = (Property<?, ?>) ImportStub.withImportStubByPass(pm._propertyCoreInstance(), processorSupport);
-        return getOriginalPropertyName(resolvedProp, association, processorSupport);
+        return getOriginalPropertyName(resolvedProp, association);
     }
 
     /**
      * Returns the original (pre-milestoning) name of an association property. If the property
      * is an edge-point generated by milestoning, returns the name of the corresponding entry
-     * in {@code originalMilestonedProperties}. Otherwise returns the property's current name.
+     * in {@code _originalMilestonedProperties()} — looked up by stripping the milestoning
+     * edge-point suffix (e.g., {@code firmAllVersions} → {@code firm}).
      */
-    private String getOriginalPropertyName(Property<?, ?> prop, Association association, ProcessorSupport processorSupport)
+    private String getOriginalPropertyName(Property<?, ?> prop, Association association)
     {
-        CoreInstance propReturnType = ImportStub.withImportStubByPass(
-                prop._genericType()._rawTypeCoreInstance(), processorSupport);
-        for (CoreInstance origProp : association.getValueForMetaPropertyToMany("originalMilestonedProperties"))
+        RichIterable<? extends Property<?, ?>> originals = association._originalMilestonedProperties();
+        if (originals.isEmpty())
         {
-            CoreInstance origReturnType = ImportStub.withImportStubByPass(
-                    ((Property<?, ?>) origProp)._genericType()._rawTypeCoreInstance(), processorSupport);
-            if (origReturnType != null && origReturnType.equals(propReturnType))
+            return prop._name();
+        }
+        String candidateOriginal = MilestoningFunctions.getSourceEdgePointPropertyName(prop._name());
+        for (Property<?, ?> origProp : originals)
+        {
+            if (candidateOriginal.equals(origProp._name()))
             {
-                return ((Property<?, ?>) origProp)._name();
+                return origProp._name();
             }
         }
         return prop._name();
@@ -268,52 +260,23 @@ public class ModelJoinProcessor extends Processor<ModelJoinAssociationImplementa
     }
 
     /**
-     * Replaces the lambda's FunctionType params (named srcParamName/tgtParamName) with _mj_src/_mj_tgt
-     * and sets their types to the appropriate MappingClass (or raw class from the set implementation).
-     * Also walks the expression body to rename VariableExpression references (names only — the
-     * compiler sets GenericTypes on body nodes during fullMatch in Step 5).
+     * Replaces the lambda's FunctionType params (named srcParamName/tgtParamName) with
+     * {@code _mj_src} / {@code _mj_tgt} and sets their types to the appropriate MappingClass
+     * (or raw class from the set implementation).
      */
     private void replaceLambdaParams(LambdaFunction<?> lambda, String srcParamName, String tgtParamName,
                                      InstanceSetImplementation sourceSet, InstanceSetImplementation targetSet,
                                      ProcessorSupport processorSupport)
     {
-        if (lambda == null || lambda._classifierGenericType() == null)
-        {
-            return;
-        }
-
-        FunctionType fType = (FunctionType) ImportStub.withImportStubByPass(
-                lambda._classifierGenericType()._typeArguments().getOnly()._rawTypeCoreInstance(), processorSupport);
-        ListIterable<? extends VariableExpression> params = fType._parameters().toList();
-        if (params.size() < 2)
-        {
-            return;
-        }
-
         Class<?> srcClass = getSetImplementationClass(sourceSet, processorSupport);
         Class<?> tgtClass = getSetImplementationClass(targetSet, processorSupport);
+        GenericType srcType = (GenericType) Type.wrapGenericType(srcClass, lambda.getSourceInformation(), processorSupport);
+        GenericType tgtType = (GenericType) Type.wrapGenericType(tgtClass, lambda.getSourceInformation(), processorSupport);
 
-        // Rename params and set types
-        for (VariableExpression param : params)
-        {
-            String originalName = param._name();
-            if (originalName.equals(srcParamName))
-            {
-                param._name(MJ_SOURCE_VAR);
-                param._genericType((GenericType) Type.wrapGenericType(srcClass, param.getSourceInformation(), processorSupport));
-            }
-            else if (originalName.equals(tgtParamName))
-            {
-                param._name(MJ_TARGET_VAR);
-                param._genericType((GenericType) Type.wrapGenericType(tgtClass, param.getSourceInformation(), processorSupport));
-            }
-        }
-
-        // Walk expression body and rename variable references (names only — pass null for GenericTypes)
-        for (ValueSpecification expr : lambda._expressionSequence())
-        {
-            ModelJoinShared.replaceVariableReferences(expr, srcParamName, MJ_SOURCE_VAR, null, tgtParamName, MJ_TARGET_VAR, null);
-        }
+        ModelJoinShared.renameLambdaParamsAndBody(lambda,
+                srcParamName, MJ_SOURCE_VAR, srcType,
+                tgtParamName, MJ_TARGET_VAR, tgtType,
+                processorSupport);
     }
 
     /**
@@ -360,8 +323,8 @@ public class ModelJoinProcessor extends Processor<ModelJoinAssociationImplementa
     }
 
     // ------------------------------------------------------------------------------------------
-    // Step 5 — compile the join condition lambdas and attach PropertyMappingValueSpecificationContext.
-    //          Params have already been renamed and typed in expandDirection (step 4).
+    // Step 4 — compile the join condition lambdas and attach PropertyMappingValueSpecificationContext.
+    //          Params have already been renamed and typed in expandDirection (step 3).
     // ------------------------------------------------------------------------------------------
     private void compileJoinConditions(ModelJoinAssociationImplementation instance, ProcessorState state, Matcher matcher, ProcessorSupport processorSupport)
     {

@@ -1,4 +1,4 @@
-// Copyright 2024 Goldman Sachs
+// Copyright 2026 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
+import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor.ModelJoinProcessor;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor.ModelJoinShared;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.unload.unbind.Shared;
@@ -29,9 +30,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.modelJoin.ModelJo
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
@@ -97,7 +95,6 @@ public class ModelJoinUnbind implements MatchRunner<ModelJoinAssociationImplemen
         }
         instance._propertyMappings(originals);
 
-        // Restore lambda param names from _mj_src/_mj_tgt back to association property names
         if (propName1 != null && propName2 != null)
         {
             for (PropertyMapping pm : originals)
@@ -109,46 +106,46 @@ public class ModelJoinUnbind implements MatchRunner<ModelJoinAssociationImplemen
     }
 
     /**
-     * Reverses the processor's renameLambdaParams: renames _mj_src/_mj_tgt back to
-     * the association property names so that re-processing can validate correctly.
+     * Reverses {@code ModelJoinProcessor.replaceLambdaParams} symbolically:
+     * renames {@code _mj_tgt} back to the user's original target-side param name (which
+     * is the association property name corresponding to this PM) and {@code _mj_src}
+     * back to the other association property's name. Generic types are cleared.
      */
     private void restoreParamNames(ModelJoinPropertyMapping pm, String propName1, String propName2, ProcessorSupport processorSupport)
     {
         LambdaFunction<?> lambda = pm._joinCondition();
-        if (lambda == null || lambda._classifierGenericType() == null)
+
+        // Determine which association property name is the target side for THIS PM.
+        // Convention: the PM's own _propertyCoreInstance is the property mapped to the
+        // target side. The other association property is the source side.
+        String tgtName;
+        String srcName;
+        CoreInstance pmPropertyCI = pm._propertyCoreInstance();
+        Property<?, ?> pmProperty = pmPropertyCI == null
+                ? null
+                : (Property<?, ?>) ImportStub.withImportStubByPass(pmPropertyCI, processorSupport);
+        if (pmProperty != null && propName1.equals(pmProperty._name()))
         {
-            return;
+            tgtName = propName1;
+            srcName = propName2;
+        }
+        else if (pmProperty != null && propName2.equals(pmProperty._name()))
+        {
+            tgtName = propName2;
+            srcName = propName1;
+        }
+        else
+        {
+            // Property reference unresolvable (e.g., partial state) — fall back to position-based
+            // restore. Better than skipping entirely; rebind will surface any mismatch.
+            tgtName = propName2;
+            srcName = propName1;
         }
 
-        CoreInstance rawType = lambda._classifierGenericType()._typeArguments().getOnly()._rawTypeCoreInstance();
-        if (rawType == null)
-        {
-            return;
-        }
-        FunctionType fType = (FunctionType) ImportStub.withImportStubByPass(rawType, processorSupport);
-        ListIterable<? extends VariableExpression> params = fType._parameters().toList();
-        if (params.size() < 2)
-        {
-            return;
-        }
-
-        // Determine the mapping: _mj_src → propName1, _mj_tgt → propName2
-        // This matches the processor which always maps src param → _mj_src, tgt param → _mj_tgt
-        // where src corresponds to the first association property's target class side.
-        // Both lambdas (pm1 and pm2) originally had params in parser order [propName1, propName2].
-        // The processor renamed them differently per direction, so we restore by position.
-        String oldName0 = params.get(0)._name();
-        String oldName1 = params.get(1)._name();
-
-        params.get(0)._name(propName1);
-        params.get(0)._genericTypeRemove();
-        params.get(1)._name(propName2);
-        params.get(1)._genericTypeRemove();
-
-        // Walk expression body and replace variable references back (clearing generic types)
-        for (ValueSpecification expr : lambda._expressionSequence())
-        {
-            ModelJoinShared.replaceVariableReferences(expr, oldName0, propName1, null, oldName1, propName2, null);
-        }
+        // _mj_src → srcName, _mj_tgt → tgtName, types cleared (null) on both decls and body refs.
+        ModelJoinShared.renameLambdaParamsAndBody(lambda,
+                ModelJoinProcessor.MJ_SOURCE_VAR, srcName, null,
+                ModelJoinProcessor.MJ_TARGET_VAR, tgtName, null,
+                processorSupport);
     }
 }

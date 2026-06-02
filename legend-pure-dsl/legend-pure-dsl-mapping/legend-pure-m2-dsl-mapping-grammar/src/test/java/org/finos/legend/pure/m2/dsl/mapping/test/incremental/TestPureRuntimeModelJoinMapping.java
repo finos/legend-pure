@@ -1,4 +1,4 @@
-// Copyright 2024 Goldman Sachs
+// Copyright 2026 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -769,6 +769,46 @@ public class TestPureRuntimeModelJoinMapping extends AbstractPureMappingTestWith
                 new RuntimeTestScriptBuilder()
                         .deleteSource("source3.pure").compile()
                         .createInMemorySource("source3.pure", bothMilMapping).compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
+    }
+
+    // ---------------------------------------------------------------------
+    // C1 — lambda parameter order opposite to association declaration order,
+    //      stress-tested through an unbind/rebind cycle.
+    //
+    // The processor's resolveContext binds parameters to classes by name (not
+    // position), so first-pass compilation succeeds. The unbinder must restore
+    // the user's original parameter names so the next compile still binds. If
+    // the unbinder restores names by lambda position rather than by user→
+    // property mapping, the subsequent recompile will mismatch and fail.
+    // ---------------------------------------------------------------------
+
+    public static String reverseOrderAssoMapping =
+            "   Firm_Person : ModelJoin\n" +
+                    "   {\n" +
+                    "      {employees:Person[1], firm:Firm[1]|$firm.id == $employees.firmId}\n" +
+                    "   }\n";
+
+    public static String reverseOrderMapping =
+            "###Mapping\nMapping FirmMapping\n(" + coreMapping + reverseOrderAssoMapping + ")\n";
+
+    @Test
+    public void testModelJoinReverseParamOrderIncremental()
+    {
+        // Toggle source3 between "no ModelJoin" and "ModelJoin with reversed param order".
+        // Each updateSource round-trips the ModelJoin through unbind / rebind. The unbinder
+        // must restore the user's original param names — `employees` at position 0 and
+        // `firm` at position 1 — even though the association declares them in the opposite
+        // order. If unbind restored by association-property position, the next compile
+        // would fail with "lambda parameter names {firm, employees} do not match …".
+        RuntimeVerifier.verifyOperationIsStable(
+                new RuntimeTestScriptBuilder().createInMemorySources(Maps.mutable.with(
+                        "source1.pure", model,
+                        "source3.pure", initialMapping,
+                        "source4.pure", relational)).compile(),
+                new RuntimeTestScriptBuilder()
+                        .updateSource("source3.pure", reverseOrderMapping).compile()
+                        .updateSource("source3.pure", initialMapping).compile(),
                 runtime, functionExecution, Lists.fixedSize.of());
     }
 }

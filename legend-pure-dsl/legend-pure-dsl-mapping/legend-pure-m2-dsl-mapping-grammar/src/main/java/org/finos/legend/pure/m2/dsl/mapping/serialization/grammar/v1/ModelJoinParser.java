@@ -116,6 +116,10 @@ public class ModelJoinParser implements IMappingParser
     @Override
     public String parseMapping(String content, String id, String extendsId, String setSourceInfo, boolean root, String classPath, String classSourceInfo, String mappingPath, String sourceName, int offsetLine, String importId, ModelRepository repository, Context context) throws PureParserException
     {
+        if (extendsId != null)
+        {
+            throw new PureParserException(null, "ModelJoin mapping does not support 'extends' — found extends id '" + extendsId + "'");
+        }
         M3AntlrParser parser = new M3AntlrParser();
         M3ProcessorSupport processorSupport = new M3ProcessorSupport(context, repository);
         String mappingName = mappingPath.replace("::", "_");

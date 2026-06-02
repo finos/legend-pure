@@ -1,4 +1,4 @@
-// Copyright 2024 Goldman Sachs
+// Copyright 2026 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,31 +18,19 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
-/**
- * Shared utilities for ModelJoin processing:
- * <ul>
- *   <li>{@link #replaceVariableReferences} — replaces variable references inside a ValueSpecification tree.
- *       Used by both {@link ModelJoinProcessor} (forward rename to canonical names with types) and
- *       the unbinder (reverse rename back to user-provided names, clearing types).</li>
- *   <li>{@link #deepClone} — deep-clones a LambdaFunction's CoreInstance graph, producing fresh nodes
- *       that have never been visited by the compiler's Matcher. References to packageable elements
- *       (Class, Property, Association, Multiplicity, ImportStub, etc.) are shared — only structural
- *       nodes (ValueSpecification subtypes, GenericType wrappers, FunctionType) are cloned.
- *       This ensures each ModelJoin property mapping gets an independent expression tree that can be
- *       compiled against a different set of variable types.</li>
- * </ul>
- */
 public final class ModelJoinShared
 {
     private ModelJoinShared()
@@ -53,6 +41,18 @@ public final class ModelJoinShared
     // -------------------------------------------------------------------------
     // Variable renaming
     // -------------------------------------------------------------------------
+    static void applyRename(VariableExpression ve, String newName, GenericType newType)
+    {
+        ve._name(newName);
+        if (newType != null)
+        {
+            ve._genericType(newType);
+        }
+        else
+        {
+            ve._genericTypeRemove();
+        }
+    }
 
     /**
      * Recursively walks a ValueSpecification tree and replaces VariableExpression nodes:
@@ -67,27 +67,11 @@ public final class ModelJoinShared
             VariableExpression ve = (VariableExpression) vs;
             if (oldName1.equals(ve._name()))
             {
-                ve._name(newName1);
-                if (type1 != null)
-                {
-                    ve._genericType(type1);
-                }
-                else
-                {
-                    ve._genericTypeRemove();
-                }
+                applyRename(ve, newName1, type1);
             }
             else if (oldName2.equals(ve._name()))
             {
-                ve._name(newName2);
-                if (type2 != null)
-                {
-                    ve._genericType(type2);
-                }
-                else
-                {
-                    ve._genericTypeRemove();
-                }
+                applyRename(ve, newName2, type2);
             }
         }
         else if (vs instanceof FunctionExpression)
@@ -116,6 +100,36 @@ public final class ModelJoinShared
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Renames a lambda's two parameters (both at the {@link FunctionType} declaration site
+     * and at every reference inside the expression body).
+     */
+    public static void renameLambdaParamsAndBody(LambdaFunction<?> lambda,
+                                                 String oldName1, String newName1, GenericType type1,
+                                                 String oldName2, String newName2, GenericType type2,
+                                                 ProcessorSupport processorSupport)
+    {
+        FunctionType fType = (FunctionType) ImportStub.withImportStubByPass(
+                lambda._classifierGenericType()._typeArguments().getOnly()._rawTypeCoreInstance(), processorSupport);
+        for (VariableExpression param : fType._parameters())
+        {
+            String currentName = param._name();
+            if (oldName1.equals(currentName))
+            {
+                applyRename(param, newName1, type1);
+            }
+            else if (oldName2.equals(currentName))
+            {
+                applyRename(param, newName2, type2);
+            }
+        }
+
+        for (ValueSpecification expr : lambda._expressionSequence())
+        {
+            replaceVariableReferences(expr, oldName1, newName1, type1, oldName2, newName2, type2);
         }
     }
 
