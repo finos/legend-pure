@@ -198,31 +198,17 @@ public final class ModelJoinShared
 
     /**
      * Determines if a node is a shared reference that should NOT be cloned.
-     * Packageable elements, primitive types, multiplicities, and ImportStubs
-     * are shared references.
+     * Packageable elements, primitive types are shared references.
      */
     private static boolean isSharedReference(CoreInstance node, ProcessorSupport processorSupport)
     {
-        // Primitive values (String, Integer, Boolean, etc.) — identified by having a
-        // PrimitiveType classifier
         CoreInstance classifier = node.getClassifier();
         if (classifier != null && Instance.instanceOf(classifier, M3Paths.PrimitiveType, processorSupport))
         {
             return true;
         }
 
-        // PackageableElement instances (Class, Property, Association, Enum, etc.)
-        // but NOT anonymous structural nodes like GenericType, FunctionType, RelationType, VariableExpression, etc.
-        if (Instance.instanceOf(node, M3Paths.PackageableElement, processorSupport)
-                && !Instance.instanceOf(node, M3Paths.FunctionType, processorSupport)
-                && !Instance.instanceOf(node, M3Paths.RelationType, processorSupport)
-                && !Instance.instanceOf(node, M3Paths.LambdaFunction, processorSupport))
-        {
-            return true;
-        }
-
-        // Multiplicity instances are shared singletons
-        return Instance.instanceOf(node, M3Paths.PackageableMultiplicity, processorSupport);
+        return Instance.instanceOf(node, M3Paths.PackageableElement, processorSupport);
     }
 }
 
