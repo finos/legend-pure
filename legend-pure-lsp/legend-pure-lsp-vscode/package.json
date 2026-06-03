@@ -1,0 +1,286 @@
+{
+  "name": "legend-pure-lsp",
+  "displayName": "Legend Pure Language Support",
+  "description": "Language support for Legend Pure (.pure files)",
+  "version": "0.2.0",
+  "publisher": "finos",
+  "license": "Apache-2.0",
+  "engines": {
+    "vscode": "^1.110.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:pure",
+    "onDebug"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "pure",
+        "aliases": [
+          "Pure",
+          "pure"
+        ],
+        "extensions": [
+          ".pure"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "pure",
+        "scopeName": "source.pure",
+        "path": "./syntaxes/pure.tmLanguage.json"
+      }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "pure",
+        "scopes": {
+          "namespace": [
+            "entity.name.type.package.pure"
+          ],
+          "class": [
+            "entity.name.type.class.pure"
+          ],
+          "class.definition": [
+            "entity.name.type.class.pure"
+          ],
+          "enum": [
+            "entity.name.type.enum.pure"
+          ],
+          "enum.definition": [
+            "entity.name.type.enum.pure"
+          ],
+          "function": [
+            "entity.name.function.pure"
+          ],
+          "function.definition": [
+            "entity.name.function.pure"
+          ],
+          "property": [
+            "variable.other.property.pure"
+          ],
+          "property.definition": [
+            "variable.other.property.pure"
+          ],
+          "enumMember": [
+            "variable.other.enummember.pure"
+          ],
+          "type": [
+            "support.type.pure"
+          ],
+          "parameter": [
+            "variable.parameter.pure"
+          ],
+          "interface": [
+            "entity.name.type.interface.pure"
+          ],
+          "struct": [
+            "entity.name.type.struct.pure"
+          ],
+          "variable": [
+            "variable.other.pure"
+          ],
+          "variable.definition": [
+            "variable.other.pure"
+          ]
+        }
+      }
+    ],
+    "breakpoints": [
+      {
+        "language": "pure"
+      }
+    ],
+    "configuration": {
+      "title": "Legend Pure",
+      "properties": {
+        "legendPure.server.jarPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to the Legend Pure LSP server JAR. If empty, the extension looks for the JAR in the default Maven build output directory relative to the workspace."
+        },
+        "legendPure.server.extraClasspath": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Extra local JAR files, directories, or directory wildcards to append to the LSP server Java classpath. Directory entries add both the directory and its JAR wildcard. Changing this setting requires reloading the VS Code window."
+        },
+        "legendPure.server.classpathRepositories": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Pure repository names to compile from classpath JARs in addition to the default platform repositories. Use this with legendPure.server.extraClasspath for extension Pure sources."
+        },
+        "legendPure.java.home": {
+          "type": "string",
+          "default": "",
+          "description": "Path to a Java 11+ installation. If empty, 'java' from PATH is used."
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "legend-pure",
+          "title": "Legend Pure",
+          "icon": "$(symbol-namespace)"
+        }
+      ]
+    },
+    "views": {
+      "legend-pure": [
+        {
+          "id": "purePackageTree",
+          "name": "Pure Packages"
+        }
+      ]
+    },
+    "debuggers": [
+      {
+        "type": "legend-pure",
+        "label": "Legend Pure",
+        "languages": [
+          "pure"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "type": "object",
+            "required": [
+              "type",
+              "request",
+              "name"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "legend-pure"
+                ]
+              },
+              "request": {
+                "type": "string",
+                "enum": [
+                  "launch"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "function": {
+                "type": "string",
+                "default": "go():Any[*]",
+                "description": "Zero-argument Pure function signature to debug."
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "legend-pure",
+            "request": "launch",
+            "name": "Debug Pure go()",
+            "function": "go():Any[*]"
+          }
+        ]
+      }
+    ],
+    "languageModelTools": [
+      {
+        "name": "legend-pure-search-symbols",
+        "displayName": "Search Pure Symbols",
+        "toolReferenceName": "pureSearch",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Search for Pure classes, functions, enums by name",
+        "modelDescription": "Search for Pure language elements (classes, functions, enums, associations, profiles) by name in the configured workspace. Returns qualified paths, element kind, and file locations. Use this to find where something is defined in Pure code.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search query — matches element names case-insensitively. Examples: 'Person', 'relational', 'graphFetch'"
+            }
+          },
+          "required": [
+            "query"
+          ]
+        }
+      },
+      {
+        "name": "legend-pure-execute-go",
+        "displayName": "Execute Pure go()",
+        "toolReferenceName": "pureGo",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Compile and run the Pure go() function",
+        "modelDescription": "Compile and execute the go():Any[*] function in the current Pure workspace. Returns the console output or compilation/execution errors. Use this to run Pure code.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "legend-pure-get-source",
+        "displayName": "Read Pure Source",
+        "toolReferenceName": "pureSource",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Read a Pure source file by its source ID",
+        "modelDescription": "Read the content of a Pure source file by its source ID (e.g., '/core/pure/lang.pure') or pure:// URI. Returns the full source text. Use this to read Pure code that you found via symbol search.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "sourceId": {
+              "type": "string",
+              "description": "Pure source ID (e.g., '/core/pure/lang.pure') or pure:// URI"
+            }
+          },
+          "required": [
+            "sourceId"
+          ]
+        }
+      }
+    ],
+    "commands": [
+      {
+        "command": "legend.reindexWorkspace",
+        "title": "Legend Pure: Reindex Workspace"
+      },
+      {
+        "command": "legend.executeGo",
+        "title": "Legend Pure: Execute go()"
+      },
+      {
+        "command": "legend.setServerJarPath",
+        "title": "Legend Pure: Set Server JAR Path"
+      },
+      {
+        "command": "legend.addServerClasspathEntry",
+        "title": "Legend Pure: Add Server Classpath Entry"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run bundle",
+    "compile": "tsc -p ./",
+    "bundle": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
+    "test": "npm run compile && node --test test/debugAdapter.test.js",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.110.0",
+    "esbuild": "^0.27.4",
+    "typescript": "^5.3.0"
+  }
+}
