@@ -25,11 +25,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.regex.Pattern;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.lsp.LegendPureSession;
 import org.finos.legend.pure.lsp.LspLog;
@@ -41,7 +39,6 @@ import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,11 +46,9 @@ class LegendDebugSession
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(LegendDebugSession.class);
     private static final String DEFAULT_FUNCTION = "go():Any[*]";
-    private static final String DEBUG_STATEMENT = "meta::pure::ide::debug();";
     private static final String DEBUG_CONSOLE_PREFIX = "Entering debug mode.  Use terminal to introspect debug state.";
     private static final String RESUME_CONSOLE_TEXT = "Resuming from debug point...";
 
-    private final UriMapper uriMapper;
     private final LegendDebugFunctionExecution functionExecution;
     private final CoreInstance function;
     private final Map<String, LineMap> lineMaps;
@@ -65,10 +60,8 @@ class LegendDebugSession
     private volatile LegendDebugState visiblePausedState;
     private int outputOffset;
 
-    private LegendDebugSession(UriMapper uriMapper, LegendDebugFunctionExecution functionExecution,
-                               CoreInstance function, Map<String, LineMap> lineMaps)
+    private LegendDebugSession(LegendDebugFunctionExecution functionExecution, CoreInstance function, Map<String, LineMap> lineMaps)
     {
-        this.uriMapper = uriMapper;
         this.functionExecution = functionExecution;
         this.function = function;
         this.lineMaps = lineMaps;
@@ -85,6 +78,10 @@ class LegendDebugSession
         Map<String, String> sources = snapshotSources(mainSession, repositoryScanner, openDocuments);
         Map<String, List<Integer>> breakpointsBySource = groupBreakpointsBySource(uriMapper, sources, breakpoints);
         Map<String, LineMap> lineMaps = new TreeMap<>();
+        LspLog.info("Debug snapshot contains " + sources.size()
+                + " source(s); requested " + breakpointCount(breakpoints)
+                + " breakpoint(s); mapped " + groupedBreakpointCount(breakpointsBySource)
+                + " breakpoint(s) across " + breakpointsBySource.size() + " source(s)");
 
         PureRuntime debugRuntime = LegendPureSession.newDebugRuntime(
                 repositoryScanner, mainSession.getClasspathRepositoryNames());
@@ -95,7 +92,7 @@ class LegendDebugSession
         }
         debugRuntime.compile();
 
-        LegendDebugFunctionExecution debugExecution = new LegendDebugFunctionExecution(lineMaps.keySet());
+        LegendDebugFunctionExecution debugExecution = new LegendDebugFunctionExecution(lineMaps.keySet(), uriMapper);
         debugExecution.init(debugRuntime, new Message(""));
 
         CoreInstance function = findZeroArgumentFunction(debugRuntime, functionName);
@@ -104,7 +101,7 @@ class LegendDebugSession
             throw new IllegalArgumentException("No zero-argument function found for " + normalizeFunctionName(functionName));
         }
 
-        return new LegendDebugSession(uriMapper, debugExecution, function, lineMaps);
+        return new LegendDebugSession(debugExecution, function, lineMaps);
     }
 
     private static void overlaySource(PureRuntime runtime, String sourceId, String content)
@@ -152,6 +149,11 @@ class LegendDebugSession
         return runUntilPauseOrCompletion(RunMode.STEP_OVER, true);
     }
 
+    LegendDebug.Response stepOut()
+    {
+        return runUntilPauseOrCompletion(RunMode.STEP_OUT, true);
+    }
+
     LegendDebug.Response stop()
     {
         this.stopped = true;
@@ -161,7 +163,7 @@ class LegendDebugSession
         return LegendDebug.Response.completed(readNewUserOutput());
     }
 
-    LegendDebug.EvaluateResult evaluate(String expression)
+    LegendDebug.EvaluateResult evaluate(String expression, int frameId)
     {
         synchronized (this.pauseStateLock)
         {
@@ -172,7 +174,7 @@ class LegendDebugSession
             }
             try
             {
-                return state.evaluate(expression == null ? "" : expression);
+                return state.evaluate(expression == null ? "" : expression, frameId);
             }
             catch (Exception e)
             {
@@ -180,6 +182,11 @@ class LegendDebugSession
                 return LegendDebug.EvaluateResult.error(message(e));
             }
         }
+    }
+
+    LegendDebug.EvaluateResult evaluate(String expression)
+    {
+        return evaluate(expression, 0);
     }
 
     List<LegendDebug.Variable> variables()
@@ -290,7 +297,7 @@ class LegendDebugSession
                     setVisiblePausedState(state);
                     return LegendDebug.Response.paused(
                             visibleOutput.toString(),
-                            stackFrames(state, pauseLocation),
+                            stackFrames(state),
                             decision.reason);
                 }
             }
@@ -317,6 +324,8 @@ class LegendDebugSession
                 return sameLocation(startLocation, pauseLocation) ? PauseDecision.resume() : PauseDecision.pause("step");
             case STEP_OVER:
                 return isStepOverTarget(startLocation, pauseLocation) ? PauseDecision.pause("step") : PauseDecision.resume();
+            case STEP_OUT:
+                return isStepOutTarget(startLocation, pauseLocation) ? PauseDecision.pause("step") : PauseDecision.resume();
             case CONTINUE:
             default:
                 return PauseDecision.resume();
@@ -333,16 +342,15 @@ class LegendDebugSession
         {
             return false;
         }
-        if (!Objects.equals(startLocation.sourceId, pauseLocation.sourceId))
-        {
-            return false;
-        }
-        if (startLocation.functionRange != null)
-        {
-            return startLocation.functionRange.contains(pauseLocation.originalLine)
-                    && pauseLocation.originalLine > startLocation.originalLine;
-        }
-        return pauseLocation.originalLine > startLocation.originalLine;
+        return !pauseLocation.location.sameLine(startLocation.location);
+    }
+
+    private boolean isStepOutTarget(PauseLocation startLocation, PauseLocation pauseLocation)
+    {
+        return startLocation != null
+                && pauseLocation != null
+                && pauseLocation.stackDepth < startLocation.stackDepth
+                && !sameLocation(startLocation, pauseLocation);
     }
 
     private PauseLocation currentPauseLocation()
@@ -353,45 +361,37 @@ class LegendDebugSession
 
     private PauseLocation currentPauseLocation(LegendDebugState state)
     {
-        SourceInformation sourceInformation = state.getCurrentSourceInformation();
-        if (sourceInformation == null)
-        {
-            return null;
-        }
-
-        String sourceId = sourceInformation.getSourceId();
-        LineMap lineMap = this.lineMaps.getOrDefault(sourceId, LineMap.identity());
-        int debugLine = positiveOrDefault(sourceInformation.getLine(), sourceInformation.getStartLine(), 1);
-        int originalLine = lineMap.toOriginalLineOneBased(debugLine);
-        return new PauseLocation(
-                sourceId,
-                originalLine,
-                lineMap.isUserBreakpoint(originalLine),
-                lineMap.isExplicitDebug(originalLine),
-                lineMap.functionRange(originalLine),
-                state.getStackDepth());
+        DebugExecutionLocation location = state.getCurrentLocation();
+        return location == null ? null : new PauseLocation(location, isUserBreakpoint(location), location.isExplicitDebug());
     }
 
-    private List<LegendDebug.StackFrame> stackFrames(LegendDebugState state, PauseLocation pauseLocation)
+    private List<LegendDebug.StackFrame> stackFrames(LegendDebugState state)
     {
-        SourceInformation sourceInformation = state.getCurrentSourceInformation();
-        if (sourceInformation == null || pauseLocation == null)
+        List<LegendDebug.StackFrame> result = new ArrayList<>();
+        for (DebugFrameSnapshot frame : state.getFrames())
         {
-            return Collections.emptyList();
+            DebugExecutionLocation location = frame.getLocation();
+            if (location == null)
+            {
+                continue;
+            }
+            result.add(new LegendDebug.StackFrame(
+                    frame.getId(),
+                    frame.getName(),
+                    location.getUri(),
+                    location.getLine(),
+                    location.getColumn(),
+                    location.getEndLine(),
+                    location.getEndColumn(),
+                    frame.getVariablesReference()));
         }
+        return result;
+    }
 
-        String sourceId = sourceInformation.getSourceId();
-        LineMap lineMap = this.lineMaps.getOrDefault(sourceId, LineMap.identity());
-        int debugLine = positiveOrDefault(sourceInformation.getLine(), sourceInformation.getStartLine(), 1);
-        int debugColumn = positiveOrDefault(sourceInformation.getColumn(), sourceInformation.getStartColumn(), 1);
-        String uri = sourceId == null ? null : this.uriMapper.toUri(sourceId);
-
-        return Collections.singletonList(new LegendDebug.StackFrame(
-                1,
-                state.getCurrentFrameName(),
-                uri,
-                pauseLocation.originalLine,
-                lineMap.toOriginalColumnOneBased(debugLine, debugColumn)));
+    private boolean isUserBreakpoint(DebugExecutionLocation location)
+    {
+        LineMap lineMap = location == null ? null : this.lineMaps.get(location.getSourceId());
+        return lineMap != null && lineMap.isUserBreakpoint(location.getLine());
     }
 
     private String readNewUserOutput()
@@ -411,15 +411,6 @@ class LegendDebugSession
         String withoutResumeText = text.replace(RESUME_CONSOLE_TEXT, "");
         int debugSummaryStart = withoutResumeText.lastIndexOf(DEBUG_CONSOLE_PREFIX);
         return debugSummaryStart < 0 ? withoutResumeText : withoutResumeText.substring(0, debugSummaryStart);
-    }
-
-    private static int positiveOrDefault(int first, int second, int fallback)
-    {
-        if (first > 0)
-        {
-            return first;
-        }
-        return second > 0 ? second : fallback;
     }
 
     private static Map<String, String> snapshotSources(LegendPureSession mainSession, RepositoryScanner repositoryScanner,
@@ -514,7 +505,8 @@ class LegendDebugSession
                 }
                 else
                 {
-                    LspLog.debug("Skipping breakpoint for unknown source: " + breakpoint.getUri());
+                    LspLog.info("Skipping debug breakpoint for unknown source: "
+                            + breakpoint.getUri() + " (derived sourceId=" + sourceId + ")");
                     continue;
                 }
             }
@@ -522,6 +514,21 @@ class LegendDebugSession
             grouped.computeIfAbsent(sourceId, ignored -> new ArrayList<>()).add(breakpoint.getLine());
         }
         return grouped;
+    }
+
+    private static int breakpointCount(List<LegendDebug.Breakpoint> breakpoints)
+    {
+        return breakpoints == null ? 0 : breakpoints.size();
+    }
+
+    private static int groupedBreakpointCount(Map<String, List<Integer>> breakpointsBySource)
+    {
+        int count = 0;
+        for (List<Integer> sourceBreakpoints : breakpointsBySource.values())
+        {
+            count += sourceBreakpoints.size();
+        }
+        return count;
     }
 
     private static boolean isFilePureUri(String uri)
@@ -544,18 +551,9 @@ class LegendDebugSession
 
     private static LineMap lineMapForSource(String content, List<Integer> breakpointLines)
     {
-        String newline = content.contains("\r\n") ? "\r\n" : "\n";
-        String[] lines = content.split(Pattern.quote(newline), -1);
-        LineMap lineMap = new LineMap(functionRanges(lines));
+        String[] lines = content == null ? new String[0] : content.split("\\R", -1);
+        LineMap lineMap = new LineMap();
         lineMap.addUserBreakpoints(validatedBreakpointLines(lines, breakpointLines));
-
-        for (int originalLine = 0; originalLine < lines.length; originalLine++)
-        {
-            if (isExplicitDebugStatement(lines[originalLine]))
-            {
-                lineMap.addExplicitDebug(originalLine + 1);
-            }
-        }
         return lineMap;
     }
 
@@ -568,101 +566,12 @@ class LegendDebugSession
         }
         for (Integer line : breakpointLines)
         {
-            if (line != null && line >= 0 && line < lines.length && isBreakableFunctionLine(lines, line))
+            if (line != null && line >= 0 && line < lines.length)
             {
                 targets.add(line + 1);
             }
         }
         return targets;
-    }
-
-    private static List<FunctionRange> functionRanges(String[] lines)
-    {
-        List<FunctionRange> ranges = new ArrayList<>();
-        boolean pendingFunction = false;
-        boolean inFunction = false;
-        int bodyStartLine = -1;
-        int depth = 0;
-
-        for (int lineNumber = 0; lineNumber < lines.length; lineNumber++)
-        {
-            String code = stripLineComment(lines[lineNumber]);
-            String trimmed = code.trim();
-            if (!inFunction && trimmed.startsWith("function "))
-            {
-                pendingFunction = true;
-            }
-
-            for (int i = 0; i < code.length(); i++)
-            {
-                char c = code.charAt(i);
-                if (c == '{')
-                {
-                    if (pendingFunction && !inFunction)
-                    {
-                        inFunction = true;
-                        pendingFunction = false;
-                        bodyStartLine = lineNumber + 1;
-                        depth = 1;
-                    }
-                    else if (inFunction)
-                    {
-                        depth++;
-                    }
-                }
-                else if (c == '}' && inFunction)
-                {
-                    depth--;
-                    if (depth == 0)
-                    {
-                        ranges.add(new FunctionRange(bodyStartLine, lineNumber + 1));
-                        inFunction = false;
-                        bodyStartLine = -1;
-                    }
-                }
-            }
-        }
-        return ranges;
-    }
-
-    private static boolean isBreakableFunctionLine(String[] lines, int targetLine)
-    {
-        if (!isStatementLine(lines[targetLine]))
-        {
-            return false;
-        }
-
-        for (FunctionRange range : functionRanges(lines))
-        {
-            if (range.contains(targetLine + 1) && targetLine + 1 > range.startLine && targetLine + 1 < range.endLine)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean isStatementLine(String line)
-    {
-        String trimmed = line.trim();
-        return !trimmed.isEmpty()
-                && !trimmed.startsWith("//")
-                && !trimmed.startsWith("/*")
-                && !trimmed.startsWith("*")
-                && !trimmed.startsWith("}")
-                && !trimmed.startsWith("{")
-                && !trimmed.startsWith("function ");
-    }
-
-    private static boolean isExplicitDebugStatement(String line)
-    {
-        return stripLineComment(line).contains(DEBUG_STATEMENT);
-    }
-
-    private static String stripLineComment(String line)
-    {
-        int idx = line.indexOf("//");
-        return idx < 0 ? line : line.substring(0, idx);
     }
 
     private static CoreInstance findZeroArgumentFunction(PureRuntime runtime, String functionName)
@@ -714,8 +623,7 @@ class LegendDebugSession
     {
         return first != null
                 && second != null
-                && first.originalLine == second.originalLine
-                && Objects.equals(first.sourceId, second.sourceId);
+                && first.location.sameRange(second.location);
     }
 
     private static String message(Exception e)
@@ -727,7 +635,8 @@ class LegendDebugSession
     {
         CONTINUE,
         STEP_IN,
-        STEP_OVER
+        STEP_OVER,
+        STEP_OUT
     }
 
     private static class PauseDecision
@@ -754,56 +663,26 @@ class LegendDebugSession
 
     private static class PauseLocation
     {
-        private final String sourceId;
-        private final int originalLine;
+        private final DebugExecutionLocation location;
         private final boolean userBreakpoint;
         private final boolean explicitDebug;
-        private final FunctionRange functionRange;
         private final int stackDepth;
 
-        private PauseLocation(String sourceId, int originalLine, boolean userBreakpoint,
-                              boolean explicitDebug, FunctionRange functionRange, int stackDepth)
+        private PauseLocation(DebugExecutionLocation location, boolean userBreakpoint, boolean explicitDebug)
         {
-            this.sourceId = sourceId;
-            this.originalLine = originalLine;
+            this.location = location;
             this.userBreakpoint = userBreakpoint;
             this.explicitDebug = explicitDebug;
-            this.functionRange = functionRange;
-            this.stackDepth = stackDepth;
-        }
-    }
-
-    private static class FunctionRange
-    {
-        private final int startLine;
-        private final int endLine;
-
-        private FunctionRange(int startLine, int endLine)
-        {
-            this.startLine = startLine;
-            this.endLine = endLine;
-        }
-
-        private boolean contains(int line)
-        {
-            return line >= this.startLine && line <= this.endLine;
+            this.stackDepth = location == null ? 0 : location.getStackDepth();
         }
     }
 
     private static class LineMap
     {
         private final Set<Integer> userBreakpointOriginalLines = new TreeSet<>();
-        private final Set<Integer> explicitDebugOriginalLines = new TreeSet<>();
-        private final List<FunctionRange> functionRanges;
 
-        private LineMap(Collection<FunctionRange> functionRanges)
+        private LineMap()
         {
-            this.functionRanges = new ArrayList<>(functionRanges);
-        }
-
-        private static LineMap identity()
-        {
-            return new LineMap(Collections.emptyList());
         }
 
         private void addUserBreakpoints(Collection<Integer> originalLines)
@@ -811,41 +690,9 @@ class LegendDebugSession
             this.userBreakpointOriginalLines.addAll(originalLines);
         }
 
-        private void addExplicitDebug(int originalLineOneBased)
-        {
-            this.explicitDebugOriginalLines.add(originalLineOneBased);
-        }
-
         private boolean isUserBreakpoint(int originalLineOneBased)
         {
             return this.userBreakpointOriginalLines.contains(originalLineOneBased);
-        }
-
-        private boolean isExplicitDebug(int originalLineOneBased)
-        {
-            return this.explicitDebugOriginalLines.contains(originalLineOneBased);
-        }
-
-        private FunctionRange functionRange(int originalLineOneBased)
-        {
-            for (FunctionRange range : this.functionRanges)
-            {
-                if (range.contains(originalLineOneBased))
-                {
-                    return range;
-                }
-            }
-            return null;
-        }
-
-        private int toOriginalLineOneBased(int debugLineOneBased)
-        {
-            return Math.max(1, debugLineOneBased);
-        }
-
-        private int toOriginalColumnOneBased(int debugLineOneBased, int debugColumnOneBased)
-        {
-            return Math.max(1, debugColumnOneBased);
         }
     }
 }
