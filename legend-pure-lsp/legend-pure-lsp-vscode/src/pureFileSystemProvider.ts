@@ -30,13 +30,13 @@ import { LanguageClient } from 'vscode-languageclient/node';
  * the custom `legend/getSourceContent` request.
  */
 export class PureFileSystemProvider implements FileSystemProvider, Disposable {
-    private readonly client: LanguageClient;
+    private readonly clientProvider: () => LanguageClient | undefined;
     private readonly contentCache = new Map<string, Uint8Array>();
     private readonly _onDidChangeFile = new EventEmitter<FileChangeEvent[]>();
     readonly onDidChangeFile: Event<FileChangeEvent[]> = this._onDidChangeFile.event;
 
-    constructor(client: LanguageClient) {
-        this.client = client;
+    constructor(clientProvider: () => LanguageClient | undefined) {
+        this.clientProvider = clientProvider;
     }
 
     dispose(): void {
@@ -92,7 +92,12 @@ export class PureFileSystemProvider implements FileSystemProvider, Disposable {
 
         // Request content from the LSP server
         const sourceId = uri.path; // e.g., /core/pure/extensions/extension.pure
-        const content: string | null = await this.client.sendRequest(
+        const client = this.clientProvider();
+        if (!client) {
+            throw new Error('Pure LSP not started');
+        }
+
+        const content: string | null = await client.sendRequest(
             'legend/getSourceContent',
             sourceId
         );

@@ -129,7 +129,7 @@ public class LegendPureSession
             LspLog.debug("Loaded " + workspaceStorages.size()
                     + (workspaceDefinitionsOnly
                     ? " workspace repo definition storage(s)"
-                    : " workspace repos (MutableFS from disk)"));
+                    : " workspace repos (overlay FS from disk)"));
         }
 
         org.eclipse.collections.api.RichIterable<CodeRepository> classpathRepos =
@@ -148,21 +148,17 @@ public class LegendPureSession
                     unresolvedClasspathRepositoryNames.remove(name);
                 }
             }
-            else if (name != null && normalizedClasspathRepositoryNames.contains(name) && finalWorkspaceNames.contains(name))
+            else if (name != null && finalWorkspaceNames.contains(name))
             {
                 unresolvedClasspathRepositoryNames.remove(name);
-                LspLog.debug("Configured classpath repo is loaded from workspace instead: " + name);
-            }
-            else if (!finalWorkspaceNames.contains(name))
-            {
-                LspLog.debug("Skipping repo not on disk: " + name);
+                LspLog.debug("Classpath repo is loaded from workspace instead: " + name);
             }
         }
         if (!classpathStorageRepos.isEmpty())
         {
             storages.add(new ClassLoaderCodeStorage(classpathStorageRepos));
             LspLog.debug("Loaded " + classpathStorageRepos.size()
-                    + " classpath repos (platform/default + configured)");
+                    + " classpath repos (non-workspace)");
         }
         if (!unresolvedClasspathRepositoryNames.isEmpty())
         {
@@ -224,9 +220,9 @@ public class LegendPureSession
         return this.mutationService;
     }
 
-    public synchronized void restoreFromDisk(String sourceId)
+    public synchronized CompileResult restoreFromDisk(String sourceId)
     {
-        this.mutationService.restoreFromDisk(sourceId);
+        return this.mutationService.restoreFromDisk(sourceId);
     }
 
     public synchronized CompileResult modifyAndCompile(String sourceId, String content)
@@ -367,11 +363,6 @@ public class LegendPureSession
         return new String(baos.toByteArray(), StandardCharsets.UTF_8);
     }
 
-    private static boolean isPlatformRepo(String name)
-    {
-        return "platform".equals(name) || name.startsWith("platform_");
-    }
-
     static boolean shouldLoadClasspathRepository(String name, Set<String> workspaceRepoNames, Set<String> classpathRepositoryNames)
     {
         if (name == null)
@@ -382,7 +373,7 @@ public class LegendPureSession
         {
             return false;
         }
-        return isPlatformRepo(name) || DEBUG_REPOSITORY_NAME.equals(name) || classpathRepositoryNames.contains(name);
+        return true;
     }
 
     private static Set<String> normalizeRepositoryNames(Collection<String> repositoryNames)

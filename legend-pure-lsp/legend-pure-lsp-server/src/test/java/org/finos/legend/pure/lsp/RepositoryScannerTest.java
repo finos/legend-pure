@@ -207,9 +207,9 @@ public class RepositoryScannerTest
     }
 
     @Test
-    public void mutableFSCodeStorage_sourceIds_neverDoublePrefixed() throws IOException
+    public void overlayWorkspaceCodeStorage_sourceIds_neverDoublePrefixed() throws IOException
     {
-        // This test catches the critical bug where MutableFSCodeStorage root was
+        // This test catches the critical bug where the FS-backed workspace storage root was
         // set to resources/ instead of resources/<repoName>/, causing source IDs
         // like /core/core/pure/lang.pure instead of /core/pure/lang.pure.
         //
@@ -227,9 +227,7 @@ public class RepositoryScannerTest
         org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository repo =
                 new org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository(
                         "test_repo", "(test)(::.*)?");
-        org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs.MutableFSCodeStorage storage =
-                new org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs.MutableFSCodeStorage(
-                        repo, resourcesDir.resolve("test_repo"));
+        OverlayWorkspaceCodeStorage storage = new OverlayWorkspaceCodeStorage(repo, resourcesDir.resolve("test_repo"));
 
         org.eclipse.collections.api.RichIterable<String> files = storage.getUserFiles();
         Assert.assertFalse("Should have files", files.isEmpty());
@@ -247,7 +245,7 @@ public class RepositoryScannerTest
     }
 
     @Test
-    public void mutableFSCodeStorage_wrongRoot_wouldDoublePrefixBug() throws IOException
+    public void overlayWorkspaceCodeStorage_wrongRoot_wouldDoublePrefixBug() throws IOException
     {
         // This test demonstrates the bug we fixed: if root = resources/ (parent dir)
         // instead of resources/<repoName>/, source IDs get double-prefixed.
@@ -261,9 +259,7 @@ public class RepositoryScannerTest
                         "test_repo", "(test)(::.*)?");
 
         // WRONG: root = resources/ (the parent, not the repo dir)
-        org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs.MutableFSCodeStorage wrongStorage =
-                new org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs.MutableFSCodeStorage(
-                        repo, resourcesDir);
+        OverlayWorkspaceCodeStorage wrongStorage = new OverlayWorkspaceCodeStorage(repo, resourcesDir);
 
         org.eclipse.collections.api.RichIterable<String> files = wrongStorage.getUserFiles();
         // This would produce /test_repo/test_repo/sub/model.pure — the bug!

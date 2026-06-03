@@ -20,7 +20,11 @@ import java.util.List;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.lsp.LegendPureSession;
 import org.finos.legend.pure.lsp.LspLog;
+import org.finos.legend.pure.lsp.OverlayWorkspaceCodeStorage;
 import org.finos.legend.pure.m3.SourceMutation;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.exception.PureException;
@@ -47,6 +51,8 @@ public class SourceMutationService
                 return LegendPureSession.CompileResult.notReady();
             }
             PureRuntime runtime = this.session.getPureRuntime();
+            String effectiveSourceId = sourceId;
+            SourceSnapshot snapshot = null;
             try
             {
                 SourceMutation mutation;
@@ -77,6 +83,8 @@ public class SourceMutationService
                         }
                     }
                 }
+                effectiveSourceId = resolvedId == null ? sourceId : resolvedId;
+                snapshot = snapshot(effectiveSourceId);
 
                 if (resolvedId != null)
                 {
@@ -86,40 +94,37 @@ public class SourceMutationService
                         LspLog.debug("Skipping modification of immutable source: " + resolvedId);
                         return LegendPureSession.CompileResult.success(Collections.emptyList());
                     }
-                    String originalContent = (existingSource != null) ? existingSource.getContent() : null;
 
                     runtime.modify(resolvedId, content);
-                    try
+                    mutation = runtime.compile();
+                }
+                else if (isOverlayBackedSource(runtime, sourceId))
+                {
+                    runtime.getCodeStorage().writeContent(sourceId, content);
+                    runtime.loadSourceIfLoadable(sourceId);
+                    Source workspaceSource = runtime.getSourceById(sourceId);
+                    if (workspaceSource == null)
                     {
-                        mutation = runtime.compile();
+                        throw new IllegalArgumentException("Could not load workspace source: " + sourceId);
                     }
-                    catch (Exception compileError)
+                    if (workspaceSource.isImmutable())
                     {
-                        if (originalContent != null)
-                        {
-                            restoreSourceContent(resolvedId, originalContent);
-                        }
-                        throw compileError;
+                        return LegendPureSession.CompileResult.success(Collections.emptyList());
                     }
+                    mutation = runtime.compile();
                 }
                 else
                 {
                     String inMemoryId = sourceId.startsWith("/") ? sourceId.substring(1) : sourceId;
-                    try
-                    {
-                        mutation = runtime.createInMemoryAndCompile(Tuples.pair(inMemoryId, content));
-                    }
-                    catch (Exception compileError)
-                    {
-                        deleteSourceIfPresent(inMemoryId);
-                        throw compileError;
-                    }
+                    effectiveSourceId = inMemoryId;
+                    snapshot = snapshot(effectiveSourceId);
+                    mutation = runtime.createInMemoryAndCompile(Tuples.pair(inMemoryId, content));
                 }
                 return LegendPureSession.CompileResult.success(mutation.getModifiedFiles());
             }
             catch (Exception e)
             {
-                return toCompileResult(e);
+                return restoreAfterFailure(Collections.singletonList(snapshot == null ? snapshot(effectiveSourceId) : snapshot), e);
             }
         }
     }
@@ -147,6 +152,10 @@ public class SourceMutationService
                             }
                             break;
                         case CREATE_OR_MODIFY:
+                            if (runtime.getSourceById(change.getSourceId()) == null && isOverlayBackedSource(runtime, change.getSourceId()))
+                            {
+                                runtime.getCodeStorage().writeContent(change.getSourceId(), change.getContent());
+                            }
                             if (runtime.getSourceById(change.getSourceId()) == null && change.getSourceId().startsWith("/"))
                             {
                                 try
@@ -174,118 +183,119 @@ public class SourceMutationService
                     }
                 }
                 SourceMutation mutation = runtime.compile();
+                clearOverlayForAcceptedDiskChanges(changes);
                 return LegendPureSession.CompileResult.success(mutation.getModifiedFiles());
             }
             catch (Exception e)
             {
-                restoreSnapshots(snapshots);
-                return toCompileResult(e);
+                return restoreAfterFailure(snapshots, e);
             }
         }
     }
 
-    public void restoreFromDisk(String sourceId)
+    public LegendPureSession.CompileResult restoreFromDisk(String sourceId)
     {
         synchronized (this.session)
         {
             if (!this.session.isInitialized() || sourceId == null)
             {
-                return;
+                return LegendPureSession.CompileResult.notReady();
             }
             PureRuntime runtime = this.session.getPureRuntime();
+            SourceSnapshot snapshot = snapshot(sourceId);
             try
             {
                 String resolvedId = this.session.resolveSourceId(sourceId);
-                if (resolvedId == null)
+                String effectiveId = resolvedId == null ? sourceId : resolvedId;
+                Source source = resolvedId == null ? null : runtime.getSourceById(resolvedId);
+                if (source != null && source.isImmutable())
                 {
-                    return;
+                    return LegendPureSession.CompileResult.success(Collections.emptyList());
                 }
-                Source source = runtime.getSourceById(resolvedId);
-                if (source == null || source.isImmutable())
+                if (source != null && source.isInMemory())
                 {
-                    return;
+                    runtime.delete(effectiveId);
+                    SourceMutation mutation = runtime.compile();
+                    return LegendPureSession.CompileResult.success(mutation.getModifiedFiles());
                 }
-                if (source.isInMemory())
+
+                OverlayWorkspaceCodeStorage overlayStorage = overlayStorage(runtime, effectiveId);
+                if (overlayStorage != null)
                 {
-                    runtime.delete(resolvedId);
-                    runtime.compile();
+                    overlayStorage.clearOverlay(effectiveId);
                 }
-                else
+
+                if (overlayStorage != null && !runtime.getCodeStorage().exists(effectiveId))
                 {
-                    String diskContent = runtime.getCodeStorage().getContentAsText(resolvedId);
-                    if (diskContent != null && !diskContent.equals(source.getContent()))
+                    if (source != null)
                     {
-                        runtime.modify(resolvedId, diskContent);
-                        runtime.compile();
+                        runtime.delete(effectiveId);
+                    }
+                    SourceMutation mutation = runtime.compile();
+                    return LegendPureSession.CompileResult.success(mutation.getModifiedFiles());
+                }
+
+                if (source == null)
+                {
+                    runtime.loadSourceIfLoadable(effectiveId);
+                    source = runtime.getSourceById(effectiveId);
+                    if (source == null)
+                    {
+                        return LegendPureSession.CompileResult.success(Collections.emptyList());
                     }
                 }
+                String diskContent = runtime.getCodeStorage().getContentAsText(effectiveId);
+                if (!diskContent.equals(source.getContent()))
+                {
+                    runtime.modify(effectiveId, diskContent);
+                }
+                SourceMutation mutation = runtime.compile();
+                clearOverlayIfDiskMatches(effectiveId, diskContent);
+                return LegendPureSession.CompileResult.success(mutation.getModifiedFiles());
             }
             catch (Exception e)
             {
                 LspLog.debug("restoreFromDisk failed for " + sourceId + ": " + e.getMessage());
+                return restoreAfterFailure(Collections.singletonList(snapshot), e);
             }
         }
     }
 
-    private void restoreSourceContent(String sourceId, String content)
+    private LegendPureSession.CompileResult restoreAfterFailure(List<SourceSnapshot> snapshots, Exception originalError)
     {
-        PureRuntime runtime = this.session.getPureRuntime();
-        try
-        {
-            runtime.modify(sourceId, content);
-            runtime.compile();
-            LOGGER.info("Restored original content for {} after compile failure", sourceId);
-        }
-        catch (Exception restoreError)
-        {
-            LOGGER.warn("Failed to restore original content for {}, runtime may be inconsistent",
-                    sourceId, restoreError);
-        }
+        return restoreSnapshots(snapshots)
+                ? toCompileResult(originalError)
+                : LegendPureSession.CompileResult.error(originalError, true);
     }
 
-    private void deleteSourceIfPresent(String sourceId)
+    private SourceSnapshot snapshot(String sourceId)
     {
         PureRuntime runtime = this.session.getPureRuntime();
-        try
+        String resolvedId = this.session.resolveSourceId(sourceId);
+        String effectiveId = resolvedId == null ? sourceId : resolvedId;
+        Source source = resolvedId == null ? null : runtime.getSourceById(resolvedId);
+        OverlayWorkspaceCodeStorage overlayStorage = overlayStorage(runtime, effectiveId);
+        OverlayWorkspaceCodeStorage.OverlaySnapshot overlaySnapshot = overlayStorage == null ? null : overlayStorage.snapshot(effectiveId);
+        if (source != null && source.isImmutable())
         {
-            if (runtime.getSourceById(sourceId) != null)
-            {
-                runtime.delete(sourceId);
-                runtime.compile();
-            }
+            return SourceSnapshot.immutable(effectiveId, overlayStorage, overlaySnapshot);
         }
-        catch (Exception restoreError)
-        {
-            LOGGER.warn("Failed to remove invalid new source {}, runtime may be inconsistent",
-                    sourceId, restoreError);
-        }
+        return source == null
+                ? SourceSnapshot.missing(effectiveId, overlayStorage, overlaySnapshot)
+                : SourceSnapshot.existing(effectiveId, source.getContent(), overlayStorage, overlaySnapshot);
     }
 
     private List<SourceSnapshot> snapshot(List<LegendPureSession.FileChange> changes)
     {
-        PureRuntime runtime = this.session.getPureRuntime();
         List<SourceSnapshot> snapshots = new ArrayList<>();
         for (LegendPureSession.FileChange change : changes)
         {
-            String resolvedId = this.session.resolveSourceId(change.getSourceId());
-            Source source = resolvedId == null ? null : runtime.getSourceById(resolvedId);
-            if (source != null && source.isImmutable())
-            {
-                snapshots.add(SourceSnapshot.immutable(resolvedId));
-            }
-            else if (source != null)
-            {
-                snapshots.add(SourceSnapshot.existing(resolvedId, source.getContent()));
-            }
-            else
-            {
-                snapshots.add(SourceSnapshot.missing(change.getSourceId()));
-            }
+            snapshots.add(snapshot(change.getSourceId()));
         }
         return snapshots;
     }
 
-    private void restoreSnapshots(List<SourceSnapshot> snapshots)
+    private boolean restoreSnapshots(List<SourceSnapshot> snapshots)
     {
         PureRuntime runtime = this.session.getPureRuntime();
         try
@@ -297,6 +307,10 @@ public class SourceMutationService
                 {
                     continue;
                 }
+                if (snapshot.overlayStorage != null)
+                {
+                    snapshot.overlayStorage.restore(snapshot.overlaySnapshot);
+                }
                 if (snapshot.existed)
                 {
                     Source source = runtime.getSourceById(snapshot.sourceId);
@@ -304,17 +318,112 @@ public class SourceMutationService
                     {
                         runtime.modify(snapshot.sourceId, snapshot.content);
                     }
+                    else if (snapshot.overlayStorage != null)
+                    {
+                        runtime.getCodeStorage().writeContent(snapshot.sourceId, snapshot.content);
+                        runtime.loadSourceIfLoadable(snapshot.sourceId);
+                    }
                 }
-                else if (runtime.getSourceById(snapshot.sourceId) != null)
+                else
                 {
                     runtime.delete(snapshot.sourceId);
                 }
             }
             runtime.compile();
+            return true;
         }
         catch (Exception restoreError)
         {
             LOGGER.warn("Failed to restore runtime after bulk compile failure", restoreError);
+            return false;
+        }
+    }
+
+    private void clearOverlayForAcceptedDiskChanges(List<LegendPureSession.FileChange> changes)
+    {
+        for (LegendPureSession.FileChange change : changes)
+        {
+            if (change.getType() == LegendPureSession.FileChangeType.CREATE_OR_MODIFY)
+            {
+                clearOverlayIfDiskMatches(change.getSourceId(), change.getContent());
+            }
+            else if (change.getType() == LegendPureSession.FileChangeType.DELETE)
+            {
+                clearOverlayIfDiskMissing(change.getSourceId());
+            }
+        }
+    }
+
+    private void clearOverlayIfDiskMatches(String sourceId, String content)
+    {
+        PureRuntime runtime = this.session.getPureRuntime();
+        OverlayWorkspaceCodeStorage overlayStorage = overlayStorage(runtime, sourceId);
+        if (overlayStorage == null)
+        {
+            return;
+        }
+        try
+        {
+            if (content != null && content.equals(overlayStorage.getDiskContentAsText(sourceId)))
+            {
+                overlayStorage.clearOverlay(sourceId);
+            }
+        }
+        catch (Exception ignore)
+        {
+            // Keep the accepted overlay if disk cannot be read.
+        }
+    }
+
+    private void clearOverlayIfDiskMissing(String sourceId)
+    {
+        PureRuntime runtime = this.session.getPureRuntime();
+        OverlayWorkspaceCodeStorage overlayStorage = overlayStorage(runtime, sourceId);
+        if (overlayStorage == null)
+        {
+            return;
+        }
+        try
+        {
+            overlayStorage.getDiskContentAsText(sourceId);
+        }
+        catch (Exception e)
+        {
+            overlayStorage.clearOverlay(sourceId);
+        }
+    }
+
+    private static boolean isOverlayBackedSource(PureRuntime runtime, String sourceId)
+    {
+        return overlayStorage(runtime, sourceId) != null;
+    }
+
+    private static OverlayWorkspaceCodeStorage overlayStorage(PureRuntime runtime, String sourceId)
+    {
+        try
+        {
+            if (runtime == null || sourceId == null || !sourceId.startsWith("/"))
+            {
+                return null;
+            }
+            if (!(runtime.getCodeStorage() instanceof CompositeCodeStorage))
+            {
+                return runtime.getCodeStorage() instanceof OverlayWorkspaceCodeStorage
+                        ? (OverlayWorkspaceCodeStorage) runtime.getCodeStorage()
+                        : null;
+            }
+            CompositeCodeStorage composite = (CompositeCodeStorage) runtime.getCodeStorage();
+            CodeRepository repository = composite.getRepositoryForPath(sourceId);
+            if (repository == null)
+            {
+                return null;
+            }
+            RepositoryCodeStorage original = composite.getOriginalCodeStorage(repository);
+            return original instanceof OverlayWorkspaceCodeStorage ? (OverlayWorkspaceCodeStorage) original : null;
+        }
+        catch (Exception e)
+        {
+            return null;
         }
     }
 
@@ -330,28 +439,37 @@ public class SourceMutationService
         private final boolean existed;
         private final boolean immutable;
         private final String content;
+        private final OverlayWorkspaceCodeStorage overlayStorage;
+        private final OverlayWorkspaceCodeStorage.OverlaySnapshot overlaySnapshot;
 
-        private SourceSnapshot(String sourceId, boolean existed, boolean immutable, String content)
+        private SourceSnapshot(String sourceId, boolean existed, boolean immutable, String content,
+                               OverlayWorkspaceCodeStorage overlayStorage,
+                               OverlayWorkspaceCodeStorage.OverlaySnapshot overlaySnapshot)
         {
             this.sourceId = sourceId;
             this.existed = existed;
             this.immutable = immutable;
             this.content = content;
+            this.overlayStorage = overlayStorage;
+            this.overlaySnapshot = overlaySnapshot;
         }
 
-        static SourceSnapshot existing(String sourceId, String content)
+        static SourceSnapshot existing(String sourceId, String content, OverlayWorkspaceCodeStorage overlayStorage,
+                                       OverlayWorkspaceCodeStorage.OverlaySnapshot overlaySnapshot)
         {
-            return new SourceSnapshot(sourceId, true, false, content);
+            return new SourceSnapshot(sourceId, true, false, content, overlayStorage, overlaySnapshot);
         }
 
-        static SourceSnapshot missing(String sourceId)
+        static SourceSnapshot missing(String sourceId, OverlayWorkspaceCodeStorage overlayStorage,
+                                      OverlayWorkspaceCodeStorage.OverlaySnapshot overlaySnapshot)
         {
-            return new SourceSnapshot(sourceId, false, false, null);
+            return new SourceSnapshot(sourceId, false, false, null, overlayStorage, overlaySnapshot);
         }
 
-        static SourceSnapshot immutable(String sourceId)
+        static SourceSnapshot immutable(String sourceId, OverlayWorkspaceCodeStorage overlayStorage,
+                                        OverlayWorkspaceCodeStorage.OverlaySnapshot overlaySnapshot)
         {
-            return new SourceSnapshot(sourceId, true, true, null);
+            return new SourceSnapshot(sourceId, true, true, null, overlayStorage, overlaySnapshot);
         }
     }
 }

@@ -81,6 +81,78 @@ public class LegendPureSessionIntegrationTest
     }
 
     @Test
+    public void invalidWorkspaceMutation_doesNotRewriteDiskAndRestoresRuntime() throws Exception
+    {
+        Path workspaceRoot = Files.createTempDirectory("pure-lsp-overlay-test");
+        Path resourcesDir = workspaceRoot.resolve("overlay-module/src/main/resources");
+        Path repoDir = resourcesDir.resolve("overlay_repo");
+        Path sourceFile = repoDir.resolve("model/OverlayPerson.pure");
+        Files.createDirectories(sourceFile.getParent());
+
+        String originalContent = "Class test::overlay::OverlayPerson\n{\n  name: String[1];\n}\n";
+        Files.write(resourcesDir.resolve("overlay_repo.definition.json"),
+                ("{\"name\":\"overlay_repo\","
+                        + "\"pattern\":\"(test::overlay)(::.*)?\","
+                        + "\"dependencies\":[\"platform\"]}").getBytes());
+        Files.write(sourceFile, originalContent.getBytes());
+
+        RepositoryScanner scanner = new RepositoryScanner();
+        scanner.scan(Collections.singletonList(workspaceRoot));
+
+        LegendPureSession workspaceSession = new LegendPureSession();
+        workspaceSession.initialize(scanner);
+
+        String sourceId = "/overlay_repo/model/OverlayPerson.pure";
+        String invalidContent = "Class test::overlay::OverlayPerson\n{\n  bad: NoSuchType99[1];\n}\n";
+        LegendPureSession.CompileResult result = workspaceSession.modifyAndCompile(sourceId, invalidContent);
+
+        Assert.assertFalse("Invalid workspace edit should produce diagnostics", result.isSuccess());
+        Assert.assertFalse("Pure compile errors should not be internal recovery errors", result.isInternalError());
+        Assert.assertEquals("Invalid edit must not overwrite disk", originalContent, new String(Files.readAllBytes(sourceFile)));
+        Assert.assertEquals("Runtime should keep last good source content after failed compile",
+                originalContent, workspaceSession.getPureRuntime().getSourceById(sourceId).getContent());
+    }
+
+    @Test
+    public void invalidBackgroundDiskChange_doesNotRevertDiskAndRestoresRuntime() throws Exception
+    {
+        Path workspaceRoot = Files.createTempDirectory("pure-lsp-background-overlay-test");
+        Path resourcesDir = workspaceRoot.resolve("overlay-module/src/main/resources");
+        Path repoDir = resourcesDir.resolve("overlay_background_repo");
+        Path sourceFile = repoDir.resolve("model/BackgroundPerson.pure");
+        Files.createDirectories(sourceFile.getParent());
+
+        String originalContent = "Class test::overlay::background::BackgroundPerson\n{\n  name: String[1];\n}\n";
+        Files.write(resourcesDir.resolve("overlay_background_repo.definition.json"),
+                ("{\"name\":\"overlay_background_repo\","
+                        + "\"pattern\":\"(test::overlay::background)(::.*)?\","
+                        + "\"dependencies\":[\"platform\"]}").getBytes());
+        Files.write(sourceFile, originalContent.getBytes());
+
+        RepositoryScanner scanner = new RepositoryScanner();
+        scanner.scan(Collections.singletonList(workspaceRoot));
+
+        LegendPureSession workspaceSession = new LegendPureSession();
+        workspaceSession.initialize(scanner);
+
+        String sourceId = "/overlay_background_repo/model/BackgroundPerson.pure";
+        String invalidDiskContent = "Class test::overlay::background::BackgroundPerson\n{\n  bad: NoSuchType99[1];\n}\n";
+        Files.write(sourceFile, invalidDiskContent.getBytes());
+
+        LegendPureSession.CompileResult result = workspaceSession.applyBulkChangesAndCompile(Collections.singletonList(
+                new LegendPureSession.FileChange(
+                        sourceId,
+                        invalidDiskContent,
+                        LegendPureSession.FileChangeType.CREATE_OR_MODIFY)));
+
+        Assert.assertFalse("Invalid background disk edit should produce diagnostics", result.isSuccess());
+        Assert.assertFalse("Pure compile errors should not be internal recovery errors", result.isInternalError());
+        Assert.assertEquals("Invalid background edit must remain on disk", invalidDiskContent, new String(Files.readAllBytes(sourceFile)));
+        Assert.assertEquals("Runtime should keep last good source content after failed background compile",
+                originalContent, workspaceSession.getPureRuntime().getSourceById(sourceId).getContent());
+    }
+
+    @Test
     public void compile_syntaxError_returnsError()
     {
         LegendPureSession.CompileResult result = session.modifyAndCompile(

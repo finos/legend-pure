@@ -113,13 +113,10 @@
           },
           "description": "Extra local JAR files, directories, or directory wildcards to append to the LSP server Java classpath. Directory entries add both the directory and its JAR wildcard. Changing this setting requires reloading the VS Code window."
         },
-        "legendPure.server.classpathRepositories": {
-          "type": "array",
-          "default": [],
-          "items": {
-            "type": "string"
-          },
-          "description": "Pure repository names to compile from classpath JARs in addition to the default platform repositories. Use this with legendPure.server.extraClasspath for extension Pure sources."
+        "legendPure.server.classpathFile": {
+          "type": "string",
+          "default": "",
+          "description": "Path to a file containing additional Java classpath entries, separated by the platform path separator. This is useful with Maven dependency:build-classpath for large host repositories. Changing this setting requires reloading the VS Code window."
         },
         "legendPure.java.home": {
           "type": "string",
@@ -256,6 +253,10 @@
       {
         "command": "legend.executeGo",
         "title": "Legend Pure: Execute go()"
+      },
+      {
+        "command": "legend.restartServer",
+        "title": "Legend Pure: Restart LSP Server"
       },
       {
         "command": "legend.setServerJarPath",

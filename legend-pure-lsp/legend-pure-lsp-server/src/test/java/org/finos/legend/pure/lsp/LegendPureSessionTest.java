@@ -24,7 +24,7 @@ import org.junit.Test;
 public class LegendPureSessionTest
 {
     @Test
-    public void shouldLoadClasspathRepository_loadsNullAndPlatformReposByDefault()
+    public void shouldLoadClasspathRepository_loadsClasspathReposByDefault()
     {
         Assert.assertTrue(LegendPureSession.shouldLoadClasspathRepository(
                 null, Collections.emptySet(), Collections.emptySet()));
@@ -34,20 +34,8 @@ public class LegendPureSessionTest
                 "platform_pure", Collections.emptySet(), Collections.emptySet()));
         Assert.assertTrue(LegendPureSession.shouldLoadClasspathRepository(
                 "pure_ide_debug", Collections.emptySet(), Collections.emptySet()));
-    }
-
-    @Test
-    public void shouldLoadClasspathRepository_skipsUnconfiguredNonPlatformRepos()
-    {
-        Assert.assertFalse(LegendPureSession.shouldLoadClasspathRepository(
-                "core", Collections.emptySet(), Collections.emptySet()));
-    }
-
-    @Test
-    public void shouldLoadClasspathRepository_loadsConfiguredNonPlatformRepos()
-    {
         Assert.assertTrue(LegendPureSession.shouldLoadClasspathRepository(
-                "core", Collections.emptySet(), set("core")));
+                "core", Collections.emptySet(), Collections.emptySet()));
     }
 
     @Test
