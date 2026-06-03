@@ -29,7 +29,6 @@ import java.util.regex.Pattern;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.lsp.protocol.LegendDebug;
@@ -46,7 +45,6 @@ import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification
 import org.finos.legend.pure.m3.serialization.runtime.IncrementalCompiler;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.transaction.framework.ThreadLocalTransactionContext;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
@@ -62,22 +60,28 @@ class LegendDebugState
 
     private final CountDownLatch latch = new CountDownLatch(1);
     private final LegendDebugFunctionExecution functionExecution;
-    private final MutableStack<CoreInstance> functionExpressionCallStack;
-    private final MutableList<Pair<String, CoreInstance>> variables;
-    private final String variablesTypeAndMultiplicity;
+    private final DebugExecutionLocation location;
+    private final List<DebugFrameSnapshot> frames;
+    private final Map<Integer, DebugFrameSnapshot> framesById = new HashMap<>();
+    private final Map<Integer, DebugFrameSnapshot> framesByVariablesReference = new HashMap<>();
     private final Map<Integer, DebugValue> referencesById = new HashMap<>();
     private final Map<String, Integer> referenceIdsByKey = new HashMap<>();
 
     private volatile boolean abort;
-    private int nextVariablesReference = TOP_LEVEL_VARIABLES_REFERENCE + 1;
+    private int nextVariablesReference;
 
-    LegendDebugState(LegendDebugFunctionExecution functionExecution, VariableContext variableContext,
-                     MutableStack<CoreInstance> functionExpressionCallStack)
+    LegendDebugState(LegendDebugFunctionExecution functionExecution, DebugExecutionLocation location,
+                     List<DebugFrameSnapshot> frames)
     {
         this.functionExecution = functionExecution;
-        this.functionExpressionCallStack = functionExpressionCallStack;
-        this.variables = computeVariables(variableContext);
-        this.variablesTypeAndMultiplicity = computeVariablesTypeAndMultiplicity(functionExecution, this.variables);
+        this.location = location;
+        this.frames = frames == null ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(frames));
+        for (DebugFrameSnapshot frame : this.frames)
+        {
+            this.framesById.put(frame.getId(), frame);
+            this.framesByVariablesReference.put(frame.getVariablesReference(), frame);
+        }
+        this.nextVariablesReference = Math.max(TOP_LEVEL_VARIABLES_REFERENCE + 1, this.frames.size() + 1);
     }
 
     void await()
@@ -89,7 +93,7 @@ class LegendDebugState
         catch (InterruptedException e)
         {
             Thread.currentThread().interrupt();
-            throw new PureExecutionException("Interrupted while paused in debugger", this.functionExpressionCallStack);
+            throw new PureExecutionException("Interrupted while paused in debugger");
         }
     }
 
@@ -110,39 +114,41 @@ class LegendDebugState
         return this.abort;
     }
 
-    SourceInformation getCurrentSourceInformation()
+    DebugExecutionLocation getCurrentLocation()
     {
-        return this.functionExpressionCallStack.isEmpty() ? null : this.functionExpressionCallStack.peek().getSourceInformation();
+        return this.location;
     }
 
     int getStackDepth()
     {
-        return this.functionExpressionCallStack.size();
+        return this.location == null ? 0 : this.location.getStackDepth();
     }
 
     String getCurrentFrameName()
     {
-        if (this.functionExpressionCallStack.isEmpty())
-        {
-            return "Pure debug point";
-        }
-        String name = this.functionExpressionCallStack.peek().getName();
-        return (name == null || name.isEmpty()) ? "Pure debug point" : name;
+        return this.location == null ? "Pure debug point" : this.location.getName();
     }
 
     MutableList<Pair<String, String>> getVariableTypeAndMultiplicity()
     {
-        return this.variables.collect(variable -> Tuples.pair(
+        MutableList<Pair<String, CoreInstance>> variables = variablesForFrame(TOP_LEVEL_VARIABLES_REFERENCE);
+        return variables.collect(variable -> Tuples.pair(
                 variable.getOne(),
                 computeVariableTypeAndMultiplicity(this.functionExecution, variable.getTwo())));
+    }
+
+    List<DebugFrameSnapshot> getFrames()
+    {
+        return this.frames;
     }
 
     List<LegendDebug.Variable> variables(int variablesReference)
     {
         int reference = variablesReference <= 0 ? TOP_LEVEL_VARIABLES_REFERENCE : variablesReference;
-        if (reference == TOP_LEVEL_VARIABLES_REFERENCE)
+        DebugFrameSnapshot frame = this.framesByVariablesReference.get(reference);
+        if (frame != null)
         {
-            return topLevelVariables();
+            return topLevelVariables(frame);
         }
 
         DebugValue debugValue = this.referencesById.get(reference);
@@ -151,8 +157,16 @@ class LegendDebugState
 
     LegendDebug.EvaluateResult evaluate(String command)
     {
+        return evaluate(command, TOP_LEVEL_VARIABLES_REFERENCE);
+    }
+
+    LegendDebug.EvaluateResult evaluate(String command, int frameId)
+    {
         String original = command == null ? "" : command;
         EvaluationCommand parsed = null;
+        DebugFrameSnapshot frame = frameForEvaluate(frameId);
+        MutableList<Pair<String, CoreInstance>> variables = variablesForFrame(frame);
+        String variablesTypeAndMultiplicity = computeVariablesTypeAndMultiplicity(this.functionExecution, variables);
         try
         {
             parsed = parseEvaluationCommand(original);
@@ -163,25 +177,26 @@ class LegendDebugState
             }
 
             this.functionExecution.addEvaluationImports(parsed.imports);
-            String normalized = normalizeExpression(parsed.expression);
-            CoreInstance result = this.functionExecution.withPausesSuppressed(() -> evaluateNormalizedExpression(normalized));
+            String normalized = normalizeExpression(parsed.expression, variables);
+            CoreInstance result = this.functionExecution.withPausesSuppressed(() -> evaluateNormalizedExpression(normalized, variables, variablesTypeAndMultiplicity));
             DebugValue debugValue = DebugValue.instance("eval:" + normalized, result);
             return LegendDebug.EvaluateResult.success(formatValue(result), variablesReferenceFor(debugValue));
         }
         catch (Exception e)
         {
-            return LegendDebug.EvaluateResult.error(sanitizeEvaluationError(e, parsed == null ? original : parsed.expression));
+            return LegendDebug.EvaluateResult.error(sanitizeEvaluationError(e, parsed == null ? original : parsed.expression, variables));
         }
     }
 
-    private CoreInstance evaluateNormalizedExpression(String expression)
+    private CoreInstance evaluateNormalizedExpression(String expression, MutableList<Pair<String, CoreInstance>> variables,
+                                                      String variablesTypeAndMultiplicity)
     {
         String functionName = "debugExpression_" + Thread.currentThread().getId() + "_" + Long.toUnsignedString(System.nanoTime());
         Source inMemorySource = new Source(
                 functionName + ".pure",
                 false,
                 true,
-                evaluationSource(functionName, expression));
+                evaluationSource(functionName, expression, variablesTypeAndMultiplicity));
 
         IncrementalCompiler incrementalCompiler = this.functionExecution.getPureRuntime().getIncrementalCompiler();
         IncrementalCompiler.IncrementalCompilerTransaction transaction = incrementalCompiler.newTransaction(false);
@@ -196,10 +211,10 @@ class LegendDebugState
             throw new IllegalStateException("Compiled debug expression function was not found");
         }
 
-        return this.functionExecution.start(function, this.variables.collect(Pair::getTwo));
+        return this.functionExecution.start(function, variables.collect(Pair::getTwo));
     }
 
-    private String evaluationSource(String functionName, String expression)
+    private String evaluationSource(String functionName, String expression, String variablesTypeAndMultiplicity)
     {
         StringBuilder source = new StringBuilder();
         for (String importLine : evaluationImports())
@@ -209,7 +224,7 @@ class LegendDebugState
         source.append("function ")
                 .append(functionName)
                 .append('(')
-                .append(this.variablesTypeAndMultiplicity)
+                .append(variablesTypeAndMultiplicity)
                 .append("):Any[*]\n{\n")
                 .append(expression)
                 .append("\n}\n");
@@ -226,13 +241,12 @@ class LegendDebugState
 
     private List<String> currentSourceImports()
     {
-        SourceInformation sourceInformation = getCurrentSourceInformation();
-        if (sourceInformation == null || sourceInformation.getSourceId() == null)
+        if (this.location == null || this.location.getSourceId() == null)
         {
             return Collections.emptyList();
         }
 
-        Source source = this.functionExecution.getPureRuntime().getSourceById(sourceInformation.getSourceId());
+        Source source = this.functionExecution.getPureRuntime().getSourceById(this.location.getSourceId());
         return source == null ? Collections.emptyList() : extractImports(source.getContent());
     }
 
@@ -327,13 +341,14 @@ class LegendDebugState
         return String.join(", ", paths);
     }
 
-    private List<LegendDebug.Variable> topLevelVariables()
+    private List<LegendDebug.Variable> topLevelVariables(DebugFrameSnapshot frame)
     {
+        MutableList<Pair<String, CoreInstance>> variables = variablesForFrame(frame);
         List<LegendDebug.Variable> result = new ArrayList<>();
-        for (Pair<String, CoreInstance> variable : this.variables.toSortedListBy(Pair::getOne))
+        for (Pair<String, CoreInstance> variable : variables.toSortedListBy(Pair::getOne))
         {
             CoreInstance value = variable.getTwo();
-            DebugValue debugValue = DebugValue.instance("local:" + variable.getOne(), value);
+            DebugValue debugValue = DebugValue.instance("frame:" + frame.getId() + ":local:" + variable.getOne(), value);
             result.add(new LegendDebug.Variable(
                     variable.getOne(),
                     formatValue(value),
@@ -504,7 +519,7 @@ class LegendDebugState
         }
     }
 
-    private String normalizeExpression(String command)
+    private String normalizeExpression(String command, MutableList<Pair<String, CoreInstance>> variables)
     {
         String expression = command == null ? "" : command.trim();
         if (expression.isEmpty())
@@ -515,15 +530,15 @@ class LegendDebugState
         if (expression.charAt(0) == '$')
         {
             String localName = leadingIdentifier(expression, 1);
-            if (localName != null && !hasLocal(localName))
+            if (localName != null && !hasLocal(localName, variables))
             {
-                throw new IllegalArgumentException(outOfScopeMessage(localName));
+                throw new IllegalArgumentException(outOfScopeMessage(localName, variables));
             }
             return expression;
         }
 
         String leadingIdentifier = leadingIdentifier(expression, 0);
-        if (leadingIdentifier != null && hasLocal(leadingIdentifier))
+        if (leadingIdentifier != null && hasLocal(leadingIdentifier, variables))
         {
             String remainder = expression.substring(leadingIdentifier.length()).trim();
             if (remainder.isEmpty() || remainder.startsWith(".") || remainder.startsWith("->") || remainder.startsWith("["))
@@ -534,9 +549,9 @@ class LegendDebugState
         return expression;
     }
 
-    private boolean hasLocal(String name)
+    private boolean hasLocal(String name, MutableList<Pair<String, CoreInstance>> variables)
     {
-        return this.variables.anySatisfy(variable -> variable.getOne().equals(name));
+        return variables.anySatisfy(variable -> variable.getOne().equals(name));
     }
 
     private String leadingIdentifier(String text, int offset)
@@ -554,21 +569,21 @@ class LegendDebugState
         return text.substring(offset, end);
     }
 
-    private String outOfScopeMessage(String name)
+    private String outOfScopeMessage(String name, MutableList<Pair<String, CoreInstance>> variables)
     {
-        List<String> localNames = availableLocalNames();
+        List<String> localNames = availableLocalNames(variables);
         return "`" + name + "` is not in scope yet; available locals are "
                 + (localNames.isEmpty() ? "none" : String.join(", ", localNames)) + ".";
     }
 
-    private List<String> availableLocalNames()
+    private List<String> availableLocalNames(MutableList<Pair<String, CoreInstance>> variables)
     {
         List<String> names = new ArrayList<>();
-        this.variables.collect(Pair::getOne).toSortedList().forEach(names::add);
+        variables.collect(Pair::getOne).toSortedList().forEach(names::add);
         return names;
     }
 
-    private String sanitizeEvaluationError(Exception e, String expression)
+    private String sanitizeEvaluationError(Exception e, String expression, MutableList<Pair<String, CoreInstance>> variables)
     {
         String message = e.getMessage() == null ? e.toString() : e.getMessage();
         String sanitized = message
@@ -577,11 +592,36 @@ class LegendDebugState
                 .replaceAll("resource:[^\\s\\]]*debug expression", "debug expression");
 
         String localName = localNameFromExplicitReference(expression);
-        if (localName != null && !hasLocal(localName) && !sanitized.contains("not in scope yet"))
+        if (localName != null && !hasLocal(localName, variables) && !sanitized.contains("not in scope yet"))
         {
-            return outOfScopeMessage(localName) + "\n" + sanitized;
+            return outOfScopeMessage(localName, variables) + "\n" + sanitized;
         }
         return sanitized;
+    }
+
+    private DebugFrameSnapshot frameForEvaluate(int frameId)
+    {
+        if (frameId > 0)
+        {
+            DebugFrameSnapshot frame = this.framesById.get(frameId);
+            if (frame != null)
+            {
+                return frame;
+            }
+        }
+        DebugFrameSnapshot top = this.framesByVariablesReference.get(TOP_LEVEL_VARIABLES_REFERENCE);
+        return top == null && !this.frames.isEmpty() ? this.frames.get(0) : top;
+    }
+
+    private MutableList<Pair<String, CoreInstance>> variablesForFrame(int variablesReference)
+    {
+        DebugFrameSnapshot frame = this.framesByVariablesReference.get(variablesReference);
+        return frame == null ? Lists.mutable.empty() : variablesForFrame(frame);
+    }
+
+    private MutableList<Pair<String, CoreInstance>> variablesForFrame(DebugFrameSnapshot frame)
+    {
+        return frame == null ? Lists.mutable.empty() : computeVariables(frame.getVariableContext());
     }
 
     private String localNameFromExplicitReference(String expression)

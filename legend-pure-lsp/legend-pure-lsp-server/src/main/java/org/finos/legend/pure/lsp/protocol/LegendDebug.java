@@ -92,6 +92,7 @@ public final class LegendDebug
     public static class EvaluateParams
     {
         private String expression;
+        private int frameId;
 
         public EvaluateParams()
         {
@@ -105,6 +106,16 @@ public final class LegendDebug
         public void setExpression(String expression)
         {
             this.expression = expression;
+        }
+
+        public int getFrameId()
+        {
+            return this.frameId;
+        }
+
+        public void setFrameId(int frameId)
+        {
+            this.frameId = frameId;
         }
     }
 
@@ -237,6 +248,9 @@ public final class LegendDebug
         private String uri;
         private int line;
         private int column;
+        private int endLine;
+        private int endColumn;
+        private int variablesReference;
 
         public StackFrame()
         {
@@ -244,11 +258,20 @@ public final class LegendDebug
 
         public StackFrame(int id, String name, String uri, int line, int column)
         {
+            this(id, name, uri, line, column, line, column, id);
+        }
+
+        public StackFrame(int id, String name, String uri, int line, int column, int endLine, int endColumn,
+                          int variablesReference)
+        {
             this.id = id;
             this.name = name;
             this.uri = uri;
             this.line = line;
             this.column = column;
+            this.endLine = endLine;
+            this.endColumn = endColumn;
+            this.variablesReference = variablesReference;
         }
 
         public int getId()
@@ -299,6 +322,36 @@ public final class LegendDebug
         public void setColumn(int column)
         {
             this.column = column;
+        }
+
+        public int getEndLine()
+        {
+            return this.endLine;
+        }
+
+        public void setEndLine(int endLine)
+        {
+            this.endLine = endLine;
+        }
+
+        public int getEndColumn()
+        {
+            return this.endColumn;
+        }
+
+        public void setEndColumn(int endColumn)
+        {
+            this.endColumn = endColumn;
+        }
+
+        public int getVariablesReference()
+        {
+            return this.variablesReference;
+        }
+
+        public void setVariablesReference(int variablesReference)
+        {
+            this.variablesReference = variablesReference;
         }
     }
 

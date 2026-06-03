@@ -53,7 +53,9 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 import org.finos.legend.pure.lsp.diagnostics.DiagnosticService;
 import org.finos.legend.pure.lsp.debug.DebugService;
+import org.finos.legend.pure.lsp.debug.LegendDebugSocketServer;
 import org.finos.legend.pure.lsp.mutation.SourceMutationService;
+import org.finos.legend.pure.lsp.protocol.DapEndpoint;
 import org.finos.legend.pure.lsp.protocol.ExecuteGoResult;
 import org.finos.legend.pure.lsp.protocol.LegendDebug;
 import org.finos.legend.pure.lsp.protocol.LegendLanguageClient;
@@ -79,6 +81,7 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     private final LegendWorkspaceService workspaceService;
     private final PureRuntimeManager runtimeManager;
     private final DebugService debugService;
+    private final LegendDebugSocketServer debugSocketServer;
     private final ExecutorService requestExecutor = Executors.newFixedThreadPool(4, r ->
     {
         Thread t = new Thread(r, "legend-pure-lsp-request");
@@ -99,6 +102,7 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
                 this.repositoryScanner,
                 this.uriMapper,
                 this.textDocumentService::getOpenDocumentSourceSnapshot);
+        this.debugSocketServer = new LegendDebugSocketServer(this.debugService);
         this.workspaceService = new LegendWorkspaceService(this);
     }
 
@@ -202,6 +206,7 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     public CompletableFuture<Object> shutdown()
     {
         this.debugService.shutdown();
+        this.debugSocketServer.close();
         this.textDocumentService.shutdown();
         this.runtimeManager.shutdown();
         this.requestExecutor.shutdownNow();
@@ -360,6 +365,12 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         return supplyAsync(this.debugService::stop);
     }
 
+    @JsonRequest("legend/debug/dapEndpoint")
+    public CompletableFuture<DapEndpoint> debugDapEndpoint()
+    {
+        return CompletableFuture.completedFuture(this.debugSocketServer.endpoint());
+    }
+
     private static List<Path> extractWorkspaceRoots(InitializeParams params)
     {
         List<Path> roots = new ArrayList<>();
@@ -507,6 +518,8 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
             Class.forName("com.google.gson.internal.bind.NumberTypeAdapter");
             Class.forName("org.eclipse.collections.impl.block.procedure.MinComparatorProcedure");
             Class.forName("org.eclipse.lsp4j.adapters.SymbolInformationTypeAdapter");
+            Class.forName("org.eclipse.lsp4j.debug.services.IDebugProtocolServer");
+            Class.forName("org.eclipse.lsp4j.jsonrpc.debug.DebugLauncher");
             Class.forName("org.finos.legend.pure.lsp.HoverProvider");
             Class.forName("org.finos.legend.pure.lsp.NavigationProvider");
             Class.forName("org.finos.legend.pure.lsp.ReferencesProvider");

@@ -135,11 +135,14 @@ public class DebugService
 
     public LegendDebug.Response stepOut()
     {
-        if (this.debugSession == null)
+        LegendDebugSession active = this.debugSession;
+        if (active == null)
         {
             return LegendDebug.Response.error("No active debug session");
         }
-        return LegendDebug.Response.error("Step out is not supported by the current Pure debug runtime");
+        LegendDebug.Response response = active.stepOut();
+        clearIfTerminal(active, response);
+        return response;
     }
 
     public LegendDebug.EvaluateResult evaluate(LegendDebug.EvaluateParams params)
@@ -149,7 +152,7 @@ public class DebugService
         {
             return LegendDebug.EvaluateResult.error("Debug execution is not paused");
         }
-        return active.evaluate(params == null ? "" : params.getExpression());
+        return active.evaluate(params == null ? "" : params.getExpression(), params == null ? 0 : params.getFrameId());
     }
 
     public List<LegendDebug.Variable> variables(LegendDebug.VariablesParams params)
