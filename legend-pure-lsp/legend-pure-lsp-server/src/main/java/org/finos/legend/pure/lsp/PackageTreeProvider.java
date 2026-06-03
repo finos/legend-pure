@@ -90,7 +90,7 @@ public class PackageTreeProvider
                     uri = uriMapper.toUri(si.getSourceId());
                     line = si.getStartLine();
                 }
-                elements.add(new PackageChildInfo(name, qualifiedPath, classifierName, false, 0, uri, line > 0 ? line : null));
+                elements.add(new PackageChildInfo(getDisplayName(child, classifierName), qualifiedPath, classifierName, false, 0, uri, line > 0 ? line : null));
             }
         }
 
@@ -102,5 +102,18 @@ public class PackageTreeProvider
         result.addAll(packages);
         result.addAll(elements);
         return result;
+    }
+
+    private static String getDisplayName(CoreInstance instance, String classifierName)
+    {
+        if ("ConcreteFunctionDefinition".equals(classifierName) || "NativeFunction".equals(classifierName))
+        {
+            CoreInstance functionName = instance.getValueForMetaPropertyToOne(M3Properties.functionName);
+            if (functionName != null)
+            {
+                return functionName.getName();
+            }
+        }
+        return instance.getName();
     }
 }
