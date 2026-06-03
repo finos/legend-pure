@@ -42,6 +42,8 @@ public class M2MappingPaths
     public static final String SetImplementation = "meta::pure::mapping::SetImplementation";
     public static final String SubstituteStore = "meta::pure::mapping::SubstituteStore";
     public static final String ValueTransformer = "meta::pure::mapping::ValueTransformer";
+    public static final String ModelJoinAssociationImplementation = "meta::pure::mapping::modelJoin::ModelJoinAssociationImplementation";
+    public static final String ModelJoinPropertyMapping = "meta::pure::mapping::modelJoin::ModelJoinPropertyMapping";
     public static final String XStoreAssociationImplementation = "meta::pure::mapping::xStore::XStoreAssociationImplementation";
     public static final String RelationFunctionPropertyMapping = "meta::pure::mapping::relation::RelationFunctionPropertyMapping";
     public static final String RelationFunctionInstanceSetImplementation = "meta::pure::mapping::relation::RelationFunctionInstanceSetImplementation";

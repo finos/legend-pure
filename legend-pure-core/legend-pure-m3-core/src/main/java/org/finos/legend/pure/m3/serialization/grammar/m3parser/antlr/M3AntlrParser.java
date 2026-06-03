@@ -358,6 +358,19 @@ public class M3AntlrParser implements Parser
         return visitor.walkMapping(parser.mapping(), lambdaContext);
     }
 
+    /**
+     * Parses a standalone combined expression (e.g., a typed lambda) using the
+     * given LambdaContext for unique lambda function naming.
+     */
+    public CoreInstance parseCombinedExpression(String content, AntlrContextToM3CoreInstance.LambdaContext lambdaContext, String sourceName, int offset, String importId, ModelRepository repository, ProcessorSupport processorSupport, Context context)
+    {
+        AntlrSourceInformation sourceInformation = new AntlrSourceInformation(offset, 0, sourceName, true);
+        org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(true, content, sourceInformation);
+        ImportGroup grp = (ImportGroup) processorSupport.package_getByUserPath("system::imports::" + importId);
+        M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(null, sourceInformation, this.inlineDSLLibrary, repository, null, null, context, grp, 0, null);
+        return visitor.walkCombinedExpression(parser.combinedExpression(), lambdaContext);
+    }
+
     @Override
     public String parseMapping(String content, String id, String extendsId, String setSourceInfo, boolean root, String classPath, String classSourceInfo, String mappingPath, String sourceName, int offset, String importId, ModelRepository repository, Context context) throws PureParserException
     {
