@@ -14,8 +14,10 @@
 
 package org.finos.legend.pure.lsp;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams;
@@ -90,6 +92,12 @@ public class LegendWorkspaceService implements WorkspaceService
             return;
         }
 
+        changes = filterOpenDocumentConflicts(changes);
+        if (changes.isEmpty())
+        {
+            return;
+        }
+
         if (this.server.getMutationService() == null)
         {
             return;
@@ -132,6 +140,28 @@ public class LegendWorkspaceService implements WorkspaceService
                 this.server.getDiagnosticService().publishException(fallbackUri, result.getError(), session);
             }
         }
+    }
+
+    private List<LegendPureSession.FileChange> filterOpenDocumentConflicts(List<LegendPureSession.FileChange> changes)
+    {
+        LegendTextDocumentService textDocumentService = (LegendTextDocumentService) this.server.getTextDocumentService();
+        List<LegendPureSession.FileChange> filtered = new ArrayList<>(changes.size());
+        for (LegendPureSession.FileChange change : changes)
+        {
+            String uri = this.server.getUriMapper().toUri(change.getSourceId());
+            if (uri != null && textDocumentService.hasOpenDocument(uri))
+            {
+                String openContent = textDocumentService.getOpenDocumentContent(uri);
+                if (change.getType() == LegendPureSession.FileChangeType.DELETE ||
+                        !Objects.equals(openContent, change.getContent()))
+                {
+                    LspLog.debug("Ignoring disk change for open document: " + uri);
+                    continue;
+                }
+            }
+            filtered.add(change);
+        }
+        return filtered;
     }
 
     @Override

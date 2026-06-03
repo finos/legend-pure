@@ -113,7 +113,7 @@ public class UriMapper
         }
 
         // Strategy A: Query PureRuntime directly for the filesystem path.
-        // If the source is backed by MutableFSCodeStorage, use FSCodeStorage.getRoot()
+        // If the source is backed by an FSCodeStorage implementation, use FSCodeStorage.getRoot()
         // to construct the real file:// URI. This is the most reliable approach.
         PureRuntime runtime = this.pureRuntime;
         if (runtime != null)
@@ -159,7 +159,7 @@ public class UriMapper
 
     /**
      * Query PureRuntime's code storage to find the filesystem path for a source.
-     * If the source is backed by FSCodeStorage (MutableFS), returns a file:// URI.
+     * If the source is backed by FSCodeStorage, returns a file:// URI.
      * Returns null for ClassLoader-backed (JAR) sources.
      */
     private String resolveViaStorage(PureRuntime runtime, String sourceId)

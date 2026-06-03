@@ -35,7 +35,6 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeReposito
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.empty.EmptyCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs.MutableFSCodeStorage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -237,9 +236,10 @@ public class RepositoryScanner
     }
 
     /**
-     * Build MutableFSCodeStorage instances for all repos found on disk.
-     * Each storage is backed by the real filesystem, so changes to .pure files
-     * are immediately visible without rebuilding any JAR.
+     * Build overlay-backed workspace storages for all repos found on disk.
+     * Each storage reads from the real filesystem but keeps PureRuntime mutations
+     * in memory, so the LSP can compile editor/disk changes without writing back
+     * to files owned by the IDE, git, or AI tools.
      *
      * Returns a list of storages and a set of repo names that were built,
      * so the caller can skip these when building ClassLoaderCodeStorage fallbacks.
@@ -272,13 +272,13 @@ public class RepositoryScanner
                     LOGGER.warn("Repo directory not found: {}", repoDir);
                     continue;
                 }
-                MutableFSCodeStorage storage = new MutableFSCodeStorage(repo, repoDir);
+                OverlayWorkspaceCodeStorage storage = new OverlayWorkspaceCodeStorage(repo, repoDir);
                 storages.add(storage);
-                LspLog.info("Workspace repo (MutableFS): " + repoName + " -> " + repoDir);
+                LspLog.info("Workspace repo (overlay FS): " + repoName + " -> " + repoDir);
             }
             catch (Exception e)
             {
-                LOGGER.warn("Failed to create MutableFSCodeStorage for '{}': {}", repoName, e.getMessage());
+                LOGGER.warn("Failed to create overlay workspace storage for '{}': {}", repoName, e.getMessage());
             }
         }
         return storages;

@@ -38,12 +38,12 @@ interface PackageChildInfo {
 }
 
 export class PurePackageTreeProvider implements TreeDataProvider<PurePackageNode> {
-    private readonly client: LanguageClient;
+    private readonly clientProvider: () => LanguageClient | undefined;
     private readonly _onDidChangeTreeData = new EventEmitter<PurePackageNode | undefined>();
     readonly onDidChangeTreeData: Event<PurePackageNode | undefined> = this._onDidChangeTreeData.event;
 
-    constructor(client: LanguageClient) {
-        this.client = client;
+    constructor(clientProvider: () => LanguageClient | undefined) {
+        this.clientProvider = clientProvider;
     }
 
     refresh(): void {
@@ -56,9 +56,13 @@ export class PurePackageTreeProvider implements TreeDataProvider<PurePackageNode
 
     async getChildren(element?: PurePackageNode): Promise<PurePackageNode[]> {
         const packagePath = element ? element.qualifiedPath : '::';
+        const client = this.clientProvider();
+        if (!client) {
+            return [];
+        }
 
         try {
-            const children: PackageChildInfo[] = await this.client.sendRequest(
+            const children: PackageChildInfo[] = await client.sendRequest(
                 'legend/getPackageChildren',
                 packagePath
             );

@@ -26,7 +26,7 @@ import org.junit.rules.TemporaryFolder;
 
 /**
  * Tests the hybrid storage architecture:
- * - MutableFSCodeStorage for workspace repos (reads from disk)
+ * - OverlayWorkspaceCodeStorage for workspace repos (reads from disk, writes in memory)
  * - ClassLoaderCodeStorage fallback for repos not on disk
  * - No duplicate repo conflicts
  * - Tests/CI still work without a workspace scanner

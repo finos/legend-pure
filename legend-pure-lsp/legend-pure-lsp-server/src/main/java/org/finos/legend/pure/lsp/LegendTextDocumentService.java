@@ -113,7 +113,8 @@ public class LegendTextDocumentService implements TextDocumentService
         if (session != null && session.isInitialized() && this.server.getMutationService() != null && !uri.startsWith("pure://"))
         {
             String sourceId = this.server.getUriMapper().toSourceId(uri);
-            this.server.getMutationService().restoreFromDisk(sourceId);
+            LegendPureSession.CompileResult result = this.server.getMutationService().restoreFromDisk(sourceId);
+            handleResult(uri, result);
         }
     }
 
@@ -536,6 +537,16 @@ public class LegendTextDocumentService implements TextDocumentService
             }
         }
         return snapshot;
+    }
+
+    boolean hasOpenDocument(String uri)
+    {
+        return this.openDocuments.containsKey(uri);
+    }
+
+    String getOpenDocumentContent(String uri)
+    {
+        return this.openDocuments.get(uri);
     }
 
     void shutdown()
