@@ -25,7 +25,6 @@ import org.finos.legend.pure.lsp.RepositoryScanner;
 import org.finos.legend.pure.lsp.UriMapper;
 import org.finos.legend.pure.lsp.protocol.LegendDebug;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -538,7 +537,6 @@ public class LegendDebugSessionTest
         debug.stop();
     }
 
-    @Ignore("FunctionExecutionInterpreted.executeFunction is not invoked for bare variable/literal ValueSpecifications; this requires a guarded ValueSpecification hook in legend-pure.")
     @Test(timeout = 60_000)
     public void breakpointOnVariableOnlyExpressionRequiresPureValueSpecificationHook()
     {

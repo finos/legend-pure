@@ -22,7 +22,7 @@ import {
     LanguageClientOptions,
     ServerOptions,
 } from 'vscode-languageclient/node';
-import { LegendPureDebugAdapter, LegendPureDebugConfigurationProvider } from './debugAdapter';
+import { createLegendPureDebugAdapterDescriptor, LegendPureDebugConfigurationProvider } from './debugAdapter';
 import { PureFileSystemProvider } from './pureFileSystemProvider';
 import { PurePackageTreeProvider } from './purePackageTree';
 
@@ -184,9 +184,7 @@ export function activate(context: ExtensionContext): void {
     );
     context.subscriptions.push(
         vscode.debug.registerDebugAdapterDescriptorFactory('legend-pure', {
-            createDebugAdapterDescriptor: () => new vscode.DebugAdapterInlineImplementation(
-                new LegendPureDebugAdapter(() => client, serverReady)
-            ),
+            createDebugAdapterDescriptor: () => createLegendPureDebugAdapterDescriptor(() => client, serverReady),
         })
     );
 
