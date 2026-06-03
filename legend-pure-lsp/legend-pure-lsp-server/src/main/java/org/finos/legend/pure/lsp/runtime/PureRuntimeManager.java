@@ -28,6 +28,7 @@ import org.finos.legend.pure.lsp.LspLog;
 import org.finos.legend.pure.lsp.RepositoryScanner;
 import org.finos.legend.pure.lsp.UriMapper;
 import org.finos.legend.pure.lsp.WorkspaceSymbolProvider;
+import org.finos.legend.pure.lsp.diagnostics.DiagnosticService;
 import org.finos.legend.pure.lsp.mutation.SourceMutationService;
 import org.finos.legend.pure.lsp.protocol.LegendLanguageClient;
 import org.finos.legend.pure.lsp.protocol.LspState;
@@ -94,6 +95,7 @@ public class PureRuntimeManager
             setStatus(LspState.FAILED, e.getMessage());
             LspLog.error("Pure LSP initialization FAILED: " + e.getMessage());
             e.printStackTrace(System.err);
+            publishFailureDiagnostic(e);
             show(MessageType.Error, "Pure LSP failed: " + e.getMessage());
         }
     }
@@ -115,6 +117,7 @@ public class PureRuntimeManager
         {
             setStatus(LspState.FAILED, e.getMessage());
             LOGGER.error("Reindex failed", e);
+            publishFailureDiagnostic(e);
             show(MessageType.Error, "Pure LSP reindex failed: " + e.getMessage());
         }
     }
@@ -148,6 +151,7 @@ public class PureRuntimeManager
         {
             setStatus(LspState.FAILED, e.getMessage());
             LOGGER.error("Recovery failed", e);
+            publishFailureDiagnostic(e);
             show(MessageType.Error, "Pure LSP recovery failed: " + e.getMessage());
         }
         finally
@@ -182,6 +186,22 @@ public class PureRuntimeManager
 
         long elapsed = System.currentTimeMillis() - start;
         setStatus(LspState.READY, readyMessage + " in " + elapsed + "ms");
+    }
+
+    private void publishFailureDiagnostic(Exception e)
+    {
+        LegendLanguageClient currentClient = this.client;
+        if (currentClient == null)
+        {
+            return;
+        }
+
+        DiagnosticService diagnosticService = new DiagnosticService(currentClient, this.uriMapper);
+        String errorUri = diagnosticService.resolveErrorUri(e);
+        if (errorUri != null)
+        {
+            diagnosticService.publishException(errorUri, e, this.session);
+        }
     }
 
     public void rescanWorkspaceRoots()

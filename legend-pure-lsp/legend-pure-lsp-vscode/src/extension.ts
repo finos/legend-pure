@@ -27,6 +27,7 @@ import { PureFileSystemProvider } from './pureFileSystemProvider';
 import { PurePackageTreeProvider } from './purePackageTree';
 
 let client: LanguageClient | undefined;
+let clientStatusSubscription: vscode.Disposable | undefined;
 let pureFs: PureFileSystemProvider | undefined;
 let packageTree: PurePackageTreeProvider | undefined;
 let goOutputChannel: import('vscode').OutputChannel | undefined;
@@ -46,59 +47,21 @@ interface LspStatus {
 }
 
 export function activate(context: ExtensionContext): void {
-    const jarPath = resolveServerJar();
-    console.log('[Legend Pure] Resolved server JAR:', jarPath);
-    const jarSize = jarPath ? Math.round(fs.statSync(jarPath).size / 1024 / 1024) : 0;
-    console.log(`[Legend Pure] JAR size: ${jarSize}MB; launching with explicit classpath`);
-    if (!jarPath) {
-        window.showErrorMessage(
-            'Legend Pure LSP: server JAR not found. ' +
-            'Set "legendPure.server.jarPath" in settings or build the server with Maven.'
-        );
-        return;
-    }
+    pureFs = new PureFileSystemProvider(() => client);
+    context.subscriptions.push(
+        workspace.registerFileSystemProvider('pure', pureFs, {
+            isReadonly: true,
+            isCaseSensitive: true,
+        })
+    );
+    context.subscriptions.push(pureFs);
 
-    const extraClasspath = resolveExtraClasspath();
-    if (!extraClasspath) {
-        return;
-    }
-    const classpathRepositories = getConfiguredStringArray('server.classpathRepositories');
-    const javaHome = getJavaExecutable();
-    const serverClasspath = resolveServerClasspath(jarPath, extraClasspath);
-    const serverArgs = buildServerArgs(serverClasspath);
-    console.log('[Legend Pure] Server launch mode: classpath');
-    console.log('[Legend Pure] Resolved server classpath entries:', serverClasspath);
-    if (extraClasspath.length > 0) {
-        console.log('[Legend Pure] Resolved extra classpath:', extraClasspath);
-    }
-    if (classpathRepositories.length > 0) {
-        console.log('[Legend Pure] Classpath Pure repositories:', classpathRepositories);
-    }
-
-    const serverOptions: ServerOptions = {
-        command: javaHome,
-        args: serverArgs,
-        options: { env: process.env },
-    };
-
-    const clientOptions: LanguageClientOptions = {
-        initializationOptions: {
-            classpathRepositories,
-        },
-        documentSelector: [
-            { scheme: 'file', language: 'pure' },
-            { scheme: 'pure', language: 'pure' },
-        ],
-        synchronize: {
-            fileEvents: workspace.createFileSystemWatcher('**/*.pure'),
-        },
-    };
-
-    client = new LanguageClient(
-        'legendPureLsp',
-        'Legend Pure LSP',
-        serverOptions,
-        clientOptions
+    packageTree = new PurePackageTreeProvider(() => client);
+    context.subscriptions.push(
+        window.createTreeView('purePackageTree', {
+            treeDataProvider: packageTree,
+            showCollapseAll: true,
+        })
     );
 
     // Register the executeGo command
@@ -133,6 +96,10 @@ export function activate(context: ExtensionContext): void {
     );
 
     context.subscriptions.push(
+        commands.registerCommand('legend.restartServer', async () => restartLegendServer(context))
+    );
+
+    context.subscriptions.push(
         commands.registerCommand('legend.setServerJarPath', async () => {
             const config = workspace.getConfiguration('legendPure');
             const configuredPath = config.get<string>('server.jarPath') || '';
@@ -162,13 +129,13 @@ export function activate(context: ExtensionContext): void {
                 : vscode.ConfigurationTarget.Global;
             await config.update('server.jarPath', jarUri.fsPath, target);
 
-            const reload = 'Reload Window';
+            const reload = 'Restart LSP';
             const choice = await window.showInformationMessage(
-                'Legend Pure LSP server JAR path updated. Reload the window to restart the server with this JAR.',
+                'Legend Pure LSP server JAR path updated. Restart the LSP to use this JAR.',
                 reload
             );
             if (choice === reload) {
-                await commands.executeCommand('workbench.action.reloadWindow');
+                await commands.executeCommand('legend.restartServer');
             }
         })
     );
@@ -198,13 +165,13 @@ export function activate(context: ExtensionContext): void {
                 : vscode.ConfigurationTarget.Global;
             await config.update('server.extraClasspath', next, target);
 
-            const reload = 'Reload Window';
+            const reload = 'Restart LSP';
             const choice = await window.showInformationMessage(
-                'Legend Pure LSP server classpath updated. Reload the window to restart the server with this classpath.',
+                'Legend Pure LSP server classpath updated. Restart the LSP to use this classpath.',
                 reload
             );
             if (choice === reload) {
-                await commands.executeCommand('workbench.action.reloadWindow');
+                await commands.executeCommand('legend.restartServer');
             }
         })
     );
@@ -226,63 +193,20 @@ export function activate(context: ExtensionContext): void {
     // Register LLM tools (VS Code LanguageModelTool API for Copilot/agents)
     registerLanguageModelTools(context);
 
-    // Start the client and register providers once ready
-    client.start().then(() => {
-        if (client) {
-            // Register pure:// filesystem provider
-            pureFs = new PureFileSystemProvider(client);
-            context.subscriptions.push(
-                workspace.registerFileSystemProvider('pure', pureFs, {
-                    isReadonly: true,
-                    isCaseSensitive: true,
-                })
-            );
-            context.subscriptions.push(pureFs);
+    context.subscriptions.push(
+        commands.registerCommand('legend.refreshPackageTree', () => refreshPureViews())
+    );
 
-            // Register Pure package tree view
-            packageTree = new PurePackageTreeProvider(client);
-            context.subscriptions.push(
-                window.createTreeView('purePackageTree', {
-                    treeDataProvider: packageTree,
-                    showCollapseAll: true,
-                })
-            );
-
-            // Refresh tree and clear caches on reindex
-            context.subscriptions.push(
-                commands.registerCommand('legend.refreshPackageTree', () => {
-                    if (pureFs) {
-                        pureFs.clearCache();
-                    }
-                    if (packageTree) {
-                        packageTree.refresh();
-                    }
-                })
-            );
-
-            client.onNotification('legend/statusChanged', (status: LspStatus) => {
-                const state = (status.state || '').toLowerCase();
-                if (state === 'ready') {
-                    console.log(
-                        `[Legend Pure] Server ready (${status.repositoryCount} repos, ${status.symbolCount} symbols)`
-                    );
-                    resolveServerReady();
-                    if (pureFs) {
-                        pureFs.clearCache();
-                    }
-                    if (packageTree) {
-                        packageTree.refresh();
-                    }
-                }
-                if (state === 'initializing' || state === 'recovering') {
-                    resetServerReady();
-                }
-            });
-        }
+    startLegendClient(context).catch((e) => {
+        window.showErrorMessage('Legend Pure LSP failed to start: ' + (e?.message || e));
     });
 }
 
 export function deactivate(): Thenable<void> | undefined {
+    if (clientStatusSubscription) {
+        clientStatusSubscription.dispose();
+        clientStatusSubscription = undefined;
+    }
     if (pureFs) {
         pureFs.dispose();
         pureFs = undefined;
@@ -291,6 +215,149 @@ export function deactivate(): Thenable<void> | undefined {
         return undefined;
     }
     return client.stop();
+}
+
+async function startLegendClient(context: ExtensionContext): Promise<void> {
+    if (client) {
+        return;
+    }
+
+    const serverOptions = resolveServerOptions(context);
+    if (!serverOptions) {
+        return;
+    }
+
+    const clientOptions: LanguageClientOptions = {
+        documentSelector: [
+            { scheme: 'file', language: 'pure' },
+            { scheme: 'pure', language: 'pure' },
+        ],
+        synchronize: {
+            fileEvents: workspace.createFileSystemWatcher('**/*.pure'),
+        },
+    };
+
+    const nextClient = new LanguageClient(
+        'legendPureLsp',
+        'Legend Pure LSP',
+        serverOptions,
+        clientOptions
+    );
+
+    client = nextClient;
+    resetServerReady();
+    try {
+        await nextClient.start();
+    } catch (e) {
+        if (client === nextClient) {
+            client = undefined;
+        }
+        throw e;
+    }
+    if (client !== nextClient) {
+        await nextClient.stop(5000).catch(() => undefined);
+        return;
+    }
+    clientStatusSubscription?.dispose();
+    clientStatusSubscription = nextClient.onNotification('legend/statusChanged', (status: LspStatus) => {
+        const state = (status.state || '').toLowerCase();
+        if (state === 'ready') {
+            console.log(
+                `[Legend Pure] Server ready (${status.repositoryCount} repos, ${status.symbolCount} symbols)`
+            );
+            resolveServerReady();
+            refreshPureViews();
+        }
+        if (state === 'initializing' || state === 'recovering') {
+            resetServerReady();
+        }
+        if (state === 'failed') {
+            console.log(`[Legend Pure] Server failed: ${status.message || 'unknown error'}`);
+        }
+    });
+}
+
+async function restartLegendServer(context: ExtensionContext): Promise<void> {
+    const previousClient = client;
+    client = undefined;
+    resetServerReady();
+    clientStatusSubscription?.dispose();
+    clientStatusSubscription = undefined;
+    refreshPureViews();
+
+    if (previousClient) {
+        try {
+            await previousClient.stop(5000);
+        } catch (e: any) {
+            console.log('[Legend Pure] Failed to stop previous LSP client:', e?.message || e);
+        }
+    }
+
+    await startLegendClient(context);
+    if (client) {
+        window.showInformationMessage('Legend Pure LSP restarted.');
+    }
+}
+
+function refreshPureViews(): void {
+    if (pureFs) {
+        pureFs.clearCache();
+    }
+    if (packageTree) {
+        packageTree.refresh();
+    }
+}
+
+function resolveServerOptions(context: ExtensionContext): ServerOptions | undefined {
+    const javaHome = getJavaExecutable();
+    const jarPath = resolveServerJar();
+    console.log('[Legend Pure] Resolved server JAR:', jarPath);
+    const jarSize = jarPath ? Math.round(fs.statSync(jarPath).size / 1024 / 1024) : 0;
+    console.log(`[Legend Pure] JAR size: ${jarSize}MB; launching with generated argfile`);
+    if (!jarPath) {
+        window.showErrorMessage(
+            'Legend Pure LSP: server JAR not found. ' +
+            'Set "legendPure.server.jarPath" in settings or build the server with Maven.'
+        );
+        return undefined;
+    }
+
+    const extraClasspath = resolveExtraClasspath();
+    if (!extraClasspath) {
+        return undefined;
+    }
+    const classpathFileEntries = resolveClasspathFileEntries();
+    if (!classpathFileEntries) {
+        return undefined;
+    }
+
+    const hostClasspath = uniqueStrings(extraClasspath.concat(classpathFileEntries));
+    const serverClasspath = resolveServerClasspath(jarPath, hostClasspath, classpathFileEntries.length > 0);
+    let generatedArgFile: string;
+    try {
+        generatedArgFile = writeServerArgFile(context, serverClasspath);
+    } catch (e: any) {
+        window.showErrorMessage(
+            'Legend Pure LSP: failed to write Java argfile: ' + (e?.message || e)
+        );
+        return undefined;
+    }
+
+    console.log('[Legend Pure] Server launch mode: generated argfile');
+    console.log('[Legend Pure] Java argfile:', generatedArgFile);
+    console.log('[Legend Pure] Resolved server classpath entries:', serverClasspath);
+    if (extraClasspath.length > 0) {
+        console.log('[Legend Pure] Resolved extra classpath:', extraClasspath);
+    }
+    if (classpathFileEntries.length > 0) {
+        console.log(`[Legend Pure] Resolved classpath file entries: ${classpathFileEntries.length}`);
+    }
+
+    return {
+        command: javaHome,
+        args: [toJavaArgFileReference(generatedArgFile)],
+        options: { env: process.env },
+    };
 }
 
 function resolveServerJar(): string | undefined {
@@ -361,19 +428,108 @@ function resolveServerJar(): string | undefined {
     return undefined;
 }
 
-function resolveServerClasspath(jarPath: string, extraClasspath: string[]): string[] {
+function resolveServerClasspath(jarPath: string, hostClasspath: string[], hostRuntimeClasspathConfigured: boolean): string[] {
     const entries = [jarPath];
     const dependencyDir = path.join(path.dirname(jarPath), 'dependency');
     if (fs.existsSync(dependencyDir) && fs.statSync(dependencyDir).isDirectory()) {
-        entries.push(path.join(dependencyDir, '*'));
+        if (hostRuntimeClasspathConfigured) {
+            const serverDependencies = fs.readdirSync(dependencyDir)
+                .filter((fileName) => fileName.endsWith('.jar'))
+                .filter((fileName) => !fileName.startsWith('legend-pure-'))
+                .sort()
+                .map((fileName) => path.join(dependencyDir, fileName));
+            entries.push(...serverDependencies);
+        } else {
+            entries.push(path.join(dependencyDir, '*'));
+        }
     } else {
         console.log('[Legend Pure] Server dependency directory not found:', dependencyDir);
     }
-    return uniqueStrings(entries.concat(extraClasspath));
+    return uniqueStrings(entries.concat(hostClasspath));
 }
 
 function buildServerArgs(classpath: string[]): string[] {
     return ['-cp', classpath.join(path.delimiter), SERVER_MAIN_CLASS];
+}
+
+function resolveClasspathFileEntries(): string[] | undefined {
+    const config = workspace.getConfiguration('legendPure');
+    const configuredPath = config.get<string>('server.classpathFile');
+    if (!configuredPath || !configuredPath.trim()) {
+        return [];
+    }
+
+    const expandedPath = expandConfiguredPath(configuredPath);
+    if (fs.existsSync(expandedPath) && fs.statSync(expandedPath).isFile()) {
+        const classpathFileDir = path.dirname(expandedPath);
+        const content = fs.readFileSync(expandedPath, { encoding: 'utf8' });
+        const entries = content
+            .split(/\r?\n/)
+            .flatMap((line) => line.split(path.delimiter))
+            .map((entry) => entry.trim())
+            .filter((entry) => entry.length > 0)
+            .map((entry) => resolveClasspathFileEntry(entry, classpathFileDir));
+
+        for (const entry of entries) {
+            if (isClasspathWildcard(entry)) {
+                const parent = entry.slice(0, -2);
+                if (!fs.existsSync(parent) || !fs.statSync(parent).isDirectory()) {
+                    window.showErrorMessage(
+                        `Legend Pure LSP: configured classpath file contains a wildcard with a missing parent directory: ${parent}`
+                    );
+                    return undefined;
+                }
+                continue;
+            }
+            if (!fs.existsSync(entry)) {
+                window.showErrorMessage(
+                    `Legend Pure LSP: configured classpath file contains a missing entry: ${entry}`
+                );
+                return undefined;
+            }
+        }
+
+        return uniqueStrings(entries);
+    }
+
+    window.showErrorMessage(
+        `Legend Pure LSP: configured classpath file does not exist or is not a file: ${expandedPath}`
+    );
+    return undefined;
+}
+
+function resolveClasspathFileEntry(entry: string, classpathFileDir: string): string {
+    const expanded = entry === '~' || entry.startsWith('~/')
+        ? expandConfiguredPath(entry)
+        : entry;
+    return path.isAbsolute(expanded)
+        ? expanded
+        : path.resolve(classpathFileDir, expanded);
+}
+
+function writeServerArgFile(context: ExtensionContext, classpath: string[]): string {
+    const storageDir = context.globalStorageUri.fsPath;
+    fs.mkdirSync(storageDir, { recursive: true });
+    const argFile = path.join(storageDir, 'legend-pure-lsp-server.args');
+    fs.writeFileSync(argFile, buildServerArgFileContent(classpath), { encoding: 'utf8' });
+    return argFile;
+}
+
+function buildServerArgFileContent(classpath: string[]): string {
+    return buildServerArgs(classpath)
+        .map(quoteJavaArgFileArgument)
+        .join(os.EOL) + os.EOL;
+}
+
+function quoteJavaArgFileArgument(argument: string): string {
+    if (/^[A-Za-z0-9_.$:/\\\-*]+$/.test(argument)) {
+        return argument;
+    }
+    return '"' + argument.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+}
+
+function toJavaArgFileReference(argFile: string): string {
+    return '@' + argFile;
 }
 
 function expandConfiguredPath(configuredPath: string): string {
