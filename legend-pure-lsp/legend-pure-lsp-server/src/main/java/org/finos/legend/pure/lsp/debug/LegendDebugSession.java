@@ -253,6 +253,7 @@ class LegendDebugSession
             }
 
             PauseLocation startLocation = currentPauseLocation();
+            RunMode effectiveMode = effectiveRunMode(mode, startLocation);
             clearVisiblePausedState();
             StringBuilder visibleOutput = new StringBuilder();
             while (true)
@@ -291,7 +292,7 @@ class LegendDebugSession
                 }
 
                 PauseLocation pauseLocation = currentPauseLocation(state);
-                PauseDecision decision = pauseDecision(mode, startLocation, pauseLocation);
+                PauseDecision decision = pauseDecision(effectiveMode, startLocation, pauseLocation);
                 if (decision.pause)
                 {
                     setVisiblePausedState(state);
@@ -330,6 +331,15 @@ class LegendDebugSession
             default:
                 return PauseDecision.resume();
         }
+    }
+
+    private RunMode effectiveRunMode(RunMode mode, PauseLocation startLocation)
+    {
+        // A red-dot breakpoint stops before its expression executes. Stepping out
+        // from that state should first move past the breakpoint expression.
+        return mode == RunMode.STEP_OUT && startLocation != null && startLocation.userBreakpoint
+                ? RunMode.STEP_OVER
+                : mode;
     }
 
     private boolean isStepOverTarget(PauseLocation startLocation, PauseLocation pauseLocation)

@@ -364,6 +364,44 @@ public class LegendDebugSessionTest
     }
 
     @Test(timeout = 60_000)
+    public void stepOutFromBreakpointStepsPastTheBreakpointExpression()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_step_out_from_breakpoint_go.pure";
+        String uri = "file:///workspace/debug_step_out_from_breakpoint_go.pure";
+        String code =
+                "function failLater():Any[*]\n" +
+                        "{\n" +
+                        "  fail('stepOut should stop before this executes');\n" +
+                        "}\n" +
+                        "function go():Any[*]\n" +
+                        "{\n" +
+                        "  let x = 'start';\n" +
+                        "  print($x, 1);\n" +
+                        "  failLater();\n" +
+                        "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        LegendDebugSession debug = LegendDebugSession.create(
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, 7)));
+
+        Assert.assertEquals(8, debug.start().getStackFrames().get(0).getLine());
+        LegendDebug.Response stepped = debug.stepOut();
+        Assert.assertTrue("stepOut from a breakpoint should not run the next failing statement: " + stepped.getMessage(), stepped.isSuccess());
+        Assert.assertEquals("step", stepped.getReason());
+        Assert.assertEquals(9, stepped.getStackFrames().get(0).getLine());
+
+        debug.stop();
+    }
+
+    @Test(timeout = 60_000)
     public void breakpointsStopOnCommonFunctionExecutionStatementBoundaries()
     {
         LegendPureSession session = newInitializedSession();
