@@ -101,6 +101,10 @@ public class PackageTreeProviderTest
                 names.contains("Animal"));
         Assert.assertTrue("Should contain Color enum, found: " + names,
                 names.contains("Color"));
+        Assert.assertTrue("Should contain function display name, found: " + names,
+                names.contains("greet"));
+        Assert.assertFalse("Should not expose internal function name, found: " + names,
+                names.contains("greet_String_1__String_1_"));
     }
 
     @Test
@@ -122,6 +126,14 @@ public class PackageTreeProviderTest
                 .findFirst().orElse(null);
         Assert.assertNotNull("Should find Color", color);
         Assert.assertEquals("Enumeration", color.getKind());
+
+        PackageChildInfo greet = children.stream()
+                .filter(c -> "greet".equals(c.getName()))
+                .findFirst().orElse(null);
+        Assert.assertNotNull("Should find greet function", greet);
+        Assert.assertEquals("ConcreteFunctionDefinition", greet.getKind());
+        Assert.assertFalse(greet.getIsPackage());
+        Assert.assertEquals("test::tree::greet_String_1__String_1_", greet.getQualifiedPath());
     }
 
     @Test
