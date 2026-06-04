@@ -311,10 +311,6 @@ class LegendDebugSession
         {
             return PauseDecision.resume();
         }
-        if (pauseLocation.userBreakpoint)
-        {
-            return PauseDecision.pause("breakpoint");
-        }
         if (pauseLocation.explicitDebug)
         {
             return PauseDecision.pause("pause");
@@ -329,7 +325,7 @@ class LegendDebugSession
                 return isStepOutTarget(startLocation, pauseLocation) ? PauseDecision.pause("step") : PauseDecision.resume();
             case CONTINUE:
             default:
-                return PauseDecision.resume();
+                return pauseLocation.userBreakpoint ? PauseDecision.pause("breakpoint") : PauseDecision.resume();
         }
     }
 
@@ -337,7 +333,9 @@ class LegendDebugSession
     {
         // A red-dot breakpoint stops before its expression executes. Stepping out
         // from that state should first move past the breakpoint expression.
-        return mode == RunMode.STEP_OUT && startLocation != null && startLocation.userBreakpoint
+        return mode == RunMode.STEP_OUT
+                && startLocation != null
+                && startLocation.userBreakpoint
                 ? RunMode.STEP_OVER
                 : mode;
     }

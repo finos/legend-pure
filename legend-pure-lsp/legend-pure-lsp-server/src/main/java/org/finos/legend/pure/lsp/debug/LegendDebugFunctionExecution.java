@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
@@ -60,6 +61,8 @@ import org.finos.legend.pure.runtime.java.interpreted.Executor;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext.VariableNameConflictException;
+import org.finos.legend.pure.runtime.java.interpreted.extension.InterpretedExtension;
+import org.finos.legend.pure.runtime.java.interpreted.extension.InterpretedExtensionLoader;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.VoidProfiler;
@@ -68,6 +71,7 @@ class LegendDebugFunctionExecution extends FunctionExecutionInterpreted
 {
     private final Set<String> debuggableSourceIds;
     private final UriMapper uriMapper;
+    private final MutableList<InterpretedExtension> interpretedExtensions = InterpretedExtensionLoader.extensions();
     private final LinkedHashSet<String> evaluationImports = new LinkedHashSet<>();
     private final ForkJoinPool executionPool;
     private final ThreadLocal<Boolean> pausesSuppressed = ThreadLocal.withInitial(() -> false);
@@ -226,7 +230,9 @@ class LegendDebugFunctionExecution extends FunctionExecutionInterpreted
                                         ExecutionSupport executionSupport)
     {
         ProcessorSupport processorSupport = getProcessorSupport();
-        if (!org.finos.legend.pure.m3.navigation.function.Function.isFunctionDefinition(function, processorSupport))
+        if (org.finos.legend.pure.m3.navigation.function.Function.isNativeFunction(function, processorSupport)
+                || org.finos.legend.pure.m3.navigation.property.Property.isProperty(function, processorSupport)
+                || !org.finos.legend.pure.m3.navigation.function.Function.isFunctionDefinition(function, processorSupport))
         {
             return super.executeFunction(limitScope, function, params, resolvedTypeParameters, resolvedMultiplicityParameters, varContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
         }
@@ -262,6 +268,28 @@ class LegendDebugFunctionExecution extends FunctionExecutionInterpreted
                 for (CoreInstance expression : executedFunction.getValueForMetaPropertyToMany(M3Properties.expressionSequence))
                 {
                     result = this.executeValueSpecification(expression, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, variableContext, profiler, instantiationContext, executionSupport);
+                }
+
+                Function<?> finalFunction = executedFunction;
+                MutableList<CoreInstance> extensionResults = this.interpretedExtensions.collect(extension -> extension.getExtraFunctionExecution(
+                        finalFunction,
+                        params,
+                        resolvedTypeParameters,
+                        resolvedMultiplicityParameters,
+                        variableContext,
+                        functionExpressionCallStack,
+                        profiler,
+                        instantiationContext,
+                        executionSupport,
+                        processorSupport,
+                        this)).select(Objects::nonNull);
+                if (extensionResults.size() == 1)
+                {
+                    result = extensionResults.get(0);
+                }
+                else if (result == null)
+                {
+                    throw new PureExecutionException("Unsupported function for execution " + executedFunction.getName() + " of type " + PackageableElement.getUserPathForPackageableElement(executedFunction.getClassifier()) + " (class " + executedFunction.getClass().getName() + ")", functionExpressionCallStack);
                 }
 
                 executePostConstraints(executedFunction, result, variableContext, functionExpressionCallStack, instantiationContext, executionSupport, processorSupport);
