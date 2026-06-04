@@ -709,6 +709,95 @@ Conditions are evaluated left-to-right; the first `true` condition wins. Note th
 both the condition *and* the result are lambdas here — neither is evaluated until
 needed.
 
+### Combining boolean expressions (`&&`, `||`)
+
+When combining boolean expressions with `&&` or `||`, each operand must be a single
+*expression* as understood by the parser. The key grammar distinction is:
+
+- `==` and `!=` are part of the `expression` rule — they form a complete expression
+  and **do not** need extra parentheses when combined with `&&` or `||`.
+- `<`, `<=`, `>`, `>=` are *arithmetic* operators in the grammar — they are **not**
+  part of `expression` and **must** be parenthesized when used as an operand to
+  `&&`, `||`, or `==`/`!=`.
+
+#### Function-call operands
+
+Function-call expressions already form a complete expression. No parentheses needed,
+and multiple `&&`/`||` can be chained freely:
+
+```pure
+// Valid — single function calls as operands
+$x->isNotEmpty() && $y->isNotEmpty()
+
+// Valid — chaining && with function calls
+$x->isNotEmpty() && $y->isNotEmpty() && $z->isNotEmpty()
+
+// Unnecessary parentheses — function calls do not need them
+($x->isNotEmpty()) && ($y->isNotEmpty())   // works but redundant
+```
+
+#### Standalone comparison expressions
+
+A comparison on its own (not combined with `&&`/`||`) does not need parentheses:
+
+```pure
+// Valid — comparison expression on its own
+$x > 5
+$x == 5
+```
+
+#### `==` and `!=` with `&&` and `||`
+
+Because `==` and `!=` are part of `expression`, they do not need parentheses when
+combined with `&&` or `||`:
+
+```pure
+// Valid — == and != do not need parentheses with && or ||
+$x == 'foo' && $y != 'bar'
+$x == 'foo' || $y == 'baz'
+```
+
+#### `<`, `<=`, `>`, `>=` with `&&`, `||`, `==`, and `!=`
+
+These operators are parsed as arithmetic continuations and must be parenthesized:
+
+```pure
+// Invalid — < and > used directly as operands
+$x < 5 || $x > 0
+
+// Valid — both wrapped in parentheses
+($x < 5) || ($x > 0)
+
+// Invalid — > used directly as operand to &&
+$x->isNotEmpty() && $x > 5
+
+// Valid
+$x->isNotEmpty() && ($x > 5)
+
+// Invalid — > used directly as operands to !=
+$x > 0 != $y > 0
+
+// Valid
+($x > 0) != ($y > 0)
+```
+
+#### `!` (not) operator
+
+`!` binds to the immediately following `expression`. Function-call chains are a
+single expression and work directly. Comparisons with `<`/`<=`/`>`/`>=` are not,
+and require parentheses:
+
+```pure
+// Valid — ! applied to a function call
+!$x->isEmpty() && $y->isNotEmpty()
+
+// Valid — ! applied to a parenthesized comparison
+!($x > 5) && $y->isNotEmpty()
+
+// Valid — chaining ! with || and a comparison
+!$x->isEmpty() || ($x->toOne() > 5)
+```
+
 ### match
 
 `match` is Pure's **type-dispatch** function. It tests a value against an ordered
