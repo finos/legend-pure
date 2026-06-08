@@ -137,9 +137,15 @@ public class LegendPureSession
         Set<String> finalWorkspaceNames = workspaceRepoNames;
         Set<String> unresolvedClasspathRepositoryNames = new LinkedHashSet<>(normalizedClasspathRepositoryNames);
         MutableList<CodeRepository> classpathStorageRepos = Lists.mutable.empty();
+        Set<String> seenClasspathRepoNames = new LinkedHashSet<>();
         for (CodeRepository repo : classpathRepos)
         {
             String name = repo.getName();
+            if (name != null && !seenClasspathRepoNames.add(name))
+            {
+                LspLog.debug("Skipping duplicate classpath repo: " + name);
+                continue;
+            }
             if (shouldLoadClasspathRepository(name, finalWorkspaceNames, normalizedClasspathRepositoryNames))
             {
                 classpathStorageRepos.add(repo);
