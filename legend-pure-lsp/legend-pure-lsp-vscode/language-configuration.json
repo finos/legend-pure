@@ -23,6 +23,7 @@
     ["'", "'"],
     ["<<", ">>"]
   ],
+  "wordPattern": "(-?\\d*\\.\\d\\w*)|([a-zA-Z_$][\\w$]*(::[a-zA-Z_$][\\w$]*)*)",
   "folding": {
     "markers": {
       "start": "^\\s*//\\s*#?region\\b",
