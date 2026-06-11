@@ -14,10 +14,6 @@
 
 package org.finos.legend.pure.lsp;
 
-/**
- * DTO for a child of a Pure package, used by the tree view.
- * Must have public getters/setters for JSON-RPC serialization.
- */
 public class PackageChildInfo
 {
     private String name;

@@ -28,11 +28,8 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationConte
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 /**
- * Pure's interpreted engine preserves the active expression stack for ordinary execution failures.
- * If a nested native throws a Pure exception with its own source,
- * the engine rethrows that inner exception directly and the caller frame in go() is lost. LSP
- * executeGo needs that caller frame so users can jump from a nested "resource" error back to the
- * expression in their file that triggered it.
+ * Wraps nested PureExceptions with the caller's expression stack, which the
+ * default interpreter discards when rethrowing inner exceptions.
  */
 class StackPreservingFunctionExecutionInterpreted extends FunctionExecutionInterpreted
 {

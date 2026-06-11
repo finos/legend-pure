@@ -38,17 +38,6 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.empty.E
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Scans workspace directories for Pure code repository definitions and builds
- * a mapping from repository name to the filesystem resources root.
- *
- * Each Pure repository has a {@code <repoName>.definition.json} file at
- * {@code <module>/src/main/resources/<repoName>.definition.json}. The parent
- * directory of that file is the resources root for that repository.
- *
- * Given this mapping, a Pure source ID like {@code /core/pure/extensions/extension.pure}
- * resolves to {@code <resourcesRoot>/core/pure/extensions/extension.pure}.
- */
 public class RepositoryScanner
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(RepositoryScanner.class);
@@ -57,9 +46,6 @@ public class RepositoryScanner
     private final Map<String, Path> repoToResourcesRoot = new ConcurrentHashMap<>();
     private final Map<String, Path> repoToDefinitionFile = new ConcurrentHashMap<>();
 
-    /**
-     * Scan one or more workspace roots for definition.json files.
-     */
     public void scan(Iterable<Path> workspaceRoots)
     {
         for (Path root : workspaceRoots)
@@ -73,9 +59,6 @@ public class RepositoryScanner
         }
     }
 
-    /**
-     * Scan a single workspace root.
-     */
     public void scanRoot(Path root)
     {
         if (!Files.isDirectory(root))
@@ -93,7 +76,6 @@ public class RepositoryScanner
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
                 {
                     String name = dir.getFileName().toString();
-                    // Skip hidden dirs, target dirs, node_modules
                     if (name.startsWith(".") || "target".equals(name) || "node_modules".equals(name))
                     {
                         return FileVisitResult.SKIP_SUBTREE;
@@ -127,7 +109,6 @@ public class RepositoryScanner
 
     private void processDefinitionFile(Path file)
     {
-        // Only process files under src/main/resources/
         Path parent = file.getParent();
         if (parent == null || !parent.toString().contains(RESOURCES_MARKER))
         {
@@ -143,9 +124,6 @@ public class RepositoryScanner
         }
     }
 
-    /**
-     * Parse the "name" field from a definition.json file.
-     */
     static String parseRepoName(Path file)
     {
         try (Reader reader = Files.newBufferedReader(file))
@@ -164,10 +142,6 @@ public class RepositoryScanner
         return null;
     }
 
-    /**
-     * Resolve a Pure source ID to a filesystem path.
-     * Returns null if the repository is unknown or the file doesn't exist on disk.
-     */
     public Path resolve(String sourceId)
     {
         if (sourceId == null || sourceId.isEmpty())
@@ -175,7 +149,6 @@ public class RepositoryScanner
             return null;
         }
 
-        // Extract repository name: first path segment after leading /
         String path = sourceId.startsWith("/") ? sourceId.substring(1) : sourceId;
         int slashIdx = path.indexOf('/');
         if (slashIdx <= 0)
@@ -191,7 +164,6 @@ public class RepositoryScanner
             return null;
         }
 
-        // Construct full path: resourcesRoot + full source path (including repo name)
         Path fullPath = resourcesRoot.resolve(path);
         if (Files.exists(fullPath))
         {
@@ -202,24 +174,12 @@ public class RepositoryScanner
         return null;
     }
 
-    /**
-     * Resolve a Pure source ID to a file:// URI string.
-     * Returns null if not resolvable.
-     */
     public String resolveToUri(String sourceId)
     {
         Path path = resolve(sourceId);
         return (path != null) ? path.toUri().toString() : null;
     }
 
-    /**
-     * Given a filesystem path, derive the Pure source ID if the file is inside
-     * a known repository's resources directory.
-     * Returns null if the path is not inside any known repo.
-     *
-     * Example: /home/user/.../src/main/resources/core_relational/tests/model.pure
-     *   -> /core_relational/tests/model.pure
-     */
     public String deriveSourceIdFromPath(Path filePath)
     {
         Path normalized = filePath.toAbsolutePath().normalize();
@@ -235,15 +195,6 @@ public class RepositoryScanner
         return null;
     }
 
-    /**
-     * Build overlay-backed workspace storages for all repos found on disk.
-     * Each storage reads from the real filesystem but keeps PureRuntime mutations
-     * in memory, so the LSP can compile editor/disk changes without writing back
-     * to files owned by the IDE, git, or AI tools.
-     *
-     * Returns a list of storages and a set of repo names that were built,
-     * so the caller can skip these when building ClassLoaderCodeStorage fallbacks.
-     */
     public MutableList<RepositoryCodeStorage> buildWorkspaceStorages()
     {
         return buildWorkspaceStorages(Collections.emptySet());
@@ -263,9 +214,6 @@ public class RepositoryScanner
                 CodeRepository repo = withAdditionalDependencies(
                         GenericCodeRepository.build(definitionFile),
                         additionalDependencies);
-                // FSCodeStorage prepends /<repoName>/ to paths relative to root.
-                // Files live at resources/<repoName>/..., so root must be
-                // resources/<repoName>/ to avoid double-prefixing.
                 Path repoDir = resourcesRoot.resolve(repoName);
                 if (!java.nio.file.Files.isDirectory(repoDir))
                 {

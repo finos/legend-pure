@@ -331,8 +331,6 @@ class LegendDebugSession
 
     private RunMode effectiveRunMode(RunMode mode, PauseLocation startLocation)
     {
-        // A red-dot breakpoint stops before its expression executes. Stepping out
-        // from that state should first move past the breakpoint expression.
         return mode == RunMode.STEP_OUT
                 && startLocation != null
                 && startLocation.userBreakpoint
