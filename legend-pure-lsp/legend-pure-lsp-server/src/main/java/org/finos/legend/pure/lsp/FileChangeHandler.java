@@ -27,10 +27,6 @@ import org.eclipse.lsp4j.FileEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Converts LSP file events into FileChange objects for LegendPureSession.
- * Does NOT touch PureRuntime directly -- all mutation goes through the session.
- */
 public class FileChangeHandler
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileChangeHandler.class);
@@ -42,10 +38,6 @@ public class FileChangeHandler
         this.uriMapper = uriMapper;
     }
 
-    /**
-     * Convert LSP file events into session-level FileChange objects.
-     * Reads file content from disk for created/changed files.
-     */
     public List<LegendPureSession.FileChange> toFileChanges(List<FileEvent> events)
     {
         List<LegendPureSession.FileChange> changes = new ArrayList<>();

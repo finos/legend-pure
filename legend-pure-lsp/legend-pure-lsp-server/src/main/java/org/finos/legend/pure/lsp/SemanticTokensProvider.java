@@ -30,24 +30,6 @@ import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
-/**
- * Provides semantic token classification for Pure source files.
- * Walks the compiled model to classify tokens as class names, properties,
- * function names, enum values, etc. — information that TextMate grammars
- * cannot derive from regex patterns alone.
- *
- * Token types (indices into LEGEND):
- *   0: namespace    (package paths)
- *   1: class        (Class definitions)
- *   2: enum         (Enumeration definitions)
- *   3: function     (function definitions)
- *   4: property     (class properties)
- *   5: enumMember   (enum values)
- *   6: type         (type references)
- *   7: parameter    (function parameters)
- *   8: interface    (Profile definitions)
- *   9: struct       (Association definitions)
- */
 public class SemanticTokensProvider
 {
     public static final List<String> TOKEN_TYPES = Collections.unmodifiableList(Arrays.asList(
@@ -74,8 +56,7 @@ public class SemanticTokensProvider
 
     private static final int MOD_DEFINITION = 1;
 
-    // Function names that map to keywords or operators in source — skip these
-    // as TextMate already colors them.
+    // Skipped — TextMate already colors these
     private static final Set<String> OPERATOR_FUNCTION_NAMES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "letFunction", "if", "match", "new",
             "plus", "minus", "times", "divide",
@@ -85,11 +66,6 @@ public class SemanticTokensProvider
 
     private static final int MAX_WALK_DEPTH = 50;
 
-    /**
-     * Get semantic tokens for a source file.
-     * Returns the encoded token data as required by LSP (array of 5-tuples:
-     * deltaLine, deltaStartChar, length, tokenType, tokenModifiers).
-     */
     public static List<Integer> getTokens(PureRuntime runtime, String sourceId)
     {
         Source source = runtime.getSourceById(sourceId);
@@ -101,11 +77,9 @@ public class SemanticTokensProvider
         List<RawToken> tokens = new ArrayList<>();
         collectTokensFromSource(source, runtime, tokens);
 
-        // Sort by position (line, then column)
         tokens.sort(Comparator.comparingInt((RawToken t) -> t.line)
                 .thenComparingInt(t -> t.column));
 
-        // Encode as LSP delta format
         return encodeDelta(tokens);
     }
 
@@ -170,18 +144,13 @@ public class SemanticTokensProvider
             return;
         }
 
-        // Extract a reasonable short name for length calculation.
-        // element.getName() returns mangled names for functions (e.g., "greet_String_1__String_1_")
-        // so we extract just the simple name before any underscore/parameter suffix.
+        // getName() returns mangled signatures for functions (e.g. "greet_String_1__String_1_")
         String name = element.getName();
         if (name == null || name.startsWith("@"))
         {
             return;
         }
 
-        // For functions, getName() returns mangled signature (greet_String_1__String_1_).
-        // Extract the short name (before first underscore that's followed by a type signature).
-        // For classes/enums, getName() is already the short name.
         String shortName = name;
         if (tokenType == TYPE_FUNCTION)
         {
@@ -192,10 +161,6 @@ public class SemanticTokensProvider
             }
         }
 
-        // Use si.getLine()/si.getColumn() which points to the simple name position
-        // (e.g., "Person" in "Class test::sem::Person"), NOT si.getStartLine()/si.getStartColumn()
-        // which points to the keyword. Use shortName.length() — the qualified package path
-        // preceding the name is already colored by the TextMate packagePaths rule.
         tokens.add(new RawToken(si.getLine(), si.getColumn(), shortName.length(), tokenType, MOD_DEFINITION));
     }
 
@@ -221,7 +186,6 @@ public class SemanticTokensProvider
                                 propName.length(), TYPE_PROPERTY, MOD_DEFINITION));
                     }
 
-                    // Type reference in the property
                     addTypeReference(tokens, prop, runtime, source);
                 }
             }
@@ -297,11 +261,6 @@ public class SemanticTokensProvider
         }
     }
 
-    /**
-     * Extract parameter names, parameter types, and return type from a function definition.
-     * Walks: function → classifierGenericType → typeArguments[0] → rawType (FunctionType)
-     *        → parameters (VariableExpression list) and returnType (GenericType).
-     */
     private static void addFunctionSignatureTokens(List<RawToken> tokens, CoreInstance function,
                                                     PureRuntime runtime, Source source)
     {
@@ -324,9 +283,7 @@ public class SemanticTokensProvider
                 return;
             }
 
-            // Parameters: each is a VariableExpression with name and genericType.
-            // Note: param.getName() returns a synthetic hash (e.g., "@_000an09"), NOT the
-            // user-visible name. The actual name "x" is in the M3 "name" property.
+            // param.getName() returns a synthetic hash; actual name is in M3Properties.name
             ListIterable<? extends CoreInstance> params = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
             if (params != null)
             {
@@ -344,12 +301,10 @@ public class SemanticTokensProvider
                         tokens.add(new RawToken(paramSi.getLine(), paramSi.getColumn(),
                                 paramName.length(), TYPE_PARAMETER, 0));
                     }
-                    // Type reference for the parameter type
                     addTypeReference(tokens, param, runtime, source);
                 }
             }
 
-            // Return type
             CoreInstance returnTypeGT = functionType.getValueForMetaPropertyToOne(M3Properties.returnType);
             if (returnTypeGT != null)
             {
@@ -381,10 +336,6 @@ public class SemanticTokensProvider
 
     // ── Function body expression tree walker ──────────────────────────────────
 
-    /**
-     * Walk the function's expressionSequence to emit semantic tokens for
-     * variable references, property accesses, function calls, and let bindings.
-     */
     private static void addFunctionBodyTokens(List<RawToken> tokens, CoreInstance function,
                                                PureRuntime runtime, Source source)
     {
@@ -429,7 +380,6 @@ public class SemanticTokensProvider
                 walkLambdaFunction(tokens, expr, runtime, source, depth);
                 break;
             default:
-                // Recurse into parametersValues / expressionSequence for unknown types
                 walkChildren(tokens, expr, runtime, source, depth);
                 break;
         }
@@ -495,10 +445,7 @@ public class SemanticTokensProvider
         }
     }
 
-    /**
-     * For let bindings (letFunction), the first argument is an InstanceValue containing
-     * the variable name string. Color it as a variable definition.
-     */
+    // In letFunction, the variable name is the first InstanceValue argument
     private static void addLetVariableName(List<RawToken> tokens, CoreInstance letExpr, Source source)
     {
         try

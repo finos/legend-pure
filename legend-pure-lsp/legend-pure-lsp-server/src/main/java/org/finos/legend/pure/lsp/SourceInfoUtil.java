@@ -20,9 +20,7 @@ import org.eclipse.lsp4j.Range;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 /**
- * Utility for converting Pure SourceInformation (1-based) to LSP positions (0-based).
- * Eliminates duplication across NavigationProvider, ReferencesProvider,
- * diagnostics, and WorkspaceSymbolProvider.
+ * Converts Pure SourceInformation (1-based) to LSP positions (0-based).
  */
 public class SourceInfoUtil
 {

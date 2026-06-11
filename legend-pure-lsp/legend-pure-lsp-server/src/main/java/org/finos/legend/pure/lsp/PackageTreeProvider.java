@@ -25,16 +25,8 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
-/**
- * Provides the Pure logical package tree for the VS Code tree view.
- * Walks the PureRuntime model graph to enumerate packages and elements.
- */
 public class PackageTreeProvider
 {
-    /**
-     * Get the children of a package path. Use "" or "::" for root.
-     * Returns packages first (sorted), then elements (sorted).
-     */
     public static List<PackageChildInfo> getChildren(PureRuntime runtime, UriMapper uriMapper, String packagePath)
     {
         CoreInstance pkg;
@@ -74,7 +66,6 @@ public class PackageTreeProvider
 
             if (child instanceof Package)
             {
-                // Count children for the label
                 ListIterable<? extends CoreInstance> subChildren =
                         child.getValueForMetaPropertyToMany(M3Properties.children);
                 int childCount = (subChildren != null) ? subChildren.size() : 0;
@@ -94,7 +85,6 @@ public class PackageTreeProvider
             }
         }
 
-        // Sort: packages alphabetically, then elements alphabetically
         packages.sort((a, b) -> a.getName().compareToIgnoreCase(b.getName()));
         elements.sort((a, b) -> a.getName().compareToIgnoreCase(b.getName()));
 

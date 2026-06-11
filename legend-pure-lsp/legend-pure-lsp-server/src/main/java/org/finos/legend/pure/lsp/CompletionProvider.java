@@ -37,16 +37,9 @@ import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
-/**
- * Provides code completion for Pure source files, matching PureIdeLight's
- * Suggestion.java patterns:
- * - Package path completion (meta::pure:: → children)
- * - Identifier completion (bare names from imports + auto-imports)
- * - Variable completion ($var → let bindings + parameters in scope)
- */
 public class CompletionProvider
 {
-    // Auto-import packages from m3.pure — same list as PureIdeLight
+    // Auto-import packages (same as m3.pure)
     static final List<String> AUTO_IMPORTS = Collections.unmodifiableList(Arrays.asList(
             "meta::pure::metamodel",
             "meta::pure::metamodel::type",
@@ -82,9 +75,6 @@ public class CompletionProvider
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+(\\S+)");
     private static final Pattern PATH_PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*(?:::[a-zA-Z_][a-zA-Z0-9_]*)*)::([a-zA-Z_][a-zA-Z0-9_]*)?$");
 
-    /**
-     * Get completions for the given position in a source file.
-     */
     public static List<CompletionItem> getCompletions(PureRuntime runtime, String sourceId,
                                                        String fileContent, int line, int column)
     {
@@ -132,9 +122,6 @@ public class CompletionProvider
         return Collections.emptyList();
     }
 
-    /**
-     * Package path completion — given "meta::pure::" complete with children of that package.
-     */
     private static List<CompletionItem> getPackagePathCompletions(PureRuntime runtime,
                                                                     ProcessorSupport processorSupport,
                                                                     String packagePath, String prefix)
@@ -175,9 +162,6 @@ public class CompletionProvider
         return items;
     }
 
-    /**
-     * Identifier completion — search imports + root + auto-imports for matching elements.
-     */
     private static List<CompletionItem> getIdentifierCompletions(PureRuntime runtime,
                                                                    ProcessorSupport processorSupport,
                                                                    List<String> importPaths,
@@ -258,10 +242,6 @@ public class CompletionProvider
         return items;
     }
 
-    /**
-     * Variable completion — find let bindings and function parameters in scope.
-     * Same approach as PureIdeLight's suggestion/variable endpoint.
-     */
     private static List<CompletionItem> getVariableCompletions(PureRuntime runtime,
                                                                  String sourceId, int line, int column)
     {
@@ -442,10 +422,6 @@ public class CompletionProvider
         }
     }
 
-    /**
-     * Get the display name for an element — simple name for non-functions,
-     * functionName for functions.
-     */
     private static String getElementName(CoreInstance element)
     {
         String classifierName = element.getClassifier() != null
@@ -462,13 +438,8 @@ public class CompletionProvider
         return element.getName();
     }
 
-    /**
-     * Extract the identifier being typed at the cursor position.
-     * Returns null if cursor is not on an identifier.
-     */
     static String extractIdentifierPrefix(String textBeforeCursor)
     {
-        // Walk backwards from end to find the start of the current identifier
         int end = textBeforeCursor.length();
         int start = end;
         while (start > 0)
@@ -495,9 +466,6 @@ public class CompletionProvider
         return textBeforeCursor.substring(start, end);
     }
 
-    /**
-     * Extract import paths from the file's import statements.
-     */
     static List<String> extractImports(String[] lines, int currentLine)
     {
         List<String> imports = new ArrayList<>();

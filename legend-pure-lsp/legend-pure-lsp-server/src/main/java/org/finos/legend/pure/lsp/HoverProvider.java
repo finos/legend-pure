@@ -29,17 +29,8 @@ import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
-/**
- * Provides hover information by navigating to the element under the cursor
- * and returning its type, qualified path, and source location.
- */
 public class HoverProvider
 {
-    /**
-     * Get hover information for the element at the given position.
-     * Line and column are 1-based (PureRuntime convention).
-     * Returns null if no hoverable element is found.
-     */
     public static Hover hover(PureRuntime runtime, String sourceId, int line, int column)
     {
         Source source = runtime.getSourceById(sourceId);
