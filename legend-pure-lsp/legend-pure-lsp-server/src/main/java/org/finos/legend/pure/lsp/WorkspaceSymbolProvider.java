@@ -32,21 +32,12 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Provides workspace symbol search with an upfront index built after PureRuntime initialization.
- * The index stores lightweight entries (path, kind, source info) so searches are fast
- * substring matches against pre-computed strings — no tree walking at query time.
- */
 public class WorkspaceSymbolProvider
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(WorkspaceSymbolProvider.class);
 
     private final List<IndexEntry> index = new CopyOnWriteArrayList<>();
 
-    /**
-     * Build the index by walking the entire Pure package tree.
-     * Call once after PureRuntime initializes, and again after reindex.
-     */
     public void buildIndex(PureRuntime runtime)
     {
         long start = System.currentTimeMillis();
@@ -62,9 +53,6 @@ public class WorkspaceSymbolProvider
         LOGGER.info("Symbol index built: {} entries in {}ms", entries.size(), elapsed);
     }
 
-    /**
-     * Search the index for symbols matching the query (case-insensitive substring).
-     */
     public List<SymbolInformation> search(UriMapper uriMapper, String query, int maxResults)
     {
         String lowerQuery = (query != null) ? query.toLowerCase() : "";
@@ -88,9 +76,6 @@ public class WorkspaceSymbolProvider
         return results;
     }
 
-    /**
-     * Get the number of indexed entries.
-     */
     public int size()
     {
         return this.index.size();
@@ -117,9 +102,6 @@ public class WorkspaceSymbolProvider
                 {
                     String qualifiedPath = PackageableElement.getUserPathForPackageableElement(child);
                     String classifierName = child.getClassifier().getName();
-                    // For functions, extract the simple name from M3Properties.functionName
-                    // so developers can search by "compileLegendGrammar" instead of the
-                    // mangled name "compileLegendGrammar_String_1__PackageableElement_MANY_"
                     String simpleName = null;
                     if ("ConcreteFunctionDefinition".equals(classifierName)
                             || "NativeFunction".equals(classifierName))
@@ -172,9 +154,7 @@ public class WorkspaceSymbolProvider
         }
     }
 
-    /**
-     * Lightweight index entry — no reference to CoreInstance (avoids holding the graph in memory twice).
-     */
+    // Lightweight — no CoreInstance reference
     static class IndexEntry
     {
         final String qualifiedPath;
@@ -212,10 +192,6 @@ public class WorkspaceSymbolProvider
             this.endColumn = endColumn;
         }
 
-        /**
-         * Get the display name: for functions, use the simple name;
-         * for other elements, use the last segment of the qualified path.
-         */
         String getDisplayName()
         {
             if (this.simpleFunctionName != null)

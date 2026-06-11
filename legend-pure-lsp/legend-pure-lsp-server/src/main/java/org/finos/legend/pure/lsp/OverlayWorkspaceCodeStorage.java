@@ -36,11 +36,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.Mutable
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs.FSCodeStorage;
 
 /**
- * Mutable Pure code storage for the LSP workspace that never mutates the real filesystem.
- *
- * PureRuntime requires a MutableRepositoryCodeStorage for source updates. FSCodeStorage is read-only,
- * while MutableFSCodeStorage writes updates back to disk. This storage keeps the FS read path, but
- * redirects all writes/deletes/creates/moves into an in-memory overlay.
+ * In-memory overlay over FSCodeStorage: reads from disk, writes stay in memory.
  */
 public class OverlayWorkspaceCodeStorage extends FSCodeStorage implements MutableRepositoryCodeStorage
 {
@@ -147,9 +143,8 @@ public class OverlayWorkspaceCodeStorage extends FSCodeStorage implements Mutabl
                 }
             }
         }
-        catch (Exception ignore)
+        catch (Exception ignored)
         {
-            // The directory may be overlay-only.
         }
 
         String prefix = folderPrefix(normalized);
@@ -181,9 +176,8 @@ public class OverlayWorkspaceCodeStorage extends FSCodeStorage implements Mutabl
                 }
             }
         }
-        catch (Exception ignore)
+        catch (Exception ignored)
         {
-            // Repo directory may not exist yet.
         }
 
         for (String file : this.contentByPath.keySet())

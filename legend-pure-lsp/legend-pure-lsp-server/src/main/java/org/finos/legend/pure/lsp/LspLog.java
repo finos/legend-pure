@@ -15,13 +15,7 @@
 package org.finos.legend.pure.lsp;
 
 /**
- * Simple logging utility that writes to stderr so output is visible
- * in the VS Code Output panel ("Legend Pure LSP" channel).
- *
- * Uses stderr because stdout is reserved for JSON-RPC communication.
- * The server's main() method redirects System.out/System.err to
- * FileDescriptor.err, so these messages appear in the extension's
- * output channel.
+ * Logs to stderr; stdout is reserved for JSON-RPC.
  */
 public class LspLog
 {

@@ -477,9 +477,7 @@ class LegendPureDebugAdapter implements IDebugProtocolServer
     private int toClientEndColumn(int pureOneBasedEndColumn)
     {
         int oneBased = Math.max(1, pureOneBasedEndColumn);
-        // Pure end columns are inclusive. LSP/DAP ranges are presented better
-        // with the same convention used by SourceInfoUtil: start shifts to
-        // zero-based when requested, end remains the exclusive boundary.
+        // Pure end columns are inclusive; keep as-is for DAP
         return this.clientColumnsStartAt1 ? oneBased : oneBased;
     }
 

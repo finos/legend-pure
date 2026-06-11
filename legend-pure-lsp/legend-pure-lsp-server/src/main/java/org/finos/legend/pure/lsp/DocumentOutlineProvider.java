@@ -32,12 +32,6 @@ import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
-/**
- * Provides document outline (Ctrl+Shift+O) for Pure source files.
- * Uses the same display approach as PureIdeLight: Function.prettyPrint()
- * for human-readable function signatures, M3Properties.functionName for
- * simple function names, and instance.getName() for non-function elements.
- */
 public class DocumentOutlineProvider
 {
     public static List<DocumentSymbol> getOutline(PureRuntime runtime, String sourceId)
@@ -96,11 +90,6 @@ public class DocumentOutlineProvider
         return symbols;
     }
 
-    /**
-     * Get a human-readable display name for an element.
-     * For functions, uses Function.prettyPrint() (same as PureIdeLight).
-     * For other elements, uses the simple name.
-     */
     static String getDisplayName(CoreInstance instance, ProcessorSupport processorSupport)
     {
         String classifierName = instance.getClassifier() != null
@@ -124,10 +113,6 @@ public class DocumentOutlineProvider
         return name != null ? name : "?";
     }
 
-    /**
-     * Get just the simple function name (without signature) for search matching.
-     * Uses M3Properties.functionName — same as PureIdeLight's Suggestion.java.
-     */
     static String getSimpleFunctionName(CoreInstance instance)
     {
         String classifierName = instance.getClassifier() != null

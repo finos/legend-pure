@@ -198,8 +198,6 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     @Override
     public void setTrace(SetTraceParams params)
     {
-        // VS Code sends $/setTrace on every connection; the default LSP4J
-        // implementation throws UnsupportedOperationException.
     }
 
     @Override

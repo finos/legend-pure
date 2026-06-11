@@ -25,20 +25,10 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Provides go-to-definition by delegating to Source.navigate(),
- * the same API that PureIdeLight's Concept.java uses.
- */
 public class NavigationProvider
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(NavigationProvider.class);
 
-    /**
-     * Find the definition location for the element at the given position.
-     * Returns null if no navigable element is found at that position.
-     *
-     * Line and column are 1-based (PureRuntime convention).
-     */
     public static Location definition(PureRuntime runtime, UriMapper uriMapper, String sourceId, int line, int column)
     {
         Source source = runtime.getSourceById(sourceId);

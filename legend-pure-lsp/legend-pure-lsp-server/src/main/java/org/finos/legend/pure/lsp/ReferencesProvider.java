@@ -32,14 +32,6 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Provides find-all-references using the same approach as PureIdeLight's findUsages:
- * - For functions: reads both {@code applications} (call sites) and
- *   {@code referenceUsages} (structural type references)
- * - For other elements: reads {@code referenceUsages}
- *
- * See {@code pure_ide/findUsage.pure} for the reference implementation.
- */
 public class ReferencesProvider
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReferencesProvider.class);
@@ -74,7 +66,6 @@ public class ReferencesProvider
         Set<String> seen = new HashSet<>();
         List<Location> locations = new ArrayList<>();
 
-        // Optionally include the declaration itself
         if (includeDeclaration)
         {
             SourceInformation defSi = element.getSourceInformation();
@@ -84,11 +75,7 @@ public class ReferencesProvider
             }
         }
 
-        // For functions: read 'applications' (call sites) — same as PureIdeLight's
-        // $f.applications->evaluateAndDeactivate()
-        // Note: we check the classifier name, NOT Java instanceof, because Pure's
-        // runtime graph objects are often plain CoreInstance and don't implement
-        // the PackageableFunction Java interface.
+        // Check classifier name (not Java instanceof) — Pure graph objects are plain CoreInstance
         if ("ConcreteFunctionDefinition".equals(classifierName)
                 || "NativeFunction".equals(classifierName))
         {
