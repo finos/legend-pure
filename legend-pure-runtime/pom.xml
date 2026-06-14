@@ -46,7 +46,6 @@
     <modules>
         <module>legend-pure-runtime-java-engine-compiled</module>
         <module>legend-pure-runtime-java-engine-interpreted</module>
-        <module>legend-pure-runtime-java-engine-mixed</module>
         <module>legend-pure-runtime-java-engine-shared</module>
     </modules>
 </project>
