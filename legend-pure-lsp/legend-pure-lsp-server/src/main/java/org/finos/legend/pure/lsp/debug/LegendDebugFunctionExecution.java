@@ -599,8 +599,7 @@ class LegendDebugFunctionExecution extends FunctionExecutionInterpreted
                 positiveOrDefault(sourceInformation.getEndColumn(), sourceInformation.getColumn(), sourceInformation.getStartColumn(), 1),
                 locationName(valueSpecification),
                 this.activeFrames.get().size(),
-                this.nextExecutionOrdinal.incrementAndGet(),
-                isExplicitDebug(valueSpecification));
+                this.nextExecutionOrdinal.incrementAndGet());
     }
 
     private DebugExecutionLocation currentFrameLocation(Function<?> function, MutableStack<CoreInstance> functionExpressionCallStack)
@@ -625,24 +624,7 @@ class LegendDebugFunctionExecution extends FunctionExecutionInterpreted
                 sourceInformation == null ? 1 : positiveOrDefault(sourceInformation.getEndColumn(), sourceInformation.getColumn(), sourceInformation.getStartColumn(), 1),
                 functionName(function),
                 this.activeFrames.get().size(),
-                this.nextExecutionOrdinal.get(),
-                false);
-    }
-
-    private boolean isExplicitDebug(CoreInstance valueSpecification)
-    {
-        CoreInstance function = functionExpressionFunction(valueSpecification);
-        if (function == null)
-        {
-            return false;
-        }
-        String name = function.getName();
-        if ("debug__Nil_0_".equals(name))
-        {
-            return true;
-        }
-        String path = safeUserPath(function);
-        return path != null && path.contains("meta::pure::ide::debug");
+                this.nextExecutionOrdinal.get());
     }
 
     private String locationName(CoreInstance valueSpecification)

@@ -25,10 +25,9 @@ class DebugExecutionLocation
     private final String name;
     private final int stackDepth;
     private final long ordinal;
-    private final boolean explicitDebug;
 
     DebugExecutionLocation(String sourceId, String uri, int line, int column, int endLine, int endColumn,
-                           String name, int stackDepth, long ordinal, boolean explicitDebug)
+                           String name, int stackDepth, long ordinal)
     {
         this.sourceId = sourceId;
         this.uri = uri;
@@ -39,7 +38,6 @@ class DebugExecutionLocation
         this.name = (name == null || name.isEmpty()) ? "Pure debug point" : name;
         this.stackDepth = Math.max(stackDepth, 0);
         this.ordinal = ordinal;
-        this.explicitDebug = explicitDebug;
     }
 
     String getSourceId()
@@ -85,11 +83,6 @@ class DebugExecutionLocation
     long getOrdinal()
     {
         return this.ordinal;
-    }
-
-    boolean isExplicitDebug()
-    {
-        return this.explicitDebug;
     }
 
     boolean containsLine(int oneBasedLine)

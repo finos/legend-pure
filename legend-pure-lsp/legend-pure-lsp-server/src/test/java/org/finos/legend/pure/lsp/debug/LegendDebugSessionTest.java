@@ -35,42 +35,33 @@ public class LegendDebugSessionTest
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test(timeout = 60_000)
-    public void normalRuntimeCompilesAndExecutesDebugWithoutStopping()
+    public void debugRuntimeStopsAtBreakpointExposesVariablesEvaluatesAndContinues()
     {
         LegendPureSession session = newInitializedSession();
-        LegendPureSession.CompileResult compile = session.modifyAndCompile(
-                "debug_normal_go.pure",
-                "function go():Any[*]\n" +
-                        "{\n" +
-                        "  meta::pure::ide::debug();\n" +
-                        "  'done';\n" +
-                        "}\n");
-
-        Assert.assertTrue("debug() should compile in the normal LSP runtime: " + errorMessage(compile), compile.isSuccess());
-        LegendPureSession.ExecuteResult execute = session.executeGo();
-        Assert.assertTrue("normal executeGo must not stop on debug(): " + execute.getError(), execute.isSuccess());
-    }
-
-    @Test(timeout = 60_000)
-    public void debugRuntimeStopsAtExplicitDebugExposesVariablesEvaluatesAndContinues()
-    {
-        LegendPureSession session = newInitializedSession();
-        assertCompiled(session.modifyAndCompile(
-                "debug_explicit_go.pure",
+        String sourceId = "debug_breakpoint_eval_go.pure";
+        String uri = "file:///workspace/debug_breakpoint_eval_go.pure";
+        String code =
                 "function go():Any[*]\n" +
                         "{\n" +
                         "  let x = 'hello';\n" +
-                        "  meta::pure::ide::debug();\n" +
                         "  $x;\n" +
-                        "}\n"));
+                        "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
 
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
         LegendDebugSession debug = LegendDebugSession.create(
-                session, null, new UriMapper(), Collections.emptyMap(), "go():Any[*]", Collections.emptyList());
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, zeroBasedLine(code, "  $x;"))));
 
         LegendDebug.Response paused = debug.start();
         Assert.assertTrue(paused.isSuccess());
         Assert.assertEquals("paused", paused.getState());
-        Assert.assertEquals("pause", paused.getReason());
+        Assert.assertEquals("breakpoint", paused.getReason());
         Assert.assertTrue(debug.variables().stream().anyMatch(variable -> "x".equals(variable.getName())));
 
         LegendDebug.EvaluateResult evaluated = debug.evaluate("$x");
@@ -138,7 +129,6 @@ public class LegendDebugSessionTest
                 "function go():Any[*]\n" +
                         "{\n" +
                         "  let x = 'unsaved';\n" +
-                        "  meta::pure::ide::debug();\n" +
                         "  $x;\n" +
                         "}\n";
         LegendDebugSession debug = LegendDebugSession.create(
@@ -147,11 +137,12 @@ public class LegendDebugSessionTest
                 uriMapper,
                 Collections.singletonMap(sourceId, unsavedCode),
                 "go():Any[*]",
-                Collections.emptyList());
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, zeroBasedLine(unsavedCode, "  $x;"))));
 
         LegendDebug.Response paused = debug.start();
         Assert.assertTrue(paused.isSuccess());
         Assert.assertEquals("paused", paused.getState());
+        Assert.assertEquals("breakpoint", paused.getReason());
         Assert.assertTrue(debug.variables().stream().anyMatch(variable -> "x".equals(variable.getName())));
         Assert.assertNull("Unsaved debug source should not be added to the main runtime",
                 session.getPureRuntime().getSourceById(sourceId));
@@ -167,21 +158,30 @@ public class LegendDebugSessionTest
         session.initialize();
         Assert.assertNotNull(session.getPureRuntime().getSourceById(classpathSourceId));
         String classpathSourceContent = session.getPureRuntime().getSourceById(classpathSourceId).getContent();
-        assertCompiled(session.modifyAndCompile(
-                "debug_with_classpath_dependencies_go.pure",
+        String sourceId = "debug_with_classpath_dependencies_go.pure";
+        String uri = "file:///workspace/debug_with_classpath_dependencies_go.pure";
+        String code =
                 "function go():Any[*]\n" +
                         "{\n" +
                         "  let x = 'classpath';\n" +
-                        "  meta::pure::ide::debug();\n" +
                         "  $x;\n" +
-                        "}\n"));
+                        "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
 
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
         LegendDebugSession debug = LegendDebugSession.create(
-                session, null, new UriMapper(), Collections.emptyMap(), "go():Any[*]", Collections.emptyList());
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, zeroBasedLine(code, "  $x;"))));
 
         LegendDebug.Response paused = debug.start();
         Assert.assertTrue("Debug start should not reparse instrumented classpath sources: " + paused.getMessage(), paused.isSuccess());
         Assert.assertEquals("paused", paused.getState());
+        Assert.assertEquals("breakpoint", paused.getReason());
         Assert.assertTrue(debug.variables().stream().anyMatch(variable -> "x".equals(variable.getName())));
         Assert.assertEquals("Classpath source content must remain unchanged in the main runtime",
                 classpathSourceContent,
@@ -216,21 +216,30 @@ public class LegendDebugSessionTest
         scanner.scan(Collections.singletonList(this.tempFolder.getRoot().toPath()));
         LegendPureSession session = new LegendPureSession();
         session.initialize(scanner, Collections.singleton("debug_dependency_repo"));
-        assertCompiled(session.modifyAndCompile(
-                "debug_configured_dependency_go.pure",
+        String sourceId = "debug_configured_dependency_go.pure";
+        String uri = "file:///workspace/debug_configured_dependency_go.pure";
+        String code =
                 "function go():Any[*]\n" +
                         "{\n" +
                         "  let x = 'configured dependency';\n" +
-                        "  meta::pure::ide::debug();\n" +
                         "  $x;\n" +
-                        "}\n"));
+                        "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
 
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
         LegendDebugSession debug = LegendDebugSession.create(
-                session, scanner, new UriMapper(), Collections.emptyMap(), "go():Any[*]", Collections.emptyList());
+                session,
+                scanner,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, zeroBasedLine(code, "  $x;"))));
 
         LegendDebug.Response paused = debug.start();
         Assert.assertTrue("Configured dependency repo sources must not be instrumented: " + paused.getMessage(), paused.isSuccess());
         Assert.assertEquals("paused", paused.getState());
+        Assert.assertEquals("breakpoint", paused.getReason());
         Assert.assertTrue(debug.variables().stream().anyMatch(variable -> "x".equals(variable.getName())));
 
         debug.stop();
@@ -290,16 +299,25 @@ public class LegendDebugSessionTest
     public void mainSessionStillWorksWhileDebugExecutionIsPaused()
     {
         LegendPureSession session = newInitializedSession();
-        assertCompiled(session.modifyAndCompile(
-                "debug_paused_go.pure",
+        String sourceId = "debug_paused_go.pure";
+        String uri = "file:///workspace/debug_paused_go.pure";
+        String code =
                 "function go():Any[*]\n" +
                         "{\n" +
-                        "  meta::pure::ide::debug();\n" +
-                        "  'done';\n" +
-                        "}\n"));
+                        "  let x = 'done';\n" +
+                        "  $x;\n" +
+                        "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
 
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
         LegendDebugSession debug = LegendDebugSession.create(
-                session, null, new UriMapper(), Collections.emptyMap(), "go():Any[*]", Collections.emptyList());
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, zeroBasedLine(code, "  $x;"))));
         LegendDebug.Response paused = debug.start();
         Assert.assertEquals("paused", paused.getState());
 
@@ -429,14 +447,17 @@ public class LegendDebugSessionTest
     public void evaluateAcceptsImplicitLocalReferencesAndFormatsResults()
     {
         LegendPureSession session = newInitializedSession();
-        assertCompiled(session.modifyAndCompile("debug_implicit_local_eval.pure", debugLocalsCode()));
+        String sourceId = "debug_implicit_local_eval.pure";
+        String uri = "file:///workspace/debug_implicit_local_eval.pure";
+        String code = debugLocalsCode();
+        assertCompiled(session.modifyAndCompile(sourceId, code));
 
-        LegendDebugSession debug = LegendDebugSession.create(
-                session, null, new UriMapper(), Collections.emptyMap(), "go():Any[*]", Collections.emptyList());
+        LegendDebugSession debug = debugAtBreakpoint(session, sourceId, uri, code, "  $name;");
 
         LegendDebug.Response paused = debug.start();
         Assert.assertTrue(paused.isSuccess());
         Assert.assertEquals("paused", paused.getState());
+        Assert.assertEquals("breakpoint", paused.getReason());
 
         LegendDebug.EvaluateResult implicit = debug.evaluate("routedFunction");
         Assert.assertTrue("Implicit local evaluate should succeed: " + implicit.getError(), implicit.isSuccess());
@@ -487,14 +508,17 @@ public class LegendDebugSessionTest
     public void variablesPanelShowsReadableExpandableValues()
     {
         LegendPureSession session = newInitializedSession();
-        assertCompiled(session.modifyAndCompile("debug_readable_locals.pure", debugLocalsCode()));
+        String sourceId = "debug_readable_locals.pure";
+        String uri = "file:///workspace/debug_readable_locals.pure";
+        String code = debugLocalsCode();
+        assertCompiled(session.modifyAndCompile(sourceId, code));
 
-        LegendDebugSession debug = LegendDebugSession.create(
-                session, null, new UriMapper(), Collections.emptyMap(), "go():Any[*]", Collections.emptyList());
+        LegendDebugSession debug = debugAtBreakpoint(session, sourceId, uri, code, "  $name;");
 
         LegendDebug.Response paused = debug.start();
         Assert.assertTrue(paused.isSuccess());
         Assert.assertEquals("paused", paused.getState());
+        Assert.assertEquals("breakpoint", paused.getReason());
 
         List<LegendDebug.Variable> locals = debug.variables(1);
         Assert.assertEquals("Ada", variable(locals, "name").getValue());
@@ -534,21 +558,21 @@ public class LegendDebugSessionTest
     public void localsAppearOnlyAfterAssignmentHasExecuted()
     {
         LegendPureSession session = newInitializedSession();
-        assertCompiled(session.modifyAndCompile(
-                "debug_assignment_timing.pure",
+        String sourceId = "debug_assignment_timing.pure";
+        String uri = "file:///workspace/debug_assignment_timing.pure";
+        String code =
                 "function makeClusters():String[*]\n" +
                         "{\n" +
                         "  ['a', 'b'];\n" +
                         "}\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
-                        "  meta::pure::ide::debug();\n" +
                         "  let clusters = makeClusters();\n" +
                         "  print($clusters->size()->toString(), 1);\n" +
-                        "}\n"));
+                        "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
 
-        LegendDebugSession debug = LegendDebugSession.create(
-                session, null, new UriMapper(), Collections.emptyMap(), "go():Any[*]", Collections.emptyList());
+        LegendDebugSession debug = debugAtBreakpoint(session, sourceId, uri, code, "  let clusters = makeClusters();");
 
         Assert.assertEquals("paused", debug.start().getState());
         Assert.assertNull(variableOrNull(debug.variables(), "clusters"));
@@ -556,12 +580,6 @@ public class LegendDebugSessionTest
         Assert.assertFalse(beforeAssignment.isSuccess());
         Assert.assertTrue(beforeAssignment.getError(), beforeAssignment.getError().contains("`clusters` is not in scope yet"));
         Assert.assertTrue(beforeAssignment.getError(), beforeAssignment.getError().contains("available locals"));
-
-        LegendDebug.Response atAssignment = debug.stepOver();
-        Assert.assertTrue(atAssignment.isSuccess());
-        Assert.assertEquals("paused", atAssignment.getState());
-        Assert.assertNull("clusters should not be visible while paused on its assignment line",
-                variableOrNull(debug.variables(), "clusters"));
 
         LegendDebug.Response afterAssignment = debug.stepOver();
         Assert.assertTrue(afterAssignment.isSuccess());
@@ -649,7 +667,6 @@ public class LegendDebugSessionTest
                 "  let routedFunction = 'test::debug::routed__String_1_'->pathToElement()->cast(@Function<Any>);\n" +
                 "  let mapping = 'test::debug::DebugMapping'->pathToElement()->cast(@meta::pure::mapping::Mapping);\n" +
                 "  let runtime = ^test::debug::DebugRuntime(mappings=[$mapping]);\n" +
-                "  meta::pure::ide::debug();\n" +
                 "  $name;\n" +
                 "}\n" +
                 "###Mapping\n" +
@@ -690,6 +707,32 @@ public class LegendDebugSessionTest
         Assert.assertEquals("breakpoint", paused.getReason());
         Assert.assertEquals(expectedLineOneBased, paused.getStackFrames().get(0).getLine());
         debug.stop();
+    }
+
+    private static LegendDebugSession debugAtBreakpoint(LegendPureSession session, String sourceId, String uri, String code, String line)
+    {
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        return LegendDebugSession.create(
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, zeroBasedLine(code, line))));
+    }
+
+    private static int zeroBasedLine(String content, String expectedLine)
+    {
+        String[] lines = content.split("\\R", -1);
+        for (int i = 0; i < lines.length; i++)
+        {
+            if (expectedLine.equals(lines[i]))
+            {
+                return i;
+            }
+        }
+        throw new AssertionError("Could not find line: " + expectedLine + " in:\n" + content);
     }
 
     private static LegendPureSession newInitializedSession()

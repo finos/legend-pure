@@ -16,10 +16,10 @@ package org.finos.legend.pure.lsp;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.finos.legend.pure.runtime.java.mixed.LegendCompileMixedProcessorSupport;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -41,6 +41,8 @@ public class LegendPureSessionIntegrationTest
         session.initialize();
         Assert.assertTrue("Session should be initialized", session.isInitialized());
         Assert.assertNotNull("PureRuntime should not be null", session.getPureRuntime());
+        Assert.assertTrue("LSP should install mixed compiled/interpreted processor support",
+                session.getFunctionExecution().getProcessorSupport() instanceof LegendCompileMixedProcessorSupport);
     }
 
     @AfterClass
@@ -263,9 +265,9 @@ public class LegendPureSessionIntegrationTest
 
         String originalContent = platformSource.getContent();
 
-        // Attempt to modify the immutable source with garbage — should be silently skipped
+        // Attempt to modify the immutable source with invalid Pure; it should be skipped.
         LegendPureSession.CompileResult result = session.modifyAndCompile(
-                platformSource.getId(), "THIS IS GARBAGE { NOT VALID PURE");
+                platformSource.getId(), "INVALID PURE CONTENT { NOT VALID PURE");
 
         // Should succeed (no-op) rather than fail
         Assert.assertTrue("Modifying immutable source should succeed (no-op), got: "
@@ -278,7 +280,7 @@ public class LegendPureSessionIntegrationTest
     }
 
     @Test
-    public void modifyAndCompile_immutableSource_doesNotPollutOtherFiles()
+    public void modifyAndCompile_immutableSource_doesNotPolluteOtherFiles()
     {
         // First compile a valid source
         LegendPureSession.CompileResult r1 = session.modifyAndCompile(
@@ -300,9 +302,9 @@ public class LegendPureSessionIntegrationTest
         Assert.assertNotNull("Should have an immutable source", immutableSource);
 
         // Attempt to modify the immutable source
-        session.modifyAndCompile(immutableSource.getId(), "GARBAGE CONTENT");
+        session.modifyAndCompile(immutableSource.getId(), "INVALID PURE CONTENT");
 
-        // Now compile our valid source again — it should still succeed
+        // Compile the valid source again; it should still succeed.
         LegendPureSession.CompileResult r2 = session.modifyAndCompile(
                 "lsp_test_immune.pure",
                 "Class test::lsp::immune::Safe\n{\n  x: String[1];\n  y: Integer[1];\n}\n"
@@ -317,10 +319,10 @@ public class LegendPureSessionIntegrationTest
     @Test
     public void executeGo_withGoFunction_returnsOutput()
     {
-        // Clean state to avoid pollution from previous tests
+        // Reinitialize so this test does not depend on earlier session state.
         session.reinitialize();
 
-        // Simulate the exact user workflow: create a file with go() and execute it
+        // Compile a user-owned file with go() and execute it.
         LegendPureSession.CompileResult r = session.modifyAndCompile(
                 "welcome.pure",
                 "function go():Any[*]\n{\n  'Hello from go!'\n}\n"
@@ -395,44 +397,4 @@ public class LegendPureSessionIntegrationTest
                 result.getOutput().contains("welcome.pure line:"));
     }
 
-    @Test
-    public void executeGo_withWorkspaceRuntime_canUsePureLspDebugNativeExtension()
-    {
-        LegendPureSession workspaceSession = new LegendPureSession();
-        RepositoryScanner scanner = new RepositoryScanner();
-        scanner.scan(Collections.singletonList(findWorkspaceRoot()));
-        workspaceSession.initialize(scanner);
-
-        LegendPureSession.CompileResult r = workspaceSession.modifyAndCompile(
-                "lsp_native_extension_test.pure",
-                "function go():Any[*]\n" +
-                        "{\n" +
-                        "  meta::pure::ide::debug();\n" +
-                        "  print('debug native extension loaded', 1);\n" +
-                        "}\n"
-        );
-        Assert.assertTrue("go() using LSP debug native extension should compile, got: " +
-                (r.getError() != null ? r.getError().getMessage() : ""), r.isSuccess());
-
-        LegendPureSession.ExecuteResult result = workspaceSession.executeGo();
-        Assert.assertTrue("executeGo should execute LSP debug native extension, got: " + result.getError(),
-                result.isSuccess());
-        Assert.assertNotNull("Native extension execution should print output", result.getOutput());
-        Assert.assertTrue(result.getOutput().contains("debug native extension loaded"));
-    }
-
-    private static Path findWorkspaceRoot()
-    {
-        Path current = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
-        while (current != null)
-        {
-            if (Files.isDirectory(current.resolve("legend-pure-lsp"))
-                    && Files.isDirectory(current.resolve("legend-pure-core")))
-            {
-                return current;
-            }
-            current = current.getParent();
-        }
-        throw new IllegalStateException("Could not find legend-pure workspace root from " + System.getProperty("user.dir"));
-    }
 }
