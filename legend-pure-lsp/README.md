@@ -128,7 +128,7 @@ The server exposes two debug surfaces:
 - legacy JSON-RPC requests under `legend/debug/*`
 - a DAP socket endpoint returned by `legend/debug/dapEndpoint`
 
-The DAP endpoint is the preferred client integration point. On startup, the LSP server opens a local DAP socket on `127.0.0.1` using an ephemeral port. A client asks the LSP server for the endpoint, then connects with the standard Debug Adapter Protocol. VS Code now uses this path; an IntelliJ plugin can use the same path from Kotlin without reimplementing Pure-specific debug semantics in the IDE client.
+The DAP endpoint is the preferred client integration point. On startup, the LSP server opens a local DAP socket on `127.0.0.1` using an ephemeral port. A client asks the LSP server for the endpoint, then connects with the standard Debug Adapter Protocol. VS Code now uses this path; other clients can use the same endpoint without reimplementing Pure-specific debug semantics.
 
 The VS Code extension no longer contains a custom in-process debug adapter implementation. Its debug adapter descriptor factory waits for the LSP server to be ready, sends `legend/debug/dapEndpoint`, and returns a `DebugAdapterServer` pointing at the Java process. The Java server owns breakpoint handling, launch, continue, step in, step over, step out, stack trace, scopes, variables, evaluate, terminate, and output events.
 
@@ -149,10 +149,9 @@ The debug runtime uses `LegendDebugFunctionExecution`, an LSP-local subclass of 
 The debug executor records source execution locations from runtime `SourceInformation`, not from text rewriting or synthetic source offsets. This is the intended direction for stable line behavior:
 
 - red-dot breakpoints are matched against original one-based source lines
-- explicit `meta::pure::ide::debug()` pauses remain supported
 - breakpoints on function-body expression sequence entries are supported, including bare variable and literal expressions
 - step in, step over, and step out operate from runtime execution locations and stack depth
-- user breakpoints and explicit debug statements take precedence over step mode
+- user breakpoints take precedence over step mode
 
 The debugger maintains a debug-only active-frame stack. At each pause, the server snapshots frames with server-owned `variablesReference` values. Stack traces can include multiple Pure frames, each frame has its own locals scope, and evaluate requests can target a selected frame by `frameId`.
 

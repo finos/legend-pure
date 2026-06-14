@@ -92,8 +92,10 @@ class LegendDebugSession
         }
         debugRuntime.compile();
 
-        LegendDebugFunctionExecution debugExecution = new LegendDebugFunctionExecution(lineMaps.keySet(), uriMapper);
-        debugExecution.init(debugRuntime, new Message(""));
+        LegendDebugFunctionExecution debugExecution = LegendPureSession.initializeFunctionExecution(
+                new LegendDebugFunctionExecution(lineMaps.keySet(), uriMapper),
+                debugRuntime,
+                new Message(""));
 
         CoreInstance function = findZeroArgumentFunction(debugRuntime, functionName);
         if (function == null)
@@ -311,10 +313,6 @@ class LegendDebugSession
         {
             return PauseDecision.resume();
         }
-        if (pauseLocation.explicitDebug)
-        {
-            return PauseDecision.pause("pause");
-        }
         switch (mode)
         {
             case STEP_IN:
@@ -331,6 +329,8 @@ class LegendDebugSession
 
     private RunMode effectiveRunMode(RunMode mode, PauseLocation startLocation)
     {
+        // A red-dot breakpoint stops before its expression executes. Stepping out
+        // from that state should first move past the breakpoint expression.
         return mode == RunMode.STEP_OUT
                 && startLocation != null
                 && startLocation.userBreakpoint
@@ -368,7 +368,7 @@ class LegendDebugSession
     private PauseLocation currentPauseLocation(LegendDebugState state)
     {
         DebugExecutionLocation location = state.getCurrentLocation();
-        return location == null ? null : new PauseLocation(location, isUserBreakpoint(location), location.isExplicitDebug());
+        return location == null ? null : new PauseLocation(location, isUserBreakpoint(location));
     }
 
     private List<LegendDebug.StackFrame> stackFrames(LegendDebugState state)
@@ -671,14 +671,12 @@ class LegendDebugSession
     {
         private final DebugExecutionLocation location;
         private final boolean userBreakpoint;
-        private final boolean explicitDebug;
         private final int stackDepth;
 
-        private PauseLocation(DebugExecutionLocation location, boolean userBreakpoint, boolean explicitDebug)
+        private PauseLocation(DebugExecutionLocation location, boolean userBreakpoint)
         {
             this.location = location;
             this.userBreakpoint = userBreakpoint;
-            this.explicitDebug = explicitDebug;
             this.stackDepth = location == null ? 0 : location.getStackDepth();
         }
     }
