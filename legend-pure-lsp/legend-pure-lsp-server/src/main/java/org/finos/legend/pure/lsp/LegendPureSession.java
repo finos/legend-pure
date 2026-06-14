@@ -41,8 +41,6 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
-import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.finos.legend.pure.runtime.java.mixed.LegendCompileMixedProcessorSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,8 +77,6 @@ public class LegendPureSession
 
         this.functionExecution = new StackPreservingFunctionExecutionInterpreted();
         this.functionExecution.init(this.pureRuntime, new Message(""));
-        FunctionExecutionInterpreted fe = (FunctionExecutionInterpreted) this.functionExecution;
-        fe.setProcessorSupport(new LegendCompileMixedProcessorSupport(fe.getRuntime().getContext(), fe.getRuntime().getModelRepository(), fe.getProcessorSupport()));
         LspLog.info("StackPreservingFunctionExecutionInterpreted initialized");
 
         this.initialized = true;
