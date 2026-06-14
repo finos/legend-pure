@@ -31,6 +31,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpa
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tools.ListHelper;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -174,16 +175,15 @@ public class TestProfile extends AbstractPureTestWithCoreCompiledPlatform
     }
 
     @Test
-    public void testMultilineTaggedValueConcatenatedWithSingleLine()
+    public void testSingleLineTaggedValueConcatenationStillWorks()
     {
+        // Concatenation of single-line strings is unchanged by the multi-line feature.
         compileTestSource("/test/testSource.pure",
                 "Profile test::docProfile\n" +
                         "{\n" +
                         "  tags: [doc];\n" +
                         "}\n" +
-                        "Class {test::docProfile.doc='Title: ' + '''\n" +
-                        "line1\n" +
-                        "line2'''} test::DocumentedClass\n" +
+                        "Class {test::docProfile.doc='a' + 'b'} test::DocumentedClass\n" +
                         "{\n" +
                         "}");
 
@@ -192,8 +192,24 @@ public class TestProfile extends AbstractPureTestWithCoreCompiledPlatform
 
         ListIterable<? extends TaggedValue> taggedValues = ListHelper.wrapListIterable(cls._taggedValues());
         Assert.assertEquals(1, taggedValues.size());
-        // The multi-line token is concatenated like any other tagged-value string token; the ", " join
-        // between '+'-separated tokens is the pre-existing tagged-value behavior, unchanged by this feature.
-        Assert.assertEquals("Title: , line1\nline2", taggedValues.getFirst()._value());
+        // The ", " join between '+'-separated single-line tokens is pre-existing tagged-value behavior.
+        Assert.assertEquals("a, b", taggedValues.getFirst()._value());
+    }
+
+    @Test
+    public void testMultilineTaggedValueCannotBeConcatenated()
+    {
+        // A multi-line tagged value is either a single multi-line string or '+'-concatenated single-line
+        // strings - it cannot be concatenated with anything.
+        Assert.assertThrows(PureParserException.class, () -> compileTestSource("/test/testSource.pure",
+                "Profile test::docProfile\n" +
+                        "{\n" +
+                        "  tags: [doc];\n" +
+                        "}\n" +
+                        "Class {test::docProfile.doc='Title: ' + '''\n" +
+                        "line1\n" +
+                        "line2'''} test::DocumentedClass\n" +
+                        "{\n" +
+                        "}"));
     }
 }

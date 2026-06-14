@@ -234,7 +234,7 @@ stereotype: qualifiedName DOT identifier
 taggedValues: CURLY_BRACKET_OPEN taggedValue (COMMA taggedValue)* CURLY_BRACKET_CLOSE
 ;
 
-taggedValue: qualifiedName DOT identifier EQUAL (STRING | MULTILINE_STRING) (PLUS (STRING | MULTILINE_STRING))*
+taggedValue: qualifiedName DOT identifier EQUAL (MULTILINE_STRING | STRING (PLUS STRING)*)
 ;
 
 defaultValue: EQUAL defaultValueExpression
