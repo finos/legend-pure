@@ -17,9 +17,11 @@ package org.finos.legend.pure.m3.tests.elements.profile;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -147,5 +149,51 @@ public class TestProfile extends AbstractPureTestWithCoreCompiledPlatform
         Assert.assertEquals("t3", t3._value());
         Assert.assertSame(profile, t3._profile());
         assertSourceInformation("/test/testSource.pure", 4, 18, 4, 18, 4, 19, t3.getSourceInformation());
+    }
+
+    @Test
+    public void testMultilineTaggedValue()
+    {
+        compileTestSource("/test/testSource.pure",
+                "Profile test::docProfile\n" +
+                        "{\n" +
+                        "  tags: [doc];\n" +
+                        "}\n" +
+                        "Class {test::docProfile.doc='''\n" +
+                        "first line\n" +
+                        "second line'''} test::DocumentedClass\n" +
+                        "{\n" +
+                        "}");
+
+        AnnotatedElement cls = (AnnotatedElement) runtime.getCoreInstance("test::DocumentedClass");
+        Assert.assertNotNull(cls);
+
+        ListIterable<? extends TaggedValue> taggedValues = ListHelper.wrapListIterable(cls._taggedValues());
+        Assert.assertEquals(1, taggedValues.size());
+        Assert.assertEquals("first line\nsecond line", taggedValues.getFirst()._value());
+    }
+
+    @Test
+    public void testMultilineTaggedValueConcatenatedWithSingleLine()
+    {
+        compileTestSource("/test/testSource.pure",
+                "Profile test::docProfile\n" +
+                        "{\n" +
+                        "  tags: [doc];\n" +
+                        "}\n" +
+                        "Class {test::docProfile.doc='Title: ' + '''\n" +
+                        "line1\n" +
+                        "line2'''} test::DocumentedClass\n" +
+                        "{\n" +
+                        "}");
+
+        AnnotatedElement cls = (AnnotatedElement) runtime.getCoreInstance("test::DocumentedClass");
+        Assert.assertNotNull(cls);
+
+        ListIterable<? extends TaggedValue> taggedValues = ListHelper.wrapListIterable(cls._taggedValues());
+        Assert.assertEquals(1, taggedValues.size());
+        // The multi-line token is concatenated like any other tagged-value string token; the ", " join
+        // between '+'-separated tokens is the pre-existing tagged-value behavior, unchanged by this feature.
+        Assert.assertEquals("Title: , line1\nline2", taggedValues.getFirst()._value());
     }
 }

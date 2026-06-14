@@ -62,6 +62,36 @@ public class TestStringParsing extends AbstractPrimitiveParsingTest
     }
 
     @Test
+    public void testSimpleMultilineString()
+    {
+        assertParsesTo("line1\nline2", "'''\nline1\nline2'''");
+    }
+
+    @Test
+    public void testMultilineStringWithTrailingNewline()
+    {
+        assertParsesTo("line1\nline2\n", "'''\nline1\nline2\n'''");
+    }
+
+    @Test
+    public void testMultilineStringIndentationStripped()
+    {
+        assertParsesTo("hello\nworld\n", "'''\n    hello\n    world\n    '''");
+    }
+
+    @Test
+    public void testMultilineStringProcessesEscapes()
+    {
+        assertParsesTo("a\tb\n", "'''\na\\tb\n'''");
+    }
+
+    @Test
+    public void testMultilineStringRequiresNewlineAfterOpeningDelimiter()
+    {
+        assertFailsToParse("'''abc'''");
+    }
+
+    @Test
     public void testStringWithOnlyEscapedQuote()
     {
         assertParsesTo("'", "'\\''");
