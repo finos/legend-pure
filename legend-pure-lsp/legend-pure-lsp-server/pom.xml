@@ -108,6 +108,10 @@
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-runtime-java-engine-interpreted</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-runtime-java-engine-mixed</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
