@@ -622,6 +622,11 @@
                 <artifactId>legend-pure-runtime-java-engine-shared</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-runtime-java-engine-mixed</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
@@ -1057,4 +1062,5 @@
             <!-- Test Scope -->
         </dependencies>
     </dependencyManagement>
+
 </project>

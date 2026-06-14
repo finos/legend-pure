@@ -41,13 +41,14 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.finos.legend.pure.runtime.java.mixed.LegendCompileMixedProcessorSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LegendPureSession
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(LegendPureSession.class);
-    private static final String DEBUG_REPOSITORY_NAME = "pure_ide_debug";
 
     private volatile PureRuntime pureRuntime;
     private volatile FunctionExecution functionExecution;
@@ -75,8 +76,10 @@ public class LegendPureSession
 
         this.pureRuntime = newRuntime(scanner, true, this.classpathRepositoryNames);
 
-        this.functionExecution = new StackPreservingFunctionExecutionInterpreted();
-        this.functionExecution.init(this.pureRuntime, new Message(""));
+        this.functionExecution = initializeFunctionExecution(
+                new StackPreservingFunctionExecutionInterpreted(),
+                this.pureRuntime,
+                new Message(""));
         LspLog.info("StackPreservingFunctionExecutionInterpreted initialized");
 
         this.initialized = true;
@@ -92,8 +95,18 @@ public class LegendPureSession
     public static PureRuntime newDebugRuntime(RepositoryScanner scanner, Collection<String> classpathRepositoryNames)
     {
         Set<String> normalizedClasspathRepositoryNames = normalizeRepositoryNames(classpathRepositoryNames);
-        return newRuntime(scanner, true, normalizedClasspathRepositoryNames, Collections.singleton(DEBUG_REPOSITORY_NAME),
+        return newRuntime(scanner, true, normalizedClasspathRepositoryNames, Collections.emptySet(),
                 true, normalizedClasspathRepositoryNames);
+    }
+
+    public static <T extends FunctionExecutionInterpreted> T initializeFunctionExecution(T functionExecution, PureRuntime runtime, Message message)
+    {
+        functionExecution.init(runtime, message);
+        functionExecution.setProcessorSupport(new LegendCompileMixedProcessorSupport(
+                runtime.getContext(),
+                runtime.getModelRepository(),
+                functionExecution.getProcessorSupport()));
+        return functionExecution;
     }
 
     private static PureRuntime newRuntime(RepositoryScanner scanner, boolean includeWorkspaceStorages, Collection<String> classpathRepositoryNames,
@@ -136,18 +149,18 @@ public class LegendPureSession
                 CodeRepositoryProviderHelper.findCodeRepositories();
         Set<String> finalWorkspaceNames = workspaceRepoNames;
         Set<String> unresolvedClasspathRepositoryNames = new LinkedHashSet<>(normalizedClasspathRepositoryNames);
-        MutableList<CodeRepository> classpathStorageRepos = Lists.mutable.empty();
         Set<String> seenClasspathRepoNames = new LinkedHashSet<>();
+        MutableList<CodeRepository> classpathStorageRepos = Lists.mutable.empty();
         for (CodeRepository repo : classpathRepos)
         {
             String name = repo.getName();
-            if (name != null && !seenClasspathRepoNames.add(name))
-            {
-                LspLog.debug("Skipping duplicate classpath repo: " + name);
-                continue;
-            }
             if (shouldLoadClasspathRepository(name, finalWorkspaceNames, normalizedClasspathRepositoryNames))
             {
+                if (name != null && !seenClasspathRepoNames.add(name))
+                {
+                    LspLog.debug("Skipping duplicate classpath repo: " + name);
+                    continue;
+                }
                 classpathStorageRepos.add(repo);
                 if (name != null)
                 {
