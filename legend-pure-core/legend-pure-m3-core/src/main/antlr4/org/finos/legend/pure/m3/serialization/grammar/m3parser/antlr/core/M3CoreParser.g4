@@ -234,7 +234,7 @@ stereotype: qualifiedName DOT identifier
 taggedValues: CURLY_BRACKET_OPEN taggedValue (COMMA taggedValue)* CURLY_BRACKET_CLOSE
 ;
 
-taggedValue: qualifiedName DOT identifier EQUAL STRING (PLUS STRING)*
+taggedValue: qualifiedName DOT identifier EQUAL (MULTILINE_STRING | STRING (PLUS STRING)*)
 ;
 
 defaultValue: EQUAL defaultValueExpression
@@ -430,7 +430,7 @@ lambdaParamType: COLON type multiplicity
 instanceLiteral: instanceLiteralToken | (MINUS INTEGER) | (MINUS FLOAT) | (MINUS DECIMAL) | (PLUS INTEGER) | (PLUS FLOAT) | (PLUS DECIMAL)
 ;
 
-instanceLiteralToken: STRING | INTEGER | FLOAT | DECIMAL | DATE | BOOLEAN | STRICTTIME
+instanceLiteralToken: STRING | MULTILINE_STRING | INTEGER | FLOAT | DECIMAL | DATE | BOOLEAN | STRICTTIME
 ;
 
 unitInstanceLiteral: (MINUS? INTEGER) | (MINUS? FLOAT) | (MINUS? DECIMAL) | (PLUS INTEGER) | (PLUS FLOAT) | (PLUS DECIMAL)

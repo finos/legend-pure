@@ -17,9 +17,11 @@ package org.finos.legend.pure.m3.tests.elements.profile;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -29,6 +31,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpa
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tools.ListHelper;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -147,5 +150,66 @@ public class TestProfile extends AbstractPureTestWithCoreCompiledPlatform
         Assert.assertEquals("t3", t3._value());
         Assert.assertSame(profile, t3._profile());
         assertSourceInformation("/test/testSource.pure", 4, 18, 4, 18, 4, 19, t3.getSourceInformation());
+    }
+
+    @Test
+    public void testMultilineTaggedValue()
+    {
+        compileTestSource("/test/testSource.pure",
+                "Profile test::docProfile\n" +
+                        "{\n" +
+                        "  tags: [doc];\n" +
+                        "}\n" +
+                        "Class {test::docProfile.doc='''\n" +
+                        "first line\n" +
+                        "second line'''} test::DocumentedClass\n" +
+                        "{\n" +
+                        "}");
+
+        AnnotatedElement cls = (AnnotatedElement) runtime.getCoreInstance("test::DocumentedClass");
+        Assert.assertNotNull(cls);
+
+        ListIterable<? extends TaggedValue> taggedValues = ListHelper.wrapListIterable(cls._taggedValues());
+        Assert.assertEquals(1, taggedValues.size());
+        Assert.assertEquals("first line\nsecond line", taggedValues.getFirst()._value());
+    }
+
+    @Test
+    public void testSingleLineTaggedValueConcatenationStillWorks()
+    {
+        // Concatenation of single-line strings is unchanged by the multi-line feature.
+        compileTestSource("/test/testSource.pure",
+                "Profile test::docProfile\n" +
+                        "{\n" +
+                        "  tags: [doc];\n" +
+                        "}\n" +
+                        "Class {test::docProfile.doc='a' + 'b'} test::DocumentedClass\n" +
+                        "{\n" +
+                        "}");
+
+        AnnotatedElement cls = (AnnotatedElement) runtime.getCoreInstance("test::DocumentedClass");
+        Assert.assertNotNull(cls);
+
+        ListIterable<? extends TaggedValue> taggedValues = ListHelper.wrapListIterable(cls._taggedValues());
+        Assert.assertEquals(1, taggedValues.size());
+        // The ", " join between '+'-separated single-line tokens is pre-existing tagged-value behavior.
+        Assert.assertEquals("a, b", taggedValues.getFirst()._value());
+    }
+
+    @Test
+    public void testMultilineTaggedValueCannotBeConcatenated()
+    {
+        // A multi-line tagged value is either a single multi-line string or '+'-concatenated single-line
+        // strings - it cannot be concatenated with anything.
+        Assert.assertThrows(PureParserException.class, () -> compileTestSource("/test/testSource.pure",
+                "Profile test::docProfile\n" +
+                        "{\n" +
+                        "  tags: [doc];\n" +
+                        "}\n" +
+                        "Class {test::docProfile.doc='Title: ' + '''\n" +
+                        "line1\n" +
+                        "line2'''} test::DocumentedClass\n" +
+                        "{\n" +
+                        "}"));
     }
 }
