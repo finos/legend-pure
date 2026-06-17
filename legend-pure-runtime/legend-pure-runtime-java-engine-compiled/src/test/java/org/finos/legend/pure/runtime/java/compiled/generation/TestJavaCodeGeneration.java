@@ -52,6 +52,7 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -327,7 +328,7 @@ public class TestJavaCodeGeneration
         Assert.assertTrue(
                 "Package_Impl.java should always be generated for platform repository",
                 packageImpl.exists());
-        String packageImplSrc = new String(java.nio.file.Files.readAllBytes(packageImpl.toPath()));
+        String packageImplSrc = new String(Files.readAllBytes(packageImpl.toPath()));
         Assert.assertTrue(
                 "Package_Impl.java should declare the correct package",
                 packageImplSrc.contains("package org.finos.legend.pure.generated"));
@@ -372,13 +373,56 @@ public class TestJavaCodeGeneration
         Assert.assertTrue(
                 "PureCompiledLambda.java should always be generated in test-sources for platform",
                 lambdaFile.exists());
-        String lambdaSrc = new String(java.nio.file.Files.readAllBytes(lambdaFile.toPath()));
+        String lambdaSrc = new String(Files.readAllBytes(lambdaFile.toPath()));
         Assert.assertTrue(
                 "PureCompiledLambda.java should declare the correct package",
                 lambdaSrc.contains("package org.finos.legend.pure.generated"));
         Assert.assertTrue(
                 "PureCompiledLambda.java should declare class PureCompiledLambda",
                 lambdaSrc.contains("class PureCompiledLambda"));
+    }
+
+    @Test
+    public void testGenerateSources_writesExternalizableApiToDisk() throws Exception
+    {
+        String externalPackage = "org.finos.legend.pure.runtime.java.compiled";
+        File directory = TMP.newFolder();
+        File classesDir = new File(directory, "classes");
+
+        JavaCodeGeneration.doIt(
+                Sets.mutable.with("platform"),
+                Sets.fixedSize.empty(),
+                Sets.fixedSize.empty(),
+                GenerationType.monolithic,
+                false,
+                true,            // addExternalAPI=true
+                externalPackage, // externalAPIPackage
+                false,           // generateMetadata=false - fastest path
+                false,
+                true,            // generateSources=true
+                false,           // generateTest=false: generated-sources/
+                true,            // preventJavaCompilation
+                classesDir,
+                directory,
+                false,
+                new VoidLog());
+
+        // With addExternalAPI=true and writeJavaSourcesToDisk on, the externalizable API class
+        // (PureExternal.java) must be written into generated-sources/ under the external package.
+        File generatedSources = new File(directory, "generated-sources");
+        File pureExternal = new File(generatedSources,
+                externalPackage.replace('.', '/') + "/PureExternal.java");
+        Assert.assertTrue(
+                "PureExternal.java should be written to generated-sources/ when addExternalAPI=true",
+                pureExternal.exists());
+
+        String src = new String(Files.readAllBytes(pureExternal.toPath()), StandardCharsets.UTF_8);
+        Assert.assertTrue(
+                "PureExternal.java should declare the external package",
+                src.contains("package " + externalPackage));
+        Assert.assertTrue(
+                "PureExternal.java should declare class PureExternal",
+                src.contains("class PureExternal"));
     }
 
     // --- error / catch block ---
