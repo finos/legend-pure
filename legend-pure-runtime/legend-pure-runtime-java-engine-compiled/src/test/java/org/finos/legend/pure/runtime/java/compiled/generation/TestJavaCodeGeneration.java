@@ -41,6 +41,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.VoidL
 import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataEager;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
+import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataPelt;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -81,7 +82,6 @@ public class TestJavaCodeGeneration
                 false,
                 null,
                 true,
-                true,
                 false,
                 false,
                 false,
@@ -89,7 +89,7 @@ public class TestJavaCodeGeneration
                 directory,
                 true,
                 new VoidLog());
-        executeDynamicNewTest(MetadataLazy::fromClassLoader, classesDirectory);
+        executeDynamicNewTest(cl -> MetadataPelt.fromClassLoader(cl, "platform"), classesDirectory);
     }
 
     @Test
@@ -108,7 +108,6 @@ public class TestJavaCodeGeneration
                 true,
                 externalPackage,
                 true,
-                true,
                 false,
                 false,
                 false,
@@ -116,6 +115,11 @@ public class TestJavaCodeGeneration
                 directory,
                 true,
                 new VoidLog());
+
+        // Monolithic generation now uses pelt serialization, which must already exist; so there should be no metadata generation
+        File metaDistributed = new File(directory, "metadata-distributed");
+        Assert.assertFalse("metadata-distributed directory should not be created", metaDistributed.exists());
+
         String externalClassName = externalPackage + ".PureExternal";
         ClassLoader previousClassLoader = Thread.currentThread().getContextClassLoader();
         try (TestClassLoader classLoader = new TestClassLoader(previousClassLoader, n -> externalClassName.equals(n) || n.startsWith(JavaPackageAndImportBuilder.rootPackage()), null, toURL(classesDirectory)))
@@ -153,7 +157,6 @@ public class TestJavaCodeGeneration
                 false,
                 null,
                 true,
-                false,  // useSingleDir=false so metadata goes to target/metadata-distributed
                 false,
                 false,
                 false,
@@ -185,7 +188,6 @@ public class TestJavaCodeGeneration
                 false,
                 null,
                 false,
-                true,
                 false,
                 false,
                 false,
@@ -212,7 +214,6 @@ public class TestJavaCodeGeneration
                 true,   // skip=true
                 false,
                 null,
-                true,
                 true,
                 false,
                 false,
@@ -251,7 +252,6 @@ public class TestJavaCodeGeneration
                     false,
                     false,
                     null,
-                    true,
                     true,
                     false,
                     false,
@@ -307,7 +307,6 @@ public class TestJavaCodeGeneration
                 false,
                 null,
                 false,   // generateMetadata=false - fastest path
-                false,
                 true,    // generateSources=true
                 false,   // generateTest=false: generated-sources/
                 true,    // preventJavaCompilation
@@ -353,7 +352,6 @@ public class TestJavaCodeGeneration
                 false,
                 null,
                 false,   // generateMetadata=false
-                false,
                 true,    // generateSources=true
                 true,    // generateTest=true: generated-test-sources/
                 true,    // preventJavaCompilation
@@ -445,7 +443,6 @@ public class TestJavaCodeGeneration
                 false,
                 false,
                 false,
-                false,
                 true,
                 classesDir,
                 directory,
@@ -473,7 +470,6 @@ public class TestJavaCodeGeneration
                 false,
                 false,
                 null,
-                false,
                 false,
                 false,
                 false,
