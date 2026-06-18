@@ -17,12 +17,14 @@ package org.finos.legend.pure.maven.javaCompiled;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.finos.legend.pure.maven.shared.MojoTestSupport;
+import org.finos.legend.pure.runtime.java.compiled.generation.JavaSourceCodeGenerator;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaCodeGeneration;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import javax.tools.JavaFileObject;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -179,22 +181,23 @@ public class TestPureCompiledJarMojo
     }
 
     @Test
-    public void testExecute_addExternalAPI_doesNotThrow() throws Exception
+    public void testExecute_addExternalAPI() throws Exception
     {
         File targetDir  = TMP.newFolder("exec-extapi-target");
         File classesDir = new File(targetDir, "classes");
-        classesDir.mkdir();
 
+        String externalAPIPackage = "org.finos.legend.pure.generated";
         PureCompiledJarMojo mojo = buildMojo(targetDir, classesDir, setOf("platform"));
         setField(mojo, "addExternalAPI",    true);
-        setField(mojo, "externalAPIPackage", "org.finos.legend.pure.generated");
+        setField(mojo, "externalAPIPackage", externalAPIPackage);
+        setField(mojo, "generateSources", true);
+        setField(mojo, "preventJavaCompilation", false);
         mojo.execute();
 
-        try (Stream<Path> stream = Files.walk(targetDir.toPath()))
-        {
-            long count = stream.filter(Files::isRegularFile).count();
-            Assert.assertTrue("addExternalAPI=true should produce output", count > 0);
-        }
+        Path expectedSource = targetDir.toPath().resolve("generated-sources/" + externalAPIPackage.replace('.', '/') + "/" + JavaSourceCodeGenerator.EXTERNAL_FUNCTIONS_CLASS_NAME + JavaFileObject.Kind.SOURCE.extension);
+        Assert.assertTrue(expectedSource.toString(), Files.exists(expectedSource));
+        Path expectedClass = classesDir.toPath().resolve(externalAPIPackage.replace('.', '/') + "/" + JavaSourceCodeGenerator.EXTERNAL_FUNCTIONS_CLASS_NAME + JavaFileObject.Kind.CLASS.extension);
+        Assert.assertTrue(expectedClass.toString(), Files.exists(expectedClass));
     }
 
     @Test

@@ -51,6 +51,7 @@ import org.junit.rules.TemporaryFolder;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -236,6 +237,31 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
         Generate generate = generator.generateOnly("test", false, sourcesDir);
         Assert.assertFalse(generate.getJavaSourcesByGroup().get("test").stream().filter(s -> s.toUri().getPath().equals("/org/finos/legend/pure/generated/test_standalone_tests.java")).collect(Collectors.toList()).get(0).getCode().contains("Root_test_standalone_simplePureTest__Boolean_1_"));
         Assert.assertTrue(generate.getJavaSourcesByGroup().get("test").stream().filter(s -> s.toUri().getPath().equals("/org/finos/legend/pure/generated/test_standalone_tests.java")).collect(Collectors.toList()).get(0).getCode().contains("Root_test_standalone_simplePureTestWithApplication__Boolean_1_"));
+    }
+
+    @Test
+    public void testExternalizableApiIsWrittenToDisk() throws Exception
+    {
+        String externalPackage = "org.finos.legend.pure.runtime.java.compiled";
+        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), true, externalPackage, new VoidLog());
+        Path rootFolder = TMP.newFolder().toPath();
+        Path sourcesDir = Files.createDirectories(rootFolder.resolve("src").resolve("java"));
+
+        Generate generate = generator.generateOnly(true, sourcesDir);
+
+        // The externalizable API source is always produced in memory ...
+        Assert.assertNotEquals(Lists.immutable.empty(), generate.getExternalizableSources());
+
+        // ... and, because writeJavaSourcesToDisk=true, it must also be written to disk.
+        Path pureExternal = sourcesDir.resolve(externalPackage.replace('.', '/') + "/PureExternal.java");
+        Assert.assertTrue("PureExternal.java should be written to disk when writeJavaSourcesToDisk=true", Files.exists(pureExternal));
+
+        String code = new String(Files.readAllBytes(pureExternal), StandardCharsets.UTF_8);
+        Assert.assertTrue("PureExternal.java should declare the external package", code.contains("package " + externalPackage));
+        Assert.assertTrue("PureExternal.java should declare class PureExternal", code.contains("class PureExternal"));
+        // The <<access.externalizable>> functions from the fixture must be exposed by the generated API
+        Assert.assertTrue("PureExternal.java should expose joinWithCommas", code.contains("joinWithCommas"));
+        Assert.assertTrue("PureExternal.java should expose testWithReflection", code.contains("testWithReflection"));
     }
 
     @Test
