@@ -243,15 +243,29 @@ Trade : Relational
 
 ## 5. Association mapping
 
-Maps an `Association` (bidirectional relationship) to its relational join.
+### Overview
+
+An **association mapping** maps both directions of a Pure `Association` to a
+relational join in a single declaration. It is written as a top-level element
+inside a `Mapping`, using the **association name** (not a class name) followed
+by `: Relational { AssociationMapping ( ... ) }`.
 
 ```pure
+###Pure
+import my::model::*;
+
+Association my::model::PersonFirm      // bidirectional relationship
+{
+    firm      : Firm[1];
+    employees : Person[*];
+}
+
 ###Mapping
 import my::model::*;
 
 Mapping my::mappings::PersonFirmMapping
 (
-    Person : Relational
+    Person[per1] : Relational
     {
         scope([myDb]PersonTable)
         (
@@ -260,7 +274,7 @@ Mapping my::mappings::PersonFirmMapping
         )
     }
 
-    Firm : Relational
+    Firm[fir1] : Relational
     {
         scope([myDb]FirmTable)
         (
@@ -269,16 +283,279 @@ Mapping my::mappings::PersonFirmMapping
         )
     }
 
-    PersonFirm : Relational          // the Association name
+    PersonFirm : Relational              // ← association name, not a class name
     {
         AssociationMapping
         (
-            person : [myDb]@PersonFirmJoin,
-            firm   : [myDb]@PersonFirmJoin
+            employees [fir1, per1] : [myDb]@PersonFirmJoin,   // Firm → Person
+            firm      [per1, fir1] : [myDb]@PersonFirmJoin    // Person → Firm
         )
     }
 )
 ```
+
+### Syntax reference
+
+```
+<AssociationName> : Relational
+{
+    AssociationMapping
+    (
+        <propertyName> [<sourceSetId>, <targetSetId>] : [<Database>]@<JoinName>,
+        <propertyName> [<sourceSetId>, <targetSetId>] : [<Database>]@<JoinName>
+    )
+}
+```
+
+| Part | Description |
+|------|-------------|
+| `<AssociationName>` | The fully-qualified (or imported) name of the `Association` defined in `###Pure`. |
+| `AssociationMapping ( ... )` | Required keyword block — the `: Relational { }` wrapper alone does not declare a class mapping; the `AssociationMapping` keyword identifies this as an association mapping. |
+| `<propertyName>` | One of the two property names declared on the `Association`. Both must be listed. |
+| `[<sourceSetId>, <targetSetId>]` | Optional when each class has exactly one mapping. Required when either class is mapped more than once (see [§12](#12-mapping-set-ids--the-full-reference)). |
+| `[<Database>]@<JoinName>` | The relational join to traverse. Both directions typically use the same join; the engine walks it in the appropriate direction for each property. |
+
+### The `[sourceId, targetId]` qualifier
+
+Each property entry can carry an optional `[sourceId, targetId]` qualifier that
+tells the engine which pair of class mappings this entry connects:
+
+```pure
+employees [fir1, per1] : [myDb]@PersonFirmJoin
+//         ↑      ↑
+//         source  target
+//         (Firm)  (Person)
+```
+
+- `sourceId` — the set ID of the class mapping for the **owning side** (the
+  class that carries this property).
+- `targetId` — the set ID of the class mapping for the **return type** of this
+  property.
+
+**When `[sourceId, targetId]` can be omitted:** if every class involved in the
+association has exactly one class mapping within scope (including included
+mappings), the compiler assigns the default set IDs automatically and uses them
+to wire up the association.
+
+**How the default set ID is calculated:** take the fully-qualified class name and
+replace every `::` separator with `_`:
+
+| Class definition | Default set ID |
+|------------------|----------------|
+| `Class Person` (root package) | `Person` |
+| `Class other::Person` | `other_Person` |
+| `Class my::model::Person` | `my_model_Person` |
+
+This is a **compile-time derivation from the class's location in the package
+tree** — `import` statements have no effect on it. If you write
+`import my::model::*` and refer to the class as just `Person`, its default set ID
+is still `my_model_Person`.
+
+```pure
+// Class other::Person and other::Firm — each mapped exactly once.
+// Compiler derives sourceId "other_Firm" and targetId "other_Person"
+// for employees, and the reverse for firm.
+PersonFirm : Relational
+{
+    AssociationMapping
+    (
+        employees : [myDb]@PersonFirmJoin,   // equivalent to employees [other_Firm, other_Person]
+        firm      : [myDb]@PersonFirmJoin    // equivalent to firm      [other_Person, other_Firm]
+    )
+}
+```
+
+**When `[sourceId, targetId]` is required:** any time the default set ID (the
+FQN-with-`_` derivation) does not match an actual class mapping ID in scope.
+This happens in two situations:
+
+**Case 1 — you gave your class mapping a custom ID.**
+Even with a single mapping per class, an explicit `[myId]` means the default
+derived ID no longer matches. If you write `Person[per1]`, the default would
+be `other_Person`, which does not exist. The qualifier is required:
+
+```pure
+Mapping my::M
+(
+    Firm  [fir1] : Relational { scope([myDb]FirmTable)   ( legalName : legal_name ) }
+    Person[per1] : Relational { scope([myDb]PersonTable) ( name : name ) }
+
+    // WRONG — compiler derives IDs "other_Firm" and "other_Person", neither exists
+    PersonFirm : Relational
+    {
+        AssociationMapping
+        (
+            employees : [myDb]@PersonFirmJoin,   // compile error
+            firm      : [myDb]@PersonFirmJoin    // compile error
+        )
+    }
+
+    // CORRECT — reference the actual custom IDs
+    PersonFirm : Relational
+    {
+        AssociationMapping
+        (
+            employees [fir1, per1] : [myDb]@PersonFirmJoin,
+            firm      [per1, fir1] : [myDb]@PersonFirmJoin
+        )
+    }
+)
+```
+
+**Case 2 — the same class is mapped more than once.**
+Each class mapping gets its own custom ID; the association mapping needs one
+entry per (source, target) pair that must be navigable. A common scenario is
+mapping the same domain class against two separate regional databases:
+
+```pure
+###Mapping
+import my::model::*;
+
+Mapping my::mappings::PersonFirmMapping
+(
+    // Firm is mapped once globally
+    Firm[fir1] : Relational
+    {
+        scope([GlobalDb]FirmTable) ( legalName : legal_name )
+    }
+
+    // Person is mapped separately per region
+    Person[per_emea] : Relational
+    {
+        scope([EmeaDb]PersonTable) ( name : name )
+    }
+    Person[per_americas] : Relational
+    {
+        scope([AmericasDb]PersonTable) ( name : name )
+    }
+
+    // One entry per (source, target) pair that must be navigable.
+    // Four entries total: two directions × two Person mappings.
+    PersonFirm : Relational
+    {
+        AssociationMapping
+        (
+            employees [fir1, per_emea]         : [EmeaDb]@PersonFirmJoin,
+            firm      [per_emea, fir1]          : [EmeaDb]@PersonFirmJoin,
+            employees [fir1, per_americas]      : [AmericasDb]@PersonFirmJoin,
+            firm      [per_americas, fir1]      : [AmericasDb]@PersonFirmJoin
+        )
+    }
+)
+```
+
+The exact compiler error when a set ID cannot be found is:
+*"Unable to find source class mapping (id:other_Person) for property 'employees'
+in Association mapping 'PersonFirm'. Make sure that you have specified a valid
+Class mapping id as the source id and target id, using the syntax
+`property[sourceId, targetId]: ...`."*
+
+### Association mapping vs. inline join in a class mapping
+
+Both approaches can navigate a join, but they serve different purposes:
+
+| | **Inline join** (property in class mapping) | **`AssociationMapping`** |
+|---|---|---|
+| Domain model | Works whether or not an `Association` exists | Requires a named `Association` in `###Pure` |
+| Directionality | Maps **one direction** only | Maps **both directions** in one block |
+| Where it lives | Inside the class mapping that owns the property | Top-level element beside the class mappings |
+| Symmetry | You manually repeat the join expression in each class mapping | One block keeps both directions consistent |
+| Conflict | Cannot be combined with `AssociationMapping` for the same property | Cannot be combined with an inline mapping of the same property |
+
+**Use an inline join** when:
+- The relationship is modelled as a plain property on the class (no `Association`
+  declaration), **or**
+- You only need to navigate one direction of a relationship, **or**
+- You want the join expression co-located with the other column mappings for that
+  class.
+
+```pure
+// Inline join — only maps Person.firm; the reverse Firm.employees is not mapped
+Person : Relational
+{
+    scope([myDb]PersonTable)
+    (
+        name : name,
+        firm : [myDb]@PersonFirmJoin   // inline join for one direction
+    )
+}
+```
+
+**Use `AssociationMapping`** when:
+- The domain model declares an explicit bidirectional `Association`, **and**
+- Both directions (`employees` on `Firm` and `firm` on `Person`) must be
+  navigable in queries, **or**
+- You want to separate relationship-mapping concerns from primitive-property
+  mapping (especially useful when composing mappings via `include`).
+
+### Compiler constraints
+
+1. **A property cannot be mapped twice.** If `firm` is already mapped inline in
+   the `Person` class mapping, listing `firm` in an `AssociationMapping` block
+   causes a compile error:
+   *"Property 'firm' is mapped twice, once in Association mapping 'PersonFirm'
+   and once in Class mapping 'Person'. Only one mapping is allowed."*
+
+2. **The target set ID must not be an embedded mapping.** Embedded class mappings
+   (see [§9](#9-embedded-mapping)) may only appear as the **source**, not the
+   target, of an association mapping property entry:
+   *"Invalid target class mapping for property 'X' in Association mapping 'Y'.
+   Target 'Z' is an embedded class mapping, embedded mappings are only allowed
+   to be the source in an Association Mapping."*
+
+3. **Both property names must be listed.** The association has exactly two
+   properties; the mapping block must contain an entry for each.
+
+### Composing association mappings with `include`
+
+The class mappings for both sides of the association do not need to live in the
+same `Mapping` element as the `AssociationMapping`. Use `include` to bring in
+the class mappings, then declare the association mapping in the including
+mapping:
+
+```pure
+###Mapping
+Mapping my::mappings::PersonMapping
+(
+    Person[per1] : Relational
+    {
+        name : [myDb]PersonTable.name
+    }
+)
+
+###Mapping
+Mapping my::mappings::FirmMapping
+(
+    Firm[fir1] : Relational
+    {
+        legalName : [myDb]FirmTable.legal_name
+    }
+)
+
+###Mapping
+Mapping my::mappings::FullMapping
+(
+    include my::mappings::PersonMapping   // per1 is now visible
+    include my::mappings::FirmMapping     // fir1 is now visible
+
+    PersonFirm : Relational
+    {
+        AssociationMapping
+        (
+            employees [fir1, per1] : [myDb]@PersonFirmJoin,
+            firm      [per1, fir1] : [myDb]@PersonFirmJoin
+        )
+    }
+)
+```
+
+The `[sourceId, targetId]` qualifiers are required here because the class
+mappings come from included mappings and the compiler must unambiguously resolve
+which set implementations are being connected.
+
+> **Note:** for cross-store or model-to-model associations, use an `XStore`
+> association mapping instead of `Relational AssociationMapping` — see
+> [§7 XStore](#7-xstore-cross-store-mapping).
 
 ---
 
