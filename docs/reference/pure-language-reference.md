@@ -798,6 +798,30 @@ and require parentheses:
 !$x->isEmpty() || ($x->toOne() > 5)
 ```
 
+#### Function-call form: `and()` / `or()`
+
+`&&` and `||` are syntactic sugar for the native functions
+`meta::pure::functions::boolean::and` and `meta::pure::functions::boolean::or`.
+You can call them directly in either direct or arrow style:
+
+```pure
+// Direct function call
+and($x->isNotEmpty(), $y->isNotEmpty())
+or($x->isEmpty(), $y->isEmpty())
+
+// Arrow style
+$x->isNotEmpty()->and($y->isNotEmpty())
+$x->isEmpty()->or($y->isEmpty())
+```
+
+Both forms are **short-circuit**: `and(false, expr2)` never evaluates `expr2`;
+`or(true, expr2)` never evaluates `expr2`.
+
+> **Prefer `&&` / `||`** — they are the canonical grammar form (defined via
+> `PCT.grammarDoc` on the native functions) and read more naturally. Reserve the
+> function-call form for cases where the expression is being passed as a value
+> or invoked reflectively (e.g. `and_Boolean_1__Boolean_1__Boolean_1_->eval(...)`).
+
 ### match
 
 `match` is Pure's **type-dispatch** function. It tests a value against an ordered
@@ -1097,22 +1121,160 @@ to be date-aware. Three stereotypes are available:
 
 | Stereotype | Date dimension | Generated `getAll` overload |
 |-----------|---------------|---------------------------|
-| `<<temporal.businesstemporal>>` | Business date | `getAll(Product, %2024-01-01)` |
-| `<<temporal.processingtemporal>>` | Processing date | `getAll(Product, processingDate)` |
-| `<<temporal.bitemporal>>` | Both | `getAll(Product, processingDate, businessDate)` |
+| `<<temporal.businesstemporal>>` | Business date | `Product.all(%2024-01-01)` |
+| `<<temporal.processingtemporal>>` | Processing date | `Product.all(%2024-01-01)` |
+| `<<temporal.bitemporal>>` | Both | `Product.all(%9999-12-31, %2024-01-01)` |
 
-Querying a milestoned class:
+### Supplying the date: literals, variables, and `today()`
+
+The date parameter to `all(...)` is any `Date[1]` expression — not just a literal.
+
+**Date literal (hardcoded):**
 
 ```pure
-// All current versions at a given business date
+Product.all(%2024-01-15)
+    ->filter(p | $p.price > 100.0)
+```
+
+**Variable (the common pattern when the date is a parameter or computed):**
+
+```pure
+function meta::mypackage::getActiveProducts(asOf: StrictDate[1]): Product[*]
+{
+    Product.all($asOf)
+        ->filter(p | $p.price > 100.0)
+}
+```
+
+Storing the date in a `let` binding works identically:
+
+```pure
+function meta::mypackage::getActiveProducts(): Product[*]
+{
+    let asOf = %2024-01-15;
+    Product.all($asOf)
+        ->filter(p | $p.price > 100.0);
+}
+```
+
+**`today()` — current date at runtime:**
+
+`today()` is available in a full Legend deployment (it is defined in
+`legend-engine`, not in this `legend-pure` repository). Because `today()`
+returns `StrictDate[1]` — a subtype of `Date[1]` — it is valid wherever a
+date parameter is expected:
+
+```pure
+// All products that are active as of today
+Product.all(today())
+    ->filter(p | $p.price > 100.0)
+```
+
+> **Note:** `today()` is not defined in `legend-pure` itself — it is provided
+> by `legend-engine`. If you are working purely within this repository's test
+> harness, use a date literal or a `StrictDate[1]` parameter instead.
+
+### Querying: `all`, `allVersions`, `allVersionsInRange`
+
+```pure
+// All versions active at a given business date (most common)
 Product.all(%2024-01-01)
 
-// All versions in a date range
-Product.allVersionsInRange(%2023-01-01, %2024-01-01)
+// All versions active as of today (requires legend-engine's today())
+Product.all(today())
 
-// All versions (no date filter)
+// All versions across all time — no date filter
 Product.allVersions()
+
+// All versions whose effectivity overlaps a date range
+Product.allVersionsInRange(%2023-01-01, %2024-01-01)
 ```
+
+`%latest` is a special constant meaning "the current/open-ended record". It is
+only valid as an argument to **milestoned property navigation**, not to `all()`:
+
+```pure
+// Valid — %latest on a property access
+order.product(%latest).name
+
+// NOT valid — %latest is not accepted by all()
+Product.all(%latest)   // compile error
+```
+
+### Date propagation through milestoned property chains
+
+When the root class is milestoned, the date supplied to `all(...)` propagates
+automatically through subsequent milestoned property accesses of the **same
+temporal dimension**. You do not need to repeat the date at every step:
+
+```pure
+// Product, Classification, and Exchange are all <<temporal.businesstemporal>>
+// The %2024-01-15 date from all(...) propagates to .classification and .exchange
+Product.all(%2024-01-15)
+    ->map(p | $p.classification.exchange.exchangeName)
+```
+
+This propagation works through `filter`, `map`, `project`, and similar
+collection functions. Using a variable makes the intent explicit when the date
+is used in multiple places:
+
+```pure
+function meta::mypackage::getExchangeNames(asOf: StrictDate[1]): String[*]
+{
+    Product.all($asOf)
+        ->map(p | $p.classification.exchange.exchangeName)
+}
+```
+
+### Non-milestoned root with a milestoned nested property
+
+When the **root class is not milestoned**, `all()` takes no date argument.
+However, if a property it navigates to points to a **milestoned class**, that
+property still requires a date — nothing is propagated because there is no date
+context at the root.
+
+```pure
+Class meta::mypackage::Order              // NOT milestoned
+{
+    product : meta::mypackage::Product[1];
+}
+
+Class <<temporal.businesstemporal>> meta::mypackage::Product
+{
+    name : String[1];
+}
+```
+
+**Wrong — no date context from the non-milestoned root:**
+
+```pure
+// COMPILE ERROR:
+// "The property 'product' is milestoned with stereotypes: [ businesstemporal ]
+//  and requires date parameters: [ businessDate ]"
+Order.all()
+    ->map(o | $o.product.name)
+```
+
+**Correct — supply the date explicitly on the milestoned property:**
+
+```pure
+Order.all()
+    ->map(o | $o.product(%2024-01-15).name)
+```
+
+**Correct — use a variable so the date is written once:**
+
+```pure
+function meta::mypackage::getOrderProductNames(asOf: StrictDate[1]): String[*]
+{
+    Order.all()
+        ->map(o | $o.product($asOf).name)
+}
+```
+
+The explicit `($asOf)` call is the **qualified property** form generated by the
+milestoning compiler transformation — it is what you write when there is no
+milestoning context to propagate from.
 
 See [Domain Concepts — Milestoning](../architecture/domain-concepts.md#milestoning-bitemporal-compiler-transformation)
 for the compiler implementation details.
