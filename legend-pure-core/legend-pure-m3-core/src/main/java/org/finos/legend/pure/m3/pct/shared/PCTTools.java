@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m3.pct.shared;
 
-import java.util.Set;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotationAccessor;
@@ -22,6 +21,8 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+
+import java.util.Set;
 
 import static org.junit.Assert.fail;
 
@@ -107,29 +108,32 @@ public class PCTTools
 
     public static String getMessageFromError(Throwable e)
     {
-        String message = e.getMessage();
-        if (message == null)
+        if (e instanceof NullPointerException)
         {
             return "NullPointer exception";
         }
-        else
+        String message = e.getMessage();
+        if (message == null)
         {
-            int expectedStarts = message.indexOf("expected: '");
-            int expectedEnds = message.indexOf("'\nactual:");
-            int actualStarts = message.indexOf("'", expectedEnds);
-            int actualEnds = message.lastIndexOf("'");
-
-            if (expectedStarts >= 0 && actualStarts > 0 && expectedEnds > 0 && actualEnds > 0)
-            {
-                String before = message.substring(0, expectedStarts);
-                String expectedValue = message.substring(expectedStarts, expectedEnds);
-                String actualValue = message.substring(actualStarts, actualEnds);
-                String after = message.substring(actualEnds);
-                return before + expectedValue.replace("\\n", "\n") + actualValue.replace("\\n", "\n") + after;
-            }
-
-            return message;
+            // Maintaining this for backward compatibility. However, this is deceptive since we know this is not a
+            // NullPointerException. Consider returning something more informative, like e.getClass().getName().
+            return "NullPointer exception";
         }
+
+        int expectedStarts = message.indexOf("expected: '");
+        int expectedEnds = message.indexOf("'\nactual:");
+        int actualStarts = message.indexOf("'", expectedEnds);
+        int actualEnds = message.lastIndexOf("'");
+        if (expectedStarts >= 0 && actualStarts > 0 && expectedEnds > 0 && actualEnds > 0)
+        {
+            String before = message.substring(0, expectedStarts);
+            String expectedValue = message.substring(expectedStarts, expectedEnds);
+            String actualValue = message.substring(actualStarts, actualEnds);
+            String after = message.substring(actualEnds);
+            return before + expectedValue.replace("\\n", "\n") + actualValue.replace("\\n", "\n") + after;
+        }
+
+        return message;
     }
 
     private static String cleanMessage(Throwable e)
