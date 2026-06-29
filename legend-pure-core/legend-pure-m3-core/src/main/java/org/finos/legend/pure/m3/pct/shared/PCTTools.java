@@ -15,16 +15,16 @@
 package org.finos.legend.pure.m3.pct.shared;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.eclipse.collections.api.factory.Sets;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotationAccessor;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.junit.Assert;
 
 import java.util.Set;
-
-import static org.junit.Assert.fail;
 
 public class PCTTools
 {
@@ -39,11 +39,10 @@ public class PCTTools
 
     public static Set<String> getPCTQualifiers(CoreInstance testFunction, ProcessorSupport processorSupport)
     {
-        return ((AnnotatedElement) testFunction)
-                ._stereotypes()
-                .select(x -> isTestQualifierProfile(x._profile(), processorSupport))
-                .collect(AnnotationAccessor::_value)
-                .toSet();
+        return ((AnnotatedElement) testFunction)._stereotypes().collectIf(
+                x -> isTestQualifierProfile(x._profile(), processorSupport),
+                AnnotationAccessor::_value,
+                Sets.mutable.empty());
     }
 
     public static boolean isTestQualifierProfile(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile profile, ProcessorSupport processorSupport)
@@ -87,8 +86,7 @@ public class PCTTools
             else
             {
                 debugHelper(testFunction, pctExecutor, true, e);
-                fail("The PCT test runner expected an error containing: \"" + message + "\" but the the error was: \"" + getMessageFromError(e).replace("\"", "\\\"").replace("\n", "\\n") + "\"\nTrace:\n" + ExceptionUtils.getStackTrace(e))
-                ;
+                Assert.fail("The PCT test runner expected an error containing: \"" + message + "\" but the the error was: \"" + getMessageFromError(e).replace("\"", "\\\"").replace("\n", "\\n") + "\"\nTrace:\n" + ExceptionUtils.getStackTrace(e));
             }
         }
     }
@@ -139,7 +137,7 @@ public class PCTTools
     private static String cleanMessage(Throwable e)
     {
         String message = getMessageFromError(e);
-        int quotes = message.indexOf("\"");
+        int quotes = message.indexOf('"');
         boolean shouldCut = quotes > -1 && (message.contains("Execution error at ") || message.contains("Assert failure at "));
         message = shouldCut ? message.substring(quotes) : message;
         return message.replace("\"", "\\\"").replace("\n", "\\n");
@@ -148,7 +146,7 @@ public class PCTTools
     public static void displayExpectedErrorFailMessage(String message, CoreInstance testFunction, String pctExecutor)
     {
         debugHelper(testFunction, pctExecutor, false, null);
-        fail("The PCT test runner expected an error containing: \"" + message + "\" but the test succeeded!");
+        Assert.fail("The PCT test runner expected an error containing: \"" + message + "\" but the test succeeded!");
     }
 
     public static boolean isTest(CoreInstance node, ProcessorSupport processorSupport)
