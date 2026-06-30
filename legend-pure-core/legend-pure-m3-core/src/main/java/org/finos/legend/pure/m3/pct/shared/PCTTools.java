@@ -14,16 +14,17 @@
 
 package org.finos.legend.pure.m3.pct.shared;
 
-import java.util.Set;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.eclipse.collections.api.factory.Sets;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotationAccessor;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.junit.Assert;
 
-import static org.junit.Assert.fail;
+import java.util.Set;
 
 public class PCTTools
 {
@@ -38,11 +39,10 @@ public class PCTTools
 
     public static Set<String> getPCTQualifiers(CoreInstance testFunction, ProcessorSupport processorSupport)
     {
-        return ((AnnotatedElement) testFunction)
-                ._stereotypes()
-                .select(x -> isTestQualifierProfile(x._profile(), processorSupport))
-                .collect(AnnotationAccessor::_value)
-                .toSet();
+        return ((AnnotatedElement) testFunction)._stereotypes().collectIf(
+                x -> isTestQualifierProfile(x._profile(), processorSupport),
+                AnnotationAccessor::_value,
+                Sets.mutable.empty());
     }
 
     public static boolean isTestQualifierProfile(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile profile, ProcessorSupport processorSupport)
@@ -86,8 +86,7 @@ public class PCTTools
             else
             {
                 debugHelper(testFunction, pctExecutor, true, e);
-                fail("The PCT test runner expected an error containing: \"" + message + "\" but the the error was: \"" + getMessageFromError(e).replace("\"", "\\\"").replace("\n", "\\n") + "\"\nTrace:\n" + ExceptionUtils.getStackTrace(e))
-                ;
+                Assert.fail("The PCT test runner expected an error containing: \"" + message + "\" but the the error was: \"" + getMessageFromError(e).replace("\"", "\\\"").replace("\n", "\\n") + "\"\nTrace:\n" + ExceptionUtils.getStackTrace(e));
             }
         }
     }
@@ -107,35 +106,38 @@ public class PCTTools
 
     public static String getMessageFromError(Throwable e)
     {
-        String message = e.getMessage();
-        if (message == null)
+        if (e instanceof NullPointerException)
         {
             return "NullPointer exception";
         }
-        else
+        String message = e.getMessage();
+        if (message == null)
         {
-            int expectedStarts = message.indexOf("expected: '");
-            int expectedEnds = message.indexOf("'\nactual:");
-            int actualStarts = message.indexOf("'", expectedEnds);
-            int actualEnds = message.lastIndexOf("'");
-
-            if (expectedStarts >= 0 && actualStarts > 0 && expectedEnds > 0 && actualEnds > 0)
-            {
-                String before = message.substring(0, expectedStarts);
-                String expectedValue = message.substring(expectedStarts, expectedEnds);
-                String actualValue = message.substring(actualStarts, actualEnds);
-                String after = message.substring(actualEnds);
-                return before + expectedValue.replace("\\n", "\n") + actualValue.replace("\\n", "\n") + after;
-            }
-
-            return message;
+            // Maintaining this for backward compatibility. However, this is deceptive since we know this is not a
+            // NullPointerException. Consider returning something more informative, like e.getClass().getName().
+            return "NullPointer exception";
         }
+
+        int expectedStarts = message.indexOf("expected: '");
+        int expectedEnds = message.indexOf("'\nactual:");
+        int actualStarts = message.indexOf("'", expectedEnds);
+        int actualEnds = message.lastIndexOf("'");
+        if (expectedStarts >= 0 && actualStarts > 0 && expectedEnds > 0 && actualEnds > 0)
+        {
+            String before = message.substring(0, expectedStarts);
+            String expectedValue = message.substring(expectedStarts, expectedEnds);
+            String actualValue = message.substring(actualStarts, actualEnds);
+            String after = message.substring(actualEnds);
+            return before + expectedValue.replace("\\n", "\n") + actualValue.replace("\\n", "\n") + after;
+        }
+
+        return message;
     }
 
     private static String cleanMessage(Throwable e)
     {
         String message = getMessageFromError(e);
-        int quotes = message.indexOf("\"");
+        int quotes = message.indexOf('"');
         boolean shouldCut = quotes > -1 && (message.contains("Execution error at ") || message.contains("Assert failure at "));
         message = shouldCut ? message.substring(quotes) : message;
         return message.replace("\"", "\\\"").replace("\n", "\\n");
@@ -144,7 +146,7 @@ public class PCTTools
     public static void displayExpectedErrorFailMessage(String message, CoreInstance testFunction, String pctExecutor)
     {
         debugHelper(testFunction, pctExecutor, false, null);
-        fail("The PCT test runner expected an error containing: \"" + message + "\" but the test succeeded!");
+        Assert.fail("The PCT test runner expected an error containing: \"" + message + "\" but the test succeeded!");
     }
 
     public static boolean isTest(CoreInstance node, ProcessorSupport processorSupport)
