@@ -69,17 +69,22 @@ jobs:
         with:
           theme: dark
 
-      - name: Build + Test
+      - name: Build
         if: (github.repository != 'finos/legend-pure') || (github.ref != 'refs/heads/master')
-        run: mvn -B -e install -DargLine="-XX:MaxRAMPercentage=25.0" -DforkCount=3 -DreuseForks=true -Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports-aggregate -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat="yyyy-MM-dd HH:mm:ss.SSSZ"
         env:
-          MAVEN_OPTS: -XX:MaxRAMPercentage=25.0
+          MAVEN_OPTS: -XX:MaxRAMPercentage=80.0
+        run: mvn -B -e -DskipTests=true -T 4 install -Dorg.slf4j.simpleLogger.showThreadName=true
 
-      - name: Build + Test + Sonar
+      - name: Build + Sonar
         if: (github.repository == 'finos/legend-pure') && (github.ref == 'refs/heads/master')
-        run: mvn -B -e install -Psonar -DargLine="-XX:MaxRAMPercentage=25.0" -DforkCount=3 -DreuseForks=true -Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports-aggregate -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat="yyyy-MM-dd HH:mm:ss.SSSZ"
+        env:
+          MAVEN_OPTS: -XX:MaxRAMPercentage=80.0
+        run: mvn -B -e -DskipTests=true -T 4 -P sonar install -Dorg.slf4j.simpleLogger.showThreadName=true
+
+      - name: Test
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=25.0
+        run: mvn -B -e surefire:test -DargLine="-XX:MaxRAMPercentage=25.0" -DforkCount=3 -DreuseForks=true -Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports-aggregate
 
       - name: Upload Test Results
         if: always()
