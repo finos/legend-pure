@@ -129,21 +129,35 @@ public class PureJavaCompiler
         }
 
         // source/target/release version
-        if ((sourceVersion != null) && (sourceVersion < 7))
+        int currentJavaVersion = getCurrentJavaVersion();
+        int resolvedVersion;
+        if (sourceVersion != null)
         {
-            throw new IllegalArgumentException("Source version must be at least 7, got: " + sourceVersion);
+            resolvedVersion = sourceVersion;
+            if (resolvedVersion < 7)
+            {
+                throw new IllegalArgumentException("Source version must be at least 7, got: " + sourceVersion);
+            }
         }
-        String versionString = (sourceVersion == null) ? "7" : sourceVersion.toString();
-        if ("7".equals(versionString) || getCurrentJavaVersion() <= 8)
+        else if (currentJavaVersion > 8)
+        {
+            resolvedVersion = currentJavaVersion;
+        }
+        else
+        {
+            resolvedVersion = 7;
+        }
+        if ((resolvedVersion == 7) || (currentJavaVersion <= 8))
         {
             // if source version is less than 8 or if this JVM is version 8 or older, we use -source and -target options
+            String versionString = Integer.toString(resolvedVersion);
             options.with("-source").with(versionString)
                     .with("-target").with(versionString);
         }
         else
         {
             // if this JVM is version 9 or newer, we use the --release option
-            options.with("--release").with(versionString);
+            options.with("--release").with(Integer.toString(resolvedVersion));
         }
         options.add("-XDuseUnsharedTable=true");
         return options;
