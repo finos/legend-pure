@@ -54,7 +54,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
         <maven.compiler.release>8</maven.compiler.release>
-        <java.version.range>[11,12),[17,18)</java.version.range>
+        <java.version.range>[11,12),[17,18),[21,22),[25,26)</java.version.range>
         <publish.server.id>central</publish.server.id>
 
         <!-- Dependency version -->

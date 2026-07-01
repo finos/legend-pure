@@ -51,7 +51,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: 17
+          java-version: 25
           java-package: jdk
           server-id: central
           server-username: CI_DEPLOY_USERNAME
@@ -118,7 +118,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk: [17, 8]
+        jdk: [25, 8]
     steps:
       - name: Download build output
         uses: actions/download-artifact@v7
@@ -148,7 +148,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: |
-            17
+            25
             8
 
       - name: Install project artifacts from this build
@@ -164,15 +164,15 @@ jobs:
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=25.0
         run: |
-          # Maven itself must run on a JDK the enforcer plugin accepts (17),
+          # Maven itself must run on a JDK the enforcer plugin accepts (25),
           # regardless of which JDK we want to run the tests on. The compiled
           # test classes already target Java 8 bytecode, so for the "8" leg
           # we just point Surefire's forked test JVM at the JDK 8 install.
-          export JAVA_HOME="$JAVA_HOME_17_X64"
+          export JAVA_HOME="$JAVA_HOME_25_X64"
           if [ "${{ matrix.jdk }}" = "8" ]; then
             TEST_JVM="$JAVA_HOME_8_X64/bin/java"
           else
-            TEST_JVM="$JAVA_HOME_17_X64/bin/java"
+            TEST_JVM="$JAVA_HOME_25_X64/bin/java"
           fi
           mvn -B -e surefire:test -Djvm="${TEST_JVM}" -DargLine="-XX:MaxRAMPercentage=25.0" -DforkCount=3 -DreuseForks=true -Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports-aggregate-jdk${{ matrix.jdk }}
 
