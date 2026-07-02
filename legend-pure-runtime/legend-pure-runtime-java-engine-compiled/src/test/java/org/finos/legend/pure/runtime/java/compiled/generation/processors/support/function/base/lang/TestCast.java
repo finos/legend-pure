@@ -60,7 +60,7 @@ public class TestCast extends AbstractTestCast
         }
         else
         {
-            String expectedMessage = JavaPackageAndImportBuilder.rootPackage() + ".Root_X_Impl incompatible with " + JavaPackageAndImportBuilder.rootPackage() + ".Root_Y";
+            String expectedMessage = JavaPackageAndImportBuilder.rootPackage() + ".Root_X_Impl cannot be cast to " + JavaPackageAndImportBuilder.rootPackage() + ".Root_Y";
             Assert.assertEquals(expectedMessage, message);
         }
     }
