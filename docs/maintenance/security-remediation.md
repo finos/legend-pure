@@ -23,7 +23,7 @@ public advisory databases. Contributions welcome: pick an unclaimed unit, follow
 | 2 | commons-io 2.7 → 2.16.1 | #80 (H) | ☐ |
 | 3 | classgraph 4.8.25 → 4.8.184 | #78 (M) | ☐ |
 | 4 | commons-lang3 3.5 → 3.18.0 | #83 (M) | ☐ |
-| 5 | checkstyle 8.25 → 9.3 | #57 (M) | ☐ |
+| 5 | checkstyle 8.25 → 8.29 | #57 (M) | ☐ |
 | 6 | jackson family 2.10.5 → 2.18.8 | #22 #52 #54 #82 #87 #89 #90 (H), #81 #84 #88 #91 (M) | ☐ |
 | 7 | h2 2.1.214 → 2.2.224 (test scope) | #79 (H) | ☐ |
 | — | **BLOCKED**: jackson #92 (CVE-2026-54515) — no released 2.x fix | #92 (M) | ⏳ watch |
@@ -50,6 +50,27 @@ order if needed, but 6 before 7 keeps the riskiest change last.
 4. Default verification recipe is `mvn clean install` (JDK 11 or 17,
    `MAVEN_OPTS=-Xmx4g`). PCT runs on both engines during a full build — that is the
    cross-engine regression net for all runtime-visible changes.
+
+## Version alignment with legend-shared 0.36.0-RC1
+
+The Legend stack is converging on a common set of fixed dependency versions via
+[legend-shared's `legend-shared-deps-update` branch](https://github.com/finos/legend-shared/tree/legend-shared-deps-update),
+publishing as **0.36.0-RC1**. legend-pure has **no dependency on legend-shared**
+(verified: zero references in any pom — legend-shared sits beside legend-engine in the
+stack, not below legend-pure), so this is version-number alignment, not a dependency
+on the RC. Where both repos manage the same library, this doc's targets match the RC
+BOM exactly:
+
+| Library | This doc | legend-shared 0.36.0-RC1 |
+|---|---|---|
+| jackson (core / databind / dataformat) | 2.18.8 (Unit 6) | 2.18.8 |
+| commons-lang3 | 3.18.0 (Unit 4) | 3.18.0 |
+| checkstyle | 8.29 (Unit 5) | 8.29 |
+
+The remaining units (bouncycastle/httpclient deletions, commons-io, classgraph, h2)
+cover libraries legend-shared's BOM does not manage; those targets are
+legend-pure-only decisions. If the RC's versions change before its final release,
+re-align before executing Units 4/5/6.
 
 ## Downstream / transitive context (applies to every unit)
 
@@ -172,8 +193,9 @@ not treat as errors. Optional follow-up (separate PR, not this unit): migrate th
 call sites to `org.apache.commons:commons-text`, which is already managed at 1.10.0 in
 this pom.
 
-3.18.0 is the CVE floor and keeps the delta minimal. 3.20.0 is latest — verify its Java
-baseline is still 8 before preferring it.
+3.18.0 is the CVE floor, keeps the delta minimal, and **matches legend-shared
+0.36.0-RC1 exactly** (see alignment section). Do not drift to 3.20.0 without
+re-aligning with legend-shared.
 
 **How.** Root `pom.xml` line ~68: `<commons-lang.version>3.5</commons-lang.version>` → `3.18.0`.
 
@@ -184,27 +206,66 @@ mvn clean install    # touches 4 modules — just run the full build
 
 ---
 
-## Unit 5 — checkstyle 8.25 → 9.3 (build-time only)
+## Unit 5 — checkstyle 8.25 → 8.29 (build-time only)
 
 **Why.** #57 (medium, CVE-2019-10782, XXE in checkstyle's config/import handling).
 Fixed ≥ 8.29. Checkstyle runs only inside the Maven build JVM and is never shipped in
-any artifact — zero runtime exposure; this closes the alert and modernizes the linter.
+any artifact — zero runtime exposure; this closes the alert.
 
-**Blast radius.** Build-only. The risk is behavioral: checkstyle 8.25 → 9.3 adds/changes
-checks, and **checkstyle failures fail the build at `verify`**. Expect possibly a
-handful of new violations to fix in code or to adjust in the checkstyle config. 9.3 is
-the last 9.x (runs fine on the build JDKs 11/17) and is the default bundled line for
-maven-checkstyle-plugin 3.6.0 (already in use here, line ~92), which minimizes plugin
-compatibility risk vs jumping to 10.x/11.x.
+**Blast radius.** Build-only, but **not a one-line bump** — it mandatorily includes a
+`checkstyle.xml` change (see below). Target **8.29** — the exact CVE floor and the
+version legend-shared 0.36.0-RC1 uses. maven-checkstyle-plugin 3.6.0 (already in use
+here, line ~92) is fully compatible. Optional later modernization: 9.3 (last 9.x,
+still the plugin's bundled line) — a separate PR if desired, not this unit.
 
-**How.** Root `pom.xml` line ~288 (inside the `maven-checkstyle-plugin` block):
-`com.puppycrawl.tools:checkstyle` `<version>8.25</version>` → `9.3`.
+**Mandatory config change — verified 2026-07-03.** Checkstyle **8.26** hardcoded a new
+`CustomImportOrder` violation ("Extra separation in import group") that fires on any
+blank line *inside* an import group. This repo's `checkstyle.xml` configures
+`CustomImportOrder` with **no `customImportOrderRules`**, so all imports collapse into a
+single group and every blank-line-separated import block trips the new check —
+**~700 pre-existing sites across ~25 modules** (m4 alone: 44). Because the check landed
+in 8.26 and the CVE floor is 8.29, **no CVE-fixing checkstyle version avoids it** — the
+version bump and a `checkstyle.xml` edit are inseparable. Empirically confirmed: 8.25
+builds clean; every path ≥ 8.29 fails at the first module's `verify` in ~20s until the
+config is adjusted.
+
+Two resolutions were tested:
+- **(Recommended) Suppress the new message repo-wide**, restoring pre-8.26 behavior.
+  Add a `SuppressionSingleFilter` at `Checker` scope (before `TreeWalker`):
+  ```xml
+  <module name="SuppressionSingleFilter">
+      <property name="checks" value="CustomImportOrder"/>
+      <property name="message" value="Extra separation in import group"/>
+  </module>
+  ```
+  With `checkstyle:check@verify` this yields **0 violations repo-wide**. Rationale:
+  with no `customImportOrderRules` the `CustomImportOrder` module was already near-vacuous
+  under 8.25 (single group = nothing to order), so this restores the prior effective
+  behavior for this one message while leaving all other `CustomImportOrder` messages live.
+  **Cost / policy note:** the suppression is repo-wide and permanent — future
+  blank-line-in-imports will also go uncaught. This is a linter-policy decision on a
+  shared FINOS artifact and should be signed off by maintainers, not slipped in as a
+  mechanical fix.
+- **(Alternative) Reformat ~700 sites** to remove blank lines within import blocks (or
+  declare explicit `customImportOrderRules` groups). Rejected for this unit: it's a
+  huge diff that contradicts the plan's minimal-delta rule, and the repo mixes two
+  import-ordering styles so no single grouping rule satisfies all files cleanly
+  (tested: `THIRD_PARTY_PACKAGE###STANDARD_JAVA_PACKAGE` produced 270 violations).
+
+**How.**
+1. Root `pom.xml` line ~288 (inside the `maven-checkstyle-plugin` block):
+   `com.puppycrawl.tools:checkstyle` `<version>8.25</version>` → `8.29`.
+2. `checkstyle.xml`: add the `SuppressionSingleFilter` block shown above.
 
 **Verify.**
 ```bash
-mvn checkstyle:check          # fast signal on new violations
-mvn verify -DskipTests        # full checkstyle gate
-mvn clean install             # final
+# Note: bare `mvn checkstyle:check` does NOT use this repo's checkstyle.xml — the
+# config is bound only to the verify-phase execution (id "verify"), so the bare goal
+# falls back to checkstyle's built-in Sun config and reports thousands of bogus
+# violations. Use the execution id explicitly for a fast signal:
+mvn checkstyle:check@verify    # fast, uses repo checkstyle.xml — expect 0 violations
+mvn verify -DskipTests         # full checkstyle gate
+mvn clean install              # final
 ```
 
 ---
@@ -247,7 +308,9 @@ Transitive coupling — this is the one unit where artifacts MUST move together:
 `jackson-dataformat-xml`/`-yaml` are managed off the same `${jackson.version}`
 property (no module currently consumes the dataformats — they're inert but should stay
 version-aligned). All five artifacts verified to exist at 2.18.8 on Maven Central.
-Jackson 2.18 is still Java 8 bytecode ✓.
+Jackson 2.18 is still Java 8 bytecode ✓. 2.18.8 **matches legend-shared 0.36.0-RC1
+exactly** (jackson.version, jackson.databind.version, and dataformat-yaml are all
+2.18.8 in its BOM) — the stack-wide convergence target.
 
 Downstream constraint (see context section): don't introduce any post-2.10 jackson API
 into legend-pure source in this unit — engine runs these classes against 2.10.5 until
