@@ -227,6 +227,14 @@ function <<PCT.test>> meta::pure::functions::boolean::tests::equality::equal::te
     assertFalse($f->eval(|equal(1->cast(@ExtendedInteger), ^SideClass(stringId='firstSide', intId=1))));
 }
 
+function <<PCT.test>> meta::pure::functions::boolean::tests::equality::equal::testEqualEmpty<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assert($f->eval(|[] == []));
+    assertFalse($f->eval(|[] != []));
+    assertFalse($f->eval(|[] == 1));
+    assertFalse($f->eval(|1 == []));
+}
+
 function <<test.Test>> meta::pure::functions::boolean::tests::equality::equal::testEqualPrimitiveCollections():Boolean[1]
 {
     assert(['a', 'b'] == ['a', 'b']);
@@ -301,9 +309,6 @@ function <<test.Test>> meta::pure::functions::boolean::tests::equality::equal::t
 
 function <<test.Test>> meta::pure::functions::boolean::tests::equality::equal::testEqualEmptyCollections():Boolean[1]
 {
-    assert([] == []);
-    assert(equal([], []));
-
     let top = ^TopClass(name='top');
 
     assert($top.sides == []);
