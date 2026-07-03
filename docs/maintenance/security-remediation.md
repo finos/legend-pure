@@ -22,7 +22,7 @@ public advisory databases. Contributions welcome: pick an unclaimed unit, follow
 | 1 | Delete dead deps (bouncycastle ×2, commons-httpclient) | #86 (H), #64 #71 #74 #76 #77 #85 (M) | ☑ |
 | 2 | commons-io 2.7 → 2.16.1 | #80 (H) | ☑ |
 | 3 | classgraph 4.8.25 → 4.8.184 | #78 (M) | ☑ |
-| 4 | commons-lang3 3.5 → 3.18.0 | #83 (M) | ☐ |
+| 4 | commons-lang3 3.5 → 3.18.0 | #83 (M) | ☑ |
 | 5 | checkstyle 8.25 → 8.29 | #57 (M) | ☐ |
 | 6 | jackson family 2.10.5 → 2.18.8 | #22 #52 #54 #82 #87 #89 #90 (H), #81 #84 #88 #91 (M) | ☐ |
 | 7 | h2 2.1.214 → 2.2.224 (test scope) | #79 (H) | ☐ |
