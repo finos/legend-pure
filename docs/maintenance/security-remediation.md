@@ -20,7 +20,7 @@ public advisory databases. Contributions welcome: pick an unclaimed unit, follow
 | Unit | What | Alerts | Status |
 |---|---|---|---|
 | 1 | Delete dead deps (bouncycastle ×2, commons-httpclient) | #86 (H), #64 #71 #74 #76 #77 #85 (M) | ☑ |
-| 2 | commons-io 2.7 → 2.16.1 | #80 (H) | ☐ |
+| 2 | commons-io 2.7 → 2.16.1 | #80 (H) | ☑ |
 | 3 | classgraph 4.8.25 → 4.8.184 | #78 (M) | ☐ |
 | 4 | commons-lang3 3.5 → 3.18.0 | #83 (M) | ☐ |
 | 5 | checkstyle 8.25 → 8.29 | #57 (M) | ☐ |
