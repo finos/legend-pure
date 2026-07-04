@@ -14,9 +14,15 @@
 
 package org.finos.legend.pure.m3.pct.shared.provider;
 
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.net.URL;
 
 public class PCTReportProviderTool
 {
@@ -25,21 +31,27 @@ public class PCTReportProviderTool
         try
         {
             MutableList<T> result = Lists.mutable.empty();
+            ObjectReader reader = null;
             for (String location : locations)
             {
-                if (classLoader.getResource(location) != null)
+                URL url = classLoader.getResource(location);
+                if (url != null)
                 {
-                    result.add(JsonMapper.builder().build().readValue(
-                            classLoader.getResourceAsStream(location),
-                            _class
-                    ));
+                    if (reader == null)
+                    {
+                        reader = JsonMapper.builder().build().readerFor(_class);
+                    }
+                    try (InputStream stream = url.openStream())
+                    {
+                        result.add(reader.readValue(stream));
+                    }
                 }
             }
             return result;
         }
-        catch (Exception e)
+        catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 }

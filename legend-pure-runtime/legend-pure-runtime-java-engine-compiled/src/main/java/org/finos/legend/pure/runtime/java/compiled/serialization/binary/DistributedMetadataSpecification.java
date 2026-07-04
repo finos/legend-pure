@@ -410,6 +410,10 @@ public class DistributedMetadataSpecification
         try
         {
             JarURLConnection connection = (JarURLConnection) jarUrl.openConnection();
+            // Get a private JarFile that is safe to close: with caching enabled, getJarFile() returns
+            // an instance cached and shared JVM-wide, and closing it invalidates all open streams other
+            // threads have over the same jar (e.g., concurrent Maven mojo executions in a parallel build)
+            connection.setUseCaches(false);
             try (JarFile jarFile = connection.getJarFile())
             {
                 Enumeration<JarEntry> entries = jarFile.entries();
