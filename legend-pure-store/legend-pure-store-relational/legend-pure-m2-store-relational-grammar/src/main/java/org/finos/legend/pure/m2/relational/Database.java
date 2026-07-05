@@ -63,6 +63,26 @@ public class Database
         }
     }
 
+    /**
+     * Whether {@code schemaName} is declared on {@code database} or any of its (transitively) included databases.
+     * The implicit {@link DatabaseProcessor#DEFAULT_SCHEMA_NAME default} schema is always considered to exist.
+     */
+    public static boolean schemaExists(org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database database, String schemaName, ProcessorSupport processorSupport)
+    {
+        if (DatabaseProcessor.DEFAULT_SCHEMA_NAME.equals(schemaName))
+        {
+            return true;
+        }
+        for (org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database db : getAllIncludedDBs(database, processorSupport))
+        {
+            if (db._schemas().anySatisfy(s -> schemaName.equals(s._name())))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static CoreInstance findTable(org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database database, String schemaName, String tableName, ProcessorSupport processorSupport)
     {
         MutableList<CoreInstance> tables = Lists.mutable.empty();

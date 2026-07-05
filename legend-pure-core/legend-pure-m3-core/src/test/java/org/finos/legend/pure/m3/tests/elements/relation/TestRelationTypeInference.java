@@ -949,8 +949,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    @Ignore
-    // Test fails due to bug in type inference, potentially due to incorrect unbind. The type (RelationType) for the 
+    // Test fails due to bug in type inference, potentially due to incorrect unbind. The type (RelationType) for the
     // only expression in the function f() is correctly inferred after first compile. However, the type parameters 
     // remain unresolved post unbind and re-compile.
     public void testRelationTypeInferenceIntegrityWithSelect()
@@ -973,11 +972,12 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                 Lists.fixedSize.of(Tuples.pair("2.pure", nativeFunctionSource)),
                 this.getAdditionalVerifiers()
         );
+        runtime.delete("1.pure");
+        runtime.delete("2.pure");
     }
 
     @Test
-    @Ignore
-    // Test fails due to bug in type inference, potentially due to incorrect unbind. The column type for the renamed 
+    // Test fails due to bug in type inference, potentially due to incorrect unbind. The column type for the renamed
     // column in the RelationType returned by the function is set to null post unbind and re-compile.
     public void testRelationTypeInferenceIntegrityWithRename()
     {
@@ -999,5 +999,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                 Lists.fixedSize.of(Tuples.pair("2.pure", nativeFunctionSource)),
                 this.getAdditionalVerifiers()
         );
+        runtime.delete("1.pure");
+        runtime.delete("2.pure");
     }
 }

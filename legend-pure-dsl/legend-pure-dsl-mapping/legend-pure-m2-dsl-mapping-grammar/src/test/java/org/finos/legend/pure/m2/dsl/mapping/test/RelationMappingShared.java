@@ -47,11 +47,11 @@ public class RelationMappingShared
             "import meta::pure::metamodel::relation::*;\n" +
             "function my::personFunction(): Relation<Any>[1]\n" +
             "{\n" +
-            "  1->cast(@Relation<(FIRSTNAME:String, AGE:Integer, FIRMID:Integer, CITY:String)>);\n" +
+            "  1->cast(@Relation<(FIRSTNAME:String[1], AGE:Integer[1], FIRMID:Integer[1], CITY:String[1])>);\n" +
             "}\n" +
             "function my::firmFunction(): Relation<Any>[1]\n" +
             "{\n" +
-            "  1->cast(@Relation<(ID:Integer, LEGALNAME:String)>);\n" +
+            "  1->cast(@Relation<(ID:Integer[1], LEGALNAME:String[1])>);\n" +
             "}\n" +
             "function my::integerFunction(): Integer[1]\n" +
             "{\n" +
@@ -60,7 +60,11 @@ public class RelationMappingShared
             "native function filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];\n" +
             "function my::addressFunction(): Relation<Any>[1]\n" +
             "{\n" +
-            "  1->cast(@Relation<(CITY:String)>);\n" +
+            "  1->cast(@Relation<(CITY:String[1])>);\n" +
+            "}\n" +
+            "function my::personFunctionTyped(): Relation<(FIRSTNAME:String[1], AGE:Integer[1], FIRMID:Integer[1], CITY:String[1])>[1]\n" +
+            "{\n" +
+            "  1->cast(@Relation<(FIRSTNAME:String[1], AGE:Integer[1], FIRMID:Integer[1], CITY:String[1])>);\n" +
             "}\n";
 
     public static final String RELATION_MAPPING_CLASS_ENUMERATION_SOURCE = "###Pure\n" +
@@ -78,6 +82,6 @@ public class RelationMappingShared
             "import meta::pure::metamodel::relation::*;\n" +
             "function my::personWithGenderFunction(): Relation<Any>[1]\n" +
             "{\n" +
-            "  1->cast(@Relation<(FIRSTNAME:String, GENDER:String)>);\n" +
+            "  1->cast(@Relation<(FIRSTNAME:String[1], GENDER:String[1])>);\n" +
             "}\n";
 }

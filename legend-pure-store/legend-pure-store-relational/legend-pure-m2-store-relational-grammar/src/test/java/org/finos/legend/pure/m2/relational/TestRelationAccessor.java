@@ -230,6 +230,175 @@ public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreComp
         assertEquals(table, accessor._sourceElement());
     }
 
+    @Test
+    public void testRelationAccessorWithSchema()
+    {
+        String sourceCode =
+                "###Pure\n" +
+                        "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.MySchema.PersonTable}#->filter(f|$f.lastName == 'ee');" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "(\n" +
+                        "   Schema MySchema\n" +
+                        "   (\n" +
+                        "      Table PersonTable(firstName VARCHAR(200), lastName VARCHAR(200), firmId INTEGER)\n" +
+                        "   )\n" +
+                        ")\n";
+        createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+    }
+
+    @Test
+    public void testRelationAccessorWithSchemaProperties()
+    {
+        // Bare accessor (no chaining) so we can read the value directly off the function's expression sequence.
+        String sourceCode =
+                "###Pure\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.MySchema.PersonTable}#" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "(\n" +
+                        "   Schema MySchema\n" +
+                        "   (\n" +
+                        "      Table PersonTable(firstName VARCHAR(200))\n" +
+                        "   )\n" +
+                        ")\n";
+        createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+
+        ConcreteFunctionDefinition<?> function = (ConcreteFunctionDefinition<?>) this.runtime.getFunction("f__Relation_1_");
+        InstanceValue iv = (InstanceValue) function._expressionSequence().getOnly();
+        RelationStoreAccessorInstance accessor = (RelationStoreAccessorInstance) iv._values().getOnly();
+
+        DatabaseInstance database = (DatabaseInstance) this.runtime.getCoreInstance("my::mainDb");
+        Table table = database._schemas().detect(s -> "MySchema".equals(s._name()))._tables().getOnly();
+
+        assertEquals(database, accessor._sourceElementContainer());
+        assertEquals(table, accessor._sourceElement());
+    }
+
+    @Test
+    public void testRelationAccessorWithSchemaInIncludedDb()
+    {
+        // Schema-qualified accessor must traverse `include`d databases, mirroring testRelationAccessorWithDBIncludes.
+        String sourceCode =
+                "###Pure\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.IncSchema.PersonTable}#" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::incDb\n" +
+                        "(\n" +
+                        "   Schema IncSchema\n" +
+                        "   (\n" +
+                        "      Table PersonTable(firstName VARCHAR(200), lastName VARCHAR(200))\n" +
+                        "   )\n" +
+                        ")\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "(\n" +
+                        "   include my::incDb\n" +
+                        "   Table FirmTable(legalName VARCHAR(200))\n" +
+                        ")\n";
+        createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+
+        ConcreteFunctionDefinition<?> function = (ConcreteFunctionDefinition<?>) this.runtime.getFunction("f__Relation_1_");
+        InstanceValue iv = (InstanceValue) function._expressionSequence().getOnly();
+        RelationStoreAccessorInstance accessor = (RelationStoreAccessorInstance) iv._values().getOnly();
+
+        DatabaseInstance mainDb = (DatabaseInstance) this.runtime.getCoreInstance("my::mainDb");
+        DatabaseInstance incDb = (DatabaseInstance) this.runtime.getCoreInstance("my::incDb");
+        Table table = incDb._schemas().detect(s -> "IncSchema".equals(s._name()))._tables().getOnly();
+
+        // The accessor's container is the *user-facing* database the path starts from, not the included one.
+        assertEquals(mainDb, accessor._sourceElementContainer());
+        assertEquals(table, accessor._sourceElement());
+    }
+
+    @Test
+    public void testRelationAccessorUnknownSchema()
+    {
+        String sourceCode =
+                "###Pure\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.NoSuchSchema.PersonTable}#" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "(\n" +
+                        "   Schema MySchema\n" +
+                        "   (\n" +
+                        "      Table PersonTable(firstName VARCHAR(200))\n" +
+                        "   )\n" +
+                        ")\n";
+        try
+        {
+            createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+            fail();
+        }
+        catch (Exception e)
+        {
+            assertPureException(PureCompilationException.class, "The schema 'NoSuchSchema' can't be found in the database 'my::mainDb'", e);
+        }
+    }
+
+    @Test
+    public void testRelationAccessorUnknownTableInSchema()
+    {
+        String sourceCode =
+                "###Pure\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.MySchema.NoSuchTable}#" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "(\n" +
+                        "   Schema MySchema\n" +
+                        "   (\n" +
+                        "      Table PersonTable(firstName VARCHAR(200))\n" +
+                        "   )\n" +
+                        ")\n";
+        try
+        {
+            createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+            fail();
+        }
+        catch (Exception e)
+        {
+            assertPureException(PureCompilationException.class, "The table 'NoSuchTable' can't be found in the schema 'MySchema' in the database 'my::mainDb'", e);
+        }
+    }
+
+    @Test
+    public void testRelationAccessorTooManySegments()
+    {
+        String sourceCode =
+                "###Pure\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.A.B.C}#" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb()\n";
+        try
+        {
+            createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+            fail();
+        }
+        catch (Exception e)
+        {
+            assertPureException(PureCompilationException.class, "RelationStoreAccessor path must be of the form 'db.table' or 'db.schema.table' (got 4 segments)", e);
+        }
+    }
+
     private static void createAndCompileSourceCode(PureRuntime runtime, String sourceId, String sourceCode)
     {
         runtime.delete(sourceId);

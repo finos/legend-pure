@@ -21,7 +21,11 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.EmbeddedRelationFunctionSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionPropertyMapping;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.tools.GrammarInfoStub;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
@@ -34,32 +38,62 @@ public class RelationFunctionInstanceSetImplementationUnbind implements MatchRun
     @Override
     public void run(RelationFunctionInstanceSetImplementation instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
+        ProcessorSupport ps = state.getProcessorSupport();
         CoreInstance relationFunction = instance._relationFunctionCoreInstance();
-        Shared.cleanUpReferenceUsage(relationFunction, instance, state.getProcessorSupport());
-        Shared.cleanImportStub(relationFunction, state.getProcessorSupport());
-        cleanPropertyMappings(instance._propertyMappings());
+        if (relationFunction != null)
+        {
+            if (ps.instance_instanceOf(relationFunction, M3Paths.ImportStub))
+            {
+                // ~func form: clean the import-stub indirection.
+                Shared.cleanUpReferenceUsage(relationFunction, instance, ps);
+                Shared.cleanImportStub(relationFunction, ps);
+            }
+            else if (relationFunction instanceof LambdaFunction)
+            {
+                // ~src form: the relationFunction holds an anonymous lambda;
+                // recursively unbind its body and clear inferred function-type
+                // metadata (mirrors PureInstanceSetImplementationUnbind for
+                // `transform`/`filter`).
+                cleanLambda((LambdaFunction<?>) relationFunction, matcher, state, ps);
+            }
+        }
+        cleanPropertyMappings(instance._propertyMappings(), matcher, state);
     }
 
-    private static void cleanPropertyMappings(Iterable<? extends PropertyMapping> propertyMappings) throws PureCompilationException
+    private static void cleanPropertyMappings(Iterable<? extends PropertyMapping> propertyMappings, Matcher matcher, MatcherState state) throws PureCompilationException
     {
+        ProcessorSupport ps = state.getProcessorSupport();
         for (PropertyMapping propertyMapping : propertyMappings)
         {
             if (propertyMapping instanceof RelationFunctionPropertyMapping)
             {
-                RelationFunctionPropertyMapping relationFunctionPropertyMapping = (RelationFunctionPropertyMapping) propertyMapping;
-                relationFunctionPropertyMapping._column()._classifierGenericTypeRemove();
-                if (relationFunctionPropertyMapping._transformerCoreInstance() != null)
+                RelationFunctionPropertyMapping rpm = (RelationFunctionPropertyMapping) propertyMapping;
+                LambdaFunction<?> valueFn = rpm._valueFn();
+                if (valueFn != null)
                 {
-                    GrammarInfoStub transformerStub = (GrammarInfoStub) relationFunctionPropertyMapping._transformerCoreInstance();
+                    cleanLambda(valueFn, matcher, state, ps);
+                }
+                if (rpm._transformerCoreInstance() != null)
+                {
+                    GrammarInfoStub transformerStub = (GrammarInfoStub) rpm._transformerCoreInstance();
                     transformerStub._value(transformerStub._original());
                     transformerStub._originalRemove();
                 }
             }
             else if (propertyMapping instanceof EmbeddedRelationFunctionSetImplementation)
             {
-                cleanPropertyMappings(((EmbeddedRelationFunctionSetImplementation) propertyMapping)._propertyMappings());
+                cleanPropertyMappings(((EmbeddedRelationFunctionSetImplementation) propertyMapping)._propertyMappings(), matcher, state);
             }
         }
+    }
+
+    private static void cleanLambda(LambdaFunction<?> lambda, Matcher matcher, MatcherState state, ProcessorSupport ps)
+    {
+        matcher.fullMatch(lambda, state);
+        FunctionType ft = (FunctionType) org.finos.legend.pure.m3.navigation.importstub.ImportStub.withImportStubByPass(
+                lambda._classifierGenericType()._typeArguments().toList().get(0)._rawTypeCoreInstance(), ps);
+        ft._parametersRemove();
+        ft._functionRemove();
     }
 
     @Override
@@ -68,3 +102,4 @@ public class RelationFunctionInstanceSetImplementationUnbind implements MatchRun
         return M2MappingPaths.RelationFunctionInstanceSetImplementation;
     }
 }
+
