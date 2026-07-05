@@ -1256,8 +1256,14 @@ import meta::pure::metamodel::relation::*;
 
 function my::personRelation(): Relation<(FIRSTNAME:String[1], AGE:Integer[1])>[1]
 {
-    #SQL { SELECT FIRSTNAME, AGE FROM #I{my::ingestDataset::PEOPLE}# }#
+    #>{my::peopleDb.PERSON}#
 }
+
+###Relational
+Database my::peopleDb
+(
+    Table PERSON(FIRSTNAME VARCHAR(200), AGE INTEGER)
+)
 
 ###Mapping
 import my::model::*;
@@ -1274,9 +1280,10 @@ Mapping my::mappings::PersonMapping
 ```
 
 The referenced function's body can contain any expression that returns a
-`Relation` — a `#SQL { ... }` block (defined in `legend-engine`), a call to a
-`native function` registered by a store extension, or a chain of relation
-operations (`->filter`, `->extend`, `->join`, ...):
+`Relation` — a relation store accessor (`#>{db.table}#` /
+`#>{db.schema.table}#`, see [§15.7](#157-schema-qualified-relation-store-accessors)),
+a call to a `native function` registered by a store extension, or a chain of
+relation operations (`->filter`, `->extend`, `->join`, ...):
 
 ```pure
 ###Pure
@@ -1311,7 +1318,7 @@ Mapping my::mappings::PersonMapping
 (
     *Person[person]: Relation
     {
-        ~src #SQL { SELECT FIRSTNAME, AGE FROM #I{my::people}# }#
+        ~src #>{my::peopleDb.PERSON}#
         firstName : FIRSTNAME,
         age       : AGE
     }
