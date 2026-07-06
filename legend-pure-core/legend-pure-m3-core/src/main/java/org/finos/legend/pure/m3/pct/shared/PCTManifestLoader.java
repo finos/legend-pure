@@ -20,6 +20,7 @@ import org.finos.legend.pure.m3.pct.shared.model.PCTManifest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.URL;
 
 /**
  * Loads a {@link PCTManifest} from a JSON resource.
@@ -47,12 +48,13 @@ public class PCTManifestLoader
     public static PCTManifest loadFromClasspath(String manifestPath)
     {
         String resourcePath = manifestPath.startsWith("/") ? manifestPath.substring(1) : manifestPath;
-        try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath))
+        URL url = Thread.currentThread().getContextClassLoader().getResource(resourcePath);
+        if (url == null)
         {
-            if (is == null)
-            {
-                throw new IllegalArgumentException("PCT manifest file not found on classpath: " + manifestPath);
-            }
+            throw new IllegalArgumentException("PCT manifest file not found on classpath: " + manifestPath);
+        }
+        try (InputStream is = url.openStream())
+        {
             return loadFromStream(is, manifestPath);
         }
         catch (IOException e)

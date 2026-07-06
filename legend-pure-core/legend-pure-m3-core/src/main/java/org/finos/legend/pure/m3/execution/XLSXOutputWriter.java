@@ -19,10 +19,12 @@ import org.apache.commons.io.IOUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class XLSXOutputWriter implements OutputWriter<Object>
 {
     private static final String XLSX_TEMPLATE = "/xlsx_template.xlsx";
@@ -38,7 +40,12 @@ public class XLSXOutputWriter implements OutputWriter<Object>
     @Override
     public void write(Object result, OutputStream outputStream) throws IOException
     {
-        try (InputStream is = XLSXOutputWriter.class.getResourceAsStream(XLSX_TEMPLATE);
+        URL url = XLSXOutputWriter.class.getResource(XLSX_TEMPLATE);
+        if (url == null)
+        {
+            throw new RuntimeException("Cannot find '" + XLSX_TEMPLATE + "'");
+        }
+        try (InputStream is = url.openStream();
              ZipInputStream zis = new ZipInputStream(is);
              ZipOutputStream zos = new ZipOutputStream(outputStream))
         {
@@ -53,7 +60,7 @@ public class XLSXOutputWriter implements OutputWriter<Object>
             ZipEntry sheet1 = new ZipEntry(SHEET_PATH);
             zos.putNextEntry(sheet1);
 
-            writer.write(result, zos);
+            this.writer.write(result, zos);
 
             zos.closeEntry();
             zos.finish();

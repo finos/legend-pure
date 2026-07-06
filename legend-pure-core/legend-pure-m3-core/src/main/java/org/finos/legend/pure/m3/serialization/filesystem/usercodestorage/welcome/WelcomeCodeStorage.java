@@ -27,6 +27,8 @@ import org.finos.legend.pure.m3.serialization.runtime.Message;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,8 +55,13 @@ public class WelcomeCodeStorage implements MutableRepositoryCodeStorage
         Path welcomeFile = resolveWelcomePath();
         if (Files.notExists(welcomeFile))
         {
-            try (OutputStream outStream = Files.newOutputStream(welcomeFile);
-                 InputStream inStream = getClass().getResourceAsStream(WELCOME_RESOURCE_NAME))
+            URL url = getClass().getResource(WELCOME_RESOURCE_NAME);
+            if (url == null)
+            {
+                throw new RuntimeException("Cannot find resource: '" + WELCOME_RESOURCE_NAME + "'");
+            }
+            try (InputStream inStream = url.openStream();
+                 OutputStream outStream = Files.newOutputStream(welcomeFile))
             {
                 byte[] buffer = new byte[2048];
                 for (int read = inStream.read(buffer); read != -1; read = inStream.read(buffer))
@@ -64,7 +71,7 @@ public class WelcomeCodeStorage implements MutableRepositoryCodeStorage
             }
             catch (IOException e)
             {
-                throw new RuntimeException("Error creating /" + WELCOME_FILE_NAME, e);
+                throw new UncheckedIOException("Error creating /" + WELCOME_FILE_NAME, e);
             }
         }
     }
@@ -72,19 +79,19 @@ public class WelcomeCodeStorage implements MutableRepositoryCodeStorage
     @Override
     public RichIterable<CodeRepository> getAllRepositories()
     {
-        return repos;
+        return this.repos;
     }
 
     @Override
     public CodeRepository getRepository(String name)
     {
-        return name == null ? repos.getFirst() : null;
+        return name == null ? this.repos.getFirst() : null;
     }
 
     @Override
     public CodeRepository getRepositoryForPath(String path)
     {
-        return WELCOME_FILE_NAME.equals(path) ? repos.getFirst() : null;
+        return WELCOME_FILE_NAME.equals(path) ? this.repos.getFirst() : null;
     }
 
     @Override
