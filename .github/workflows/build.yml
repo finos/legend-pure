@@ -70,16 +70,15 @@ jobs:
           theme: dark
 
       - name: Build
-        if: (github.repository != 'finos/legend-pure') || (github.ref != 'refs/heads/master')
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=80.0
         run: mvn -B -e -DskipTests=true -T 4 install -Dorg.slf4j.simpleLogger.showThreadName=true
 
-      - name: Build + Sonar
+      - name: Sonar
         if: (github.repository == 'finos/legend-pure') && (github.ref == 'refs/heads/master')
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=80.0
-        run: mvn -B -e -DskipTests=true -T 4 -P sonar install -Dorg.slf4j.simpleLogger.showThreadName=true
+        run: mvn -B -e -P sonar sonar:sonar
 
       - name: Test
         env:
