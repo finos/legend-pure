@@ -24,8 +24,13 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.Log;
 
-import javax.tools.*;
+import javax.tools.FileObject;
+import javax.tools.ForwardingJavaFileManager;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -70,17 +75,22 @@ public class MemoryFileManager extends ForwardingJavaFileManager<StandardJavaFil
     public Iterable<JavaFileObject> list(Location location, String packageName, Set<Kind> kinds, boolean recurse) throws IOException
     {
         MutableList<JavaFileObject> result = Lists.mutable.ofInitialCapacity(this.codeByName.size());
-        collectFiles(result, location, packageName, kinds, recurse);
+        // List file system files exactly once, via this file manager's delegate. Parent file managers
+        // must contribute only their in-memory classes: when this file manager is used for a compilation
+        // task, javac applies path options (e.g. -classpath) to this delegate only, so a parent delegate
+        // may have a different effective classpath. On JDK 8, a file listed by one delegate but resolved
+        // against another crashes javac with an NPE in ClassReader.fillIn (inferBinaryName returns null).
+        result.addAllIterable(super.list(location, packageName, kinds, recurse));
+        collectMemoryFiles(result, location, packageName, kinds, recurse);
         return result;
     }
 
-    private void collectFiles(MutableCollection<JavaFileObject> target, Location location, String packageName, Set<Kind> kinds, boolean recurse) throws IOException
+    private void collectMemoryFiles(MutableCollection<JavaFileObject> target, Location location, String packageName, Set<Kind> kinds, boolean recurse)
     {
         if (this.parent != null)
         {
-            this.parent.collectFiles(target, location, packageName, kinds, recurse);
+            this.parent.collectMemoryFiles(target, location, packageName, kinds, recurse);
         }
-        target.addAllIterable(super.list(location, packageName, kinds, recurse));
         if ((location == StandardLocation.CLASS_PATH) && kinds.contains(Kind.CLASS))
         {
             MutableList<ClassJavaSource> packageFiles = this.codeByPackage.get(packageName);

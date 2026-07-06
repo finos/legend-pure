@@ -30,9 +30,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.lang.model.SourceVersion;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
+import java.util.function.ToIntFunction;
 
 public abstract class AbstractFilePathProviderExtensionTest extends AbstractReferenceTest
 {
@@ -62,7 +63,7 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
     @Test
     public void testAllElementPaths()
     {
-        MapIterable<String, Pattern> patternBySeparator = buildPatternMap(getExpectedElementPrefixDirs(), getExpectedElementFilenameExtension());
+        MapIterable<String, PathNameMatcher> matcherBySeparator = buildMatcherMap(getExpectedElementPrefixDirs(), getExpectedElementFilenameExtension());
         GraphTools.getTopLevelAndPackagedElements(processorSupport).forEach(element ->
         {
             String path = PackageableElement.getUserPathForPackageableElement(element);
@@ -70,10 +71,11 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
             {
                 String filePath = this.extension.getElementFilePath(path, fsSeparator);
                 Assert.assertNotNull(path, filePath);
-                Pattern pattern = patternBySeparator.get(fsSeparator);
-                if (!pattern.matcher(filePath).matches())
+                PathNameMatcher matcher = matcherBySeparator.get(fsSeparator);
+                int invalidIndex = matcher.applyAsInt(filePath);
+                if (invalidIndex != -1)
                 {
-                    Assert.fail("File path does not match the expected pattern\n\telement path: " + path + "\n\tfile path: " + filePath + "\n\tpattern: " + pattern.pattern());
+                    Assert.fail("Invalid file path\n\telement path: " + path + "\n\tfile path: " + filePath + "\n\tinvalid index: " + invalidIndex + "\n\tinvalid code point: " + ((invalidIndex < filePath.length()) ? codePointToString(filePath.codePointAt(invalidIndex)) : null));
                 }
                 int index = findInvalidName(filePath, fsSeparator);
                 if (index > -1)
@@ -87,7 +89,7 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
     @Test
     public void testAllModuleManifestPaths()
     {
-        MapIterable<String, Pattern> patternBySeparator = buildPatternMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleManifestFilenameExtension());
+        MapIterable<String, PathNameMatcher> matcherBySeparator = buildMatcherMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleManifestFilenameExtension());
         runtime.getCodeStorage().getAllRepositories().forEach(module ->
         {
             String moduleName = module.getName();
@@ -95,10 +97,11 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
             {
                 String filePath = this.extension.getModuleManifestFilePath(moduleName, fsSeparator);
                 Assert.assertNotNull(moduleName, filePath);
-                Pattern pattern = patternBySeparator.get(fsSeparator);
-                if (!pattern.matcher(filePath).matches())
+                PathNameMatcher matcher = matcherBySeparator.get(fsSeparator);
+                int invalidIndex = matcher.applyAsInt(filePath);
+                if (invalidIndex != -1)
                 {
-                    Assert.fail("File path does not match the expected pattern\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tpattern: " + pattern.pattern());
+                    Assert.fail("Invalid file path\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tinvalid index: " + invalidIndex + "\n\tinvalid code point: " + ((invalidIndex < filePath.length()) ? codePointToString(filePath.codePointAt(invalidIndex)) : null));
                 }
                 int index = findInvalidName(filePath, fsSeparator);
                 if (index > -1)
@@ -112,7 +115,7 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
     @Test
     public void testAllModuleSourceMetadataPaths()
     {
-        MapIterable<String, Pattern> patternBySeparator = buildPatternMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleSourceMetadataFilenameExtension());
+        MapIterable<String, PathNameMatcher> matcherBySeparator = buildMatcherMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleSourceMetadataFilenameExtension());
         runtime.getCodeStorage().getAllRepositories().forEach(module ->
         {
             String moduleName = module.getName();
@@ -120,10 +123,11 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
             {
                 String filePath = this.extension.getModuleSourceMetadataFilePath(moduleName, fsSeparator);
                 Assert.assertNotNull(moduleName, filePath);
-                Pattern pattern = patternBySeparator.get(fsSeparator);
-                if (!pattern.matcher(filePath).matches())
+                PathNameMatcher matcher = matcherBySeparator.get(fsSeparator);
+                int invalidIndex = matcher.applyAsInt(filePath);
+                if (invalidIndex != -1)
                 {
-                    Assert.fail("File path does not match the expected pattern\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tpattern: " + pattern.pattern());
+                    Assert.fail("Invalid file path\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tinvalid index: " + invalidIndex + "\n\tinvalid code point: " + ((invalidIndex < filePath.length()) ? codePointToString(filePath.codePointAt(invalidIndex)) : null));
                 }
                 int index = findInvalidName(filePath, fsSeparator);
                 if (index > -1)
@@ -137,7 +141,7 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
     @Test
     public void testAllModuleExternalReferencePaths()
     {
-        MapIterable<String, Pattern> patternBySeparator = buildPatternMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleExternalReferenceMetadataFilenameExtension());
+        MapIterable<String, PathNameMatcher> matcherBySeparator = buildMatcherMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleExternalReferenceMetadataFilenameExtension());
         runtime.getCodeStorage().getAllRepositories().forEach(module ->
         {
             String moduleName = module.getName();
@@ -145,10 +149,11 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
             {
                 String filePath = this.extension.getModuleExternalReferenceMetadataFilePath(moduleName, fsSeparator);
                 Assert.assertNotNull(moduleName, filePath);
-                Pattern pattern = patternBySeparator.get(fsSeparator);
-                if (!pattern.matcher(filePath).matches())
+                PathNameMatcher matcher = matcherBySeparator.get(fsSeparator);
+                int invalidIndex = matcher.applyAsInt(filePath);
+                if (invalidIndex != -1)
                 {
-                    Assert.fail("File path does not match the expected pattern\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tpattern: " + pattern.pattern());
+                    Assert.fail("Invalid file path\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tinvalid index: " + invalidIndex + "\n\tinvalid code point: " + ((invalidIndex < filePath.length()) ? codePointToString(filePath.codePointAt(invalidIndex)) : null));
                 }
                 int index = findInvalidName(filePath, fsSeparator);
                 if (index > -1)
@@ -163,7 +168,7 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
     public void testAllModuleElementBackReferencePaths()
     {
         MutableList<String> moduleNames = runtime.getCodeStorage().getAllRepositories().collect(CodeRepository::getName, Lists.mutable.empty());
-        MapIterable<String, Pattern> patternBySeparator = buildPatternMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleElementBackReferenceMetadataFilenameExtension());
+        MapIterable<String, PathNameMatcher> matcherBySeparator = buildMatcherMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleElementBackReferenceMetadataFilenameExtension());
         GraphTools.getTopLevelAndPackagedElements(processorSupport).forEach(element ->
         {
             String path = PackageableElement.getUserPathForPackageableElement(element);
@@ -171,10 +176,11 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
             {
                 String filePath = this.extension.getModuleElementBackReferenceMetadataFilePath(moduleName, path, fsSeparator);
                 Assert.assertNotNull(path, filePath);
-                Pattern pattern = patternBySeparator.get(fsSeparator);
-                if (!pattern.matcher(filePath).matches())
+                PathNameMatcher matcher = matcherBySeparator.get(fsSeparator);
+                int invalidIndex = matcher.applyAsInt(filePath);
+                if (invalidIndex != -1)
                 {
-                    Assert.fail("File path does not match the expected pattern\n\telement path: " + path + "\n\tfile path: " + filePath + "\n\tpattern: " + pattern.pattern());
+                    Assert.fail("Invalid file path\n\telement path: " + path + "\n\tfile path: " + filePath + "\n\tinvalid index: " + invalidIndex + "\n\tinvalid code point: " + ((invalidIndex < filePath.length()) ? codePointToString(filePath.codePointAt(invalidIndex)) : null));
                 }
                 int index = findInvalidName(filePath, fsSeparator);
                 if (index > -1)
@@ -198,17 +204,18 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
                         "\uD801\uDE21\uD801\uDE22\uD801\uDE23\uD801\uDE24\uD801\uDE25\uD801\uDE26\uD801\uDE27\uD801\uDE28\uD801\uDE29\uD801\uDE2A\uD801\uDE2B::" +
                         "\uD801\uDE2C\uD801\uDE2D\uD801\uDE2E\uD801\uDE2F"
         };
-        MapIterable<String, Pattern> patternBySeparator = buildPatternMap(getExpectedElementPrefixDirs(), getExpectedElementFilenameExtension());
+        MapIterable<String, PathNameMatcher> matcherBySeparator = buildMatcherMap(getExpectedElementPrefixDirs(), getExpectedElementFilenameExtension());
         forEachFSSeparator(fsSeparator ->
         {
-            Pattern pattern = patternBySeparator.get(fsSeparator);
+            PathNameMatcher matcher = matcherBySeparator.get(fsSeparator);
             for (String path : unicodeElementPaths)
             {
                 String filePath = this.extension.getElementFilePath(path, fsSeparator);
                 Assert.assertNotNull(path, filePath);
-                if (!pattern.matcher(filePath).matches())
+                int invalidIndex = matcher.applyAsInt(filePath);
+                if (invalidIndex != -1)
                 {
-                    Assert.fail("File path does not match the expected pattern\n\telement path: " + path + "\n\tfile path: " + filePath + "\n\tpattern: " + pattern.pattern());
+                    Assert.fail("Invalid file path\n\telement path: " + path + "\n\tfile path: " + filePath + "\n\tinvalid index: " + invalidIndex + "\n\tinvalid code point: " + ((invalidIndex < filePath.length()) ? codePointToString(filePath.codePointAt(invalidIndex)) : null));
                 }
                 int index = findInvalidName(filePath, fsSeparator);
                 if (index > -1)
@@ -229,17 +236,18 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
                 "\uD802\uDF21\uD802\uDF22\uD802\uDF23\uD802\uDF24\uD802\uDF25\uD802\uDF26\uD802\uDF27\uD802\uDF28\uD802\uDF29\uD802\uDF2A\uD802\uDF2B",
                 "a\uD802\uDF2C\uD802\uDF2D\uD802\uDF2E\uD802\uDF2F\uD802\uDF30\uD802\uDF31\uD802\uDF32\uD802\uDF33\uD802\uDF34\uD802\uDF35z"
         };
-        MapIterable<String, Pattern> patternBySeparator = buildPatternMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleManifestFilenameExtension());
+        MapIterable<String, PathNameMatcher> matcherBySeparator = buildMatcherMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleManifestFilenameExtension());
         forEachFSSeparator(fsSeparator ->
         {
-            Pattern pattern = patternBySeparator.get(fsSeparator);
+            PathNameMatcher matcher = matcherBySeparator.get(fsSeparator);
             for (String moduleName : unicodeModuleNames)
             {
                 String filePath = this.extension.getModuleManifestFilePath(moduleName, fsSeparator);
                 Assert.assertNotNull(moduleName, filePath);
-                if (!pattern.matcher(filePath).matches())
+                int invalidIndex = matcher.applyAsInt(filePath);
+                if (invalidIndex != -1)
                 {
-                    Assert.fail("File path does not match the expected pattern\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tpattern: " + pattern.pattern());
+                    Assert.fail("Invalid file path\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tinvalid index: " + invalidIndex + "\n\tinvalid code point: " + ((invalidIndex < filePath.length()) ? codePointToString(filePath.codePointAt(invalidIndex)) : null));
                 }
                 int index = findInvalidName(filePath, fsSeparator);
                 if (index > -1)
@@ -260,17 +268,18 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
                 "\uD802\uDF21\uD802\uDF22\uD802\uDF23\uD802\uDF24\uD802\uDF25\uD802\uDF26\uD802\uDF27\uD802\uDF28\uD802\uDF29\uD802\uDF2A\uD802\uDF2B",
                 "a\uD802\uDF2C\uD802\uDF2D\uD802\uDF2E\uD802\uDF2F\uD802\uDF30\uD802\uDF31\uD802\uDF32\uD802\uDF33\uD802\uDF34\uD802\uDF35z"
         };
-        MapIterable<String, Pattern> patternBySeparator = buildPatternMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleSourceMetadataFilenameExtension());
+        MapIterable<String, PathNameMatcher> matcherBySeparator = buildMatcherMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleSourceMetadataFilenameExtension());
         forEachFSSeparator(fsSeparator ->
         {
-            Pattern pattern = patternBySeparator.get(fsSeparator);
+            PathNameMatcher matcher = matcherBySeparator.get(fsSeparator);
             for (String moduleName : unicodeModuleNames)
             {
                 String filePath = this.extension.getModuleSourceMetadataFilePath(moduleName, fsSeparator);
                 Assert.assertNotNull(moduleName, filePath);
-                if (!pattern.matcher(filePath).matches())
+                int invalidIndex = matcher.applyAsInt(filePath);
+                if (invalidIndex != -1)
                 {
-                    Assert.fail("File path does not match the expected pattern\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tpattern: " + pattern.pattern());
+                    Assert.fail("Invalid file path\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tinvalid index: " + invalidIndex + "\n\tinvalid code point: " + ((invalidIndex < filePath.length()) ? codePointToString(filePath.codePointAt(invalidIndex)) : null));
                 }
                 int index = findInvalidName(filePath, fsSeparator);
                 if (index > -1)
@@ -291,17 +300,18 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
                 "\uD802\uDF21\uD802\uDF22\uD802\uDF23\uD802\uDF24\uD802\uDF25\uD802\uDF26\uD802\uDF27\uD802\uDF28\uD802\uDF29\uD802\uDF2A\uD802\uDF2B",
                 "a\uD802\uDF2C\uD802\uDF2D\uD802\uDF2E\uD802\uDF2F\uD802\uDF30\uD802\uDF31\uD802\uDF32\uD802\uDF33\uD802\uDF34\uD802\uDF35z"
         };
-        MapIterable<String, Pattern> patternBySeparator = buildPatternMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleExternalReferenceMetadataFilenameExtension());
+        MapIterable<String, PathNameMatcher> matcherBySeparator = buildMatcherMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleExternalReferenceMetadataFilenameExtension());
         forEachFSSeparator(fsSeparator ->
         {
-            Pattern pattern = patternBySeparator.get(fsSeparator);
+            PathNameMatcher matcher = matcherBySeparator.get(fsSeparator);
             for (String moduleName : unicodeModuleNames)
             {
                 String filePath = this.extension.getModuleExternalReferenceMetadataFilePath(moduleName, fsSeparator);
                 Assert.assertNotNull(moduleName, filePath);
-                if (!pattern.matcher(filePath).matches())
+                int invalidIndex = matcher.applyAsInt(filePath);
+                if (invalidIndex != -1)
                 {
-                    Assert.fail("File path does not match the expected pattern\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tpattern: " + pattern.pattern());
+                    Assert.fail("Invalid file path\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tinvalid index: " + invalidIndex + "\n\tinvalid code point: " + ((invalidIndex < filePath.length()) ? codePointToString(filePath.codePointAt(invalidIndex)) : null));
                 }
                 int index = findInvalidName(filePath, fsSeparator);
                 if (index > -1)
@@ -334,19 +344,20 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
                         "\uD801\uDE2C\uD801\uDE2D\uD801\uDE2E\uD801\uDE2F"
         };
 
-        MapIterable<String, Pattern> patternBySeparator = buildPatternMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleElementBackReferenceMetadataFilenameExtension());
+        MapIterable<String, PathNameMatcher> matcherBySeparator = buildMatcherMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleElementBackReferenceMetadataFilenameExtension());
         forEachFSSeparator(fsSeparator ->
         {
-            Pattern pattern = patternBySeparator.get(fsSeparator);
+            PathNameMatcher matcher = matcherBySeparator.get(fsSeparator);
             for (String elementPath : unicodeElementPaths)
             {
                 for (String moduleName : unicodeModuleNames)
                 {
                     String filePath = this.extension.getModuleElementBackReferenceMetadataFilePath(moduleName, elementPath, fsSeparator);
                     Assert.assertNotNull(moduleName, filePath);
-                    if (!pattern.matcher(filePath).matches())
+                    int invalidIndex = matcher.applyAsInt(filePath);
+                    if (invalidIndex != -1)
                     {
-                        Assert.fail("File path does not match the expected pattern\n\tmodule name: " + moduleName + "\n\telement path: " + elementPath + "\n\tfile path: " + filePath + "\n\tpattern: " + pattern.pattern());
+                        Assert.fail("Invalid file path\n\tmodule name: " + moduleName + "\n\telement path: " + elementPath + "\n\tfile path: " + filePath + "\n\tinvalid index: " + invalidIndex + "\n\tinvalid code point: " + ((invalidIndex < filePath.length()) ? codePointToString(filePath.codePointAt(invalidIndex)) : null));
                     }
                     int index = findInvalidName(filePath, fsSeparator);
                     if (index > -1)
@@ -387,17 +398,18 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
                         "VeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVery\uD808\uDC00\uD808\uDC17" +
                         "ryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName"
         };
-        MapIterable<String, Pattern> patternBySeparator = buildPatternMap(getExpectedElementPrefixDirs(), getExpectedElementFilenameExtension());
+        MapIterable<String, PathNameMatcher> matcherBySeparator = buildMatcherMap(getExpectedElementPrefixDirs(), getExpectedElementFilenameExtension());
         forEachFSSeparator(fsSeparator ->
         {
-            Pattern pattern = patternBySeparator.get(fsSeparator);
+            PathNameMatcher matcher = matcherBySeparator.get(fsSeparator);
             for (String path : longElementPaths)
             {
                 String filePath = this.extension.getElementFilePath(path, fsSeparator);
                 Assert.assertNotNull(path, filePath);
-                if (!pattern.matcher(filePath).matches())
+                int invalidIndex = matcher.applyAsInt(filePath);
+                if (invalidIndex != -1)
                 {
-                    Assert.fail("File path does not match the expected pattern\n\telement path: " + path + "\n\tfile path: " + filePath + "\n\tpattern: " + pattern.pattern());
+                    Assert.fail("Invalid file path\n\telement path: " + path + "\n\tfile path: " + filePath + "\n\tinvalid index: " + invalidIndex + "\n\tinvalid code point: " + ((invalidIndex < filePath.length()) ? codePointToString(filePath.codePointAt(invalidIndex)) : null));
                 }
                 int index = findInvalidName(filePath, fsSeparator);
                 if (index > -1)
@@ -422,17 +434,18 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
                         "\uD802\uDF21\uD802\uDF22\uD802\uDF23\uD802\uDF24\uD802\uDF25\uD802\uDF26\uD802\uDF27\uD802\uDF28\uD802\uDF29\uD802\uDF2A\uD802\uDF2B" +
                         "\uD802\uDF2C\uD802\uDF2D\uD802\uDF2E\uD802\uDF2F\uD802\uDF30\uD802\uDF31\uD802\uDF32\uD802\uDF33\uD802\uDF34\uD802\uDF35_long_name"
         };
-        MapIterable<String, Pattern> patternBySeparator = buildPatternMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleManifestFilenameExtension());
+        MapIterable<String, PathNameMatcher> matcherBySeparator = buildMatcherMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleManifestFilenameExtension());
         forEachFSSeparator(fsSeparator ->
         {
-            Pattern pattern = patternBySeparator.get(fsSeparator);
+            PathNameMatcher matcher = matcherBySeparator.get(fsSeparator);
             for (String moduleName : longModuleNames)
             {
                 String filePath = this.extension.getModuleManifestFilePath(moduleName, fsSeparator);
                 Assert.assertNotNull(moduleName, filePath);
-                if (!pattern.matcher(filePath).matches())
+                int invalidIndex = matcher.applyAsInt(filePath);
+                if (invalidIndex != -1)
                 {
-                    Assert.fail("File path does not match the expected pattern\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tpattern: " + pattern.pattern());
+                    Assert.fail("Invalid file path\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tinvalid index: " + invalidIndex + "\n\tinvalid code point: " + ((invalidIndex < filePath.length()) ? codePointToString(filePath.codePointAt(invalidIndex)) : null));
                 }
                 int index = findInvalidName(filePath, fsSeparator);
                 if (index > -1)
@@ -457,17 +470,18 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
                         "\uD802\uDF21\uD802\uDF22\uD802\uDF23\uD802\uDF24\uD802\uDF25\uD802\uDF26\uD802\uDF27\uD802\uDF28\uD802\uDF29\uD802\uDF2A\uD802\uDF2B" +
                         "\uD802\uDF2C\uD802\uDF2D\uD802\uDF2E\uD802\uDF2F\uD802\uDF30\uD802\uDF31\uD802\uDF32\uD802\uDF33\uD802\uDF34\uD802\uDF35_long_name"
         };
-        MapIterable<String, Pattern> patternBySeparator = buildPatternMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleSourceMetadataFilenameExtension());
+        MapIterable<String, PathNameMatcher> matcherBySeparator = buildMatcherMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleSourceMetadataFilenameExtension());
         forEachFSSeparator(fsSeparator ->
         {
-            Pattern pattern = patternBySeparator.get(fsSeparator);
+            PathNameMatcher matcher = matcherBySeparator.get(fsSeparator);
             for (String moduleName : longModuleNames)
             {
                 String filePath = this.extension.getModuleSourceMetadataFilePath(moduleName, fsSeparator);
                 Assert.assertNotNull(moduleName, filePath);
-                if (!pattern.matcher(filePath).matches())
+                int invalidIndex = matcher.applyAsInt(filePath);
+                if (invalidIndex != -1)
                 {
-                    Assert.fail("File path does not match the expected pattern\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tpattern: " + pattern.pattern());
+                    Assert.fail("Invalid file path\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tinvalid index: " + invalidIndex + "\n\tinvalid code point: " + ((invalidIndex < filePath.length()) ? codePointToString(filePath.codePointAt(invalidIndex)) : null));
                 }
                 int index = findInvalidName(filePath, fsSeparator);
                 if (index > -1)
@@ -492,17 +506,18 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
                         "\uD802\uDF21\uD802\uDF22\uD802\uDF23\uD802\uDF24\uD802\uDF25\uD802\uDF26\uD802\uDF27\uD802\uDF28\uD802\uDF29\uD802\uDF2A\uD802\uDF2B" +
                         "\uD802\uDF2C\uD802\uDF2D\uD802\uDF2E\uD802\uDF2F\uD802\uDF30\uD802\uDF31\uD802\uDF32\uD802\uDF33\uD802\uDF34\uD802\uDF35_long_name"
         };
-        MapIterable<String, Pattern> patternBySeparator = buildPatternMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleExternalReferenceMetadataFilenameExtension());
+        MapIterable<String, PathNameMatcher> matcherBySeparator = buildMatcherMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleExternalReferenceMetadataFilenameExtension());
         forEachFSSeparator(fsSeparator ->
         {
-            Pattern pattern = patternBySeparator.get(fsSeparator);
+            PathNameMatcher matcher = matcherBySeparator.get(fsSeparator);
             for (String moduleName : longModuleNames)
             {
                 String filePath = this.extension.getModuleExternalReferenceMetadataFilePath(moduleName, fsSeparator);
                 Assert.assertNotNull(moduleName, filePath);
-                if (!pattern.matcher(filePath).matches())
+                int invalidIndex = matcher.applyAsInt(filePath);
+                if (invalidIndex != -1)
                 {
-                    Assert.fail("File path does not match the expected pattern\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tpattern: " + pattern.pattern());
+                    Assert.fail("Invalid file path\n\tmodule name: " + moduleName + "\n\tfile path: " + filePath + "\n\tinvalid index: " + invalidIndex + "\n\tinvalid code point: " + ((invalidIndex < filePath.length()) ? codePointToString(filePath.codePointAt(invalidIndex)) : null));
                 }
                 int index = findInvalidName(filePath, fsSeparator);
                 if (index > -1)
@@ -553,19 +568,20 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
                         "VeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVery\uD808\uDC00\uD808\uDC17" +
                         "ryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName"
         };
-        MapIterable<String, Pattern> patternBySeparator = buildPatternMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleElementBackReferenceMetadataFilenameExtension());
+        MapIterable<String, PathNameMatcher> matcherBySeparator = buildMatcherMap(getExpectedModuleMetadataPrefixDirs(), getExpectedModuleElementBackReferenceMetadataFilenameExtension());
         forEachFSSeparator(fsSeparator ->
         {
-            Pattern pattern = patternBySeparator.get(fsSeparator);
+            PathNameMatcher matcher = matcherBySeparator.get(fsSeparator);
             for (String moduleName : longModuleNames)
             {
                 for (String elementPath : longElementPaths)
                 {
                     String filePath = this.extension.getModuleElementBackReferenceMetadataFilePath(moduleName, elementPath, fsSeparator);
                     Assert.assertNotNull(moduleName, filePath);
-                    if (!pattern.matcher(filePath).matches())
+                    int invalidIndex = matcher.applyAsInt(filePath);
+                    if (invalidIndex != -1)
                     {
-                        Assert.fail("File path does not match the expected pattern\n\tmodule name: " + moduleName + "\n\telement path: " + elementPath + "\n\tfile path: " + filePath + "\n\tpattern: " + pattern.pattern());
+                        Assert.fail("Invalid file path\n\tmodule name: " + moduleName + "\n\telement path: " + elementPath + "\n\tfile path: " + filePath + "\n\tinvalid index: " + invalidIndex + "\n\tinvalid code point: " + ((invalidIndex < filePath.length()) ? codePointToString(filePath.codePointAt(invalidIndex)) : null));
                     }
                     int index = findInvalidName(filePath, fsSeparator);
                     if (index > -1)
@@ -619,27 +635,102 @@ public abstract class AbstractFilePathProviderExtensionTest extends AbstractRefe
         consumer.accept("\\");
     }
 
-    private static MapIterable<String, Pattern> buildPatternMap(ListIterable<String> expectedPrefixDirs, String expectedExtension)
+    private static MapIterable<String, PathNameMatcher> buildMatcherMap(ListIterable<String> expectedPrefixDirs, String expectedExtension)
     {
-        MutableMap<String, Pattern> patterns = Maps.mutable.empty();
-        forEachFSSeparator(sep -> patterns.put(sep, buildFilePathPattern(expectedPrefixDirs, sep, expectedExtension)));
+        MutableMap<String, PathNameMatcher> patterns = Maps.mutable.empty();
+        forEachFSSeparator(sep -> patterns.put(sep, new PathNameMatcher(expectedPrefixDirs, sep, expectedExtension)));
         return patterns;
     }
 
-    private static Pattern buildFilePathPattern(ListIterable<String> prefixDirs, String separator, String ext)
+    private static String codePointToString(int codePoint)
     {
-        StringBuilder builder = new StringBuilder();
-        if ((prefixDirs != null) && prefixDirs.notEmpty())
+        return new String(new int[]{codePoint}, 0, 1);
+    }
+
+    private static class PathNameMatcher implements ToIntFunction<String>
+    {
+        private final String prefix;
+        private final String separator;
+        private final String extension;
+        private final boolean checkValidCPs;
+
+        private PathNameMatcher(ListIterable<String> prefixDirs, String separator, String extension)
         {
-            builder.append("\\Q");
-            prefixDirs.forEach(dir -> builder.append(dir).append(separator));
-            builder.append("\\E");
+            this.prefix = ((prefixDirs == null) || prefixDirs.isEmpty()) ? null : prefixDirs.makeString("", separator, separator);
+            this.separator = separator;
+            this.extension = extension;
+            // Java 8 does not properly handle Character.isLetterOrDigit for supplementary characters
+            // (i.e., unicode code points that consist of multiple chars)
+            // so we only check valid code points after Java 8
+            this.checkValidCPs = SourceVersion.latest().ordinal() > 8;
         }
-        builder.append("([\\w$]++\\Q").append(separator).append("\\E)*+[\\w$]++");
-        if ((ext != null) && !ext.isEmpty())
+
+        @Override
+        public int applyAsInt(String value)
         {
-            builder.append("\\Q").append(ext).append("\\E");
+            if ((value == null) || value.isEmpty())
+            {
+                return 0;
+            }
+
+            int index = 0;
+            if (this.prefix != null)
+            {
+                if (!value.startsWith(this.prefix))
+                {
+                    return 0;
+                }
+                index += this.prefix.length();
+            }
+
+            int end;
+            if (this.extension == null)
+            {
+                end = value.length();
+            }
+            else if (!value.endsWith(this.extension))
+            {
+                return index;
+            }
+            else
+            {
+                end = value.length() - this.extension.length();
+                if (end < index)
+                {
+                    return index;
+                }
+            }
+
+            int nameCPCount = 0;
+            while (index < end)
+            {
+                if (value.startsWith(this.separator, index))
+                {
+                    if (nameCPCount == 0)
+                    {
+                        return index;
+                    }
+                    nameCPCount = 0;
+                    index += this.separator.length();
+                }
+                else
+                {
+                    int cp = value.codePointAt(index);
+                    if (!isValidPathNameCodePoint(cp))
+                    {
+                        return index;
+                    }
+                    nameCPCount++;
+                    index += Character.charCount(cp);
+                }
+            }
+
+            return -1;
         }
-        return Pattern.compile(builder.toString(), Pattern.UNICODE_CHARACTER_CLASS);
+
+        private boolean isValidPathNameCodePoint(int codePoint)
+        {
+            return !this.checkValidCPs || (codePoint == '_') || (codePoint == '$') || Character.isLetterOrDigit(codePoint);
+        }
     }
 }

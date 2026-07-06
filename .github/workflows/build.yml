@@ -35,7 +35,12 @@ jobs:
         env:
           cache-name: cache-mvn-deps
         with:
-          path: ~/.m2/repository
+          # Never cache this project's own artifacts: the cache is only
+          # refreshed when a pom.xml changes, so cached project jars go stale
+          # on Java-only commits and would shadow the current build's output.
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/finos/legend/pure
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
@@ -80,17 +85,24 @@ jobs:
           MAVEN_OPTS: -XX:MaxRAMPercentage=80.0
         run: mvn -B -e -P sonar sonar:sonar
 
-      - name: Test
-        env:
-          MAVEN_OPTS: -XX:MaxRAMPercentage=25.0
-        run: mvn -B -e surefire:test -DargLine="-XX:MaxRAMPercentage=25.0" -DforkCount=3 -DreuseForks=true -Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports-aggregate
+      - name: Archive build output
+        # Bundle the whole workspace (compiled classes, generated sources, PAR
+        # archives, etc.) into one file so the test jobs can reuse this build
+        # instead of recompiling. The .git dir isn't needed downstream.
+        # Also bundle the project's own artifacts that `mvn install` put in the
+        # local repository: `mvn surefire:test` resolves inter-module
+        # dependencies from ~/.m2, so the test jobs must get THIS build's jars
+        # rather than whatever project jars the Maven dependency cache carries.
+        run: |
+          cp -r ~/.m2/repository/org/finos/legend/pure project-artifacts
+          tar -cf build-output.tar --exclude='.git' .
 
-      - name: Upload Test Results
-        if: always()
+      - name: Upload build output
         uses: actions/upload-artifact@v7
         with:
-          name: test-results
-          path: ${{ github.workspace }}/surefire-reports-aggregate/*.xml
+          name: build-output
+          path: build-output.tar
+          retention-days: 1
 
       - name: Upload CI Event
         if: always()
@@ -98,3 +110,75 @@ jobs:
         with:
           name: event-file
           path: ${{ github.event_path }}
+
+  test:
+    name: Test (JDK ${{ matrix.jdk }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk: [17, 8]
+    steps:
+      - name: Download build output
+        uses: actions/download-artifact@v7
+        with:
+          name: build-output
+
+      - name: Extract build output
+        run: tar -xf build-output.tar
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v5
+        env:
+          cache-name: cache-mvn-deps
+        with:
+          # Never cache this project's own artifacts (see the build job).
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/finos/legend/pure
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - name: Set up JDKs
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: |
+            17
+            8
+
+      - name: Install project artifacts from this build
+        # Inter-module dependencies resolve from ~/.m2 during surefire:test,
+        # so they must be the jars installed by this run's build job — never
+        # project jars left over in the restored dependency cache.
+        run: |
+          rm -rf ~/.m2/repository/org/finos/legend/pure
+          mkdir -p ~/.m2/repository/org/finos/legend
+          cp -r project-artifacts ~/.m2/repository/org/finos/legend/pure
+
+      - name: Test
+        env:
+          MAVEN_OPTS: -XX:MaxRAMPercentage=25.0
+        run: |
+          # Maven itself must run on a JDK the enforcer plugin accepts (17),
+          # regardless of which JDK we want to run the tests on. The compiled
+          # test classes already target Java 8 bytecode, so for the "8" leg
+          # we just point Surefire's forked test JVM at the JDK 8 install.
+          export JAVA_HOME="$JAVA_HOME_17_X64"
+          if [ "${{ matrix.jdk }}" = "8" ]; then
+            TEST_JVM="$JAVA_HOME_8_X64/bin/java"
+          else
+            TEST_JVM="$JAVA_HOME_17_X64/bin/java"
+          fi
+          mvn -B -e surefire:test -Djvm="${TEST_JVM}" -DargLine="-XX:MaxRAMPercentage=25.0" -DforkCount=3 -DreuseForks=true -Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports-aggregate-jdk${{ matrix.jdk }}
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-jdk${{ matrix.jdk }}
+          path: ${{ github.workspace }}/surefire-reports-aggregate-jdk${{ matrix.jdk }}/*.xml

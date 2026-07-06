@@ -52,27 +52,27 @@ public class NewDate extends AbstractNative
                 "       {\n" +
                 "           case 1:\n" +
                 "           {\n" +
-                "               return CoreGen.newDate((long) vars.get(0), null);\n" +
+                "               return CoreGen.newDate(((Number) vars.get(0)).longValue(), null);\n" +
                 "           }\n" +
                 "           case 2:\n" +
                 "           {\n" +
-                "               return CoreGen.newDate((long) vars.get(0), (long) vars.get(1), null);\n" +
+                "               return CoreGen.newDate(((Number) vars.get(0)).longValue(), ((Number) vars.get(1)).longValue(), null);\n" +
                 "           }\n" +
                 "           case 3:\n" +
                 "           {\n" +
-                "               return CoreGen.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), null);\n" +
+                "               return CoreGen.newDate(((Number) vars.get(0)).longValue(), ((Number) vars.get(1)).longValue(), ((Number) vars.get(2)).longValue(), null);\n" +
                 "           }\n" +
                 "           case 4:\n" +
                 "           {\n" +
-                "               return CoreGen.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), (long) vars.get(3), null);\n" +
+                "               return CoreGen.newDate(((Number) vars.get(0)).longValue(), ((Number) vars.get(1)).longValue(), ((Number) vars.get(2)).longValue(), ((Number) vars.get(3)).longValue(), null);\n" +
                 "           }\n" +
                 "           case 5:\n" +
                 "           {\n" +
-                "               return CoreGen.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), (long) vars.get(3), (long) vars.get(4), null);\n" +
+                "               return CoreGen.newDate(((Number) vars.get(0)).longValue(), ((Number) vars.get(1)).longValue(), ((Number) vars.get(2)).longValue(), ((Number) vars.get(3)).longValue(), ((Number) vars.get(4)).longValue(), null);\n" +
                 "           }\n" +
                 "           default:\n" +
                 "           {\n" +
-                "               return CoreGen.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), (long) vars.get(3), (long) vars.get(4), (Number) vars.get(5), null);\n" +
+                "               return CoreGen.newDate(((Number) vars.get(0)).longValue(), ((Number) vars.get(1)).longValue(), ((Number) vars.get(2)).longValue(), ((Number) vars.get(3)).longValue(), ((Number) vars.get(4)).longValue(), (Number) vars.get(5), null);\n" +
                 "           }\n" +
                 "       }\n" +
                 "   }\n" +
