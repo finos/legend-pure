@@ -115,9 +115,9 @@ public class ExecutePCTTest extends NativeFunction
             // Test passed
             if (expectedError != null)
             {
-                // Was expected to fail but passed: needs rebase
+                // Was expected to fail but passed: exclusion is stale and should be removed
                 status = "FAIL";
-                message = "Test was expected to fail with \"" + expectedError + "\" but now passes — run with rebase to update the manifest.";
+                message = PCTTools.formatUnexpectedPass(fqn, expectedError);
             }
             else
             {
@@ -136,7 +136,7 @@ public class ExecutePCTTest extends NativeFunction
             else
             {
                 status = "FAIL";
-                message = errorMsg;
+                message = PCTTools.formatExpectedFailureMismatch(fqn, expectedError, errorMsg);
                 if (e.hasPureStackTrace())
                 {
                     message += "\n" + e.getPureStackTrace("        ");
@@ -145,8 +145,14 @@ public class ExecutePCTTest extends NativeFunction
         }
         catch (Exception e)
         {
-            String errorMsg = PCTTools.getMessageFromError(e);
-            if (expectedError != null && errorMsg.contains(expectedError))
+            // Report and match against the underlying error after stripping the generic
+            // "Unexpected error executing function ..." wrapper(s) and reflection plumbing, so the
+            // opaque wrapper never surfaces in results. The generic wrapper is intentionally NOT a
+            // valid expectedError: an exclusion must record the real diagnostic error. Consistent
+            // with the compiled runner.
+            Throwable thrown = PCTTools.unwrapExecutionError(e);
+            String errorMsg = PCTTools.getMessageFromError(thrown);
+            if (expectedError != null && !PCTTools.isGenericExecutionErrorMessage(expectedError) && errorMsg.contains(expectedError))
             {
                 // Expected failure with matching error
                 status = "PASS";
@@ -155,18 +161,11 @@ public class ExecutePCTTest extends NativeFunction
             else
             {
                 status = "ERROR";
+                message = PCTTools.formatExpectedFailureMismatch(fqn, expectedError, errorMsg);
                 PureException pe = PureException.findPureException(e);
-                if (pe != null)
+                if (pe != null && pe.hasPureStackTrace())
                 {
-                    message = pe.getInfo();
-                    if (pe.hasPureStackTrace())
-                    {
-                        message += "\n" + pe.getPureStackTrace("        ");
-                    }
-                }
-                else
-                {
-                    message = e.getMessage();
+                    message += "\n" + pe.getPureStackTrace("        ");
                 }
             }
         }

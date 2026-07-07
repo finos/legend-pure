@@ -31,6 +31,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.enumeration.Enumeration;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
+import org.finos.legend.pure.m3.pct.shared.PCTTools;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
@@ -131,7 +132,9 @@ public class ExecuteTest extends NativeFunction
             }
             else
             {
-                message = e.getMessage();
+                // Strip the generic "Unexpected error executing function ..." wrapper(s) so the
+                // helpful underlying error is reported rather than the opaque wrapper.
+                message = PCTTools.getMessageFromError(PCTTools.unwrapExecutionError(e));
             }
         }
 
