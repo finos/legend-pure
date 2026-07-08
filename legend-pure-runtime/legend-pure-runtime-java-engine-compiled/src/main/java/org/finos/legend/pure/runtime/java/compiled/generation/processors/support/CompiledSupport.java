@@ -2375,7 +2375,7 @@ public class CompiledSupport
         catch (Throwable e)
         {
             status = "ERROR";
-            message = PCTTools.getMessageFromError(e);
+            message = PCTTools.getMessageFromError(PCTTools.unwrapExecutionError(e));
         }
 
         long timeNanos = System.nanoTime() - start;
@@ -2460,8 +2460,8 @@ public class CompiledSupport
                 if (expectedError != null)
                 {
                     status = "FAIL";
-                    message = "Test was expected to fail with \"" + expectedError + "\" but now passes — run with rebase to update " + "the manifest.";
-                } 
+                    message = PCTTools.formatUnexpectedPass(fqn, expectedError);
+                }
                 else
                 {
                     status = "PASS";
@@ -2496,21 +2496,26 @@ public class CompiledSupport
             else
             {
                 status = "FAIL";
-                message = errorMsg;
+                message = PCTTools.formatExpectedFailureMismatch(fqn, expectedError, errorMsg);
             }
         }
         catch (Throwable e)
         {
             String expectedError = lookupExclusionCompiled(exclusionsMap, testFn);
-            String errorMsg = PCTTools.getMessageFromError(e);
+            // Report and match against the underlying error after stripping the generic
+            // "Unexpected error executing function ..." wrapper(s) and reflection plumbing, so the
+            // opaque wrapper never surfaces in results. The generic wrapper is intentionally NOT a
+            // valid expectedError: an exclusion must record the real diagnostic error.
+            Throwable thrown = PCTTools.unwrapExecutionError(e);
+            String errorMsg = PCTTools.getMessageFromError(thrown);
             boolean match = false;
-            if (expectedError != null)
+            if (expectedError != null && !PCTTools.isGenericExecutionErrorMessage(expectedError))
             {
                 if (errorMsg.contains(expectedError))
                 {
                     match = true;
                 }
-                else if (e instanceof AssertionError && "Assert failure".equals(expectedError))
+                else if (thrown instanceof AssertionError && "Assert failure".equals(expectedError))
                 {
                     match = true;
                 }
@@ -2523,7 +2528,7 @@ public class CompiledSupport
             else
             {
                 status = "ERROR";
-                message = errorMsg;
+                message = PCTTools.formatExpectedFailureMismatch(fqn, expectedError, errorMsg);
             }
         }
 
