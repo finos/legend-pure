@@ -141,7 +141,7 @@ public class PureJavaCompiler
         }
         else if (currentJavaVersion >= 20)
         {
-            resolvedVersion = currentJavaVersion;
+            resolvedVersion = 8;
         }
         else
         {
