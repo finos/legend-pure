@@ -18,7 +18,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure-lsp</artifactId>
-        <version>5.87.1-SNAPSHOT</version>
+        <version>5.88.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
