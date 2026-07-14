@@ -67,7 +67,7 @@
         <commons-io.version>2.7</commons-io.version>
         <commons-lang.version>3.5</commons-lang.version>
         <commons-text.version>1.10.0</commons-text.version>
-        <deephaven-csv.version>0.18.0</deephaven-csv.version>
+        <deephaven-csv.version>0.19.0</deephaven-csv.version>
         <eclipsecollections.version>10.2.0</eclipsecollections.version>
         <guava.version>33.4.6-jre</guava.version>
         <vavr.version>1.0.1</vavr.version>

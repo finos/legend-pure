@@ -329,7 +329,11 @@ public class TDSExtension implements InlineDSL
 
     public static CsvSpecs makePureCsvSpecs()
     {
-        return CsvSpecs.builder().nullValueLiterals(Arrays.asList("", "null")).build();
+        return CsvSpecs.builder()
+                .quote('\'') // emulate Pure String quoting
+                .escape('\\') // emulate escaping from Pure
+                .nullValueLiterals(Arrays.asList("", "null"))
+                .build();
     }
 
     public static SinkFactory makePureSinkFactory()
