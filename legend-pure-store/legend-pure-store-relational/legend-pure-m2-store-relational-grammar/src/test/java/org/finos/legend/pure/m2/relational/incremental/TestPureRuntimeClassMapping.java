@@ -150,14 +150,14 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
             "  Table personTable\n" +
             "  (\n" +
             "    FIRSTNAME VARCHAR(100) PRIMARY KEY,\n" +
-            "    AGE INTEGER,\n" +
-            "    FIRMID INTEGER\n" +
+            "    AGE INTEGER NOT NULL,\n" +
+            "    FIRMID INTEGER NOT NULL\n" +
             "  )\n" +
             "\n" +
             "  Table firmTable\n" +
             "  (\n" +
             "    ID INTEGER PRIMARY KEY,\n" +
-            "    LEGALNAME VARCHAR(100)\n" +
+            "    LEGALNAME VARCHAR(100) NOT NULL\n" +
             "  )\n" +
             ")\n";
 

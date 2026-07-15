@@ -14,15 +14,23 @@
 
 package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.antlr;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.misc.Interval;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.RelationMappingParser;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.RelationMappingParserBaseVisitor;
+import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.function.InvalidFunctionDescriptorException;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.AntlrContextToM3CoreInstance;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
@@ -33,24 +41,30 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
     private final ModelRepository repository;
     private final ProcessorSupport processorSupport;
     private final AntlrSourceInformation sourceInformation;
+    private final Context context;
+    private final String sourceName;
+    private final int offset;
     private String mappingPath;
+    private int lambdaCounter;
 
-    public RelationMappingGraphBuilder(String importId, ModelRepository repository, ProcessorSupport processorSupport, AntlrSourceInformation sourceInformation)
+    public RelationMappingGraphBuilder(String importId, ModelRepository repository, ProcessorSupport processorSupport, AntlrSourceInformation sourceInformation, Context context, String sourceName, int offset)
     {
         this.importId = importId;
         this.repository = repository;
         this.processorSupport = processorSupport;
         this.sourceInformation = sourceInformation;
+        this.context = context;
+        this.sourceName = sourceName;
+        this.offset = offset;
     }
 
     public String visitMapping(RelationMappingParser.MappingContext ctx, String id, String extendsId, String setSourceInfo, boolean root, String classPath, String classSourceInfo, String mappingPath)
     {
         this.mappingPath = mappingPath;
-        Token functionStartToken = ctx.functionDescriptor() != null ? ctx.functionDescriptor().getStart() : ctx.qualifiedName().getStart();
-        Token functionEndToken = ctx.functionDescriptor() != null ? ctx.functionDescriptor().getStop() : ctx.qualifiedName().getStop();
+        RelationMappingParser.RelationSourceContext srcCtx = ctx.relationSource();
         try
         {
-            String functionId = ctx.functionDescriptor() != null ? FunctionDescriptor.functionDescriptorToId(ctx.functionDescriptor().getText()) : ctx.qualifiedName().getText();
+            String relationFunctionM4 = visitRelationSource(srcCtx, id, classPath);
             String propertyMappings = ctx.singlePropertyMapping() == null ? "" : ListIterate.collect(ctx.singlePropertyMapping(), c -> visitPropertyMapping(c, id)).makeString(",");
 
             return "^meta::pure::mapping::relation::RelationFunctionInstanceSetImplementation" + setSourceInfo + "(" +
@@ -59,14 +73,36 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
                     "root = " + root + "," +
                     "class = ^meta::pure::metamodel::import::ImportStub " + classSourceInfo + " (importGroup=system::imports::" + importId + ", idOrPath='" + classPath + "')," +
                     "parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + importId + ", idOrPath='" + mappingPath + "')," +
-                    "relationFunction = ^meta::pure::metamodel::import::ImportStub " + this.sourceInformation.getPureSourceInformation(functionStartToken, functionStartToken,  functionEndToken).toM4String() + " (importGroup=system::imports::" + this.importId + ", idOrPath='" + functionId + "')," +
+                    "relationFunction = " + relationFunctionM4 + "," +
                     "propertyMappings=[" + propertyMappings + "]" +
                     ")";
         }
         catch (InvalidFunctionDescriptorException e)
         {
-            throw new PureParserException(this.sourceInformation.getPureSourceInformation(functionStartToken, functionStartToken,  functionEndToken), "Invalid function descriptor specified for relation function mapping!", e);
+            Token startTok = srcCtx.getStart();
+            Token stopTok = srcCtx.getStop();
+            throw new PureParserException(this.sourceInformation.getPureSourceInformation(startTok, startTok, stopTok), "Invalid function descriptor specified for relation function mapping!", e);
         }
+    }
+
+    private String visitRelationSource(RelationMappingParser.RelationSourceContext ctx, String id, String classPath) throws InvalidFunctionDescriptorException
+    {
+        if (ctx.RELATION_FUNCTION() != null)
+        {
+            // ~func qualifiedName | functionDescriptor — emit ImportStub as before.
+            Token functionStartToken = ctx.functionDescriptor() != null ? ctx.functionDescriptor().getStart() : ctx.qualifiedName().getStart();
+            Token functionEndToken = ctx.functionDescriptor() != null ? ctx.functionDescriptor().getStop() : ctx.qualifiedName().getStop();
+            String functionId = ctx.functionDescriptor() != null ? FunctionDescriptor.functionDescriptorToId(ctx.functionDescriptor().getText()) : ctx.qualifiedName().getText();
+            return "^meta::pure::metamodel::import::ImportStub " + this.sourceInformation.getPureSourceInformation(functionStartToken, functionStartToken, functionEndToken).toM4String() + " (importGroup=system::imports::" + this.importId + ", idOrPath='" + functionId + "')";
+        }
+        // ~src combinedExpression — wrap the inline expression in a synthetic
+        // zero-arg lambda so the rest of the pipeline can treat both forms
+        // uniformly with the `~func` ImportStub flow. The user writes a single
+        // expression (`~src my::personFunction()`) and the resulting lambda's
+        // last-expression generic type drives `$src` binding for property
+        // mappings exactly as if it had come from an explicit Pure function.
+        String srcLambdaText = "{| " + extractText(ctx.combinedExpression()) + "}";
+        return parseLambdaTextToM4(srcLambdaText, lambdaContextId(id, classPath, "src"));
     }
 
     private String visitPropertyMapping(RelationMappingParser.SinglePropertyMappingContext ctx, String id)
@@ -98,7 +134,24 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
 
     private String buildRelationFunctionPropertyMapping(RelationMappingParser.RelationFunctionPropertyMappingContext ctx, String classMappingId, String propertyName, SourceInformation sourceInfo, String localPropertyType, String localPropertyMultiplicity)
     {
-        String columnName = AntlrContextToM3CoreInstance.removeQuotes(ctx.columnName().getText());
+        String lambdaText;
+        if (ctx.columnName() != null)
+        {
+            // Bare-column lowering: `prop: COL` -> `{| $src.COL}`.  Keep the
+            // original (possibly quoted) column text so columns with spaces
+            // (`'LEGAL NAME'`) still parse correctly as quoted property
+            // accessors.  The M3 expression post-processor resolves the
+            // accessor once `src`'s generic type is bound to the relation's
+            // last-expression type.
+            lambdaText = "{| $src." + ctx.columnName().getText() + "}";
+        }
+        else
+        {
+            // Expression form: wrap user expression in a zero-param lambda.
+            lambdaText = "{| " + extractText(ctx.combinedExpression()) + "}";
+        }
+        String lambdaM4 = parseLambdaTextToM4(lambdaText, lambdaContextId(classMappingId, propertyName, "valueFn"));
+
         String transformer = ctx.transformer() != null ? visitTransformerBlock(ctx.transformer()) : null;
 
         return "^meta::pure::mapping::relation::RelationFunctionPropertyMapping" + sourceInfo.toM4String() + "(" +
@@ -108,7 +161,7 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
             "        property = '" + propertyName + "'," +
             (classMappingId == null ? "" : "        sourceSetImplementationId = '" + classMappingId + "', ") +
             (transformer == null ? "" : "        transformer = " + transformer + ",") +
-            "        column=^meta::pure::metamodel::relation::Column(name = '" + columnName + "', nameWildCard = false)" +
+            "        valueFn = " + lambdaM4 +
             ")";
     }
 
@@ -159,4 +212,82 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
                 ")";
     }
 
+    /**
+     * Re-enter the M3 parser to convert a Pure lambda literal text (e.g.
+     * {@code "{| $src.X + $src.Y}"}) into its M4 string form, suitable for
+     * embedding back into the M4 string this graph builder is assembling.
+     * <p>
+     * We deliberately do NOT serialize the parsed {@code LambdaFunction} via
+     * {@code M3AntlrParser.process} — that walks resolved {@code Function}
+     * references inside the body and recurses indefinitely (e.g. for
+     * {@code 1->cast(...)}).  Instead we extract the lambda's
+     * {@code expressionSequence}, serialize just that, and hand-roll an empty
+     * {@code FunctionType} wrapper around it — same shape the existing
+     * {@code PureInstanceSetImplementation.parseMapping} produces.  The
+     * post-processor injects the {@code src} parameter and runs full type
+     * inference at processing time.
+     */
+    private String parseLambdaTextToM4(String lambdaText, String lambdaContextSuffix)
+    {
+        AntlrContextToM3CoreInstance.LambdaContext lambdaContext =
+                new AntlrContextToM3CoreInstance.LambdaContext(lambdaContextSuffix + "_" + (++lambdaCounter));
+        ProcessorSupport ps = (this.processorSupport instanceof M3ProcessorSupport)
+                ? this.processorSupport
+                : new M3ProcessorSupport(this.context, this.repository);
+        CoreInstance parsed = new M3AntlrParser().parseCombinedExpression(
+                lambdaText, lambdaContext, this.sourceName, this.offset, this.importId, this.repository, ps, this.context);
+        ListIterable<? extends CoreInstance> wrapped = parsed == null
+                ? null
+                : parsed.getValueForMetaPropertyToMany(M3Properties.values).toList();
+        if (wrapped == null || wrapped.size() != 1)
+        {
+            throw new PureParserException(null, "Expected a lambda function literal, got: " + lambdaText);
+        }
+        CoreInstance lambda = wrapped.get(0);
+        ListIterable<? extends CoreInstance> bodyExpressions =
+                lambda.getValueForMetaPropertyToMany(M3Properties.expressionSequence).toList();
+        if (bodyExpressions.isEmpty())
+        {
+            throw new PureParserException(null, "Lambda body is empty in: " + lambdaText);
+        }
+        String lambdaSrcInfo = lambda.getSourceInformation() == null
+                ? ""
+                : (" " + lambda.getSourceInformation().toM4String());
+        StringBuilder bodyM4 = new StringBuilder();
+        bodyM4.append('[');
+        for (int i = 0; i < bodyExpressions.size(); i++)
+        {
+            if (i > 0)
+            {
+                bodyM4.append(',');
+            }
+            bodyM4.append(M3AntlrParser.process(bodyExpressions.get(i), ps));
+        }
+        bodyM4.append(']');
+        return "^meta::pure::metamodel::function::LambdaFunction<{->Any[*]}> " + lambdaContext.getLambdaFunctionUniqueName() + lambdaSrcInfo + " (" +
+                "  classifierGenericType = ^meta::pure::metamodel::type::generics::GenericType" + lambdaSrcInfo + " (" +
+                "    rawType = meta::pure::metamodel::function::LambdaFunction," +
+                "    typeArguments = ^meta::pure::metamodel::type::generics::GenericType" + lambdaSrcInfo + " (" +
+                "      rawType = ^meta::pure::metamodel::type::FunctionType" + lambdaSrcInfo + " ()" +
+                "    )" +
+                "  )," +
+                "  expressionSequence = " + bodyM4 +
+                ")";
+    }
+
+    private static String extractText(ParserRuleContext ctx)
+    {
+        Token start = ctx.getStart();
+        Token stop = ctx.getStop();
+        return start.getInputStream().getText(Interval.of(start.getStartIndex(), stop.getStopIndex()));
+    }
+
+    private String lambdaContextId(String classMappingId, String classOrPropertyName, String suffix)
+    {
+        String mp = mappingPath == null ? "anon" : mappingPath.replace("::", "_");
+        return mp + (classMappingId == null ? "" : "_" + classMappingId) + (classOrPropertyName == null ? "" : "_" + classOrPropertyName.replace("::", "_")) + "_" + suffix;
+    }
+
 }
+
+

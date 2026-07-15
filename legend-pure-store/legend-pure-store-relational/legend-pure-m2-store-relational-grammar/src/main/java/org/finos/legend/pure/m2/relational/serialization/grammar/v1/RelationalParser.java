@@ -291,19 +291,36 @@ public class RelationalParser implements IRelationalParser
     {
         Database store = (Database) element;
 
-        Table table;
-        if (path.size() == 2)
+        String schemaName;
+        String tableName;
+        switch (path.size())
         {
-            String schemaName = DatabaseProcessor.DEFAULT_SCHEMA_NAME;
-            table = (Table) org.finos.legend.pure.m2.relational.Database.findTable(store, schemaName, path.get(1), processorSupport);
-            if (table == null)
+            case 2:
             {
-                throw new PureCompilationException(sourceInformation, "The table '" + path.get(1) + "' can't be found in the schema '" + schemaName + "' in the database '" + path.get(0) + "'");
+                schemaName = DatabaseProcessor.DEFAULT_SCHEMA_NAME;
+                tableName = path.get(1);
+                break;
+            }
+            case 3:
+            {
+                schemaName = path.get(1);
+                tableName = path.get(2);
+                if (!org.finos.legend.pure.m2.relational.Database.schemaExists(store, schemaName, processorSupport))
+                {
+                    throw new PureCompilationException(sourceInformation, "The schema '" + schemaName + "' can't be found in the database '" + path.get(0) + "'");
+                }
+                break;
+            }
+            default:
+            {
+                throw new PureCompilationException(sourceInformation, "RelationStoreAccessor path must be of the form 'db.table' or 'db.schema.table' (got " + path.size() + " segment" + (path.size() == 1 ? "" : "s") + ")");
             }
         }
-        else
+
+        Table table = (Table) org.finos.legend.pure.m2.relational.Database.findTable(store, schemaName, tableName, processorSupport);
+        if (table == null)
         {
-            throw new PureCompilationException("Schemas are not supported yet");
+            throw new PureCompilationException(sourceInformation, "The table '" + tableName + "' can't be found in the schema '" + schemaName + "' in the database '" + path.get(0) + "'");
         }
         return Tuples.pair(
                 table,

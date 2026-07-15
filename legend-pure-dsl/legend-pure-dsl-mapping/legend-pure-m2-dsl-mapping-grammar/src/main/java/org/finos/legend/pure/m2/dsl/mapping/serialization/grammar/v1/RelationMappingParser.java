@@ -75,7 +75,7 @@ public class RelationMappingParser implements Parser
 
         try
         {
-            RelationMappingGraphBuilder visitor = new RelationMappingGraphBuilder(importId, repository, new M3ProcessorSupport(context, repository), sourceInformation);
+            RelationMappingGraphBuilder visitor = new RelationMappingGraphBuilder(importId, repository, new M3ProcessorSupport(context, repository), sourceInformation, context, sourceName, offset);
             org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.RelationMappingParser.MappingContext c = parser.mapping();
             return visitor.visitMapping(c, id, extendsId, setSourceInfo, root, classPath, classSourceInfo, mappingPath);
         }

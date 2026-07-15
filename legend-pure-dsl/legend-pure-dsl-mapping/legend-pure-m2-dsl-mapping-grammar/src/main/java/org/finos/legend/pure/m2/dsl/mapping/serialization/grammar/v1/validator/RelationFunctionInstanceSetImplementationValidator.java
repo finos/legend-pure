@@ -21,14 +21,14 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.EmbeddedRelationFunctionSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionPropertyMapping;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
@@ -51,10 +51,9 @@ public class RelationFunctionInstanceSetImplementationValidator implements Match
         {
             if (propertyMapping instanceof RelationFunctionPropertyMapping)
             {
-                RelationFunctionPropertyMapping relationFunctionPropertyMapping = (RelationFunctionPropertyMapping) propertyMapping;
-                Property<?, ?> property = relationFunctionPropertyMapping._property();
-                Column<?, ?> column = relationFunctionPropertyMapping._column();
-                validateProperty(property, column, relationFunctionPropertyMapping._transformer() instanceof EnumerationMapping, propertyMapping.getSourceInformation(), processorSupport);
+                RelationFunctionPropertyMapping rpm = (RelationFunctionPropertyMapping) propertyMapping;
+                Property<?, ?> property = rpm._property();
+                validateValueFn(rpm, property, rpm._transformer() instanceof EnumerationMapping, propertyMapping.getSourceInformation(), processorSupport);
             }
             else if (propertyMapping instanceof EmbeddedRelationFunctionSetImplementation)
             {
@@ -63,27 +62,69 @@ public class RelationFunctionInstanceSetImplementationValidator implements Match
         }
     }
 
-    private void validateProperty(Property<?, ?> property, Column<?, ?> column, boolean hasEnumTransformer, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    private void validateValueFn(RelationFunctionPropertyMapping rpm, Property<?, ?> property, boolean hasEnumTransformer, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
+        LambdaFunction<?> valueFn = rpm._valueFn();
+        if (valueFn == null)
+        {
+            throw new PureCompilationException(sourceInformation, "Relation mapping property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property) + "' has no valueFn lambda.");
+        }
+        ValueSpecification last = valueFn._expressionSequence().toList().getLast();
+        if (last == null)
+        {
+            throw new PureCompilationException(sourceInformation, "Relation mapping property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property) + "' valueFn lambda has no expression body.");
+        }
+
+        String propertyName = org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property);
+
+        // Multiplicity compatibility — the valueFn's multiplicity range must be subsumed
+        // by the property's. Both bounds must be concrete to compare; if either is
+        // non-concrete (parameterised) we let downstream type-checking surface any issue.
         Multiplicity propertyMultiplicity = property._multiplicity();
-        if (!org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isToOne(propertyMultiplicity) && !org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isZeroToOne(propertyMultiplicity))
+        Multiplicity resultMultiplicity = last._multiplicity();
+        if (org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isMultiplicityConcrete(propertyMultiplicity)
+                && org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isMultiplicityConcrete(resultMultiplicity)
+                && !org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.subsumes(propertyMultiplicity, resultMultiplicity))
         {
-            throw new PureCompilationException(sourceInformation, "Properties in relation mappings can only have multiplicity 1 or 0..1, but the property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property) + "' has multiplicity " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(propertyMultiplicity) + ".");
+            throw new PureCompilationException(sourceInformation,
+                    "Multiplicity Error: The property '" + propertyName
+                            + "' has a multiplicity range of " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(propertyMultiplicity)
+                            + " when the given expression has a multiplicity range of " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(resultMultiplicity));
         }
 
-        Type propertyType = property._genericType()._rawType();
-        if (!processorSupport.type_isPrimitiveType(propertyType) && !hasEnumTransformer)
+        // Type compatibility — when an EnumerationMapping transformer is present the
+        // valueFn produces the transformer's source type (typically a primitive) and
+        // the transformer bridges it to the property's enum type, so the direct
+        // subtype check does not apply.
+        if (!hasEnumTransformer)
         {
-            throw new PureCompilationException(sourceInformation, "Relation mapping is only supported for primitive properties, but the property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property) + "' has type " + propertyType._name() + ".");
-        }
-
-        Type columnType = _Column.getColumnType(column)._rawType();
-        if (!processorSupport.type_subTypeOf(columnType, propertyType) && !hasEnumTransformer)
-        {
-            throw new PureCompilationException(sourceInformation, "Mismatching property and relation column types. Property type is " + propertyType._name() + ", but relation column it is mapped to has type " + columnType._name() + ".");
+            GenericType propertyGenericType = property._genericType();
+            GenericType resultGenericType = last._genericType();
+            if (propertyGenericType != null
+                    && resultGenericType != null
+                    && propertyGenericType._rawType() != null
+                    && resultGenericType._rawType() != null
+                    && !org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(resultGenericType, propertyGenericType, processorSupport))
+            {
+                String exprTypeString = org.finos.legend.pure.m3.navigation.generictype.GenericType.print(resultGenericType, false, processorSupport);
+                String propertyTypeString = org.finos.legend.pure.m3.navigation.generictype.GenericType.print(propertyGenericType, false, processorSupport);
+                // Two distinct raw types can still print identically when their
+                // simple names collide (e.g. two `Foo` classes from different
+                // packages); fall back to fully-qualified printing to keep the
+                // error meaningful in that case.
+                if (exprTypeString.equals(propertyTypeString))
+                {
+                    exprTypeString = org.finos.legend.pure.m3.navigation.generictype.GenericType.print(resultGenericType, true, processorSupport);
+                    propertyTypeString = org.finos.legend.pure.m3.navigation.generictype.GenericType.print(propertyGenericType, true, processorSupport);
+                }
+                throw new PureCompilationException(sourceInformation,
+                        "Mismatching property and relation expression types. Property '" + propertyName
+                                + "' is of type '" + propertyTypeString
+                                + "', but the expression mapped to it is of type '" + exprTypeString + "'.");
+            }
         }
     }
-    
+
     public static void validateRelationFunction(CoreInstance relationFunction, ProcessorSupport processorSupport)
     {
         FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(relationFunction);
@@ -103,3 +144,4 @@ public class RelationFunctionInstanceSetImplementationValidator implements Match
         return M2MappingPaths.RelationFunctionInstanceSetImplementation;
     }
 }
+
