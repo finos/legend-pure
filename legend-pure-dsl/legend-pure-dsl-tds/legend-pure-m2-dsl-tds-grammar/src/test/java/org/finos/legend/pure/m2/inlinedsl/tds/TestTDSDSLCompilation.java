@@ -208,7 +208,7 @@ public class TestTDSDSLCompilation extends AbstractPureTestWithCoreCompiled
                         "function test():TDS<(name:String)>[*]\n" +
                         "{\n" +
                         "       #TDS\n" +
-                        "         name :String\n" +
+                        "         name:String\n" +
                         "         'A,B,C'\n" +
                         "         '\\'B\\''\n" +
                         "         B\\,C\\,D\n" +
