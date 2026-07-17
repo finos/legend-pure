@@ -61,3 +61,9 @@ function <<test.Test>> meta::pure::metamodel::relation::tests::testStringToTDSWi
     let tds = stringToTDS('a,b,c\n2,c,true\n,,\nnull,null,null\n')->cast(@TDS<(a:Integer, b:String, c:Boolean)>);
     assertEquals('a, b, c\n2,c,true\n,,\nnull,null,null\n', $tds.csv);
 }
+
+function <<test.Test>> meta::pure::metamodel::relation::tests::testStringToTDSWithQuotedColumns():Boolean[1]
+{
+    let tds = stringToTDS('\'\\\'col\\\'\'\n2\n')->cast(@TDS<('\'col\'':Integer)>);
+    assertEquals('\'\\\'col\\\'\'\n2\n', $tds.csv);
+}

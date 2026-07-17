@@ -61,6 +61,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 
 import java.io.ByteArrayInputStream;
@@ -229,7 +230,13 @@ public class TDSExtension implements InlineDSL
     {
         RelationType<?> givenRelationType = ((RelationType<?>) headerType._rawType());
 
-        String fullText = givenRelationType._columns().collect(FunctionAccessor::_name).makeString(", ") + ((body != null) ? "\n" + body : "");
+        String fullText = givenRelationType._columns()
+                .collect(x ->
+                {
+                    String escaped = StringEscape.escape(x._name());
+                    return escaped.equals(x._name()) ? escaped : "'" + escaped + "'";
+                })
+                .makeString(", ") + ((body != null) ? "\n" + body : "");
 
         CsvReader.Result result;
         try
