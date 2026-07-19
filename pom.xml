@@ -61,20 +61,19 @@
         <antlr.version>4.8-1</antlr.version>
         <apache-httpcomponents.version>4.5.13</apache-httpcomponents.version>
         <apache.maven.version>3.9.11</apache.maven.version>
-        <bouncycastle.version>1.67</bouncycastle.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-csv.version>1.5</commons-csv.version>
-        <commons-io.version>2.7</commons-io.version>
-        <commons-lang.version>3.5</commons-lang.version>
+        <commons-io.version>2.16.1</commons-io.version>
+        <commons-lang.version>3.18.0</commons-lang.version>
         <commons-text.version>1.10.0</commons-text.version>
         <deephaven-csv.version>0.19.0</deephaven-csv.version>
         <eclipsecollections.version>10.2.0</eclipsecollections.version>
         <guava.version>33.4.6-jre</guava.version>
         <vavr.version>1.0.1</vavr.version>
-        <h2.version>2.1.214</h2.version>
+        <h2.version>2.2.224</h2.version>
         <duckdb.version>1.0.0</duckdb.version>
-        <jackson.version>2.10.5</jackson.version>
-        <jackson.databind.version>2.10.5.1</jackson.databind.version>
+        <jackson.version>2.18.8</jackson.version>
+        <jackson.databind.version>2.18.8</jackson.databind.version>
         <javax.servlet.version>3.1.0</javax.servlet.version>
         <jaxrs.version>2.0.1</jaxrs.version>
         <jersey.version>2.25.1</jersey.version>
@@ -285,7 +284,7 @@
                     <dependency>
                         <groupId>com.puppycrawl.tools</groupId>
                         <artifactId>checkstyle</artifactId>
-                        <version>8.25</version>
+                        <version>8.29</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -787,17 +786,6 @@
                 <version>${commons-codec.version}</version>
             </dependency>
             <dependency>
-                <groupId>commons-httpclient</groupId>
-                <artifactId>commons-httpclient</artifactId>
-                <version>3.1</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>${apache-httpcomponents.version}</version>
@@ -866,19 +854,6 @@
             </dependency>
             <!-- Jackson -->
 
-            <!-- To Review -->
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpg-jdk15on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
-            <!-- To Review -->
-
             <!-- Logs -->
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -918,7 +893,7 @@
             <dependency>
                 <groupId>io.github.classgraph</groupId>
                 <artifactId>classgraph</artifactId>
-                <version>4.8.25</version>
+                <version>4.8.184</version>
             </dependency>
             <!-- Class graph -->
 

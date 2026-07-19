@@ -162,6 +162,7 @@ paths are always equivalent from a user's perspective.
 | [Documentation Maintenance](maintenance/maintenance.md) | Keeping docs up to date, ownership, and review cadence |
 | [Module README Template](templates/module-readme-template.md) | Standard template for per-module README files |
 | [Phased Documentation Plan](maintenance/documentation-plan.md) | The phased timeline that produced this documentation set |
+| [Dependency Vulnerability Remediation](maintenance/security-remediation.md) | Tracking doc for upgrading known-vulnerable dependency versions — unit-by-unit plan, blast radius, and status |
 | [Architecture Decision Records](decisions/) | ADR-001 JUnit 4; ADR-002 Eclipse Collections; ADR-003 No mocking |
 
 ---
@@ -184,6 +185,9 @@ See the [Getting Started Guide](guides/getting-started.md) for the full walkthro
 
 To report a vulnerability, follow the process in
 [`SECURITY.md`](../SECURITY.md) — do **not** open a public GitHub issue.
+
+For the ongoing effort to upgrade known-vulnerable third-party dependency versions,
+see [Dependency Vulnerability Remediation](maintenance/security-remediation.md).
 
 ---
 
