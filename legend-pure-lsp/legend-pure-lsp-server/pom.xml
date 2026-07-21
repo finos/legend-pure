@@ -18,7 +18,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure-lsp</artifactId>
-        <version>5.88.2-SNAPSHOT</version>
+        <version>5.89.3-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -55,6 +55,15 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/LspTestSuite.java</include>
+                    </includes>
+                </configuration>
             </plugin>
         </plugins>
     </build>

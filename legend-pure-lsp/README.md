@@ -102,7 +102,7 @@ Open the `legend-engine` repository as the VS Code workspace and add workspace s
 
 ```json
 {
-  "legendPure.server.jarPath": "<legend-pure>/legend-pure-lsp/legend-pure-lsp-server/target/legend-pure-lsp-server-5.86.3-SNAPSHOT.jar",
+  "legendPure.server.jarPath": "<legend-pure>/legend-pure-lsp/legend-pure-lsp-server/target/legend-pure-lsp-server-5.89.3-SNAPSHOT.jar",
   "legendPure.server.classpathFile": "<legend-engine>/legend-engine-core/legend-engine-core-pure/legend-engine-pure-ide/legend-engine-pure-ide-light-http-server/target/legend-pure-lsp-engine.classpath"
 }
 ```
