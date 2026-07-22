@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- Copyright 2022 Goldman Sachs
+ Copyright 2026 Goldman Sachs
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -22,31 +22,16 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>legend-pure-runtime</artifactId>
+    <artifactId>legend-pure-lsp</artifactId>
     <packaging>pom</packaging>
-    <name>Legend Pure - Runtime</name>
+    <name>Legend Pure - LSP</name>
 
-    <build>
-        <plugins>
-            <plugin>
-                <!-- Used to copy test results into test reports module -->
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <configuration>
-                            <reportsDirectory>../../legend-pure-test-reports/surefire-reports-aggregate</reportsDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+    <properties>
+        <gson.version>2.14.0</gson.version>
+        <lsp4j.version>0.23.1</lsp4j.version>
+    </properties>
 
     <modules>
-        <module>legend-pure-runtime-java-engine-compiled</module>
-        <module>legend-pure-runtime-java-engine-interpreted</module>
-        <module>legend-pure-runtime-java-engine-mixed</module>
-        <module>legend-pure-runtime-java-engine-shared</module>
+        <module>legend-pure-lsp-server</module>
     </modules>
 </project>

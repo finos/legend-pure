@@ -35,6 +35,7 @@
         <module>legend-pure-maven</module>
         <module>legend-pure-runtime</module>
         <module>legend-pure-store</module>
+        <module>legend-pure-lsp</module>
         <module>legend-pure-docs</module>
     </modules>
 
@@ -621,6 +622,11 @@
                 <artifactId>legend-pure-runtime-java-engine-shared</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-runtime-java-engine-mixed</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
@@ -1056,4 +1062,5 @@
             <!-- Test Scope -->
         </dependencies>
     </dependencyManagement>
+
 </project>
