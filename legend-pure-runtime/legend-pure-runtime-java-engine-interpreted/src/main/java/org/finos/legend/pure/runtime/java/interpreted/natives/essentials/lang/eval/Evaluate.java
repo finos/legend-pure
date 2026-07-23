@@ -34,6 +34,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.generictype.match.GenericTypeMatch;
 import org.finos.legend.pure.m3.navigation.generictype.match.ParameterMatchBehavior;
+import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -112,7 +113,8 @@ public class Evaluate extends NativeFunction
         CoreInstance valueGenericType = Instance.getValueForMetaPropertyToOneResolved(value, M3Properties.genericType, processorSupport);
         try
         {
-            if (!GenericTypeMatch.genericTypeMatches(signatureGenericType, valueGenericType, true, ParameterMatchBehavior.MATCH_ANYTHING, ParameterMatchBehavior.MATCH_CAUTIOUSLY, processorSupport))
+            if (!GenericTypeMatch.genericTypeMatches(signatureGenericType, valueGenericType, true, ParameterMatchBehavior.MATCH_ANYTHING, ParameterMatchBehavior.MATCH_CAUTIOUSLY, processorSupport)
+                    && !actualValuesMatch(value, signatureGenericType, processorSupport))
             {
                 throw new PureExecutionException(sourceInfo, "Error during dynamic function evaluation. The type " + GenericType.print(valueGenericType, processorSupport) + " is not compatible with the type " + GenericType.print(signatureGenericType, processorSupport), functionExpressionCallStack);
             }
@@ -121,5 +123,24 @@ public class Evaluate extends NativeFunction
         {
             throw new PureExecutionException(sourceInfo, "Error evaluating generic types: " + GenericType.print(valueGenericType, processorSupport) + ", " + GenericType.print(signatureGenericType, processorSupport), e, functionExpressionCallStack);
         }
+    }
+
+    /**
+     * The declared genericType of a value specification may be wider than the types of the actual
+     * values it holds (e.g. after an upcast, whose result keeps the cast target type on the wrapper).
+     * Dynamic evaluation must accept any value whose actual type conforms to the signature, as
+     * compiled mode dispatches on the runtime instance.
+     */
+    private static boolean actualValuesMatch(CoreInstance value, CoreInstance signatureGenericType, ProcessorSupport processorSupport)
+    {
+        ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(value, M3Properties.values, processorSupport);
+        return values.allSatisfy(v -> GenericTypeMatch.genericTypeMatches(signatureGenericType, extractActualGenericType(v, processorSupport), true, ParameterMatchBehavior.MATCH_ANYTHING, ParameterMatchBehavior.MATCH_CAUTIOUSLY, processorSupport));
+    }
+
+    private static CoreInstance extractActualGenericType(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        return Measure.isUnitOrMeasureInstance(instance, processorSupport)
+                ? Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.genericType, processorSupport)
+                : Instance.extractGenericTypeFromInstance(instance, processorSupport);
     }
 }
