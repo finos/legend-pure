@@ -377,7 +377,7 @@ public class JavaStandaloneLibraryGenerator
 
     public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, boolean generatePureTests, Log log)
     {
-        return newGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, true, generatePureTests, log);
+        return newGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, false, generatePureTests, log);
     }
 
     public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, Log log)

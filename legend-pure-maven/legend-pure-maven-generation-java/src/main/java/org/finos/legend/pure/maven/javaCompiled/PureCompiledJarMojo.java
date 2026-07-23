@@ -74,6 +74,7 @@ public class PureCompiledJarMojo extends AbstractMojo
     @Parameter(defaultValue = "monolithic")
     private JavaCodeGeneration.GenerationType generationType;
 
+    @Deprecated
     @Parameter(defaultValue = "false")
     private boolean useSingleDir;
 
@@ -148,7 +149,7 @@ public class PureCompiledJarMojo extends AbstractMojo
         try (URLClassLoader cl = new URLClassLoader(dependencyUrls, savedClassLoader))
         {
             Thread.currentThread().setContextClassLoader(cl);
-            JavaCodeGeneration.doIt(this.repositories, this.excludedRepositories, this.extraRepositories, this.generationType, this.skip, this.addExternalAPI, this.externalAPIPackage, this.generateMetadata, this.useSingleDir, this.generateSources, false, this.preventJavaCompilation, this.classesDirectory, this.targetDirectory, this.generatePureTests, log);
+            JavaCodeGeneration.doIt(this.repositories, this.excludedRepositories, this.extraRepositories, this.generationType, this.skip, this.addExternalAPI, this.externalAPIPackage, this.generateMetadata, this.generateSources, false, this.preventJavaCompilation, this.classesDirectory, this.targetDirectory, this.generatePureTests, log);
         }
         catch (Exception e)
         {

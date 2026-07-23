@@ -62,25 +62,9 @@ public class TestPureCompiledJarMojo
         PureCompiledJarMojo mojo = buildMojo(targetDir, classesDir, setOf("platform"));
         mojo.execute();
 
-        // Monolithic generation writes metadata to target/metadata-distributed.
-        // The serializer writes metadata/bin/*.bin and metadata/classifiers/*.idx inside it.
+        // Monolithic generation no longer writes metadata, but relies on it to already exist
         File metaDir = new File(targetDir, "metadata-distributed");
-        Assert.assertTrue("metadata-distributed directory should be created", metaDir.exists());
-
-        // metadata/bin/ and metadata/classifiers/ are structural invariants
-        File binDir        = new File(metaDir, "metadata/bin");
-        File classifiersDir = new File(metaDir, "metadata/classifiers");
-        Assert.assertTrue("metadata/bin should exist under metadata-distributed",        binDir.isDirectory());
-        Assert.assertTrue("metadata/classifiers should exist under metadata-distributed", classifiersDir.isDirectory());
-
-        // Package.idx is a stable landmark file always produced for the platform repository
-        File packageIdx = new File(classifiersDir, "Package.idx");
-        Assert.assertTrue(
-                "metadata/classifiers/Package.idx should always be generated for the platform repository",
-                packageIdx.exists());
-        Assert.assertTrue(
-                "Package.idx should be a non-empty file",
-                packageIdx.length() > 0);
+        Assert.assertFalse("metadata-distributed directory should not be created", metaDir.exists());
     }
 
     @Test
@@ -113,10 +97,13 @@ public class TestPureCompiledJarMojo
         Assert.assertFalse("Pre-condition: classesDir must not exist", classesDir.exists());
 
         PureCompiledJarMojo mojo = buildMojo(targetDir, classesDir, setOf("platform"));
+        setField(mojo, "generateSources", true);
+        setField(mojo, "preventJavaCompilation", false);
         mojo.execute();
 
         // JavaCodeGeneration creates targetDirectory; verify it now exists
         Assert.assertTrue("targetDirectory should be created by execute()", targetDir.exists());
+        Assert.assertTrue("classesDirectory should be created by execute()", classesDir.exists());
     }
 
     @Test
@@ -136,32 +123,6 @@ public class TestPureCompiledJarMojo
             long count = stream.filter(Files::isRegularFile).count();
             Assert.assertTrue("generateSources=true should produce at least one file", count > 0);
         }
-    }
-
-    @Test
-    public void testExecute_useSingleDir_writesMetadataToClassesDirectory() throws Exception
-    {
-        File targetDir  = TMP.newFolder("exec-singledir-target");
-        File classesDir = new File(targetDir, "classes");
-        classesDir.mkdir();
-
-        PureCompiledJarMojo mojo = buildMojo(targetDir, classesDir, setOf("platform"));
-        setField(mojo, "useSingleDir", true);
-        mojo.execute();
-
-        // With useSingleDir=true metadata goes directly to classesDirectory.
-        // The serializer writes metadata/bin/*.bin and metadata/classifiers/*.idx inside it.
-        // Verify files exist under classesDir and no separate metadata-distributed was created.
-        File binDir         = new File(classesDir, "metadata/bin");
-        File classifiersDir = new File(classesDir, "metadata/classifiers");
-        Assert.assertTrue("useSingleDir=true should write metadata/bin into classesDirectory",
-                binDir.isDirectory() && binDir.list() != null && binDir.list().length > 0);
-        Assert.assertFalse("useSingleDir=true should NOT create a separate metadata-distributed directory",
-                new File(targetDir, "metadata-distributed").exists());
-        // Package.idx is a stable landmark always produced for the platform repository
-        File packageIdx = new File(classifiersDir, "Package.idx");
-        Assert.assertTrue("metadata/classifiers/Package.idx should exist inside classesDirectory",
-                packageIdx.exists() && packageIdx.length() > 0);
     }
 
     @Test
@@ -219,47 +180,6 @@ public class TestPureCompiledJarMojo
         }
     }
 
-    // --- engine production pattern: modular + useSingleDir + generateSources + preventJavaCompilation ---
-
-    @Test
-    public void testExecute_enginePattern_modularUseSingleDirWithSources() throws Exception
-    {
-        // This is the exact parameter combination used by all 139 engine modules:
-        //   generationType=modular, useSingleDir=true, generateSources=true, preventJavaCompilation=true
-        // All output (metadata + generated sources) goes into classesDirectory rather than
-        // a separate metadata-distributed/ directory.
-        File targetDir  = TMP.newFolder("exec-engine-pattern-target");
-        File classesDir = new File(targetDir, "classes");
-        classesDir.mkdir();
-
-        PureCompiledJarMojo mojo = buildMojo(targetDir, classesDir, setOf("platform"));
-        setField(mojo, "generationType",         JavaCodeGeneration.GenerationType.modular);
-        setField(mojo, "useSingleDir",           true);
-        setField(mojo, "generateSources",        true);
-        setField(mojo, "preventJavaCompilation", true);
-        mojo.execute();
-
-        // With useSingleDir=true, all output goes into classesDirectory — no separate metadata-distributed/
-        Assert.assertFalse(
-                "useSingleDir=true must not create a separate metadata-distributed/ directory",
-                new File(targetDir, "metadata-distributed").exists());
-
-        // Generated Java source — with useSingleDir=true, sources go to targetDir/generated-sources/
-        // (not inside classesDir); only metadata is written into classesDir
-        File packageImpl = new File(targetDir,
-                "generated-sources/org/finos/legend/pure/generated/Package_Impl.java");
-        Assert.assertTrue(
-                "Package_Impl.java should be generated in targetDir/generated-sources/ " +
-                "(useSingleDir=true routes metadata to classesDir but sources to targetDir/generated-sources/)",
-                packageImpl.exists());
-        String src = new String(java.nio.file.Files.readAllBytes(packageImpl.toPath()));
-        Assert.assertTrue("Package_Impl.java should declare class Package_Impl", src.contains("class Package_Impl"));
-
-        // Modular generation now uses pelt serialization, which must already exist; so there should be no metadata generation
-        File metaDir = new File(targetDir, "metadata");
-        Assert.assertFalse("metadata directory should not be created", metaDir.exists());
-    }
-
     // --- error path ---
 
     @Test
@@ -301,7 +221,6 @@ public class TestPureCompiledJarMojo
         setField(mojo, "addExternalAPI",           false);
         setField(mojo, "externalAPIPackage",       "org.finos.legend.pure.generated");
         setField(mojo, "generateMetadata",         true);
-        setField(mojo, "useSingleDir",             false);
         setField(mojo, "generateSources",          false);
         setField(mojo, "preventJavaCompilation",   true);
         setField(mojo, "generatePureTests",        false);

@@ -20,7 +20,12 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.utility.Iterate;
+import org.finos.legend.pure.m3.serialization.compiler.PureCompilerSerializer;
+import org.finos.legend.pure.m3.serialization.compiler.element.ConcreteElementSerializer;
+import org.finos.legend.pure.m3.serialization.compiler.file.FilePathProvider;
+import org.finos.legend.pure.m3.serialization.compiler.file.FileSerializer;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataGenerator;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializer;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
@@ -42,7 +47,6 @@ import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLo
 import org.finos.legend.pure.runtime.java.compiled.generation.Generate;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaStandaloneLibraryGenerator;
-import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphSerializer;
 
 import java.io.File;
 import java.io.IOException;
@@ -101,7 +105,6 @@ public class JavaCodeGeneration
                 true,
                 true,
                 true,
-                true,
                 new File(args[1]),
                 new File(args[2]),
                 true,
@@ -109,6 +112,7 @@ public class JavaCodeGeneration
         );
     }
 
+    @Deprecated
     public static void doIt(Set<String> repositories,
                             Set<String> excludedRepositories,
                             Set<String> extraRepositories,
@@ -125,10 +129,10 @@ public class JavaCodeGeneration
                             File targetDirectory,
                             Log log)
     {
-        doIt(repositories,excludedRepositories,extraRepositories,generationType, skip,addExternalAPI,externalAPIPackage,generateMetadata,useSingleDir,generateSources,generateTest,preventJavaCompilation,classesDirectory,targetDirectory,true,log);
+        doIt(repositories, excludedRepositories, extraRepositories, generationType, skip, addExternalAPI, externalAPIPackage, generateMetadata, generateSources, generateTest, preventJavaCompilation, classesDirectory, targetDirectory, log);
     }
 
-
+    @Deprecated
     public static void doIt(Set<String> repositories,
                             Set<String> excludedRepositories,
                             Set<String> extraRepositories,
@@ -138,6 +142,43 @@ public class JavaCodeGeneration
                             String externalAPIPackage,
                             boolean generateMetadata,
                             boolean useSingleDir,
+                            boolean generateSources,
+                            boolean generateTest,
+                            boolean preventJavaCompilation,
+                            File classesDirectory,
+                            File targetDirectory,
+                            boolean generatePureTests,
+                            Log log)
+    {
+        doIt(repositories, excludedRepositories, extraRepositories, generationType, skip, addExternalAPI, externalAPIPackage, generateMetadata, generateSources, generateTest, preventJavaCompilation, classesDirectory, targetDirectory, generatePureTests, log);
+    }
+
+    public static void doIt(Set<String> repositories,
+                            Set<String> excludedRepositories,
+                            Set<String> extraRepositories,
+                            JavaCodeGeneration.GenerationType generationType,
+                            boolean skip,
+                            boolean addExternalAPI,
+                            String externalAPIPackage,
+                            boolean generateMetadata,
+                            boolean generateSources,
+                            boolean generateTest,
+                            boolean preventJavaCompilation,
+                            File classesDirectory,
+                            File targetDirectory,
+                            Log log)
+    {
+        doIt(repositories, excludedRepositories, extraRepositories, generationType, skip, addExternalAPI, externalAPIPackage, generateMetadata, generateSources, generateTest, preventJavaCompilation, classesDirectory, targetDirectory, true, log);
+    }
+
+    public static void doIt(Set<String> repositories,
+                            Set<String> excludedRepositories,
+                            Set<String> extraRepositories,
+                            JavaCodeGeneration.GenerationType generationType,
+                            boolean skip,
+                            boolean addExternalAPI,
+                            String externalAPIPackage,
+                            boolean generateMetadata,
                             boolean generateSources,
                             boolean generateTest,
                             boolean preventJavaCompilation,
@@ -173,25 +214,6 @@ public class JavaCodeGeneration
             MutableSet<String> selectedRepositories = getSelectedRepositories(allRepositories, repositories, excludedRepositories);
             log.debug(selectedRepositories.makeString("  Selected repositories: ", ", ", ""));
 
-            Path distributedMetadataDirectory;
-            if (!generateMetadata)
-            {
-                distributedMetadataDirectory = null;
-                log.info("  Classes output directory: " + classesDirectory);
-                log.info("  No metadata output");
-            }
-            else if (useSingleDir)
-            {
-                distributedMetadataDirectory = classesDirectory.toPath();
-                log.info("  All in output directory: " + classesDirectory);
-            }
-            else
-            {
-                distributedMetadataDirectory = targetDirectory.toPath().resolve("metadata-distributed");
-                log.info("  Classes output directory: " + classesDirectory);
-                log.info("  Distributed metadata output directory: " + distributedMetadataDirectory);
-            }
-
             Path codegenDirectory;
             if (generateSources)
             {
@@ -204,7 +226,7 @@ public class JavaCodeGeneration
             }
 
             // Generate metadata and Java sources
-            Generate generate = generate(System.nanoTime(), allRepositories, selectedRepositories, distributedMetadataDirectory, codegenDirectory, generateMetadata, addExternalAPI, externalAPIPackage, generationType, generateSources, generatePureTests, log);
+            Generate generate = generate(System.nanoTime(), allRepositories, selectedRepositories, classesDirectory.toPath(), codegenDirectory, generateMetadata, addExternalAPI, externalAPIPackage, generationType, generateSources, generatePureTests, log);
 
             // Compile Java sources
             if (!preventJavaCompilation)
@@ -303,24 +325,24 @@ public class JavaCodeGeneration
         return selected;
     }
 
-    private static Generate generate(long start, CodeRepositorySet allRepositories, SetIterable<String> selectedRepositories, Path distributedMetadataDirectory, Path codegenDirectory, boolean generateMetadata, boolean addExternalAPI, String externalAPIPackage, GenerationType generationType, boolean generateSources, boolean generatePureTests, Log log)
+    private static Generate generate(long start, CodeRepositorySet allRepositories, SetIterable<String> selectedRepositories, Path metadataDirectory, Path codegenDirectory, boolean generateMetadata, boolean addExternalAPI, String externalAPIPackage, GenerationType generationType, boolean generateSources, boolean generatePureTests, Log log)
     {
         // Initialize runtime
         PureRuntime runtime = initializeRuntime(start, allRepositories, selectedRepositories, log);
 
-        // Possibly write distributed metadata
+        // Validate that metadata exists
         if (generateMetadata)
         {
             switch (generationType)
             {
                 case monolithic:
                 {
-                    generateMetadata(start, runtime, distributedMetadataDirectory, log);
+                    generateMissingMetadata(runtime, metadataDirectory, log);
                     break;
                 }
                 case modular:
                 {
-                    generateModularMetadata(start, runtime, selectedRepositories, distributedMetadataDirectory, log);
+                    validateMetadata(selectedRepositories, log);
                     break;
                 }
                 default:
@@ -339,7 +361,7 @@ public class JavaCodeGeneration
         {
             case monolithic:
             {
-                generate = generator.generateOnly(!generateMetadata, generateSources, codegenDirectory);
+                generate = generator.generateOnly(true, generateSources, codegenDirectory);
                 break;
             }
             case modular:
@@ -402,24 +424,51 @@ public class JavaCodeGeneration
         }
     }
 
-    private static void generateMetadata(long start, PureRuntime runtime, Path distributedMetadataDirectory, Log log)
+    private static void validateMetadata(RichIterable<String> repositoriesForMetadata, Log log)
     {
-        String writeMetadataStep = "writing distributed Pure metadata";
-        long writeMetadataStart = startStep(writeMetadataStep, log);
-        DistributedBinaryGraphSerializer.newSerializer(runtime).serializeToDirectory(distributedMetadataDirectory);
-        completeStep(writeMetadataStep, writeMetadataStart, log);
+        String validateMetadataStep = "validating Pure metadata";
+        long validateMetadataStart = startStep(validateMetadataStep, log);
+        MutableList<String> missingMetadata = findReposWithoutMetadata(Thread.currentThread().getContextClassLoader(), repositoriesForMetadata);
+        if (missingMetadata.notEmpty())
+        {
+            throw new RuntimeException(missingMetadata.sortThis().makeString("No modular metadata for the following repos: ", ", ", ""));
+        }
+        completeStep(validateMetadataStep, validateMetadataStart, log);
     }
 
-    private static void generateModularMetadata(long start, PureRuntime runtime, Iterable<String> repositoriesForMetadata, Path distributedMetadataDirectory, Log log)
+    private static void generateMissingMetadata(PureRuntime runtime, Path outputDirectory, Log log)
     {
-        String writeMetadataStep = "writing distributed Pure metadata";
-        long writeMetadataStart = startStep(writeMetadataStep, log);
-        PureCompilerLoader loader = PureCompilerLoader.newLoader(Thread.currentThread().getContextClassLoader());
-        if (!Iterate.allSatisfy(repositoriesForMetadata, loader::canLoad))
+        String generateMetadataStep = "generating Pure metadata";
+        long generateMetadataStart = startStep(generateMetadataStep, log);
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        MutableList<String> allRepos = runtime.getCodeStorage().getAllRepositories().collect(CodeRepository::getName, Lists.mutable.empty());
+        MutableList<String> toGenerateMetadata = findReposWithoutMetadata(classLoader, allRepos);
+        if (toGenerateMetadata.isEmpty())
         {
-            throw new RuntimeException(Iterate.reject(repositoriesForMetadata, loader::canLoad, Lists.mutable.empty()).sortThis().makeString("No modular metadata for the following repos: ", ", ", ""));
+            log.info("    No metadata needs to be generated");
         }
-        completeStep(writeMetadataStep, writeMetadataStart, log);
+        else
+        {
+            log.info(toGenerateMetadata.sortThis().makeString("    Generating metadata for the following repos: ", ", ", ""));
+            FileSerializer fileSerializer = FileSerializer.builder()
+                    .withFilePathProvider(FilePathProvider.builder().withLoadedExtensions(classLoader).build())
+                    .withConcreteElementSerializer(ConcreteElementSerializer.builder(runtime.getProcessorSupport()).withLoadedExtensions(classLoader).build())
+                    .withModuleMetadataSerializer(ModuleMetadataSerializer.builder().withLoadedExtensions(classLoader).build())
+                    .build();
+            PureCompilerSerializer serializer = PureCompilerSerializer.builder()
+                    .withFileSerializer(fileSerializer)
+                    .withModuleMetadataGenerator(ModuleMetadataGenerator.fromPureRuntime(runtime))
+                    .withProcessorSupport(runtime.getProcessorSupport())
+                    .build();
+            serializer.serializeModules(outputDirectory, toGenerateMetadata);
+        }
+        completeStep(generateMetadataStep, generateMetadataStart, log);
+    }
+
+    private static MutableList<String> findReposWithoutMetadata(ClassLoader classLoader, RichIterable<String> repositoriesForMetadata)
+    {
+        PureCompilerLoader loader = PureCompilerLoader.newLoader(classLoader);
+        return repositoriesForMetadata.reject(loader::canLoad, Lists.mutable.empty());
     }
 
     private static PureJavaCompiler compileJavaSources(long start, Generate generate, boolean addExternalAPI, Log log)

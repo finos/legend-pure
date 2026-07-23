@@ -268,7 +268,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     public void testStandaloneLibraryExternalExecutionDistributedMetadata() throws Exception
     {
         String externalPackage = "org.finos.legend.pure.runtime.java.compiled";
-        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), true, externalPackage, new VoidLog());
+        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), true, externalPackage, true, false, new VoidLog());
         Path classesDir = TMP.newFolder().toPath();
         generator.serializeAndWriteDistributedMetadata(classesDir);
         generator.compileAndWriteClasses(classesDir, new VoidLog());
