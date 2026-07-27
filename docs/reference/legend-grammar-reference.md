@@ -16,6 +16,11 @@ Detailed per-section references live in their own pages:
 For how the `###` section system works, see
 [Section 0 of the Pure Language Reference](pure-language-reference.md#0-the-grammar-section-system).
 
+> **Multi-line string literals (`'''…'''`) are a `###Pure` feature only.** The
+> `MULTILINE_STRING` token is declared in `M3CoreLexer.g4`; the `###Mapping`,
+> `###Relational`, and `###Diagram` grammars do not accept it. See
+> [Multi-line String Literals](pure-language-reference.md#multi-line-string-literals).
+
 ---
 
 ## 1. Quick-reference — `###Mapping`
