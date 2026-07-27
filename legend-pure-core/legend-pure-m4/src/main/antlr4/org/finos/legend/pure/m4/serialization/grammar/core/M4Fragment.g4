@@ -6,6 +6,8 @@ fragment PathSeparator: '::'
 ;
 fragment String: ('\'' ( EscSeq | ~['\r\n\\] )*  '\'' )
 ;
+fragment MultilineString: ('\'\'\'' [ \t]* '\r'? '\n' .*? '\'\'\'' )
+;
 fragment Boolean: True | False
 ;
 fragment True: 'true'

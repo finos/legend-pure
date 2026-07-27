@@ -33,6 +33,12 @@ Everything after a `###<Name>` line until the next `###` belongs to the parser
 registered under that name. The `ParserLibrary` dispatches each section to its
 corresponding `Parser` implementation based on the string name.
 
+> **This split happens before any grammar parses anything, and it is not
+> string-aware.** A line beginning with `###` at column 0 always starts a new
+> section — including inside a
+> [multi-line string literal](#multi-line-string-literals). Indent the `###` by
+> one space to keep it as content.
+
 ### Grammar sections available in this repository
 
 | Section header | Parser | What it defines |
@@ -124,7 +130,7 @@ let doubled = $x * 2;
 
 | Type | Example literals | Notes |
 |------|-----------------|-------|
-| `String` | `'hello'`, `'it\'s'` | Single-quoted; escape with `\'` |
+| `String` | `'hello'`, `'it\'s'` | Single-quoted; escape with `\'`. A [multi-line form](#multi-line-string-literals) `'''…'''` also exists |
 | `Integer` | `42`, `-7` | 64-bit signed |
 | `Float` | `3.14`, `-0.5` | 64-bit IEEE 754 |
 | `Decimal` | `3.14d` | Arbitrary precision (precisePrimitives module) |
@@ -134,6 +140,166 @@ let doubled = $x * 2;
 | `DateTime` | `%2024-01-15T10:30:00+0000` | Date + time with optional TZ offset |
 | `Number` | *(abstract)* | Supertype of `Integer`, `Float`, `Decimal` |
 | `Any` | *(abstract)* | Root type; every Pure type is a subtype |
+
+### Multi-line String Literals
+
+A string literal may be written across multiple lines using a triple-quote
+delimiter `'''`, following **Java text-block semantics**:
+
+```pure
+function meta::mypackage::greeting(): String[1]
+{
+    '''
+    Hello,
+    world!
+    '''
+}
+```
+
+The value above is `"Hello,\nworld!\n"` — the four-space indentation shared by
+every line is *incidental* and is removed.
+
+`'''…'''` is **syntax only**. It produces an ordinary `String` — there is no new
+type, no marker on the instance, and nothing downstream (the compiler, either
+execution engine, serialization) can tell it apart from the equivalent
+single-line literal. Anywhere a `String` literal is accepted in a `###Pure`
+section, a multi-line literal is accepted too: expressions, collection literals,
+property default values, function arguments, and tagged values.
+
+```pure
+// All of these are valid
+'prefix: ' + '''
+  body
+  '''
+
+'''
+  abc
+  '''->length()
+
+Class meta::mypackage::Thing
+{
+    note : String[1] = '''
+        default note
+        ''';
+}
+```
+
+#### The five processing rules
+
+Given the raw text between the delimiters, the parser applies these steps in
+order (`AntlrContextToM3CoreInstance.processMultilineString`):
+
+1. **Line terminators are normalized** — `\r\n` and `\r` both become `\n`.
+2. **The opening delimiter line is dropped.** The opening `'''` *must* be
+   followed by a line terminator (spaces and tabs between the two are allowed
+   and ignored). Content starts on the next line.
+3. **Incidental indentation is removed.** The amount removed is the smallest
+   leading-whitespace run across all non-blank lines **and the closing-delimiter
+   line** — the closing line participates even when it is blank.
+4. **Trailing whitespace is stripped from every line.**
+5. **Escape sequences are processed** — the same set as single-line strings
+   (`\n`, `\t`, `\'`, `\\`, `\uXXXX`, octal).
+
+> **Escapes are resolved last, and that is load-bearing.** Steps 3 and 4 see the
+> raw characters, so an *escaped* whitespace character is invisible to them: a
+> line ending in `\t` ends in the letter `t` as far as step 4 is concerned, and
+> becomes a real tab only at step 5. This is how you keep whitespace the layout
+> passes would otherwise remove — see below.
+
+#### Worked examples
+
+Below, `⏎` marks a newline in the source, `·` a space, and `⇥` a tab.
+
+| Literal | Value |
+|---------|-------|
+| `'''`⏎`line1`⏎`line2'''` | `"line1\nline2"` — no trailing newline |
+| `'''`⏎`line1`⏎`line2`⏎`'''` | `"line1\nline2\n"` — closing `'''` on its own line adds the terminal newline |
+| `'''`⏎`····hello`⏎`····world`⏎`····'''` | `"hello\nworld\n"` — common indent removed |
+| `'''`⏎`····a`⏎`··b`⏎`····'''` | `"··a\nb\n"` — min indent is 2, set by the shortest line |
+| `'''`⏎`····a`⏎`····b`⏎`'''` | `"····a\n····b\n"` — closing `'''` at column 0 sets the floor to 0, so **nothing** is stripped |
+| `'''`⏎`a···`⏎`b⇥`⏎`'''` | `"a\nb\n"` — trailing whitespace always stripped |
+| `'''`⏎`'''` | `""` — empty |
+
+> **Controlling the indent with the closing delimiter.** Because the closing
+> line participates in the minimum, its column is what you tune to keep or drop
+> leading indentation. Put `'''` flush left to preserve the block's indentation
+> verbatim; align it with the content to strip all of it.
+
+#### Differences from Java text blocks
+
+Pure reuses Java's *layout* algorithm but not its escape extensions. Two Java
+text-block features are **not** available:
+
+| Java feature | In Pure |
+|-------------|---------|
+| `\s` — escape meaning "a space that survives trailing-whitespace stripping" | No `\s` escape; it yields a literal `s`. Use `\u0020` instead — see below |
+| `\` at end-of-line — joins the line with the next | Not supported. The backslash is simply dropped and the newline is kept |
+
+More generally, an unrecognized escape does not error — the backslash is
+discarded and the following character is kept verbatim (`\q` → `q`). This is
+pre-existing `StringEscape` behaviour shared with single-line strings.
+
+**Preserving significant whitespace.** Pure has no `\s`, but it does not need
+one: because escapes are resolved *after* the two layout passes, any escaped
+whitespace survives them intact.
+
+| Literal | Value | Why |
+|---------|-------|-----|
+| `'''`⏎`a\u0020\u0020`⏎`'''` | `"a··\n"` | Trailing spaces preserved — step 4 saw the 12 characters of `\u0020\u0020`, none of them whitespace |
+| `'''`⏎`a\t`⏎`'''` | `"a⇥\n"` | Same, for a tab |
+| `'''`⏎`\tabc`⏎`\tdef`⏎`'''` | `"⇥abc\n⇥def\n"` | Leading escaped tabs are not counted as indentation, so step 3 cannot strip them |
+
+#### Restrictions and gotchas
+
+- **The opening `'''` must be followed by a newline.** `'''abc'''` does not
+  parse as a multi-line string. With the multi-line rule inapplicable, the lexer
+  falls back to the single-line rule and produces three separate `STRING`
+  tokens — `''`, `'abc'`, `''` — which the parser rejects
+  (`expected: '}' found: 'abc'`).
+
+- **The content cannot contain `'''`.** The lexer closes the literal at the
+  first `'''` it meets, so a run of three-or-more quotes (e.g. `''''`) is a
+  token-recognition error. Two consecutive quotes (`''`) are fine, as are lone
+  `'` and `"` characters — no escaping needed. To embed a literal `'''`, escape
+  the quotes: `\'\'\'` yields `'''`.
+
+- **⚠ A line starting with `###` at column 0 terminates the section, even
+  inside a multi-line string.** The top-level lexer that splits a file into
+  `###`-delimited grammar sections (see
+  [§0](#0-the-grammar-section-system)) runs *before* the Pure parser and knows
+  nothing about string literals. This source fails to compile because the
+  `###Relational` line splits the file, leaving the `'''` unterminated:
+
+  ```pure
+  function meta::mypackage::bad(): String[1]
+  {
+      '''
+  ###Relational
+      ''' // parse error: unterminated
+  }
+  ```
+
+  Indenting the `###` by even one space is enough to avoid this, because the
+  section separator token is `'\n###'` — it must sit immediately after a
+  newline. The workaround is free: that indent is incidental, so step 3 strips
+  it back off and the resulting value still has `###Relational` at column 0.
+  This hazard is new with multi-line strings; a single-line literal cannot span
+  a newline, so `\n###` could never occur inside one.
+
+- **`###Pure` sections only.** The `MULTILINE_STRING` token is declared in
+  `M3CoreLexer.g4` alone. The `###Mapping`, `###Relational`, and `###Diagram`
+  grammars — and M4 — do not accept `'''…'''`, even though they share the
+  underlying `MultilineString` fragment definition in `M4Fragment.g4`.
+
+- **Printing does not round-trip.** Since the value is an ordinary `String`,
+  anything that renders it back to Pure source emits a single-line, escaped
+  literal — not a `'''` block.
+
+**Implementation:** lexer fragment `MultilineString` in `M4Fragment.g4`; token
+`MULTILINE_STRING` in `M3CoreLexer.g4`; parser rules `instanceLiteralToken` and
+`taggedValue` in `M3CoreParser.g4`; processing in
+`AntlrContextToM3CoreInstance.processMultilineString`. Tests:
+`TestStringParsing` and `TestProfile`.
 
 ### `Any` and `Nil`
 
@@ -283,6 +449,43 @@ Class <<meta::mypackage::classification.internal>>
 ```
 
 Both stereotypes and tags can be applied together, and multiple values are separated by commas inside the curly braces.
+
+#### Tag values — concatenation and multi-line form
+
+A tag value is written in one of two mutually exclusive forms.
+
+**1. One or more `+`-joined single-line strings.** Note that `+` here is *not*
+the string-concatenation function — the parser joins the fragments with the
+default `makeString()` separator, `", "`:
+
+```pure
+Class {doc.doc = 'first' + 'second'} meta::mypackage::Thing {}
+// resulting tag value: "first, second"   ← comma-space, not "firstsecond"
+```
+
+This is long-standing behaviour and is unchanged. It is a common surprise for
+anyone expecting `+` to behave as it does in an expression.
+
+**2. A single [multi-line string](#multi-line-string-literals)** — the readable
+way to attach a paragraph of documentation:
+
+```pure
+Class {doc.doc = '''
+    Represents a documented class.
+
+    The blank line above is preserved; the shared indentation is not.
+    '''} meta::mypackage::DocumentedClass
+{
+    name : String[1];
+}
+```
+
+> **A multi-line tag value cannot be concatenated.** `{doc.doc = 'Title: ' + '''…'''}`
+> is a parse error. The grammar rule is
+> `(MULTILINE_STRING | STRING (PLUS STRING)*)` — you get either one multi-line
+> string or a `+`-joined run of single-line ones, never a mix. Given that `+`
+> inserts `", "` rather than concatenating, mixing the two forms would produce
+> a value almost nobody intends, so the combination is rejected outright.
 
 #### Built-in profiles
 

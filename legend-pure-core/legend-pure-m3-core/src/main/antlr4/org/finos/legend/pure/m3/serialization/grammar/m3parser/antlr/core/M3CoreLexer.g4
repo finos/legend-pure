@@ -32,6 +32,7 @@ TILDE: '~';
 QUESTION: '?';
 PATH_SEPARATOR: PathSeparator;
 
+MULTILINE_STRING: MultilineString;
 STRING: String;
 BOOLEAN: Boolean;
 TRUE: True;

@@ -892,6 +892,10 @@ public class AntlrContextToM3CoreInstance
                 String withQuote = StringEscape.unescape(ctx.getText());
                 result = this.repository.newStringCoreInstance_cached(withQuote.substring(1, withQuote.length() - 1));
             }
+            else if (ctx.MULTILINE_STRING() != null)
+            {
+                result = this.repository.newStringCoreInstance_cached(processMultilineString(ctx.getText()));
+            }
             else if (ctx.INTEGER() != null)
             {
                 result = this.repository.newIntegerCoreInstance(ctx.getText());
@@ -3248,6 +3252,12 @@ public class AntlrContextToM3CoreInstance
     private TaggedValue taggedValue(ImportGroup importId, TaggedValueContext ctx)
     {
         ImportStubInstance importStubInstance = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart(), ctx.identifier().getStart(), ctx.identifier().getStop()), this.getQualifiedNameString(ctx.qualifiedName()) + "%" + ctx.identifier().getText(), importId);
+        // A tagged value is either a single multi-line string or one-or-more '+'-concatenated single-line strings.
+        if (ctx.MULTILINE_STRING() != null)
+        {
+            TerminalNode multiline = ctx.MULTILINE_STRING();
+            return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), multiline.getSymbol(), multiline.getSymbol()), importStubInstance, processMultilineString(multiline.getText()));
+        }
         return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.STRING().get(0).getSymbol(), ctx.STRING().get(ctx.STRING().size() - 1).getSymbol()), importStubInstance, Lists.mutable.withAll(ctx.STRING()).collect(AntlrContextToM3CoreInstance::removeQuotes).makeString());
     }
 
@@ -3956,6 +3966,75 @@ public class AntlrContextToM3CoreInstance
     {
         name = name.trim();
         return name.startsWith("'") ? name.substring(1, name.length() - 1) : name;
+    }
+
+    /**
+     * Convert the raw text of a multi-line string literal ('''...''') into its value, following the Java
+     * text-block algorithm: strip the opening delimiter line and the closing delimiter, remove the common
+     * (incidental) leading-whitespace indentation, strip trailing whitespace from each line, then process
+     * escape sequences. The opening '''  must be followed by a line terminator (enforced by the lexer), so
+     * the first line of content is the line after it; the terminal newline is preserved iff the closing '''
+     * sits on its own line.
+     */
+    public static String processMultilineString(String rawTokenText)
+    {
+        // Normalize line terminators, then drop the opening delimiter line (through its terminator) and the
+        // trailing closing '''.
+        String normalized = rawTokenText.replace("\r\n", "\n").replace('\r', '\n');
+        int firstNewLine = normalized.indexOf('\n');
+        String body = normalized.substring(firstNewLine + 1, normalized.length() - 3);
+
+        String[] lines = body.split("\n", -1);
+
+        // Minimum indentation is computed over every non-blank line plus the last line (the closing-delimiter
+        // line, even when blank) - the latter sets a floor that prevents over-stripping.
+        int minIndent = Integer.MAX_VALUE;
+        for (int i = 0; i < lines.length; i++)
+        {
+            String line = lines[i];
+            int leading = leadingWhitespaceLength(line);
+            if ((leading < line.length()) || (i == lines.length - 1))
+            {
+                minIndent = Math.min(minIndent, leading);
+            }
+        }
+        if (minIndent == Integer.MAX_VALUE)
+        {
+            minIndent = 0;
+        }
+
+        StringBuilder builder = new StringBuilder(body.length());
+        for (int i = 0; i < lines.length; i++)
+        {
+            if (i > 0)
+            {
+                builder.append('\n');
+            }
+            String line = lines[i];
+            builder.append(stripTrailingWhitespace(line.substring(Math.min(minIndent, line.length()))));
+        }
+
+        return StringEscape.unescape(builder.toString());
+    }
+
+    private static int leadingWhitespaceLength(String line)
+    {
+        int i = 0;
+        while ((i < line.length()) && Character.isWhitespace(line.charAt(i)))
+        {
+            i++;
+        }
+        return i;
+    }
+
+    private static String stripTrailingWhitespace(String line)
+    {
+        int end = line.length();
+        while ((end > 0) && Character.isWhitespace(line.charAt(end - 1)))
+        {
+            end--;
+        }
+        return line.substring(0, end);
     }
 
     private InstanceValue doWrap(MutableList<PropertyNameContext> content)
