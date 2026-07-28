@@ -190,8 +190,32 @@ This is what stops a file header, or a note trailing the previous element, from 
 next element's documentation. It is the same rule Go, Rust, and JSDoc use. When two
 documentation comments precede an element, the nearest one wins and the earlier is ignored.
 
-An element may not carry both a documentation comment and an explicit `doc.doc` tagged value —
-that is a parse error rather than a silent choice between the two.
+#### Conflict with an explicit `doc.doc`
+
+An element may not carry **both** a documentation comment and an explicit `doc.doc` tagged
+value. Both are statements of intent, and silently honouring one would make the other vanish
+without trace, so this is a parse error:
+
+```pure
+/** From the comment. */
+Class {meta::pure::profiles::doc.doc = 'From the tagged value.'} model::A
+{
+}
+```
+
+```
+Element has both a documentation comment and an explicit doc.doc tagged value. Use one.
+```
+
+Because tag references are not resolved until after parsing, the check matches the profile
+**as written** — either bare `doc` (resolved through an import) or the fully qualified
+`meta::pure::profiles::doc`. The following are therefore *not* conflicts:
+
+| Case | Why it is allowed |
+|---|---|
+| `{meta::pure::profiles::doc.todo = '…'}` | Same profile, different tag |
+| A doc comment separated by a blank line, plus `doc.doc` | The comment never attached |
+| `{my::pkg::doc.doc = '…'}` | A different profile that merely ends in `doc` |
 
 #### How the content is processed
 

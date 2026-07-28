@@ -3285,16 +3285,22 @@ public class AntlrContextToM3CoreInstance
     }
 
     /**
-     * Matches on the profile's unqualified name, so both {@code doc.doc} (via an import) and the
-     * fully qualified {@code meta::pure::profiles::doc.doc} are recognised.
+     * Tag references are import stubs, unresolved at parse time, so this matches the profile
+     * path as written: bare {@code doc} resolved through an import, or the fully qualified
+     * {@code meta::pure::profiles::doc}. A user profile that merely ends in {@code doc}, such as
+     * {@code my::pkg::doc}, is a different profile and is not a conflict.
      */
     private static TaggedValueContext findExplicitDocTaggedValue(TaggedValuesContext ctx)
     {
         for (TaggedValueContext tv : ctx.taggedValue())
         {
-            if ("doc".equals(tv.identifier().getText()) && "doc".equals(tv.qualifiedName().identifier().getText()))
+            if ("doc".equals(tv.identifier().getText()))
             {
-                return tv;
+                String profile = tv.qualifiedName().getText();
+                if ("doc".equals(profile) || M3Paths.doc.equals(profile))
+                {
+                    return tv;
+                }
             }
         }
         return null;

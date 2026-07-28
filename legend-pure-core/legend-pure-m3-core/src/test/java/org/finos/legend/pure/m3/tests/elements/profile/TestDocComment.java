@@ -295,6 +295,41 @@ public class TestDocComment extends AbstractPureTestWithCoreCompiledPlatform
     }
 
     @Test
+    public void testDocCommentAndImportedDocTaggedValueIsAnError()
+    {
+        PureParserException e = Assert.assertThrows(PureParserException.class,
+                () -> compile("import meta::pure::profiles::*;\n" +
+                        "/** From the comment. */\n" +
+                        "Class {doc.doc = 'From the tagged value.'} test::A\n{\n}"));
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("Element has both a documentation comment and an explicit doc.doc tagged value"));
+    }
+
+    /** Same profile, different tag - not a conflict. */
+    @Test
+    public void testDocTodoAlongsideDocCommentIsFine()
+    {
+        compile("/** Documented. */\nClass {meta::pure::profiles::doc.todo = 'later'} test::A\n{\n}");
+        Assert.assertEquals("Documented.", doc("test::A"));
+    }
+
+    /** The comment does not attach, so there is nothing to conflict with. */
+    @Test
+    public void testDetachedDocCommentWithExplicitDocTaggedValueIsFine()
+    {
+        compile("/** Not attached. */\n\nClass {meta::pure::profiles::doc.doc = 'Explicit.'} test::A\n{\n}");
+        Assert.assertEquals("Explicit.", doc("test::A"));
+    }
+
+    /** A user profile whose own name happens to be 'doc' is a different profile entirely. */
+    @Test
+    public void testUnrelatedProfileNamedDocIsNotAConflict()
+    {
+        compile("Profile test::doc\n{\n  tags: [doc];\n}\n" +
+                "/** Documented. */\nClass {test::doc.doc = 'unrelated'} test::A\n{\n}");
+        Assert.assertEquals("Documented.", doc("test::A"));
+    }
+
+    @Test
     public void testExplicitDocTaggedValueAloneStillWorks()
     {
         compile("Class {meta::pure::profiles::doc.doc = 'Explicit.'} test::A\n{\n}");
