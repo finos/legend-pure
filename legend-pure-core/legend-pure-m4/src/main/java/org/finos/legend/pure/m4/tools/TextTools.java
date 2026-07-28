@@ -15,9 +15,135 @@
 package org.finos.legend.pure.m4.tools;
 
 import java.util.Locale;
+import java.util.function.IntPredicate;
 
 public class TextTools
 {
+    /**
+     * Return the index of the first character found in the given text which satisfies the given predicate, or -1 if no
+     * such character is found.
+     *
+     * @param text      text
+     * @param predicate predicate
+     * @return index of first satisfying character or -1
+     */
+    public static int indexOf(String text, IntPredicate predicate)
+    {
+        return indexOf(text, 0, text.length(), predicate);
+    }
+
+    /**
+     * Return the index of the first character found in a region of text (starting from start) which satisfies the given
+     * predicate, or -1 if no such character is found in that region.
+     *
+     * @param text      text
+     * @param start     start of region (inclusive)
+     * @param predicate predicate
+     * @return index of first satisfying character or -1
+     */
+    public static int indexOf(String text, int start, IntPredicate predicate)
+    {
+        return indexOf(text, start, text.length(), predicate);
+    }
+
+    /**
+     * Return the index of the first character found in a region of text which satisfies the given predicate, or -1 if
+     * no such character is found in that region. The text is traversed by code point, so the predicate is applied to
+     * supplementary characters as single code points, and the returned index is that of the first char of the
+     * character. Only chars within the region are considered: if a surrogate pair straddles the end of the region, the
+     * high surrogate is presented to the predicate as an unpaired surrogate.
+     *
+     * @param text      text
+     * @param start     start of region (inclusive)
+     * @param end       end of region (exclusive)
+     * @param predicate predicate
+     * @return index of first satisfying character or -1
+     */
+    public static int indexOf(String text, int start, int end, IntPredicate predicate)
+    {
+        checkRegionBounds(text, start, end);
+        int index = start;
+        while (index < end)
+        {
+            int codePoint = text.codePointAt(index);
+            int nextIndex = index + Character.charCount(codePoint);
+            if (nextIndex > end)
+            {
+                // a surrogate pair straddles the end of the region: consider only the char within the region
+                codePoint = text.charAt(index);
+            }
+            if (predicate.test(codePoint))
+            {
+                return index;
+            }
+            index = nextIndex;
+        }
+        return -1;
+    }
+
+    /**
+     * Return the index of the last character found in the given text which satisfies the given predicate, or -1 if no
+     * such character is found.
+     *
+     * @param text      text
+     * @param predicate predicate
+     * @return index of last satisfying character or -1
+     */
+    public static int lastIndexOf(String text, IntPredicate predicate)
+    {
+        return lastIndexOf(text, 0, text.length(), predicate);
+    }
+
+    /**
+     * Return the index of the last character found in a region of text (starting from start) which satisfies the given
+     * predicate, or -1 if no such character is found in that region.
+     *
+     * @param text      text
+     * @param start     start of region (inclusive)
+     * @param predicate predicate
+     * @return index of last satisfying character or -1
+     */
+    public static int lastIndexOf(String text, int start, IntPredicate predicate)
+    {
+        return lastIndexOf(text, start, text.length(), predicate);
+    }
+
+    /**
+     * Return the index of the last character found in a region of text which satisfies the given predicate, or -1 if
+     * no such character is found in that region. The text is traversed backward by code point, so the predicate is
+     * applied to supplementary characters as single code points, and the returned index is that of the first char of
+     * the character. Only chars within the region are considered: if a surrogate pair straddles the start of the
+     * region, the low surrogate is presented to the predicate as an unpaired surrogate.
+     *
+     * @param text      text
+     * @param start     start of region (inclusive)
+     * @param end       end of region (exclusive)
+     * @param predicate predicate
+     * @return index of last satisfying character or -1
+     */
+    public static int lastIndexOf(String text, int start, int end, IntPredicate predicate)
+    {
+        checkRegionBounds(text, start, end);
+        int afterIndex = end;
+        while (afterIndex > start)
+        {
+            int codePoint = text.codePointBefore(afterIndex);
+            int index = afterIndex - Character.charCount(codePoint);
+            if (index < start)
+            {
+                // a surrogate pair straddles the start of the region: consider only the char within the region
+                index = start;
+                codePoint = text.charAt(start);
+            }
+            if (predicate.test(codePoint))
+            {
+                return index;
+            }
+            afterIndex = index;
+        }
+        return -1;
+    }
+
     /**
      * Return the index of the first non-whitespace character found in the given text, or -1 if no non-whitespace
      * character is found.
@@ -25,11 +151,11 @@ public class TextTools
      * @param text text
      * @return index of first non-whitespace character or -1
      * @see #indexOfWhitespace(String)
-     * @see #isBlank
+     * @see #isBlank(String)
      */
     public static int indexOfNonWhitespace(String text)
     {
-        return indexOfNonWhitespace(text, 0);
+        return indexOf(text, TextTools::isNonWhiteSpace);
     }
 
     /**
@@ -40,11 +166,11 @@ public class TextTools
      * @param start start of region (inclusive)
      * @return index of first non-whitespace character or -1
      * @see #indexOfWhitespace(String, int)
-     * @see #isBlank
+     * @see #isBlank(String, int)
      */
     public static int indexOfNonWhitespace(String text, int start)
     {
-        return indexOfNonWhitespace(text, start, text.length());
+        return indexOf(text, start, TextTools::isNonWhiteSpace);
     }
 
     /**
@@ -56,21 +182,61 @@ public class TextTools
      * @param end   end of region (exclusive)
      * @return index of first non-whitespace character or -1
      * @see #indexOfWhitespace(String, int, int)
-     * @see #isBlank
+     * @see #isBlank(String, int, int)
      */
     public static int indexOfNonWhitespace(String text, int start, int end)
     {
-        checkRegionBounds(text, start, end);
-        int codePoint;
-        for (int i = start; i < end; i += Character.charCount(codePoint))
-        {
-            codePoint = text.codePointAt(i);
-            if (!Character.isWhitespace(codePoint))
-            {
-                return i;
-            }
-        }
-        return -1;
+        return indexOf(text, start, end, TextTools::isNonWhiteSpace);
+    }
+
+    /**
+     * Return the index of the last non-whitespace character found in the given text, or -1 if no non-whitespace
+     * character is found.
+     *
+     * @param text text
+     * @return index of last non-whitespace character or -1
+     * @see #indexOfNonWhitespace(String)
+     * @see #isBlank(String)
+     */
+    public static int lastIndexOfNonWhitespace(String text)
+    {
+        return lastIndexOf(text, TextTools::isNonWhiteSpace);
+    }
+
+    /**
+     * Return the index of the last non-whitespace character found in a region of text (starting from start), or -1 if
+     * no non-whitespace character is found.
+     *
+     * @param text  text
+     * @param start start of region (inclusive)
+     * @return index of last non-whitespace character or -1
+     * @see #indexOfNonWhitespace(String, int)
+     * @see #isBlank(String, int)
+     */
+    public static int lastIndexOfNonWhitespace(String text, int start)
+    {
+        return lastIndexOf(text, start, TextTools::isNonWhiteSpace);
+    }
+
+    /**
+     * Return the index of the last non-whitespace character found in a region of text, or -1 if no non-whitespace
+     * character is found.
+     *
+     * @param text  text
+     * @param start start of region (inclusive)
+     * @param end   end of region (exclusive)
+     * @return index of last non-whitespace character or -1
+     * @see #indexOfNonWhitespace(String, int, int)
+     * @see #isBlank(String, int, int)
+     */
+    public static int lastIndexOfNonWhitespace(String text, int start, int end)
+    {
+        return lastIndexOf(text, start, end, TextTools::isNonWhiteSpace);
+    }
+
+    private static boolean isNonWhiteSpace(int c)
+    {
+        return !Character.isWhitespace(c);
     }
 
     /**
@@ -80,11 +246,11 @@ public class TextTools
      * @param text text
      * @return index of first whitespace character or -1
      * @see #indexOfNonWhitespace(String)
-     * @see #isBlank
+     * @see #isBlank(String)
      */
     public static int indexOfWhitespace(String text)
     {
-        return indexOfWhitespace(text, 0);
+        return indexOf(text, Character::isWhitespace);
     }
 
     /**
@@ -95,11 +261,11 @@ public class TextTools
      * @param start start of region (inclusive)
      * @return index of first whitespace character or -1
      * @see #indexOfNonWhitespace(String, int)
-     * @see #isBlank
+     * @see #isBlank(String, int)
      */
     public static int indexOfWhitespace(String text, int start)
     {
-        return indexOfWhitespace(text, start, text.length());
+        return indexOf(text, start, Character::isWhitespace);
     }
 
     /**
@@ -111,21 +277,36 @@ public class TextTools
      * @param end   end of region (exclusive)
      * @return index of first whitespace character or -1
      * @see #indexOfNonWhitespace(String, int, int)
-     * @see #isBlank
+     * @see #isBlank(String, int, int)
      */
     public static int indexOfWhitespace(String text, int start, int end)
     {
-        checkRegionBounds(text, start, end);
-        int codePoint;
-        for (int i = start; i < end; i += Character.charCount(codePoint))
-        {
-            codePoint = text.codePointAt(i);
-            if (Character.isWhitespace(codePoint))
-            {
-                return i;
-            }
-        }
-        return -1;
+        return indexOf(text, start, end, Character::isWhitespace);
+    }
+
+    /**
+     * Return whether the given text is blank, meaning it is empty or contains only whitespace.
+     *
+     * @param text text
+     * @return whether the text is blank
+     * @see #indexOfNonWhitespace(String)
+     */
+    public static boolean isBlank(String text)
+    {
+        return indexOfNonWhitespace(text) == -1;
+    }
+
+    /**
+     * Return whether a region of text (starting from start) is blank, meaning it is empty or contains only whitespace.
+     *
+     * @param text  text
+     * @param start start of region (inclusive)
+     * @return whether the region of text is blank
+     * @see #indexOfNonWhitespace(String, int)
+     */
+    public static boolean isBlank(String text, int start)
+    {
+        return indexOfNonWhitespace(text, start) == -1;
     }
 
     /**
@@ -139,7 +320,6 @@ public class TextTools
      */
     public static boolean isBlank(String text, int start, int end)
     {
-        checkRegionBounds(text, start, end);
         return indexOfNonWhitespace(text, start, end) == -1;
     }
 
@@ -147,8 +327,8 @@ public class TextTools
      * Convert a code point of a string to lower case using the rules of the default locale.
      *
      * @param string string
-     * @param index  code point index
-     * @return converted string
+     * @param index  index of the code point (a char index, not a count of code points)
+     * @return converted string, or the given string itself if the conversion changes nothing
      */
     public static String toLowerCase(String string, int index)
     {
@@ -159,9 +339,9 @@ public class TextTools
      * Convert a code point of a string to lower case using the rules of the given locale.
      *
      * @param string string
-     * @param index  code point index
+     * @param index  index of the code point (a char index, not a count of code points)
      * @param locale locale for case transformation rules
-     * @return converted string
+     * @return converted string, or the given string itself if the conversion changes nothing
      */
     public static String toLowerCase(String string, int index, Locale locale)
     {
@@ -174,7 +354,7 @@ public class TextTools
      * @param string string
      * @param start  region start (inclusive)
      * @param end    region end (exclusive)
-     * @return converted string
+     * @return converted string, or the given string itself if the conversion changes nothing
      */
     public static String toLowerCase(String string, int start, int end)
     {
@@ -188,7 +368,7 @@ public class TextTools
      * @param start  region start (inclusive)
      * @param end    region end (exclusive)
      * @param locale locale for case transformation rules
-     * @return converted string
+     * @return converted string, or the given string itself if the conversion changes nothing
      */
     public static String toLowerCase(String string, int start, int end, Locale locale)
     {
@@ -205,8 +385,8 @@ public class TextTools
      * Convert a code point of a string to upper case using the rules of the default locale.
      *
      * @param string string
-     * @param index  code point index
-     * @return converted string
+     * @param index  index of the code point (a char index, not a count of code points)
+     * @return converted string, or the given string itself if the conversion changes nothing
      */
     public static String toUpperCase(String string, int index)
     {
@@ -217,9 +397,9 @@ public class TextTools
      * Convert a code point of a string to upper case using the rules of the given locale.
      *
      * @param string string
-     * @param index  code point index
+     * @param index  index of the code point (a char index, not a count of code points)
      * @param locale locale for case transformation rules
-     * @return converted string
+     * @return converted string, or the given string itself if the conversion changes nothing
      */
     public static String toUpperCase(String string, int index, Locale locale)
     {
@@ -232,7 +412,7 @@ public class TextTools
      * @param string string
      * @param start  region start (inclusive)
      * @param end    region end (exclusive)
-     * @return converted string
+     * @return converted string, or the given string itself if the conversion changes nothing
      */
     public static String toUpperCase(String string, int start, int end)
     {
@@ -246,7 +426,7 @@ public class TextTools
      * @param start  region start (inclusive)
      * @param end    region end (exclusive)
      * @param locale locale for case transformation rules
-     * @return converted string
+     * @return converted string, or the given string itself if the conversion changes nothing
      */
     public static String toUpperCase(String string, int start, int end, Locale locale)
     {
