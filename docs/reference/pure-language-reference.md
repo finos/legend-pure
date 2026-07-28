@@ -34,9 +34,10 @@ registered under that name. The `ParserLibrary` dispatches each section to its
 corresponding `Parser` implementation based on the string name.
 
 > **This split happens before any grammar parses anything, and it is not
-> string-aware.** A line beginning with `###` at column 0 always starts a new
+> string- or comment-aware.** A line beginning with `###` at column 0 always starts a new
 > section — including inside a
-> [multi-line string literal](#multi-line-string-literals). Indent the `###` by
+> [multi-line string literal](#multi-line-string-literals) or a
+> [documentation comment](#documentation-comments). Indent the `###` by
 > one space to keep it as content.
 
 ### Grammar sections available in this repository
@@ -121,6 +122,153 @@ let doubled = $x * 2;
 /* Multi-line
    comment */
 ```
+
+Block comments do **not** nest: `/* a /* b */` ends at the first `*/`. A third form,
+[documentation comments](#documentation-comments), does nest and carries meaning.
+
+### Documentation Comments
+
+A `/** … */` comment immediately preceding an element is **syntactic sugar** for the
+`meta::pure::profiles::doc` `doc` tagged value. These two are identical after parsing:
+
+```pure
+/**
+A **person** in the system.
+
+Identity is established by `legalName`.
+*/
+Class model::Person
+{
+  /** Given name. Not guaranteed unique. */
+  firstName: String[1];
+}
+```
+
+```pure
+Class {meta::pure::profiles::doc.doc = 'A **person** in the system.\n\nIdentity is established by `legalName`.'} model::Person
+{
+  {meta::pure::profiles::doc.doc = 'Given name. Not guaranteed unique.'} firstName: String[1];
+}
+```
+
+There is no new profile, no new metamodel, and nothing downstream needs to change: consumers
+that already read the `doc` tag see documentation comments automatically.
+
+#### Where they attach
+
+`Class`, `Enum` (and individual enum values), `Association`, `Profile`, `Measure`, `function`,
+`native function`, `Primitive`, properties, and qualified (derived) properties.
+
+The comment must precede the **whole declaration**, before any stereotypes or tagged values:
+
+```pure
+/** Attached to the class. */
+Class <<meta::pure::profiles::access.private>> {meta::pure::profiles::doc.todo = 'x'} model::Person
+{
+}
+```
+
+#### Attachment requires adjacency
+
+A documentation comment attaches only when separated from the element by whitespace containing
+no blank line. Anything else leaves it as an ordinary comment — silently, with no error:
+
+```pure
+/** Attached. */
+Class model::A {}
+
+/** NOT attached — blank line intervenes. */
+
+Class model::B {}
+
+/** NOT attached — a line comment is not whitespace. */
+// note
+Class model::C {}
+```
+
+This is what stops a file header, or a note trailing the previous element, from becoming the
+next element's documentation. It is the same rule Go, Rust, and JSDoc use. When two
+documentation comments precede an element, the nearest one wins and the earlier is ignored.
+
+An element may not carry both a documentation comment and an explicit `doc.doc` tagged value —
+that is a parse error rather than a silent choice between the two.
+
+#### How the content is processed
+
+Content is **literal**: there is no escape processing, so `\n`, `\'` and `\\` are content, not
+escapes — unlike [string literals](#multi-line-string-literals), where those are escapes.
+Content is conventionally Markdown, but the grammar is format-agnostic: nothing here parses or
+validates it.
+
+Rules, in the order they apply:
+
+1. The `/**` and `*/` delimiters are removed and line endings are normalized to `\n`.
+2. If the first line is blank it is dropped; otherwise it is inline content and one leading
+   space is removed.
+3. If the last line is blank it is dropped, but **its indentation is remembered** and
+   participates in step 5.
+4. If **every** non-blank line begins with `*`, that `*` is stripped along with at most one
+   following space. If *any* non-blank line lacks it, nothing is stripped.
+5. Otherwise the common leading indentation — the minimum across all non-blank lines *and* the
+   closing delimiter's line — is removed from every line.
+6. Trailing whitespace is removed from each line, and leading and trailing blank lines are
+   dropped.
+
+Below, `⏎` marks a newline in the source and `·` a space.
+
+| Source | Value |
+|---|---|
+| `/** One line. */` | `"One line."` — inline form, one leading space removed |
+| `/**`⏎`·*·A`⏎`·*`⏎`·*·B`⏎`·*/` | `"A\n\nB"` — every non-blank line starts with `*`, so stars are stripped |
+| `/**`⏎`Options:`⏎`*·first`⏎`*/` | `"Options:\n*·first"` — `Options:` has no star, so **nothing** is stripped and the bullet survives |
+| `/**`⏎`··Text`⏎⏎`······code`⏎`··*/` | `"Text\n\n····code"` — min indent is 2, set by the closing `*/`; the code block keeps its relative indent |
+| `/**`⏎`····indented`⏎`*/` | `"····indented"` — closing `*/` at column 0 sets the floor to 0, so nothing is stripped |
+| `/** */` | `""` — empty |
+
+#### Gotchas
+
+- **A Markdown bullet list written with `*` is preserved.** Because star-stripping is
+  all-or-nothing, the leading `Options:` below means no stripping happens and the bullets
+  survive. Javadoc gets this wrong.
+
+  ```pure
+  /**
+  Options:
+  * first
+  * second
+  */
+  ```
+
+- **Indentation is semantic in Markdown** — four-space-indented lines are code blocks. Because
+  the closing `*/`'s indentation sets the floor, put `*/` at the indentation your content is
+  written at, and deeper indentation survives relative to it.
+- **Documentation comments nest**, so a code sample containing a *balanced* `/* … */` works —
+  the inner comment is absorbed and the documentation comment ends at the outer `*/`:
+
+  ````pure
+  /**
+  ```c
+  /* legacy comment */
+  ```
+  */
+  ````
+
+  Nesting only handles balanced pairs. A **lone** `*/` in the content still terminates the
+  comment, and there is no escape for it — split it (`*` `/`) or reword.
+
+- `/**/` is an empty *ordinary* comment, not an unterminated documentation comment. `/** */` is
+  an empty documentation comment.
+- The `###` section split is not comment-aware (see §0), so a line beginning `###` inside a
+  documentation comment will split the file into sections.
+- Resolution of Pure references inside documentation (`[[pkg::Class]]`, ` ```pure ` blocks) and
+  Markdown rendering are the consumer's concern, not the grammar's.
+
+**Implementation:** fragment `DocComment` in `M4Fragment.g4`; token `DOC_COMMENT` on the
+`DOCUMENTATION` channel in `M3CoreLexer.g4` (inherited by `M3Lexer`, `RelationalLexer` and
+`RelationMappingLexer`); canonicalization in
+`org.finos.legend.pure.m4.serialization.grammar.DocCommentCanonicalizer`; attachment via
+`DocCommentLookup` and `AntlrContextToM3CoreInstance.taggedValues(...)`. Tests:
+`TestDocCommentCanonicalizer` (m4) and `TestDocComment` (m3-core).
 
 ---
 
@@ -286,10 +434,19 @@ whitespace survives them intact.
   This hazard is new with multi-line strings; a single-line literal cannot span
   a newline, so `\n###` could never occur inside one.
 
-- **`###Pure` sections only.** The `MULTILINE_STRING` token is declared in
-  `M3CoreLexer.g4` alone. The `###Mapping`, `###Relational`, and `###Diagram`
-  grammars — and M4 — do not accept `'''…'''`, even though they share the
-  underlying `MultilineString` fragment definition in `M4Fragment.g4`.
+- **`###Pure` sections only, in practice.** `###Mapping`, `###Diagram` and M4 do not accept
+  `'''…'''`: their lexers import only `M4Fragment.g4`, where `MultilineString` sits as an
+  unreferenced fragment.
+
+  `###Relational` and relation mappings are a different case. `RelationalLexer.g4` and
+  `RelationMappingLexer.g4` import `M3CoreLexer`, so they *do* inherit the
+  `MULTILINE_STRING` token, and `RelationalParser` inherits the `taggedValue` rule that
+  accepts it — a `'''…'''` tagged value on a `###Relational` column therefore parses.
+  It then fails in `RelationalGraphBuilder.visitTaggedValueNew`, which reads
+  `ctx.STRING(0)` unconditionally; the resulting `NullPointerException` surfaces as a
+  `PureParserException` with an empty message and a misreported line number. **Treat
+  multi-line tagged values in `###Relational` as unsupported**, but note the failure is a
+  known gap rather than a deliberate rejection.
 
 - **Printing does not round-trip.** Since the value is an ordinary `String`,
   anything that renders it back to Pure source emits a single-line, escaped

@@ -16,10 +16,18 @@ Detailed per-section references live in their own pages:
 For how the `###` section system works, see
 [Section 0 of the Pure Language Reference](pure-language-reference.md#0-the-grammar-section-system).
 
-> **Multi-line string literals (`'''…'''`) are a `###Pure` feature only.** The
-> `MULTILINE_STRING` token is declared in `M3CoreLexer.g4`; the `###Mapping`,
-> `###Relational`, and `###Diagram` grammars do not accept it. See
+> **Multi-line string literals (`'''…'''`) work in `###Pure` only.** The `MULTILINE_STRING`
+> token is declared in `M3CoreLexer.g4`, so `###Mapping` and `###Diagram` genuinely cannot
+> see it. `###Relational` and relation mappings *do* inherit it by import and will parse a
+> `'''…'''` tagged value, but then fail with an empty-message `PureParserException` — a known
+> gap, not a deliberate rejection. See
 > [Multi-line String Literals](pure-language-reference.md#multi-line-string-literals).
+
+> **Documentation comments (`/** … */`) attach in `###Pure` only.** The `DOC_COMMENT` token is
+> declared in `M3CoreLexer.g4`, so `RelationalLexer` and `RelationMappingLexer` inherit it by
+> import — but only the `###Pure` walker looks the tokens up, so elsewhere they behave exactly
+> like ordinary comments. See
+> [Documentation Comments](pure-language-reference.md#documentation-comments).
 
 ---
 

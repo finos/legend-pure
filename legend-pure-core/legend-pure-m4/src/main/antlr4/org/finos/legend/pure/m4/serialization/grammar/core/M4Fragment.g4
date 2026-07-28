@@ -64,3 +64,7 @@ fragment Comment:      '/*' .*? '*/'
 ;
 fragment LineComment: '//' ~[\r\n]*
 ;
+// Recursing on Comment as well as DocComment is what absorbs a plain '/* ... */' nested in a
+// doc comment; the ~[/] guard keeps '/**/' an empty Comment rather than an unterminated one.
+fragment DocComment: '/**' ~[/] ( DocComment | Comment | . )*? '*/'
+;

@@ -2,6 +2,8 @@ lexer grammar M3CoreLexer;
 
 import M4Fragment;
 
+channels { DOCUMENTATION }
+
 MAPPING_SRC: '~src';
 MAPPING_FILTER: '~filter';
 MAPPING_GROUPBY: '~groupBy';
@@ -83,6 +85,8 @@ CONSTRAINT_ENFORCEMENT: '~enforcementLevel';
 CONSTRAINT_MESSAGE: '~message';
 
 WHITESPACE:   Whitespace        ->  skip ;
+// Must precede COMMENT: both match '/** x */', and ANTLR breaks the tie by declaration order.
+DOC_COMMENT:  DocComment        -> channel(DOCUMENTATION) ;
 COMMENT:      Comment           -> skip  ;
 LINE_COMMENT: LineComment       -> skip  ;
 

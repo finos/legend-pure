@@ -239,6 +239,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.grammar.DocCommentCanonicalizer;
 import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
@@ -265,8 +266,9 @@ public class AntlrContextToM3CoreInstance
     private final SourceState oldState;
     private final MutableMap<CoreInstance, SourceInformation> newSourceInfoMap;
     private final MutableSet<CoreInstance> oldInstances;
+    private final DocCommentLookup docCommentLookup;
 
-    public AntlrContextToM3CoreInstance(Context context, ModelRepository repository, ProcessorSupport processorSupport, AntlrSourceInformation sourceInformation, InlineDSLLibrary inlineDSLLibrary, MutableList<CoreInstance> coreInstancesResult, int count, boolean addLines, SourceState oldState)
+    public AntlrContextToM3CoreInstance(Context context, ModelRepository repository, ProcessorSupport processorSupport, AntlrSourceInformation sourceInformation, InlineDSLLibrary inlineDSLLibrary, MutableList<CoreInstance> coreInstancesResult, int count, boolean addLines, SourceState oldState, DocCommentLookup docCommentLookup)
     {
         this.context = context;
         this.repository = repository;
@@ -279,6 +281,7 @@ public class AntlrContextToM3CoreInstance
         this.oldState = oldState;
         this.newSourceInfoMap = Maps.mutable.empty();
         this.oldInstances = this.oldState == null ? Sets.mutable.empty() : this.oldState.getInstances().toSet();
+        this.docCommentLookup = (docCommentLookup == null) ? DocCommentLookup.NONE : docCommentLookup;
     }
 
     public CoreInstance definition(DefinitionContext ctx, boolean useImportStubsInInstanceParser) throws PureParserException
@@ -2066,7 +2069,7 @@ public class AntlrContextToM3CoreInstance
         {
             enumValue.setKeyValues(M3PropertyPaths.stereotypes, stereotypes);
         }
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
         if (taggedValues.notEmpty())
         {
             enumValue.setKeyValues(M3PropertyPaths.taggedValues, taggedValues);
@@ -2089,7 +2092,7 @@ public class AntlrContextToM3CoreInstance
                 ._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Enumeration))
                 ._typeArguments(Lists.immutable.with(GenericTypeInstance.createPersistent(this.repository, sourceInfo)._rawType(enumeration))));
 
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
         if (taggedValues.notEmpty())
         {
             enumeration._taggedValues(taggedValues);
@@ -2127,7 +2130,7 @@ public class AntlrContextToM3CoreInstance
         {
             measure._stereotypesCoreInstance(stereotypes);
         }
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
         if (taggedValues.notEmpty())
         {
             measure._taggedValues(taggedValues);
@@ -2247,7 +2250,7 @@ public class AntlrContextToM3CoreInstance
         {
             primitiveType._stereotypesCoreInstance(stereotypes);
         }
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
         if (taggedValues.notEmpty())
         {
             primitiveType._taggedValues(taggedValues);
@@ -2278,7 +2281,7 @@ public class AntlrContextToM3CoreInstance
         }
 
         ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? Lists.immutable.empty() : stereotypes(ctx.stereotypes(), importId);
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
         if (ctx.projection() != null)
         {
             return projectionParser(ctx, importId, addLines, stereotypes, taggedValues);
@@ -2645,7 +2648,7 @@ public class AntlrContextToM3CoreInstance
 
         String associationName = ctx.qualifiedName().identifier().getText();
         ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? Lists.immutable.empty() : stereotypes(ctx.stereotypes(), importId);
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
 
         if (ctx.associationProjection() != null)
         {
@@ -2751,9 +2754,9 @@ public class AntlrContextToM3CoreInstance
             ListIterable<CoreInstance> stereotypes = this.stereotypes(ctx.stereotypes(), importId);
             propertyInstance._stereotypesCoreInstance(stereotypes);
         }
-        if (ctx.taggedValues() != null)
+        ListIterable<TaggedValue> tags = taggedValues(ctx, ctx.taggedValues(), importId);
+        if (tags.notEmpty())
         {
-            ListIterable<TaggedValue> tags = taggedValues(ctx.taggedValues(), importId);
             propertyInstance._taggedValues(tags);
         }
         if (ctx.defaultValue() != null)
@@ -2895,7 +2898,7 @@ public class AntlrContextToM3CoreInstance
         {
             qpi._stereotypesCoreInstance(stereotypes);
         }
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
         if (taggedValues.notEmpty())
         {
             qpi._taggedValues(taggedValues);
@@ -2940,7 +2943,7 @@ public class AntlrContextToM3CoreInstance
         {
             function._stereotypesCoreInstance(stereotypes);
         }
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
         if (taggedValues.notEmpty())
         {
             function._taggedValues(taggedValues);
@@ -2960,7 +2963,7 @@ public class AntlrContextToM3CoreInstance
         ConcreteFunctionDefinitionInstance functionDefinition = ConcreteFunctionDefinitionInstance.createPersistent(this.repository, ctx.qualifiedName().identifier().getText() + importId.getName() + this.functionCounter, this.sourceInformation.getPureSourceInformation(ctx.FUNCTION().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
 
         ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? null : stereotypes(ctx.stereotypes(), importId);
-        ListIterable<TaggedValue> tags = (ctx.taggedValues() == null) ? null : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> tags = taggedValues(ctx, ctx.taggedValues(), importId);
 
         MutableList<String> typeParametersNames = Lists.mutable.empty();
         MutableList<String> multiplicityParameterNames = Lists.mutable.empty();
@@ -3249,6 +3252,54 @@ public class AntlrContextToM3CoreInstance
         return ListIterate.collect(ctx.taggedValue(), tvContext -> taggedValue(importId, tvContext));
     }
 
+    /**
+     * Builds an element's tagged values, folding in its documentation comment as a
+     * {@code meta::pure::profiles::doc} {@code doc} value if it has one.
+     *
+     * @param elementCtx the element context, whose start token must be the element keyword
+     * @param tvCtx      the explicit tagged values, or null if the element declares none
+     * @param importId   import group used to resolve the tag references
+     */
+    private ListIterable<TaggedValue> taggedValues(ParserRuleContext elementCtx, TaggedValuesContext tvCtx, ImportGroup importId)
+    {
+        ListIterable<TaggedValue> explicit = (tvCtx == null) ? Lists.immutable.empty() : taggedValues(tvCtx, importId);
+        Token docToken = this.docCommentLookup.findDocComment(elementCtx);
+        if (docToken == null)
+        {
+            return explicit;
+        }
+        TaggedValueContext conflict = (tvCtx == null) ? null : findExplicitDocTaggedValue(tvCtx);
+        if (conflict != null)
+        {
+            throw new PureParserException(this.sourceInformation.getPureSourceInformation(conflict.getStart(), conflict.getStart(), conflict.getStop()),
+                    "Element has both a documentation comment and an explicit doc.doc tagged value. Use one.");
+        }
+        return Lists.mutable.with(docTaggedValue(docToken, importId)).withAll(explicit);
+    }
+
+    private TaggedValue docTaggedValue(Token docToken, ImportGroup importId)
+    {
+        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(docToken, docToken, docToken);
+        ImportStubInstance tag = ImportStubInstance.createPersistent(this.repository, sourceInfo, M3Paths.doc + "%doc", importId);
+        return TaggedValueInstance.createPersistent(this.repository, sourceInfo, tag, DocCommentCanonicalizer.canonicalize(docToken.getText()));
+    }
+
+    /**
+     * Matches on the profile's unqualified name, so both {@code doc.doc} (via an import) and the
+     * fully qualified {@code meta::pure::profiles::doc.doc} are recognised.
+     */
+    private static TaggedValueContext findExplicitDocTaggedValue(TaggedValuesContext ctx)
+    {
+        for (TaggedValueContext tv : ctx.taggedValue())
+        {
+            if ("doc".equals(tv.identifier().getText()) && "doc".equals(tv.qualifiedName().identifier().getText()))
+            {
+                return tv;
+            }
+        }
+        return null;
+    }
+
     private TaggedValue taggedValue(ImportGroup importId, TaggedValueContext ctx)
     {
         ImportStubInstance importStubInstance = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart(), ctx.identifier().getStart(), ctx.identifier().getStop()), this.getQualifiedNameString(ctx.qualifiedName()) + "%" + ctx.identifier().getText(), importId);
@@ -3373,9 +3424,10 @@ public class AntlrContextToM3CoreInstance
         {
             profile._stereotypesCoreInstance(stereotypes(ctx.stereotypes(), importId));
         }
-        if (ctx.taggedValues() != null)
+        ListIterable<TaggedValue> profileTaggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
+        if (profileTaggedValues.notEmpty())
         {
-            profile._taggedValues(taggedValues(ctx.taggedValues(), importId));
+            profile._taggedValues(profileTaggedValues);
         }
 
         return profile._name(profileName)
