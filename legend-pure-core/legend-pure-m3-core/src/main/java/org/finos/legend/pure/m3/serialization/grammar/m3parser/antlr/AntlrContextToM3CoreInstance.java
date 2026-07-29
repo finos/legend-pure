@@ -3274,12 +3274,17 @@ public class AntlrContextToM3CoreInstance
             throw new PureParserException(this.sourceInformation.getPureSourceInformation(conflict.getStart(), conflict.getStart(), conflict.getStop()),
                     "Element has both a documentation comment and an explicit doc.doc tagged value. Use one.");
         }
-        return Lists.mutable.with(docTaggedValue(docToken, importId)).withAll(explicit);
+        return Lists.mutable.with(docTaggedValue(elementCtx, docToken, importId)).withAll(explicit);
     }
 
-    private TaggedValue docTaggedValue(Token docToken, ImportGroup importId)
+    private TaggedValue docTaggedValue(ParserRuleContext elementCtx, Token docToken, ImportGroup importId)
     {
-        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(docToken, docToken, docToken);
+        // Anchored to the element, not to the comment. A documentation comment sits *before* the
+        // element it documents, and ReferenceIdGenerator only assigns a reference id to instances
+        // whose source information the element subsumes - so anchoring to the comment leaves the
+        // tagged value unreferenceable and breaks PAR serialization.
+        Token anchor = elementCtx.getStart();
+        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(anchor, anchor, anchor);
         ImportStubInstance tag = ImportStubInstance.createPersistent(this.repository, sourceInfo, M3Paths.doc + "%doc", importId);
         return TaggedValueInstance.createPersistent(this.repository, sourceInfo, tag, DocCommentCanonicalizer.canonicalize(docToken.getText()));
     }

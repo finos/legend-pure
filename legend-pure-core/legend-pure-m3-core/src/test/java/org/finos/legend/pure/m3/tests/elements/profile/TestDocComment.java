@@ -31,6 +31,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composi
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.After;
 import org.junit.Assert;
@@ -153,6 +154,31 @@ public class TestDocComment extends AbstractPureTestWithCoreCompiledPlatform
     {
         compile("/** Native. */\nnative function test::myNative(s: String[1]): String[1];");
         Assert.assertEquals("Native.", docOf((AnnotatedElement) runtime.getCoreInstance("test::myNative_String_1__String_1_")));
+    }
+
+    /**
+     * The shape used throughout platform/pure: a stereotype and a multi-line tagged-value
+     * block sit between 'native function' and the signature, so the element context spans
+     * several lines. See platform/pure/grammar/functions/collection/iteration/map.pure.
+     */
+    @Test
+    public void testDocCommentOnNativeFunctionWithMultiLineStereotypeAndTagBlock()
+    {
+        compile("Profile test::P\n{\n  stereotypes: [func];\n  tags: [grammarDoc];\n}\n" +
+                "/**\n" +
+                " * Summary line.\n" +
+                " *\n" +
+                " * - bullet one\n" +
+                " * - bullet two\n" +
+                " */\n" +
+                "native function\n" +
+                "    <<test::P.func>>\n" +
+                "    {\n" +
+                "        test::P.grammarDoc='a grammar note'\n" +
+                "    }\n" +
+                "    test::myDocumented(value:String[*]):String[*];");
+        Assert.assertEquals("Summary line.\n\n- bullet one\n- bullet two",
+                docOf((AnnotatedElement) runtime.getCoreInstance("test::myDocumented_String_MANY__String_MANY_")));
     }
 
     @Test
@@ -342,6 +368,67 @@ public class TestDocComment extends AbstractPureTestWithCoreCompiledPlatform
         compile("Profile test::P\n{\n  tags: [other];\n}\n" +
                 "/** Documented. */\nClass {test::P.other = 'x'} test::A\n{\n}");
         Assert.assertEquals("Documented.", doc("test::A"));
+    }
+
+    // ---------------------------------------------------------------- serializability
+
+    /**
+     * The synthesized tagged value must sit inside the owning element's source range.
+     * {@code ReferenceIdGenerator} only assigns a reference id to instances the element's source
+     * information subsumes, so anchoring to the comment - which precedes the element - leaves it
+     * unreferenceable and breaks PAR serialization of any repository that uses the feature.
+     */
+    @Test
+    public void testDocTaggedValueIsAnchoredInsideTheElement()
+    {
+        compile("/**\n * Documented.\n */\nClass test::A\n{\n  /** A property. */\n  name: String[1];\n}");
+
+        CoreInstance cls = runtime.getCoreInstance("test::A");
+        assertSubsumed(cls, taggedValues("test::A").getFirst());
+
+        Property<?, ?> property = ListHelper.wrapListIterable(((Class<?>) cls)._properties()).getFirst();
+        assertSubsumed(cls, ListHelper.wrapListIterable(property._taggedValues()).getFirst());
+    }
+
+    /** Native function is the shape the PAR serialization failure actually surfaced on. */
+    @Test
+    public void testDocTaggedValueOnNativeFunctionIsAnchoredInsideTheElement()
+    {
+        compile("/**\n * Documented.\n */\nnative function test::myNative(s: String[1]): String[1];");
+        CoreInstance fn = runtime.getCoreInstance("test::myNative_String_1__String_1_");
+        assertSubsumed(fn, ListHelper.wrapListIterable(((AnnotatedElement) fn)._taggedValues()).getFirst());
+    }
+
+    /**
+     * The platform/pure shape: a documentation comment alongside a surviving explicit tagged
+     * value. Both must be anchored inside the element, and they must remain distinguishable.
+     */
+    @Test
+    public void testDocAndExplicitTaggedValuesAreBothAnchoredInsideTheElement()
+    {
+        compile("Profile test::P\n{\n  stereotypes: [func];\n  tags: [grammarDoc];\n}\n" +
+                "/**\n * Documented.\n */\n" +
+                "native function\n" +
+                "    <<test::P.func>>\n" +
+                "    {\n" +
+                "        test::P.grammarDoc='a grammar note'\n" +
+                "    }\n" +
+                "    test::myDocumented(value:String[*]):String[*];");
+
+        CoreInstance fn = runtime.getCoreInstance("test::myDocumented_String_MANY__String_MANY_");
+        ListIterable<? extends TaggedValue> tvs = ListHelper.wrapListIterable(((AnnotatedElement) fn)._taggedValues());
+        Assert.assertEquals(2, tvs.size());
+        tvs.forEach(tv -> assertSubsumed(fn, tv));
+        Assert.assertNotEquals("the two tagged values must not collapse onto one source location",
+                tvs.get(0).getSourceInformation(), tvs.get(1).getSourceInformation());
+    }
+
+    private static void assertSubsumed(CoreInstance element, TaggedValue taggedValue)
+    {
+        SourceInformation elementInfo = element.getSourceInformation();
+        SourceInformation tagInfo = taggedValue.getSourceInformation();
+        Assert.assertNotNull("tagged value has no source information", tagInfo);
+        Assert.assertTrue(elementInfo + " does not subsume " + tagInfo, elementInfo.subsumes(tagInfo));
     }
 
     // ---------------------------------------------------------------- helpers
