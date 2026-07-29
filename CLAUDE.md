@@ -10,7 +10,7 @@ Group ID: `org.finos.legend.pure`. Current version: `5.81.1-SNAPSHOT` (root `pom
 
 ## Build & test commands
 
-Requires **JDK 11 or 17** (enforcer rejects anything else) and Maven 3.6+.
+Requires **JDK 11, 17, 21, or 25** (enforcer rejects anything else) and Maven 3.6+.
 
 ```bash
 # First build, skip tests (15–30 min warm repo, longer cold)
