@@ -18,4 +18,40 @@ Profile meta::pure::profiles::doc
     tags: [doc, todo];
 }
 
+/** Documented with a documentation comment. */
+Class meta::pure::functions::meta::tests::documentation::CC_DocumentedWithComment
+{
+}
+
+Class {meta::pure::profiles::doc.doc = 'Documented with a documentation comment.'} meta::pure::functions::meta::tests::documentation::CC_DocumentedWithTaggedValue
+{
+}
+
+/**
+ * Documented across several lines.
+ *
+ * Stars and indentation are stripped; the blank line above is kept.
+ */
+Class meta::pure::functions::meta::tests::documentation::CC_DocumentedAcrossLines
+{
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::documentation::testDocumentationCommentIsSugarForTheDocTag():Boolean[1]
+{
+    let sugared = meta::pure::functions::meta::tests::documentation::CC_DocumentedWithComment.taggedValues->toOne();
+    let explicit = meta::pure::functions::meta::tests::documentation::CC_DocumentedWithTaggedValue.taggedValues->toOne();
+
+    assertEquals('doc', $sugared.tag.value);
+    assertIs(meta::pure::profiles::doc, $sugared.tag.profile);
+    assertIs($explicit.tag, $sugared.tag);
+    assertEquals($explicit.value, $sugared.value);
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::documentation::testMultiLineDocumentationCommentIsCanonicalized():Boolean[1]
+{
+    let documented = meta::pure::functions::meta::tests::documentation::CC_DocumentedAcrossLines.taggedValues->toOne();
+
+    assertEquals('Documented across several lines.\n\nStars and indentation are stripped; the blank line above is kept.', $documented.value);
+}
+
 

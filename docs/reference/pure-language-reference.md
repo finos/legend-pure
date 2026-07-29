@@ -292,7 +292,10 @@ Below, `⏎` marks a newline in the source and `·` a space.
 `RelationMappingLexer`); canonicalization in
 `org.finos.legend.pure.m4.serialization.grammar.DocCommentCanonicalizer`; attachment via
 `DocCommentLookup` and `AntlrContextToM3CoreInstance.taggedValues(...)`. Tests:
-`TestDocCommentCanonicalizer` (m4) and `TestDocComment` (m3-core).
+`TestDocCommentCanonicalizer` (m4) and `TestDocComment` (m3-core) cover parsing and
+canonicalization; `platform/pure/documentation.pure` pins the same contract at run time on both
+execution engines, where the tagged value has been through metadata serialization rather than read
+straight off the AST.
 
 ---
 
