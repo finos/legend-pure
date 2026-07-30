@@ -240,6 +240,7 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.DocCommentCanonicalizer;
+import org.finos.legend.pure.m4.serialization.grammar.MultilineTextLayout;
 import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
@@ -4032,72 +4033,12 @@ public class AntlrContextToM3CoreInstance
     }
 
     /**
-     * Convert the raw text of a multi-line string literal ('''...''') into its value, following the Java
-     * text-block algorithm: strip the opening delimiter line and the closing delimiter, remove the common
-     * (incidental) leading-whitespace indentation, strip trailing whitespace from each line, then process
-     * escape sequences. The opening '''  must be followed by a line terminator (enforced by the lexer), so
-     * the first line of content is the line after it; the terminal newline is preserved iff the closing '''
-     * sits on its own line.
+     * Convert the raw text of a multi-line string literal ('''...''') into its value: the Java text-block
+     * layout of {@link MultilineTextLayout}, then escape processing.
      */
     public static String processMultilineString(String rawTokenText)
     {
-        // Normalize line terminators, then drop the opening delimiter line (through its terminator) and the
-        // trailing closing '''.
-        String normalized = rawTokenText.replace("\r\n", "\n").replace('\r', '\n');
-        int firstNewLine = normalized.indexOf('\n');
-        String body = normalized.substring(firstNewLine + 1, normalized.length() - 3);
-
-        String[] lines = body.split("\n", -1);
-
-        // Minimum indentation is computed over every non-blank line plus the last line (the closing-delimiter
-        // line, even when blank) - the latter sets a floor that prevents over-stripping.
-        int minIndent = Integer.MAX_VALUE;
-        for (int i = 0; i < lines.length; i++)
-        {
-            String line = lines[i];
-            int leading = leadingWhitespaceLength(line);
-            if ((leading < line.length()) || (i == lines.length - 1))
-            {
-                minIndent = Math.min(minIndent, leading);
-            }
-        }
-        if (minIndent == Integer.MAX_VALUE)
-        {
-            minIndent = 0;
-        }
-
-        StringBuilder builder = new StringBuilder(body.length());
-        for (int i = 0; i < lines.length; i++)
-        {
-            if (i > 0)
-            {
-                builder.append('\n');
-            }
-            String line = lines[i];
-            builder.append(stripTrailingWhitespace(line.substring(Math.min(minIndent, line.length()))));
-        }
-
-        return StringEscape.unescape(builder.toString());
-    }
-
-    private static int leadingWhitespaceLength(String line)
-    {
-        int i = 0;
-        while ((i < line.length()) && Character.isWhitespace(line.charAt(i)))
-        {
-            i++;
-        }
-        return i;
-    }
-
-    private static String stripTrailingWhitespace(String line)
-    {
-        int end = line.length();
-        while ((end > 0) && Character.isWhitespace(line.charAt(end - 1)))
-        {
-            end--;
-        }
-        return line.substring(0, end);
+        return StringEscape.unescape(MultilineTextLayout.layout(rawTokenText));
     }
 
     private InstanceValue doWrap(MutableList<PropertyNameContext> content)
