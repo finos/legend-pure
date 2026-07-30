@@ -317,7 +317,7 @@ public class TestDocComment extends AbstractPureTestWithCoreCompiledPlatform
         PureParserException e = Assert.assertThrows(PureParserException.class,
                 () -> compile("/** From the comment. */\n" +
                         "Class {meta::pure::profiles::doc.doc = 'From the tagged value.'} test::A\n{\n}"));
-        Assert.assertTrue(e.getMessage(), e.getMessage().contains("Element has both a documentation comment and an explicit doc.doc tagged value"));
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("Element has both documentation and an explicit doc.doc tagged value"));
     }
 
     @Test
@@ -327,7 +327,7 @@ public class TestDocComment extends AbstractPureTestWithCoreCompiledPlatform
                 () -> compile("import meta::pure::profiles::*;\n" +
                         "/** From the comment. */\n" +
                         "Class {doc.doc = 'From the tagged value.'} test::A\n{\n}"));
-        Assert.assertTrue(e.getMessage(), e.getMessage().contains("Element has both a documentation comment and an explicit doc.doc tagged value"));
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("Element has both documentation and an explicit doc.doc tagged value"));
     }
 
     /** Same profile, different tag - not a conflict. */

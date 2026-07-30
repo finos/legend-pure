@@ -155,6 +155,7 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.De
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DefaultValueExpressionContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DefinitionContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DerivedPropertyContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DocumentationContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DslContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EnumDefinitionContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EnumValueContext;
@@ -240,6 +241,7 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.DocCommentCanonicalizer;
+import org.finos.legend.pure.m4.serialization.grammar.DocumentationCanonicalizer;
 import org.finos.legend.pure.m4.serialization.grammar.MultilineTextLayout;
 import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
@@ -2654,7 +2656,7 @@ public class AntlrContextToM3CoreInstance
         if (ctx.associationProjection() != null)
         {
             AssociationProjectionContext apCtx = ctx.associationProjection();
-            AssociationProjection projection = AssociationProjectionInstance.createPersistent(this.repository, associationName, this.sourceInformation.getPureSourceInformation(ctx.ASSOCIATION().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.associationProjection().getStop()), null)
+            AssociationProjection projection = AssociationProjectionInstance.createPersistent(this.repository, associationName, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.associationProjection().getStop()), null)
                     ._name(associationName);
             buildAndSetPackage(projection, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
 
@@ -2675,7 +2677,7 @@ public class AntlrContextToM3CoreInstance
             return projection;
         }
 
-        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.ASSOCIATION().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.getStop());
+        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop());
         Association association = AssociationInstance.createPersistent(this.repository, associationName, sourceInfo)
                 ._name(associationName);
         buildAndSetPackage(association, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
@@ -2927,7 +2929,7 @@ public class AntlrContextToM3CoreInstance
     private CoreInstance nativeFunction(NativeFunctionContext ctx, ImportGroup importId, String space, MutableList<CoreInstance> coreInstancesResult)
     {
         this.functionCounter++;
-        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.NATIVE().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.END_LINE().getSymbol());
+        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.END_LINE().getSymbol());
         NativeFunction<?> function = NativeFunctionInstance.createPersistent(this.repository, ctx.qualifiedName().identifier().getText() + this.functionCounter, sourceInfo)
                 ._functionName(ctx.qualifiedName().identifier().getText());
         buildAndSetPackage(function, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
@@ -2961,7 +2963,7 @@ public class AntlrContextToM3CoreInstance
     public CoreInstance concreteFunctionDefinition(FunctionDefinitionContext ctx, ImportGroup importId, boolean addLines, String space, MutableList<CoreInstance> coreInstancesResult)
     {
         this.functionCounter++;
-        ConcreteFunctionDefinitionInstance functionDefinition = ConcreteFunctionDefinitionInstance.createPersistent(this.repository, ctx.qualifiedName().identifier().getText() + importId.getName() + this.functionCounter, this.sourceInformation.getPureSourceInformation(ctx.FUNCTION().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
+        ConcreteFunctionDefinitionInstance functionDefinition = ConcreteFunctionDefinitionInstance.createPersistent(this.repository, ctx.qualifiedName().identifier().getText() + importId.getName() + this.functionCounter, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
 
         ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? null : stereotypes(ctx.stereotypes(), importId);
         ListIterable<TaggedValue> tags = taggedValues(ctx, ctx.taggedValues(), importId);
@@ -3264,8 +3266,12 @@ public class AntlrContextToM3CoreInstance
     private ListIterable<TaggedValue> taggedValues(ParserRuleContext elementCtx, TaggedValuesContext tvCtx, ImportGroup importId)
     {
         ListIterable<TaggedValue> explicit = (tvCtx == null) ? Lists.immutable.empty() : taggedValues(tvCtx, importId);
-        Token docToken = this.docCommentLookup.findDocComment(elementCtx);
-        if (docToken == null)
+        // Transitional: documentation is moving from a '/** ... */' comment on a hidden channel to a
+        // '''...''' literal that is a child of the declaration. Both are accepted until the comment
+        // form is removed. The literal wins if an element somehow carries both.
+        DocumentationContext docCtx = elementCtx.getRuleContext(DocumentationContext.class, 0);
+        Token docToken = (docCtx == null) ? this.docCommentLookup.findDocComment(elementCtx) : null;
+        if ((docCtx == null) && (docToken == null))
         {
             return explicit;
         }
@@ -3273,12 +3279,27 @@ public class AntlrContextToM3CoreInstance
         if (conflict != null)
         {
             throw new PureParserException(this.sourceInformation.getPureSourceInformation(conflict.getStart(), conflict.getStart(), conflict.getStop()),
-                    "Element has both a documentation comment and an explicit doc.doc tagged value. Use one.");
+                    "Element has both documentation and an explicit doc.doc tagged value. Use one.");
         }
-        return Lists.mutable.with(docTaggedValue(elementCtx, docToken, importId)).withAll(explicit);
+        TaggedValue doc = (docCtx == null) ? docCommentTaggedValue(elementCtx, docToken, importId) : docTaggedValue(docCtx, importId);
+        return Lists.mutable.with(doc).withAll(explicit);
     }
 
-    private TaggedValue docTaggedValue(ParserRuleContext elementCtx, Token docToken, ImportGroup importId)
+    /**
+     * Spans the documentation literal itself, closing delimiter included, so navigating to the tagged
+     * value lands on the text the author wrote. The literal is a child of the declaration and so inside
+     * its source range, which ReferenceIdGenerator requires to assign a reference id - without one, PAR
+     * serialization fails.
+     */
+    private TaggedValue docTaggedValue(DocumentationContext docCtx, ImportGroup importId)
+    {
+        Token start = docCtx.getStart();
+        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(start, start, docCtx.getStop());
+        ImportStubInstance tag = ImportStubInstance.createPersistent(this.repository, sourceInfo, M3Paths.doc + "%doc", importId);
+        return TaggedValueInstance.createPersistent(this.repository, sourceInfo, tag, DocumentationCanonicalizer.canonicalize(docCtx.getText()));
+    }
+
+    private TaggedValue docCommentTaggedValue(ParserRuleContext elementCtx, Token docToken, ImportGroup importId)
     {
         // Anchored to the element, not to the comment. A documentation comment sits *before* the
         // element it documents, and ReferenceIdGenerator only assigns a reference id to instances

@@ -30,7 +30,7 @@ definition: imports
             EOF
 ;
 
-classDefinition: CLASS stereotypes? taggedValues? qualifiedName typeVariableParameters? typeParametersWithContravarianceAndMultiplicityParameters?
+classDefinition: documentation? CLASS stereotypes? taggedValues? qualifiedName typeVariableParameters? typeParametersWithContravarianceAndMultiplicityParameters?
        (
            (
               PROJECTS projection
@@ -47,11 +47,11 @@ classDefinition: CLASS stereotypes? taggedValues? qualifiedName typeVariablePara
 typeVariableParameters: GROUP_OPEN (functionVariableExpression (COMMA functionVariableExpression)*)? GROUP_CLOSE
 ;
 
-primitiveDefinition: PRIMITIVE stereotypes? taggedValues? qualifiedName typeVariableParameters? EXTENDS type
+primitiveDefinition: documentation? PRIMITIVE stereotypes? taggedValues? qualifiedName typeVariableParameters? EXTENDS type
                      constraints?
 ;
 
-measureDefinition: MEASURE stereotypes? taggedValues? qualifiedName
+measureDefinition: documentation? MEASURE stereotypes? taggedValues? qualifiedName
                    measureBody
 ;
 
@@ -104,10 +104,10 @@ properties: ( property | qualifiedProperty )*
 propertyName: (identifier | STRING)
 ;
 
-property: stereotypes? taggedValues? aggregation? propertyName COLON propertyReturnType defaultValue? END_LINE
+property: documentation? stereotypes? taggedValues? aggregation? propertyName COLON propertyReturnType defaultValue? END_LINE
 ;
 
-qualifiedProperty:  stereotypes? taggedValues? identifier qualifiedPropertyBody COLON propertyReturnType  END_LINE
+qualifiedProperty:  documentation? stereotypes? taggedValues? identifier qualifiedPropertyBody COLON propertyReturnType  END_LINE
 ;
 
 qualifiedPropertyBody:
@@ -119,7 +119,7 @@ qualifiedPropertyBody:
                     CURLY_BRACKET_CLOSE
 ;
 
-association: ASSOCIATION stereotypes? taggedValues? qualifiedName (associationProjection | associationBody)
+association: documentation? ASSOCIATION stereotypes? taggedValues? qualifiedName (associationProjection | associationBody)
 ;
 
 associationBody:
@@ -131,22 +131,22 @@ associationBody:
 associationProjection: PROJECTS qualifiedName LESSTHAN qualifiedName COMMA qualifiedName GREATERTHAN
 ;
 
-enumDefinition: ENUM stereotypes? taggedValues? qualifiedName
+enumDefinition: documentation? ENUM stereotypes? taggedValues? qualifiedName
       CURLY_BRACKET_OPEN
          enumValue (COMMA enumValue)*
       CURLY_BRACKET_CLOSE
 ;
 
-enumValue: stereotypes? taggedValues? identifier
+enumValue: documentation? stereotypes? taggedValues? identifier
 ;
 
-nativeFunction: NATIVE FUNCTION stereotypes? taggedValues? qualifiedName typeAndMultiplicityParameters? functionTypeSignature END_LINE
+nativeFunction: documentation? NATIVE FUNCTION stereotypes? taggedValues? qualifiedName typeAndMultiplicityParameters? functionTypeSignature END_LINE
 ;
 
 functionTypeSignature: GROUP_OPEN (functionVariableExpression (COMMA functionVariableExpression)*)? GROUP_CLOSE COLON type multiplicity
 ;
 
-functionDefinition: FUNCTION stereotypes? taggedValues? qualifiedName typeAndMultiplicityParameters? functionTypeSignature
+functionDefinition: documentation? FUNCTION stereotypes? taggedValues? qualifiedName typeAndMultiplicityParameters? functionTypeSignature
           constraints?
           CURLY_BRACKET_OPEN
              codeBlock
@@ -237,6 +237,14 @@ taggedValues: CURLY_BRACKET_OPEN taggedValue (COMMA taggedValue)* CURLY_BRACKET_
 taggedValue: qualifiedName DOT identifier EQUAL (MULTILINE_STRING | STRING (PLUS STRING)*)
 ;
 
+// Sugar for the meta::pure::profiles::doc doc tagged value. Documentation is its own construct
+// that happens to share a lexical shape with the string literal: it is listed explicitly at each
+// declaration that accepts it, so '''...''' in expression position is entirely unaffected. Being
+// a child of the declaration is also what keeps the synthesized tagged value inside the element's
+// source range, which ReferenceIdGenerator requires for PAR serialization.
+documentation: MULTILINE_STRING
+;
+
 defaultValue: EQUAL defaultValueExpression
 ;
 
@@ -246,7 +254,7 @@ defaultValueExpression: (instanceReference)(propertyExpression) | expressionInst
 defaultValueExpressionsArray: BRACKET_OPEN ( defaultValueExpression (COMMA defaultValueExpression)* )? BRACKET_CLOSE
 ;
 
-profile: PROFILE stereotypes? taggedValues? qualifiedName
+profile: documentation? PROFILE stereotypes? taggedValues? qualifiedName
          CURLY_BRACKET_OPEN
             stereotypeDefinitions?
             tagDefinitions?

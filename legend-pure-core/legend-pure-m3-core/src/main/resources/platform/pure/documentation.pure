@@ -18,27 +18,34 @@ Profile meta::pure::profiles::doc
     tags: [doc, todo];
 }
 
-/** Documented with a documentation comment. */
-Class meta::pure::functions::meta::tests::documentation::CC_DocumentedWithComment
+// A documentation literal is sugar for the doc tag of the profile above. TestDocumentation pins
+// that at parse time; the tests below are what pin it at run time, on both execution engines,
+// where the tagged value has been through metadata serialization rather than read straight off
+// the AST.
+
+'''
+Documented with a documentation literal.
+'''
+Class meta::pure::functions::meta::tests::documentation::CC_Documented
 {
 }
 
-Class {meta::pure::profiles::doc.doc = 'Documented with a documentation comment.'} meta::pure::functions::meta::tests::documentation::CC_DocumentedWithTaggedValue
+Class {meta::pure::profiles::doc.doc = 'Documented with a documentation literal.'} meta::pure::functions::meta::tests::documentation::CC_DocumentedWithTaggedValue
 {
 }
 
-/**
- * Documented across several lines.
- *
- * Stars and indentation are stripped; the blank line above is kept.
- */
+'''
+Documented across several lines.
+
+Indentation is stripped; the blank line above is kept.
+'''
 Class meta::pure::functions::meta::tests::documentation::CC_DocumentedAcrossLines
 {
 }
 
-function <<test.Test>> meta::pure::functions::meta::tests::documentation::testDocumentationCommentIsSugarForTheDocTag():Boolean[1]
+function <<test.Test>> meta::pure::functions::meta::tests::documentation::testDocumentationIsSugarForTheDocTag():Boolean[1]
 {
-    let sugared = meta::pure::functions::meta::tests::documentation::CC_DocumentedWithComment.taggedValues->toOne();
+    let sugared = meta::pure::functions::meta::tests::documentation::CC_Documented.taggedValues->toOne();
     let explicit = meta::pure::functions::meta::tests::documentation::CC_DocumentedWithTaggedValue.taggedValues->toOne();
 
     assertEquals('doc', $sugared.tag.value);
@@ -47,11 +54,11 @@ function <<test.Test>> meta::pure::functions::meta::tests::documentation::testDo
     assertEquals($explicit.value, $sugared.value);
 }
 
-function <<test.Test>> meta::pure::functions::meta::tests::documentation::testMultiLineDocumentationCommentIsCanonicalized():Boolean[1]
+function <<test.Test>> meta::pure::functions::meta::tests::documentation::testMultiLineDocumentationIsCanonicalized():Boolean[1]
 {
     let documented = meta::pure::functions::meta::tests::documentation::CC_DocumentedAcrossLines.taggedValues->toOne();
 
-    assertEquals('Documented across several lines.\n\nStars and indentation are stripped; the blank line above is kept.', $documented.value);
+    assertEquals('Documented across several lines.\n\nIndentation is stripped; the blank line above is kept.', $documented.value);
 }
 
 
