@@ -100,8 +100,42 @@ public class AntlrSourceInformation
         int mainLine = middleToken.getLine();
         int mainCol = middleToken.getCharPositionInLine() + 1;
         int endLine = endToken.getLine();
-        int endCol = endToken.getCharPositionInLine() + (useEndOfEndToken ? endToken.getText().length() : 1);
+        int endCol = endToken.getCharPositionInLine() + 1;
+        if (useEndOfEndToken)
+        {
+            endLine += countNewLines(endToken.getText());
+            endCol = endColumnOf(endToken);
+        }
         return getPureSourceInformation(beginLine, beginCol, mainLine, mainCol, endLine, endCol);
+    }
+
+    /**
+     * The column the token's last character sits in.
+     * <p>
+     * A token reports only the line it <em>starts</em> on, so for one whose text spans lines -
+     * {@code MULTILINE_STRING}, {@code DOC_STRING} and {@code DSL_TEXT} are the ones that can - the
+     * end has to be derived from the text rather than from the start column plus the whole length,
+     * which would name a column past the end of the first line.
+     * <p>
+     * Newlines are counted as {@code \n} only, and the column as the characters following the last
+     * one, which is exactly how ANTLR advances line and {@code charPositionInLine} - so this stays
+     * consistent with every other position the lexer reports.
+     */
+    private static int endColumnOf(Token token)
+    {
+        String text = token.getText();
+        int lastNewLine = text.lastIndexOf('\n');
+        return (lastNewLine < 0) ? (token.getCharPositionInLine() + text.length()) : (text.length() - lastNewLine - 1);
+    }
+
+    private static int countNewLines(String text)
+    {
+        int count = 0;
+        for (int i = text.indexOf('\n'); i >= 0; i = text.indexOf('\n', i + 1))
+        {
+            count++;
+        }
+        return count;
     }
 
     public SourceInformation getSourceInformationForUnknownErrorPosition(int line, int charPositionInLine)
