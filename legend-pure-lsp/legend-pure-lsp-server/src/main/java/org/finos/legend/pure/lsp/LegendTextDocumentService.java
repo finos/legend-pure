@@ -147,15 +147,12 @@ public class LegendTextDocumentService implements TextDocumentService
 
                 if (content == null && resolvedId != null)
                 {
-                    synchronized (session)
+                    content = session.withGraphReadLock(() ->
                     {
                         org.finos.legend.pure.m3.serialization.runtime.Source source =
                                 session.getPureRuntime().getSourceById(resolvedId);
-                        if (source != null)
-                        {
-                            content = source.getContent();
-                        }
-                    }
+                        return source != null ? source.getContent() : null;
+                    });
                 }
 
                 if (content == null || resolvedId == null)
@@ -163,12 +160,13 @@ public class LegendTextDocumentService implements TextDocumentService
                     return Either.<List<CompletionItem>, CompletionList>forLeft(Collections.emptyList());
                 }
 
-                synchronized (session)
+                String finalContent = content;
+                return session.withGraphReadLock(() ->
                 {
                     List<CompletionItem> items = CompletionProvider.getCompletions(
-                            session.getPureRuntime(), resolvedId, content, line, column);
+                            session.getPureRuntime(), resolvedId, finalContent, line, column);
                     return Either.<List<CompletionItem>, CompletionList>forLeft(items);
-                }
+                });
             }
             catch (Exception e)
             {
@@ -202,17 +200,13 @@ public class LegendTextDocumentService implements TextDocumentService
                     return Either.<List<? extends Location>, List<? extends LocationLink>>forLeft(Collections.emptyList());
                 }
 
-                Location location;
-                synchronized (session)
-                {
-                    location = NavigationProvider.definition(
-                            session.getPureRuntime(),
-                            this.server.getUriMapper(),
-                            resolvedId,
-                            line,
-                            column
-                    );
-                }
+                Location location = session.withGraphReadLock(() -> NavigationProvider.definition(
+                        session.getPureRuntime(),
+                        this.server.getUriMapper(),
+                        resolvedId,
+                        line,
+                        column
+                ));
 
                 if (location == null)
                 {
@@ -252,10 +246,8 @@ public class LegendTextDocumentService implements TextDocumentService
                     return null;
                 }
 
-                synchronized (session)
-                {
-                    return HoverProvider.hover(session.getPureRuntime(), resolvedId, line, column);
-                }
+                return session.withGraphReadLock(() ->
+                        HoverProvider.hover(session.getPureRuntime(), resolvedId, line, column));
             }
             catch (Exception e)
             {
@@ -290,17 +282,14 @@ public class LegendTextDocumentService implements TextDocumentService
                     return Collections.<Location>emptyList();
                 }
 
-                synchronized (session)
-                {
-                    return ReferencesProvider.references(
-                            session.getPureRuntime(),
-                            this.server.getUriMapper(),
-                            resolvedId,
-                            line,
-                            column,
-                            includeDeclaration
-                    );
-                }
+                return session.withGraphReadLock(() -> ReferencesProvider.references(
+                        session.getPureRuntime(),
+                        this.server.getUriMapper(),
+                        resolvedId,
+                        line,
+                        column,
+                        includeDeclaration
+                ));
             }
             catch (Exception e)
             {
@@ -327,12 +316,12 @@ public class LegendTextDocumentService implements TextDocumentService
                 if (uri.startsWith("pure://"))
                 {
                     String sourceId = uri.substring("pure://".length());
-                    synchronized (session)
+                    return session.withGraphReadLock(() ->
                     {
                         List<Integer> data = SemanticTokensProvider.getTokens(
                                 session.getPureRuntime(), sourceId);
                         return new SemanticTokens(data);
-                    }
+                    });
                 }
 
                 String sourceId = this.server.getUriMapper().toSourceId(uri);
@@ -342,12 +331,12 @@ public class LegendTextDocumentService implements TextDocumentService
                     return new SemanticTokens(Collections.emptyList());
                 }
 
-                synchronized (session)
+                return session.withGraphReadLock(() ->
                 {
                     List<Integer> data = SemanticTokensProvider.getTokens(
                             session.getPureRuntime(), resolvedId);
                     return new SemanticTokens(data);
-                }
+                });
             }
             catch (Exception e)
             {
@@ -386,7 +375,7 @@ public class LegendTextDocumentService implements TextDocumentService
                     return Collections.<Either<SymbolInformation, DocumentSymbol>>emptyList();
                 }
 
-                synchronized (session)
+                return session.withGraphReadLock(() ->
                 {
                     List<DocumentSymbol> outline = DocumentOutlineProvider.getOutline(
                             session.getPureRuntime(), resolvedId);
@@ -396,7 +385,7 @@ public class LegendTextDocumentService implements TextDocumentService
                         result.add(Either.forRight(symbol));
                     }
                     return result;
-                }
+                });
             }
             catch (Exception e)
             {
@@ -547,6 +536,18 @@ public class LegendTextDocumentService implements TextDocumentService
     String getOpenDocumentContent(String uri)
     {
         return this.openDocuments.get(uri);
+    }
+
+    /**
+     * Drops a document from the open set and cancels any pending compile/diagnostics for it, WITHOUT
+     * restoring its content from disk (contrast didClose, which restores). Used by legend/deleteFile
+     * to fully unload a source the bridge had pushed via didOpen.
+     */
+    void removeOpenDocument(String uri)
+    {
+        this.openDocuments.remove(uri);
+        cancelPending(uri);
+        this.server.getDiagnosticService().clear(uri);
     }
 
     void shutdown()

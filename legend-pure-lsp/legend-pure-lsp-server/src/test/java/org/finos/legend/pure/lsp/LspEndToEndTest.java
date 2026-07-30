@@ -15,6 +15,7 @@
 package org.finos.legend.pure.lsp;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -23,7 +24,12 @@ import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionContext;
 import org.eclipse.lsp4j.CodeActionParams;
 import org.eclipse.lsp4j.Command;
+import org.eclipse.lsp4j.CompletionItem;
+import org.eclipse.lsp4j.CompletionList;
+import org.eclipse.lsp4j.CompletionParams;
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DocumentSymbol;
+import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
@@ -48,6 +54,17 @@ import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.eclipse.lsp4j.WorkspaceSymbolParams;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
+import org.finos.legend.pure.lsp.protocol.CheckBatchParams;
+import org.finos.legend.pure.lsp.protocol.CheckBatchResult;
+import org.finos.legend.pure.lsp.protocol.DeleteFileParams;
+import org.finos.legend.pure.lsp.protocol.DeleteFileResult;
+import org.finos.legend.pure.lsp.protocol.ExecuteFunctionParams;
+import org.finos.legend.pure.lsp.protocol.ExecuteGoParams;
+import org.finos.legend.pure.lsp.protocol.ExecuteGoResult;
+import org.finos.legend.pure.lsp.protocol.FileEntry;
+import org.finos.legend.pure.lsp.protocol.LspStatus;
+import org.finos.legend.pure.lsp.protocol.SetOptionParams;
+import org.finos.legend.pure.lsp.protocol.SetOptionResult;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -359,6 +376,232 @@ public class LspEndToEndTest
         {
             Assert.assertFalse("Content should not be empty", content.isEmpty());
         }
+    }
+
+    // -- New custom RPC endpoints, driven through the same in-process server harness --
+
+    @Test
+    public void executeGo_rpc_withInlineFiles_compilesThenRunsGo() throws Exception
+    {
+        long ts = System.currentTimeMillis();
+        String uri = "file:///workspace/src/main/resources/e2e_rpc_go_" + ts + ".pure";
+        ExecuteGoParams params = new ExecuteGoParams();
+        params.setFiles(Collections.singletonList(
+                new FileEntry(uri, "function go():Any[*]\n{\n  print('rpc go output', 1)\n}\n")));
+
+        ExecuteGoResult result = server.executeGo(params).get(30, TimeUnit.SECONDS);
+        Assert.assertTrue("executeGo RPC should succeed, got: " + result.getError(), result.isSuccess());
+        Assert.assertNotNull("Should have output", result.getOutput());
+        Assert.assertTrue("Should capture printed output, got: " + result.getOutput(),
+                result.getOutput().contains("rpc go output"));
+
+        // Clean up the throwaway go() wrapper via the delete RPC (also exercises deleteFile).
+        DeleteFileResult deleted = server.deleteFile(new DeleteFileParams(uri)).get(15, TimeUnit.SECONDS);
+        Assert.assertTrue("deleteFile should succeed", deleted.isSuccess());
+        Assert.assertTrue("go() wrapper should have been removed", deleted.isRemoved());
+    }
+
+    @Test
+    public void execute_rpc_runsArbitraryNamedFunction() throws Exception
+    {
+        long ts = System.currentTimeMillis();
+        String uri = "file:///workspace/src/main/resources/e2e_rpc_named_" + ts + ".pure";
+        String fnName = "e2eRpcFn" + ts;
+        ExecuteFunctionParams params = new ExecuteFunctionParams();
+        params.setFunction(fnName + "():Any[*]");
+        params.setFiles(Collections.singletonList(new FileEntry(uri,
+                "function " + fnName + "():Any[*]\n{\n  print('named rpc', 1)\n}\n")));
+
+        ExecuteGoResult result = server.execute(params).get(30, TimeUnit.SECONDS);
+        Assert.assertTrue("execute RPC should succeed, got: " + result.getError(), result.isSuccess());
+        Assert.assertTrue("Should capture printed output, got: " + result.getOutput(),
+                result.getOutput().contains("named rpc"));
+
+        server.deleteFile(new DeleteFileParams(uri)).get(15, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void execute_rpc_missingFunctionPath_returnsError() throws Exception
+    {
+        ExecuteGoResult result = server.execute(new ExecuteFunctionParams()).get(15, TimeUnit.SECONDS);
+        Assert.assertFalse("execute with no function path should fail", result.isSuccess());
+    }
+
+    @Test
+    public void checkBatch_rpc_success_reportsInputAsModified() throws Exception
+    {
+        long ts = System.currentTimeMillis();
+        String uri = "file:///workspace/src/main/resources/e2e_rpc_batch_" + ts + ".pure";
+        CheckBatchParams params = new CheckBatchParams();
+        params.setFiles(Collections.singletonList(new FileEntry(uri,
+                "Class test::e2e::BatchClass" + ts + "\n{\n  v: Integer[1];\n}\n")));
+
+        CheckBatchResult result = server.checkBatch(params).get(30, TimeUnit.SECONDS);
+        Assert.assertTrue("checkBatch should succeed, got: " + result.getError(), result.isSuccess());
+        Assert.assertNotNull("Modified files should be reported", result.getModifiedFiles());
+        Assert.assertTrue("Input file should be reported clean, got: " + result.getModifiedFiles(),
+                result.getModifiedFiles().contains(uri));
+
+        server.deleteFile(new DeleteFileParams(uri)).get(15, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void checkBatch_rpc_failure_attributesErrorToOffendingFile() throws Exception
+    {
+        long ts = System.currentTimeMillis();
+        String goodUri = "file:///workspace/src/main/resources/e2e_rpc_good_" + ts + ".pure";
+        String badUri = "file:///workspace/src/main/resources/e2e_rpc_bad_" + ts + ".pure";
+        CheckBatchParams params = new CheckBatchParams();
+        // Good file first: if the error were attributed blindly to files.get(0) it would point here.
+        params.setFiles(Arrays.asList(
+                new FileEntry(goodUri, "Class test::e2e::Good" + ts + "\n{\n  v: Integer[1];\n}\n"),
+                new FileEntry(badUri, "Class test::e2e::Bad" + ts + "\n{\n  v: NoSuchType999[1];\n}\n")));
+
+        CheckBatchResult result = server.checkBatch(params).get(30, TimeUnit.SECONDS);
+        Assert.assertFalse("Batch containing a bad file should fail", result.isSuccess());
+        Assert.assertNotNull("Error should be reported", result.getError());
+        Assert.assertEquals("Error must be attributed to the offending file, not files.get(0)",
+                badUri, result.getErrorUri());
+    }
+
+    @Test
+    public void checkBatch_rpc_emptyFiles_returnsError() throws Exception
+    {
+        CheckBatchResult result = server.checkBatch(new CheckBatchParams()).get(15, TimeUnit.SECONDS);
+        Assert.assertFalse("checkBatch with no files should fail", result.isSuccess());
+    }
+
+    @Test
+    public void setOption_rpc_togglesRuntimeOptionLive() throws Exception
+    {
+        String optionName = "E2eTestOption" + System.currentTimeMillis();
+        String key = "pure.options." + optionName;
+        try
+        {
+            SetOptionResult on = server.setOption(new SetOptionParams(optionName, true)).get(10, TimeUnit.SECONDS);
+            Assert.assertTrue("setOption(true) should succeed", on.isSuccess());
+            Assert.assertTrue("Option should now be effective", on.isEffective());
+            Assert.assertEquals("System property should be set", "true", System.getProperty(key));
+
+            SetOptionResult off = server.setOption(new SetOptionParams(optionName, false)).get(10, TimeUnit.SECONDS);
+            Assert.assertTrue("setOption(false) should succeed", off.isSuccess());
+            Assert.assertFalse("Option should no longer be effective", off.isEffective());
+            Assert.assertNull("Property should be cleared, not stored as 'false'", System.getProperty(key));
+        }
+        finally
+        {
+            System.clearProperty(key);
+        }
+    }
+
+    @Test
+    public void setOption_rpc_blankName_returnsError() throws Exception
+    {
+        SetOptionResult result = server.setOption(new SetOptionParams("   ", true)).get(10, TimeUnit.SECONDS);
+        Assert.assertFalse("Blank option name should fail", result.isSuccess());
+    }
+
+    @Test
+    public void deleteFile_rpc_absentSource_reportsNotRemovedButSuccess() throws Exception
+    {
+        String uri = "file:///workspace/src/main/resources/e2e_never_created_"
+                + System.currentTimeMillis() + ".pure";
+        DeleteFileResult result = server.deleteFile(new DeleteFileParams(uri)).get(15, TimeUnit.SECONDS);
+        Assert.assertTrue("Deleting an absent source is not an error", result.isSuccess());
+        Assert.assertFalse("Nothing should have been removed", result.isRemoved());
+    }
+
+    @Test
+    public void checkBatch_rpc_success_clearsDiagnosticsOnInputFile() throws Exception
+    {
+        long ts = System.currentTimeMillis();
+        String uri = "file:///workspace/src/main/resources/e2e_rpc_clear_" + ts + ".pure";
+        mockClient.clearDiagnostics();
+
+        CheckBatchParams params = new CheckBatchParams();
+        params.setFiles(Collections.singletonList(new FileEntry(uri,
+                "Class test::e2e::Clear" + ts + "\n{\n  v: Integer[1];\n}\n")));
+        CheckBatchResult result = server.checkBatch(params).get(30, TimeUnit.SECONDS);
+        Assert.assertTrue("checkBatch should succeed, got: " + result.getError(), result.isSuccess());
+
+        // A successful batch must tell the client the input file is clean (empty diagnostics),
+        // otherwise a real editor keeps showing stale errors after a fix.
+        List<PublishDiagnosticsParams> published = mockClient.getDiagnosticsFor(uri);
+        Assert.assertFalse("Should have published a diagnostics update for the input file", published.isEmpty());
+        Assert.assertTrue("Input file diagnostics should be cleared, got: "
+                        + published.get(published.size() - 1).getDiagnostics(),
+                published.get(published.size() - 1).getDiagnostics().isEmpty());
+
+        server.deleteFile(new DeleteFileParams(uri)).get(15, TimeUnit.SECONDS);
+    }
+
+    // -- Read providers behind the graph read lock (previously untested handlers) --
+
+    @Test
+    public void completion_rpc_returnsResultForOpenFile() throws Exception
+    {
+        long ts = System.currentTimeMillis();
+        String uri = "file:///workspace/src/main/resources/e2e_completion_" + ts + ".pure";
+        server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(
+                new TextDocumentItem(uri, "pure", 1,
+                        "Class test::e2e::CompletionClass" + ts + "\n{\n  name: String[1];\n}\n")));
+        Thread.sleep(1500);
+
+        CompletionParams params = new CompletionParams(new TextDocumentIdentifier(uri), new Position(2, 8));
+        Either<List<CompletionItem>, CompletionList> result =
+                server.getTextDocumentService().completion(params).get(10, TimeUnit.SECONDS);
+
+        // The read-locked handler must run without error and return a (possibly empty) item list.
+        Assert.assertNotNull("completion() should return a result", result);
+        List<CompletionItem> items = result.isLeft() ? result.getLeft() : result.getRight().getItems();
+        Assert.assertNotNull("completion items should not be null", items);
+    }
+
+    @Test
+    public void documentSymbol_rpc_returnsOutlineForOpenFile() throws Exception
+    {
+        long ts = System.currentTimeMillis();
+        String uri = "file:///workspace/src/main/resources/e2e_outline_" + ts + ".pure";
+        server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(
+                new TextDocumentItem(uri, "pure", 1,
+                        "Class test::e2e::OutlineClass" + ts + "\n{\n  name: String[1];\n}\n")));
+        Thread.sleep(1500);
+
+        DocumentSymbolParams params = new DocumentSymbolParams(new TextDocumentIdentifier(uri));
+        List<Either<SymbolInformation, DocumentSymbol>> symbols =
+                server.getTextDocumentService().documentSymbol(params).get(10, TimeUnit.SECONDS);
+
+        Assert.assertNotNull("documentSymbol() should return a result", symbols);
+        boolean found = false;
+        for (Either<SymbolInformation, DocumentSymbol> either : symbols)
+        {
+            DocumentSymbol ds = either.getRight();
+            if (ds != null && ds.getName().contains("OutlineClass" + ts))
+            {
+                found = true;
+                break;
+            }
+        }
+        Assert.assertTrue("Outline should include the opened class", found);
+    }
+
+    @Test
+    public void status_rpc_exposesRepositoryProgressFields() throws Exception
+    {
+        // Plumbing/invariant check that legend/status carries the compiled/total repository fields
+        // fed by onCompileProgress -> CompileProgressTracker. (The concrete parsing of progress
+        // messages is covered deterministically by CompileProgressTrackerTest; a platform-only warm
+        // session may legitimately report 0/0 since it loads the platform without a multi-repo compile.)
+        LspStatus status = server.status().get(10, TimeUnit.SECONDS);
+        Assert.assertNotNull("status() should return a result", status);
+        Assert.assertNotNull("status should carry a state", status.getState());
+        Assert.assertTrue("Total repositories should be non-negative, got: " + status.getTotalRepositories(),
+                status.getTotalRepositories() >= 0);
+        Assert.assertTrue("Compiled repositories should be non-negative, got: " + status.getCompiledRepositories(),
+                status.getCompiledRepositories() >= 0);
+        Assert.assertTrue("Compiled repositories must not exceed total ("
+                        + status.getCompiledRepositories() + " > " + status.getTotalRepositories() + ")",
+                status.getCompiledRepositories() <= status.getTotalRepositories());
     }
 
     /**

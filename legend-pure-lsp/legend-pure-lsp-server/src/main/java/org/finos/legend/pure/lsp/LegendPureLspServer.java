@@ -15,6 +15,9 @@
 package org.finos.legend.pure.lsp;
 
 import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -55,11 +58,20 @@ import org.finos.legend.pure.lsp.diagnostics.DiagnosticService;
 import org.finos.legend.pure.lsp.debug.DebugService;
 import org.finos.legend.pure.lsp.debug.LegendDebugSocketServer;
 import org.finos.legend.pure.lsp.mutation.SourceMutationService;
+import org.finos.legend.pure.lsp.protocol.CheckBatchParams;
+import org.finos.legend.pure.lsp.protocol.CheckBatchResult;
 import org.finos.legend.pure.lsp.protocol.DapEndpoint;
+import org.finos.legend.pure.lsp.protocol.ExecuteFunctionParams;
+import org.finos.legend.pure.lsp.protocol.ExecuteGoParams;
 import org.finos.legend.pure.lsp.protocol.ExecuteGoResult;
+import org.finos.legend.pure.lsp.protocol.FileEntry;
 import org.finos.legend.pure.lsp.protocol.LegendDebug;
+import org.finos.legend.pure.lsp.protocol.DeleteFileParams;
+import org.finos.legend.pure.lsp.protocol.DeleteFileResult;
 import org.finos.legend.pure.lsp.protocol.LegendLanguageClient;
 import org.finos.legend.pure.lsp.protocol.LspStatus;
+import org.finos.legend.pure.lsp.protocol.SetOptionParams;
+import org.finos.legend.pure.lsp.protocol.SetOptionResult;
 import org.finos.legend.pure.lsp.runtime.PureRuntimeManager;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.slf4j.Logger;
@@ -255,15 +267,13 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
             {
                 return Collections.<PackageChildInfo>emptyList();
             }
-            synchronized (session)
-            {
-                return PackageTreeProvider.getChildren(session.getPureRuntime(), this.uriMapper, packagePath);
-            }
+            return session.withGraphReadLock(() ->
+                    PackageTreeProvider.getChildren(session.getPureRuntime(), this.uriMapper, packagePath));
         });
     }
 
     @JsonRequest("legend/executeGo")
-    public CompletableFuture<ExecuteGoResult> executeGo()
+    public CompletableFuture<ExecuteGoResult> executeGo(ExecuteGoParams params)
     {
         return supplyAsync(() ->
         {
@@ -272,12 +282,288 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
             {
                 return new ExecuteGoResult(false, "Runtime not initialized", null);
             }
-            synchronized (session)
+            List<FileEntry> files = params == null ? null : params.getFiles();
+            // NOTE: no `synchronized (session)` here anymore. Compilation (compileBatch) and execution
+            // (executeGo) each acquire the session's internal ReadWriteLock (write for compile, read
+            // for execute). Dropping the object-monitor lets independent executions run concurrently
+            // on the requestExecutor pool while compiles remain exclusive.
+            if (files != null && !files.isEmpty())
             {
-                LegendPureSession.ExecuteResult result = session.executeGo();
-                return new ExecuteGoResult(result.isSuccess(), result.getError(), result.getOutput());
+                CheckBatchResult batchResult = compileBatch(session, files);
+                if (!batchResult.isSuccess())
+                {
+                    return new ExecuteGoResult(false, batchResult.getError(), null, batchResult.getErrorUri());
+                }
+            }
+            LegendPureSession.ExecuteResult result = session.executeGo();
+            return new ExecuteGoResult(result.isSuccess(), result.getError(), result.getOutput(), null);
+        });
+    }
+
+    /**
+     * Execute an arbitrary zero-argument function by Pure path (not just go()). Runs concurrently with
+     * other executeFunction/executeGo calls (the session read-locks execution; the requestExecutor is
+     * a pool). Optional files are compiled as one batch (write-locked) before executing.
+     */
+    @JsonRequest("legend/execute")
+    public CompletableFuture<ExecuteGoResult> execute(ExecuteFunctionParams params)
+    {
+        return supplyAsync(() ->
+        {
+            LegendPureSession session = getSession();
+            if (session == null || !session.isInitialized())
+            {
+                return new ExecuteGoResult(false, "Runtime not initialized", null);
+            }
+            if (params == null || params.getFunction() == null || params.getFunction().trim().isEmpty())
+            {
+                return new ExecuteGoResult(false, "Function path is required (params.function)", null);
+            }
+            List<FileEntry> files = params.getFiles();
+            if (files != null && !files.isEmpty())
+            {
+                CheckBatchResult batchResult = compileBatch(session, files);
+                if (!batchResult.isSuccess())
+                {
+                    return new ExecuteGoResult(false, batchResult.getError(), null, batchResult.getErrorUri());
+                }
+            }
+            LegendPureSession.ExecuteResult result = session.executeFunction(params.getFunction());
+            return new ExecuteGoResult(result.isSuccess(), result.getError(), result.getOutput(), null);
+        });
+    }
+
+    static final String PURE_OPTION_PREFIX = "pure.options.";
+
+    /**
+     * Sets or clears a Pure runtime option in this JVM so that isOptionSet('&lt;name&gt;') reflects it
+     * live, without restarting the server. The Pure runtime resolves options through
+     * RuntimeOptions.systemPropertyOptions(PURE_OPTION_PREFIX) - i.e. isOptionSet("X") is
+     * Boolean.getBoolean("pure.options.X"), read on every call - so toggling the system property here
+     * takes effect immediately for subsequent go()/execute() runs in this session.
+     * <p>
+     * value == true  -&gt; System.setProperty("pure.options." + name, "true")
+     * value == false -&gt; System.clearProperty("pure.options." + name)
+     * (clearing rather than storing "false" keeps the property table clean; Boolean.getBoolean
+     * returns false for an absent property either way.)
+     */
+    @JsonRequest("legend/setOption")
+    public CompletableFuture<SetOptionResult> setOption(SetOptionParams params)
+    {
+        return supplyAsync(() ->
+        {
+            if (params == null || params.getName() == null || params.getName().trim().isEmpty())
+            {
+                return new SetOptionResult(false, params == null ? null : params.getName(), false, "Option name is required");
+            }
+            String name = params.getName().trim();
+            String key = PURE_OPTION_PREFIX + name;
+            if (params.isValue())
+            {
+                System.setProperty(key, "true");
+            }
+            else
+            {
+                System.clearProperty(key);
+            }
+            boolean effective = Boolean.getBoolean(key);
+            LspLog.info("setOption: " + name + " -> " + effective + " (isOptionSet('" + name + "') now returns " + effective + ")");
+            return new SetOptionResult(true, name, effective, null);
+        });
+    }
+
+    /**
+     * Unloads a .pure source from the running session: removes it from the open-document set (so it
+     * is not re-pushed as an open doc), deletes it from the Pure runtime, and clears any overlay
+     * content, then recompiles. Unlike a workspace/didChangeWatchedFiles Deleted event (which is
+     * filtered out for currently-open documents), this reliably removes a file the bridge pushed via
+     * didOpen - e.g. a throwaway go() wrapper - which is the fix for orphan
+     * 'go__Any_MANY_ is defined more than once' overlays lingering in the warm session.
+     * <p>
+     * Accepts either a file:// uri or a raw sourceId. removed=false (with success=true) means the
+     * source was not present to begin with - not an error.
+     */
+    @JsonRequest("legend/deleteFile")
+    public CompletableFuture<DeleteFileResult> deleteFile(DeleteFileParams params)
+    {
+        return supplyAsync(() ->
+        {
+            if (params == null || params.getUri() == null || params.getUri().trim().isEmpty())
+            {
+                return new DeleteFileResult(false, null, false, "File uri/sourceId is required");
+            }
+            LegendPureSession session = getSession();
+            if (session == null || !session.isInitialized())
+            {
+                return new DeleteFileResult(false, null, false, "Runtime not initialized");
+            }
+            SourceMutationService mutationService = getMutationService();
+            if (mutationService == null)
+            {
+                return new DeleteFileResult(false, null, false, "Mutation service not available");
+            }
+
+            String raw = params.getUri().trim();
+            String uri = raw.startsWith("file://") ? raw : ("file://" + raw);
+
+            // Drop it from the open-document set first so a subsequent compile does not re-add it.
+            this.textDocumentService.removeOpenDocument(uri);
+
+            java.util.concurrent.locks.Lock writeLock = session.graphWriteLock();
+            writeLock.lock();
+            try
+            {
+                // Resolve to the sourceId the runtime actually registered. The input may be a file://
+                // uri, an absolute path, or a raw sourceId, and the uriMapper's derivation for a
+                // pushed file is not a straight path copy - so try the mapped id, the raw input, and
+                // the leading-slash-normalised forms until one names a live source.
+                String sourceId = null;
+                for (String candidate : new String[]{this.uriMapper.toSourceId(uri), raw,
+                        raw.startsWith("/") ? raw : ("/" + raw), raw.startsWith("/") ? raw.substring(1) : raw})
+                {
+                    if (candidate != null && session.getPureRuntime().getSourceById(candidate) != null)
+                    {
+                        sourceId = candidate;
+                        break;
+                    }
+                }
+                if (sourceId == null)
+                {
+                    String derived = this.uriMapper.toSourceId(uri);
+                    LspLog.info("deleteFile: " + derived + " (from " + raw + ") not present in session (nothing to remove)");
+                    return new DeleteFileResult(true, derived, false, null);
+                }
+                LegendPureSession.CompileResult result = mutationService.applyBulkChangesAndCompile(
+                        Collections.singletonList(new LegendPureSession.FileChange(
+                                sourceId, null, LegendPureSession.FileChangeType.DELETE)));
+                if (result.isInternalError())
+                {
+                    this.triggerRecovery();
+                    return new DeleteFileResult(false, sourceId, false,
+                            "Internal error deleting " + sourceId + "; recovery triggered");
+                }
+                if (!result.isSuccess() && result.getError() != null)
+                {
+                    return new DeleteFileResult(false, sourceId, false, result.getError().getMessage());
+                }
+                LspLog.info("deleteFile: removed " + sourceId + " from session");
+                return new DeleteFileResult(true, sourceId, true, null);
+            }
+            finally
+            {
+                writeLock.unlock();
             }
         });
+    }
+
+    @JsonRequest("legend/checkBatch")
+    public CompletableFuture<CheckBatchResult> checkBatch(CheckBatchParams params)
+    {
+        return supplyAsync(() ->
+        {
+            LegendPureSession session = getSession();
+            if (session == null || !session.isInitialized())
+            {
+                return CheckBatchResult.failure("Runtime not initialized", null);
+            }
+            List<FileEntry> files = params == null ? null : params.getFiles();
+            if (files == null || files.isEmpty())
+            {
+                return CheckBatchResult.failure("'files' must be a non-empty list", null);
+            }
+            // compileBatch takes the write lock itself.
+            return compileBatch(session, files);
+        });
+    }
+
+    /**
+     * Applies every file in one atomic, single-compile batch (see
+     * SourceMutationService#applyBulkChangesAndCompile) instead of the one-compile-per-file path
+     * textDocument/didChange uses. On success every file (and anything else transitively
+     * affected) is guaranteed clean; on failure the whole batch is rolled back and exactly one
+     * error is reported, attributed to its real source file via DiagnosticService#resolveErrorUri
+     * where the exception carries source information.
+     *
+     * Takes the session write lock itself for the whole batch (compile + index + diagnostics), so it
+     * is safe to call with no outer lock - e.g. directly from legend/executeGo and legend/execute.
+     */
+    private CheckBatchResult compileBatch(LegendPureSession session, List<FileEntry> files)
+    {
+        List<LegendPureSession.FileChange> changes = new ArrayList<>(files.size());
+        for (FileEntry file : files)
+        {
+            String sourceId = this.uriMapper.toSourceId(file.getUri());
+            changes.add(new LegendPureSession.FileChange(sourceId, file.getContent(), LegendPureSession.FileChangeType.CREATE_OR_MODIFY));
+        }
+
+        // Whole batch under the write lock: the compile, the symbol-index rebuild, and the diagnostics
+        // refresh are one atomic unit that no mutation can interleave - which is what lets executeGo /
+        // execute call this with no outer lock. applyBulkChangesAndCompile re-takes the (reentrant)
+        // write lock internally.
+        java.util.concurrent.locks.Lock writeLock = session.graphWriteLock();
+        writeLock.lock();
+        try
+        {
+            LegendPureSession.CompileResult result = session.getMutationService().applyBulkChangesAndCompile(changes);
+
+            if (!result.isReady())
+            {
+                return CheckBatchResult.failure("Runtime not ready", null);
+            }
+            if (result.isInternalError())
+            {
+                LspLog.error("Internal error during batch compile, triggering recovery: " + result.getError());
+                triggerRecovery();
+                return CheckBatchResult.failure("Internal error, runtime is recovering: " + result.getError().getMessage(), null);
+            }
+            if (result.isSuccess())
+            {
+                // getModifiedFiles() only reports knock-on effects elsewhere in the graph, not the
+                // files that were the direct input to this compile - without also clearing the
+                // input files' own diagnostics here, a real LSP client (VS Code) would keep showing
+                // stale errors on them after a fix, since nothing would ever tell it they're clean.
+                LinkedHashSet<String> modifiedUris = new LinkedHashSet<>();
+                for (FileEntry file : files)
+                {
+                    modifiedUris.add(file.getUri());
+                }
+                for (String sourceId : result.getModifiedFiles())
+                {
+                    String uri = this.uriMapper.toUri(sourceId);
+                    if (uri != null)
+                    {
+                        modifiedUris.add(uri);
+                    }
+                }
+                if (this.diagnosticService != null)
+                {
+                    for (String uri : modifiedUris)
+                    {
+                        this.diagnosticService.clear(uri);
+                    }
+                }
+                this.symbolProvider.buildIndex(session.getPureRuntime());
+                return CheckBatchResult.success(new ArrayList<>(modifiedUris));
+            }
+
+            Exception error = result.getError();
+            String errorUri = this.diagnosticService == null ? null : this.diagnosticService.resolveErrorUri(error);
+            String fallbackUri = files.get(0).getUri();
+            // Publish to the file the error actually resolves to (not blindly files.get(0)), so the
+            // squiggle lands on the real offending source.
+            String publishUri = errorUri != null ? errorUri : fallbackUri;
+            List<org.eclipse.lsp4j.Diagnostic> errorDiagnostics = null;
+            if (this.diagnosticService != null)
+            {
+                errorDiagnostics = this.diagnosticService.fromException(error);
+                this.diagnosticService.publishException(publishUri, error, session);
+            }
+            return CheckBatchResult.failure(error.getMessage(), publishUri, errorDiagnostics);
+        }
+        finally
+        {
+            writeLock.unlock();
+        }
     }
 
     @JsonRequest("legend/getSourceContent")
@@ -534,6 +820,18 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
             System.exit(1);
         }
 
+        // Socket mode (--socket <port> or -Dlegend.lsp.socketPort=<port>): run as a standalone
+        // daemon that listens on a TCP socket instead of reading System.in. This decouples the JVM
+        // from any parent process's stdin pipe, so it survives the launcher/bridge going away and a
+        // fresh client can reconnect to the same warm session. Without it, the JVM's lifecycle is
+        // bound to whoever owns its stdin pipe (the classic stdio LSP model, kept as the default).
+        int socketPort = resolveSocketPort(args);
+        if (socketPort > 0)
+        {
+            runSocketMode(socketPort, stderrOut);
+            return;
+        }
+
         LegendPureLspServer server = new LegendPureLspServer();
         Launcher<LegendLanguageClient> launcher = new Launcher.Builder<LegendLanguageClient>()
                 .setLocalService(server)
@@ -543,6 +841,100 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
                 .create();
         server.connect(launcher.getRemoteProxy());
         launcher.startListening().get();
+    }
+
+    static int resolveSocketPort(String[] args)
+    {
+        for (int i = 0; i < args.length; i++)
+        {
+            if ("--socket".equals(args[i]) && (i + 1) < args.length)
+            {
+                try
+                {
+                    return Integer.parseInt(args[i + 1].trim());
+                }
+                catch (NumberFormatException ignored)
+                {
+                    return -1;
+                }
+            }
+        }
+        String prop = System.getProperty("legend.lsp.socketPort");
+        if (prop != null && !prop.trim().isEmpty())
+        {
+            try
+            {
+                return Integer.parseInt(prop.trim());
+            }
+            catch (NumberFormatException ignored)
+            {
+                return -1;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Daemon mode: bind a TCP socket on 127.0.0.1:port and serve LSP JSON-RPC over accepted
+     * connections instead of over System.in/out. ONE LegendPureLspServer (one warm Pure runtime) is
+     * created up front and reused across every client connection, so a client (the bridge) can
+     * disconnect and reconnect without losing the compiled session - the whole point of decoupling
+     * the JVM's lifecycle from any single client. Connections are handled one at a time (the bridge
+     * holds a single long-lived connection); when a client drops, we loop back to accept the next.
+     */
+    private static void runSocketMode(int port, PrintStream stderrOut) throws Exception
+    {
+        LegendPureLspServer server = new LegendPureLspServer();
+        // Bind only on loopback: this is a local dev-loop daemon, never exposed off-box.
+        try (ServerSocket serverSocket = new ServerSocket(port, 0, InetAddress.getByName("127.0.0.1")))
+        {
+            System.err.println("[LSP] socket daemon listening on 127.0.0.1:" + port
+                    + " (pid decoupled from any launcher; reconnectable)");
+            // Signal readiness to a spawner watching stderr for a fixed marker.
+            System.err.println("[LSP] SOCKET_READY " + port);
+            while (true)
+            {
+                Socket socket;
+                try
+                {
+                    socket = serverSocket.accept();
+                }
+                catch (Exception e)
+                {
+                    System.err.println("[LSP] accept failed, daemon exiting: " + e.getMessage());
+                    return;
+                }
+                socket.setTcpNoDelay(true);
+                System.err.println("[LSP] client connected from " + socket.getRemoteSocketAddress());
+                try
+                {
+                    Launcher<LegendLanguageClient> launcher = new Launcher.Builder<LegendLanguageClient>()
+                            .setLocalService(server)
+                            .setRemoteInterface(LegendLanguageClient.class)
+                            .setInput(socket.getInputStream())
+                            .setOutput(socket.getOutputStream())
+                            .create();
+                    server.connect(launcher.getRemoteProxy());
+                    // Blocks until this client disconnects (stream EOF); then we loop to accept again.
+                    launcher.startListening().get();
+                }
+                catch (Exception e)
+                {
+                    System.err.println("[LSP] client session ended: " + e.getMessage());
+                }
+                finally
+                {
+                    try
+                    {
+                        socket.close();
+                    }
+                    catch (Exception ignored)
+                    {
+                    }
+                    System.err.println("[LSP] client disconnected; awaiting reconnect (session kept warm)");
+                }
+            }
+        }
     }
 
     private static class LegendLanguageClientAdapter implements LegendLanguageClient

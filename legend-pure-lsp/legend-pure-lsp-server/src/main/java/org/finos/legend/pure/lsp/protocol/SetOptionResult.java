@@ -14,28 +14,27 @@
 
 package org.finos.legend.pure.lsp.protocol;
 
-public class ExecuteGoResult
+/**
+ * Result of legend/setOption. Echoes back the resolved state so a caller can confirm
+ * isOptionSet('&lt;name&gt;') now returns {@link #isEffective()} in this JVM.
+ */
+public class SetOptionResult
 {
     private boolean success;
+    private String name;
+    private boolean effective;
     private String error;
-    private String output;
-    private String errorUri;
 
-    public ExecuteGoResult()
+    public SetOptionResult()
     {
     }
 
-    public ExecuteGoResult(boolean success, String error, String output)
-    {
-        this(success, error, output, null);
-    }
-
-    public ExecuteGoResult(boolean success, String error, String output, String errorUri)
+    public SetOptionResult(boolean success, String name, boolean effective, String error)
     {
         this.success = success;
+        this.name = name;
+        this.effective = effective;
         this.error = error;
-        this.output = output;
-        this.errorUri = errorUri;
     }
 
     public boolean isSuccess()
@@ -48,6 +47,26 @@ public class ExecuteGoResult
         this.success = success;
     }
 
+    public String getName()
+    {
+        return this.name;
+    }
+
+    public void setName(String name)
+    {
+        this.name = name;
+    }
+
+    public boolean isEffective()
+    {
+        return this.effective;
+    }
+
+    public void setEffective(boolean effective)
+    {
+        this.effective = effective;
+    }
+
     public String getError()
     {
         return this.error;
@@ -56,25 +75,5 @@ public class ExecuteGoResult
     public void setError(String error)
     {
         this.error = error;
-    }
-
-    public String getOutput()
-    {
-        return this.output;
-    }
-
-    public void setOutput(String output)
-    {
-        this.output = output;
-    }
-
-    public String getErrorUri()
-    {
-        return this.errorUri;
-    }
-
-    public void setErrorUri(String errorUri)
-    {
-        this.errorUri = errorUri;
     }
 }

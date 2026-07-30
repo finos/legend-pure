@@ -78,4 +78,56 @@ public class LegendPureLspServerTest
                 Collections.emptyList(),
                 LegendPureLspServer.extractClasspathRepositoryNames(new InitializeParams()));
     }
+
+    @Test
+    public void resolveSocketPort_parsesSocketArg()
+    {
+        Assert.assertEquals(7777, LegendPureLspServer.resolveSocketPort(new String[]{"--socket", "7777"}));
+    }
+
+    @Test
+    public void resolveSocketPort_invalidSocketArg_returnsMinusOne()
+    {
+        Assert.assertEquals(-1, LegendPureLspServer.resolveSocketPort(new String[]{"--socket", "notaport"}));
+    }
+
+    @Test
+    public void resolveSocketPort_noSocketArgOrProperty_returnsMinusOne()
+    {
+        String saved = System.getProperty("legend.lsp.socketPort");
+        System.clearProperty("legend.lsp.socketPort");
+        try
+        {
+            Assert.assertEquals(-1, LegendPureLspServer.resolveSocketPort(new String[]{"--other", "x"}));
+        }
+        finally
+        {
+            if (saved != null)
+            {
+                System.setProperty("legend.lsp.socketPort", saved);
+            }
+        }
+    }
+
+    @Test
+    public void resolveSocketPort_readsSystemPropertyFallback()
+    {
+        String saved = System.getProperty("legend.lsp.socketPort");
+        System.setProperty("legend.lsp.socketPort", "8899");
+        try
+        {
+            Assert.assertEquals(8899, LegendPureLspServer.resolveSocketPort(new String[]{}));
+        }
+        finally
+        {
+            if (saved == null)
+            {
+                System.clearProperty("legend.lsp.socketPort");
+            }
+            else
+            {
+                System.setProperty("legend.lsp.socketPort", saved);
+            }
+        }
+    }
 }
