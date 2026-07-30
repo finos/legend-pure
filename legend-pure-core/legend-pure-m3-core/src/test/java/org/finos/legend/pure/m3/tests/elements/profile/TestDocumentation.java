@@ -292,6 +292,17 @@ public class TestDocumentation extends AbstractPureTestWithCoreCompiledPlatform
         Assert.assertEquals("Documented.", doc("test::A"));
     }
 
+    /**
+     * Guards the removal of the doc-comment token: a Javadoc-shaped block comment is once again
+     * just a comment, and carries no meaning.
+     */
+    @Test
+    public void testBlockCommentIsNotDocumentation()
+    {
+        compile("/** Just a comment. */\nClass test::A\n{\n}");
+        Assert.assertNull(doc("test::A"));
+    }
+
     // ---------------------------------------------------------------- content
 
     @Test

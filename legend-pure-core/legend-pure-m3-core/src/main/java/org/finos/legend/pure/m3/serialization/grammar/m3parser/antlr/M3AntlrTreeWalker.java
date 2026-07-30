@@ -50,25 +50,25 @@ public class M3AntlrTreeWalker extends org.finos.legend.pure.m3.serialization.gr
 
     public M3AntlrTreeWalker(String classPathForMapping, AntlrSourceInformation antlrSourceInformation, InlineDSLLibrary inlineDSLLibrary, ModelRepository repository, MutableList<CoreInstance> coreInstancesResult, M3M4StateListener listener, Context context, ImportGroup importId, int count, SourceState oldState)
     {
-        this(classPathForMapping, antlrSourceInformation, inlineDSLLibrary, repository, coreInstancesResult, listener, context, importId, count, true, true, oldState, null);
+        this(classPathForMapping, antlrSourceInformation, inlineDSLLibrary, repository, coreInstancesResult, listener, context, importId, count, true, true, oldState);
     }
 
     public M3AntlrTreeWalker(AntlrSourceInformation antlrSourceInformation, InlineDSLLibrary inlineDSLLibrary, ModelRepository repository, MutableList<CoreInstance> coreInstancesResult, M3M4StateListener listener, Context context, ImportGroup importId, int count, SourceState oldState)
     {
-        this("", antlrSourceInformation, inlineDSLLibrary, repository, coreInstancesResult, listener, context, importId, count, true, true, oldState, null);
+        this("", antlrSourceInformation, inlineDSLLibrary, repository, coreInstancesResult, listener, context, importId, count, true, true, oldState);
     }
 
-    public M3AntlrTreeWalker(AntlrSourceInformation antlrSourceInformation, InlineDSLLibrary inlineDSLLibrary, ModelRepository repository, MutableList<CoreInstance> coreInstancesResult, M3M4StateListener listener, Context context, ImportGroup importId, int count, boolean useImportStubsInInstanceParser, boolean addLines, SourceState oldState, DocCommentLookup docCommentLookup)
+    public M3AntlrTreeWalker(AntlrSourceInformation antlrSourceInformation, InlineDSLLibrary inlineDSLLibrary, ModelRepository repository, MutableList<CoreInstance> coreInstancesResult, M3M4StateListener listener, Context context, ImportGroup importId, int count, boolean useImportStubsInInstanceParser, boolean addLines, SourceState oldState)
     {
-        this("", antlrSourceInformation, inlineDSLLibrary, repository, coreInstancesResult, listener, context, importId, count, useImportStubsInInstanceParser, addLines, oldState, docCommentLookup);
+        this("", antlrSourceInformation, inlineDSLLibrary, repository, coreInstancesResult, listener, context, importId, count, useImportStubsInInstanceParser, addLines, oldState);
     }
 
-    public M3AntlrTreeWalker(String classPathForMapping, AntlrSourceInformation antlrSourceInformation, InlineDSLLibrary inlineDSLLibrary, ModelRepository repository, MutableList<CoreInstance> coreInstancesResult, M3M4StateListener listener, Context context, ImportGroup importId, int count, boolean useImportStubsInInstanceParser, boolean addLines, SourceState oldState, DocCommentLookup docCommentLookup)
+    public M3AntlrTreeWalker(String classPathForMapping, AntlrSourceInformation antlrSourceInformation, InlineDSLLibrary inlineDSLLibrary, ModelRepository repository, MutableList<CoreInstance> coreInstancesResult, M3M4StateListener listener, Context context, ImportGroup importId, int count, boolean useImportStubsInInstanceParser, boolean addLines, SourceState oldState)
     {
         this.repository = repository;
         this.listener = listener;
         this.importId = importId;
-        this.antlrContextToM3Builder = new AntlrContextToM3CoreInstance(context, repository, new M3ProcessorSupport(context, repository), antlrSourceInformation, inlineDSLLibrary, coreInstancesResult, count, addLines, oldState, docCommentLookup);
+        this.antlrContextToM3Builder = new AntlrContextToM3CoreInstance(context, repository, new M3ProcessorSupport(context, repository), antlrSourceInformation, inlineDSLLibrary, coreInstancesResult, count, addLines, oldState);
         this.useImportStubsInInstanceParser = useImportStubsInInstanceParser;
         this.classPathForMapping = classPathForMapping;
    }

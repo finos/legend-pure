@@ -240,7 +240,6 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
-import org.finos.legend.pure.m4.serialization.grammar.DocCommentCanonicalizer;
 import org.finos.legend.pure.m4.serialization.grammar.DocumentationCanonicalizer;
 import org.finos.legend.pure.m4.serialization.grammar.MultilineTextLayout;
 import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
@@ -269,9 +268,8 @@ public class AntlrContextToM3CoreInstance
     private final SourceState oldState;
     private final MutableMap<CoreInstance, SourceInformation> newSourceInfoMap;
     private final MutableSet<CoreInstance> oldInstances;
-    private final DocCommentLookup docCommentLookup;
 
-    public AntlrContextToM3CoreInstance(Context context, ModelRepository repository, ProcessorSupport processorSupport, AntlrSourceInformation sourceInformation, InlineDSLLibrary inlineDSLLibrary, MutableList<CoreInstance> coreInstancesResult, int count, boolean addLines, SourceState oldState, DocCommentLookup docCommentLookup)
+    public AntlrContextToM3CoreInstance(Context context, ModelRepository repository, ProcessorSupport processorSupport, AntlrSourceInformation sourceInformation, InlineDSLLibrary inlineDSLLibrary, MutableList<CoreInstance> coreInstancesResult, int count, boolean addLines, SourceState oldState)
     {
         this.context = context;
         this.repository = repository;
@@ -284,7 +282,6 @@ public class AntlrContextToM3CoreInstance
         this.oldState = oldState;
         this.newSourceInfoMap = Maps.mutable.empty();
         this.oldInstances = this.oldState == null ? Sets.mutable.empty() : this.oldState.getInstances().toSet();
-        this.docCommentLookup = (docCommentLookup == null) ? DocCommentLookup.NONE : docCommentLookup;
     }
 
     public CoreInstance definition(DefinitionContext ctx, boolean useImportStubsInInstanceParser) throws PureParserException
@@ -3256,22 +3253,23 @@ public class AntlrContextToM3CoreInstance
     }
 
     /**
-     * Builds an element's tagged values, folding in its documentation comment as a
-     * {@code meta::pure::profiles::doc} {@code doc} value if it has one.
+     * Builds an element's tagged values, folding in its documentation as a
+     * {@code meta::pure::profiles::doc} {@code doc} value if it declares any.
+     * <p>
+     * The documentation is read off the element context rather than passed in, so every rule
+     * carrying {@code documentation?} is handled by declaring it in the grammar - there is no
+     * second place to remember to update.
      *
-     * @param elementCtx the element context, whose start token must be the element keyword
+     * @param elementCtx the element context, whose start token is the documentation when present
      * @param tvCtx      the explicit tagged values, or null if the element declares none
      * @param importId   import group used to resolve the tag references
      */
     private ListIterable<TaggedValue> taggedValues(ParserRuleContext elementCtx, TaggedValuesContext tvCtx, ImportGroup importId)
     {
         ListIterable<TaggedValue> explicit = (tvCtx == null) ? Lists.immutable.empty() : taggedValues(tvCtx, importId);
-        // Transitional: documentation is moving from a '/** ... */' comment on a hidden channel to a
-        // '''...''' literal that is a child of the declaration. Both are accepted until the comment
-        // form is removed. The literal wins if an element somehow carries both.
+        // 'documentation?' is a direct child of the declaration, which is exactly what this searches.
         DocumentationContext docCtx = elementCtx.getRuleContext(DocumentationContext.class, 0);
-        Token docToken = (docCtx == null) ? this.docCommentLookup.findDocComment(elementCtx) : null;
-        if ((docCtx == null) && (docToken == null))
+        if (docCtx == null)
         {
             return explicit;
         }
@@ -3281,34 +3279,21 @@ public class AntlrContextToM3CoreInstance
             throw new PureParserException(this.sourceInformation.getPureSourceInformation(conflict.getStart(), conflict.getStart(), conflict.getStop()),
                     "Element has both documentation and an explicit doc.doc tagged value. Use one.");
         }
-        TaggedValue doc = (docCtx == null) ? docCommentTaggedValue(elementCtx, docToken, importId) : docTaggedValue(docCtx, importId);
-        return Lists.mutable.with(doc).withAll(explicit);
+        return Lists.mutable.with(docTaggedValue(docCtx, importId)).withAll(explicit);
     }
 
-    /**
-     * Spans the documentation literal itself, closing delimiter included, so navigating to the tagged
-     * value lands on the text the author wrote. The literal is a child of the declaration and so inside
-     * its source range, which ReferenceIdGenerator requires to assign a reference id - without one, PAR
-     * serialization fails.
-     */
     private TaggedValue docTaggedValue(DocumentationContext docCtx, ImportGroup importId)
     {
+        // Spans the documentation literal itself, closing delimiter included, so navigating to the
+        // tagged value lands on the text the author wrote. The literal is a direct child of the
+        // declaration and therefore inside its source range, which two things require:
+        // ReferenceIdGenerator only assigns a reference id to instances the element subsumes - without
+        // one, PAR serialization fails - and processPackageableElement needs the element's stored
+        // source start to equal the start of its parse context on every incremental recompile.
         Token start = docCtx.getStart();
         SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(start, start, docCtx.getStop());
         ImportStubInstance tag = ImportStubInstance.createPersistent(this.repository, sourceInfo, M3Paths.doc + "%doc", importId);
         return TaggedValueInstance.createPersistent(this.repository, sourceInfo, tag, DocumentationCanonicalizer.canonicalize(docCtx.getText()));
-    }
-
-    private TaggedValue docCommentTaggedValue(ParserRuleContext elementCtx, Token docToken, ImportGroup importId)
-    {
-        // Anchored to the element, not to the comment. A documentation comment sits *before* the
-        // element it documents, and ReferenceIdGenerator only assigns a reference id to instances
-        // whose source information the element subsumes - so anchoring to the comment leaves the
-        // tagged value unreferenceable and breaks PAR serialization.
-        Token anchor = elementCtx.getStart();
-        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(anchor, anchor, anchor);
-        ImportStubInstance tag = ImportStubInstance.createPersistent(this.repository, sourceInfo, M3Paths.doc + "%doc", importId);
-        return TaggedValueInstance.createPersistent(this.repository, sourceInfo, tag, DocCommentCanonicalizer.canonicalize(docToken.getText()));
     }
 
     /**
@@ -3336,9 +3321,7 @@ public class AntlrContextToM3CoreInstance
     private TaggedValue taggedValue(ImportGroup importId, TaggedValueContext ctx)
     {
         ImportStubInstance importStubInstance = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart(), ctx.identifier().getStart(), ctx.identifier().getStop()), this.getQualifiedNameString(ctx.qualifiedName()) + "%" + ctx.identifier().getText(), importId);
-        // A tagged value is either a single multi-line string or one-or-more '+'-concatenated single-line
-        // strings. Neither processes escapes: the single-line branch below never has, and applying them to
-        // the multi-line one corrupts any backslash a tagged value happens to carry.
+        // A tagged value is either a single multi-line string or one-or-more '+'-concatenated single-line strings.
         if (ctx.MULTILINE_STRING() != null)
         {
             TerminalNode multiline = ctx.MULTILINE_STRING();
@@ -4057,7 +4040,9 @@ public class AntlrContextToM3CoreInstance
 
     /**
      * Convert the raw text of a multi-line string literal ('''...''') into its value: the Java text-block
-     * layout of {@link MultilineTextLayout}, then escape processing.
+     * layout of {@link MultilineTextLayout}, then escape processing. Escapes are what separate a string
+     * literal from documentation, which shares the layout but keeps its content literal - see
+     * {@link DocumentationCanonicalizer}.
      */
     public static String processMultilineString(String rawTokenText)
     {

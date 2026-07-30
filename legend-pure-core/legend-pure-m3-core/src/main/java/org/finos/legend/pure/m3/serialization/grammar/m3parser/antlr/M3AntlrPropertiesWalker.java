@@ -46,7 +46,7 @@ public class M3AntlrPropertiesWalker extends org.finos.legend.pure.m3.serializat
     public M3AntlrPropertiesWalker(AntlrSourceInformation antlrSourceInformation, InlineDSLLibrary inlineDSLLibrary, ModelRepository repository, Context context, ImportGroup importId, MutableList<Property<? extends CoreInstance, ?>> properties, MutableList<QualifiedProperty<? extends CoreInstance>> qualifiedProperties, ImportStub typeOwner, int startingQualifiedPropertyIndex)
     {
         this.startingQualifiedPropertyIndex = startingQualifiedPropertyIndex;
-        this.antlrContextToM3Builder = new AntlrContextToM3CoreInstance(context, repository, new M3ProcessorSupport(context, repository), antlrSourceInformation, inlineDSLLibrary, Lists.mutable.<CoreInstance>empty(), 0, true, null, null);
+        this.antlrContextToM3Builder = new AntlrContextToM3CoreInstance(context, repository, new M3ProcessorSupport(context, repository), antlrSourceInformation, inlineDSLLibrary, Lists.mutable.<CoreInstance>empty(), 0, true, null);
         this.importId = importId;
         this.properties = properties;
         this.qualifiedProperties = qualifiedProperties;

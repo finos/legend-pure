@@ -202,7 +202,7 @@ public class M3AntlrParser implements Parser
         {
             AntlrSourceInformation sourceInformation = new AntlrSourceInformation(this.offsetLine, 0, sourceName, addLines);
             org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(useFastParser, code, sourceInformation);
-            final M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(sourceInformation, this.inlineDSLLibrary, repository, coreInstancesResult, listener, context, null, count, this.useImportStubsInInstanceParser, addLines, oldState, new DocCommentLookup(parser, M3Lexer.DOCUMENTATION));
+            final M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(sourceInformation, this.inlineDSLLibrary, repository, coreInstancesResult, listener, context, null, count, this.useImportStubsInInstanceParser, addLines, oldState);
             visitor.visit(parser.definition());
         }
         catch (Exception e)
