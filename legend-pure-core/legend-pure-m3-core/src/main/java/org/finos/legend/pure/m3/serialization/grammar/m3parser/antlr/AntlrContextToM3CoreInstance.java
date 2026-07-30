@@ -3315,11 +3315,13 @@ public class AntlrContextToM3CoreInstance
     private TaggedValue taggedValue(ImportGroup importId, TaggedValueContext ctx)
     {
         ImportStubInstance importStubInstance = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart(), ctx.identifier().getStart(), ctx.identifier().getStop()), this.getQualifiedNameString(ctx.qualifiedName()) + "%" + ctx.identifier().getText(), importId);
-        // A tagged value is either a single multi-line string or one-or-more '+'-concatenated single-line strings.
+        // A tagged value is either a single multi-line string or one-or-more '+'-concatenated single-line
+        // strings. Neither processes escapes: the single-line branch below never has, and applying them to
+        // the multi-line one corrupts any backslash a tagged value happens to carry.
         if (ctx.MULTILINE_STRING() != null)
         {
             TerminalNode multiline = ctx.MULTILINE_STRING();
-            return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), multiline.getSymbol(), multiline.getSymbol()), importStubInstance, processMultilineString(multiline.getText()));
+            return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), multiline.getSymbol(), multiline.getSymbol()), importStubInstance, MultilineTextLayout.layout(multiline.getText()));
         }
         return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.STRING().get(0).getSymbol(), ctx.STRING().get(ctx.STRING().size() - 1).getSymbol()), importStubInstance, Lists.mutable.withAll(ctx.STRING()).collect(AntlrContextToM3CoreInstance::removeQuotes).makeString());
     }

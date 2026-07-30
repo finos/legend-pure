@@ -175,6 +175,27 @@ public class TestProfile extends AbstractPureTestWithCoreCompiledPlatform
     }
 
     @Test
+    public void testMultilineTaggedValueContentIsLiteral()
+    {
+        // Matches the single-line form, which has never unescaped. Escape processing here would rewrite
+        // any backslash the value carries, and a backslash-u not followed by four hex digits would throw
+        // an unchecked exception carrying no source information.
+        compileTestSource("/test/testSource.pure",
+                "Profile test::docProfile\n" +
+                        "{\n" +
+                        "  tags: [doc];\n" +
+                        "}\n" +
+                        "Class {test::docProfile.doc='''\n" +
+                        "Matches \\d+ under C:\\users'''} test::DocumentedClass\n" +
+                        "{\n" +
+                        "}");
+
+        AnnotatedElement cls = (AnnotatedElement) runtime.getCoreInstance("test::DocumentedClass");
+        ListIterable<? extends TaggedValue> taggedValues = ListHelper.wrapListIterable(cls._taggedValues());
+        Assert.assertEquals("Matches \\d+ under C:\\users", taggedValues.getFirst()._value());
+    }
+
+    @Test
     public void testSingleLineTaggedValueConcatenationStillWorks()
     {
         // Concatenation of single-line strings is unchanged by the multi-line feature.
