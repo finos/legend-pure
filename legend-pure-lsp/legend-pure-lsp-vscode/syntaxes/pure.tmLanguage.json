@@ -36,6 +36,12 @@
     "strings": {
       "patterns": [
         {
+          "comment": "Must precede the single-quote rule: without it, ''' opens an empty string and then a string that runs to the next apostrophe in the content. A TextMate grammar cannot tell a documentation literal from a multi-line string, because that distinction is positional rather than lexical, so both colour as strings.",
+          "name": "string.quoted.triple.pure",
+          "begin": "'''",
+          "end": "'''"
+        },
+        {
           "name": "string.quoted.single.pure",
           "begin": "'",
           "end": "'",

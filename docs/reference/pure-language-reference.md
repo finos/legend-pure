@@ -37,7 +37,7 @@ corresponding `Parser` implementation based on the string name.
 > string- or comment-aware.** A line beginning with `###` at column 0 always starts a new
 > section — including inside a
 > [multi-line string literal](#multi-line-string-literals) or a
-> [documentation comment](#documentation-comments). Indent the `###` by
+> [documentation](#documentation) literal. Indent the `###` by
 > one space to keep it as content.
 
 ### Grammar sections available in this repository
@@ -123,23 +123,25 @@ let doubled = $x * 2;
    comment */
 ```
 
-Block comments do **not** nest: `/* a /* b */` ends at the first `*/`. A third form,
-[documentation comments](#documentation-comments), does nest and carries meaning.
+Block comments do **not** nest: `/* a /* b */` ends at the first `*/`. Comments never carry
+meaning — [documentation](#documentation) is a `'''…'''` literal, not a comment.
 
-### Documentation Comments
+### Documentation
 
-A `/** … */` comment immediately preceding an element is **syntactic sugar** for the
+A `'''…'''` literal immediately preceding a declaration is **syntactic sugar** for the
 `meta::pure::profiles::doc` `doc` tagged value. These two are identical after parsing:
 
 ```pure
-/**
+'''
 A **person** in the system.
 
 Identity is established by `legalName`.
-*/
+'''
 Class model::Person
 {
-  /** Given name. Not guaranteed unique. */
+  '''
+  Given name. Not guaranteed unique.
+  '''
   firstName: String[1];
 }
 ```
@@ -152,59 +154,85 @@ Class {meta::pure::profiles::doc.doc = 'A **person** in the system.\n\nIdentity 
 ```
 
 There is no new profile, no new metamodel, and nothing downstream needs to change: consumers
-that already read the `doc` tag see documentation comments automatically.
+that already read the `doc` tag see documentation automatically.
 
-#### Where they attach
+Documentation is a **parser rule**, listed explicitly at each declaration that accepts it — not a
+lexer-level construct. That is what keeps the identical literal in expression position an ordinary
+[multi-line string](#multi-line-string-literals), and it is why attachment needs no adjacency
+heuristic: either the literal is in a documentation position or it is a value.
+
+#### Where it attaches
 
 `Class`, `Enum` (and individual enum values), `Association`, `Profile`, `Measure`, `function`,
 `native function`, `Primitive`, properties, and qualified (derived) properties.
 
-The comment must precede the **whole declaration**, before any stereotypes or tagged values:
+Documentation precedes the **whole declaration**, before any stereotypes or tagged values:
 
 ```pure
-/** Attached to the class. */
+'''
+Attached to the class.
+'''
 Class <<meta::pure::profiles::access.private>> {meta::pure::profiles::doc.todo = 'x'} model::Person
 {
 }
 ```
 
-#### Attachment requires adjacency
-
-A documentation comment attaches only when separated from the element by whitespace containing
-no blank line. Anything else leaves it as an ordinary comment — silently, with no error:
+Because attachment is syntactic, intervening whitespace and comments are simply skipped — a note
+written between the documentation and the declaration does not detach it:
 
 ```pure
-/** Attached. */
+'''
+Still attached.
+'''
+// a note about the class
 Class model::A {}
-
-/** NOT attached — blank line intervenes. */
-
-Class model::B {}
-
-/** NOT attached — a line comment is not whitespace. */
-// note
-Class model::C {}
 ```
 
-This is what stops a file header, or a note trailing the previous element, from becoming the
-next element's documentation. It is the same rule Go, Rust, and JSDoc use. When two
-documentation comments precede an element, the nearest one wins and the earlier is ignored.
+Two consecutive documentation literals, or one trailing at end of file with no declaration to
+attach to, are parse errors rather than silently ignored.
+
+#### The same literal in expression position is a value
+
+This is the one thing to internalize. A `'''…'''` before a property is documentation; inside a
+derived property's body it is that property's **return value**:
+
+```pure
+Class model::Person
+{
+  '''
+  Given name.                 <-- documentation
+  '''
+  firstName: String[1];
+
+  fullName(){
+    '''
+    Formatted name.           <-- NOT documentation: this IS the return value
+    '''
+  }: String[1];
+}
+```
+
+Adding a `;` after that inner literal to make room for real code compiles, and silently evaluates
+and discards the string on every call. There is nowhere to write documentation *inside* a function
+or derived-property body; it goes before the declaration.
 
 #### Conflict with an explicit `doc.doc`
 
-An element may not carry **both** a documentation comment and an explicit `doc.doc` tagged
-value. Both are statements of intent, and silently honouring one would make the other vanish
-without trace, so this is a parse error:
+An element may not carry **both** documentation and an explicit `doc.doc` tagged value. Both are
+statements of intent, and silently honouring one would make the other vanish without trace, so
+this is a parse error:
 
 ```pure
-/** From the comment. */
+'''
+From the documentation.
+'''
 Class {meta::pure::profiles::doc.doc = 'From the tagged value.'} model::A
 {
 }
 ```
 
 ```
-Element has both a documentation comment and an explicit doc.doc tagged value. Use one.
+Element has both documentation and an explicit doc.doc tagged value. Use one.
 ```
 
 Because tag references are not resolved until after parsing, the check matches the profile
@@ -214,85 +242,63 @@ Because tag references are not resolved until after parsing, the check matches t
 | Case | Why it is allowed |
 |---|---|
 | `{meta::pure::profiles::doc.todo = '…'}` | Same profile, different tag |
-| A doc comment separated by a blank line, plus `doc.doc` | The comment never attached |
 | `{my::pkg::doc.doc = '…'}` | A different profile that merely ends in `doc` |
 
 #### How the content is processed
 
-Content is **literal**: there is no escape processing, so `\n`, `\'` and `\\` are content, not
-escapes — unlike [string literals](#multi-line-string-literals), where those are escapes.
+Documentation shares the Java-text-block **layout** of
+[multi-line string literals](#multi-line-string-literals) and differs from them in two respects.
+
+1. **Content is literal — there is no escape processing.** `\n`, `\'` and `\\` are content. This is
+   the opposite of a string literal, and it is deliberate: documentation is prose. Unescaping prose
+   silently rewrites a regex (`\d+` → `d+`), a Markdown escape (`\*` → `*`) and a Windows path
+   (`C:\temp` → `C:` followed by a tab) — and a `\u` not followed by four hex digits, as in
+   `C:\users`, aborts compilation with an error carrying no source location at all.
+2. **Leading and trailing blank lines are dropped**, so how the literal is laid out does not change
+   the documentation. A string literal instead keeps a trailing newline when its closing delimiter
+   sits on its own line.
+
+Otherwise the rules are the shared ones: line endings are normalized; the opening delimiter's line
+is dropped; the common leading indentation — the minimum across all non-blank lines *and* the
+closing delimiter's line — is removed; trailing whitespace is removed from each line.
+
 Content is conventionally Markdown, but the grammar is format-agnostic: nothing here parses or
 validates it.
-
-Rules, in the order they apply:
-
-1. The `/**` and `*/` delimiters are removed and line endings are normalized to `\n`.
-2. If the first line is blank it is dropped; otherwise it is inline content and one leading
-   space is removed.
-3. If the last line is blank it is dropped, but **its indentation is remembered** and
-   participates in step 5.
-4. If **every** non-blank line begins with `*`, that `*` is stripped along with at most one
-   following space. If *any* non-blank line lacks it, nothing is stripped.
-5. Otherwise the common leading indentation — the minimum across all non-blank lines *and* the
-   closing delimiter's line — is removed from every line.
-6. Trailing whitespace is removed from each line, and leading and trailing blank lines are
-   dropped.
 
 Below, `⏎` marks a newline in the source and `·` a space.
 
 | Source | Value |
 |---|---|
-| `/** One line. */` | `"One line."` — inline form, one leading space removed |
-| `/**`⏎`·*·A`⏎`·*`⏎`·*·B`⏎`·*/` | `"A\n\nB"` — every non-blank line starts with `*`, so stars are stripped |
-| `/**`⏎`Options:`⏎`*·first`⏎`*/` | `"Options:\n*·first"` — `Options:` has no star, so **nothing** is stripped and the bullet survives |
-| `/**`⏎`··Text`⏎⏎`······code`⏎`··*/` | `"Text\n\n····code"` — min indent is 2, set by the closing `*/`; the code block keeps its relative indent |
-| `/**`⏎`····indented`⏎`*/` | `"····indented"` — closing `*/` at column 0 sets the floor to 0, so nothing is stripped |
-| `/** */` | `""` — empty |
+| `'''`⏎`One line.`⏎`'''` | `"One line."` |
+| `'''`⏎`A`⏎⏎`B`⏎`'''` | `"A\n\nB"` — interior blank lines are kept |
+| `'''`⏎`Options:`⏎`*·first`⏎`'''` | `"Options:\n*·first"` — nothing is star-aware, so bullets are ordinary content |
+| `'''`⏎`··Text`⏎⏎`······code`⏎`··'''` | `"Text\n\n····code"` — min indent is 2, set by the closing `'''`; the code block keeps its relative indent |
+| `'''`⏎`····indented`⏎`'''` | `"····indented"` — closing `'''` at column 0 sets the floor to 0, so nothing is stripped |
+| `'''`⏎`'''` | `""` — empty |
 
 #### Gotchas
 
-- **A Markdown bullet list written with `*` is preserved.** Because star-stripping is
-  all-or-nothing, the leading `Options:` below means no stripping happens and the bullets
-  survive. Javadoc gets this wrong.
-
-  ```pure
-  /**
-  Options:
-  * first
-  * second
-  */
-  ```
-
-- **Indentation is semantic in Markdown** — four-space-indented lines are code blocks. Because
-  the closing `*/`'s indentation sets the floor, put `*/` at the indentation your content is
-  written at, and deeper indentation survives relative to it.
-- **Documentation comments nest**, so a code sample containing a *balanced* `/* … */` works —
-  the inner comment is absorbed and the documentation comment ends at the outer `*/`:
-
-  ````pure
-  /**
-  ```c
-  /* legacy comment */
-  ```
-  */
-  ````
-
-  Nesting only handles balanced pairs. A **lone** `*/` in the content still terminates the
-  comment, and there is no escape for it — split it (`*` `/`) or reword.
-
-- `/**/` is an empty *ordinary* comment, not an unterminated documentation comment. `/** */` is
-  an empty documentation comment.
-- The `###` section split is not comment-aware (see §0), so a line beginning `###` inside a
-  documentation comment will split the file into sections.
+- **A Markdown bullet list written with `*` is preserved.** Nothing strips leading stars, so unlike
+  Javadoc there is no all-or-nothing rule to reason about.
+- **Indentation is semantic in Markdown** — four-space-indented lines are code blocks. Because the
+  closing `'''`'s indentation sets the floor, put `'''` at the indentation your content is written
+  at, and deeper indentation survives relative to it.
+- **The opening `'''` must be followed by a line terminator**, so there is no one-line form.
+  `'''docs'''` does not lex as a documentation literal.
+- **A literal `'''` cannot appear in the content** and there is no escape for it — reword.
+- An ordinary `/* … */` or `/** … */` block comment is just a comment. Only `'''…'''` in a
+  documentation position produces a `doc` tagged value.
+- The `###` section split is not string-aware (see §0), so a line beginning `###` inside
+  documentation will split the file into sections.
 - Resolution of Pure references inside documentation (`[[pkg::Class]]`, ` ```pure ` blocks) and
   Markdown rendering are the consumer's concern, not the grammar's.
 
-**Implementation:** fragment `DocComment` in `M4Fragment.g4`; token `DOC_COMMENT` on the
-`DOCUMENTATION` channel in `M3CoreLexer.g4` (inherited by `M3Lexer`, `RelationalLexer` and
-`RelationMappingLexer`); canonicalization in
-`org.finos.legend.pure.m4.serialization.grammar.DocCommentCanonicalizer`; attachment via
-`DocCommentLookup` and `AntlrContextToM3CoreInstance.taggedValues(...)`. Tests:
-`TestDocCommentCanonicalizer` (m4) and `TestDocComment` (m3-core) cover parsing and
+**Implementation:** parser rule `documentation` in `M3CoreParser.g4`, prefixed onto each
+declaration that accepts it (inherited by `M3Parser`, `RelationalParser` and
+`RelationMappingParser`); layout shared with string literals in
+`org.finos.legend.pure.m4.serialization.grammar.MultilineTextLayout`; canonicalization in
+`DocumentationCanonicalizer`; attachment in `AntlrContextToM3CoreInstance.taggedValues(...)`.
+Tests: `TestDocumentationCanonicalizer` (m4) and `TestDocumentation` (m3-core) cover parsing and
 canonicalization; `platform/pure/documentation.pure` pins the same contract at run time on both
 execution engines, where the tagged value has been through metadata serialization rather than read
 straight off the AST.

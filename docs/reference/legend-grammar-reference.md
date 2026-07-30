@@ -23,11 +23,11 @@ For how the `###` section system works, see
 > gap, not a deliberate rejection. See
 > [Multi-line String Literals](pure-language-reference.md#multi-line-string-literals).
 
-> **Documentation comments (`/** … */`) attach in `###Pure` only.** The `DOC_COMMENT` token is
-> declared in `M3CoreLexer.g4`, so `RelationalLexer` and `RelationMappingLexer` inherit it by
-> import — but only the `###Pure` walker looks the tokens up, so elsewhere they behave exactly
-> like ordinary comments. See
-> [Documentation Comments](pure-language-reference.md#documentation-comments).
+> **Documentation (`'''…'''` leading a declaration) attaches in `###Pure` only.** The
+> `documentation` rule is declared in `M3CoreParser.g4`, so `RelationalParser` and
+> `RelationMappingParser` inherit it — but it is prefixed only onto the `###Pure` declarations,
+> and those grammars override the top-level rule. See
+> [Documentation](pure-language-reference.md#documentation).
 
 ---
 
