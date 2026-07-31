@@ -62,7 +62,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.G
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database;
-import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Table;
+import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.NamedRelation;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
@@ -317,24 +317,29 @@ public class RelationalParser implements IRelationalParser
             }
         }
 
-        Table table = (Table) org.finos.legend.pure.m2.relational.Database.findTable(store, schemaName, tableName, processorSupport);
-        if (table == null)
+        NamedRelation relation = (NamedRelation) org.finos.legend.pure.m2.relational.Database.findTable(store, schemaName, tableName, processorSupport);
+        if (relation == null)
         {
-            throw new PureCompilationException(sourceInformation, "The table '" + tableName + "' can't be found in the schema '" + schemaName + "' in the database '" + path.get(0) + "'");
+            throw new PureCompilationException(sourceInformation, "The table or view '" + tableName + "' can't be found in the schema '" + schemaName + "' in the database '" + path.get(0) + "'");
         }
         return Tuples.pair(
-                table,
+                relation,
                 _RelationType.build(
-                        table._columns().collect(c -> (CoreInstance) _Column.getColumnInstance(
+                        relation._columns().collect(c ->
+                        {
+                            Boolean nullable = ((Column) c)._nullable();
+                            int lowerBound = (nullable == null || nullable) ? 0 : 1;  //Add null check for View
+                            return (CoreInstance) _Column.getColumnInstance(
                                         c.getValueForMetaPropertyToOne("name").getName(),
                                         false,
                                         convertType(c.getValueForMetaPropertyToOne("type"), repository, processorSupport),
-                                        (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(((Column) c)._nullable() ? 0 : 1, 1, processorSupport),
+                                        (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(lowerBound, 1, processorSupport),
                                         ((Column) c)._stereotypesCoreInstance(),
                                         ((Column) c)._taggedValues(),
                                         sourceInformation,
                                         processorSupport
-                                ),
+                                );
+                        },
                                 Lists.mutable.empty()
                         ),
                         sourceInformation,

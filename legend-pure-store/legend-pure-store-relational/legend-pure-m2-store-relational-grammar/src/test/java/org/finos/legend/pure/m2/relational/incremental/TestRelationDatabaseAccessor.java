@@ -168,7 +168,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source2.pure", STORE1_CHANGED)
-                        .compileWithExpectedCompileFailure("The table 'PersonTable' can't be found in the schema 'default' in the database 'test::mainDb'", "source1.pure", 5, 5)
+                        .compileWithExpectedCompileFailure("The table or view 'PersonTable' can't be found in the schema 'default' in the database 'test::mainDb'", "source1.pure", 5, 5)
                         .updateSource("source2.pure", STORE1)
                         .compile(),
                 runtime, functionExecution, Lists.fixedSize.empty());

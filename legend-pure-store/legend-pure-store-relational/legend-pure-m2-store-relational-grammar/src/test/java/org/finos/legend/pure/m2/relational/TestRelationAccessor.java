@@ -373,7 +373,7 @@ public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreComp
         }
         catch (Exception e)
         {
-            assertPureException(PureCompilationException.class, "The table 'NoSuchTable' can't be found in the schema 'MySchema' in the database 'my::mainDb'", e);
+            assertPureException(PureCompilationException.class, "The table or view 'NoSuchTable' can't be found in the schema 'MySchema' in the database 'my::mainDb'", e);
         }
     }
 
