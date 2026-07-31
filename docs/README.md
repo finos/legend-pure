@@ -158,6 +158,7 @@ paths are always equivalent from a user's perspective.
 | [Contributor Workflow Guide](guides/contributor-workflow.md) | How to add a new DSL extension, native function, or store connector |
 | [Exploration & Discovery](guides/exploration.md) | Systematic approach for new engineers exploring the codebase |
 | [Coding Standards & Style Guide](standards/coding-standards.md) | Checkstyle rules, naming conventions, Git workflow, and PR checklist |
+| [PCT Function Documentation](standards/pct-documentation.md) | How to write the published `'''…'''` documentation on PCT functions and tests |
 | [Testing Strategy](testing/testing-strategy.md) | Testing pyramid, frameworks, coverage thresholds, and how to run tests |
 | [Documentation Maintenance](maintenance/maintenance.md) | Keeping docs up to date, ownership, and review cadence |
 | [Module README Template](templates/module-readme-template.md) | Standard template for per-module README files |
