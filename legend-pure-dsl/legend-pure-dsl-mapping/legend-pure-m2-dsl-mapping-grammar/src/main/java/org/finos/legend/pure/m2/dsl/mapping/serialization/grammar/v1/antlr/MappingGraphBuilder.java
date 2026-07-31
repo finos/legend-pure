@@ -152,7 +152,7 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
         StringBuilder builder = new StringBuilder();
         String parserName = ctx.parserName().getText();
 
-        if (ctx.superClassMappingId() != null && !("Relational").equals(parserName))
+        if (ctx.superClassMappingId() != null && !("Relational").equals(parserName) && !("Relation").equals(parserName))
         {
             throw new PureParserException(this.sourceInformation.getPureSourceInformation(ctx.parserName().getStart()),
                     "Mapping Inheritance feature is applicable only for Class Mappings, not applicable for " + ("Pure".equals(parserName) ? "Model to Model Pure" : parserName) + " Mappings.");
