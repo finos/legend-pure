@@ -26,17 +26,45 @@ Class meta::pure::functions::meta::SourceInformation
     <<equality.Key>> endColumn : Integer[1];
 }
 
+'''
+Where a model element was defined: its source file, and the span it occupies.
+
+Returns a `SourceInformation` carrying the file `source` plus two coordinate pairs — `startLine`/
+`startColumn` and `endLine`/`endColumn` delimit the element's whole span, while `line`/`column` point at
+its name. That distinction matters when reporting a diagnostic: the span is what to underline, the name
+is where to put the caret.
+
+**Values that were not written in a source file have no source information**, so the result is `[0..1]`
+and a primitive yields empty rather than an error.
+
+Note that these coordinates are line numbers in a file, so they move whenever anything above the element
+moves. Tests and tools that hard-code them need updating alongside any edit that shifts the file.
+
+**Parameters**
+- `node` — the element to locate.
+
+**Returns** its source information, or empty for a value that has none.
+
+**Examples**
+```pure
+XTestClass->sourceInformation()->toOne().source   // '/platform/pure/.../sourceInformation.pure'
+1->sourceInformation()                            // empty -- primitives have no source
+```
+
+**See also** `elementToPath(Function<Any>[1]):String[1]`,
+`meta::pure::functions::asserts::assertError(Function<{->Any[*]}>[1], String[1], Integer[0..1], Integer[0..1]):Boolean[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::sourceInformation(node:Any[1]):SourceInformation[0..1];
 
 function <<test.Test>> meta::pure::functions::meta::tests::sourceInformation::testClassSourceInformation():Boolean[1]
 {
     let sourceInfo = XTestClass->sourceInformation()->toOne();
     assertEq('/platform/pure/essential/meta/source/sourceInformation.pure', $sourceInfo.source);
-    assertEq(61, $sourceInfo.startLine);
+    assertEq(89, $sourceInfo.startLine);
     assertEq(1, $sourceInfo.startColumn);
-    assertEq(61, $sourceInfo.line);
+    assertEq(89, $sourceInfo.line);
     assertEq(62, $sourceInfo.column);
-    assertEq(64, $sourceInfo.endLine);
+    assertEq(92, $sourceInfo.endLine);
     assertEq(1, $sourceInfo.endColumn);
 }
 
@@ -44,11 +72,11 @@ function <<test.Test>> meta::pure::functions::meta::tests::sourceInformation::te
 {
     let sourceInfo = meta::pure::functions::meta::tests::sourceInformation::testFunctionSourceInformation__Boolean_1_->sourceInformation()->toOne();
     assertEq('/platform/pure/essential/meta/source/sourceInformation.pure', $sourceInfo.source);
-    assertEq(43, $sourceInfo.startLine);
+    assertEq(71, $sourceInfo.startLine);
     assertEq(1, $sourceInfo.startColumn);
-    assertEq(43, $sourceInfo.line);
+    assertEq(71, $sourceInfo.line);
     assertEq(79, $sourceInfo.column);
-    assertEq(53, $sourceInfo.endLine);
+    assertEq(81, $sourceInfo.endLine);
     assertEq(1, $sourceInfo.endColumn);
 }
 

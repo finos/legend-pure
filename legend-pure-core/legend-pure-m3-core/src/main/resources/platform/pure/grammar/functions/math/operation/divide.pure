@@ -23,6 +23,20 @@ native function
     }
     meta::pure::functions::math::divide(left:Number[1], right:Number[1]):Float[1];
 
+'''
+Divides one decimal by another, rounding the result to a given number of decimal places.
+
+The `scale` is what makes this the right choice for exact arithmetic: decimal division can produce a
+non-terminating expansion, so a scale must be chosen somewhere. Fixing it here keeps the result an exact
+`Decimal` rather than falling back to floating point.
+
+**Parameters**
+- `left` — the dividend.
+- `right` — the divisor.
+- `scale` — decimal places to round the result to.
+
+**Returns** the quotient as a `Decimal`.
+'''
 native function <<PCT.function>> meta::pure::functions::math::divide(left:Decimal[1], right:Decimal[1], scale:Integer[1]):Decimal[1];
 
 

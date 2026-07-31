@@ -14,19 +14,42 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Whether `source` begins with `val`.
+
+The match is literal and case-sensitive. Every string starts with the empty string.
+
+**Parameters**
+- `source` — the string to test.
+- `val` — the prefix to look for.
+
+**Returns** `true` if `source` begins with `val`.
+
+**Examples**
+```pure
+'the quick brown fox'->startsWith('the')   // true
+'the quick brown fox'->startsWith('fox')   // false
+```
+
+**See also** `endsWith(String[1], String[1]):Boolean[1]`,
+`contains(String[1], String[1]):Boolean[1]`
+'''
 native function
     <<PCT.function>>
-    {
-        doc.doc=''
-    }
     meta::pure::functions::string::startsWith(source:String[1], val:String[1]):Boolean[1];
 
+'''
+Both a single leading word and a longer leading phrase match.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::startswith::testTrueStartsWith<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assert($f->eval(|startsWith('the quick brown fox jumps over the lazy dog', 'the')));
     assert($f->eval(|startsWith('the quick brown fox jumps over the lazy dog', 'the quick brown fox')));
 }
 
+'''
+A substring that occurs later in the string is not a prefix.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::startswith::testFalseStartsWith<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertFalse($f->eval(|startsWith('the quick brown fox jumps over the lazy dog', 'the lazy dog')));

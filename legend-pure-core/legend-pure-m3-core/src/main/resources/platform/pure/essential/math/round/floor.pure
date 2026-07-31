@@ -14,6 +14,30 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The largest integer not greater than a number — rounding toward negative infinity.
+
+Unconditional, unlike `round(Number[1]):Integer[1]`: the fractional part is simply discarded for positive
+values, so `17.9` gives `17`. For negatives, "down" means away from zero, so `-17.1` gives `-18`.
+
+An integer input is returned unchanged.
+
+**Parameters**
+- `number` — the value to round down.
+
+**Returns** the largest integer that is not greater than `number`.
+
+**Examples**
+```pure
+floor(17.01)   // 17
+floor(17.5)    // 17
+floor(17.9)    // 17
+floor(17)      // 17
+floor(-17)     // -17
+```
+
+**See also** `ceiling(Number[1]):Integer[1]`, `round(Number[1]):Integer[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::floor(number:Number[1]):Integer[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::floor::testPositiveIntegerFloor<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

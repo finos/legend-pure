@@ -15,9 +15,59 @@
 import meta::pure::functions::asserts::*;
 import meta::pure::test::pct::*;
 
+'''
+Asserts that evaluating a function raises an error, and inspects that error with a matcher.
+
+The code under test is passed as a zero-argument function, written `|expression`, so that the error
+happens inside the assertion rather than at the call site. The matcher receives the error message and
+its source information, and is free to assert whatever it needs — which is what makes this the most
+general of the three forms. The assertion fails if the function does *not* raise.
+
+Reach for the simpler `assertError(Function<{->Any[*]}>[1], String[1]):Boolean[1]` when you only need
+to check the message.
+
+**Parameters**
+- `f` — the code expected to fail, as `|expression`.
+- `errorMessageMatcher` — receives the message and source information, and asserts against them.
+
+**Returns** `true` when the expected error was raised and the matcher passed.
+
+**Examples**
+```pure
+assertError(|[1, 2]->at(3), {msg, si | assertEquals(42, $si.line->toOne())})
+```
+
+**See also** `assertError(Function<{->Any[*]}>[1], String[1]):Boolean[1]`,
+`assertError(Function<{->Any[*]}>[1], String[1], Integer[0..1], Integer[0..1]):Boolean[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::asserts::assertError(f:Function<{->Any[*]}>[1], errorMessageMatcher:Function<{String[1], SourceInformation[0..1]->Any[*]}>[1]):Boolean[1];
 
 
+'''
+Asserts that evaluating a function raises an error with a given message, at a given source location.
+
+`line` and `column` are both `[0..1]`, so pass `[]` for either to leave it unchecked — checking the
+message and line but not the column is the common case. The message must match exactly, not merely
+contain the expected text.
+
+Use this when the *location* of the error is part of what you are testing, such as for compiler
+diagnostics. Prefer `assertError(Function<{->Any[*]}>[1], String[1]):Boolean[1]` otherwise, since
+hard-coded line numbers must be updated whenever the source above them moves.
+
+**Parameters**
+- `f` — the code expected to fail, as `|expression`.
+- `message` — the exact expected error message.
+- `line` — the expected line, or `[]` to skip the check.
+- `column` — the expected column, or `[]` to skip the check.
+
+**Returns** `true` when the expected error was raised at the expected place.
+
+**Examples**
+```pure
+// checks the message and the line, leaving the column unchecked
+assertError(|[1, 2]->at(3), 'The system is trying to get an element at offset 3 where the collection is of size 2', 42, [])
+```
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::asserts::assertError(f:Function<{->Any[*]}>[1], message:String[1], line:Integer[0..1], column:Integer[0..1]):Boolean[1]
 {
     $f->assertError({msg, si |
@@ -27,6 +77,28 @@ function <<PCT.function, PCT.platformOnly>> meta::pure::functions::asserts::asse
     });
 }
 
+'''
+Asserts that evaluating a function raises an error with exactly the given message.
+
+The usual form. The code under test is passed as `|expression` so the error is raised inside the
+assertion, and the assertion fails if no error is raised at all. The source location is not checked,
+which keeps the test stable when surrounding code moves.
+
+The message must match exactly rather than being a substring.
+
+**Parameters**
+- `f` — the code expected to fail, as `|expression`.
+- `message` — the exact expected error message.
+
+**Returns** `true` when the expected error was raised.
+
+**Examples**
+```pure
+assertError(|[1, 2]->at(3), 'The system is trying to get an element at offset 3 where the collection is of size 2')
+```
+
+**See also** `assertError(Function<{->Any[*]}>[1], String[1], Integer[0..1], Integer[0..1]):Boolean[1]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::asserts::assertError(f:Function<{->Any[*]}>[1], message:String[1]):Boolean[1]
 {
     assertError($f, $message, [], []);
@@ -39,12 +111,12 @@ function <<test.Test>> meta::pure::functions::asserts::testSimpleAssertError():B
 
 function <<test.Test>> meta::pure::functions::asserts::testSimpleAssertErrorLine():Boolean[1]
 {
-    assertError(|[1,2]->at(3),'The system is trying to get an element at offset 3 where the collection is of size 2', 42, []);
+    assertError(|[1,2]->at(3),'The system is trying to get an element at offset 3 where the collection is of size 2', 114, []);
 }
 
 function <<test.Test>> meta::pure::functions::asserts::testSimpleAssertErrorLineColumn():Boolean[1]
 {
-    assertError(|[1,2]->at(3),'The system is trying to get an element at offset 3 where the collection is of size 2', 47, 25);
+    assertError(|[1,2]->at(3),'The system is trying to get an element at offset 3 where the collection is of size 2', 119, 25);
 }
 
 function <<test.Test>> meta::pure::functions::asserts::testSimpleAssertErrorColumn():Boolean[1]

@@ -23,6 +23,19 @@ native function
     }
     meta::pure::functions::multiplicity::toOne<T>(values:T[*]):T[1];
 
+'''
+Asserts a collection holds exactly one value and returns it, failing with a given message otherwise.
+
+As `meta::pure::functions::multiplicity::toOne(T[*]):T[1]`, but you supply the error message. Worth using
+wherever the failure would otherwise be hard to trace back — the default message says only that the
+multiplicity was wrong, not which value was missing or why it mattered.
+
+**Parameters**
+- `values` — the collection expected to hold exactly one value.
+- `message` — the error to raise when it does not.
+
+**Returns** the single value.
+'''
 native function <<PCT.function>> meta::pure::functions::multiplicity::toOne<T>(values:T[*], message: String[1]): T[1];
 
 function <<test.Test>> meta::pure::functions::multiplicity::tests::toOne::testToOneMultiplicity():Boolean[1]

@@ -14,6 +14,40 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The number of duration-unit boundaries between two dates, signed.
+
+**This counts calendar boundaries crossed, not elapsed time** — the single most common source of surprise
+here. `%2016-02-01` to `%2016-02-29` is `0` months, because both fall in the same calendar month, even
+though they are 28 days apart. Conversely `%2015-12-31T23:59:59` to `%2016-01-01T00:00:01` is `1` year,
+two seconds apart, because a year boundary lies between them.
+
+If you need elapsed duration rather than boundaries crossed, difference in a finer unit and convert.
+
+The result is **signed and directional**: `$d1->dateDiff($d2, …)` is positive when `d2` is later, negative
+when earlier, and `0` for two dates in the same interval.
+
+**Parameters**
+- `d1` — the starting date.
+- `d2` — the ending date.
+- `du` — the unit whose boundaries are counted.
+
+**Returns** the signed number of boundaries from `d1` to `d2`.
+
+**Examples**
+```pure
+%2015->dateDiff(%2016, DurationUnit.YEARS)                    // 1
+%2016->dateDiff(%2015, DurationUnit.YEARS)                    // -1
+%2015->dateDiff(%2015, DurationUnit.YEARS)                    // 0
+%2016-02-01->dateDiff(%2016-02-29, DurationUnit.MONTHS)       // 0   -- same month
+%2016-02-01->dateDiff(%2016-03-01, DurationUnit.MONTHS)       // 1
+%2015-01-01T00:00:00->dateDiff(%2015-12-31T23:59:59, DurationUnit.YEARS)   // 0
+%2015-12-31T23:59:59->dateDiff(%2016-01-01T00:00:01, DurationUnit.YEARS)   // 1
+```
+
+**See also** `adjust(Date[1], Integer[1], DurationUnit[1]):Date[1]`,
+`datePart(Date[1]):Date[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::date::dateDiff(d1:Date[1], d2:Date[1], du:DurationUnit[1]):Integer[1];
 
 function <<PCT.test>> meta::pure::functions::date::tests::testDateDiffYears<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

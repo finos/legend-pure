@@ -14,10 +14,61 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Rounds a number to the nearest integer, breaking ties toward the even neighbour.
+
+**Rounding is half-even**, also called banker's rounding — not the half-up rule most people expect. A
+value exactly halfway between two integers goes to whichever neighbour is even, so `17.5` rounds to `18`
+but `16.5` rounds to `16`. This holds for negatives too: `-16.5` gives `-16`, `-17.5` gives `-18`.
+
+Half-even avoids the upward bias half-up introduces when summing many rounded values, which is why it is
+the usual choice for financial arithmetic.
+
+To round to a number of decimal places and keep the number's own type, use
+`round(Decimal[1], Integer[1]):Decimal[1]` or `round(Float[1], Integer[1]):Float[1]`.
+
+**Parameters**
+- `number` — the value to round.
+
+**Returns** the nearest integer, ties going to the even neighbour.
+
+**Examples**
+```pure
+round(17.6)       // 18
+round(17.4)       // 17
+round(17.5)       // 18   -- tie: 18 is even
+round(16.5)       // 16   -- tie: 16 is even
+round(-17.5)      // -18  -- tie: -18 is even
+round(-16.5)      // -16
+round(3.14159d)   // 3
+```
+
+**See also** `ceiling(Number[1]):Integer[1]`, `floor(Number[1]):Integer[1]`,
+`round(Decimal[1], Integer[1]):Decimal[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::round(number:Number[1]):Integer[1];
 
+'''
+Rounds a `Decimal` to a given number of decimal places, returning a `Decimal`.
+
+Unlike `round(Number[1]):Integer[1]`, the type is preserved and the fractional part is kept, so this is
+the form to reach for with monetary amounts. A `scale` of `0` rounds to a whole number while still
+returning a `Decimal`.
+'''
 native function <<PCT.function>> meta::pure::functions::math::round(decimal:Decimal[1], scale:Integer[1]):Decimal[1];
 
+'''
+Rounds a `Float` to a given number of decimal places, returning a `Float`.
+
+As `round(Decimal[1], Integer[1]):Decimal[1]` but for binary floating point, so the result is subject to
+the usual float representation limits — prefer the `Decimal` form when exactness matters.
+
+**Examples**
+```pure
+round(17.3, 0)     // 17.0
+round(-17.36, 1)   // -17.4
+```
+'''
 native function <<PCT.function>> meta::pure::functions::math::round(float:Float[1], scale:Integer[1]):Float[1];
 
 

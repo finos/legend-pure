@@ -14,6 +14,29 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The hidden payload carried by an instance created with getter overrides.
+
+`meta::pure::functions::lang::dynamicNew(Class<Any>[1], KeyValue[*], Function<{Any[1], Property<Nil, Any|0..1>[1]->Any[0..1]}>[0..1], Function<{Any[1], Property<Nil, Any|*>[1]->Any[*]}>[0..1], Any[0..1]):Any[1]`
+can attach arbitrary state to an instance that is not a property of its class — typically the context a
+getter override needs, such as a row handle or a connection. This reads that state back.
+
+**Only meaningful for an instance that actually has an override.** Calling it on an ordinary instance
+fails rather than returning empty, so guard accordingly.
+
+**Parameters**
+- `o` — the instance to read.
+
+**Returns** its hidden payload.
+
+**Examples**
+```pure
+$lazyInstance->getHiddenPayload()
+```
+
+**See also** `meta::pure::functions::lang::removeOverride(T[1]):T[1]`,
+`meta::pure::functions::lang::rawEvalProperty(Property<Nil, V|m>[1], Any[1]):V[m]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::getHiddenPayload(o:Any[1]):Any[1]
 {
    $o.elementOverride->toOne()->cast(@GetterOverride).hiddenPayload->toOne();

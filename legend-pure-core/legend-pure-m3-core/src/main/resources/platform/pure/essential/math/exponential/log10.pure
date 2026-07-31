@@ -14,6 +14,28 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The base-10 logarithm of a number.
+
+Use this rather than `log(Number[1]):Float[1]`, which is the *natural* logarithm, whenever you want
+orders of magnitude — digit counts, decibels, scientific notation.
+
+The result is always a `Float` and carries the usual floating-point representation error — compare with a
+tolerance rather than exact equality.
+
+**Parameters**
+- `value` — the number whose base-10 logarithm is wanted.
+
+**Returns** the base-10 logarithm of `value`.
+
+**Examples**
+```pure
+log10(10)    // 1.0
+log10(100)   // 2.0
+```
+
+**See also** `log(Number[1]):Float[1]`, `exp(Number[1]):Float[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::log10(value:Number[1]):Float[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::log10::testNumberLog10<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

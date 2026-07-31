@@ -14,12 +14,48 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Writes a value to standard output followed by a newline, following object references to a bounded
+depth.
+
+As `print(Any[*], Integer[1]):Nil[0]`, but terminates the line. `max` limits how far object graphs are
+expanded: at depth `1` an object's own properties are shown but referenced objects are summarised
+rather than expanded.
+
+The return type is `Nil[0]`, meaning nothing: this is called for its side effect, so it cannot be used
+as a value. Intended for debugging, not for building output.
+
+**Parameters**
+- `param` — the values to write.
+- `max` — how many levels of object reference to expand.
+
+**Returns** nothing.
+
+**Examples**
+```pure
+println('hello', 1)
+println($person, 3)   // three levels of referenced objects
+```
+
+**See also** `print(Any[*], Integer[1]):Nil[0]`,
+`meta::pure::functions::string::format(String[1], Any[*]):String[1]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::io::println(param:Any[*], max:Integer[1]):Nil[0]
 {
     print($param, $max);
     print('\n');
 }
 
+'''
+Writes a value and a newline to standard output, expanding object references one level deep.
+
+Equivalent to `println($param, 1)`, and the usual form for quick debugging output.
+
+**Examples**
+```pure
+println('hello')
+```
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::io::println(param:Any[*]):Nil[0]
 {
     println($param, 1);

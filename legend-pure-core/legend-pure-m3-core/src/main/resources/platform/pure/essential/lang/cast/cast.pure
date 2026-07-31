@@ -15,6 +15,35 @@
 import meta::pure::test::pct::*;
 import meta::pure::functions::lang::tests::cast::*;
 
+'''
+Reinterprets a value as a more specific type.
+
+The target type is given as a type literal, written `@Type`, rather than as a value. The cast is
+checked at runtime: if the value is not actually an instance of that type, execution fails rather
+than returning an empty result. Multiplicity is carried through unchanged, so casting a `[*]` gives
+a `[*]`.
+
+Casting narrows the *static* type so that subtype properties become reachable; it does not convert
+between unrelated types. For numeric conversion use
+`meta::pure::functions::math::toFloat(Number[1]):Float[1]` or
+`meta::pure::functions::math::toDecimal(Number[1]):Decimal[1]`.
+
+**Parameters**
+- `source` — the value to reinterpret.
+- `object` — a type literal, `@Type`, naming the target type.
+
+**Returns** the same value, typed as `T`.
+
+**Examples**
+```pure
+$anyValue->cast(@Person).firstName    // reach a Person property
+1->cast(@P8)                          // narrow to a Primitive extension
+```
+
+**See also** `match(Any[*], Function<{Nil[n]->T[m]}>[1..*]):T[m]`,
+`toMultiplicity(T[*], Any[z]):T[z]`,
+`meta::pure::functions::meta::instanceOf(Any[1], Type[1]):Boolean[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::lang::cast<T|m>(source:Any[m], object:T[1]):T[m];
 
 

@@ -16,6 +16,33 @@ import meta::pure::functions::meta::tests::model::*;
 import meta::pure::functions::meta::tests::evaluateAndDeactivate::*;
 import meta::pure::test::pct::*;
 
+'''
+Turns an expression into its own syntax tree, instead of evaluating it.
+
+This is Pure's metaprogramming entry point. Normally an expression such as `$people->filter(p | …)` runs
+and yields a result; deactivating it yields the `ValueSpecification` describing *how* the result would be
+computed — the function being called, its arguments, and so on. So a call becomes a
+`SimpleFunctionExpression` whose `func` and `parametersValues` can be inspected or rewritten.
+
+That makes it the basis of query manipulation: read a query's structure, transform it, and run the
+transformed version with `reactivate(ValueSpecification[1], Map<String, List<Any>>[1]):Any[*]`.
+
+**Parameters**
+- `var` — the expression to capture rather than evaluate.
+
+**Returns** the syntax tree of the expression.
+
+**Examples**
+```pure
+let f = CC_Person.all()->filter(p | $p.lastName == 'Doe')->first()->deactivate();
+$f->cast(@SimpleFunctionExpression).func.functionName;         // 'first'
+$f->cast(@SimpleFunctionExpression).parametersValues->size();  // 1
+```
+
+**See also** `reactivate(ValueSpecification[1], Map<String, List<Any>>[1]):Any[*]`,
+`evaluateAndDeactivate(T[m]):T[m]`,
+`canReactivateDynamically(ValueSpecification[1]):Boolean[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::deactivate(var:Any[*]):ValueSpecification[1];
 
 function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::deactivate::testDeactivateFunctionToOne():Boolean[1]

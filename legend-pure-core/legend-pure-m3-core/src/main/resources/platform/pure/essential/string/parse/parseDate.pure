@@ -14,20 +14,52 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Reads a date, or a date and time, from its ISO-8601 textual form.
+
+Month and day may be written with or without a leading zero. A trailing `Z` denotes UTC, and an
+offset such as `-0500` is honoured — the resulting instant is the same moment in time, so comparing
+two dates written in different zones compares the instants, not the text.
+
+**Parameters**
+- `string` — the text to read.
+
+**Returns** the date the text denotes.
+
+**Examples**
+```pure
+parseDate('2014-02-27T10:01:35.231')        // %2014-02-27T10:01:35.231
+parseDate('2014-2-27T10:01:35.231')         // same; a leading zero is optional
+parseDate('2014-02-27T10:01:35.231Z')       // same, stated as UTC
+parseDate('2014-02-27T10:01:35.231-0500')   // %2014-02-27T15:01:35.231+0000
+```
+
+**See also** `parseInteger(String[1]):Integer[1]`,
+`meta::pure::functions::string::toString(Any[1]):String[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::string::parseDate(string:String[1]):Date[1];
 
+'''
+A leading zero in the month or day is optional.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::parseDate::testParseDate<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEq(%2014-02-27T10:01:35.231, $f->eval(|parseDate('2014-02-27T10:01:35.231')));
     assertEq(%2014-02-27T10:01:35.231, $f->eval(|parseDate('2014-2-27T10:01:35.231')));
 }
 
+'''
+An explicit trailing Z states UTC without changing the instant.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::parseDate::testParseDateWithZ<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEq(%2014-02-27T10:01:35.231, $f->eval(|parseDate('2014-02-27T10:01:35.231Z')));
     assertEq(%2014-02-27T10:01:35.231, $f->eval(|parseDate('2014-2-27T10:01:35.231Z')));
 }
 
+'''
+An offset is honoured: the same instant compares equal across zones.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::parseDate::testParseDateWithTimezone<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEq(%2014-02-27T10:01:35.231-0500, $f->eval(|parseDate('2014-02-27T10:01:35.231-0500')));

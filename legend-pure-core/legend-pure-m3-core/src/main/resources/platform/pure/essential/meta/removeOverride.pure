@@ -14,4 +14,30 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Returns an instance with any getter override stripped off.
+
+An instance built with getter overrides computes property values on access rather than reading stored
+state. This yields an equivalent instance without that behaviour, so subsequent reads see the stored
+values directly.
+
+Use it when an override has served its purpose — after materialising a lazily-loaded object, say — and
+you want a plain instance to pass on. To read past an override case by case instead, use
+`meta::pure::functions::lang::rawEvalProperty(Property<Nil, V|m>[1], Any[1]):V[m]`.
+
+The type is preserved, so no cast is needed afterwards.
+
+**Parameters**
+- `instance` — the instance to strip.
+
+**Returns** the same instance without its override.
+
+**Examples**
+```pure
+$lazyInstance->removeOverride()
+```
+
+**See also** `meta::pure::functions::lang::rawEvalProperty(Property<Nil, V|m>[1], Any[1]):V[m]`,
+`meta::pure::functions::meta::getHiddenPayload(Any[1]):Any[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::removeOverride<T>(instance:T[1]):T[1];

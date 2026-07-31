@@ -14,6 +14,30 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The sine of an angle.
+
+**Angles are in radians, not degrees.** Convert with `$degrees * 3.141592653589793 / 180` if your
+input is in degrees.
+
+The result is always a `Float` and carries floating-point representation error, so compare with a
+tolerance rather than exact equality.
+
+**Parameters**
+- `number` — the angle, in radians.
+
+**Returns** its sine, between -1 and 1.
+
+**Examples**
+```pure
+sin(0)     // 0.0
+sin(1)     // 0.841470984807
+sin(1.5)   // 0.997494986604
+```
+
+**See also** `cos(Number[1]):Float[1]`, `tan(Number[1]):Float[1]`,
+`asin(Number[1]):Float[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::sin(number:Number[1]):Float[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testSine<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

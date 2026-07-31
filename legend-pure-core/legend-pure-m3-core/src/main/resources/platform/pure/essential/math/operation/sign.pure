@@ -14,6 +14,30 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The sign of a number, as `-1`, `0` or `1`.
+
+Always an `Integer` regardless of the input type, so the sign of a float or decimal is still one of three
+integer values. Zero has sign `0`, giving a three-way result rather than a boolean — useful for
+comparators, which expect exactly this convention.
+
+**Parameters**
+- `number` — the value whose sign is wanted.
+
+**Returns** `-1` for negative, `0` for zero, `1` for positive.
+
+**Examples**
+```pure
+sign(-10)     // -1
+sign(0)       // 0
+sign(10)      // 1
+sign(-10.5)   // -1
+sign(0.5)     // 1
+```
+
+**See also** `abs(Integer[1]):Integer[1]`,
+`meta::pure::functions::collection::sort(T[m], Function<{T[1], T[1]->Integer[1]}>[0..1]):T[m]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::sign(number:Number[1]):Integer[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::sign::testSign<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

@@ -14,8 +14,32 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Reads an integer from its textual form.
+
+An explicit `+` or `-` sign is accepted, as are leading zeros.
+
+**Parameters**
+- `string` — the text to read.
+
+**Returns** the integer the text denotes.
+
+**Examples**
+```pure
+'17'->parseInteger()          // 17
+'+00000017'->parseInteger()   // 17
+'-17'->parseInteger()         // -17
+```
+
+**See also** `parseFloat(String[1]):Float[1]`,
+`parseDecimal(String[1]):Decimal[1]`,
+`meta::pure::functions::string::toString(Any[1]):String[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::string::parseInteger(string:String[1]):Integer[1];
 
+'''
+Signs and leading zeros are accepted, including at the top of the integer range.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::parseInteger::testParseInteger<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEq(17, $f->eval(|parseInteger('17')));

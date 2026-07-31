@@ -14,6 +14,27 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Returns a map with the given entries added, replacing any that share a key.
+
+Keys present in `pairs` take the new value; keys absent from `pairs` keep theirs. The key-comparison
+behaviour of the original map — including any properties it was built with — is carried over.
+
+**Parameters**
+- `m` — the map to start from.
+- `pairs` — the entries to add or overwrite.
+
+**Returns** the updated map.
+
+**Examples**
+```pure
+$m->replaceAll([pair('a', 9)])   // 'a' now maps to 9; other keys untouched
+$m->replaceAll([])               // unchanged
+```
+
+**See also** `newMap(Pair<U, V>[*]):Map<U, V>[1]`,
+`getIfAbsentPutWithKey(Map<U, V>[1], U[1], Function<{U[1]->V[0..1]}>[1]):V[0..1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::replaceAll<U,V>(m:Map<U,V>[1], pairs:Pair<U,V>[*]):Map<U,V>[1];
 //{
 //   $pairs->fold({a,b|$b->put($a.first, $a.second)}, ^Map<U,V>(_func= $m._func));

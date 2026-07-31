@@ -14,10 +14,37 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Whether the first operand succeeds or equals the second, according to the type's natural order.
+
+Written `>=` in Pure: `$a >= $b`. Overloads cover `Number`, `Date`, `String` and `Boolean`, so the
+same operator orders numerically, chronologically, lexicographically, or with `false` before `true`.
+
+An absent operand makes the result `false`, **not** empty — the comparison does not propagate
+emptiness the way arithmetic does. So a missing value never satisfies the comparison, and
+`$a >= $b` is false whenever either side is empty. Test with `isEmpty()` first when you need to
+distinguish "absent" from "present but not greater than or equal to".
+
+**Parameters**
+- `left` — the first operand.
+- `right` — the second operand.
+
+**Returns** `true` when `left` is greater than or equal to `right`.
+
+**Examples**
+```pure
+1 >= 2
+'a' >= 'b'
+%2015-01-01 >= %2016-01-01
+false >= true
+```
+
+**See also** `lessThanEqual(Number[1], Number[1]):Boolean[1]`,
+`meta::pure::functions::collection::sort(T[m], Function<{T[1], T[1]->Integer[1]}>[0..1]):T[m]`
+'''
 function
     <<PCT.function>>
     {
-        doc.doc='Returns true if, according to the type order, $left succeeds or is equal to $right',
         PCT.grammarDoc='$first >= $second',
         PCT.grammarCharacters='>='
     }
@@ -26,76 +53,135 @@ function
     $left->isNotEmpty() && $right->isNotEmpty() && greaterThanEqual($left->toOne(), $right->toOne())
 }
 
+'''
+As `greaterThanEqual(Number[1], Number[1]):Boolean[1]`, for `Number` operands where a value may be missing.
+The second operand may be absent; an absent operand makes the result `false` rather than empty.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Number[1], right:Number[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && greaterThanEqual($left, $right->toOne())
 }
 
+'''
+As `greaterThanEqual(Number[1], Number[1]):Boolean[1]`, for `Number` operands where a value may be missing.
+The first operand may be absent; an absent operand makes the result `false` rather than empty.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Number[0..1], right:Number[1]):Boolean[1]
 {
     $left->isNotEmpty() && greaterThanEqual($left->toOne(), $right)
 }
 
+'''
+As `greaterThanEqual(Date[1], Date[1]):Boolean[1]`, for `Date` operands where a value may be missing.
+Either operand may be absent; an absent operand makes the result `false` rather than empty.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Date[0..1], right:Date[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && greaterThanEqual($left->toOne(), $right->toOne())
 }
 
+'''
+As `greaterThanEqual(Date[1], Date[1]):Boolean[1]`, for `Date` operands where a value may be missing.
+The second operand may be absent; an absent operand makes the result `false` rather than empty.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Date[1], right:Date[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && greaterThanEqual($left, $right->toOne())
 }
 
+'''
+As `greaterThanEqual(Date[1], Date[1]):Boolean[1]`, for `Date` operands where a value may be missing.
+The first operand may be absent; an absent operand makes the result `false` rather than empty.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Date[0..1], right:Date[1]):Boolean[1]
 {
     $left->isNotEmpty() && greaterThanEqual($left->toOne(), $right)
 }
 
+'''
+As `greaterThanEqual(String[1], String[1]):Boolean[1]`, for `String` operands where a value may be missing.
+Either operand may be absent; an absent operand makes the result `false` rather than empty.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:String[0..1], right:String[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && greaterThanEqual($left->toOne(), $right->toOne())
 }
 
+'''
+As `greaterThanEqual(String[1], String[1]):Boolean[1]`, for `String` operands where a value may be missing.
+The second operand may be absent; an absent operand makes the result `false` rather than empty.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:String[1], right:String[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && greaterThanEqual($left, $right->toOne())
 }
 
+'''
+As `greaterThanEqual(String[1], String[1]):Boolean[1]`, for `String` operands where a value may be missing.
+The first operand may be absent; an absent operand makes the result `false` rather than empty.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:String[0..1], right:String[1]):Boolean[1]
 {
     $left->isNotEmpty() && greaterThanEqual($left->toOne(), $right)
 }
 
+'''
+As `greaterThanEqual(Boolean[1], Boolean[1]):Boolean[1]`, for `Boolean` operands where a value may be missing.
+Either operand may be absent; an absent operand makes the result `false` rather than empty.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Boolean[0..1], right:Boolean[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && greaterThanEqual($left->toOne(), $right->toOne())
 }
 
+'''
+As `greaterThanEqual(Boolean[1], Boolean[1]):Boolean[1]`, for `Boolean` operands where a value may be missing.
+The second operand may be absent; an absent operand makes the result `false` rather than empty.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Boolean[1], right:Boolean[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && greaterThanEqual($left, $right->toOne())
 }
 
+'''
+As `greaterThanEqual(Boolean[1], Boolean[1]):Boolean[1]`, for `Boolean` operands where a value may be missing.
+The first operand may be absent; an absent operand makes the result `false` rather than empty.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Boolean[0..1], right:Boolean[1]):Boolean[1]
 {
     $left->isNotEmpty() && greaterThanEqual($left->toOne(), $right)
 }
 
+'''
+Whether one number is greater than or equal to another, both operands being present.
+
+The `[1]` form, so there is no empty case to consider — see
+`greaterThanEqual(Number[0..1], Number[0..1]):Boolean[1]` for how absent operands are treated.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Number[1], right:Number[1]):Boolean[1]
 {
     lessThanEqual($right, $left)
 }
 
+'''
+Compares two strings lexicographically, character by character.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:String[1], right:String[1]):Boolean[1]
 {
     lessThanEqual($right, $left)
 }
 
+'''
+Compares two dates chronologically — true when `left` falls at or after `right`.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Date[1], right:Date[1]):Boolean[1]
 {
     lessThanEqual($right, $left)
 }
 
+'''
+Orders booleans with `false` before `true`.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Boolean[1], right:Boolean[1]):Boolean[1]
 {
     lessThanEqual($right, $left)

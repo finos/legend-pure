@@ -22,6 +22,12 @@ native function
     }
     meta::pure::functions::collection::isEmpty(p:Any[*]):Boolean[1];
 
+'''
+Whether an optional value is absent.
+
+The `[0..1]` overload, for a value that may or may not be present. Note this asks whether there is *no
+value*: an empty `String` is still a present value, so `''->isEmpty()` is false.
+'''
 function <<PCT.function>> meta::pure::functions::collection::isEmpty(p:Any[0..1]):Boolean[1]
 {
     eq($p->size(), 0)

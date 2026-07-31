@@ -16,6 +16,27 @@ import meta::pure::test::pct::*;
 
 import meta::pure::functions::collection::tests::model::*;
 
+'''
+The first element satisfying a predicate, or nothing if none does.
+
+Stops at the first match, so prefer it to `filter(…)->first()` when only one result is wanted. The
+`[0..1]` result means no match yields an empty value rather than an error.
+
+**Parameters**
+- `value` — the collection to search.
+- `func` — the predicate applied to each element.
+
+**Returns** the first matching element, or an empty value.
+
+**Examples**
+```pure
+['Smith', 'Doe', 'Oth']->find(s | $s->length() == 3)   // 'Doe'
+['Smith', 'Doe']->find(s | $s == 'Zzz')                // empty
+```
+
+**See also** `filter(T[*], Function<{T[1]->Boolean[1]}>[1]):T[*]`,
+`exists(T[*], Function<{T[1]->Boolean[1]}>[1]):Boolean[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::collection::find<T>(value:T[*], func:Function<{T[1]->Boolean[1]}>[1]):T[0..1];
 
 function <<PCT.test>> meta::pure::functions::collection::tests::find::testFindLiteral<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

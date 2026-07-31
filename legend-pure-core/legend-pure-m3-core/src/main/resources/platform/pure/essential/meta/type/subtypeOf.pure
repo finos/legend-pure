@@ -15,6 +15,34 @@
 import meta::pure::functions::meta::tests::subTypeOf::*;
 import meta::pure::test::pct::*;
 
+'''
+Whether one type is the same as, or a subtype of, another.
+
+**Reflexive** — every type is a subtype of itself, so `Boolean->subTypeOf(Boolean)` is true. This is
+the type-level relation; use `instanceOf(Any[1], Type[1]):Boolean[1]` to test a *value* instead.
+
+`Nil` is the bottom type and is a subtype of everything, including primitives. Nothing but `Nil` is a
+subtype of `Nil`, so `Any->subTypeOf(Nil)` is false.
+
+**Parameters**
+- `subType` — the candidate subtype.
+- `superType` — the candidate supertype.
+
+**Returns** `true` when `subType` is `superType` or descends from it.
+
+**Examples**
+```pure
+Integer->subTypeOf(Number)   // true
+Boolean->subTypeOf(Boolean)  // true  -- reflexive
+Boolean->subTypeOf(Any)      // true
+Nil->subTypeOf(String)       // true  -- Nil is the bottom type
+Any->subTypeOf(Nil)          // false
+```
+
+**See also** `instanceOf(Any[1], Type[1]):Boolean[1]`,
+`generalizations(Type[1]):Type[1..*]`,
+`_subTypeOf(Type[1], Type[1]):Boolean[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::subTypeOf(subType:Type[1], superType:Type[1]):Boolean[1];
 
 Class meta::pure::functions::meta::tests::subTypeOf::SA {}

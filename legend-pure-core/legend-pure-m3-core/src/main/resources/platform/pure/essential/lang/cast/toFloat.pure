@@ -14,6 +14,28 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Converts any number to a `Float`.
+
+Accepts `Integer`, `Float` and `Decimal`. Because `Float` is binary floating point, converting from
+`Decimal` may lose precision — a decimal that cannot be represented exactly is rounded to the nearest
+representable float. Convert in the other direction, or stay in `Decimal`, when exactness matters.
+
+**Parameters**
+- `number` — the value to convert.
+
+**Returns** the value as a `Float`.
+
+**Examples**
+```pure
+toFloat(8)      // 8.0
+toFloat(3.8)    // 3.8
+toFloat(3.8D)   // 3.8   -- from Decimal; may round
+```
+
+**See also** `meta::pure::functions::math::toDecimal(Number[1]):Decimal[1]`,
+`meta::pure::functions::string::parseFloat(String[1]):Float[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::toFloat(number: Number[1]): Float[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::toFloat::testDoubleToFloat<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

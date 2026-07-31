@@ -14,6 +14,29 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The first `count` elements of a collection.
+
+Out-of-range counts are clamped rather than rejected: a negative or zero `count` yields an empty
+collection, and a `count` beyond the end yields the whole collection.
+
+**Parameters**
+- `set` — the collection to take from.
+- `count` — how many leading elements to keep.
+
+**Returns** the first `count` elements, or fewer if the collection is shorter.
+
+**Examples**
+```pure
+[1, 2, 3]->take(2)    // [1, 2]
+[1, 2, 3]->take(0)    // []
+[1, 2, 3]->take(-1)   // []
+[1, 2, 3]->take(10)   // [1, 2, 3]
+```
+
+**See also** `drop(T[*], Integer[1]):T[*]`,
+`slice(T[*], Integer[1], Integer[1]):T[*]`
+'''
 native function <<PCT.function>> meta::pure::functions::collection::take<T>(set:T[*], count:Integer[1]):T[*];
 
 function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeNegativeOnEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

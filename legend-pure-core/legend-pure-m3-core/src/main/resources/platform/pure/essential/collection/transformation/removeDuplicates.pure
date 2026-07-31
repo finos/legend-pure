@@ -15,18 +15,66 @@
 import meta::pure::test::pct::*;
 import meta::pure::functions::collection::tests::removeDuplicates::*;
 
+'''
+Removes duplicate elements from a collection, optionally comparing by a derived key and optionally
+with a custom equality function.
+
+**The order of the result is unspecified** — sort afterwards if you need a stable order.
+
+This is the most general form; the shorter overloads delegate to it. Both function arguments are
+`[0..1]`, so passing `[]` for either falls back to the default: elements are compared directly when
+no `key` is given, and with the default equality when no `eql` is given. When a `key` is supplied,
+duplicates are decided by comparing keys rather than elements.
+
+Of any group of duplicates, the first one encountered is the one kept.
+
+**Parameters**
+- `col` — the collection to de-duplicate.
+- `key` — derives the value to compare on, or `[]` to compare elements directly.
+- `eql` — compares two elements (or two keys), or `[]` for the default equality.
+
+**Returns** the collection with duplicates removed, in unspecified order.
+
+**Examples**
+```pure
+[1, 2, 1, 3]->removeDuplicates([], [])                  // [1, 2, 3]
+[1, '1', 2]->removeDuplicates([], {a, b | $a->toString() == $b->toString()})   // [1, 2]
+```
+
+**See also** `removeDuplicates(T[*]):T[*]`,
+`removeDuplicatesBy(T[*], Function<{T[1]->Any[1]}>[1]):T[*]`,
+`sort(T[m]):T[m]`
+'''
 native function
     <<PCT.function>>
-    {
-        doc.doc='Returns a collection of elements with duplicates removed. The order of elements is unspecified. If a key function is provided, it is used to compute the key for each element and duplicates are determined based on the keys. If an equality function is provided, it is used to compare elements (or keys if a key function is provided) for equality. If no equality function is provided, the default equality comparison is used.'
-    }
     meta::pure::functions::collection::removeDuplicates<T,V>(col:T[*], key:Function<{T[1]->V[1]}>[0..1], eql:Function<{V[1],V[1]->Boolean[1]}>[0..1]):T[*];
 
+'''
+Removes duplicates using a custom equality function applied to the elements themselves.
+
+Equivalent to `removeDuplicates($col, [], $eql)`. The order of the result is unspecified.
+
+**Examples**
+```pure
+[1, '1', 2]->removeDuplicates({a, b | $a->toString() == $b->toString()})   // [1, 2]
+```
+'''
 function <<PCT.function>> meta::pure::functions::collection::removeDuplicates<T>(col:T[*], eql:Function<{T[1],T[1]->Boolean[1]}>[1]):T[*]
 {
     $col->removeDuplicates([], $eql)
 }
 
+'''
+Removes duplicates using the default equality.
+
+The common case; equivalent to `removeDuplicates($col, [], [])`. The order of the result is
+unspecified, so sort afterwards if order matters.
+
+**Examples**
+```pure
+[1, 2, 1, 3, 3]->removeDuplicates()->sort()   // [1, 2, 3]
+```
+'''
 function <<PCT.function>> meta::pure::functions::collection::removeDuplicates<T>(col:T[*]):T[*]
 {
     $col->removeDuplicates([], [])

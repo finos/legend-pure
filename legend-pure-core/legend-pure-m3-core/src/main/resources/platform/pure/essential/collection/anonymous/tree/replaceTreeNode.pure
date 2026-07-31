@@ -14,4 +14,23 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Returns a tree with one node substituted for another.
+
+Searches `root` for `target` and puts `value` in its place, rebuilding the branch above it. The
+original tree is not modified. `target` is matched as a node within the tree, so it must be a node
+taken from `root` rather than an equal-looking copy.
+
+**Parameters**
+- `root` — the tree to rewrite.
+- `target` — the node to replace.
+- `value` — the node to put in its place.
+
+**Returns** the rewritten tree.
+
+**Examples**
+```pure
+$tree->replaceTreeNode($oldNode, $newNode)
+```
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::replaceTreeNode(root:TreeNode[1], target:TreeNode[1], value:TreeNode[1]):TreeNode[1];

@@ -14,6 +14,32 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The arc tangent of a value — the angle whose tangent it is.
+
+The inverse of `tan(Number[1]):Float[1]`. Accepts any number, since tangent is unbounded, and returns an
+angle **in radians** approaching but never reaching ±π/2.
+
+Because a single ratio cannot distinguish opposite quadrants, prefer
+`atan2(Number[1], Number[1]):Float[1]` when converting a coordinate pair to an angle.
+
+The result is always a `Float` and carries floating-point representation error, so compare with a
+tolerance rather than exact equality.
+
+**Parameters**
+- `number` — the tangent value.
+
+**Returns** the angle in radians, strictly between -π/2 and π/2.
+
+**Examples**
+```pure
+atan(0)     // 0.0
+atan(1.5)   // 0.982793723247
+atan(100)   // 1.560796660108   -- approaching π/2
+```
+
+**See also** `atan2(Number[1], Number[1]):Float[1]`, `tan(Number[1]):Float[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::atan(number:Number[1]):Float[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testArcTangent<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

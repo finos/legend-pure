@@ -15,6 +15,31 @@
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
+'''
+The full generic type of a value, including its type arguments.
+
+Where `type(Any[*]):Type[1]` gives only the raw type, a `GenericType` keeps the type parameters too. Its
+`rawType` is the type itself and its `typeArguments` are the parameters, so a `List<String>` reports a
+raw type of `List` with `String` as its single argument.
+
+Note the metamodel is reflective: asking a *class* for its generic type describes the class object, so
+`CC_Person->genericType().rawType` is `Class`, and the argument is `CC_Person`.
+
+**Parameters**
+- `any` — the value to inspect.
+
+**Returns** its generic type.
+
+**Examples**
+```pure
+CC_Person->genericType().rawType->toOne()                    // Class
+CC_Person->genericType().typeArguments->at(0).rawType->toOne()   // CC_Person
+```
+
+**See also** `type(Any[*]):Type[1]`,
+`genericTypeClass(GenericType[1]):Class<Any>[1]`,
+`properties(GenericType[1]):Property<Nil, Any|*>[*]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::genericType(any:Any[*]):GenericType[1];
 
 function <<test.Test>> meta::pure::functions::meta::tests::genericType::testGenericType():Boolean[1]

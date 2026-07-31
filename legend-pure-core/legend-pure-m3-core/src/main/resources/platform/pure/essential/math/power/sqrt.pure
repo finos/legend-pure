@@ -15,6 +15,26 @@
 import meta::pure::test::pct::*;
 import meta::pure::functions::asserts::*;
 
+'''
+The square root of a number.
+
+Always returns a `Float`, even for a perfect square of integers — `sqrt(9)` is `3.0`, not `3`. Equivalent
+to `pow($n, 0.5)` but clearer at the call site.
+
+**Parameters**
+- `number` — the number whose square root is wanted.
+
+**Returns** the square root, as a `Float`.
+
+**Examples**
+```pure
+sqrt(0)      // 0.0
+sqrt(9)      // 3.0   -- not 3
+sqrt(0.01)   // 0.1
+```
+
+**See also** `cbrt(Number[1]):Float[1]`, `pow(Number[1], Number[1]):Number[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::sqrt(number:Number[1]):Float[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::testSquareRoot<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

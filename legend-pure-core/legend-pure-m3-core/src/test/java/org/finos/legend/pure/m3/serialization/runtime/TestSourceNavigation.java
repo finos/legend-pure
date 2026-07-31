@@ -273,12 +273,12 @@ public class TestSourceNavigation extends AbstractPureTestWithCoreCompiledPlatfo
         runtime.compile();
         CoreInstance found = source.navigate(4, 7, processorSupport);
         Assert.assertEquals("/platform/pure/essential/io/print.pure", found.getSourceInformation().getSourceId());
-        Assert.assertEquals(17, found.getSourceInformation().getLine());
+        Assert.assertEquals(47, found.getSourceInformation().getLine());
         Assert.assertEquals(79, found.getSourceInformation().getColumn());
 
         found = source.navigate(6, 7, processorSupport);
         Assert.assertEquals("/platform/pure/essential/io/print.pure", found.getSourceInformation().getSourceId());
-        Assert.assertEquals(17, found.getSourceInformation().getLine());
+        Assert.assertEquals(47, found.getSourceInformation().getLine());
         Assert.assertEquals(79, found.getSourceInformation().getColumn());
     }
 }

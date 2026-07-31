@@ -14,6 +14,29 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The day-of-month component of a date, from 1 to 31.
+
+Pure dates carry **variable granularity** — `%2015`, `%2015-04`, `%2015-04-15`, `%2015-04-15T17` and
+so on are all valid `Date` values, each knowing only as much as was written. A date with no day — `%2015` or `%2015-04` — **fails rather than returning empty**, with an error
+such as `Cannot get day of month for 2017`. Guard with `hasDay(Date[1]):Boolean[1]` when the granularity
+is not known.
+
+**Parameters**
+- `d` — the date to read.
+
+**Returns** the day of the month.
+
+**Examples**
+```pure
+%2015-04-15->dayOfMonth()                  // 15
+%2015-04-15T17:09:21.398->dayOfMonth()     // 15
+%2017->dayOfMonth()                        // fails: Cannot get day of month for 2017
+```
+
+**See also** `hasDay(Date[1]):Boolean[1]`, `monthNumber(Date[1]):Integer[1]`,
+`datePart(Date[1]):Date[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::date::dayOfMonth(d:Date[1]):Integer[1];
 
 function <<PCT.test>> meta::pure::functions::date::tests::testDayOfMonth<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
@@ -27,5 +50,5 @@ function <<PCT.test>> meta::pure::functions::date::tests::testDayOfMonth<Z|y>(f:
 
 function <<PCT.test>> meta::pure::functions::date::tests::testDayOfMonthError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertError(| $f->eval(|%2017->dayOfMonth()), 'Cannot get day of month for 2017', 30, 36);
+    assertError(| $f->eval(|%2017->dayOfMonth()), 'Cannot get day of month for 2017', 53, 36);
 }

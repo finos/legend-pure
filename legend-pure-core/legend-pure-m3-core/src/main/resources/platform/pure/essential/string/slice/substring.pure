@@ -14,15 +14,47 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The portion of a string from `start` to its end.
+
+Positions are zero-based, so `start` is the number of characters to drop from the front. A `start`
+of `0` returns the whole string.
+
+**Parameters**
+- `str` — the string to take from.
+- `start` — zero-based index of the first character to keep.
+
+**Returns** the remainder of the string from `start` onwards.
+
+**Examples**
+```pure
+'the quick brown'->substring(0)   // 'the quick brown'
+'the quick brown'->substring(4)   // 'quick brown'
+```
+
+**See also** `substring(String[1], Integer[1], Integer[1]):String[1]`,
+`indexOf(String[1], String[1]):Integer[1]`, `length(String[1]):Integer[1]`
+'''
 native function
     <<PCT.function>>
-    {
-        doc.doc=''
-    }
     meta::pure::functions::string::substring(str:String[1], start:Integer[1]):String[1];
 
+'''
+The portion of a string between two positions: from `start` inclusive to `end` exclusive.
+
+Both indexes are zero-based, so the result has `end - start` characters, and passing `length()` as
+`end` is equivalent to `substring(String[1], Integer[1]):String[1]`.
+
+**Examples**
+```pure
+'the quick brown fox'->substring(4, 9)   // 'quick'
+```
+'''
 native function <<PCT.function>> meta::pure::functions::string::substring(str:String[1], start:Integer[1], end:Integer[1]):String[1];
 
+'''
+`start` counts characters dropped from the front, so 0 returns the whole string.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::substring::testStart<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let string = 'the quick brown fox jumps over the lazy dog';
@@ -33,6 +65,9 @@ function <<PCT.test>> meta::pure::functions::string::tests::substring::testStart
     assertEquals('quick brown fox jumps over the lazy dog', $f->eval(|substring($string, 4)));
 }
 
+'''
+`end` is exclusive, so the slice spans `end - start` characters.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::substring::testStartEnd<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let string = 'the quick brown fox jumps over the lazy dog';

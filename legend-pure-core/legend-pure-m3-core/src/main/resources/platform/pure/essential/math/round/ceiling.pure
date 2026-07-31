@@ -14,6 +14,30 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The smallest integer not less than a number — rounding toward positive infinity.
+
+Unconditional, unlike `round(Number[1]):Integer[1]`: any fractional part at all moves the result up, so
+`17.01` gives `18`. For negatives, "up" means toward zero, so `-17.9` gives `-17`.
+
+An integer input is returned unchanged.
+
+**Parameters**
+- `number` — the value to round up.
+
+**Returns** the smallest integer that is not less than `number`.
+
+**Examples**
+```pure
+ceiling(17.01)   // 18
+ceiling(17.5)    // 18
+ceiling(17.9)    // 18
+ceiling(17)      // 17
+ceiling(-17)     // -17
+```
+
+**See also** `floor(Number[1]):Integer[1]`, `round(Number[1]):Integer[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::ceiling(number:Number[1]):Integer[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::ceiling::testPositiveIntegerCeiling<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

@@ -15,11 +15,38 @@
 import meta::pure::test::pct::*;
 
 // Used by Pair
+'''
+Builds a string by substituting values into a format template.
+
+Each specifier in `format` consumes the next value from `args`, in order.
+
+**Specifiers**
+- `%s` — the value as a string.
+- `%d` — an integer; width and zero-padding may be given, as in `%05d`.
+- `%f` — a floating-point number; precision may be given, as in `%.2f`.
+- `%r` — the value's Pure representation, quoting strings as they would be written in source.
+- `%t` — a date. A pattern may follow in braces, as in `%t{yyyy-MM-dd}`, optionally opening with a
+  timezone, as in `%t{[CET]yyyy-MM-dd HH:mm:ss.SSSZ}`.
+
+**Parameters**
+- `format` — the template.
+- `args` — the values to substitute, in the order their specifiers appear.
+
+**Returns** the formatted string.
+
+**Examples**
+```pure
+format('Hello %s %s', ['John', 'Roe'])                  // 'Hello John Roe'
+format('%s scored %.2f', ['Pierre', 3.14159])           // 'Pierre scored 3.14'
+format('%s has %05d points', ['Pierre', 42])            // 'Pierre has 00042 points'
+format('on %t{yyyy-MM-dd}', %2014-02-27T10:01:35.231)   // 'on 2014-02-27'
+```
+
+**See also** `meta::pure::functions::string::toString(Any[1]):String[1]`,
+`joinStrings(String[*], String[1]):String[1]`
+'''
 native function
     <<PCT.function>>
-    {
-        doc.doc=''
-    }
     meta::pure::functions::string::format(format:String[1], args:Any[*]):String[1];
 
 function <<PCT.test>> meta::pure::functions::string::tests::format::testFormatString<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

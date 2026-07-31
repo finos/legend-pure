@@ -14,6 +14,29 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The month of a date, as a number from 1 to 12.
+
+Pure dates carry **variable granularity** — `%2015`, `%2015-04`, `%2015-04-15`, `%2015-04-15T17` and
+so on are all valid `Date` values, each knowing only as much as was written. A date with no month — a bare `%2015` — has no month to return, so **this fails rather than
+returning empty**. Guard with `hasMonth(Date[1]):Boolean[1]` when the granularity is not known.
+
+January is `1`, not `0`.
+
+**Parameters**
+- `d` — the date to read.
+
+**Returns** the month, 1 through 12.
+
+**Examples**
+```pure
+%2015-04->monthNumber()                    // 4
+%2015-04-15T17:09:21.398->monthNumber()    // 4
+```
+
+**See also** `hasMonth(Date[1]):Boolean[1]`, `year(Date[1]):Integer[1]`,
+`dayOfMonth(Date[1]):Integer[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::date::monthNumber(d:Date[1]):Integer[1];
 
 function <<PCT.test>> meta::pure::functions::date::tests::testMonthNumber<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

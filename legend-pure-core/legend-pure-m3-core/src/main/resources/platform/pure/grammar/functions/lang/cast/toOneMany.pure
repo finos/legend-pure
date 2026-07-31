@@ -23,6 +23,13 @@ native function
     }
     meta::pure::functions::multiplicity::toOneMany<T>(values:T[*]):T[1..*];
 
+'''
+Asserts a collection is non-empty and returns it, failing with a given message otherwise.
+
+As `meta::pure::functions::multiplicity::toOneMany(T[*]):T[1..*]`, but you supply the error message. The
+result is `[1..*]`, so it narrows "possibly empty" to "at least one" without collapsing to a single value
+the way `toOne` does.
+'''
 native function <<PCT.function>> meta::pure::functions::multiplicity::toOneMany<T>(values:T[*], message: String[1]):T[1..*];
 
 function <<test.Test>> meta::pure::functions::multiplicity::tests::toOneMany::testToOneManyMultiplicity():Boolean[1]

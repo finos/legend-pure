@@ -15,6 +15,30 @@
 import meta::pure::test::pct::*;
 import meta::pure::functions::asserts::*;
 
+'''
+The arc cosine of a value — the angle whose cosine it is.
+
+The inverse of `cos(Number[1]):Float[1]`. The input must be between -1 and 1. The result is an angle **in
+radians**, in the range 0 to π — note this differs from `asin(Number[1]):Float[1]`, which is centred on
+zero.
+
+The result is always a `Float` and carries floating-point representation error, so compare with a
+tolerance rather than exact equality.
+
+**Parameters**
+- `number` — a value between -1 and 1.
+
+**Returns** the angle in radians, between 0 and π.
+
+**Examples**
+```pure
+acos(0)     // 1.570796326794   -- π/2
+acos(-1)    // 3.141592653589   -- π
+acos(0.5)   // 1.047197551196
+```
+
+**See also** `cos(Number[1]):Float[1]`, `asin(Number[1]):Float[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::acos(number:Number[1]):Float[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testArcCosine<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

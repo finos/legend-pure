@@ -15,6 +15,33 @@
 import meta::pure::test::pct::*;
 import meta::pure::functions::asserts::*;
 
+'''
+Raises a number to a power.
+
+**The result is floating point even when both arguments are integers** — `pow(2, 2)` is `4.0`, not `4`.
+The declared return type is `Number`, so if you need an `Integer` you must round or cast; comparing the
+result directly against an integer literal will not match.
+
+Because the computation goes through floating point, results are subject to the usual representation
+error: comparisons on non-trivial exponents should use a tolerance rather than exact equality.
+
+**Parameters**
+- `base` — the number to raise.
+- `exponent` — the power to raise it to.
+
+**Returns** `base` raised to `exponent`, as a floating-point number.
+
+**Examples**
+```pure
+pow(2, 2)         // 4.0   -- not 4
+2->pow(2)         // 4.0
+2->pow(2)->pow(2) // 16.0
+4.0->pow(2.0)     // 16.0
+```
+
+**See also** `sqrt(Number[1]):Float[1]`, `cbrt(Number[1]):Float[1]`,
+`exp(Number[1]):Float[1]`, `round(Number[1]):Integer[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::pow(base:Number[1], exponent:Number[1]):Number[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::pow::testSimplePow<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

@@ -14,6 +14,27 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The hour component of a date.
+
+Pure dates carry **variable granularity** — `%2015`, `%2015-04`, `%2015-04-15`, `%2015-04-15T17` and
+so on are all valid `Date` values, each knowing only as much as was written. A date that carries no time — or a time less precise than the hour — **fails rather than
+returning empty**, with an error such as `Cannot get hour for 2017`. Guard with `hasHour(Date[1]):Boolean[1]`
+when the granularity is not known.
+
+**Parameters**
+- `d` — the date to read.
+
+**Returns** its hour.
+
+**Examples**
+```pure
+%2015-04-15T17:09:21.398->hour()
+%2017->hour()   // fails: Cannot get hour for 2017
+```
+
+**See also** `hasHour(Date[1]):Boolean[1]`, `datePart(Date[1]):Date[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::date::hour(d:Date[1]):Integer[1];
 
 function <<PCT.test>> meta::pure::functions::date::tests::testHour<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
@@ -26,5 +47,5 @@ function <<PCT.test>> meta::pure::functions::date::tests::testHour<Z|y>(f:Functi
 
 function <<PCT.test>> meta::pure::functions::date::tests::testHourError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertError(| $f->eval(|%2017->hour()), 'Cannot get hour for 2017', 29, 36);
+    assertError(| $f->eval(|%2017->hour()), 'Cannot get hour for 2017', 50, 36);
 }

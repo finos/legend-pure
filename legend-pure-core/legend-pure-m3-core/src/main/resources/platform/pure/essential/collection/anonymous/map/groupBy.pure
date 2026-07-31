@@ -15,6 +15,29 @@
 import meta::pure::test::pct::*;
 import meta::pure::functions::collection::tests::model::*;
 
+'''
+Groups a collection into a map, keyed by a value derived from each element.
+
+Every element is placed in the bucket for its key, so no element is discarded and the buckets
+partition the input. The values are `List` objects rather than bare collections, because a map
+cannot hold a collection per key directly — reach the elements through `.values`.
+
+**Parameters**
+- `set` — the collection to group.
+- `f` — derives the grouping key for each element.
+
+**Returns** a map from key to the `List` of elements having that key.
+
+**Examples**
+```pure
+$people->groupBy(p | $p.lastName)                  // {'Smith' -> List(…), 'Doe' -> List(…)}
+$people->groupBy(p | $p.lastName)->get('Smith').values
+```
+
+**See also** `newMap(Pair<U, V>[*]):Map<U, V>[1]`,
+`removeDuplicatesBy(T[*], Function<{T[1]->Any[1]}>[1]):T[*]`,
+`list(U[*]):List<U>[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::groupBy<X,K>(set:X[*], f:Function<{X[1]->K[1]}>[1]):Map<K,List<X>>[1];
 //{
 //   $set->fold({value,map|let key = $f->eval($value);

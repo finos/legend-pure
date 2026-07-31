@@ -14,6 +14,29 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Pairs up two collections element by element.
+
+The result is as long as the *shorter* input — surplus elements of the longer one are discarded, so
+zipping against an empty collection gives an empty result. The two collections may hold different
+types.
+
+**Parameters**
+- `set1` — supplies the first element of each pair.
+- `set2` — supplies the second.
+
+**Returns** the pairs, in order.
+
+**Examples**
+```pure
+[1, 2, 3]->zip(['a', 'b', 'c'])   // [^Pair(1,'a'), ^Pair(2,'b'), ^Pair(3,'c')]
+[1, 2, 3]->zip(['a'])             // [^Pair(1,'a')]  -- truncated to the shorter
+[]->zip(['a', 'b'])               // []
+```
+
+**See also** `pair(U[1], V[1]):Pair<U, V>[1]`,
+`meta::pure::functions::collection::keyValues(Map<U, V>[1]):Pair<U, V>[*]`
+'''
 native function <<PCT.function>> meta::pure::functions::collection::zip<T,U>(set1:T[*], set2:U[*]):Pair<T,U>[*];
 
 function <<PCT.test>> meta::pure::functions::collection::tests::zip::testZipBothListsEmpty<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

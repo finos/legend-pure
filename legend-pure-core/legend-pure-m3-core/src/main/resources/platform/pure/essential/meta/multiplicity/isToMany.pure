@@ -14,6 +14,33 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Whether a multiplicity can hold more than one value.
+
+True when the multiplicity is unbounded above, or bounded at more than one. This is the usual test for
+"is this a collection?" when reflecting over a property — a `[*]` or `[1..*]` property needs collection
+handling, while `[0..1]` and `[1]` do not.
+
+Not the negation of `isToOne(Multiplicity[1]):Boolean[1]`: `[0..1]` is neither to-one nor to-many.
+
+**Parameters**
+- `m` — the multiplicity to inspect.
+
+**Returns** `true` when more than one value is permitted.
+
+**Examples**
+```pure
+ZeroMany->isToMany()   // true  -- [*]
+OneMany->isToMany()    // true  -- [1..*]
+PureOne->isToMany()    // false
+ZeroOne->isToMany()    // false
+PureZero->isToMany()   // false
+```
+
+**See also** `isToOne(Multiplicity[1]):Boolean[1]`,
+`hasUpperBound(Multiplicity[1]):Boolean[1]`,
+`getUpperBound(Multiplicity[1]):Integer[1]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::isToMany(m:Multiplicity[1]):Boolean[1]
 {
    !$m->hasUpperBound() || ($m->getUpperBound() > 1);

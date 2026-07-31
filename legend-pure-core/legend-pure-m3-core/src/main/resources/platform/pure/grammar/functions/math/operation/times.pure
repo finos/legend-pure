@@ -23,10 +23,28 @@ native function
     }
     meta::pure::functions::math::times(ints:Integer[*]):Integer[1];
 
+'''
+Multiplying every element of a `Float` collection, returning a `Float`.
+
+The `*` operator desugars to this: `$a * $b` is `times([$a, $b])`, which is why the parameter is a
+collection rather than two values. The result keeps the `Float` type.
+'''
 native function <<PCT.function>> meta::pure::functions::math::times(ints:Float[*]):Float[1];
 
+'''
+Multiplying every element of a `Decimal` collection, left to right, returning a `Decimal`.
+
+The `*` operator desugars to this: `$a * $b` is `times([$a, $b])`, which is why the parameter is a
+collection rather than two values. The result keeps the `Decimal` type.
+'''
 native function <<PCT.function>> meta::pure::functions::math::times(decimal:Decimal[*]):Decimal[1];
 
+'''
+Multiplying every element of a `Number` collection, left to right, returning a `Number`.
+
+The `*` operator desugars to this: `$a * $b` is `times([$a, $b])`, which is why the parameter is a
+collection rather than two values. The result keeps the `Number` type.
+'''
 native function <<PCT.function>> meta::pure::functions::math::times(numbers:Number[*]):Number[1];
 
 

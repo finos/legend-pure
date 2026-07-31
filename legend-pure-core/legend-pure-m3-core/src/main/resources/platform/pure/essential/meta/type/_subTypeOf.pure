@@ -15,6 +15,29 @@
 import meta::pure::functions::meta::tests::subTypeOf::*;
 import meta::pure::test::pct::*;
 
+'''
+Whether one type is the same as, or a subtype of, another — computed in Pure rather than natively.
+
+Behaves as `subTypeOf(Type[1], Type[1]):Boolean[1]`: reflexive, with `Nil` a subtype of everything. It
+reaches the answer by walking the generalisation chain, so prefer the native `subTypeOf` in ordinary
+code and use this where a Pure-level implementation is specifically wanted.
+
+**Parameters**
+- `subType` — the candidate subtype.
+- `superType` — the candidate supertype.
+
+**Returns** `true` when `subType` is `superType` or descends from it.
+
+**Examples**
+```pure
+Any->_subTypeOf(Any)       // true  -- reflexive
+Any->_subTypeOf(Nil)       // false
+Any->_subTypeOf(Integer)   // false
+```
+
+**See also** `subTypeOf(Type[1], Type[1]):Boolean[1]`,
+`generalizations(Type[1]):Type[1..*]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::_subTypeOf(subType:Type[1], superType:Type[1]):Boolean[1]
 {
     if($subType == Nil,|true, |$subType->getAllTypeGeneralisations()->contains($superType));  

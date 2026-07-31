@@ -15,6 +15,26 @@
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
+'''
+The simple name of an enumeration, without its package.
+
+Takes the enumeration itself, not one of its values, so it answers "what is this enum called" rather
+than "which value is this". The result is the bare name — use
+`elementToPath(Function<Any>[1]):String[1]` for the fully-qualified path.
+
+**Parameters**
+- `enum` — the enumeration to name.
+
+**Returns** its simple name.
+
+**Examples**
+```pure
+CC_GeographicEntityType->enumName()   // 'CC_GeographicEntityType'
+```
+
+**See also** `enumValues(Enumeration<T>[1]):T[*]`,
+`elementToPath(Function<Any>[1]):String[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::enumName<T>(enum:Enumeration<T>[1]):String[1];
 
 function <<test.Test>> meta::pure::functions::meta::tests::enumName::testEnumName():Boolean[1]

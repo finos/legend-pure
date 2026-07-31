@@ -14,18 +14,43 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Splits a string into a collection of pieces around each occurrence of a separator.
+
+The separator is matched literally, not as a regular expression, and is not itself included in the
+result. If the separator never occurs, the result is a single-element collection holding the
+original string — not an empty collection.
+
+**Parameters**
+- `str` — the string to split.
+- `token` — the literal separator to split on.
+
+**Returns** the pieces, in order.
+
+**Examples**
+```pure
+'Hello World'->split(' ')   // ['Hello', 'World']
+'Hello World'->split(';')   // ['Hello World']
+```
+
+**See also** `joinStrings(String[*], String[1]):String[1]`,
+`indexOf(String[1], String[1]):Integer[1]`
+'''
 native function
     <<PCT.function>>
-    {
-        doc.doc=''
-    }
     meta::pure::functions::string::split(str:String[1], token:String[1]):String[*];
 
+'''
+The separator is consumed and the surrounding pieces are returned.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::split::testSplit<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals(['Hello', 'World'], $f->eval(|'Hello World'->split(' ')));
 }
 
+'''
+A separator that never occurs yields the whole string as a single element.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::split::testSplitWithNoSplit<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals(['Hello World'], $f->eval(|'Hello World'->split(';')));

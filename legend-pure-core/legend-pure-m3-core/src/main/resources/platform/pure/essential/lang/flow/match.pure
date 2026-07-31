@@ -17,13 +17,59 @@ import meta::pure::functions::lang::tests::match::*;
 import meta::pure::functions::lang::tests::model::*;
 
 
+'''
+Dispatches on the runtime type of a value, choosing the first branch whose parameter type it fits.
+
+Each branch is a one-argument lambda whose parameter type declares what it handles, as in
+`s:String[1] | …`. Branches are tried **in declaration order**, so put more specific types before
+more general ones — a leading `a:Any[1]` branch would swallow everything after it.
+
+Prefer this to a chain of `instanceOf` tests and casts: the matched value arrives already typed, so
+its properties are directly reachable. Matching also dispatches on multiplicity, which is why a
+branch may be declared `[*]` or `[0..1]` to catch collection or empty cases.
+
+If no branch matches, execution fails; add a final `Any` branch to make the fallback explicit.
+
+**Parameters**
+- `var` — the value to dispatch on.
+- `functions` — the candidate branches, tried in order.
+
+**Returns** the value produced by the matching branch.
+
+**Examples**
+```pure
+$value->match([
+  s:String[1]  | 'string: ' + $s,
+  i:Integer[1] | 'int: ' + $i->toString(),
+  a:Any[1]     | 'something else'
+])
+```
+
+**See also** `match(Any[*], Function<{Nil[n], P[o]->T[m]}>[1..*], P[o]):T[m]`,
+`if(Boolean[1], Function<{->T[m]}>[1], Function<{->T[m]}>[1]):T[m]`,
+`cast(Any[m], T[1]):T[m]`,
+`meta::pure::functions::meta::instanceOf(Any[1], Type[1]):Boolean[1]`
+'''
 native function
     <<PCT.function>>
-    {
-        doc.doc=''
-    }
     meta::pure::functions::lang::match<T|m,n>(var:Any[*], functions:Function<{Nil[n]->T[m]}>[1..*]):T[m];
 
+'''
+As `match(Any[*], Function<{Nil[n]->T[m]}>[1..*]):T[m]`, but threads an extra value through to every
+branch.
+
+Each branch takes two parameters — the matched value and `with` — which lets the branches share
+context without capturing it from the enclosing scope. Useful when the branch bodies are defined
+elsewhere, or when the same set of branches is reused with different context.
+
+**Examples**
+```pure
+$value->match([
+  {s:String[1],  prefix:String[1] | $prefix + $s},
+  {i:Integer[1], prefix:String[1] | $prefix + $i->toString()}
+], 'value: ')
+```
+'''
 native function <<PCT.function>> meta::pure::functions::lang::match<T,P|m,n,o>(var:Any[*], functions:Function<{Nil[n],P[o]->T[m]}>[1..*], with:P[o]):T[m];
 
 

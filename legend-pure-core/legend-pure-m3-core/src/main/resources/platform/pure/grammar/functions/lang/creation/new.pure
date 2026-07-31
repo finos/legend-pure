@@ -16,6 +16,16 @@ import meta::pure::test::pct::*;
 import meta::pure::functions::lang::tests::model::*;
 import meta::pure::functions::lang::tests::new::*;
 
+'''
+Creates an instance of a class, giving it an identifier.
+
+The reflective form of `^Class(...)`, for when the class is chosen at runtime. The `id` names the instance
+so it can be referred to later — it is the identifier `meta::pure::functions::meta::id(Any[1]):String[1]`
+reports, not a property value.
+
+Properties are not set here; use the `KeyValue` form
+`meta::pure::functions::lang::dynamicNew(Class<Any>[1], KeyValue[*]):Any[1]` when you need to populate them.
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::new<T>(class:Class<T>[1], id:String[1]):T[1];
 native function
     <<PCT.function, PCT.platformOnly>>

@@ -14,8 +14,32 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Reads a floating-point number from its textual form.
+
+An explicit `+` or `-` sign is accepted, as are leading and trailing zeros. Use
+`parseDecimal(String[1]):Decimal[1]` instead when exact decimal arithmetic matters, such as for
+monetary amounts.
+
+**Parameters**
+- `string` — the text to read.
+
+**Returns** the float the text denotes.
+
+**Examples**
+```pure
+'3.14159'->parseFloat()               // 3.14159
+'+0000003.1415900000'->parseFloat()   // 3.14159
+'-000.000'->parseFloat()              // 0.0
+```
+
+**See also** `parseDecimal(String[1]):Decimal[1]`, `parseInteger(String[1]):Integer[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::string::parseFloat(string:String[1]):Float[1];
 
+'''
+Signs, leading zeros and trailing zeros are all accepted.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::parseFloat::testParseFloat<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEq(3.14159, $f->eval(|parseFloat('3.14159')));
@@ -23,6 +47,9 @@ function <<PCT.test>> meta::pure::functions::string::tests::parseFloat::testPars
     assertEq(-3.14159, $f->eval(|parseFloat('-0000003.1415900000')));
 }
 
+'''
+Zero parses to zero however it is written, including a signed all-zeros form.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::parseFloat::testParseZero<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEq(0.0, $f->eval(|parseFloat('0.0')));

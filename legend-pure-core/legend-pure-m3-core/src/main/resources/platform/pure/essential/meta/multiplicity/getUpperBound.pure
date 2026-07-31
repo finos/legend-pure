@@ -14,6 +14,31 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The maximum number of values a multiplicity permits.
+
+**Only meaningful when the multiplicity actually has an upper bound** — test with
+`hasUpperBound(Multiplicity[1]):Boolean[1]` first. For an unbounded multiplicity such as `ZeroMany` or
+`OneMany` there is no upper bound to report, so the result is not a usable count.
+
+**Parameters**
+- `multiplicity` — the multiplicity to inspect.
+
+**Returns** the upper bound, for a multiplicity that has one.
+
+**Examples**
+```pure
+PureZero->getUpperBound()   // 0
+ZeroOne->getUpperBound()    // 1
+PureOne->getUpperBound()    // 1
+
+if($m->hasUpperBound(), |$m->getUpperBound()->toString(), |'unbounded')
+```
+
+**See also** `hasUpperBound(Multiplicity[1]):Boolean[1]`,
+`getLowerBound(Multiplicity[1]):Integer[1]`,
+`isToMany(Multiplicity[1]):Boolean[1]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::getUpperBound(multiplicity:Multiplicity[1]):Integer[1]
 {
     $multiplicity.upperBound->toOne().value->toOne()

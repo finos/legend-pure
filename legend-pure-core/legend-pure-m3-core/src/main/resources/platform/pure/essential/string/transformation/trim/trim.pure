@@ -14,8 +14,30 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Removes whitespace from both ends of a string.
+
+Whitespace inside the string is left alone — only the leading and trailing runs are removed.
+
+**Parameters**
+- `str` — the string to trim.
+
+**Returns** the string without leading or trailing whitespace.
+
+**Examples**
+```pure
+'  hello  '->trim()   // 'hello'
+'  hello'->trim()     // 'hello'
+'a b'->trim()         // 'a b'
+```
+
+**See also** `ltrim(String[1]):String[1]`, `rtrim(String[1]):String[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::string::trim(str:String[1]):String[1];
 
+'''
+Whitespace is removed from both ends, whichever end actually has any.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::trim::testTrim<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals('A Simple Text To Trim', $f->eval(|' A Simple Text To Trim    '->trim()));

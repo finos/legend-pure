@@ -14,6 +14,33 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The tangent of an angle.
+
+**Angles are in radians, not degrees.** Convert with `$degrees * 3.141592653589793 / 180` if your
+input is in degrees.
+
+Unlike sine and cosine, tangent is unbounded: it grows without limit as the angle approaches an odd
+multiple of π/2, where it is mathematically undefined. Expect very large magnitudes near those points
+rather than a clean error.
+
+The result is always a `Float` and carries floating-point representation error, so compare with a
+tolerance rather than exact equality.
+
+**Parameters**
+- `number` — the angle, in radians.
+
+**Returns** its tangent.
+
+**Examples**
+```pure
+tan(0)   // 0.0
+tan(2)   // -2.185039863262
+```
+
+**See also** `cot(Number[1]):Float[1]`, `sin(Number[1]):Float[1]`,
+`atan(Number[1]):Float[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::tan(number:Number[1]):Float[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testTangent<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

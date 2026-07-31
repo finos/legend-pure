@@ -24,6 +24,21 @@ native function
     }
     meta::pure::functions::lang::extractEnumValue<T>(enum:Enumeration<T>[1], value:String[1]):T[1];
 
+'''
+Looks up an enumeration value by name.
+
+The way to turn a string — from parsing, configuration, or user input — into an enum value. **An empty
+input gives an empty result** rather than failing, which is why both the parameter and the return are
+`[0..1]`: the optionality passes straight through.
+
+**Parameters**
+- `enum` — the enumeration to search.
+- `value` — the value's name, or empty.
+
+**Returns** the matching enum value, or empty.
+
+**See also** `meta::pure::functions::meta::enumValues(Enumeration<T>[1]):T[*]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::extractEnumValue<T>(enum:Enumeration<T>[1], value:String[0..1]):T[0..1]
 {
     if ($value->isEmpty(), | [], | $enum->extractEnumValue($value->toOne()));

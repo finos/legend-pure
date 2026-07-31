@@ -14,8 +14,29 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Reads a boolean from its textual form.
+
+Matching is case-insensitive, so `'true'`, `'True'` and `'TRUE'` are all accepted.
+
+**Parameters**
+- `string` — the text to read.
+
+**Returns** the boolean the text denotes.
+
+**Examples**
+```pure
+'true'->parseBoolean()    // true
+'FALSE'->parseBoolean()   // false
+```
+
+**See also** `parseInteger(String[1]):Integer[1]`, `parseFloat(String[1]):Float[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::string::parseBoolean(string:String[1]):Boolean[1];
 
+'''
+Every capitalisation of 'true' parses to true.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::parseBoolean::testParseTrue<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assert($f->eval(|parseBoolean('true')));
@@ -26,6 +47,9 @@ function <<PCT.test>> meta::pure::functions::string::tests::parseBoolean::testPa
     assert($f->eval(|parseBoolean('TRUE')));
 }
 
+'''
+Every capitalisation of 'false' parses to false.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::parseBoolean::testParseFalse<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertFalse($f->eval(|parseBoolean('false')));

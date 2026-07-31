@@ -15,6 +15,31 @@
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
+'''
+The fully-qualified path of a model element, as a string.
+
+For a packageable element — a class, enumeration, function, profile — this is the `::`-separated path
+that identifies it, such as `meta::pure::functions::meta::type`. For a property or a relation column,
+which live inside a class rather than in a package, it is the bare member name.
+
+The inverse of `pathToElement(String[1]):PackageableElement[1]`, so the two together let an element be
+written out as text and looked up again.
+
+**Parameters**
+- `element` — the element to name.
+
+**Returns** its `::`-separated path, or its name for a property or column.
+
+**Examples**
+```pure
+CC_Person->elementToPath()   // 'meta::pure::functions::meta::tests::model::CC_Person'
+$someProperty->elementToPath()   // 'firstName'
+```
+
+**See also** `pathToElement(String[1]):PackageableElement[1]`,
+`id(Any[1]):String[1]`,
+`enumName(Enumeration<T>[1]):String[1]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::elementToPath(element:Function<Any>[1]):String[1]
 {
     $element->match(

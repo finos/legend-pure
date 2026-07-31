@@ -21,11 +21,74 @@ Class meta::pure::functions::lang::KeyValue
     value : Any[*];
 }
 
+'''
+Creates an instance of a class chosen at runtime, with its properties supplied as name/value pairs.
+
+The reflective counterpart of the `^Class(prop=…)` literal. Use it when the class or the set of
+properties is not known when the code is written — generic deserialization, data-driven construction,
+tooling. Prefer `^Class(…)` whenever the shape *is* known, since that form is type-checked at compile
+time while this one is not.
+
+Properties are given as `KeyValue` objects pairing a property name with its value, so a property that
+holds a collection simply takes a collection as its `value`. Names not matching a property of the
+class, or values of the wrong type, fail at runtime.
+
+The result is typed `Any[1]`, so callers normally `cast` it to the expected class.
+
+**Parameters**
+- `class` — the class to instantiate.
+- `keyExpressions` — the property values, as name/value pairs.
+
+**Returns** the new instance, as `Any[1]`.
+
+**Examples**
+```pure
+dynamicNew(D_A, [^KeyValue(key='a', value='hello')])->cast(@D_A).a   // 'hello'
+```
+
+**See also** `dynamicNew(GenericType[1], KeyValue[*]):Any[1]`,
+`cast(Any[m], T[1]):T[m]`,
+`meta::pure::functions::meta::newUnit(Unit[1], Number[1]):Any[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::dynamicNew(class:Class<Any>[1], keyExpressions:KeyValue[*]):Any[1];
+
+'''
+As `dynamicNew(Class<Any>[1], KeyValue[*]):Any[1]`, but takes a `GenericType` so that type arguments
+can be supplied.
+
+Use this for a generic class, where naming the class alone would leave its parameters unbound.
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::dynamicNew(genericType:GenericType[1], keyExpressions:KeyValue[*]):Any[1];
+'''
+As `dynamicNew(Class<Any>[1], KeyValue[*]):Any[1]`, but the instance intercepts property reads and
+manages its own constraints.
+
+The two getter-override functions are called instead of reading stored state — one for `[0..1]`
+properties, one for `[*]` — which is how lazily-loaded or computed instances are built. `hiddenPayload`
+carries arbitrary state for those overrides to consult without being a property of the class, and
+`constraintsManager` replaces the default constraint checking. Every override is `[0..1]`, so pass `[]`
+for any you do not need.
+
+`rawEvalProperty(Property<Nil, V|m>[1], Any[1]):V[m]` reads past these overrides when the stored value
+is what you want.
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::dynamicNew(class:Class<Any>[1], keyExpressions:KeyValue[*], getterOverrideToOne:Function<{Any[1],Property<Nil,Any|0..1>[1]->Any[0..1]}>[0..1], getterOverrideToMany : Function<{Any[1],Property<Nil,Any|*>[1]->Any[*]}>[0..1], hiddenPayload:Any[0..1],constraintsManager:Function<{Any[1]->Any[1]}>[0..1]):Any[1];
+
+'''
+As `dynamicNew(Class<Any>[1], KeyValue[*], Function<{Any[1], Property<Nil, Any|0..1>[1]->Any[0..1]}>[0..1], Function<{Any[1], Property<Nil, Any|*>[1]->Any[*]}>[0..1], Any[0..1], Function<{Any[1]->Any[1]}>[0..1]):Any[1]`,
+but takes a `GenericType` so type arguments can be supplied.
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::dynamicNew(genericType:GenericType[1], keyExpressions:KeyValue[*], getterOverrideToOne:Function<{Any[1],Property<Nil,Any|0..1>[1]->Any[0..1]}>[0..1], getterOverrideToMany : Function<{Any[1],Property<Nil,Any|*>[1]->Any[*]}>[0..1], hiddenPayload:Any[0..1],constraintsManager:Function<{Any[1]->Any[1]}>[0..1]):Any[1];
+
+'''
+As the six-argument form, but leaves constraint checking at its default — supply the getter overrides
+and `hiddenPayload` only.
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::dynamicNew(class:Class<Any>[1], keyExpressions:KeyValue[*], getterOverrideToOne:Function<{Any[1],Property<Nil,Any|0..1>[1]->Any[0..1]}>[0..1], getterOverrideToMany : Function<{Any[1],Property<Nil,Any|*>[1]->Any[*]}>[0..1], hiddenPayload:Any[0..1]):Any[1];
+
+'''
+As the five-argument `Class` form, but takes a `GenericType` so type arguments can be supplied.
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::dynamicNew(genericType:GenericType[1], keyExpressions:KeyValue[*], getterOverrideToOne:Function<{Any[1],Property<Nil,Any|0..1>[1]->Any[0..1]}>[0..1], getterOverrideToMany : Function<{Any[1],Property<Nil,Any|*>[1]->Any[*]}>[0..1], hiddenPayload:Any[0..1]):Any[1];
 
 

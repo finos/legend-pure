@@ -15,6 +15,30 @@
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
+'''
+The `Class` underlying a generic type, for generic types that have one.
+
+Takes the `GenericType` rather than the value, so it composes after
+`genericType(Any[*]):GenericType[1]` when you already hold one. **A generic type whose raw type is a
+primitive yields an empty result** despite the `[1]` in the signature.
+
+`class(T[*]):Class<T>[1]` is the shorthand for going straight from a value to its class.
+
+**Parameters**
+- `g` — the generic type to unwrap.
+
+**Returns** its class, or empty when the raw type is not a class.
+
+**Examples**
+```pure
+^CC_Person(firstName='Pierre', lastName='Doe')->genericType()->genericTypeClass()   // CC_Person
+1->genericType()->genericTypeClass()                                               // empty
+```
+
+**See also** `class(T[*]):Class<T>[1]`,
+`genericType(Any[*]):GenericType[1]`,
+`properties(GenericType[1]):Property<Nil, Any|*>[*]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::genericTypeClass(g:GenericType[1]):Class<Any>[1];
 
 function <<test.Test>> meta::pure::functions::meta::tests::genericTypeClass::testGenericTypeClassPrimitive():Boolean[1]

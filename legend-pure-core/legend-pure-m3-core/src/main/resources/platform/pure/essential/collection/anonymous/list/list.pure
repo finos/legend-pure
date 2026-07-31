@@ -14,6 +14,27 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Wraps a collection in a `List` object.
+
+Pure collections are values with a multiplicity, not objects; a `List` is a single object holding
+them. Wrapping is what lets you build a collection *of* collections — a `List<X>[*]` — which a bare
+`X[*]` cannot express because collections do not nest.
+
+**Parameters**
+- `vals` — the values to wrap.
+
+**Returns** a `List` whose `values` are `vals`.
+
+**Examples**
+```pure
+list([1, 2, 3])          // ^List(values=[1, 2, 3])
+list([1, 2, 3]).values   // [1, 2, 3]
+```
+
+**See also** `meta::pure::functions::collection::groupBy(X[*], Function<{X[1]->K[1]}>[1]):Map<K, List<X>>[1]`,
+`pair(U[1], V[1]):Pair<U, V>[1]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::list<U>(vals:U[*]):List<U>[1]
 {
    ^List<U>(values = $vals);

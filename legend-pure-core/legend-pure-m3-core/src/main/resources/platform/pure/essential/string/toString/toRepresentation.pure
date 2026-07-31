@@ -15,6 +15,28 @@
 import meta::pure::functions::string::tests::toRepresentation::*;
 import meta::pure::test::pct::*;
 
+'''
+The Pure source representation of a value — the form you would write to produce it.
+
+This differs from `toString(Any[1]):String[1]`, which gives the plain human-readable rendering.
+Here strings are quoted and escaped, dates and times carry their `%` prefix, and decimals their `D`
+suffix, so the result can be read back as Pure. A value with no literal syntax is rendered as
+`<id instanceOf Type>`.
+
+**Parameters**
+- `any` — the value to represent.
+
+**Returns** the value as it would appear in Pure source.
+
+**Examples**
+```pure
+1->toRepresentation()        // 1
+true->toRepresentation()     // true
+'abc'->toRepresentation()    // 'abc'   -- includes the quote characters, unlike toString
+```
+
+**See also** `meta::pure::functions::string::toString(Any[1]):String[1]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::string::toRepresentation(any:Any[1]):String[1]
 {
     $any->match([

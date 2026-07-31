@@ -15,6 +15,30 @@
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
+'''
+Looks up a model element by its fully-qualified path.
+
+The inverse of `elementToPath(Function<Any>[1]):String[1]`, and the way to reach an element named at
+runtime — from configuration, user input, or generated code — rather than written as a literal.
+
+The path is `::`-separated. **A path that resolves to nothing is an error, not an empty result**, since
+the return multiplicity is `[1]`; use `lenientPathToElement` in the same package when a missing element
+should yield empty instead.
+
+**Parameters**
+- `path` — the `::`-separated path to resolve.
+
+**Returns** the element at that path.
+
+**Examples**
+```pure
+'meta::pure::functions::meta::tests::model::CC_Person'->pathToElement()
+$className->pathToElement()->cast(@Class<Any>)
+```
+
+**See also** `elementToPath(Function<Any>[1]):String[1]`,
+`meta::pure::functions::lang::cast(Any[m], T[1]):T[m]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::pathToElement(path:String[1]):PackageableElement[1]
 {
     $path->pathToElement('::')

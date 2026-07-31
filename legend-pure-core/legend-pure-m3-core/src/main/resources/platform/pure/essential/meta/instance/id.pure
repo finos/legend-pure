@@ -15,6 +15,32 @@
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
+'''
+The identifier of a value: its simple name for a model element, or its literal form for a primitive.
+
+For a packageable element this is the last segment of its path — `CC_Person`, not the full path, which is
+what `elementToPath(Function<Any>[1]):String[1]` gives. For a primitive it is the value written out, so a
+date becomes `'2017-01-01'` and the integer `1` becomes `'1'`.
+
+Because a string's identifier is the string itself, `'CC_Person'->id()` is `'CC_Person'` — the same result
+as for the class of that name. Do not use `id` alone to decide whether something is an element.
+
+**Parameters**
+- `instance` — the value to identify.
+
+**Returns** its identifier.
+
+**Examples**
+```pure
+CC_Person->id()        // 'CC_Person'  -- simple name, not the full path
+%2017-01-01->id()      // '2017-01-01'
+1->id()                // '1'
+```
+
+**See also** `elementToPath(Function<Any>[1]):String[1]`,
+`meta::pure::functions::string::toString(Any[1]):String[1]`,
+`meta::pure::functions::string::toRepresentation(Any[1]):String[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::id(instance:Any[1]):String[1];
 
 function <<test.Test>> meta::pure::functions::meta::tests::id::testId():Boolean[1]
