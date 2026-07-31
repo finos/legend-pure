@@ -409,6 +409,18 @@ Class meta::relational::metamodel::datatype::Integer extends meta::relational::m
 {
 }
 
+Class meta::relational::metamodel::datatype::UnsignedBigInt extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+Class meta::relational::metamodel::datatype::UnsignedInt extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+Class meta::relational::metamodel::datatype::UnsignedTinyInt extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
 Class meta::relational::metamodel::datatype::Float extends meta::relational::metamodel::datatype::CoreDataType
 {
 }
