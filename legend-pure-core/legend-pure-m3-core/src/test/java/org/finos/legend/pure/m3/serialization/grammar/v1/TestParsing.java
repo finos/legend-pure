@@ -52,7 +52,8 @@ public class TestParsing extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "   'aa';\n" +
                         "} helloeoe"));
-        assertPureException(PureParserException.class, "expected: one of {<EOF>, '^', 'native', 'function', 'Primitive', 'Class', 'Association', 'Profile', 'Enum', 'Measure'} found: 'helloeoe'", "fromString.pure", 4, 3, e);
+        // MULTILINE_STRING is in the expected set because a declaration may open with documentation.
+        assertPureException(PureParserException.class, "expected: one of {<EOF>, '^', MULTILINE_STRING, 'native', 'function', 'Primitive', 'Class', 'Association', 'Profile', 'Enum', 'Measure'} found: 'helloeoe'", "fromString.pure", 4, 3, e);
     }
 
     @Test

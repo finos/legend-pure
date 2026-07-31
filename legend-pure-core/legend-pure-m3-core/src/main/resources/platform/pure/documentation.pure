@@ -18,4 +18,47 @@ Profile meta::pure::profiles::doc
     tags: [doc, todo];
 }
 
+// A documentation literal is sugar for the doc tag of the profile above. TestDocumentation pins
+// that at parse time; the tests below are what pin it at run time, on both execution engines,
+// where the tagged value has been through metadata serialization rather than read straight off
+// the AST.
+
+'''
+Documented with a documentation literal.
+'''
+Class meta::pure::functions::meta::tests::documentation::CC_Documented
+{
+}
+
+Class {meta::pure::profiles::doc.doc = 'Documented with a documentation literal.'} meta::pure::functions::meta::tests::documentation::CC_DocumentedWithTaggedValue
+{
+}
+
+'''
+Documented across several lines.
+
+Indentation is stripped; the blank line above is kept.
+'''
+Class meta::pure::functions::meta::tests::documentation::CC_DocumentedAcrossLines
+{
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::documentation::testDocumentationIsSugarForTheDocTag():Boolean[1]
+{
+    let sugared = meta::pure::functions::meta::tests::documentation::CC_Documented.taggedValues->toOne();
+    let explicit = meta::pure::functions::meta::tests::documentation::CC_DocumentedWithTaggedValue.taggedValues->toOne();
+
+    assertEquals('doc', $sugared.tag.value);
+    assertIs(meta::pure::profiles::doc, $sugared.tag.profile);
+    assertIs($explicit.tag, $sugared.tag);
+    assertEquals($explicit.value, $sugared.value);
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::documentation::testMultiLineDocumentationIsCanonicalized():Boolean[1]
+{
+    let documented = meta::pure::functions::meta::tests::documentation::CC_DocumentedAcrossLines.taggedValues->toOne();
+
+    assertEquals('Documented across several lines.\n\nIndentation is stripped; the blank line above is kept.', $documented.value);
+}
+
 

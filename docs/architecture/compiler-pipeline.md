@@ -51,6 +51,14 @@ DSL extensions register additional inline parsers via `ParserLibrary` and
 mapping blocks, relational schemas) is handed off to the appropriate
 ANTLR4 grammar mid-parse.
 
+Whitespace and comments are discarded by the lexer (`-> skip`), so they never
+reach the parser. **Documentation is not a comment:** a `'''…'''` literal leading
+a declaration matches the `documentation` parser rule, and
+`AntlrContextToM3CoreInstance` turns it into an ordinary
+`meta::pure::profiles::doc` `doc` tagged value. Nothing downstream of parse knows
+documentation exists — see
+[Documentation](../reference/pure-language-reference.md#documentation).
+
 **Output:** An initial, unlinked `CoreInstance` graph. Names are recorded but
 type references are not yet resolved to their target `CoreInstance` nodes.
 

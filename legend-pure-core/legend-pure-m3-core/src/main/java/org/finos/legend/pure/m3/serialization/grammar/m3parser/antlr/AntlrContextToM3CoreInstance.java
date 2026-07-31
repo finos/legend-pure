@@ -155,6 +155,7 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.De
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DefaultValueExpressionContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DefinitionContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DerivedPropertyContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DocumentationContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DslContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EnumDefinitionContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EnumValueContext;
@@ -239,6 +240,8 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.grammar.DocumentationCanonicalizer;
+import org.finos.legend.pure.m4.serialization.grammar.MultilineTextLayout;
 import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
@@ -2066,7 +2069,7 @@ public class AntlrContextToM3CoreInstance
         {
             enumValue.setKeyValues(M3PropertyPaths.stereotypes, stereotypes);
         }
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
         if (taggedValues.notEmpty())
         {
             enumValue.setKeyValues(M3PropertyPaths.taggedValues, taggedValues);
@@ -2089,7 +2092,7 @@ public class AntlrContextToM3CoreInstance
                 ._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Enumeration))
                 ._typeArguments(Lists.immutable.with(GenericTypeInstance.createPersistent(this.repository, sourceInfo)._rawType(enumeration))));
 
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
         if (taggedValues.notEmpty())
         {
             enumeration._taggedValues(taggedValues);
@@ -2127,7 +2130,7 @@ public class AntlrContextToM3CoreInstance
         {
             measure._stereotypesCoreInstance(stereotypes);
         }
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
         if (taggedValues.notEmpty())
         {
             measure._taggedValues(taggedValues);
@@ -2247,7 +2250,7 @@ public class AntlrContextToM3CoreInstance
         {
             primitiveType._stereotypesCoreInstance(stereotypes);
         }
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
         if (taggedValues.notEmpty())
         {
             primitiveType._taggedValues(taggedValues);
@@ -2278,7 +2281,7 @@ public class AntlrContextToM3CoreInstance
         }
 
         ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? Lists.immutable.empty() : stereotypes(ctx.stereotypes(), importId);
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
         if (ctx.projection() != null)
         {
             return projectionParser(ctx, importId, addLines, stereotypes, taggedValues);
@@ -2645,12 +2648,12 @@ public class AntlrContextToM3CoreInstance
 
         String associationName = ctx.qualifiedName().identifier().getText();
         ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? Lists.immutable.empty() : stereotypes(ctx.stereotypes(), importId);
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
 
         if (ctx.associationProjection() != null)
         {
             AssociationProjectionContext apCtx = ctx.associationProjection();
-            AssociationProjection projection = AssociationProjectionInstance.createPersistent(this.repository, associationName, this.sourceInformation.getPureSourceInformation(ctx.ASSOCIATION().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.associationProjection().getStop()), null)
+            AssociationProjection projection = AssociationProjectionInstance.createPersistent(this.repository, associationName, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.associationProjection().getStop()), null)
                     ._name(associationName);
             buildAndSetPackage(projection, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
 
@@ -2671,7 +2674,7 @@ public class AntlrContextToM3CoreInstance
             return projection;
         }
 
-        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.ASSOCIATION().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.getStop());
+        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop());
         Association association = AssociationInstance.createPersistent(this.repository, associationName, sourceInfo)
                 ._name(associationName);
         buildAndSetPackage(association, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
@@ -2751,9 +2754,9 @@ public class AntlrContextToM3CoreInstance
             ListIterable<CoreInstance> stereotypes = this.stereotypes(ctx.stereotypes(), importId);
             propertyInstance._stereotypesCoreInstance(stereotypes);
         }
-        if (ctx.taggedValues() != null)
+        ListIterable<TaggedValue> tags = taggedValues(ctx, ctx.taggedValues(), importId);
+        if (tags.notEmpty())
         {
-            ListIterable<TaggedValue> tags = taggedValues(ctx.taggedValues(), importId);
             propertyInstance._taggedValues(tags);
         }
         if (ctx.defaultValue() != null)
@@ -2895,7 +2898,7 @@ public class AntlrContextToM3CoreInstance
         {
             qpi._stereotypesCoreInstance(stereotypes);
         }
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
         if (taggedValues.notEmpty())
         {
             qpi._taggedValues(taggedValues);
@@ -2923,7 +2926,7 @@ public class AntlrContextToM3CoreInstance
     private CoreInstance nativeFunction(NativeFunctionContext ctx, ImportGroup importId, String space, MutableList<CoreInstance> coreInstancesResult)
     {
         this.functionCounter++;
-        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.NATIVE().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.END_LINE().getSymbol());
+        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.END_LINE().getSymbol());
         NativeFunction<?> function = NativeFunctionInstance.createPersistent(this.repository, ctx.qualifiedName().identifier().getText() + this.functionCounter, sourceInfo)
                 ._functionName(ctx.qualifiedName().identifier().getText());
         buildAndSetPackage(function, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
@@ -2940,7 +2943,7 @@ public class AntlrContextToM3CoreInstance
         {
             function._stereotypesCoreInstance(stereotypes);
         }
-        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> taggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
         if (taggedValues.notEmpty())
         {
             function._taggedValues(taggedValues);
@@ -2957,10 +2960,10 @@ public class AntlrContextToM3CoreInstance
     public CoreInstance concreteFunctionDefinition(FunctionDefinitionContext ctx, ImportGroup importId, boolean addLines, String space, MutableList<CoreInstance> coreInstancesResult)
     {
         this.functionCounter++;
-        ConcreteFunctionDefinitionInstance functionDefinition = ConcreteFunctionDefinitionInstance.createPersistent(this.repository, ctx.qualifiedName().identifier().getText() + importId.getName() + this.functionCounter, this.sourceInformation.getPureSourceInformation(ctx.FUNCTION().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
+        ConcreteFunctionDefinitionInstance functionDefinition = ConcreteFunctionDefinitionInstance.createPersistent(this.repository, ctx.qualifiedName().identifier().getText() + importId.getName() + this.functionCounter, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
 
         ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? null : stereotypes(ctx.stereotypes(), importId);
-        ListIterable<TaggedValue> tags = (ctx.taggedValues() == null) ? null : taggedValues(ctx.taggedValues(), importId);
+        ListIterable<TaggedValue> tags = taggedValues(ctx, ctx.taggedValues(), importId);
 
         MutableList<String> typeParametersNames = Lists.mutable.empty();
         MutableList<String> multiplicityParameterNames = Lists.mutable.empty();
@@ -3249,6 +3252,72 @@ public class AntlrContextToM3CoreInstance
         return ListIterate.collect(ctx.taggedValue(), tvContext -> taggedValue(importId, tvContext));
     }
 
+    /**
+     * Builds an element's tagged values, folding in its documentation as a
+     * {@code meta::pure::profiles::doc} {@code doc} value if it declares any.
+     * <p>
+     * The documentation is read off the element context rather than passed in, so every rule
+     * carrying {@code documentation?} is handled by declaring it in the grammar - there is no
+     * second place to remember to update.
+     *
+     * @param elementCtx the element context, whose start token is the documentation when present
+     * @param tvCtx      the explicit tagged values, or null if the element declares none
+     * @param importId   import group used to resolve the tag references
+     */
+    private ListIterable<TaggedValue> taggedValues(ParserRuleContext elementCtx, TaggedValuesContext tvCtx, ImportGroup importId)
+    {
+        ListIterable<TaggedValue> explicit = (tvCtx == null) ? Lists.immutable.empty() : taggedValues(tvCtx, importId);
+        // 'documentation?' is a direct child of the declaration, which is exactly what this searches.
+        DocumentationContext docCtx = elementCtx.getRuleContext(DocumentationContext.class, 0);
+        if (docCtx == null)
+        {
+            return explicit;
+        }
+        TaggedValueContext conflict = (tvCtx == null) ? null : findExplicitDocTaggedValue(tvCtx);
+        if (conflict != null)
+        {
+            throw new PureParserException(this.sourceInformation.getPureSourceInformation(conflict.getStart(), conflict.getStart(), conflict.getStop()),
+                    "Element has both documentation and an explicit doc.doc tagged value. Use one.");
+        }
+        return Lists.mutable.with(docTaggedValue(docCtx, importId)).withAll(explicit);
+    }
+
+    private TaggedValue docTaggedValue(DocumentationContext docCtx, ImportGroup importId)
+    {
+        // Spans the documentation literal itself, closing delimiter included, so navigating to the
+        // tagged value lands on the text the author wrote. The literal is a direct child of the
+        // declaration and therefore inside its source range, which two things require:
+        // ReferenceIdGenerator only assigns a reference id to instances the element subsumes - without
+        // one, PAR serialization fails - and processPackageableElement needs the element's stored
+        // source start to equal the start of its parse context on every incremental recompile.
+        Token start = docCtx.getStart();
+        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(start, start, docCtx.getStop());
+        ImportStubInstance tag = ImportStubInstance.createPersistent(this.repository, sourceInfo, M3Paths.doc + "%doc", importId);
+        return TaggedValueInstance.createPersistent(this.repository, sourceInfo, tag, DocumentationCanonicalizer.canonicalize(docCtx.getText()));
+    }
+
+    /**
+     * Tag references are import stubs, unresolved at parse time, so this matches the profile
+     * path as written: bare {@code doc} resolved through an import, or the fully qualified
+     * {@code meta::pure::profiles::doc}. A user profile that merely ends in {@code doc}, such as
+     * {@code my::pkg::doc}, is a different profile and is not a conflict.
+     */
+    private static TaggedValueContext findExplicitDocTaggedValue(TaggedValuesContext ctx)
+    {
+        for (TaggedValueContext tv : ctx.taggedValue())
+        {
+            if ("doc".equals(tv.identifier().getText()))
+            {
+                String profile = tv.qualifiedName().getText();
+                if ("doc".equals(profile) || M3Paths.doc.equals(profile))
+                {
+                    return tv;
+                }
+            }
+        }
+        return null;
+    }
+
     private TaggedValue taggedValue(ImportGroup importId, TaggedValueContext ctx)
     {
         ImportStubInstance importStubInstance = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart(), ctx.identifier().getStart(), ctx.identifier().getStop()), this.getQualifiedNameString(ctx.qualifiedName()) + "%" + ctx.identifier().getText(), importId);
@@ -3256,7 +3325,7 @@ public class AntlrContextToM3CoreInstance
         if (ctx.MULTILINE_STRING() != null)
         {
             TerminalNode multiline = ctx.MULTILINE_STRING();
-            return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), multiline.getSymbol(), multiline.getSymbol()), importStubInstance, processMultilineString(multiline.getText()));
+            return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), multiline.getSymbol(), multiline.getSymbol()), importStubInstance, MultilineTextLayout.layout(multiline.getText()));
         }
         return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.STRING().get(0).getSymbol(), ctx.STRING().get(ctx.STRING().size() - 1).getSymbol()), importStubInstance, Lists.mutable.withAll(ctx.STRING()).collect(AntlrContextToM3CoreInstance::removeQuotes).makeString());
     }
@@ -3373,9 +3442,10 @@ public class AntlrContextToM3CoreInstance
         {
             profile._stereotypesCoreInstance(stereotypes(ctx.stereotypes(), importId));
         }
-        if (ctx.taggedValues() != null)
+        ListIterable<TaggedValue> profileTaggedValues = taggedValues(ctx, ctx.taggedValues(), importId);
+        if (profileTaggedValues.notEmpty())
         {
-            profile._taggedValues(taggedValues(ctx.taggedValues(), importId));
+            profile._taggedValues(profileTaggedValues);
         }
 
         return profile._name(profileName)
@@ -3969,72 +4039,14 @@ public class AntlrContextToM3CoreInstance
     }
 
     /**
-     * Convert the raw text of a multi-line string literal ('''...''') into its value, following the Java
-     * text-block algorithm: strip the opening delimiter line and the closing delimiter, remove the common
-     * (incidental) leading-whitespace indentation, strip trailing whitespace from each line, then process
-     * escape sequences. The opening '''  must be followed by a line terminator (enforced by the lexer), so
-     * the first line of content is the line after it; the terminal newline is preserved iff the closing '''
-     * sits on its own line.
+     * Convert the raw text of a multi-line string literal ('''...''') into its value: the Java text-block
+     * layout of {@link MultilineTextLayout}, then escape processing. Escapes are what separate a string
+     * literal from documentation, which shares the layout but keeps its content literal - see
+     * {@link DocumentationCanonicalizer}.
      */
     public static String processMultilineString(String rawTokenText)
     {
-        // Normalize line terminators, then drop the opening delimiter line (through its terminator) and the
-        // trailing closing '''.
-        String normalized = rawTokenText.replace("\r\n", "\n").replace('\r', '\n');
-        int firstNewLine = normalized.indexOf('\n');
-        String body = normalized.substring(firstNewLine + 1, normalized.length() - 3);
-
-        String[] lines = body.split("\n", -1);
-
-        // Minimum indentation is computed over every non-blank line plus the last line (the closing-delimiter
-        // line, even when blank) - the latter sets a floor that prevents over-stripping.
-        int minIndent = Integer.MAX_VALUE;
-        for (int i = 0; i < lines.length; i++)
-        {
-            String line = lines[i];
-            int leading = leadingWhitespaceLength(line);
-            if ((leading < line.length()) || (i == lines.length - 1))
-            {
-                minIndent = Math.min(minIndent, leading);
-            }
-        }
-        if (minIndent == Integer.MAX_VALUE)
-        {
-            minIndent = 0;
-        }
-
-        StringBuilder builder = new StringBuilder(body.length());
-        for (int i = 0; i < lines.length; i++)
-        {
-            if (i > 0)
-            {
-                builder.append('\n');
-            }
-            String line = lines[i];
-            builder.append(stripTrailingWhitespace(line.substring(Math.min(minIndent, line.length()))));
-        }
-
-        return StringEscape.unescape(builder.toString());
-    }
-
-    private static int leadingWhitespaceLength(String line)
-    {
-        int i = 0;
-        while ((i < line.length()) && Character.isWhitespace(line.charAt(i)))
-        {
-            i++;
-        }
-        return i;
-    }
-
-    private static String stripTrailingWhitespace(String line)
-    {
-        int end = line.length();
-        while ((end > 0) && Character.isWhitespace(line.charAt(end - 1)))
-        {
-            end--;
-        }
-        return line.substring(0, end);
+        return StringEscape.unescape(MultilineTextLayout.layout(rawTokenText));
     }
 
     private InstanceValue doWrap(MutableList<PropertyNameContext> content)

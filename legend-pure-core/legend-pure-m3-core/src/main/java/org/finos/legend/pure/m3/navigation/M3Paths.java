@@ -142,6 +142,9 @@ public class M3Paths
     // Access
     public static final String access = "meta::pure::profiles::access";
 
+    // Documentation
+    public static final String doc = "meta::pure::profiles::doc";
+
 
     // -- To Move
 

@@ -34,9 +34,10 @@ registered under that name. The `ParserLibrary` dispatches each section to its
 corresponding `Parser` implementation based on the string name.
 
 > **This split happens before any grammar parses anything, and it is not
-> string-aware.** A line beginning with `###` at column 0 always starts a new
+> string- or comment-aware.** A line beginning with `###` at column 0 always starts a new
 > section — including inside a
-> [multi-line string literal](#multi-line-string-literals). Indent the `###` by
+> [multi-line string literal](#multi-line-string-literals) or a
+> [documentation](#documentation) literal. Indent the `###` by
 > one space to keep it as content.
 
 ### Grammar sections available in this repository
@@ -121,6 +122,186 @@ let doubled = $x * 2;
 /* Multi-line
    comment */
 ```
+
+Block comments do **not** nest: `/* a /* b */` ends at the first `*/`. Comments never carry
+meaning — [documentation](#documentation) is a `'''…'''` literal, not a comment.
+
+### Documentation
+
+A `'''…'''` literal immediately preceding a declaration is **syntactic sugar** for the
+`meta::pure::profiles::doc` `doc` tagged value. These two are identical after parsing:
+
+```pure
+'''
+A **person** in the system.
+
+Identity is established by `legalName`.
+'''
+Class model::Person
+{
+  '''
+  Given name. Not guaranteed unique.
+  '''
+  firstName: String[1];
+}
+```
+
+```pure
+Class {meta::pure::profiles::doc.doc = 'A **person** in the system.\n\nIdentity is established by `legalName`.'} model::Person
+{
+  {meta::pure::profiles::doc.doc = 'Given name. Not guaranteed unique.'} firstName: String[1];
+}
+```
+
+There is no new profile, no new metamodel, and nothing downstream needs to change: consumers
+that already read the `doc` tag see documentation automatically.
+
+Documentation is a **parser rule**, listed explicitly at each declaration that accepts it — not a
+lexer-level construct. That is what keeps the identical literal in expression position an ordinary
+[multi-line string](#multi-line-string-literals), and it is why attachment needs no adjacency
+heuristic: either the literal is in a documentation position or it is a value.
+
+#### Where it attaches
+
+`Class`, `Enum` (and individual enum values), `Association`, `Profile`, `Measure`, `function`,
+`native function`, `Primitive`, properties, and qualified (derived) properties.
+
+Documentation precedes the **whole declaration**, before any stereotypes or tagged values:
+
+```pure
+'''
+Attached to the class.
+'''
+Class <<meta::pure::profiles::access.private>> {meta::pure::profiles::doc.todo = 'x'} model::Person
+{
+}
+```
+
+Because attachment is syntactic, intervening whitespace and comments are simply skipped — a note
+written between the documentation and the declaration does not detach it:
+
+```pure
+'''
+Still attached.
+'''
+// a note about the class
+Class model::A {}
+```
+
+Two consecutive documentation literals, or one trailing at end of file with no declaration to
+attach to, are parse errors rather than silently ignored.
+
+#### The same literal in expression position is a value
+
+This is the one thing to internalize. A `'''…'''` before a property is documentation; inside a
+derived property's body it is that property's **return value**:
+
+```pure
+Class model::Person
+{
+  '''
+  Given name.                 <-- documentation
+  '''
+  firstName: String[1];
+
+  fullName(){
+    '''
+    Formatted name.           <-- NOT documentation: this IS the return value
+    '''
+  }: String[1];
+}
+```
+
+Adding a `;` after that inner literal to make room for real code compiles, and silently evaluates
+and discards the string on every call. There is nowhere to write documentation *inside* a function
+or derived-property body; it goes before the declaration.
+
+#### Conflict with an explicit `doc.doc`
+
+An element may not carry **both** documentation and an explicit `doc.doc` tagged value. Both are
+statements of intent, and silently honouring one would make the other vanish without trace, so
+this is a parse error:
+
+```pure
+'''
+From the documentation.
+'''
+Class {meta::pure::profiles::doc.doc = 'From the tagged value.'} model::A
+{
+}
+```
+
+```
+Element has both documentation and an explicit doc.doc tagged value. Use one.
+```
+
+Because tag references are not resolved until after parsing, the check matches the profile
+**as written** — either bare `doc` (resolved through an import) or the fully qualified
+`meta::pure::profiles::doc`. The following are therefore *not* conflicts:
+
+| Case | Why it is allowed |
+|---|---|
+| `{meta::pure::profiles::doc.todo = '…'}` | Same profile, different tag |
+| `{my::pkg::doc.doc = '…'}` | A different profile that merely ends in `doc` |
+
+#### How the content is processed
+
+Documentation shares the Java-text-block **layout** of
+[multi-line string literals](#multi-line-string-literals) and differs from them in two respects.
+
+1. **Content is literal — there is no escape processing.** `\n`, `\'` and `\\` are content. This is
+   the opposite of a string literal, and it is deliberate: documentation is prose. Unescaping prose
+   silently rewrites a regex (`\d+` → `d+`), a Markdown escape (`\*` → `*`) and a Windows path
+   (`C:\temp` → `C:` followed by a tab) — and a `\u` not followed by four hex digits, as in
+   `C:\users`, aborts compilation with an error carrying no source location at all.
+2. **Leading and trailing blank lines are dropped**, so how the literal is laid out does not change
+   the documentation. A string literal instead keeps a trailing newline when its closing delimiter
+   sits on its own line.
+
+Otherwise the rules are the shared ones: line endings are normalized; the opening delimiter's line
+is dropped; the common leading indentation — the minimum across all non-blank lines *and* the
+closing delimiter's line — is removed; trailing whitespace is removed from each line.
+
+Content is conventionally Markdown, but the grammar is format-agnostic: nothing here parses or
+validates it.
+
+Below, `⏎` marks a newline in the source and `·` a space.
+
+| Source | Value |
+|---|---|
+| `'''`⏎`One line.`⏎`'''` | `"One line."` |
+| `'''`⏎`A`⏎⏎`B`⏎`'''` | `"A\n\nB"` — interior blank lines are kept |
+| `'''`⏎`Options:`⏎`*·first`⏎`'''` | `"Options:\n*·first"` — nothing is star-aware, so bullets are ordinary content |
+| `'''`⏎`··Text`⏎⏎`······code`⏎`··'''` | `"Text\n\n····code"` — min indent is 2, set by the closing `'''`; the code block keeps its relative indent |
+| `'''`⏎`····indented`⏎`'''` | `"····indented"` — closing `'''` at column 0 sets the floor to 0, so nothing is stripped |
+| `'''`⏎`'''` | `""` — empty |
+
+#### Gotchas
+
+- **A Markdown bullet list written with `*` is preserved.** Nothing strips leading stars, so unlike
+  Javadoc there is no all-or-nothing rule to reason about.
+- **Indentation is semantic in Markdown** — four-space-indented lines are code blocks. Because the
+  closing `'''`'s indentation sets the floor, put `'''` at the indentation your content is written
+  at, and deeper indentation survives relative to it.
+- **The opening `'''` must be followed by a line terminator**, so there is no one-line form.
+  `'''docs'''` does not lex as a documentation literal.
+- **A literal `'''` cannot appear in the content** and there is no escape for it — reword.
+- An ordinary `/* … */` or `/** … */` block comment is just a comment. Only `'''…'''` in a
+  documentation position produces a `doc` tagged value.
+- The `###` section split is not string-aware (see §0), so a line beginning `###` inside
+  documentation will split the file into sections.
+- Resolution of Pure references inside documentation (`[[pkg::Class]]`, ` ```pure ` blocks) and
+  Markdown rendering are the consumer's concern, not the grammar's.
+
+**Implementation:** parser rule `documentation` in `M3CoreParser.g4`, prefixed onto each
+declaration that accepts it (inherited by `M3Parser`, `RelationalParser` and
+`RelationMappingParser`); layout shared with string literals in
+`org.finos.legend.pure.m4.serialization.grammar.MultilineTextLayout`; canonicalization in
+`DocumentationCanonicalizer`; attachment in `AntlrContextToM3CoreInstance.taggedValues(...)`.
+Tests: `TestDocumentationCanonicalizer` (m4) and `TestDocumentation` (m3-core) cover parsing and
+canonicalization; `platform/pure/documentation.pure` pins the same contract at run time on both
+execution engines, where the tagged value has been through metadata serialization rather than read
+straight off the AST.
 
 ---
 
@@ -286,10 +467,19 @@ whitespace survives them intact.
   This hazard is new with multi-line strings; a single-line literal cannot span
   a newline, so `\n###` could never occur inside one.
 
-- **`###Pure` sections only.** The `MULTILINE_STRING` token is declared in
-  `M3CoreLexer.g4` alone. The `###Mapping`, `###Relational`, and `###Diagram`
-  grammars — and M4 — do not accept `'''…'''`, even though they share the
-  underlying `MultilineString` fragment definition in `M4Fragment.g4`.
+- **`###Pure` sections only, in practice.** `###Mapping`, `###Diagram` and M4 do not accept
+  `'''…'''`: their lexers import only `M4Fragment.g4`, where `MultilineString` sits as an
+  unreferenced fragment.
+
+  `###Relational` and relation mappings are a different case. `RelationalLexer.g4` and
+  `RelationMappingLexer.g4` import `M3CoreLexer`, so they *do* inherit the
+  `MULTILINE_STRING` token, and `RelationalParser` inherits the `taggedValue` rule that
+  accepts it — a `'''…'''` tagged value on a `###Relational` column therefore parses.
+  It then fails in `RelationalGraphBuilder.visitTaggedValueNew`, which reads
+  `ctx.STRING(0)` unconditionally; the resulting `NullPointerException` surfaces as a
+  `PureParserException` with an empty message and a misreported line number. **Treat
+  multi-line tagged values in `###Relational` as unsupported**, but note the failure is a
+  known gap rather than a deliberate rejection.
 
 - **Printing does not round-trip.** Since the value is an ordinary `String`,
   anything that renders it back to Pure source emits a single-line, escaped
