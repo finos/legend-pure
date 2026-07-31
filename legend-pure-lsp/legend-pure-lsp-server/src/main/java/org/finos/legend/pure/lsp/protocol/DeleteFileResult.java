@@ -14,28 +14,28 @@
 
 package org.finos.legend.pure.lsp.protocol;
 
-public class ExecuteGoResult
+/**
+ * Result of legend/deleteFile. {@link #isRemoved()} is true when the source was actually present and
+ * has been unloaded (false when it was not in the session to begin with - not an error). {@code error}
+ * is populated only when the delete + recompile failed.
+ */
+public class DeleteFileResult
 {
     private boolean success;
+    private String sourceId;
+    private boolean removed;
     private String error;
-    private String output;
-    private String errorUri;
 
-    public ExecuteGoResult()
+    public DeleteFileResult()
     {
     }
 
-    public ExecuteGoResult(boolean success, String error, String output)
-    {
-        this(success, error, output, null);
-    }
-
-    public ExecuteGoResult(boolean success, String error, String output, String errorUri)
+    public DeleteFileResult(boolean success, String sourceId, boolean removed, String error)
     {
         this.success = success;
+        this.sourceId = sourceId;
+        this.removed = removed;
         this.error = error;
-        this.output = output;
-        this.errorUri = errorUri;
     }
 
     public boolean isSuccess()
@@ -48,6 +48,26 @@ public class ExecuteGoResult
         this.success = success;
     }
 
+    public String getSourceId()
+    {
+        return this.sourceId;
+    }
+
+    public void setSourceId(String sourceId)
+    {
+        this.sourceId = sourceId;
+    }
+
+    public boolean isRemoved()
+    {
+        return this.removed;
+    }
+
+    public void setRemoved(boolean removed)
+    {
+        this.removed = removed;
+    }
+
     public String getError()
     {
         return this.error;
@@ -56,25 +76,5 @@ public class ExecuteGoResult
     public void setError(String error)
     {
         this.error = error;
-    }
-
-    public String getOutput()
-    {
-        return this.output;
-    }
-
-    public void setOutput(String output)
-    {
-        this.output = output;
-    }
-
-    public String getErrorUri()
-    {
-        return this.errorUri;
-    }
-
-    public void setErrorUri(String errorUri)
-    {
-        this.errorUri = errorUri;
     }
 }

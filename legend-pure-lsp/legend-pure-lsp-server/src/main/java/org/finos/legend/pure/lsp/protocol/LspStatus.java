@@ -22,6 +22,8 @@ public class LspStatus
     private int recoveryAttempts;
     private boolean recoveryInProgress;
     private String message;
+    private int compiledRepositories;
+    private int totalRepositories;
 
     public LspStatus()
     {
@@ -30,12 +32,20 @@ public class LspStatus
     public LspStatus(LspState state, int repositoryCount, int symbolCount, int recoveryAttempts,
                      boolean recoveryInProgress, String message)
     {
+        this(state, repositoryCount, symbolCount, recoveryAttempts, recoveryInProgress, message, 0, 0);
+    }
+
+    public LspStatus(LspState state, int repositoryCount, int symbolCount, int recoveryAttempts,
+                     boolean recoveryInProgress, String message, int compiledRepositories, int totalRepositories)
+    {
         this.state = state.getProtocolValue();
         this.repositoryCount = repositoryCount;
         this.symbolCount = symbolCount;
         this.recoveryAttempts = recoveryAttempts;
         this.recoveryInProgress = recoveryInProgress;
         this.message = message;
+        this.compiledRepositories = compiledRepositories;
+        this.totalRepositories = totalRepositories;
     }
 
     public String getState()
@@ -96,5 +106,25 @@ public class LspStatus
     public void setMessage(String message)
     {
         this.message = message;
+    }
+
+    public int getCompiledRepositories()
+    {
+        return this.compiledRepositories;
+    }
+
+    public void setCompiledRepositories(int compiledRepositories)
+    {
+        this.compiledRepositories = compiledRepositories;
+    }
+
+    public int getTotalRepositories()
+    {
+        return this.totalRepositories;
+    }
+
+    public void setTotalRepositories(int totalRepositories)
+    {
+        this.totalRepositories = totalRepositories;
     }
 }

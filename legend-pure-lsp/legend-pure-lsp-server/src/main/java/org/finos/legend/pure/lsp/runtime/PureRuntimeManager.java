@@ -40,6 +40,7 @@ public class PureRuntimeManager
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(PureRuntimeManager.class);
     private static final int MAX_RECOVERY_ATTEMPTS = 3;
+    private static final long STATUS_PUBLISH_THROTTLE_MS = 300;
 
     private final RepositoryScanner repositoryScanner;
     private final UriMapper uriMapper;
@@ -55,6 +56,10 @@ public class PureRuntimeManager
     private volatile Set<String> classpathRepositoryNames = Collections.emptySet();
     private volatile LspState state = LspState.CREATED;
     private volatile String statusMessage = "";
+    private volatile int compiledRepositories;
+    private volatile int totalRepositories;
+    private volatile long lastPublishedAtMs;
+    private final CompileProgressTracker progressTracker = new CompileProgressTracker();
 
     public PureRuntimeManager(RepositoryScanner repositoryScanner, UriMapper uriMapper,
                               WorkspaceSymbolProvider symbolProvider, Runnable openDocumentCompiler)
@@ -90,13 +95,14 @@ public class PureRuntimeManager
                     + this.symbolProvider.size() + " symbols)");
             LspLog.info("Pure LSP initialized successfully - " + this.symbolProvider.size() + " symbols indexed");
         }
-        catch (Exception e)
+        catch (Throwable e)
         {
-            setStatus(LspState.FAILED, e.getMessage());
-            LspLog.error("Pure LSP initialization FAILED: " + e.getMessage());
+            String message = describeFailure(e);
+            setStatus(LspState.FAILED, message);
+            LspLog.error("Pure LSP initialization FAILED: " + message);
             e.printStackTrace(System.err);
             publishFailureDiagnostic(e);
-            show(MessageType.Error, "Pure LSP failed: " + e.getMessage());
+            show(MessageType.Error, "Pure LSP failed: " + message);
         }
     }
 
@@ -113,12 +119,13 @@ public class PureRuntimeManager
             initializeRuntime("Reindex complete");
             show(MessageType.Info, "Pure LSP: reindex complete");
         }
-        catch (Exception e)
+        catch (Throwable e)
         {
-            setStatus(LspState.FAILED, e.getMessage());
+            String message = describeFailure(e);
+            setStatus(LspState.FAILED, message);
             LOGGER.error("Reindex failed", e);
             publishFailureDiagnostic(e);
-            show(MessageType.Error, "Pure LSP reindex failed: " + e.getMessage());
+            show(MessageType.Error, "Pure LSP reindex failed: " + message);
         }
     }
 
@@ -147,12 +154,13 @@ public class PureRuntimeManager
             this.recoveryAttempts = 0;
             show(MessageType.Info, "Pure LSP: recovered");
         }
-        catch (Exception e)
+        catch (Throwable e)
         {
-            setStatus(LspState.FAILED, e.getMessage());
+            String message = describeFailure(e);
+            setStatus(LspState.FAILED, message);
             LOGGER.error("Recovery failed", e);
             publishFailureDiagnostic(e);
-            show(MessageType.Error, "Pure LSP recovery failed: " + e.getMessage());
+            show(MessageType.Error, "Pure LSP recovery failed: " + message);
         }
         finally
         {
@@ -167,8 +175,13 @@ public class PureRuntimeManager
         this.uriMapper.clear();
         rescanWorkspaceRoots();
 
+        this.progressTracker.reset();
+        this.compiledRepositories = 0;
+        this.totalRepositories = 0;
+
         LegendPureSession nextSession = this.session == null ? new LegendPureSession() : this.session;
         nextSession.setClasspathRepositoryNames(this.classpathRepositoryNames);
+        nextSession.setProgressListener(this::onCompileProgress);
         if (nextSession.isInitialized())
         {
             nextSession.reinitialize();
@@ -188,8 +201,47 @@ public class PureRuntimeManager
         setStatus(LspState.READY, readyMessage + " in " + elapsed + "ms");
     }
 
-    private void publishFailureDiagnostic(Exception e)
+    /**
+     * Called synchronously from the compiler's own progress callback (see
+     * IncrementalCompiler_New / GraphLoader), including high-frequency messages
+     * emitted per bound instance. Field writes are cheap and happen every time so
+     * a concurrent legend/status request always sees the latest values; the actual
+     * client push notification is throttled separately to avoid flooding it.
+     */
+    private void onCompileProgress(String message)
     {
+        this.progressTracker.onMessage(message);
+        this.statusMessage = message == null ? "" : message;
+        this.compiledRepositories = this.progressTracker.getCompleted();
+        this.totalRepositories = this.progressTracker.getTotal();
+
+        long now = System.currentTimeMillis();
+        if (now - this.lastPublishedAtMs >= STATUS_PUBLISH_THROTTLE_MS)
+        {
+            this.lastPublishedAtMs = now;
+            publishStatus();
+        }
+    }
+
+    static String describeFailure(Throwable e)
+    {
+        String message = e.getMessage();
+        return message == null || message.isEmpty()
+                ? e.getClass().getSimpleName()
+                : e.getClass().getSimpleName() + ": " + message;
+    }
+
+    private void publishFailureDiagnostic(Throwable e)
+    {
+        if (!(e instanceof Exception))
+        {
+            // Errors (e.g. LinkageError from a classpath conflict) have no meaningful
+            // Pure source location to attach a diagnostic to; describeFailure() already
+            // surfaced them via LspStatus.message / show(MessageType.Error, ...).
+            return;
+        }
+        Exception exception = (Exception) e;
+
         LegendLanguageClient currentClient = this.client;
         if (currentClient == null)
         {
@@ -197,10 +249,10 @@ public class PureRuntimeManager
         }
 
         DiagnosticService diagnosticService = new DiagnosticService(currentClient, this.uriMapper);
-        String errorUri = diagnosticService.resolveErrorUri(e);
+        String errorUri = diagnosticService.resolveErrorUri(exception);
         if (errorUri != null)
         {
-            diagnosticService.publishException(errorUri, e, this.session);
+            diagnosticService.publishException(errorUri, exception, this.session);
         }
     }
 
@@ -238,7 +290,9 @@ public class PureRuntimeManager
                 this.symbolProvider.size(),
                 this.recoveryAttempts,
                 this.recoveryInProgress.get(),
-                this.statusMessage
+                this.statusMessage,
+                this.compiledRepositories,
+                this.totalRepositories
         );
     }
 

@@ -427,7 +427,9 @@ class LegendDebugSession
                 ? Collections.emptySet()
                 : repositoryScanner.getWorkspaceRepoNames();
         Set<String> runtimeDependencyRepositoryNames = mainSession.getClasspathRepositoryNames();
-        synchronized (mainSession)
+        java.util.concurrent.locks.Lock readLock = mainSession.graphReadLock();
+        readLock.lock();
+        try
         {
             for (Source source : mainSession.getPureRuntime().getSourceRegistry().getSources())
             {
@@ -437,6 +439,10 @@ class LegendDebugSession
                 }
                 sources.put(source.getId(), source.getContent());
             }
+        }
+        finally
+        {
+            readLock.unlock();
         }
         if (openDocuments != null)
         {

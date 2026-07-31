@@ -44,7 +44,8 @@ public class SourceMutationService
 
     public LegendPureSession.CompileResult modifyAndCompile(String sourceId, String content)
     {
-        synchronized (this.session)
+        this.session.graphWriteLock().lock();
+        try
         {
             if (!this.session.isInitialized())
             {
@@ -127,11 +128,16 @@ public class SourceMutationService
                 return restoreAfterFailure(Collections.singletonList(snapshot == null ? snapshot(effectiveSourceId) : snapshot), e);
             }
         }
+        finally
+        {
+            this.session.graphWriteLock().unlock();
+        }
     }
 
     public LegendPureSession.CompileResult applyBulkChangesAndCompile(List<LegendPureSession.FileChange> changes)
     {
-        synchronized (this.session)
+        this.session.graphWriteLock().lock();
+        try
         {
             if (!this.session.isInitialized())
             {
@@ -191,11 +197,16 @@ public class SourceMutationService
                 return restoreAfterFailure(snapshots, e);
             }
         }
+        finally
+        {
+            this.session.graphWriteLock().unlock();
+        }
     }
 
     public LegendPureSession.CompileResult restoreFromDisk(String sourceId)
     {
-        synchronized (this.session)
+        this.session.graphWriteLock().lock();
+        try
         {
             if (!this.session.isInitialized() || sourceId == null)
             {
@@ -258,6 +269,10 @@ public class SourceMutationService
                 LspLog.debug("restoreFromDisk failed for " + sourceId + ": " + e.getMessage());
                 return restoreAfterFailure(Collections.singletonList(snapshot), e);
             }
+        }
+        finally
+        {
+            this.session.graphWriteLock().unlock();
         }
     }
 
