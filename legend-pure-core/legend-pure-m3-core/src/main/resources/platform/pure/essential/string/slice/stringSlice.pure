@@ -1,0 +1,106 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::test::pct::*;
+
+'''
+The portion of a string from `start` to its end.
+
+A synonym for `substring(String[1], Integer[1]):String[1]`, behaving identically to it.
+
+Positions are zero-based, so `start` is the number of characters to drop from the front. A `start`
+of `0` returns the whole string. Note that `start` is a position, not a length — to keep a given
+number of leading characters, use `stringTake(String[1], Integer[1]):String[1]`.
+
+**Parameters**
+- `str` — the string to take from.
+- `start` — zero-based index of the first character to keep.
+
+**Returns** the remainder of the string from `start` onwards.
+
+**Examples**
+```pure
+'the quick brown'->stringSlice(0)   // 'the quick brown'
+'the quick brown'->stringSlice(4)   // 'quick brown'
+```
+
+**See also** `stringSlice(String[1], Integer[1], Integer[1]):String[1]`,
+`substring(String[1], Integer[1]):String[1]`, `stringTake(String[1], Integer[1]):String[1]`
+'''
+function <<PCT.function>> meta::pure::functions::string::stringSlice(str:String[1], start:Integer[1]):String[1]
+{
+    $str->substring($start)
+}
+
+'''
+The portion of a string between two positions: from `start` inclusive to `end` exclusive.
+
+As `stringSlice(String[1], Integer[1]):String[1]`, but stopping at `end` rather than running to the
+end of the string. Both indexes are zero-based, so the result has `end - start` characters. A
+synonym for `substring(String[1], Integer[1], Integer[1]):String[1]`.
+
+**Examples**
+```pure
+'the quick brown fox'->stringSlice(4, 9)   // 'quick'
+'the quick brown fox'->stringSlice(0, 3)   // 'the'
+```
+'''
+function <<PCT.function>> meta::pure::functions::string::stringSlice(str:String[1], start:Integer[1], end:Integer[1]):String[1]
+{
+    $str->substring($start, $end)
+}
+
+'''
+`start` counts characters dropped from the front, so `0` returns the whole string.
+'''
+function <<PCT.test>> meta::pure::functions::string::tests::stringSlice::testStringSliceStart<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    let string = 'the quick brown fox jumps over the lazy dog';
+    assertEquals('the quick brown fox jumps over the lazy dog', $f->eval(|stringSlice($string, 0)));
+    assertEquals('he quick brown fox jumps over the lazy dog', $f->eval(|stringSlice($string, 1)));
+    assertEquals('quick brown fox jumps over the lazy dog', $f->eval(|stringSlice($string, 4)));
+}
+
+'''
+`end` is exclusive, so the slice spans `end - start` characters.
+'''
+function <<PCT.test>> meta::pure::functions::string::tests::stringSlice::testStringSliceStartEnd<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    let string = 'the quick brown fox jumps over the lazy dog';
+    assertEquals('the quick brown fox jumps over the lazy dog', $f->eval(|stringSlice($string, 0, 43)));
+    assertEquals('quick', $f->eval(|stringSlice($string, 4, 9)));
+    assertEquals('the', $f->eval(|stringSlice($string, 0, 3)));
+}
+
+'''
+A `start` equal to the length, or a range of zero width, yields the empty string.
+'''
+function <<PCT.test>> meta::pure::functions::string::tests::stringSlice::testStringSliceEmptyResult<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals('', $f->eval(|stringSlice('abc', 3)));
+    assertEquals('', $f->eval(|stringSlice('abc', 1, 1)));
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::stringSlice::testStringSliceMatchesSubstring():Boolean[1]
+{
+    let string = 'the quick brown fox';
+    assertEquals(substring($string, 4), stringSlice($string, 4));
+    assertEquals(substring($string, 4, 9), stringSlice($string, 4, 9));
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::stringSlice::testStringSliceEval():Boolean[1]
+{
+    assertEq('quick brown', stringSlice_String_1__Integer_1__String_1_->eval('the quick brown', 4));
+    assertEq('quick', stringSlice_String_1__Integer_1__Integer_1__String_1_->eval('the quick brown fox', 4, 9));
+}
