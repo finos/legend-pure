@@ -21,9 +21,9 @@ The `width` is a maximum, not a requirement: a string already `width` characters
 returned unchanged rather than padded or rejected, so this is safe to apply to a whole column of
 mixed-length values. A `width` of `0` keeps nothing and gives the empty string.
 
-Note that `width` is a length, not a position — unlike `substring(String[1], Integer[1]):String[1]`,
+Note that `width` is a length, not a position — unlike `stringSlice(String[1], Integer[1]):String[1]`,
 which takes an index and drops what comes before it. `'hello world'->stringTake(5)` gives `'hello'`,
-while `'hello world'->substring(5)` gives `' world'`.
+while `'hello world'->stringSlice(5)` gives `' world'`.
 
 The `width` must not be negative.
 
@@ -42,11 +42,11 @@ The `width` must not be negative.
 ```
 
 **See also** `stringTakeLast(String[1], Integer[1]):String[1]`,
-`substring(String[1], Integer[1]):String[1]`, `length(String[1]):Integer[1]`
+`stringSlice(String[1], Integer[1]):String[1]`, `length(String[1]):Integer[1]`
 '''
 function <<PCT.function>> meta::pure::functions::string::stringTake(str:String[1], width:Integer[1]):String[1]
 {
-    if($width < $str->length(), |$str->substring(0, $width), |$str)
+    if($width < $str->length(), |$str->stringSlice(0, $width), |$str)
 }
 
 '''

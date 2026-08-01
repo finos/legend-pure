@@ -42,11 +42,11 @@ The `width` must not be negative.
 ```
 
 **See also** `stringTake(String[1], Integer[1]):String[1]`,
-`substring(String[1], Integer[1]):String[1]`, `length(String[1]):Integer[1]`
+`stringSlice(String[1], Integer[1]):String[1]`, `length(String[1]):Integer[1]`
 '''
 function <<PCT.function>> meta::pure::functions::string::stringTakeLast(str:String[1], width:Integer[1]):String[1]
 {
-    if($width < $str->length(), |$str->substring($str->length() - $width), |$str)
+    if($width < $str->length(), |$str->stringSlice($str->length() - $width), |$str)
 }
 
 '''

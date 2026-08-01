@@ -1,0 +1,102 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::test::pct::*;
+
+'''
+The start of the fixed-width bucket that an integer falls into, computed as
+`value - (value mod width)`.
+
+Buckets are `width` apart and aligned on zero, and the value returned is the bucket's lower
+bound rather than a bucket number — `widthBucket(17, 10)` gives `10`, the start of the bucket
+spanning 10 to 19, not the index of that bucket.
+
+**Bucketing is downward, not toward zero.** The result is always the multiple at or below the
+input on the number line, so negative values move away from zero rather than toward it:
+`widthBucket(-1, 10)` gives `-10`, placing it in the bucket spanning -10 to -1. This is what
+makes every value in a bucket map to the same bound regardless of sign.
+
+A value already sitting on a bucket boundary is returned unchanged, so bucketing twice gives the
+same answer as bucketing once. A `width` of `1` is the identity.
+
+The `width` must be positive; `0` raises a divide-by-zero error.
+
+**Parameters**
+- `value` — the integer to place in a bucket.
+- `width` — the bucket size, a positive integer.
+
+**Returns** the largest multiple of `width` that is less than or equal to `value`.
+
+**Examples**
+```pure
+widthBucket(1, 10)      // 0
+widthBucket(17, 10)     // 10
+widthBucket(20, 10)     // 20   -- already on a boundary
+widthBucket(-1, 10)     // -10  -- downward, not toward zero
+widthBucket(-17, 10)    // -20
+widthBucket(7, 1)       // 7    -- width 1 is the identity
+```
+
+**See also** `floor(Number[1]):Integer[1]`, `round(Number[1]):Integer[1]`,
+`mod(Integer[1], Integer[1]):Integer[1]`
+'''
+function <<PCT.function>> meta::pure::functions::math::widthBucket(value:Integer[1], width:Integer[1]):Integer[1]
+{
+    $value - $value->mod($width)
+}
+
+'''
+A value between two boundaries loses its remainder and falls to the lower one.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketPositive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(0, $f->eval(|widthBucket(1, 10)));
+    assertEq(3, $f->eval(|widthBucket(5, 3)));
+    assertEq(10, $f->eval(|widthBucket(17, 10)));
+}
+
+'''
+Negative values move away from zero, landing on the boundary below rather than the one above.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketNegative<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(-10, $f->eval(|widthBucket(-1, 10)));
+    assertEq(-6, $f->eval(|widthBucket(-5, 3)));
+    assertEq(-20, $f->eval(|widthBucket(-17, 10)));
+}
+
+'''
+A value already on a boundary is returned unchanged, so bucketing twice changes nothing.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketExactBoundary<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(20, $f->eval(|widthBucket(20, 10)));
+    assertEq(-10, $f->eval(|widthBucket(-10, 10)));
+    assertEq(0, $f->eval(|widthBucket(0, 10)));
+}
+
+'''
+Every integer is a multiple of `1`, so a width of `1` is the identity for both signs.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketWidthOne<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(7, $f->eval(|widthBucket(7, 1)));
+    assertEq(-7, $f->eval(|widthBucket(-7, 1)));
+}
+
+function <<test.Test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketEval():Boolean[1]
+{
+    assertEq(0, widthBucket_Integer_1__Integer_1__Integer_1_->eval(1, 10));
+    assertEq(-10, widthBucket_Integer_1__Integer_1__Integer_1_->eval(-1, 10));
+}
