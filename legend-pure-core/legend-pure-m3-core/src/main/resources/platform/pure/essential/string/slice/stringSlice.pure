@@ -21,7 +21,7 @@ A synonym for `substring(String[1], Integer[1]):String[1]`, behaving identically
 
 Positions are zero-based, so `start` is the number of characters to drop from the front. A `start`
 of `0` returns the whole string. Note that `start` is a position, not a length — to keep a given
-number of leading characters, use `stringTake(String[1], Integer[1]):String[1]`.
+number of leading characters, use `left(String[1], Integer[1]):String[1]`.
 
 **Parameters**
 - `str` — the string to take from.
@@ -36,7 +36,7 @@ number of leading characters, use `stringTake(String[1], Integer[1]):String[1]`.
 ```
 
 **See also** `stringSlice(String[1], Integer[1], Integer[1]):String[1]`,
-`substring(String[1], Integer[1]):String[1]`, `stringTake(String[1], Integer[1]):String[1]`
+`substring(String[1], Integer[1]):String[1]`, `left(String[1], Integer[1]):String[1]`
 '''
 function <<PCT.function>> meta::pure::functions::string::stringSlice(str:String[1], start:Integer[1]):String[1]
 {
