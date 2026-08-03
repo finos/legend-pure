@@ -239,7 +239,7 @@ After this phase the only main-code references to `serialization/binary` are
 Verified: module `verify -DskipTests` (0 Checkstyle violations, `dependency:analyze` clean) and
 the full module suite - 1,994 tests, 0 failures, 0 errors, 13 skipped.
 
-### Phase 3 - relocate the code-generation `IdBuilder` factory
+### Phase 3 - relocate the code-generation `IdBuilder` factory - **DONE**
 `getSourceCodeGenerator` no longer mentions `DistributedBinaryGraphSerializer`. Per **D2**,
 the replacement is a private static helper in `JavaStandaloneLibraryGenerator` - no new class,
 no new public API - along these lines:
@@ -265,6 +265,21 @@ The `$<name>$` prefix format is load-bearing downstream (`legend-engine`'s `Test
 asserts on `"$core$"`) and must not change. The `DistributedMetadataHelper.validateMetadataName`
 check that the old factory performed on the compile-group name is dropped; compile groups are
 repository names, already validated upstream.
+
+In the event the behavioural delta was narrower than feared. The modular branch is byte-for-byte
+equivalent - `getMetadataIdPrefix` only ever built that same `$name$` string - so the sole change
+is the `compileGroup == null` branch. That branch is reached by the `modularMetadataIds=false`
+overloads (tests only) **and by the externalizable-API generator in both branches** (lines ~219
+and ~261), so any build with `addExternalAPI` set exercises it. Everything else in the compiled
+engine reaches `JavaSourceCodeGenerator` through `JavaCompilerEventHandler` with a null
+`IdBuilder`, which already defaulted to `IdBuilder.newIdBuilder(ps, false)`.
+
+Verified: full reactor `-T 4 clean install -DskipTests` (BUILD SUCCESS, 2:50 - exercises code
+generation in every module), module `verify -DskipTests` (0 Checkstyle violations,
+`dependency:analyze` clean), and the full module suite - 1,994 tests, 0 failures, 0 errors,
+13 skipped.
+
+After this phase `MetadataLazy` is the only consumer of `serialization/binary` left.
 
 ### Phase 4 - remove the read path
 `MetadataLazy`: delete `LegacyMetadataLazy`, `newMetadata(...)`, `fromClassLoader(ClassLoader)`,

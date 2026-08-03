@@ -43,7 +43,6 @@ import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.Log;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
-import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphSerializer;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.VoidJavaCompilerEventObserver;
 
 import java.io.IOException;
@@ -283,10 +282,25 @@ public class JavaStandaloneLibraryGenerator
 
     private JavaSourceCodeGenerator getSourceCodeGenerator(String compileGroup, boolean writeJavaSourcesToDisk, Path pathToWriteTo)
     {
-        IdBuilder idBuilder = DistributedBinaryGraphSerializer.newIdBuilder(compileGroup, this.runtime.getProcessorSupport());
-        JavaSourceCodeGenerator javaSourceCodeGenerator = new JavaSourceCodeGenerator(this.runtime.getProcessorSupport(), idBuilder, this.runtime.getCodeStorage(), writeJavaSourcesToDisk, pathToWriteTo, false, this.extensions, "UserCode", this.externalAPIPackage);
+        JavaSourceCodeGenerator javaSourceCodeGenerator = new JavaSourceCodeGenerator(this.runtime.getProcessorSupport(), newIdBuilder(compileGroup), this.runtime.getCodeStorage(), writeJavaSourcesToDisk, pathToWriteTo, false, this.extensions, "UserCode", this.externalAPIPackage);
         javaSourceCodeGenerator.collectClassesToSerialize();
         return javaSourceCodeGenerator;
+    }
+
+    /**
+     * Build an id builder for a compile group. Instances with no reference id get an id derived
+     * from their synthetic id, which is only unique within a single compile group; so where there
+     * is a compile group, its name is used as a prefix to keep such ids distinct across groups.
+     *
+     * @param compileGroup compile group name, or null if generating for the whole graph at once
+     * @return id builder
+     */
+    private IdBuilder newIdBuilder(String compileGroup)
+    {
+        ProcessorSupport processorSupport = this.runtime.getProcessorSupport();
+        return (compileGroup == null) ?
+               IdBuilder.newIdBuilder(processorSupport) :
+               IdBuilder.newIdBuilder('$' + compileGroup + '$', processorSupport);
     }
 
     private SortedMap<String, MutableList<Source>> getSourcesToCompile()
