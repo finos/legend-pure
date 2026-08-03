@@ -496,11 +496,6 @@ public class TestJavaCodeGeneration
         //   args[0] = repository, args[1] = classesDir (generated-test-resources), args[2] = targetDir
         JavaCodeGeneration.main("platform", classesDir.getAbsolutePath(), directory.getAbsolutePath());
 
-        // main() calls doIt() with: modular, useSingleDir=true, generateSources=true, generateTest=true
-        // Modular generation now uses pelt serialization, which must already exist; so there should be no metadata generation
-        File metadataDir = new File(classesDir, "metadata");
-        Assert.assertFalse(metadataDir.exists());
-
         // Generated sources go to targetDir/generated-test-sources/ because main() passes generateTest=true
         File packageImpl = new File(directory,
                 "generated-test-sources/org/finos/legend/pure/generated/Package_Impl.java");

@@ -61,17 +61,15 @@ public class JavaStandaloneLibraryGenerator
     private final Iterable<? extends CompiledExtension> extensions;
     private final boolean addExternalAPI;
     private final String externalAPIPackage;
-    private final boolean useLegacyMetadataForExternalAPI;
     private final Log log;
     private final boolean generatePureTests;
 
-    private JavaStandaloneLibraryGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, boolean useLegacyMetadataForExternalAPI, boolean generatePureTests, Log log)
+    private JavaStandaloneLibraryGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, boolean generatePureTests, Log log)
     {
         this.runtime = runtime;
         this.extensions = extensions;
         this.addExternalAPI = addExternalAPI;
         this.externalAPIPackage = externalAPIPackage;
-        this.useLegacyMetadataForExternalAPI = useLegacyMetadataForExternalAPI;
         this.log = log;
         this.generatePureTests = generatePureTests;
     }
@@ -199,32 +197,6 @@ public class JavaStandaloneLibraryGenerator
                 .build();
     }
 
-    public void serializeAndWriteDistributedMetadata(Path directory) throws IOException
-    {
-        DistributedBinaryGraphSerializer.newSerializer(this.runtime).serializeToDirectory(directory);
-    }
-
-    public void serializeAndWriteDistributedMetadata(String repositoryName, Path directory) throws IOException
-    {
-        DistributedBinaryGraphSerializer.newSerializer(this.runtime, repositoryName).serializeToDirectory(directory);
-    }
-
-    public void serializeAndWriteDistributedMetadata(JarOutputStream jarOutputStream) throws IOException
-    {
-        DistributedBinaryGraphSerializer.newSerializer(this.runtime).serializeToJar(jarOutputStream);
-    }
-
-    public void serializeAndWriteDistributedMetadata(String repositoryName, JarOutputStream jarOutputStream) throws IOException
-    {
-        DistributedBinaryGraphSerializer.newSerializer(this.runtime, repositoryName).serializeToJar(jarOutputStream);
-    }
-
-    public void compileSerializeAndWriteClassesAndMetadata(JarOutputStream jarOutputStream) throws IOException, PureJavaCompileException
-    {
-        serializeAndWriteDistributedMetadata(jarOutputStream);
-        compileAndWriteClasses(jarOutputStream);
-    }
-
     private PureJavaCompiler compile(SortedMap<String, MutableList<Source>> sourcesToCompile, boolean modularMetadataIds, boolean writeJavaSourcesToDisk, Path pathToWriteTo) throws PureJavaCompileException
     {
         GenerateAndCompile generateAndCompile = new GenerateAndCompile(new Message("")
@@ -312,7 +284,7 @@ public class JavaStandaloneLibraryGenerator
     private JavaSourceCodeGenerator getSourceCodeGenerator(String compileGroup, boolean writeJavaSourcesToDisk, Path pathToWriteTo)
     {
         IdBuilder idBuilder = DistributedBinaryGraphSerializer.newIdBuilder(compileGroup, this.runtime.getProcessorSupport());
-        JavaSourceCodeGenerator javaSourceCodeGenerator = new JavaSourceCodeGenerator(this.runtime.getProcessorSupport(), idBuilder, this.runtime.getCodeStorage(), writeJavaSourcesToDisk, pathToWriteTo, false, this.extensions, "UserCode", this.externalAPIPackage, false, this.useLegacyMetadataForExternalAPI);
+        JavaSourceCodeGenerator javaSourceCodeGenerator = new JavaSourceCodeGenerator(this.runtime.getProcessorSupport(), idBuilder, this.runtime.getCodeStorage(), writeJavaSourcesToDisk, pathToWriteTo, false, this.extensions, "UserCode", this.externalAPIPackage);
         javaSourceCodeGenerator.collectClassesToSerialize();
         return javaSourceCodeGenerator;
     }
@@ -370,19 +342,25 @@ public class JavaStandaloneLibraryGenerator
         return sourcesByRepo;
     }
 
-    public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, boolean useLegacyMetadataForExternalAPI, boolean generatePureTests, Log log)
-    {
-        return new JavaStandaloneLibraryGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, useLegacyMetadataForExternalAPI, generatePureTests, log);
-    }
-
     public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, boolean generatePureTests, Log log)
     {
-        return newGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, false, generatePureTests, log);
+        return new JavaStandaloneLibraryGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, generatePureTests, log);
     }
 
     public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, Log log)
     {
         return newGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, true, log);
+    }
+
+    /**
+     * @deprecated The externalizable API is always generated against PELT metadata, so
+     * useLegacyMetadataForExternalAPI is ignored. Retained temporarily for backward compatibility;
+     * use the overload without it instead.
+     */
+    @Deprecated
+    public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, boolean useLegacyMetadataForExternalAPI, boolean generatePureTests, Log log)
+    {
+        return newGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, generatePureTests, log);
     }
 
     public static PureJavaCompiler compileOnly(MapIterable<? extends String, ? extends Iterable<? extends StringJavaSource>> javaSources, ListIterable<? extends StringJavaSource> externalizableSources, boolean addExternalAPI, Log log) throws PureJavaCompileException

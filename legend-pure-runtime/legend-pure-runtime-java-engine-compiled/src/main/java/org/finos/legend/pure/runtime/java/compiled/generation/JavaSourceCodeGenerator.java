@@ -149,7 +149,6 @@ public final class JavaSourceCodeGenerator
     private final boolean writeFilesToDisk;
     private final Path directoryToWriteFilesTo;
     private final String externalAPIPackage;
-    private final boolean useLegacyMetadataForExternalAPI;
 
     private final boolean includePureStackTrace;
     private final MutableSet<CoreInstance> processedClasses = Sets.mutable.empty();
@@ -159,7 +158,7 @@ public final class JavaSourceCodeGenerator
 
     private final String name;
 
-    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> providedExtensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode, boolean useLegacyMetadataForExternalAPI)
+    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> providedExtensions, String name, String externalAPIPackage)
     {
         this.name = name;
         this.processorSupport = processorSupport;
@@ -169,7 +168,6 @@ public final class JavaSourceCodeGenerator
         this.directoryToWriteFilesTo = directoryToWriteFilesTo;
         this.includePureStackTrace = includePureStackTrace;
         this.externalAPIPackage = externalAPIPackage;
-        this.useLegacyMetadataForExternalAPI = useLegacyMetadataForExternalAPI;
         this.extensions = UnifiedSetWithHashingStrategy.newSet(new HashingStrategy<CompiledExtension>()
         {
             @Override
@@ -186,14 +184,40 @@ public final class JavaSourceCodeGenerator
         }, CompiledExtensionLoader.extensions()).withAll(providedExtensions).toList();
     }
 
-    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> providedExtensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode)
+    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> extensions, String name, String externalAPIPackage)
     {
-        this(processorSupport, idBuilder, codeStorage, writeFilesToDisk, directoryToWriteFilesTo, includePureStackTrace, providedExtensions, name, externalAPIPackage, generateCompilerExtensionCode, true);
+        this(processorSupport, null, codeStorage, writeFilesToDisk, directoryToWriteFilesTo, includePureStackTrace, extensions, name, externalAPIPackage);
     }
 
+    /**
+     * @deprecated The generateCompilerExtensionCode flag is not used. Retained temporarily for
+     * backward compatibility; use the constructor without it instead.
+     */
+    @Deprecated
+    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> providedExtensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode)
+    {
+        this(processorSupport, idBuilder, codeStorage, writeFilesToDisk, directoryToWriteFilesTo, includePureStackTrace, providedExtensions, name, externalAPIPackage);
+    }
+
+    /**
+     * @deprecated The generateCompilerExtensionCode flag is not used. Retained temporarily for
+     * backward compatibility; use the constructor without it instead.
+     */
+    @Deprecated
     public JavaSourceCodeGenerator(ProcessorSupport processorSupport, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> extensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode)
     {
-        this(processorSupport, null, codeStorage, writeFilesToDisk, directoryToWriteFilesTo, includePureStackTrace, extensions, name, externalAPIPackage, generateCompilerExtensionCode);
+        this(processorSupport, codeStorage, writeFilesToDisk, directoryToWriteFilesTo, includePureStackTrace, extensions, name, externalAPIPackage);
+    }
+
+    /**
+     * @deprecated The generateCompilerExtensionCode flag is not used, and the externalizable API is
+     * always generated against PELT metadata. Retained temporarily for backward compatibility; use
+     * the constructor without those flags instead.
+     */
+    @Deprecated
+    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> providedExtensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode, boolean useLegacyMetadataForExternalAPI)
+    {
+        this(processorSupport, idBuilder, codeStorage, writeFilesToDisk, directoryToWriteFilesTo, includePureStackTrace, providedExtensions, name, externalAPIPackage);
     }
 
     public ProcessorSupport getProcessorSupport()
@@ -360,7 +384,7 @@ public final class JavaSourceCodeGenerator
                 e -> (e instanceof Function) || Instance.instanceOf(e, functionClass, this.processorSupport),
                 e -> FunctionProcessor.buildExternalizableFunction(e, processorContext),
                 Lists.mutable.empty());
-        String text = ExternalClassBuilder.buildExternalizableFunctionClass(pack, EXTERNAL_FUNCTIONS_CLASS_NAME, externalizableFunctionCode, this.codeStorage.getAllRepositories().collect(CodeRepository::getName), this.useLegacyMetadataForExternalAPI);
+        String text = ExternalClassBuilder.buildExternalizableFunctionClass(pack, EXTERNAL_FUNCTIONS_CLASS_NAME, externalizableFunctionCode, this.codeStorage.getAllRepositories().collect(CodeRepository::getName));
         ImmutableList<StringJavaSource> javaSources = Lists.immutable.with(StringJavaSource.newStringJavaSource(pack, EXTERNAL_FUNCTIONS_CLASS_NAME, text));
         if (this.writeFilesToDisk)
         {

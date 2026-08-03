@@ -219,13 +219,25 @@ mvn.cmd clean install -pl legend-pure-runtime/legend-pure-runtime-java-engine-co
 mvn.cmd surefire:test -pl legend-pure-runtime/legend-pure-runtime-java-engine-compiled
 ```
 
-### Phase 2 - remove the write path
+### Phase 2 - remove the write path - **DONE**
 `JavaStandaloneLibraryGenerator` (the 5 methods + the `useLegacyMetadataForExternalAPI` field),
 `ExternalClassBuilder`, `JavaSourceCodeGenerator`, `JavaCompilerEventHandler`,
 `JavaModelFactoryGenerator`. Retain `@Deprecated` no-op overloads per **D5**.
 
-After this phase the only main-code reference to `serialization/binary` is
-`getSourceCodeGenerator`'s `IdBuilder` factory call and `MetadataLazy`'s import.
+The dead `generateCompilerExtensionCode` parameter was removed at the same time: three
+`JavaSourceCodeGenerator` constructors accepted it and none ever stored or read it, and removing
+`useLegacyMetadataForExternalAPI` was already restructuring exactly those signatures. All three
+prior signatures survive as `@Deprecated` pass-throughs.
+
+Also removed here (deferred from Phase 1): the `new File(classesDir, "metadata")` assertion in
+`TestJavaCodeGeneration.testMain`, whose subject - the distributed write path - no longer exists.
+
+After this phase the only main-code references to `serialization/binary` are
+`getSourceCodeGenerator`'s `IdBuilder` factory call (Phase 3) and `MetadataLazy`'s import
+(Phase 4).
+
+Verified: module `verify -DskipTests` (0 Checkstyle violations, `dependency:analyze` clean) and
+the full module suite - 1,994 tests, 0 failures, 0 errors, 13 skipped.
 
 ### Phase 3 - relocate the code-generation `IdBuilder` factory
 `getSourceCodeGenerator` no longer mentions `DistributedBinaryGraphSerializer`. Per **D2**,

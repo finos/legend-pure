@@ -34,7 +34,6 @@ import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSu
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledProcessorSupport;
 import org.finos.legend.pure.runtime.java.compiled.execution.ConsoleCompiled;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
-import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataPelt;
 
 public class ExternalClassBuilder
@@ -52,6 +51,7 @@ public class ExternalClassBuilder
             ExecutionSupport.class.getName(),
             JavaCompilerState.class.getName(),
             Lists.class.getName(),
+            MetadataPelt.class.getName(),
             MutableList.class.getName(),
             MutableSet.class.getName(),
             PureException.class.getName(),
@@ -62,17 +62,17 @@ public class ExternalClassBuilder
     @Deprecated
     public static String buildExternalizableFunctionClass(RichIterable<String> functionDefinitions, String externalFunctionClass, RichIterable<String> vcsRepos, RichIterable<String> classLoaderRepos)
     {
-        return buildExternalizableFunctionClass(null, externalFunctionClass, functionDefinitions, Lists.mutable.withAll(classLoaderRepos).withAll(vcsRepos), true);
+        return buildExternalizableFunctionClass((String) null, externalFunctionClass, functionDefinitions, Lists.mutable.withAll(classLoaderRepos).withAll(vcsRepos));
     }
 
-    static String buildExternalizableFunctionClass(String pkg, String className, RichIterable<String> functionDefinitions, RichIterable<String> repositories, boolean useLegacyMetadata)
+    static String buildExternalizableFunctionClass(String pkg, String className, RichIterable<String> functionDefinitions, RichIterable<String> repositories)
     {
         StringBuilder builder = new StringBuilder();
         if (pkg != null)
         {
             builder.append("package ").append(pkg).append(";\n\n");
         }
-        JavaTools.sortReduceAndPrintImports(builder, BASE_EXTERNALIZABLE_IMPORTS.toList().with((useLegacyMetadata ? MetadataLazy.class : MetadataPelt.class).getName())).append('\n');
+        JavaTools.sortReduceAndPrintImports(builder, BASE_EXTERNALIZABLE_IMPORTS).append('\n');
         builder.append("public class ").append(className).append("\n");
         builder.append("{\n");
         builder.append("    private static volatile ExecutionSupport EXECUTION_SUPPORT = null;\n");
@@ -142,19 +142,12 @@ public class ExternalClassBuilder
         builder.append("                    {\n");
         builder.append("                        console.disable();\n");
         builder.append("                    }\n");
-        if (useLegacyMetadata)
+        builder.append("                    MetadataPelt metadata = MetadataPelt.fromClassLoader(classLoader");
+        if (sortedRepoNames.notEmpty())
         {
-            builder.append("                    MetadataLazy metadata = MetadataLazy.fromClassLoader(classLoader);\n");
+            sortedRepoNames.appendString(builder, ", \"", "\", \"", "\"");
         }
-        else
-        {
-            builder.append("                    MetadataPelt metadata = MetadataPelt.fromClassLoader(classLoader");
-            if (sortedRepoNames.notEmpty())
-            {
-                sortedRepoNames.appendString(builder, ", \"", "\", \"", "\"");
-            }
-            builder.append(");\n");
-        }
+        builder.append(");\n");
         builder.append("                    EXECUTION_SUPPORT = result = new CompiledExecutionSupport(new JavaCompilerState(null, classLoader), new CompiledProcessorSupport(classLoader, metadata), null, codeStorage, null, EXECUTION_ACTIVITY_LISTENER, console, null, Sets.mutable.<String>of(), CompiledExtensionLoader.extensions(classLoader));\n");
         builder.append("                }\n");
         builder.append("            }\n");
