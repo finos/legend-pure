@@ -309,9 +309,21 @@ and complete); full reactor `-T 4 clean install -DskipTests` (BUILD SUCCESS, 2:5
 other module was picking up Jackson transitively through this one); and the full module suite -
 1,994 tests, 0 failures, 0 errors, 13 skipped.
 
-### Phase 6 - retire `LegacyIdBuilder` (per **D3**)
+### Phase 6 - retire `LegacyIdBuilder` (per **D3**) - **DONE**
 Delete `LegacyIdBuilder`, `IdBuilder.LegacyBuilder` and `IdBuilder.legacyBuilder`. Nothing
 references them after Phase 3.
+
+Two things surfaced that were **not** in the original inventory, and neither was actioned:
+
+1. **`CompiledExtension.getExtraIdBuilders` is now a dead extension point.** `LegacyIdBuilder`
+   was its only consumer (`LegacyIdBuilder:181`). The default method on `CompiledExtension` and
+   the one override, `PathExtensionCompiled.getExtraIdBuilders` (which registers an id function
+   for `Path`), are now never called. See open decision **D8**.
+2. `IdBuilder.AbstractBuilder` is now a redundant layer with a single subclass, `Builder`. It is
+   package-private, so collapsing it is a free but purely cosmetic refactor, out of scope here.
+
+Verified: module `verify -DskipTests` (0 Checkstyle violations, `dependency:analyze` clean),
+full reactor `-T 4 clean install -DskipTests` (BUILD SUCCESS, 2:14), and the full module suite.
 
 ### Phase 7 - retire `_LazyImpl` code generation (per **D4**)
 `ClassLazyImplProcessor`, `AbstractLazyReflectiveCoreInstance` (and, optionally, the
@@ -382,6 +394,12 @@ new snapshot.
 | **D5** | Retain no-op `@Deprecated` overloads for the removed boolean flags? | **Yes** - `newGenerator(..., useLegacyMetadataForExternalAPI, ...)` and the wide `JavaSourceCodeGenerator` constructors stay as deprecated pass-throughs. Javadoc should say they are retained temporarily, without naming a removal release. |
 | **D6** | Mark the whole of `MetadataLazy` `@Deprecated`, or only the removed members? | **Whole class** - it is entirely replaceable by `MetadataPelt`. Internal call sites move to `MetadataPelt` so no `legend-pure` code triggers the deprecation warning. |
 | **D7** | Rename the surviving `...PeltMetadata` test methods? | **Yes** - drop the now-redundant suffix. |
+
+### Open
+
+| # | Question | Options | Recommendation |
+|---|---|---|---|
+| **D8** | `CompiledExtension.getExtraIdBuilders` became a dead extension point in Phase 6 - `LegacyIdBuilder` was its only consumer. Its sole override, `PathExtensionCompiled.getExtraIdBuilders`, registers an id function for `Path` that is now never invoked. What should happen to it? | (a) leave both as-is; (b) deprecate the default method and the override, with javadoc saying it is no longer consulted; (c) delete both. | **(b)**, or (c). This is dead code, **not** a behaviour gap: `getExtraIdBuilders` was only ever consulted when a `LegacyIdBuilder` was constructed, which happened solely for the null-metadata-name case. Every modular build - including all 142 `legend-engine` modules - already used `ReferenceIdV1IdBuilder` and so already ignored this extension point. Reference id v1 assigns ids by generic graph-path traversal, so `Path` instances need no special-casing. Leaving it as-is is a trap (an implementor gets silent no-op behaviour); deprecating removes the trap without breaking anyone; deleting is safe within these four repos, since no `legend-engine` extension overrides it. |
 
 ---
 

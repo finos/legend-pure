@@ -111,34 +111,9 @@ public abstract class IdBuilder
         }
     }
 
-    public static class LegacyBuilder extends AbstractBuilder
-    {
-        private LegacyBuilder(ProcessorSupport processorSupport)
-        {
-            super(processorSupport);
-        }
-
-        public LegacyBuilder withDefaultIdPrefix(String prefix)
-        {
-            setDefaultIdPrefix(prefix);
-            return this;
-        }
-
-        @Override
-        public IdBuilder build()
-        {
-            return new LegacyIdBuilder(this.defaultIdPrefix, this.processorSupport);
-        }
-    }
-
     public static Builder builder(ProcessorSupport processorSupport)
     {
         return new Builder(processorSupport);
-    }
-
-    public static LegacyBuilder legacyBuilder(ProcessorSupport processorSupport)
-    {
-        return new LegacyBuilder(processorSupport);
     }
 
     public static IdBuilder newIdBuilder(String defaultIdPrefix, ProcessorSupport processorSupport)
