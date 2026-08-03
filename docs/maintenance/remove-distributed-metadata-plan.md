@@ -281,11 +281,21 @@ generation in every module), module `verify -DskipTests` (0 Checkstyle violation
 
 After this phase `MetadataLazy` is the only consumer of `serialization/binary` left.
 
-### Phase 4 - remove the read path
+### Phase 4 - remove the read path - **DONE**
 `MetadataLazy`: delete `LegacyMetadataLazy`, `newMetadata(...)`, `fromClassLoader(ClassLoader)`,
-and mark the class `@Deprecated` (**D6**). Repoint `PureTestBuilderCompiled` at `MetadataPelt`
-so that no `legend-pure` code depends on the deprecated shim. After this, `serialization/binary`
-has no callers.
+and mark the class `@Deprecated` (**D6**). Repoint `PureTestBuilderCompiled` and
+`TestJavaCodeGeneration.testModularGeneration` at `MetadataPelt` so that no `legend-pure` code
+depends on the deprecated shim. `PureTestBuilderCompiled.buildMetadata` is `private static
+Metadata`, so that repoint is internal and changes no signature.
+
+`MetadataLazy` is now 367 lines lighter and delegates entirely to `MetadataPelt`.
+`serialization/binary` has **no consumers at all** - Phase 5 can delete it wholesale. The only
+remaining `MetadataLazy` references are the `_LazyImpl` machinery removed in Phase 7:
+`AbstractLazyReflectiveCoreInstance`, and the generated-code strings in `EnumProcessor` and
+`ClassLazyImplProcessor`.
+
+Verified: module `verify -DskipTests` (0 Checkstyle violations, `dependency:analyze` clean) and
+the full module suite - 1,994 tests, 0 failures, 0 errors, 13 skipped.
 
 ### Phase 5 - delete `serialization/binary` and the Jackson dependencies
 Delete all 29 files; remove the three Jackson dependencies from the module `pom.xml`

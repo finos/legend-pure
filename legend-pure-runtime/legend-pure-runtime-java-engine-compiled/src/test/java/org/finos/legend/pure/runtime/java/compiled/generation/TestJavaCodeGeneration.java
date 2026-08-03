@@ -40,7 +40,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaC
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.VoidLog;
 import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataEager;
-import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataPelt;
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -161,7 +160,7 @@ public class TestJavaCodeGeneration
                 true,
                 new VoidLog());
 
-        executeDynamicNewTest(cl -> MetadataLazy.fromClassLoader(cl, "platform"), classesDirectory);
+        executeDynamicNewTest(cl -> MetadataPelt.fromClassLoader(cl, "platform"), classesDirectory);
     }
 
     @Test
