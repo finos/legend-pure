@@ -196,10 +196,19 @@ mvn.cmd -T 4 clean install -DskipTests
 (JDK 25 at `C:/Users/kmkni/.jdks/temurin-25.0.4`, Maven at
 `C:/Users/kmkni/AppData/Local/Apache/apache-maven-3.9.6`.)
 
-### Phase 1 - delete the distributed tests and the CLI tool
+### Phase 1 - delete the distributed tests and the CLI tool - **DONE**
 Delete everything in **3.3** except `TestObj`, plus `serialization/tool/DistributedMetadataTool.java`,
 plus the `TestJavaStandaloneLibraryGenerator` / `TestJavaCodeGeneration` edits from **3.4**.
 Main sources are untouched apart from the tool, so this cannot break compilation.
+
+While renaming per **D7**, the surviving test methods collided with the private helpers they
+call (`testStandaloneLibraryNoExternal`, `testStandaloneLibraryExternalExecution`); the helpers
+were renamed to `assertStandaloneLibrary*` rather than leaving a confusing overload pair. The
+surviving external-execution test was also moved off the 7-arg `newGenerator` overload onto the
+equivalent 6-arg one, since the 7-arg form becomes a deprecated no-op in Phase 2.
+
+Verified: module `verify -DskipTests` (0 Checkstyle violations, `dependency:analyze` clean) and
+the full module suite - 1,994 tests, 0 failures, 0 errors, 13 skipped.
 
 *Note:* this deliberately leaves `serialization/binary` untested for the two commits until
 Phase 5 deletes it. The alternative - deleting each test with its subject - is equally valid

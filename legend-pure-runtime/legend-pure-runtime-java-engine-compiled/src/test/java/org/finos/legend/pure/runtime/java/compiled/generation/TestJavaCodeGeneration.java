@@ -116,10 +116,6 @@ public class TestJavaCodeGeneration
                 true,
                 new VoidLog());
 
-        // Monolithic generation now uses pelt serialization, which must already exist; so there should be no metadata generation
-        File metaDistributed = new File(directory, "metadata-distributed");
-        Assert.assertFalse("metadata-distributed directory should not be created", metaDistributed.exists());
-
         String externalClassName = externalPackage + ".PureExternal";
         ClassLoader previousClassLoader = Thread.currentThread().getContextClassLoader();
         try (TestClassLoader classLoader = new TestClassLoader(previousClassLoader, n -> externalClassName.equals(n) || n.startsWith(JavaPackageAndImportBuilder.rootPackage()), null, toURL(classesDirectory)))
@@ -164,10 +160,6 @@ public class TestJavaCodeGeneration
                 directory,
                 true,
                 new VoidLog());
-
-        // Modular generation now uses pelt serialization, which must already exist; so there should be no metadata generation
-        File metaDistributed = new File(directory, "metadata-distributed");
-        Assert.assertFalse("metadata-distributed directory should not be created", metaDistributed.exists());
 
         executeDynamicNewTest(cl -> MetadataLazy.fromClassLoader(cl, "platform"), classesDirectory);
     }
