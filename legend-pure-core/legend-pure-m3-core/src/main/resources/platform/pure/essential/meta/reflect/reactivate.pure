@@ -33,7 +33,7 @@ The result is `Any[*]`, so callers normally cast it.
 - `vs` — the syntax tree to evaluate.
 - `vars` — values for the tree's open variables, keyed by name.
 
-**Returns** the value the expression produces.
+**Returns** the values the expression produces.
 
 **Examples**
 ```pure

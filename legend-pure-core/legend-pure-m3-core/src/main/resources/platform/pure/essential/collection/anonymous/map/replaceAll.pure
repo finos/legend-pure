@@ -15,24 +15,27 @@
 import meta::pure::test::pct::*;
 
 '''
-Returns a map with the given entries added, replacing any that share a key.
+Returns a map holding exactly the given entries, discarding those of the original map.
 
-Keys present in `pairs` take the new value; keys absent from `pairs` keep theirs. The key-comparison
-behaviour of the original map — including any properties it was built with — is carried over.
+Despite the name this is not a merge: entries of `m` whose keys are absent from `pairs` are dropped.
+The key-comparison behaviour of the original map — including any properties it was built with — is
+carried over. Use `putAll(Map<U, V>[1], Pair<U, V>[*]):Map<U, V>[1]` to add entries while keeping
+the ones already present.
 
 **Parameters**
-- `m` — the map to start from.
-- `pairs` — the entries to add or overwrite.
+- `m` — the map whose key-comparison behaviour is reused.
+- `pairs` — the entries the new map holds.
 
-**Returns** the updated map.
+**Returns** a new map containing only `pairs`.
 
 **Examples**
 ```pure
-$m->replaceAll([pair('a', 9)])   // 'a' now maps to 9; other keys untouched
-$m->replaceAll([])               // unchanged
+// $m maps 1 -> '_1' and 2 -> '_2'
+$m->replaceAll([pair(1, '_1_1'), pair(3, '_3')])   // {1 -> '_1_1', 3 -> '_3'} -- key 2 is gone
 ```
 
-**See also** `newMap(Pair<U, V>[*]):Map<U, V>[1]`,
+**See also** `putAll(Map<U, V>[1], Pair<U, V>[*]):Map<U, V>[1]`,
+`newMap(Pair<U, V>[*]):Map<U, V>[1]`,
 `getIfAbsentPutWithKey(Map<U, V>[1], U[1], Function<{U[1]->V[0..1]}>[1]):V[0..1]`
 '''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::replaceAll<U,V>(m:Map<U,V>[1], pairs:Pair<U,V>[*]):Map<U,V>[1];

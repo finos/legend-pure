@@ -19,7 +19,7 @@ The maximum number of values a multiplicity permits.
 
 **Only meaningful when the multiplicity actually has an upper bound** — test with
 `hasUpperBound(Multiplicity[1]):Boolean[1]` first. For an unbounded multiplicity such as `ZeroMany` or
-`OneMany` there is no upper bound to report, so the result is not a usable count.
+`OneMany` there is no upper bound to report, so the call fails rather than returning a count.
 
 **Parameters**
 - `multiplicity` — the multiplicity to inspect.

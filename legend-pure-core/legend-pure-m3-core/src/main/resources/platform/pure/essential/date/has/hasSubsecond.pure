@@ -18,9 +18,8 @@ import meta::pure::test::pct::*;
 Whether a date carries a sub-second component.
 
 Pure dates carry **variable granularity** — `%2015`, `%2015-04`, `%2015-04-15`, `%2015-04-15T17` and
-so on are all valid `Date` values, each knowing only as much as was written. Extractors such as `hasSubsecondWithAtLeastPrecision` **fail** on a date that lacks the component they read, so
-this is the guard to call first when the granularity is not known — for example when the date came from
-parsing or from user input.
+so on are all valid `Date` values, each knowing only as much as was written. This is the guard to call
+first when the granularity is not known — for example when the date came from parsing or from user input.
 
 True for a date written with a fractional second, such as `%2015-04-15T17:09:21.398`.
 

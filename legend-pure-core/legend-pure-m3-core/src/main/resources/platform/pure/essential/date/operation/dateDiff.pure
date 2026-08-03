@@ -24,8 +24,10 @@ two seconds apart, because a year boundary lies between them.
 
 If you need elapsed duration rather than boundaries crossed, difference in a finer unit and convert.
 
-The result is **signed and directional**: `$d1->dateDiff($d2, …)` is positive when `d2` is later, negative
-when earlier, and `0` for two dates in the same interval.
+The result is **signed and directional**: `$d1->dateDiff($d2, …)` is positive when `d2` is later, zero or
+negative when earlier, and `0` for two dates in the same interval. Swapping the two dates does not always
+just flip the sign: `%2015-07-04->dateDiff(%2015-07-05, DurationUnit.WEEKS)` is `1`, while
+`%2015-07-05->dateDiff(%2015-07-04, DurationUnit.WEEKS)` is `0`.
 
 **Parameters**
 - `d1` — the starting date.
