@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.m4.serialization.grammar;
 
+import org.finos.legend.pure.m4.tools.TextTools;
+
 /**
  * Java-text-block layout for the raw text of a multi-line literal ({@code '''...'''}): drop the
  * opening delimiter's line, remove the common (incidental) leading indentation, and strip trailing
@@ -39,63 +41,57 @@ public class MultilineTextLayout
      */
     public static String layout(String rawTokenText)
     {
-        // Normalize line terminators, then drop the opening delimiter line (through its terminator)
-        // and the trailing closing '''.
-        String normalized = rawTokenText.replace("\r\n", "\n").replace('\r', '\n');
-        int firstNewLine = normalized.indexOf('\n');
-        String body = normalized.substring(firstNewLine + 1, normalized.length() - 3);
-
-        String[] lines = body.split("\n", -1);
-
-        // Minimum indentation is computed over every non-blank line plus the last line (the
-        // closing-delimiter line, even when blank) - the latter sets a floor that prevents
-        // over-stripping.
-        int minIndent = Integer.MAX_VALUE;
-        for (int i = 0; i < lines.length; i++)
+        // Verify we have a valid multi-line string and split lines. We will replace line breaks uniformly
+        // with \n.
+        if (!((rawTokenText.length() >= 6) && rawTokenText.startsWith("'''") && rawTokenText.endsWith("'''")))
         {
-            String line = lines[i];
-            int leading = leadingWhitespaceLength(line);
-            if ((leading < line.length()) || (i == lines.length - 1))
-            {
-                minIndent = Math.min(minIndent, leading);
-            }
+            throw new IllegalArgumentException("Invalid multi-line string: " + rawTokenText);
         }
-        if (minIndent == Integer.MAX_VALUE)
+        String[] lines = rawTokenText.substring(3, rawTokenText.length() - 3).split("\r\n|\r|\n", -1);
+        if ((lines.length < 2) || !TextTools.isBlank(lines[0]))
         {
-            minIndent = 0;
+            throw new IllegalArgumentException("Invalid multi-line string: " + rawTokenText);
         }
 
-        StringBuilder builder = new StringBuilder(body.length());
-        for (int i = 0; i < lines.length; i++)
+        int minIndent = findMinIndent(lines);
+        StringBuilder builder = new StringBuilder(rawTokenText.length() - 6 - lines[0].length());
+        appendLine(builder, lines[1], minIndent);
+        for (int i = 2; i < lines.length; i++)
         {
-            if (i > 0)
-            {
-                builder.append('\n');
-            }
-            String line = lines[i];
-            builder.append(stripTrailingWhitespace(line.substring(Math.min(minIndent, line.length()))));
+            appendLine(builder.append('\n'), lines[i], minIndent);
         }
-
         return builder.toString();
     }
 
-    static int leadingWhitespaceLength(String line)
+    private static int findMinIndent(String[] lines)
     {
-        int i = 0;
-        while ((i < line.length()) && Character.isWhitespace(line.charAt(i)))
+        // Minimum indentation is computed over the leading whitespace of every non-blank line, plus that of the
+        // last line (the closing-delimiter line) whether or not it is blank - the latter sets a floor that
+        // prevents over-stripping. A last line that is entirely whitespace counts as indented by its full length.
+        int lastIndex = lines.length - 1;
+        String lastLine = lines[lastIndex];
+        int lastLineIndent = TextTools.indexOfNonWhitespace(lastLine);
+        int minIndent = (lastLineIndent == -1) ? lastLine.length() : lastLineIndent;
+        for (int i = 1; (minIndent != 0) && (i < lastIndex); i++)
         {
-            i++;
+            int index = TextTools.indexOfNonWhitespace(lines[i]);
+            if (index != -1)
+            {
+                minIndent = Math.min(minIndent, index);
+            }
         }
-        return i;
+        return minIndent;
     }
 
-    static String stripTrailingWhitespace(String line)
+    private static void appendLine(StringBuilder builder, String line, int minIndent)
     {
-        int end = line.length();
-        while ((end > 0) && Character.isWhitespace(line.charAt(end - 1)))
+        if (minIndent < line.length())
         {
-            end--;
+            int end = TextTools.lastIndexOfNonWhitespace(line, minIndent);
+            if (end >= minIndent)
+            {
+                builder.append(line, minIndent, end + Character.charCount(line.codePointAt(end)));
+            }
         }
-        return line.substring(0, end);
     }
 }

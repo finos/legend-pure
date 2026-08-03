@@ -14,10 +14,6 @@
 
 package org.finos.legend.pure.m4.serialization.grammar;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * Converts the raw text of a documentation literal into the string stored as the
  * {@code meta::pure::profiles::doc.doc} tagged value.
@@ -37,21 +33,19 @@ public class DocumentationCanonicalizer
 
     public static String canonicalize(String rawTokenText)
     {
-        List<String> lines = new ArrayList<>(Arrays.asList(MultilineTextLayout.layout(rawTokenText).split("\n", -1)));
-        removeLeadingAndTrailingBlankLines(lines);
-        return String.join("\n", lines);
-    }
-
-    private static void removeLeadingAndTrailingBlankLines(List<String> lines)
-    {
-        // Layout has already stripped trailing whitespace, so a blank line is exactly empty.
-        while (!lines.isEmpty() && lines.get(0).isEmpty())
+        // Layout has already stripped trailing whitespace from every line, so a blank line is exactly empty and a
+        // run of leading or trailing blank lines is exactly a run of leading or trailing newlines.
+        String text = MultilineTextLayout.layout(rawTokenText);
+        int start = 0;
+        int end = text.length();
+        while ((start < end) && (text.charAt(start) == '\n'))
         {
-            lines.remove(0);
+            start++;
         }
-        while (!lines.isEmpty() && lines.get(lines.size() - 1).isEmpty())
+        while ((end > start) && (text.charAt(end - 1) == '\n'))
         {
-            lines.remove(lines.size() - 1);
+            end--;
         }
+        return text.substring(start, end);
     }
 }
