@@ -297,9 +297,17 @@ remaining `MetadataLazy` references are the `_LazyImpl` machinery removed in Pha
 Verified: module `verify -DskipTests` (0 Checkstyle violations, `dependency:analyze` clean) and
 the full module suite - 1,994 tests, 0 failures, 0 errors, 13 skipped.
 
-### Phase 5 - delete `serialization/binary` and the Jackson dependencies
+### Phase 5 - delete `serialization/binary` and the Jackson dependencies - **DONE**
 Delete all 29 files; remove the three Jackson dependencies from the module `pom.xml`
 (finding 6). `mvn verify` here specifically to exercise `dependency:analyze-only` and Checkstyle.
+
+No `Distributed` identifier remains anywhere in `legend-pure` Java source after this phase.
+
+Verified: module `verify -DskipTests` (0 Checkstyle violations, and `dependency:analyze-only`
+green with `failOnWarning=true`, which is what confirms the Jackson removal was both necessary
+and complete); full reactor `-T 4 clean install -DskipTests` (BUILD SUCCESS, 2:56 - confirms no
+other module was picking up Jackson transitively through this one); and the full module suite -
+1,994 tests, 0 failures, 0 errors, 13 skipped.
 
 ### Phase 6 - retire `LegacyIdBuilder` (per **D3**)
 Delete `LegacyIdBuilder`, `IdBuilder.LegacyBuilder` and `IdBuilder.legacyBuilder`. Nothing
