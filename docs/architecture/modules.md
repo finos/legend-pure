@@ -220,7 +220,7 @@ base execution context, HTTP utility wrappers, shared exception types.
 
 The **compiled (AOT) Java engine**. Executes Pure functions using pre-generated Java
 classes. Key classes: `CompiledExecutionSupport`, `JavaModelFactoryGenerator`,
-`DistributedBinaryGraphSerializer`.
+`JavaStandaloneLibraryGenerator`, `MetadataPelt`.
 
 During the Maven build this module uses `exec-maven-plugin` to run
 `JavaModelFactoryGenerator` at `generate-sources` phase, then re-runs

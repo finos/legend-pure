@@ -369,8 +369,17 @@ Not actioned: `PersistentReflectiveCoreInstance` is now orphaned (`AbstractLazyR
 was its only subclass). It is public API in a package that generated code imports by wildcard, so
 deleting it is left as a separate call.
 
-### Phase 8 - documentation
-Apply **3.5**.
+### Phase 8 - documentation - **DONE**
+Apply **3.5**. All six files updated, plus a row for this plan in the documentation map.
+
+The `maven-plugins-usage-patterns.md` layout description was rewritten against a real build
+(`legend-pure-m3-core/target/classes`) rather than from the old text: PELT writes one `.pelt`
+file per packageable element at its package path, with per-module `.pmf` / `.psr` / `.pxr` /
+`.pbr` / `.pfn` files under `org/finos/legend/pure/module/`. No `metadata/` directory is produced
+at all now.
+
+A case-insensitive sweep of `docs/` and `README.md` confirms no reference to distributed
+metadata remains.
 
 ### Phase 9 - full verification
 ```

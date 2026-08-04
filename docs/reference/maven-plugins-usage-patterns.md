@@ -184,10 +184,14 @@ the generated Java sources to `.class` files rather than just retaining the
 
 The practical effect of the standard combination is:
 - All generated Java sources and all metadata are written directly into the
-  module's `target/classes/` directory (`useSingleDir=true`)
-- No separate `metadata-distributed/` directory is created
-- The metadata is written at `metadata/classifiers/<repoName>/` and
-  `metadata/bin/<repoName>/` within `target/classes/`
+  module's `target/classes/` directory
+- Metadata is written in PELT form: one `.pelt` file per packageable element, at
+  the path implied by its package (e.g. `meta::pure::metamodel::type::Class`
+  becomes `meta/pure/metamodel/type/Class.pelt`)
+- Per-module metadata sits under `org/finos/legend/pure/module/` as
+  `<repoName>.pmf` (manifest), `.psr` (source metadata), `.pxr` (external
+  references), `.pbr` (back-reference index) and `.pfn` (function names), with
+  per-element back-references under `org/finos/legend/pure/module/<repoName>/`
 - The `.java` sources are retained for debugging but not compiled by this plugin
 
 ### `generate-pct-report` — 25 modules

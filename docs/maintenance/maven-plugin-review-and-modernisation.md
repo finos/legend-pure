@@ -72,9 +72,10 @@ Delegates to: `PureCompilerBinaryGenerator.serializeModules()`
 | **Has `skip` parameter** | Yes |
 
 **Purpose.** Generates Java source code from the compiled Pure model, optionally
-compiles it into `.class` files, and writes distributed binary metadata. This is the
+compiles it into `.class` files, and writes PELT metadata. This is the
 primary plugin that turns a Pure code base into a Java library. It supports both
-`monolithic` and `modular` generation strategies.
+`monolithic` and `modular` generation strategies, which now differ only in how
+generation is grouped; both write PELT metadata.
 
 The classloader is constructed directly from `MavenProject.getCompileClasspathElements()`
 using Eclipse Collections. It does **not** use the shared `ProjectDependencyResolution`
@@ -191,7 +192,7 @@ The affected write paths are:
 | `M3CoreInstanceGenerator` → `M3ToJavaGenerator` | `Files.write(path, bytes)` | Generated `.java` source files |
 | `M3CoreInstanceGenerator` → `M3LazyCoreInstanceGenerator` | `Files.write(filePath, code.getBytes())` | Generated `.java` source files |
 | `JavaCodeGeneration` → `MemoryFileManager.writeClassJavaSources()` | `Files.write(path, source.getBytes())` | Compiled `.class` files |
-| `JavaCodeGeneration` → `DistributedBinaryGraphSerializer` | `FileWriters.fromDirectory(directory)` | Binary metadata files |
+| `JavaCodeGeneration` → `PureCompilerSerializer` | `Files.newOutputStream(...)` | PELT element and module metadata files |
 | `PureJarSerializer.writePureRepositoryJars()` | `Files.newOutputStream(outputFile)` | `.par` archive files |
 | `PureCompilerBinaryGenerator` → `FileSerializer.serializeElement()` | `Files.newOutputStream(filePath)` | Binary element files |
 | `PureCompilerBinaryGenerator` → `FileSerializer.serializeModule*()` | `Files.newOutputStream(...)` | Module metadata files |

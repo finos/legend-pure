@@ -237,8 +237,8 @@ When navigating the Java source for the first time, use this table to orient you
 | `compiled.execution` | `CompiledExecutionSupport`, `FunctionExecutionCompiled` — main entry points |
 | `compiled.generation` | `JavaCodeGeneration` and orchestration classes |
 | `compiled.compiler` | In-memory `javax.tools` Java compiler wrapper |
-| `compiled.serialization` | `DistributedBinaryGraphSerializer` — binary metadata writer |
-| `compiled.metadata` | `MetadataAccessor` — runtime metadata lookup |
+| `compiled.serialization` | `GraphSerializer` — converts value specifications to Java objects |
+| `compiled.metadata` | `MetadataAccessor` — runtime metadata lookup; `MetadataPelt` — reads serialized PELT metadata |
 | `compiled.extension` | `CompiledExtension` interface — how DSL/store extensions register |
 | `compiled.factory` | Generated factory classes for `CoreInstance` creation |
 | `compiled.delta` | Incremental (delta) compilation support for IDE scenarios |
