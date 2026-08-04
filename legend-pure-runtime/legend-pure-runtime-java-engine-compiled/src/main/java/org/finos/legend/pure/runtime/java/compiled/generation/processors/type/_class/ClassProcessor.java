@@ -30,7 +30,6 @@ import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.serialization.grammar.CoreInstanceFactoriesRegistry;
 import org.finos.legend.pure.m3.serialization.runtime.ParserService;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 
@@ -76,10 +75,6 @@ public class ClassProcessor
                 processorContext.addJavaSource(ClassImplIncrementalCompilationProcessor.buildImplementation(_package, imports, classGenericType, processorContext, processorSupport));
             }
             processorContext.addJavaSource(ClassImplProcessor.buildImplementation(_package, imports, classGenericType, processorContext, processorSupport, useJavaInheritance, addJavaSerializationSupport, pureExternalPackage));
-            if (isLazy(_class))
-            {
-                processorContext.addJavaSource(ClassLazyImplProcessor.buildImplementation(_package, imports, classGenericType, processorContext, processorSupport));
-            }
         }
 
         return processedClasses;
@@ -110,13 +105,6 @@ public class ClassProcessor
     static String typeParameters(CoreInstance _class)
     {
         return _class.getValueForMetaPropertyToMany(M3Properties.typeParameters).collect(ci -> ci.getValueForMetaPropertyToOne(M3Properties.name).getName()).makeString(",");
-    }
-
-    static boolean isLazy(CoreInstance _class)
-    {
-        SourceInformation sourceInfo = _class.getSourceInformation();
-        String sourceId = (sourceInfo == null) ? null : sourceInfo.getSourceId();
-        return (sourceId != null) && sourceId.startsWith("/platform");
     }
 
     private static SetIterable<String> computePlatformClasses(ClassLoader classLoader)

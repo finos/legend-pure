@@ -326,7 +326,7 @@ Two things surfaced that were **not** in the original inventory:
 Verified: module `verify -DskipTests` (0 Checkstyle violations, `dependency:analyze` clean),
 full reactor `-T 4 clean install -DskipTests` (BUILD SUCCESS, 2:14), and the full module suite.
 
-### Phase 7 - retire `_LazyImpl` code generation (per **D4**)
+### Phase 7 - retire `_LazyImpl` code generation (per **D4**) - **DONE**
 `ClassLazyImplProcessor`, `AbstractLazyReflectiveCoreInstance` (and, optionally, the
 now-orphaned `PersistentReflectiveCoreInstance`), `serialization/model/`,
 `GraphSerializer.buildObj` + `ClassifierCaches`, `EnumProcessor.ENUM_LAZY_CLASS_NAME`,
@@ -342,6 +342,32 @@ the deletion of `serialization/model`, or every generated file will fail to comp
 This removes one generated class per platform class, so the generated-source footprint of every
 downstream build shrinks - worth calling out in the PR description. Verify by regenerating and
 diffing the file list under `target/generated-*-sources/`.
+
+**Knock-on not anticipated by this plan: five DSL extension module POMs.** The generated
+`_LazyImpl` classes imported `org.eclipse.collections.impl.list.mutable.FastList`, and
+`JavaModelFactoryGenerator` writes generated sources into `target/generated-sources` - *main*
+scope. They were therefore the last main-scope consumer of the eclipse-collections **impl** jar
+in the compiled DSL extension modules, so `dependency:analyze` (`failOnWarning=true`) began
+rejecting the now-unneeded compile-scope declaration. Two plausible fixes are wrong:
+
+- `<scope>test</scope>` breaks the `generate-sources` classpath. Eclipse Collections resolves its
+  factories through `META-INF/services`, so this is a **runtime** need, not compile-time or
+  test-only. It also overrides the transitive compile-scope dependency, narrowing it.
+- Applying `runtime` uniformly breaks `...-compiled-dsl-graph`, whose *generated main* sources do
+  use `org.eclipse.collections.impl.factory.Maps`.
+
+The discriminator is what each module's **generated** main sources use, not `src/main/java`.
+Final state: `<scope>runtime</scope>` on diagram, mapping, path, store and tds; graph untouched
+at compile scope.
+
+Verified: full reactor `-T 4 clean install -DskipTests` (BUILD SUCCESS, 2:27), module `verify
+-DskipTests` (0 Checkstyle violations, `dependency:analyze` clean), and the module suite - 1,985
+tests, 0 failures, 0 errors, 13 skipped. The drop from 1,994 is exactly the 5 `TestObj` tests
+plus the 4 deleted `TestJavaPackageAndImportBuilder` methods.
+
+Not actioned: `PersistentReflectiveCoreInstance` is now orphaned (`AbstractLazyReflectiveCoreInstance`
+was its only subclass). It is public API in a package that generated code imports by wildcard, so
+deleting it is left as a separate call.
 
 ### Phase 8 - documentation
 Apply **3.5**.

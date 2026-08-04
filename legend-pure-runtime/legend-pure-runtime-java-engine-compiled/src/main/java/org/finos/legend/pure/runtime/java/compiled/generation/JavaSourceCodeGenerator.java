@@ -128,7 +128,6 @@ public final class JavaSourceCodeGenerator
                     "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
                     "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.*;\n" +
                     "import org.finos.legend.pure.runtime.java.compiled.metadata.*;\n" +
-                    "import org.finos.legend.pure.runtime.java.compiled.serialization.model.*;\n" +
 
                     "import java.lang.reflect.Method;\n" +
                     "import java.math.BigInteger;\n" +
@@ -798,7 +797,6 @@ public final class JavaSourceCodeGenerator
                 StringJavaSource.newStringJavaSource(JavaPackageAndImportBuilder.platformJavaPackage(), "PureCompiledLambda", imports + platform + this.buildPureCompiledLambda(processorContext)),
                 StringJavaSource.newStringJavaSource(JavaPackageAndImportBuilder.platformJavaPackage(), "LambdaZero", imports + platform + this.buildLambdaZero()),
                 EnumProcessor.processEnum(),
-                EnumProcessor.processEnumLazy(),
                 EnumProcessor.processEnumLazyComponent());
 
         if (this.writeFilesToDisk)

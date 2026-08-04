@@ -36,7 +36,6 @@ import java.util.function.IntFunction;
 public class EnumProcessor
 {
     public static final String ENUM_CLASS_NAME = "PureEnum";
-    public static final String ENUM_LAZY_CLASS_NAME = ENUM_CLASS_NAME + "_LazyImpl";
     public static final String ENUM_LAZY_COMPONENT_CLASS_NAME = ENUM_CLASS_NAME + "_LazyComponent";
 
     public static StringJavaSource processEnum()
@@ -62,38 +61,6 @@ public class EnumProcessor
                         "         return this.fullSystemPath;\n" +
                         "    }\n" +
                         "}\n");
-    }
-
-    public static StringJavaSource processEnumLazy()
-    {
-        String className = ENUM_LAZY_CLASS_NAME;
-        String superClassName =  JavaPackageAndImportBuilder.buildInterfaceNameFromUserPath(M3Paths.Enum) + "_LazyImpl";
-        return StringJavaSource.newStringJavaSource(JavaPackageAndImportBuilder.rootPackage(), className,
-                "import " + JavaPackageAndImportBuilder.buildPackageFromUserPath(M3Paths.Enum) + ".*;\n" +
-                "import org.finos.legend.pure.m4.coreinstance.SourceInformation;\n" +
-                "import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;\n" +
-                "import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;\n" +
-                "import org.eclipse.collections.api.map.ImmutableMap;\n" +
-                "\n" +
-                "public class " + className + " extends " + superClassName + " implements Comparable<" + FullJavaPaths.Enum + ">" +
-                "{\n" +
-                "    private final String fullSystemPath;\n" +
-                "    " + className + "(Obj obj, MetadataLazy metadataLazy)\n" +
-                "    {\n" +
-                "        super(obj, metadataLazy);\n" +
-                "        this.fullSystemPath = \"Root::\" + obj.getClassifier();\n" +
-                "    }\n" +
-                "    @Override\n" +
-                "    public int compareTo(" + FullJavaPaths.Enum + " o)\n" +
-                "    {\n" +
-                "        return this.getName().compareTo(o.getName());\n" +
-                "    }\n" +
-                "    @Override\n" +
-                "    public String getFullSystemPath()\n" +
-                "    {\n" +
-                "         return this.fullSystemPath;\n" +
-                "    }\n" +
-                "}\n");
     }
 
     public static StringJavaSource processEnumLazyComponent()

@@ -17,10 +17,8 @@ package org.finos.legend.pure.runtime.java.compiled.metadata;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
-import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.runtime.java.compiled.serialization.model.RValue;
 
 import java.util.Objects;
 
@@ -32,28 +30,6 @@ import java.util.Objects;
 @Deprecated
 public abstract class MetadataLazy implements Metadata
 {
-    public abstract Object valueToObject(RValue value);
-
-    public RichIterable<Object> valuesToObjects(ListIterable<RValue> values)
-    {
-        int size = (values == null) ? 0 : values.size();
-        switch (size)
-        {
-            case 0:
-            {
-                return Lists.immutable.empty();
-            }
-            case 1:
-            {
-                return Lists.mutable.with(valueToObject(values.get(0)));
-            }
-            default:
-            {
-                return values.collect(this::valueToObject, Lists.mutable.ofInitialCapacity(size));
-            }
-        }
-    }
-
     public static MetadataLazy fromClassLoader(ClassLoader classLoader, String metadataName)
     {
         Objects.requireNonNull(classLoader, "class loader may not be null");
@@ -141,12 +117,6 @@ public abstract class MetadataLazy implements Metadata
         public CoreInstance getElementByPath(String path)
         {
             return this.metadataPelt.getElementByPath(path);
-        }
-
-        @Override
-        public Object valueToObject(RValue value)
-        {
-            throw new UnsupportedOperationException();
         }
     }
 }

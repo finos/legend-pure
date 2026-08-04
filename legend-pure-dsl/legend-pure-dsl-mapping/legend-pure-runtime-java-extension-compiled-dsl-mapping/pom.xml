@@ -169,6 +169,7 @@
         <dependency>
             <groupId>org.eclipse.collections</groupId>
             <artifactId>eclipse-collections</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
