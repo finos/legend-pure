@@ -231,8 +231,18 @@ function <<PCT.test>> meta::pure::functions::boolean::tests::equality::equal::te
 {
     assert($f->eval(|[] == []));
     assertFalse($f->eval(|[] != []));
+
     assertFalse($f->eval(|[] == 1));
     assertFalse($f->eval(|1 == []));
+
+    assertFalse($f->eval(|[] == 1.123));
+    assertFalse($f->eval(|1.123 == []));
+
+    assertFalse($f->eval(|[] == 'string'));
+    assertFalse($f->eval(|'string' == []));
+
+    assertFalse($f->eval(|[] == %2026-01-01));
+    assertFalse($f->eval(|%2026-01-01 == []));
 }
 
 function <<test.Test>> meta::pure::functions::boolean::tests::equality::equal::testEqualPrimitiveCollections():Boolean[1]
