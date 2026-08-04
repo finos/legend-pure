@@ -313,12 +313,13 @@ other module was picking up Jackson transitively through this one); and the full
 Delete `LegacyIdBuilder`, `IdBuilder.LegacyBuilder` and `IdBuilder.legacyBuilder`. Nothing
 references them after Phase 3.
 
-Two things surfaced that were **not** in the original inventory, and neither was actioned:
+Two things surfaced that were **not** in the original inventory:
 
 1. **`CompiledExtension.getExtraIdBuilders` is now a dead extension point.** `LegacyIdBuilder`
    was its only consumer (`LegacyIdBuilder:181`). The default method on `CompiledExtension` and
-   the one override, `PathExtensionCompiled.getExtraIdBuilders` (which registers an id function
-   for `Path`), are now never called. See open decision **D8**.
+   the one override, `PathExtensionCompiled.getExtraIdBuilders` (which registered an id function
+   for `Path`), were never called again. Resolved by **D8**: the default method is deprecated and
+   the override deleted.
 2. `IdBuilder.AbstractBuilder` is now a redundant layer with a single subclass, `Builder`. It is
    package-private, so collapsing it is a free but purely cosmetic refactor, out of scope here.
 
@@ -395,11 +396,7 @@ new snapshot.
 | **D6** | Mark the whole of `MetadataLazy` `@Deprecated`, or only the removed members? | **Whole class** - it is entirely replaceable by `MetadataPelt`. Internal call sites move to `MetadataPelt` so no `legend-pure` code triggers the deprecation warning. |
 | **D7** | Rename the surviving `...PeltMetadata` test methods? | **Yes** - drop the now-redundant suffix. |
 
-### Open
-
-| # | Question | Options | Recommendation |
-|---|---|---|---|
-| **D8** | `CompiledExtension.getExtraIdBuilders` became a dead extension point in Phase 6 - `LegacyIdBuilder` was its only consumer. Its sole override, `PathExtensionCompiled.getExtraIdBuilders`, registers an id function for `Path` that is now never invoked. What should happen to it? | (a) leave both as-is; (b) deprecate the default method and the override, with javadoc saying it is no longer consulted; (c) delete both. | **(b)**, or (c). This is dead code, **not** a behaviour gap: `getExtraIdBuilders` was only ever consulted when a `LegacyIdBuilder` was constructed, which happened solely for the null-metadata-name case. Every modular build - including all 142 `legend-engine` modules - already used `ReferenceIdV1IdBuilder` and so already ignored this extension point. Reference id v1 assigns ids by generic graph-path traversal, so `Path` instances need no special-casing. Leaving it as-is is a trap (an implementor gets silent no-op behaviour); deprecating removes the trap without breaking anyone; deleting is safe within these four repos, since no `legend-engine` extension overrides it. |
+| **D8** | `CompiledExtension.getExtraIdBuilders` became a dead extension point in Phase 6 - `LegacyIdBuilder` was its only consumer. Its sole override, `PathExtensionCompiled.getExtraIdBuilders`, registers an id function for `Path` that is now never invoked. What should happen to it? | **Deprecate `CompiledExtension.getExtraIdBuilders`** (javadoc: no longer consulted, implementing it has no effect, retained temporarily) **and delete `PathExtensionCompiled.getExtraIdBuilders` along with its `buildIdForPath` helper.** This is dead code, not a behaviour gap: the extension point was only consulted when a `LegacyIdBuilder` was constructed, which happened solely for the null-metadata-name case, so every modular build - including all 142 `legend-engine` modules - already ignored it. Reference id v1 assigns ids by generic graph-path traversal, so `Path` needs no special-casing. |
 
 ---
 

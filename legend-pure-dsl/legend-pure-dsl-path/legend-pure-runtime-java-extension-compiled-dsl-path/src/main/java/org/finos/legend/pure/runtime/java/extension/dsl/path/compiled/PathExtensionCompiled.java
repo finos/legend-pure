@@ -20,9 +20,6 @@ import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m2.inlinedsl.path.M2PathPaths;
 import org.finos.legend.pure.m3.coreinstance.PathCoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.Path;
@@ -30,29 +27,14 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PropertyPa
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Bridge;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction1;
 
-import java.util.function.Function;
-
 public class PathExtensionCompiled implements CompiledExtension
 {
-    @Override
-    public RichIterable<? extends Pair<String, Function<? super CoreInstance, String>>> getExtraIdBuilders(ProcessorSupport processorSupport)
-    {
-        if (processorSupport.package_getByUserPath(M2PathPaths.Path) != null)
-        {
-            return Lists.immutable.with(Tuples.pair(M2PathPaths.Path, PathExtensionCompiled::buildIdForPath));
-        }
-        return Lists.immutable.empty();
-    }
-
     @Override
     public PureFunction1<Object, Object> getExtraFunctionEvaluation(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge, ExecutionSupport es)
     {
@@ -87,12 +69,6 @@ public class PathExtensionCompiled implements CompiledExtension
             };
         }
         return null;
-    }
-
-    private static String buildIdForPath(CoreInstance path)
-    {
-        SourceInformation sourceInfo = path.getSourceInformation();
-        return sourceInfo.getMessage();
     }
 
     @Override
