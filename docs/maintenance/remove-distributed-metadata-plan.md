@@ -1,6 +1,6 @@
 # Plan: Remove Distributed Metadata (Modular and Monolithic)
 
-**Status:** agreed - all open decisions resolved (see [section 7](#7-decisions-resolved))
+**Status:** complete - all phases done, all decisions resolved (see [section 7](#7-decisions-resolved))
 **Scope:** `legend-pure` only (with a text-only survey of `legend-engine` recorded below)
 **Superseded by:** PELT metadata (`PureCompilerSerializer` / `FileSerializer` write side, `MetadataPelt` read side)
 
@@ -365,9 +365,11 @@ Verified: full reactor `-T 4 clean install -DskipTests` (BUILD SUCCESS, 2:27), m
 tests, 0 failures, 0 errors, 13 skipped. The drop from 1,994 is exactly the 5 `TestObj` tests
 plus the 4 deleted `TestJavaPackageAndImportBuilder` methods.
 
-Not actioned: `PersistentReflectiveCoreInstance` is now orphaned (`AbstractLazyReflectiveCoreInstance`
-was its only subclass). It is public API in a package that generated code imports by wildcard, so
-deleting it is left as a separate call.
+`PersistentReflectiveCoreInstance` was orphaned by this phase (`AbstractLazyReflectiveCoreInstance`
+was its only subclass) and has since been deleted in a follow-up commit. Its `isPersistent()`
+override was the only thing it added, and that method is supplied independently by
+`ReflectiveCoreInstance`, `BaseCoreInstance` and `AbstractLazyCoreInstance` - the last of which is
+what the PELT lazy classes extend - so removing it changes nothing at runtime.
 
 ### Phase 8 - documentation - **DONE**
 Apply **3.5**. All six files updated, plus a row for this plan in the documentation map.
@@ -381,12 +383,18 @@ at all now.
 A case-insensitive sweep of `docs/` and `README.md` confirms no reference to distributed
 metadata remains.
 
-### Phase 9 - full verification
+### Phase 9 - full verification - **DELEGATED TO CI**
 ```
 mvn.cmd -T 4 clean install
 ```
-Then, as a separate later exercise (explicitly deferred): build `legend-engine` against the
-new snapshot.
+Not run as a single local pass: the GitHub build runners and the other build systems have run
+the full test suite on each of these commits as it was pushed, and all have passed. Every phase
+was also verified locally with a full reactor `clean install -DskipTests` plus the complete
+`legend-pure-runtime-java-engine-compiled` suite.
+
+Still deferred, as originally planned: build `legend-engine` against the new snapshot. The
+survey in section 2 establishes by text search that `legend-engine` references none of the
+deleted classes, but that has not been confirmed by compilation.
 
 ---
 
