@@ -16,6 +16,14 @@ package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.compos
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.factory.Sets;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 
 public class TestCompositeCodeStorage
 {
@@ -72,5 +80,24 @@ public class TestCompositeCodeStorage
             Assert.assertTrue(CompositeCodeStorage.isSourceInRepository(sourceId, "example"));
             Assert.assertFalse(CompositeCodeStorage.isSourceInRepository(sourceId, "not_a_module"));
         }
+    }
+
+    @Test
+    public void testGetFileOrFilesRootHasNoDuplicates()
+    {
+        RichIterable<CodeRepository> repos = CodeRepositoryProviderHelper.findCodeRepositories(getClass().getClassLoader(), true);
+        RepositoryCodeStorage classpathStorage = new ClassLoaderCodeStorage(repos);
+
+        CompositeCodeStorage composite = new CompositeCodeStorage(classpathStorage);
+
+        MutableSet<String> expected = Sets.mutable.empty();
+        for (CodeRepository repo : classpathStorage.getAllRepositories())
+        {
+            expected.addAllIterable(classpathStorage.getFileOrFiles("/" + repo.getName()));
+        }
+
+        RichIterable<String> actual = composite.getFileOrFiles("/");
+        Assert.assertEquals("Root file listing should not contain duplicates", actual.toSet().size(), actual.size());
+        Assert.assertEquals(expected, actual.toSet());
     }
 }
