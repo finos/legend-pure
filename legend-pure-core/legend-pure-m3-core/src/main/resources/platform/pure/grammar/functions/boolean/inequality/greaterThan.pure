@@ -15,15 +15,10 @@
 import meta::pure::test::pct::*;
 
 '''
-Whether the first operand succeeds the second, according to the type's natural order.
+Whether the first number succeeds the second, in numeric order.
 
-Written `>` in Pure: `$a > $b`. Overloads cover `Number`, `Date`, `String` and `Boolean`, so the
-same operator orders numerically, chronologically, lexicographically, or with `false` before `true`.
-
-An absent operand makes the result `false`, **not** empty — the comparison does not propagate
-emptiness the way arithmetic does. So a missing value never satisfies the comparison, and
-`$a > $b` is false whenever either side is empty. Test with `isEmpty()` first when you need to
-distinguish "absent" from "present but not greater than".
+Written `>` in Pure: `$a > $b`. Both operands are present, so the comparison is always decided; it is
+strict, so equal numbers give `false`.
 
 **Parameters**
 - `left` — the first operand.
@@ -33,13 +28,16 @@ distinguish "absent" from "present but not greater than".
 
 **Examples**
 ```pure
-1 > 2
-'a' > 'b'
-%2015-01-01 > %2016-01-01
-false > true
+4 > 3   // true
+1 > 2   // false
+3 > 3   // false, the comparison is strict
 ```
 
-**See also** `lessThan(Number[1], Number[1]):Boolean[1]`,
+**See also** `greaterThan(Date[1], Date[1]):Boolean[1]`,
+`greaterThan(String[1], String[1]):Boolean[1]`,
+`greaterThan(Boolean[1], Boolean[1]):Boolean[1]`,
+`greaterThan(Number[0..1], Number[0..1]):Boolean[1]`,
+`lessThan(Number[1], Number[1]):Boolean[1]`,
 `meta::pure::functions::collection::sort(T[m], Function<{T[1], T[1]->Integer[1]}>[0..1]):T[m]`
 '''
 function
@@ -56,7 +54,13 @@ function
 
 '''
 As `greaterThan(Number[1], Number[1]):Boolean[1]`, for `Number` operands where a value may be missing.
-Either operand may be absent; an absent operand makes the result `false` rather than empty.
+Either operand may be absent.
+
+An absent operand makes the result `false`, **not** empty — the comparison does not propagate
+emptiness the way arithmetic does. Each `[0..1]` operand is tested with `isNotEmpty()` before being
+compared, so a missing value never satisfies the comparison and `$a > $b` is false whenever either
+side is empty. Test with `isEmpty()` first when you need to distinguish "absent" from "present but
+not greater than". The other overloads taking `[0..1]` operands behave the same way.
 '''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Number[0..1], right:Number[0..1]):Boolean[1]
 {
@@ -65,7 +69,8 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Numbe
 
 '''
 As `greaterThan(Number[1], Number[1]):Boolean[1]`, for `Number` operands where a value may be missing.
-The second operand may be absent; an absent operand makes the result `false` rather than empty.
+The second operand may be absent; absent operands are treated as described in
+`greaterThan(Number[0..1], Number[0..1]):Boolean[1]`.
 '''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Number[1], right:Number[0..1]):Boolean[1]
 {
@@ -74,7 +79,8 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Numbe
 
 '''
 As `greaterThan(Number[1], Number[1]):Boolean[1]`, for `Number` operands where a value may be missing.
-The first operand may be absent; an absent operand makes the result `false` rather than empty.
+The first operand may be absent; absent operands are treated as described in
+`greaterThan(Number[0..1], Number[0..1]):Boolean[1]`.
 '''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Number[0..1], right:Number[1]):Boolean[1]
 {
@@ -83,7 +89,8 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Numbe
 
 '''
 As `greaterThan(Date[1], Date[1]):Boolean[1]`, for `Date` operands where a value may be missing.
-Either operand may be absent; an absent operand makes the result `false` rather than empty.
+Either operand may be absent; absent operands are treated as described in
+`greaterThan(Number[0..1], Number[0..1]):Boolean[1]`.
 '''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]
 {
@@ -92,7 +99,8 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Date[
 
 '''
 As `greaterThan(Date[1], Date[1]):Boolean[1]`, for `Date` operands where a value may be missing.
-The second operand may be absent; an absent operand makes the result `false` rather than empty.
+The second operand may be absent; absent operands are treated as described in
+`greaterThan(Number[0..1], Number[0..1]):Boolean[1]`.
 '''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Date[1], right:Date[0..1]):Boolean[1]
 {
@@ -101,7 +109,8 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Date[
 
 '''
 As `greaterThan(Date[1], Date[1]):Boolean[1]`, for `Date` operands where a value may be missing.
-The first operand may be absent; an absent operand makes the result `false` rather than empty.
+The first operand may be absent; absent operands are treated as described in
+`greaterThan(Number[0..1], Number[0..1]):Boolean[1]`.
 '''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Date[0..1], right:Date[1]):Boolean[1]
 {
@@ -110,7 +119,8 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Date[
 
 '''
 As `greaterThan(String[1], String[1]):Boolean[1]`, for `String` operands where a value may be missing.
-Either operand may be absent; an absent operand makes the result `false` rather than empty.
+Either operand may be absent; absent operands are treated as described in
+`greaterThan(Number[0..1], Number[0..1]):Boolean[1]`.
 '''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:String[0..1], right:String[0..1]):Boolean[1]
 {
@@ -119,7 +129,8 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Strin
 
 '''
 As `greaterThan(String[1], String[1]):Boolean[1]`, for `String` operands where a value may be missing.
-The second operand may be absent; an absent operand makes the result `false` rather than empty.
+The second operand may be absent; absent operands are treated as described in
+`greaterThan(Number[0..1], Number[0..1]):Boolean[1]`.
 '''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:String[1], right:String[0..1]):Boolean[1]
 {
@@ -128,7 +139,8 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Strin
 
 '''
 As `greaterThan(String[1], String[1]):Boolean[1]`, for `String` operands where a value may be missing.
-The first operand may be absent; an absent operand makes the result `false` rather than empty.
+The first operand may be absent; absent operands are treated as described in
+`greaterThan(Number[0..1], Number[0..1]):Boolean[1]`.
 '''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:String[0..1], right:String[1]):Boolean[1]
 {
@@ -137,7 +149,8 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Strin
 
 '''
 As `greaterThan(Boolean[1], Boolean[1]):Boolean[1]`, for `Boolean` operands where a value may be missing.
-Either operand may be absent; an absent operand makes the result `false` rather than empty.
+Either operand may be absent; absent operands are treated as described in
+`greaterThan(Number[0..1], Number[0..1]):Boolean[1]`.
 '''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Boolean[0..1], right:Boolean[0..1]):Boolean[1]
 {
@@ -146,7 +159,8 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Boole
 
 '''
 As `greaterThan(Boolean[1], Boolean[1]):Boolean[1]`, for `Boolean` operands where a value may be missing.
-The second operand may be absent; an absent operand makes the result `false` rather than empty.
+The second operand may be absent; absent operands are treated as described in
+`greaterThan(Number[0..1], Number[0..1]):Boolean[1]`.
 '''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Boolean[1], right:Boolean[0..1]):Boolean[1]
 {
@@ -155,7 +169,8 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Boole
 
 '''
 As `greaterThan(Boolean[1], Boolean[1]):Boolean[1]`, for `Boolean` operands where a value may be missing.
-The first operand may be absent; an absent operand makes the result `false` rather than empty.
+The first operand may be absent; absent operands are treated as described in
+`greaterThan(Number[0..1], Number[0..1]):Boolean[1]`.
 '''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Boolean[0..1], right:Boolean[1]):Boolean[1]
 {
@@ -164,6 +179,18 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Boole
 
 '''
 Compares two strings lexicographically, character by character.
+
+As `greaterThan(Number[1], Number[1]):Boolean[1]`, the operator is written `>` — `$a > $b` — but the
+order is lexicographic rather than numeric.
+
+**Examples**
+```pure
+'b' > 'a'   // true
+'a' > 'b'   // false
+'a' > 'a'   // false
+```
+
+**See also** `greaterThan(Number[1], Number[1]):Boolean[1]`
 '''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:String[1], right:String[1]):Boolean[1]
 {
@@ -172,6 +199,18 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Strin
 
 '''
 Compares two dates chronologically — true when `left` falls strictly after `right`.
+
+As `greaterThan(Number[1], Number[1]):Boolean[1]`, the operator is written `>` — `$a > $b` — but the
+order is chronological rather than numeric.
+
+**Examples**
+```pure
+%2012-10-02 > %2012-10-01   // true
+%2015-01-01 > %2016-01-01   // false
+%2012-10-02 > %2012-10-02   // false
+```
+
+**See also** `greaterThan(Number[1], Number[1]):Boolean[1]`
 '''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Date[1], right:Date[1]):Boolean[1]
 {
@@ -179,7 +218,20 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Date[
 }
 
 '''
-Orders booleans with `false` before `true`.
+Orders booleans with `false` before `true`, so `true > false` is the only case that holds.
+
+As `greaterThan(Number[1], Number[1]):Boolean[1]`, the operator is written `>` — `$a > $b` — but the
+order is over the two boolean values rather than numeric.
+
+**Examples**
+```pure
+true > false    // true
+false > true    // false
+true > true     // false
+false > false   // false
+```
+
+**See also** `greaterThan(Number[1], Number[1]):Boolean[1]`
 '''
 function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Boolean[1], right:Boolean[1]):Boolean[1]
 {

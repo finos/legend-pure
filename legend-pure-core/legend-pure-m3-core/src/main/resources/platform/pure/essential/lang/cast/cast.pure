@@ -16,17 +16,19 @@ import meta::pure::test::pct::*;
 import meta::pure::functions::lang::tests::cast::*;
 
 '''
-Reinterprets a value as a more specific type.
+Reinterprets a value under a different declared type.
 
 The target type is given as a type literal, written `@Type`, rather than as a value. The cast is
 checked at runtime: if the value is not actually an instance of that type, execution fails rather
 than returning an empty result. Multiplicity is carried through unchanged, so casting a `[*]` gives
 a `[*]`.
 
-Casting narrows the *static* type so that subtype properties become reachable; it does not convert
-between unrelated types. For numeric conversion use
-`meta::pure::functions::math::toFloat(Number[1]):Float[1]` or
-`meta::pure::functions::math::toDecimal(Number[1]):Decimal[1]`.
+**A cast never changes the value — only its declared type.** Narrowing to a subtype is the common
+case, and is what makes subtype properties reachable, but a cast need not narrow: it may widen to a
+more general type, which is unusual but does happen, or move to a type bearing no direct relation to
+the declared one, which is useful because Pure supports multiple inheritance. Contrast the numeric
+conversions `meta::pure::functions::math::toFloat(Number[1]):Float[1]` and
+`meta::pure::functions::math::toDecimal(Number[1]):Decimal[1]`, which do change the value.
 
 **Parameters**
 - `source` — the value to reinterpret.

@@ -17,8 +17,7 @@ import meta::pure::test::pct::*;
 '''
 Looks up a tag on a profile by name.
 
-Tags are the `{Profile.name='value'}` annotations attached to model elements; where a stereotype is a
-bare marker, a tag carries a string value. This resolves the name to the `Tag` object, which is what you
+A TaggedValue annotation on a model element, `{Profile.name='value'}`, associates a Tag with a string value (unlike a stereotype, which is a bare marker). This resolves the name to the `Tag` object, which is what you
 match a `TaggedValue`'s `tag` against — comparing names alone would ignore which profile the tag belongs
 to, and two profiles may define tags of the same name.
 

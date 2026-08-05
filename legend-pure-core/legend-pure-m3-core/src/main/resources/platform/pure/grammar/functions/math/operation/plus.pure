@@ -14,10 +14,36 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Adds every element of an `Integer` collection, returning a single `Integer`.
+
+Written `+` in Pure: `$a + $b` desugars to `plus([$a, $b])`, which is why the parameter is a collection
+rather than two values. The collection parameter is also what shapes the edge cases: a single value is
+returned unchanged, so unary `+1` is just `1`, and an empty collection gives `0` — the additive
+identity, so that adding nothing changes nothing.
+
+**Parameters**
+- `ints` — the values to add.
+
+**Returns** the sum of the collection.
+
+**Examples**
+```pure
+1 + 2                        // 3
+3 + 4 + 5 + 7                // 19
+[15, 13, 2, 1, 1]->plus()    // 32
++1                           // 1
+```
+
+**See also** `minus(Integer[*]):Integer[1]`,
+`times(Integer[*]):Integer[1]`,
+`plus(Float[*]):Float[1]`,
+`plus(Decimal[*]):Decimal[1]`,
+`plus(Number[*]):Number[1]`
+'''
 native function
     <<PCT.function, functionType.ReducerFunction>>
     {
-        doc.doc='Adds all the provided values',
         PCT.grammarDoc='4 + 1',
         PCT.grammarCharacters='+'
     }

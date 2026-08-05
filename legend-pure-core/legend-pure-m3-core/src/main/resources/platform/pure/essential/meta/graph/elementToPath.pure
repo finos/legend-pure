@@ -16,14 +16,113 @@ import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
 '''
-The fully-qualified path of a model element, as a string.
+The fully-qualified path of a packageable element, as a string.
 
-For a packageable element — a class, enumeration, function, profile — this is the `::`-separated path
-that identifies it, such as `meta::pure::functions::meta::type`. For a property or a relation column,
-which live inside a class rather than in a package, it is the bare member name.
+A packageable element — a class, an enumeration, a profile, a function definition, a package — is
+identified by the chain of packages that contains it. This is that chain, `::`-separated and ending in the
+element's own name, such as `meta::pure::functions::meta::tests::model::CC_Person`.
+
+The name of the top-level package is left out, so the path of the root package itself is the empty string
+and every other path starts at the first package below the root. An element that sits at the top level
+with no package at all, such as `Integer` or `Package`, is just its own name.
 
 The inverse of `pathToElement(String[1]):PackageableElement[1]`, so the two together let an element be
-written out as text and looked up again.
+written out as text and looked up again. The round trip holds for any separator that cannot occur inside
+an element name: `::` and `.` are safe, `_` is not.
+
+**Parameters**
+- `element` — the element to name.
+
+**Returns** its `::`-separated path, empty for the root package.
+
+**Examples**
+```pure
+elementToPath(meta::pure::functions::meta)    // 'meta::pure::functions::meta'
+elementToPath(CC_Person.package->at(0))       // 'meta::pure::functions::meta::tests::model'
+elementToPath(::)                             // '' — the root package
+```
+
+**See also** `pathToElement(String[1]):PackageableElement[1]`,
+`elementPath(PackageableElement[1]):PackageableElement[1..*]`,
+`id(Any[1]):String[1]`,
+`enumName(Enumeration<T>[1]):String[1]`
+'''
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::elementToPath(element:PackageableElement[1]):String[1]
+{
+    $element->elementToPath('::')
+}
+
+'''
+As `elementToPath(PackageableElement[1]):String[1]`, but `includeRoot` decides whether the name of the
+top-level package appears at the head of the path. With it set to true,
+`elementToPath(meta::pure::functions::meta, true)` gives `Root::meta::pure::functions::meta`, and the root
+package itself gives `Root` rather than the empty string. Elements with no package at all, such as
+`Integer`, are unaffected.
+'''
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::elementToPath(element:PackageableElement[1], includeRoot:Boolean[1]):String[1]
+{
+    $element->elementToPath('::', $includeRoot)
+}
+
+'''
+As `elementToPath(PackageableElement[1]):String[1]`, but joins the path with `separator` instead of `::` —
+`elementToPath(CC_Person.package->at(0), '_')` gives `meta_pure_functions_meta_tests_model`. The name of
+the top-level package is still left out.
+
+A separator that can occur inside an element name, `_` among them, makes the result ambiguous and no
+longer safe to feed back to `pathToElement(String[1], String[1]):PackageableElement[1]`.
+'''
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::elementToPath(element:PackageableElement[1], separator:String[1]):String[1]
+{
+    $element->elementToPath($separator, false)
+}
+
+'''
+As `elementToPath(PackageableElement[1]):String[1]`, but takes both the `separator` used to join the path
+and the `includeRoot` flag that decides whether the name of the top-level package appears at the head of
+it — `elementToPath(CC_Person.package->at(0), '$', true)` gives
+`Root$meta$pure$functions$meta$tests$model`. The other packageable-element variants are conveniences over
+this one, with `separator` defaulting to `::` and `includeRoot` to false.
+'''
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::elementToPath(element:PackageableElement[1], separator:String[1], includeRoot:Boolean[1]):String[1];
+
+'''
+As `elementToPath(PackageableElement[1]):String[1]`, for a statically-typed `Type`. Kept for backward
+compatibility: `Type` used to be a subtype of `PackageableElement`, and most types — classes,
+enumerations, primitive types — still are packageable elements. Units are not, and are handled by
+`elementToPath(Type[1], String[1]):String[1]`, to which this delegates with `::`.
+'''
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::elementToPath(element:Type[1]):String[1]
+{
+    $element->elementToPath('::')
+}
+
+'''
+As `elementToPath(PackageableElement[1], String[1]):String[1]`, for a statically-typed `Type`: the path,
+joined with `separator` rather than `::`.
+
+This is also the variant that gives a unit its path. A unit is a `Type` but not a packageable element, so
+it is named by the path of its measure, a `~`, and the unit name — `elementToPath(RomanLength~Pes)`, which
+delegates here with `::`, gives `meta::pure::functions::meta::tests::model::RomanLength~Pes`.
+'''
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::elementToPath(element:Type[1], separator:String[1]):String[1]
+{
+    $element->match(
+        [
+            p : PackageableElement[1] | $p->elementToPath($separator),
+            u : Unit[1] | $u.measure->elementToPath($separator) + '~' + $u.name->toOne()
+        ]
+    )
+}
+
+'''
+As `elementToPath(PackageableElement[1]):String[1]`, for a statically-typed `Function`. Kept for backward
+compatibility: `Function` used to be a subtype of `PackageableElement`, and code holding a statically-typed
+function still resolves to it. A function that is a packageable element delegates to
+`elementToPath(PackageableElement[1], String[1]):String[1]` with `::`.
+
+Properties and relation columns are functions but not packageable elements: they live inside a class or a
+relation rather than in a package, so for them the result is the bare member name.
 
 **Parameters**
 - `element` — the element to name.
@@ -32,7 +131,7 @@ written out as text and looked up again.
 
 **Examples**
 ```pure
-CC_Person->elementToPath()   // 'meta::pure::functions::meta::tests::model::CC_Person'
+CC_Person->elementToPath()       // 'meta::pure::functions::meta::tests::model::CC_Person'
 $someProperty->elementToPath()   // 'firstName'
 ```
 
@@ -50,42 +149,6 @@ function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::element
         ]
     )
 }
-
-function meta::pure::functions::meta::elementToPath(element:Type[1]):String[1]
-{
-    $element->elementToPath('::')
-}
-
-function meta::pure::functions::meta::elementToPath(element:Type[1], separator:String[1]):String[1]
-{
-    $element->match(
-        [
-            p : PackageableElement[1] | $p->elementToPath($separator),
-            u : Unit[1] | $u.measure->elementToPath($separator) + '~' + $u.name->toOne()
-        ]
-    )
-}
-
-function meta::pure::functions::meta::elementToPath(element:PackageableElement[1]):String[1]
-{
-    $element->elementToPath('::')
-}
-
-function meta::pure::functions::meta::elementToPath(element:PackageableElement[1], includeRoot:Boolean[1]):String[1]
-{
-    $element->elementToPath('::', $includeRoot)
-}
-
-function meta::pure::functions::meta::elementToPath(element:PackageableElement[1], separator:String[1]):String[1]
-{
-    $element->elementToPath($separator, false)
-}
-
-native function meta::pure::functions::meta::elementToPath(element:PackageableElement[1], separator:String[1], includeRoot:Boolean[1]):String[1];
-
-native function meta::pure::functions::meta::elementPath(element:PackageableElement[1]):PackageableElement[1..*];
-
-
 
 
 function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testElementToPath():Boolean[1]
@@ -159,81 +222,6 @@ function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testEp
 
     assertEquals('', ^PackageableElement()->elementToPath());
     assertEquals('', ^PackageableElement()->elementToPath(true));
-}
-
-function <<test.Test>> meta::pure::functions::meta::tests::elementPath::testTopLevelElementPath():Boolean[1]
-{
-    assertEquals([Package], elementPath(Package));
-    assertEquals([Number], elementPath(Number));
-    assertEquals([Boolean], elementPath(Boolean));
-    assertEquals([Date], elementPath(Date));
-    assertEquals([Float], elementPath(Float));
-    assertEquals([Integer], elementPath(Integer));
-    assertEquals([String], elementPath(String));
-}
-
-function <<test.Test>> meta::pure::functions::meta::tests::elementPath::testRootElementPath():Boolean[1]
-{
-    assertEquals([::], elementPath(::));
-}
-
-function <<test.Test>> meta::pure::functions::meta::tests::elementPath::testElementPath():Boolean[1]
-{
-    assertEquals(
-        [
-         ::,
-         meta,
-         meta::pure,
-         meta::pure::functions,
-         meta::pure::functions::meta,
-         meta::pure::functions::meta::tests,
-         meta::pure::functions::meta::tests::model,
-         meta::pure::functions::meta::tests::model::CC_Person
-        ],
-        elementPath(CC_Person));
-    assertEquals(
-        [
-         ::,
-         meta,
-         meta::pure,
-         meta::pure::functions,
-         meta::pure::functions::meta,
-         meta::pure::functions::meta::tests,
-         meta::pure::functions::meta::tests::model,
-         meta::pure::functions::meta::tests::model::CC_GeographicEntityType
-        ],
-        elementPath(CC_GeographicEntityType));
-    assertEquals(
-        [
-         ::,
-         meta,
-         meta::pure,
-         meta::pure::functions
-        ],
-        elementPath(meta::pure::functions));
-    assertEquals(
-        [
-         ::,
-         meta
-        ],
-        elementPath(meta));
-}
-
-function <<test.Test>> meta::pure::functions::meta::tests::elementPath::testEphemeralPackageableElement():Boolean[1]
-{
-    let rootPkg = ^Package(name='Root');
-    let pkgPkg = ^Package(name='pkg', package=$rootPkg);
-    let element = ^PackageableElement(name='MyElement', package=$pkgPkg);
-    assertEquals([$rootPkg], $rootPkg->elementPath());
-    assertEquals([$rootPkg, $pkgPkg], $pkgPkg->elementPath());
-    assertEquals([$rootPkg, $pkgPkg, $element], $element->elementPath());
-
-    let otherRootPkg = ^Package(name='Other');
-    let otherPkgPkg = ^Package(name='pkg', package=$otherRootPkg);
-    let otherElement = ^PackageableElement(name='MyElement', package=$otherPkgPkg);
-    assertEquals([$otherRootPkg], $otherRootPkg->elementPath());
-    assertEquals([$otherRootPkg, $otherPkgPkg], $otherPkgPkg->elementPath());
-    assertEquals([$otherRootPkg, $otherPkgPkg, $otherElement], $otherElement->elementPath());
 }
 
 function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testElementToPathRoundTrip():Boolean[1]

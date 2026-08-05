@@ -20,9 +20,9 @@ The number of duration-unit boundaries between two dates, signed.
 **This counts calendar boundaries crossed, not elapsed time** — the single most common source of surprise
 here. `%2016-02-01` to `%2016-02-29` is `0` months, because both fall in the same calendar month, even
 though they are 28 days apart. Conversely `%2015-12-31T23:59:59` to `%2016-01-01T00:00:01` is `1` year,
-two seconds apart, because a year boundary lies between them.
+even though they are just two seconds apart, because a year boundary lies between them.
 
-If you need elapsed duration rather than boundaries crossed, difference in a finer unit and convert.
+If you need elapsed duration rather than boundaries crossed, compute the difference in a finer unit and then convert.
 
 The result is **signed and directional**: `$d1->dateDiff($d2, …)` is positive when `d2` is later, zero or
 negative when earlier, and `0` for two dates in the same interval. Swapping the two dates does not always

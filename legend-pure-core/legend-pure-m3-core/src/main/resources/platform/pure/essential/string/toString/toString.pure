@@ -20,8 +20,12 @@ import meta::pure::functions::string::tests::toString::*;
 The plain textual form of any value.
 
 This is the human-readable rendering: strings come back as their own contents, with no surrounding
-quotes. Use `toRepresentation(Any[1]):String[1]` when you want the form a value would take in Pure
-source, with strings quoted and escaped.
+quotes or escapes. This can yield ambiguous results; e.g., `1->toString()` and `'1'->toString()` both
+give the same result. Use `toRepresentation(Any[1]):String[1]` when you want the form a value would
+take in Pure source, with strings quoted and escaped.
+
+If a Class defines a qualified property `toString()` returning `String[1]`, it will be called by this
+function to generate string renderings for its instances.
 
 **Parameters**
 - `any` — the value to render.

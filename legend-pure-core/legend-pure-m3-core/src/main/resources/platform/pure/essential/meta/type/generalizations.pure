@@ -16,7 +16,7 @@ import meta::pure::functions::meta::tests::generalizations::*;
 import meta::pure::test::pct::*;
 
 '''
-A type together with all of its supertypes, most specific first.
+A type together with all of its supertypes, in inheritance order. That is, the order in which types are searched when trying to resolve something (such as a property) through inheritance.
 
 **The type itself is the first element**, which is why the result is `[1..*]` and never empty — every
 type generalises to at least itself. The chain always ends at `Any`.

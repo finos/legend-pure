@@ -18,12 +18,12 @@ import meta::pure::test::pct::*;
 '''
 Looks up a model element by its fully-qualified path.
 
-The inverse of `elementToPath(Function<Any>[1]):String[1]`, and the way to reach an element named at
+The inverse of `elementToPath(PackageableElement[1]):String[1]`, and the way to reach an element named at
 runtime — from configuration, user input, or generated code — rather than written as a literal.
 
 The path is `::`-separated. **A path that resolves to nothing is an error, not an empty result**, since
-the return multiplicity is `[1]`; use `lenientPathToElement` in the same package when a missing element
-should yield empty instead.
+the return multiplicity is `[1]`; use `lenientPathToElement(String[1]):PackageableElement[0..1]` when a
+missing element should yield empty instead.
 
 **Parameters**
 - `path` — the `::`-separated path to resolve.
@@ -44,14 +44,12 @@ function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::pathToE
     $path->pathToElement('::')
 }
 
-native function meta::pure::functions::meta::pathToElement(path:String[1], separator:String[1]):PackageableElement[1];
-
-function meta::pure::functions::meta::lenientPathToElement(path:String[1]):PackageableElement[0..1]
-{
-    $path->lenientPathToElement('::')
-}
-
-native function meta::pure::functions::meta::lenientPathToElement(path:String[1], separator:String[1]):PackageableElement[0..1];
+'''
+As `pathToElement(String[1]):PackageableElement[1]`, but splits `path` on `separator` instead of `::` —
+`pathToElement('meta.pure.functions.meta.tests.model.CC_Person', '.')` resolves the same class as the
+`::`-separated form. A path that resolves to nothing is still an error rather than an empty result.
+'''
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::pathToElement(path:String[1], separator:String[1]):PackageableElement[1];
 
 
 function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testPathToElement():Boolean[1]
@@ -61,21 +59,6 @@ function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testPa
     assertIs(CC_Person.package->toOne(), pathToElement('meta::pure::functions::meta::tests::model'));
     assertIs(CC_Person.package->toOne(), pathToElement('meta_pure_functions_meta_tests_model', '_'));
     assertIs(RomanLength, pathToElement('meta::pure::functions::meta::tests::model::RomanLength'));
-}
-
-function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testLenientPathToElement():Boolean[1]
-{
-    assertIs(CC_Person, lenientPathToElement('meta::pure::functions::meta::tests::model::CC_Person')->toOne());
-    assertIs(CC_Person, lenientPathToElement('meta.pure.functions.meta.tests.model.CC_Person', '.')->toOne());
-    assertEmpty(lenientPathToElement('meta::pure::functions::meta::tests::model::CCC_Person'));
-    assertEmpty(lenientPathToElement('meta.pure.functions.meta.tests.model.CCC_Person', '.'));
-    assertEmpty(lenientPathToElement('meta::pure::functions::meta::tests::models::CC_Person'));
-    assertEmpty(lenientPathToElement('meta.pure.functions.meta.tests.models.CC_Person', '.'));
-
-    assertIs(CC_Person.package->toOne(), lenientPathToElement('meta::pure::functions::meta::tests::model')->toOne());
-    assertIs(CC_Person.package->toOne(), lenientPathToElement('meta_pure_functions_meta_tests_model', '_')->toOne());
-    assertEmpty(lenientPathToElement('meta::pure::functions::metal::tests::model'));
-    assertEmpty(lenientPathToElement('meta_pure_functions_metal_tests_model', '_'));
 }
 
 function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testRootPathToElement():Boolean[1]

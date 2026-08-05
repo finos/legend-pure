@@ -1,0 +1,126 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::meta::tests::model::*;
+import meta::pure::test::pct::*;
+
+'''
+The chain of elements containing a packageable element, from the top-level package down to the element
+itself.
+
+Where `elementToPath(PackageableElement[1]):String[1]` renders that chain as a string, this returns the
+elements themselves: first the top-level package — `Root` for elements in the graph — then each package
+below it, and last the element that was passed in. An element that sits at the top level with no package
+at all, such as `Integer` or `Package`, is a chain of one. The result is never empty, since it always ends
+with the element itself.
+
+The chain is followed through the `package` property, so it works for elements assembled on the fly as
+well as for elements in the graph: an ephemeral element under an ephemeral package sitting under a package
+named `Other` has that package, not `Root`, at the head of its chain.
+
+**Parameters**
+- `element` — the element whose containing chain is wanted.
+
+**Returns** the containing elements from the top-level package down to `element`, inclusive.
+
+**Examples**
+```pure
+elementPath(::)          // [::]
+elementPath(Integer)     // [Integer]
+elementPath(meta)        // [::, meta]
+elementPath(CC_Person)   // [::, meta, meta::pure, meta::pure::functions, meta::pure::functions::meta,
+                         //  meta::pure::functions::meta::tests,
+                         //  meta::pure::functions::meta::tests::model, CC_Person]
+```
+
+**See also** `elementToPath(PackageableElement[1]):String[1]`,
+`pathToElement(String[1]):PackageableElement[1]`
+'''
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::elementPath(element:PackageableElement[1]):PackageableElement[1..*];
+
+
+function <<test.Test>> meta::pure::functions::meta::tests::elementPath::testTopLevelElementPath():Boolean[1]
+{
+    assertEquals([Package], elementPath(Package));
+    assertEquals([Number], elementPath(Number));
+    assertEquals([Boolean], elementPath(Boolean));
+    assertEquals([Date], elementPath(Date));
+    assertEquals([Float], elementPath(Float));
+    assertEquals([Integer], elementPath(Integer));
+    assertEquals([String], elementPath(String));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::elementPath::testRootElementPath():Boolean[1]
+{
+    assertEquals([::], elementPath(::));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::elementPath::testElementPath():Boolean[1]
+{
+    assertEquals(
+        [
+         ::,
+         meta,
+         meta::pure,
+         meta::pure::functions,
+         meta::pure::functions::meta,
+         meta::pure::functions::meta::tests,
+         meta::pure::functions::meta::tests::model,
+         meta::pure::functions::meta::tests::model::CC_Person
+        ],
+        elementPath(CC_Person));
+    assertEquals(
+        [
+         ::,
+         meta,
+         meta::pure,
+         meta::pure::functions,
+         meta::pure::functions::meta,
+         meta::pure::functions::meta::tests,
+         meta::pure::functions::meta::tests::model,
+         meta::pure::functions::meta::tests::model::CC_GeographicEntityType
+        ],
+        elementPath(CC_GeographicEntityType));
+    assertEquals(
+        [
+         ::,
+         meta,
+         meta::pure,
+         meta::pure::functions
+        ],
+        elementPath(meta::pure::functions));
+    assertEquals(
+        [
+         ::,
+         meta
+        ],
+        elementPath(meta));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::elementPath::testEphemeralPackageableElement():Boolean[1]
+{
+    let rootPkg = ^Package(name='Root');
+    let pkgPkg = ^Package(name='pkg', package=$rootPkg);
+    let element = ^PackageableElement(name='MyElement', package=$pkgPkg);
+    assertEquals([$rootPkg], $rootPkg->elementPath());
+    assertEquals([$rootPkg, $pkgPkg], $pkgPkg->elementPath());
+    assertEquals([$rootPkg, $pkgPkg, $element], $element->elementPath());
+
+    let otherRootPkg = ^Package(name='Other');
+    let otherPkgPkg = ^Package(name='pkg', package=$otherRootPkg);
+    let otherElement = ^PackageableElement(name='MyElement', package=$otherPkgPkg);
+    assertEquals([$otherRootPkg], $otherRootPkg->elementPath());
+    assertEquals([$otherRootPkg, $otherPkgPkg], $otherPkgPkg->elementPath());
+    assertEquals([$otherRootPkg, $otherPkgPkg, $otherElement], $otherElement->elementPath());
+}

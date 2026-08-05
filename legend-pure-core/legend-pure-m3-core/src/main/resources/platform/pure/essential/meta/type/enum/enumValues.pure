@@ -18,8 +18,8 @@ import meta::pure::test::pct::*;
 '''
 Every value of an enumeration, in declaration order.
 
-The way to enumerate an enum's members without naming them — for building a lookup, validating input,
-or iterating all cases. The enumeration may be held in a variable, so the enum need not be known when
+The way to enumerate an enumeration's members without naming them — for building a lookup, validating input,
+or iterating all cases. The enumeration may be held in a variable, so it need not be known when
 the code is written.
 
 **Parameters**

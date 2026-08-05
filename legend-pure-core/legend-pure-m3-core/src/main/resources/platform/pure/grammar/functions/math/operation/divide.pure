@@ -14,10 +14,36 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Divides one number by another.
+
+Written `/` in Pure: `$left / $right`. Unlike the other arithmetic operators, this one does not preserve
+the type of its operands — the result is always a `Float`, even when both operands are `Integer`, so
+`4 / 2` is `2.0` rather than `2`. A quotient with no terminating expansion is carried at floating-point
+precision. When an exact result matters, use `divide(Decimal[1], Decimal[1], Integer[1]):Decimal[1]`,
+which takes a scale and returns a `Decimal`.
+
+**Parameters**
+- `left` — the dividend.
+- `right` — the divisor.
+
+**Returns** the quotient as a `Float`.
+
+**Examples**
+```pure
+4 / 2         // 2.0
+3 / 2         // 1.5
+4 / -2        // -2.0
+1 / 96        // 0.010416666666666666
+```
+
+**See also** `divide(Decimal[1], Decimal[1], Integer[1]):Decimal[1]`,
+`times(Integer[*]):Integer[1]`,
+`rem(Number[1], Number[1]):Number[1]`
+'''
 native function
     <<PCT.function>>
     {
-        doc.doc='Divides the first parameter by the second one.',
         PCT.grammarDoc='$left / $right',
         PCT.grammarCharacters='/'
     }
