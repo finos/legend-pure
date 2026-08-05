@@ -15,16 +15,10 @@
 import meta::pure::test::pct::*;
 
 '''
-Whether the first number succeeds or equals the second, in numeric order, where either operand may be
-absent.
+Whether the first number succeeds or equals the second, in numeric order.
 
-Written `>=` in Pure: `$a >= $b`. The comparison is not strict, so equal numbers give `true`.
-
-An absent operand makes the result `false`, **not** empty — the comparison does not propagate
-emptiness the way arithmetic does. Each `[0..1]` operand is tested with `isNotEmpty()` before being
-compared, so a missing value never satisfies the comparison and `$a >= $b` is false whenever either
-side is empty. Test with `isEmpty()` first when you need to distinguish "absent" from "present but
-not greater than or equal to". The other overloads taking `[0..1]` operands behave the same way.
+Written `>=` in Pure: `$a >= $b`. Both operands are present, so the comparison is always decided; it is
+not strict, so equal numbers give `true`.
 
 **Parameters**
 - `left` — the first operand.
@@ -34,16 +28,15 @@ not greater than or equal to". The other overloads taking `[0..1]` operands beha
 
 **Examples**
 ```pure
-4 >= 3     // true
-3 >= 3     // true, the comparison is not strict
-3 >= 4     // false
-$a >= $b   // false when either $a or $b is empty
+4 >= 3   // true
+3 >= 3   // true, the comparison is not strict
+3 >= 4   // false
 ```
 
-**See also** `greaterThanEqual(Number[1], Number[1]):Boolean[1]`,
-`greaterThanEqual(Date[1], Date[1]):Boolean[1]`,
+**See also** `greaterThanEqual(Date[1], Date[1]):Boolean[1]`,
 `greaterThanEqual(String[1], String[1]):Boolean[1]`,
 `greaterThanEqual(Boolean[1], Boolean[1]):Boolean[1]`,
+`greaterThanEqual(Number[0..1], Number[0..1]):Boolean[1]`,
 `lessThanEqual(Number[1], Number[1]):Boolean[1]`,
 `meta::pure::functions::collection::sort(T[m], Function<{T[1], T[1]->Integer[1]}>[0..1]):T[m]`
 '''
@@ -53,7 +46,23 @@ function
         PCT.grammarDoc='$first >= $second',
         PCT.grammarCharacters='>='
     }
-    meta::pure::functions::boolean::greaterThanEqual(left:Number[0..1], right:Number[0..1]):Boolean[1]
+    meta::pure::functions::boolean::greaterThanEqual(left:Number[1], right:Number[1]):Boolean[1]
+{
+    lessThanEqual($right, $left)
+}
+
+
+'''
+As `greaterThanEqual(Number[1], Number[1]):Boolean[1]`, for `Number` operands where a value may be missing.
+Either operand may be absent.
+
+An absent operand makes the result `false`, **not** empty — the comparison does not propagate
+emptiness the way arithmetic does. Each `[0..1]` operand is tested with `isNotEmpty()` before being
+compared, so a missing value never satisfies the comparison and `$a >= $b` is false whenever either
+side is empty. Test with `isEmpty()` first when you need to distinguish "absent" from "present but
+not greater than or equal to". The other overloads taking `[0..1]` operands behave the same way.
+'''
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Number[0..1], right:Number[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && greaterThanEqual($left->toOne(), $right->toOne())
 }
@@ -169,17 +178,6 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:
 }
 
 '''
-Whether one number is greater than or equal to another, both operands being present.
-
-The `[1]` form, so there is no empty case to consider — see
-`greaterThanEqual(Number[0..1], Number[0..1]):Boolean[1]` for how absent operands are treated.
-'''
-function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Number[1], right:Number[1]):Boolean[1]
-{
-    lessThanEqual($right, $left)
-}
-
-'''
 Compares two strings lexicographically, character by character.
 
 As `greaterThanEqual(Number[1], Number[1]):Boolean[1]`, the operator is written `>=` — `$a >= $b` —
@@ -200,7 +198,9 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:
 }
 
 '''
-Compares two dates chronologically — true when `left` falls at or after `right`.
+Compares two dates chronologically. For dates of the same granularity, this is true when `left` falls at
+or after `right`. The general case is that it is true when `left` starts strictly after the start of
+`right`, or when they start at the same time and `left` ends before or at the same time as `right`.
 
 As `greaterThanEqual(Number[1], Number[1]):Boolean[1]`, the operator is written `>=` — `$a >= $b` —
 but the order is chronological rather than numeric.
@@ -210,6 +210,7 @@ but the order is chronological rather than numeric.
 %2012-10-02 >= %2012-10-01   // true
 %2012-10-02 >= %2012-10-02   // true, the comparison is not strict
 %2015-01-01 >= %2016-01-01   // false
+%2015-01-01 >= %2015         // true, both start together but %2015-01-01 ends first
 ```
 
 **See also** `greaterThanEqual(Number[1], Number[1]):Boolean[1]`

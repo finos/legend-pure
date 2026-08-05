@@ -175,7 +175,9 @@ function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:Boolean[
 }
 
 '''
-Compares two dates chronologically — true when `left` falls strictly before `right`.
+Compares two dates chronologically. For dates of the same granularity, this is true when `left` falls
+strictly before `right`. The general case is that it is true when `left` starts strictly before the start
+of `right`, or when they start at the same time and `left` ends strictly after the end of `right`.
 
 As `lessThan(Number[1], Number[1]):Boolean[1]`, the operator is written `<` — `$a < $b` — but the
 order is chronological rather than numeric.
@@ -185,6 +187,7 @@ order is chronological rather than numeric.
 %2012-10-01 < %2012-10-02   // true
 %2015-01-01 < %2016-01-01   // true
 %2012-10-02 < %2012-10-02   // false
+%2015 < %2015-01-01         // true, both start together but %2015 ends later
 ```
 
 **See also** `lessThan(Number[1], Number[1]):Boolean[1]`

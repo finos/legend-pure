@@ -198,7 +198,9 @@ function <<PCT.function>> meta::pure::functions::boolean::greaterThan(left:Strin
 }
 
 '''
-Compares two dates chronologically — true when `left` falls strictly after `right`.
+Compares two dates chronologically. For dates of the same granularity, this is true when `left` falls
+strictly after `right`. The general case is that it is true when `left` starts strictly after the start of
+`right`, or when they start at the same time but `left` ends strictly before `right`.
 
 As `greaterThan(Number[1], Number[1]):Boolean[1]`, the operator is written `>` — `$a > $b` — but the
 order is chronological rather than numeric.
@@ -208,6 +210,7 @@ order is chronological rather than numeric.
 %2012-10-02 > %2012-10-01   // true
 %2015-01-01 > %2016-01-01   // false
 %2012-10-02 > %2012-10-02   // false
+%2015-01-01 > %2015         // true, both start together but %2015-01-01 ends first
 ```
 
 **See also** `greaterThan(Number[1], Number[1]):Boolean[1]`
