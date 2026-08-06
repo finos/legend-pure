@@ -199,7 +199,7 @@ Key internal structures:
 | `ClassCache` | Caches `Class<?>` lookups for generated Pure types |
 | `FunctionCache` | Caches `Method` reflective handles for generated Pure functions |
 | `MetadataAccessor` | Runtime metadata lookup (type graph, property descriptors) |
-| `MetadataEager` / `MetadataLazy` | Two strategies for loading metadata — eager loads all at startup, lazy loads on demand |
+| `MetadataEager` / `MetadataPelt` | Two strategies for loading metadata — eager loads all at startup from the in-memory graph, `MetadataPelt` loads elements on demand from serialized PELT metadata |
 | `CompiledExtension` | SPI for registering DSL/store extensions with the compiled engine |
 
 **Startup cost:** High. All generated Java classes must be loaded and the metadata

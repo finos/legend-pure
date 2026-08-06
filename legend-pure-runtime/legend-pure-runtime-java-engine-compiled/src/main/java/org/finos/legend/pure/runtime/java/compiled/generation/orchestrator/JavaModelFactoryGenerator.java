@@ -98,7 +98,7 @@ public class JavaModelFactoryGenerator
         }
         System.out.format("      Finished Pure initialization (%.6fs)%n", (System.nanoTime() - start) / 1_000_000_000.0);
 
-        JavaSourceCodeGenerator javaSourceCodeGenerator = new JavaSourceCodeGenerator(runtime.getProcessorSupport(), runtime.getCodeStorage(), true, filePath, false, Sets.mutable.empty(), name, JavaPackageAndImportBuilder.externalizablePackage(), true);
+        JavaSourceCodeGenerator javaSourceCodeGenerator = new JavaSourceCodeGenerator(runtime.getProcessorSupport(), runtime.getCodeStorage(), true, filePath, false, Sets.mutable.empty(), name, JavaPackageAndImportBuilder.externalizablePackage());
         javaSourceCodeGenerator.generateCode(allTypes);
     }
 }

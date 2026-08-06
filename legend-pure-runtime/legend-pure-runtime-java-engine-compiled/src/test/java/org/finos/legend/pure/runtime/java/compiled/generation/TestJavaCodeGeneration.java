@@ -40,7 +40,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaC
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.VoidLog;
 import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataEager;
-import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataPelt;
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -116,10 +115,6 @@ public class TestJavaCodeGeneration
                 true,
                 new VoidLog());
 
-        // Monolithic generation now uses pelt serialization, which must already exist; so there should be no metadata generation
-        File metaDistributed = new File(directory, "metadata-distributed");
-        Assert.assertFalse("metadata-distributed directory should not be created", metaDistributed.exists());
-
         String externalClassName = externalPackage + ".PureExternal";
         ClassLoader previousClassLoader = Thread.currentThread().getContextClassLoader();
         try (TestClassLoader classLoader = new TestClassLoader(previousClassLoader, n -> externalClassName.equals(n) || n.startsWith(JavaPackageAndImportBuilder.rootPackage()), null, toURL(classesDirectory)))
@@ -165,11 +160,7 @@ public class TestJavaCodeGeneration
                 true,
                 new VoidLog());
 
-        // Modular generation now uses pelt serialization, which must already exist; so there should be no metadata generation
-        File metaDistributed = new File(directory, "metadata-distributed");
-        Assert.assertFalse("metadata-distributed directory should not be created", metaDistributed.exists());
-
-        executeDynamicNewTest(cl -> MetadataLazy.fromClassLoader(cl, "platform"), classesDirectory);
+        executeDynamicNewTest(cl -> MetadataPelt.fromClassLoader(cl, "platform"), classesDirectory);
     }
 
     @Test
@@ -503,11 +494,6 @@ public class TestJavaCodeGeneration
         // Mirror the exact call used in legend-pure DSL/runtime pom.xml:
         //   args[0] = repository, args[1] = classesDir (generated-test-resources), args[2] = targetDir
         JavaCodeGeneration.main("platform", classesDir.getAbsolutePath(), directory.getAbsolutePath());
-
-        // main() calls doIt() with: modular, useSingleDir=true, generateSources=true, generateTest=true
-        // Modular generation now uses pelt serialization, which must already exist; so there should be no metadata generation
-        File metadataDir = new File(classesDir, "metadata");
-        Assert.assertFalse(metadataDir.exists());
 
         // Generated sources go to targetDir/generated-test-sources/ because main() passes generateTest=true
         File packageImpl = new File(directory,

@@ -40,7 +40,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImpo
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaStandaloneLibraryGenerator;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.VoidLog;
 import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
-import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataPelt;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -136,21 +135,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     }
 
     @Test
-    public void testStandaloneLibraryNoExternalDistributedMetadata() throws Exception
-    {
-        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null, new VoidLog());
-        Path classesDir = TMP.newFolder().toPath();
-        generator.serializeAndWriteDistributedMetadata(classesDir);
-        generator.compileAndWriteClasses(classesDir, new VoidLog());
-        try (URLClassLoader classLoader = new URLClassLoader(new URL[]{classesDir.toUri().toURL()}, Thread.currentThread().getContextClassLoader()))
-        {
-            Metadata metadata = MetadataLazy.fromClassLoader(classLoader);
-            testStandaloneLibraryNoExternal(classLoader, metadata);
-        }
-    }
-
-    @Test
-    public void testStandaloneLibraryNoExternalPeltMetadata() throws Exception
+    public void testStandaloneLibraryNoExternal() throws Exception
     {
         JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null, new VoidLog());
         Path classesDir = TMP.newFolder().toPath();
@@ -159,35 +144,30 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
         try (URLClassLoader classLoader = new URLClassLoader(new URL[]{classesDir.toUri().toURL()}, Thread.currentThread().getContextClassLoader()))
         {
             Metadata metadata = MetadataPelt.fromClassLoader(classLoader, runtime.getCodeStorage().getAllRepositories().asLazy().collect(CodeRepository::getName));
-            testStandaloneLibraryNoExternal(classLoader, metadata);
+            CompiledExecutionSupport executionSupport = new CompiledExecutionSupport(
+                    new JavaCompilerState(null, classLoader),
+                    new CompiledProcessorSupport(classLoader, metadata),
+                    null,
+                    runtime.getCodeStorage(),
+                    null,
+                    VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER,
+                    new ConsoleCompiled(),
+                    null,
+                    null,
+                    CompiledExtensionLoader.extensions()
+            );
+
+            String className = JavaPackageAndImportBuilder.getRootPackage() + ".test_standalone_tests";
+            Class<?> testClass = classLoader.loadClass(className);
+
+            Method joinWithCommas = testClass.getMethod("Root_test_standalone_joinWithCommas_String_MANY__String_1_", RichIterable.class, ExecutionSupport.class);
+            Object result1 = joinWithCommas.invoke(null, Lists.immutable.with("a", "b", "c"), executionSupport);
+            Assert.assertEquals("a, b, c", result1);
+
+            Method testWithReflection = testClass.getMethod("Root_test_standalone_testWithReflection_String_1__String_1_", String.class, ExecutionSupport.class);
+            Object result2 = testWithReflection.invoke(null, "_*_", executionSupport);
+            Assert.assertEquals("_*_testWithReflection", result2);
         }
-    }
-
-    private void testStandaloneLibraryNoExternal(ClassLoader classLoader, Metadata metadata) throws Exception
-    {
-        CompiledExecutionSupport executionSupport = new CompiledExecutionSupport(
-                new JavaCompilerState(null, classLoader),
-                new CompiledProcessorSupport(classLoader, metadata),
-                null,
-                runtime.getCodeStorage(),
-                null,
-                VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER,
-                new ConsoleCompiled(),
-                null,
-                null,
-                CompiledExtensionLoader.extensions()
-        );
-
-        String className = JavaPackageAndImportBuilder.getRootPackage() + ".test_standalone_tests";
-        Class<?> testClass = classLoader.loadClass(className);
-
-        Method joinWithCommas = testClass.getMethod("Root_test_standalone_joinWithCommas_String_MANY__String_1_", RichIterable.class, ExecutionSupport.class);
-        Object result1 = joinWithCommas.invoke(null, Lists.immutable.with("a", "b", "c"), executionSupport);
-        Assert.assertEquals("a, b, c", result1);
-
-        Method testWithReflection = testClass.getMethod("Root_test_standalone_testWithReflection_String_1__String_1_", String.class, ExecutionSupport.class);
-        Object result2 = testWithReflection.invoke(null, "_*_", executionSupport);
-        Assert.assertEquals("_*_testWithReflection", result2);
     }
 
     @Test
@@ -205,7 +185,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
 
         List<Path> files = Files.walk(sourcesDir).filter(Files::isRegularFile).collect(Collectors.toList());
         Assert.assertNotEquals(Lists.fixedSize.empty(), files);
-        Pattern pattern = Pattern.compile("org/finos/legend/pure/generated/(CoreGen|LambdaZero|PureCompiledLambda|PureEnum(_(LazyImpl|LazyComponent))?|(Package_(Impl|LazyImpl|LazyConcrete|LazyVirtual))|((test|platform|other)_\\w++)|(Root_(meta|test|other)_\\w++(\\$\\w++)?))\\.java");
+        Pattern pattern = Pattern.compile("org/finos/legend/pure/generated/(CoreGen|LambdaZero|PureCompiledLambda|PureEnum(_LazyComponent)?|(Package_(Impl|LazyConcrete|LazyVirtual))|((test|platform|other)_\\w++)|(Root_(meta|test|other)_\\w++(\\$\\w++)?))\\.java");
         Assert.assertEquals(Collections.emptyList(), ListIterate.reject(files, f -> pattern.matcher(Iterate.makeString(sourcesDir.relativize(f), "/")).matches()));
     }
 
@@ -223,7 +203,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
 
         List<Path> files = Files.walk(sourcesDir).filter(Files::isRegularFile).collect(Collectors.toList());
         Assert.assertNotEquals(Lists.fixedSize.empty(), files);
-        Pattern pattern = Pattern.compile("org/finos/legend/pure/generated/((CoreGen|LambdaZero|PureCompiledLambda|PureEnum(_(LazyImpl|LazyComponent))?)|(test_\\w++(\\$\\w++)?)|(Root_test_\\w++(\\$\\w++)?))\\.java");
+        Pattern pattern = Pattern.compile("org/finos/legend/pure/generated/((CoreGen|LambdaZero|PureCompiledLambda|PureEnum(_LazyComponent)?)|(test_\\w++(\\$\\w++)?)|(Root_test_\\w++(\\$\\w++)?))\\.java");
         Assert.assertEquals(Lists.fixedSize.empty(), ListIterate.reject(files, f -> pattern.matcher(Iterate.makeString(sourcesDir.relativize(f), "/")).matches()));
         Assert.assertTrue(generate.getJavaSourcesByGroup().get("test").stream().filter(s -> s.toUri().getPath().equals("/org/finos/legend/pure/generated/test_standalone_tests.java")).collect(Collectors.toList()).get(0).getCode().contains("Root_test_standalone_simplePureTest__Boolean_1_"));
     }
@@ -265,42 +245,23 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     }
 
     @Test
-    public void testStandaloneLibraryExternalExecutionDistributedMetadata() throws Exception
+    public void testStandaloneLibraryExternalExecution() throws Exception
     {
         String externalPackage = "org.finos.legend.pure.runtime.java.compiled";
-        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), true, externalPackage, true, false, new VoidLog());
-        Path classesDir = TMP.newFolder().toPath();
-        generator.serializeAndWriteDistributedMetadata(classesDir);
-        generator.compileAndWriteClasses(classesDir, new VoidLog());
-        try (URLClassLoader classLoader = new URLClassLoader(new URL[]{classesDir.toUri().toURL()}, Thread.currentThread().getContextClassLoader()))
-        {
-            testStandaloneLibraryExternalExecution(classLoader, externalPackage);
-        }
-    }
-
-    @Test
-    public void testStandaloneLibraryExternalExecutionPeltMetadata() throws Exception
-    {
-        String externalPackage = "org.finos.legend.pure.runtime.java.compiled";
-        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), true, externalPackage, false, false, new VoidLog());
+        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), true, externalPackage, false, new VoidLog());
         Path classesDir = TMP.newFolder().toPath();
         generator.serializeAndWriteMetadata(classesDir);
         generator.compileAndWriteClasses(classesDir, new VoidLog());
         try (URLClassLoader classLoader = new URLClassLoader(new URL[]{classesDir.toUri().toURL()}, Thread.currentThread().getContextClassLoader()))
         {
-            testStandaloneLibraryExternalExecution(classLoader, externalPackage);
+            String className = externalPackage + ".PureExternal";
+            Class<?> testClass = classLoader.loadClass(className);
+
+            Method joinWithCommas = testClass.getMethod("joinWithCommas", RichIterable.class);
+            Assert.assertEquals("a, b, c", joinWithCommas.invoke(null, Lists.immutable.with("a", "b", "c")));
+
+            Method testWithReflection = testClass.getMethod("testWithReflection", String.class);
+            Assert.assertEquals("_*_testWithReflection", testWithReflection.invoke(null, "_*_"));
         }
-    }
-
-    private void testStandaloneLibraryExternalExecution(ClassLoader classLoader, String externalPackage) throws Exception
-    {
-        String className = externalPackage + ".PureExternal";
-        Class<?> testClass = classLoader.loadClass(className);
-
-        Method joinWithCommas = testClass.getMethod("joinWithCommas", RichIterable.class);
-        Assert.assertEquals("a, b, c", joinWithCommas.invoke(null, Lists.immutable.with("a", "b", "c")));
-
-        Method testWithReflection = testClass.getMethod("testWithReflection", String.class);
-        Assert.assertEquals("_*_testWithReflection", testWithReflection.invoke(null, "_*_"));
     }
 }

@@ -29,7 +29,6 @@ import org.finos.legend.pure.m4.tools.SafeAppendable;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassImplProcessor;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassLazyImplProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassPeltImplProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassProcessor;
 
@@ -122,15 +121,6 @@ public class JavaPackageAndImportBuilder
     }
 
 
-    public static String buildLazyImplClassReferenceFromUserPath(String elementPath)
-    {
-        return buildLazyImplClassReferenceFromUserPath(new StringBuilder(elementPath.length() + CODE_GEN_PACKAGE_NAME.length()), elementPath).toString();
-    }
-
-    public static String buildLazyImplClassNameFromUserPath(String elementPath)
-    {
-        return buildLazyImplClassNameFromUserPath(new StringBuilder(elementPath.length()), elementPath).toString();
-    }
 
 
     public static String buildLazyConcreteElementClassReferenceFromUserPath(String elementPath)
@@ -183,16 +173,6 @@ public class JavaPackageAndImportBuilder
         return buildLazyVirtualPackageClassName(new StringBuilder(M3Paths.Package.length() + ClassPeltImplProcessor.CLASS_VIRTUAL_PACKAGE_SUFFIX.length())).toString();
     }
 
-    public static <T extends Appendable> T buildLazyImplClassReferenceFromUserPath(T appendable, String elementPath)
-    {
-        buildLazyImplClassNameFromUserPath(appendCodeGenPackage(appendable), elementPath);
-        return appendable;
-    }
-
-    public static <T extends Appendable> T buildLazyImplClassNameFromUserPath(T appendable, String elementPath)
-    {
-        return buildImplClassNameFromUserPath(appendable, elementPath, ClassLazyImplProcessor.CLASS_LAZYIMPL_SUFFIX);
-    }
 
 
     public static <T extends Appendable> T buildImplClassReferenceFromUserPath(T appendable, String elementPath)
@@ -279,15 +259,6 @@ public class JavaPackageAndImportBuilder
         return buildImplClassNameFromType(new StringBuilder(64), element, processorSupport).toString();
     }
 
-    public static String buildLazyImplClassReferenceFromType(CoreInstance element, ProcessorSupport processorSupport)
-    {
-        return buildLazyImplClassReferenceFromType(new StringBuilder(CODE_GEN_PACKAGE_NAME.length() + 64), element, processorSupport).toString();
-    }
-
-    public static String buildLazyImplClassNameFromType(CoreInstance element, ProcessorSupport processorSupport)
-    {
-        return buildLazyImplClassNameFromType(new StringBuilder(64), element, processorSupport).toString();
-    }
 
     public static String buildImplClassNameFromType(CoreInstance element, String suffix, ProcessorSupport processorSupport)
     {
@@ -346,16 +317,6 @@ public class JavaPackageAndImportBuilder
         return buildImplClassNameFromType(appendable, element, ClassImplProcessor.CLASS_IMPL_SUFFIX, processorSupport);
     }
 
-    public static <T extends Appendable> T buildLazyImplClassReferenceFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)
-    {
-        buildLazyImplClassNameFromType(appendCodeGenPackage(appendable), type, processorSupport);
-        return appendable;
-    }
-
-    public static <T extends Appendable> T buildLazyImplClassNameFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)
-    {
-        return buildImplClassNameFromType(appendable, type, ClassLazyImplProcessor.CLASS_LAZYIMPL_SUFFIX, processorSupport);
-    }
 
 
     public static <T extends Appendable> T buildLazyConcreteElementClassReferenceFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)

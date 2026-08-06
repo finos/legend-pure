@@ -28,6 +28,8 @@ import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingSt
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.execution.test.TestTools;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -52,6 +54,8 @@ import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLo
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.ClassJsonFactoryProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.FunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.AbstractPureCompiledLambda;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.EnumProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.ExtendedPrimitiveTypeProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
@@ -128,7 +132,6 @@ public final class JavaSourceCodeGenerator
                     "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
                     "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.*;\n" +
                     "import org.finos.legend.pure.runtime.java.compiled.metadata.*;\n" +
-                    "import org.finos.legend.pure.runtime.java.compiled.serialization.model.*;\n" +
 
                     "import java.lang.reflect.Method;\n" +
                     "import java.math.BigInteger;\n" +
@@ -149,7 +152,6 @@ public final class JavaSourceCodeGenerator
     private final boolean writeFilesToDisk;
     private final Path directoryToWriteFilesTo;
     private final String externalAPIPackage;
-    private final boolean useLegacyMetadataForExternalAPI;
 
     private final boolean includePureStackTrace;
     private final MutableSet<CoreInstance> processedClasses = Sets.mutable.empty();
@@ -159,7 +161,7 @@ public final class JavaSourceCodeGenerator
 
     private final String name;
 
-    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> providedExtensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode, boolean useLegacyMetadataForExternalAPI)
+    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> providedExtensions, String name, String externalAPIPackage)
     {
         this.name = name;
         this.processorSupport = processorSupport;
@@ -169,7 +171,6 @@ public final class JavaSourceCodeGenerator
         this.directoryToWriteFilesTo = directoryToWriteFilesTo;
         this.includePureStackTrace = includePureStackTrace;
         this.externalAPIPackage = externalAPIPackage;
-        this.useLegacyMetadataForExternalAPI = useLegacyMetadataForExternalAPI;
         this.extensions = UnifiedSetWithHashingStrategy.newSet(new HashingStrategy<CompiledExtension>()
         {
             @Override
@@ -186,14 +187,40 @@ public final class JavaSourceCodeGenerator
         }, CompiledExtensionLoader.extensions()).withAll(providedExtensions).toList();
     }
 
-    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> providedExtensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode)
+    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> extensions, String name, String externalAPIPackage)
     {
-        this(processorSupport, idBuilder, codeStorage, writeFilesToDisk, directoryToWriteFilesTo, includePureStackTrace, providedExtensions, name, externalAPIPackage, generateCompilerExtensionCode, true);
+        this(processorSupport, null, codeStorage, writeFilesToDisk, directoryToWriteFilesTo, includePureStackTrace, extensions, name, externalAPIPackage);
     }
 
+    /**
+     * @deprecated The generateCompilerExtensionCode flag is not used. Retained temporarily for
+     * backward compatibility; use the constructor without it instead.
+     */
+    @Deprecated
+    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> providedExtensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode)
+    {
+        this(processorSupport, idBuilder, codeStorage, writeFilesToDisk, directoryToWriteFilesTo, includePureStackTrace, providedExtensions, name, externalAPIPackage);
+    }
+
+    /**
+     * @deprecated The generateCompilerExtensionCode flag is not used. Retained temporarily for
+     * backward compatibility; use the constructor without it instead.
+     */
+    @Deprecated
     public JavaSourceCodeGenerator(ProcessorSupport processorSupport, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> extensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode)
     {
-        this(processorSupport, null, codeStorage, writeFilesToDisk, directoryToWriteFilesTo, includePureStackTrace, extensions, name, externalAPIPackage, generateCompilerExtensionCode);
+        this(processorSupport, codeStorage, writeFilesToDisk, directoryToWriteFilesTo, includePureStackTrace, extensions, name, externalAPIPackage);
+    }
+
+    /**
+     * @deprecated The generateCompilerExtensionCode flag is not used, and the externalizable API is
+     * always generated against PELT metadata. Retained temporarily for backward compatibility; use
+     * the constructor without those flags instead.
+     */
+    @Deprecated
+    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> providedExtensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode, boolean useLegacyMetadataForExternalAPI)
+    {
+        this(processorSupport, idBuilder, codeStorage, writeFilesToDisk, directoryToWriteFilesTo, includePureStackTrace, providedExtensions, name, externalAPIPackage);
     }
 
     public ProcessorSupport getProcessorSupport()
@@ -360,7 +387,7 @@ public final class JavaSourceCodeGenerator
                 e -> (e instanceof Function) || Instance.instanceOf(e, functionClass, this.processorSupport),
                 e -> FunctionProcessor.buildExternalizableFunction(e, processorContext),
                 Lists.mutable.empty());
-        String text = ExternalClassBuilder.buildExternalizableFunctionClass(pack, EXTERNAL_FUNCTIONS_CLASS_NAME, externalizableFunctionCode, this.codeStorage.getAllRepositories().collect(CodeRepository::getName), this.useLegacyMetadataForExternalAPI);
+        String text = ExternalClassBuilder.buildExternalizableFunctionClass(pack, EXTERNAL_FUNCTIONS_CLASS_NAME, externalizableFunctionCode, this.codeStorage.getAllRepositories().collect(CodeRepository::getName));
         ImmutableList<StringJavaSource> javaSources = Lists.immutable.with(StringJavaSource.newStringJavaSource(pack, EXTERNAL_FUNCTIONS_CLASS_NAME, text));
         if (this.writeFilesToDisk)
         {
@@ -556,39 +583,46 @@ public final class JavaSourceCodeGenerator
 
     private String buildPureCompiledLambda(ProcessorContext processorContext)
     {
-        return "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.*;\n" +
-                "\n" +
-                "public class PureCompiledLambda extends AbstractPureCompiledLambda<Object>\n" +
-                "{\n" +
-                "    public PureCompiledLambda(LambdaFunction lambdaFunction, SharedPureFunction pureFunction)\n" +
-                "    {\n" +
-                "        super(lambdaFunction, pureFunction);\n" +
-                "    }\n" +
-                "\n" +
-                "    public PureCompiledLambda(ExecutionSupport executionSupport, String lambdaId, SharedPureFunction pureFunction)\n" +
-                "    {\n" +
-                "        super(executionSupport, lambdaId, pureFunction);\n" +
-                "    }\n" +
-                "\n" +
-                "    @Override\n" +
-                "    public PureCompiledLambda copy()\n" +
-                "    {\n" +
-                "        LambdaFunction<Object> lambda = lambdaFunction();\n" +
-                "        return new PureCompiledLambda((lambda == null) ? null : lambda.copy(), pureFunction());\n" +
-                "    }\n" +
-                this.processorSupport.class_getSimpleProperties(this.processorSupport.package_getByUserPath(M3Paths.LambdaFunction)).toSortedListBy(CoreInstance::getName).collect(prop ->
-                {
-                    CoreInstance functionType = this.processorSupport.function_getFunctionType(prop);
-                    CoreInstance unresolvedReturnType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, this.processorSupport);
-                    CoreInstance returnType = GenericType.isGenericTypeConcrete(unresolvedReturnType) ? unresolvedReturnType : Type.wrapGenericType(this.processorSupport.package_getByUserPath(M3Paths.Any), this.processorSupport);
-                    CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(prop, M3Properties.multiplicity, this.processorSupport);
-                    return buildDelegationReadProperty(prop, "LambdaFunction", "lambdaFunction()", true, "", Property.getPropertyName(prop), returnType, unresolvedReturnType, multiplicity, this.processorSupport, processorContext);
-                }).makeString("", "\n", "\n") +
-                "    public static SharedPureFunction getPureFunction(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, ExecutionSupport es)\n" +
-                "    {\n" +
-                "        return (function == null) ? null : CoreGen.getSharedPureFunction(function, es);\n" +
-                "    }\n" +
-                "}\n";
+        StringBuilder builder = new StringBuilder("package ").append(JavaPackageAndImportBuilder.platformJavaPackage()).append(";\n\n");
+        JavaTools.sortReduceAndPrintImports(builder,
+                AbstractPureCompiledLambda.class.getName(),
+                CoreInstance.class.getName(),
+                ExecutionSupport.class.getName(),
+                LambdaFunction.class.getName(),
+                RichIterable.class.getName(),
+                SharedPureFunction.class.getName()).append('\n');
+        builder.append("public class PureCompiledLambda extends AbstractPureCompiledLambda<Object>\n")
+                .append("{\n")
+                .append("    public PureCompiledLambda(LambdaFunction lambdaFunction, SharedPureFunction pureFunction)\n")
+                .append("    {\n")
+                .append("        super(lambdaFunction, pureFunction);\n")
+                .append("    }\n")
+                .append("\n")
+                .append("    public PureCompiledLambda(ExecutionSupport executionSupport, String lambdaId, SharedPureFunction pureFunction)\n")
+                .append("    {\n")
+                .append("        super(executionSupport, lambdaId, pureFunction);\n")
+                .append("    }\n")
+                .append("\n")
+                .append("    @Override\n")
+                .append("    public PureCompiledLambda copy()\n")
+                .append("    {\n")
+                .append("        LambdaFunction<Object> lambda = lambdaFunction();\n")
+                .append("        return new PureCompiledLambda((lambda == null) ? null : lambda.copy(), pureFunction());\n")
+                .append("    }\n");
+        this.processorSupport.class_getSimpleProperties(this.processorSupport.package_getByUserPath(M3Paths.LambdaFunction)).toSortedListBy(CoreInstance::getName).collect(prop ->
+        {
+            CoreInstance functionType = this.processorSupport.function_getFunctionType(prop);
+            CoreInstance unresolvedReturnType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, this.processorSupport);
+            CoreInstance returnType = GenericType.isGenericTypeConcrete(unresolvedReturnType) ? unresolvedReturnType : Type.wrapGenericType(this.processorSupport.package_getByUserPath(M3Paths.Any), this.processorSupport);
+            CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(prop, M3Properties.multiplicity, this.processorSupport);
+            return buildDelegationReadProperty(prop, "LambdaFunction", "lambdaFunction()", true, "", Property.getPropertyName(prop), returnType, unresolvedReturnType, multiplicity, this.processorSupport, processorContext);
+        }).appendString(builder, "", "\n", "\n");
+        builder.append("    public static SharedPureFunction getPureFunction(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, ExecutionSupport es)\n")
+                .append("    {\n")
+                .append("        return (function == null) ? null : CoreGen.getSharedPureFunction(function, es);\n")
+                .append("    }\n")
+                .append("}\n");
+        return builder.toString();
     }
 
     public static String buildDelegationReadProperty(CoreInstance property, String className, String owner, String classOwnerFullId, String name, CoreInstance returnType,
@@ -700,7 +734,9 @@ public final class JavaSourceCodeGenerator
 
     private String buildLambdaZero()
     {
-        return "public interface LambdaZero<T>\n" +
+        return "package " + JavaPackageAndImportBuilder.platformJavaPackage() + ";\n" +
+                "\n" +
+                "public interface LambdaZero<T>\n" +
                 "{\n" +
                 "    T execute();\n" +
                 "}\n";
@@ -768,13 +804,10 @@ public final class JavaSourceCodeGenerator
 
     public ListIterable<StringJavaSource> generatePureCoreHelperClasses(ProcessorContext processorContext)
     {
-        String platform = "import " + JavaPackageAndImportBuilder.platformJavaPackage() + ".*;\n";
-
         MutableList<StringJavaSource> coreJavaSources = Lists.mutable.with(
-                StringJavaSource.newStringJavaSource(JavaPackageAndImportBuilder.platformJavaPackage(), "PureCompiledLambda", imports + platform + this.buildPureCompiledLambda(processorContext)),
-                StringJavaSource.newStringJavaSource(JavaPackageAndImportBuilder.platformJavaPackage(), "LambdaZero", imports + platform + this.buildLambdaZero()),
+                StringJavaSource.newStringJavaSource(JavaPackageAndImportBuilder.platformJavaPackage(), "PureCompiledLambda", buildPureCompiledLambda(processorContext)),
+                StringJavaSource.newStringJavaSource(JavaPackageAndImportBuilder.platformJavaPackage(), "LambdaZero", buildLambdaZero()),
                 EnumProcessor.processEnum(),
-                EnumProcessor.processEnumLazy(),
                 EnumProcessor.processEnumLazyComponent());
 
         if (this.writeFilesToDisk)

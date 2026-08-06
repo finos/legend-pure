@@ -148,6 +148,6 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
 
     private JavaSourceCodeGenerator getJavaSourceCodeGenerator()
     {
-        return new JavaSourceCodeGenerator(this.processorSupport, this.codeStorage, false, null, this.includePureStackTrace, this.extensions, "Dyna", JavaPackageAndImportBuilder.externalizablePackage(), false);
+        return new JavaSourceCodeGenerator(this.processorSupport, this.codeStorage, false, null, this.includePureStackTrace, this.extensions, "Dyna", JavaPackageAndImportBuilder.externalizablePackage());
     }
 }

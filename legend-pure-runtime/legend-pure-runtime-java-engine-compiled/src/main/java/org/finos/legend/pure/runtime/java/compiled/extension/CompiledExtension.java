@@ -57,6 +57,12 @@ public interface CompiledExtension
         return Lists.fixedSize.empty();
     }
 
+    /**
+     * @deprecated No longer consulted. Ids are built from reference ids, which are derived
+     * generically and need no per-classifier registration. Implementing this has no effect.
+     * Retained temporarily so that existing implementations keep compiling.
+     */
+    @Deprecated
     default RichIterable<? extends Pair<String, Function<? super CoreInstance, String>>> getExtraIdBuilders(ProcessorSupport processorSupport)
     {
         return Lists.immutable.empty();
