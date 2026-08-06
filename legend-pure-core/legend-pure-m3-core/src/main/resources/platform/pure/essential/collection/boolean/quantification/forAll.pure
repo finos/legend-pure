@@ -14,6 +14,28 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Whether every element of a collection satisfies a predicate.
+
+An empty collection returns `true`, following the usual convention for universal quantification:
+there is no element that fails the test.
+
+**Parameters**
+- `value` — the collection to test.
+- `func` — the predicate applied to each element.
+
+**Returns** `true` if the predicate holds for every element.
+
+**Examples**
+```pure
+[1, 2, 3]->forAll(e | $e > 0)   // true
+[1, 2, 3]->forAll(e | $e > 1)   // false
+[]->forAll(e | $e == 0)         // true  -- vacuously
+```
+
+**See also** `exists(T[*], Function<{T[1]->Boolean[1]}>[1]):Boolean[1]`,
+`filter(T[*], Function<{T[1]->Boolean[1]}>[1]):T[*]`
+'''
 native function <<PCT.function>> meta::pure::functions::collection::forAll<T>(value:T[*], func:Function<{T[1]->Boolean[1]}>[1]):Boolean[1];
 
 function <<PCT.test>> meta::pure::functions::collection::tests::forall::testforAllOnEmptySet<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

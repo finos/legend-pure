@@ -15,6 +15,32 @@
 import meta::pure::functions::lang::tests::model::*;
 import meta::pure::test::pct::*;
 
+'''
+Calls a function whose arity is not known until runtime, passing its arguments as a collection.
+
+Where `eval(Function<{->V[m]}>[1]):V[m]` has a separate overload per arity and checks argument types
+at compile time, this takes the arguments as `List` objects and so accepts any number of them. Reach
+for it only when the arity genuinely varies — reflection over `Function` values, or generic
+dispatch — and prefer `eval` otherwise, since `eval` keeps its type checking.
+
+Each argument is wrapped in a `List`, which is what allows an argument to itself be a collection. The
+result is `Any[*]`, so the caller usually casts it to the expected type.
+
+**Parameters**
+- `func` — the function to call.
+- `params` — one `List` per argument, in order.
+
+**Returns** whatever `func` returns, as `Any[*]`.
+
+**Examples**
+```pure
+$someFunction->evaluate([list('a'), list(1)])
+```
+
+**See also** `eval(Function<{->V[m]}>[1]):V[m]`,
+`meta::pure::functions::collection::list(U[*]):List<U>[1]`,
+`cast(Any[m], T[1]):T[m]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::evaluate(func:Function<Any>[1], params:List<Any>[*]):Any[*];
 
 

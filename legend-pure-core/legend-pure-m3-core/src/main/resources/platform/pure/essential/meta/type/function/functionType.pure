@@ -14,6 +14,33 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The signature of a function, as a `FunctionType` metamodel object.
+
+Gives programmatic access to what a function accepts and returns: the result's `parameters` are the
+declared parameters, each with its own name, type and multiplicity, and `returnType` and
+`returnMultiplicity` describe the result. This is how generic code inspects a function value before
+calling it.
+
+**Supported only for ordinary and native functions.** Passing any other kind of `Function` — a lambda
+that is not a `FunctionDefinition`, or a property — fails with an explicit error rather than returning
+empty.
+
+**Parameters**
+- `f` — the function to inspect.
+
+**Returns** its function type.
+
+**Examples**
+```pure
+$someFunction->functionType().parameters->map(p | $p.name)
+$someFunction->functionType().returnMultiplicity->isToMany()
+```
+
+**See also** `meta::pure::functions::lang::eval(Function<{T[n]->V[m]}>[1], T[n]):V[m]`,
+`isToMany(Multiplicity[1]):Boolean[1]`,
+`type(Any[*]):Type[1]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::functionType(f:Function<Any>[1]):FunctionType[1]
 {
    assert($f->instanceOf(FunctionDefinition) || $f->instanceOf(NativeFunction), | 'functionType is not supported yet for this subtype of function '+$f->type()->id());

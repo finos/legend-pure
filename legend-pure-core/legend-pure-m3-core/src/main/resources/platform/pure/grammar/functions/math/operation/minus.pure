@@ -14,19 +14,64 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Subtracts every element of an `Integer` collection from the first, left to right, returning a single
+`Integer`.
+
+Written `-` in Pure: `$a - $b` desugars to `minus([$a, $b])`, which is why the parameter is a collection
+rather than two values. A single value is the case worth knowing: unlike `plus`, it is *negated* rather
+than returned unchanged, so `minus(1)` is `-1` — this is what makes unary `-` work. An empty collection
+gives `0`.
+
+**Parameters**
+- `ints` — the values to subtract; the first is the starting value, the rest are taken off it in order.
+
+**Returns** the first value with all the others subtracted from it, or the negation of a lone value.
+
+**Examples**
+```pure
+3 - 2                // 1
+3 - -2               // 5
+6 - (4 - 5) - 7      // 0
+minus(1)             // -1
+```
+
+**See also** `plus(Integer[*]):Integer[1]`,
+`times(Integer[*]):Integer[1]`,
+`minus(Float[*]):Float[1]`,
+`minus(Decimal[*]):Decimal[1]`,
+`minus(Number[*]):Number[1]`
+'''
 native function
     <<PCT.function>>
     {
-        doc.doc='Subtracts all the provided values',
         PCT.grammarDoc='1 - 2',
         PCT.grammarCharacters='-'
     }
     meta::pure::functions::math::minus(ints:Integer[*]):Integer[1];
 
+'''
+Subtracting every element of a `Float` collection, left to right, returning a `Float`.
+
+The `-` operator desugars to this: `$a - $b` is `minus([$a, $b])`, which is why the parameter is a
+collection rather than two values. The result keeps the `Float` type.
+'''
 native function <<PCT.function>> meta::pure::functions::math::minus(float:Float[*]):Float[1];
 
+'''
+Subtracting every element of a `Decimal` collection, left to right, returning a `Decimal`.
+
+The `-` operator desugars to this: `$a - $b` is `minus([$a, $b])`, which is why the parameter is a
+collection rather than two values. The result keeps the `Decimal` type.
+'''
 native function <<PCT.function>> meta::pure::functions::math::minus(decimal:Decimal[*]):Decimal[1];
 
+'''
+Subtracting every element of a `Number` collection, left to right, returning a `Number`.
+
+The `-` operator desugars to this: `$a - $b` is `minus([$a, $b])`, which is why the parameter is a
+collection rather than two values. The result keeps the `Number` type.
+'''
 native function <<PCT.function>> meta::pure::functions::math::minus(numbers:Number[*]):Number[1];
 
 

@@ -14,8 +14,30 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Converts every character in a string to upper case.
+
+Characters that have no upper-case form, such as digits and punctuation, are left unchanged, so a
+string that is already upper case comes back identical.
+
+**Parameters**
+- `source` — the string to convert.
+
+**Returns** the upper-cased string.
+
+**Examples**
+```pure
+'TesT'->toUpper()   // 'TEST'
+'TEST'->toUpper()   // 'TEST'
+```
+
+**See also** `toLower(String[1]):String[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::string::toUpper(source:String[1]):String[1];
 
+'''
+Mixed case is raised, and an already-upper-case string is unchanged.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::toupper::testToUpper<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals('TEST', $f->eval(|'TesT'->toUpper()));

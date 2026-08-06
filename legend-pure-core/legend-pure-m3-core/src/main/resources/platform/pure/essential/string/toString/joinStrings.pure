@@ -14,22 +14,46 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Concatenates a collection of strings, placing a separator between consecutive elements.
+
+The separator appears only *between* elements, so a single-element collection comes back unchanged
+and an empty collection yields the empty string.
+
+**Parameters**
+- `strings` — the strings to join.
+- `separator` — placed between consecutive elements.
+
+**Returns** the joined string.
+
+**Examples**
+```pure
+['a', 'b', 'c']->joinStrings(',')   // 'a,b,c'
+['a']->joinStrings(',')             // 'a'
+```
+
+**See also** `split(String[1], String[1]):String[*]`,
+`meta::pure::functions::string::toString(Any[1]):String[1]`
+'''
 function
     <<PCT.function, functionType.ReducerFunction>>
-    {
-        doc.doc=''
-    }
     meta::pure::functions::string::joinStrings(strings:String[*], separator:String[1]):String[1]
 {
     $strings->joinStrings('', $separator, '')
 }
 
+'''
+The separator falls only between elements.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::joinStrings::testJoinStrings<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEq('a,b,c', $f->eval(|joinStrings(['a', 'b', 'c'], ',')));
     assertEq('[a,b,c]', $f->eval(|joinStrings(['a', 'b', 'c'], '[', ',', ']')));
 }
 
+'''
+The arrow form reads the same as the prefix form.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::joinStrings::testJoinStringsUsingGenericArrow<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEq('a,b,c', $f->eval(|['a', 'b', 'c']->joinStrings(',')));

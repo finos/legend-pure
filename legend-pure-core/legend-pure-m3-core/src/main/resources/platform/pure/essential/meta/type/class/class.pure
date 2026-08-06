@@ -15,6 +15,32 @@
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
+'''
+The `Class` of a value, for values that have one.
+
+Narrower than `type(Any[*]):Type[1]`: only class instances have a `Class`. **A primitive yields an empty
+result** even though the signature says `[1]` — `1->class()` is empty, not `Integer`. Guard with
+`isEmpty()`, or use `type(Any[*]):Type[1]` when the value may be a primitive.
+
+Returning a `Class` rather than a `Type` is what makes the class's own members reachable, such as
+`.properties`.
+
+**Parameters**
+- `any` — the value to inspect.
+
+**Returns** its class, or empty for a primitive.
+
+**Examples**
+```pure
+^CC_Person(firstName='Pierre', lastName='Doe')->class()   // CC_Person
+1->class()                                                // empty -- not Integer
+'abc'->class()                                            // empty
+```
+
+**See also** `type(Any[*]):Type[1]`,
+`genericTypeClass(GenericType[1]):Class<Any>[1]`,
+`properties(GenericType[1]):Property<Nil, Any|*>[*]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::class<T>(any:T[*]):Class<T>[1]
 {
     $any->genericType()->genericTypeClass()->cast(@Class<T>);

@@ -14,6 +14,29 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Whether a date carries a month component.
+
+Pure dates carry **variable granularity** — `%2015`, `%2015-04`, `%2015-04-15`, `%2015-04-15T17` and
+so on are all valid `Date` values, each knowing only as much as was written. Extractors such as `monthNumber` **fail** on a date that lacks the component they read, so
+this is the guard to call first when the granularity is not known — for example when the date came from
+parsing or from user input.
+
+True for `%2015-04` and anything more precise.
+
+**Parameters**
+- `d` — the date to test.
+
+**Returns** `true` when the month component is present.
+
+**Examples**
+```pure
+%2015-04-15T17:09:21.398->hasMonth()
+%2015->hasMonth()                       // false
+```
+
+**See also** `monthNumber(Date[1]):Integer[1]`, `datePart(Date[1]):Date[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::date::hasMonth(d:Date[1]):Boolean[1];
 
 function <<PCT.test>> meta::pure::functions::date::tests::testHasMonth<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

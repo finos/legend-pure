@@ -14,6 +14,34 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Reinterprets a collection under a different declared multiplicity, checking the size at runtime.
+
+The target multiplicity is given as a multiplicity literal, written `@[1]`, `@[0..1]`, `@[1..*]` and
+so on. Where `cast(Any[m], T[1]):T[m]` changes the declared *type* and leaves multiplicity alone,
+this changes the declared *multiplicity* and leaves the type alone.
+
+**The values themselves never change — only the declared multiplicity.** Narrowing is the common
+case, but it need not be a narrowing: the target may equally be the same multiplicity or a wider one.
+
+The check is enforced: a collection whose size does not fit the target fails with
+`Cannot cast a collection of size N to multiplicity [BOUNDS]` rather than being truncated or padded.
+
+**Parameters**
+- `source` — the collection to reinterpret.
+- `object` — a multiplicity literal, `@[…]`, naming the target multiplicity.
+
+**Returns** the same values, with multiplicity `z`.
+
+**Examples**
+```pure
+['a']->toMultiplicity(@[1])        // 'a', now typed [1]
+['a', 'b']->toMultiplicity(@[1])   // fails: size 2 does not fit [1]
+```
+
+**See also** `cast(Any[m], T[1]):T[m]`,
+`meta::pure::functions::multiplicity::toOne(T[*]):T[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::toMultiplicity<T|z>(source:T[*], object:Any[z]):T[z];
 
 // ----------------------------------------------------------------------------

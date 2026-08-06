@@ -15,6 +15,30 @@
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
+'''
+Builds a unit-carrying value from a unit and a plain number.
+
+The programmatic equivalent of the literal form `5 RomanLength~Pes`. A unit is referenced as
+`Measure~Unit`, so `RomanLength~Pes` names the `Pes` unit of the `RomanLength` measure. Use this when
+the unit is chosen at runtime and cannot be written as a literal.
+
+The magnitude keeps the numeric type it was given, so passing a `Decimal` yields a decimal-valued
+quantity.
+
+**Parameters**
+- `type` — the unit, written `Measure~Unit`.
+- `value` — the magnitude.
+
+**Returns** the value in that unit.
+
+**Examples**
+```pure
+newUnit(RomanLength~Pes, 5)            // 5 RomanLength~Pes
+newUnit(RomanLength~Cubitum, 10.5D)    // 10.5D RomanLength~Cubitum
+```
+
+**See also** `meta::pure::functions::meta::getUnitValue(Any[1]):Number[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::newUnit(type:Unit[1], value:Number[1]):Any[1];
 
 

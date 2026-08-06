@@ -14,14 +14,40 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Whether `source` ends with `val`.
+
+The match is literal and case-sensitive. Every string ends with the empty string.
+
+**Parameters**
+- `source` — the string to test.
+- `val` — the suffix to look for.
+
+**Returns** `true` if `source` ends with `val`.
+
+**Examples**
+```pure
+'the quick brown fox'->endsWith('fox')     // true
+'the quick brown fox'->endsWith('brown')   // false
+```
+
+**See also** `startsWith(String[1], String[1]):Boolean[1]`,
+`contains(String[1], String[1]):Boolean[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::string::endsWith(source:String[1], val:String[1]):Boolean[1];
 
+'''
+Both a single trailing word and a longer trailing phrase match.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::endswith::testTrueEndsWith<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assert($f->eval(|endsWith('the quick brown fox jumps over the lazy dog', 'dog')));
     assert($f->eval(|endsWith('the quick brown fox jumps over the lazy dog', 'lazy dog')));
 }
 
+'''
+A substring that occurs earlier in the string is not a suffix.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::endswith::testFalseEndsWith<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertFalse($f->eval(|endsWith('the quick brown fox jumps over the lazy dog', 'brown fox')));

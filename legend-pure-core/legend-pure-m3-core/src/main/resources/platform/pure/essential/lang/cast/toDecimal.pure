@@ -14,6 +14,31 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Converts any number to a `Decimal`.
+
+Accepts `Integer`, `Float` and `Decimal`. `Decimal` is exact base-10 arithmetic, so this is the
+conversion to reach for with monetary amounts and anywhere rounding error is unacceptable. Note that
+converting *from* `Float` cannot recover precision the float has already lost — parse or construct as
+`Decimal` from the outset when exactness matters.
+
+Decimal literals are written with a `D` suffix, as in `3.8D`.
+
+**Parameters**
+- `number` — the value to convert.
+
+**Returns** the value as a `Decimal`.
+
+**Examples**
+```pure
+toDecimal(8)      // 8D
+toDecimal(3.8)    // 3.8D
+toDecimal(3.8D)   // 3.8D
+```
+
+**See also** `meta::pure::functions::math::toFloat(Number[1]):Float[1]`,
+`meta::pure::functions::string::parseDecimal(String[1]):Decimal[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::toDecimal(number: Number[1]): Decimal[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::toDecimal::testDoubleToDecimal<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

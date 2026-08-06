@@ -15,6 +15,28 @@
 import meta::pure::test::pct::*;
 import meta::pure::functions::asserts::*;
 
+'''
+The elements between two positions: from `start` inclusive to `end` exclusive.
+
+Both indexes are zero-based, so the result holds `end - start` elements. Ranges reaching past the
+end of the collection are clamped rather than rejected.
+
+**Parameters**
+- `set` — the collection to slice.
+- `start` — zero-based index of the first element to keep.
+- `end` — zero-based index just past the last element to keep.
+
+**Returns** the elements in that range.
+
+**Examples**
+```pure
+[1, 2, 3, 4, 5, 6]->slice(1, 4)   // [2, 3, 4]
+[]->slice(2, 3)                   // []
+```
+
+**See also** `take(T[*], Integer[1]):T[*]`, `drop(T[*], Integer[1]):T[*]`,
+`at(T[*], Integer[1]):T[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::collection::slice<T>(set:T[*], start:Integer[1], end:Integer[1]):T[*];
 
 

@@ -14,8 +14,30 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Converts every character in a string to lower case.
+
+Characters that have no lower-case form, such as digits and punctuation, are left unchanged, so a
+string that is already lower case comes back identical.
+
+**Parameters**
+- `source` — the string to convert.
+
+**Returns** the lower-cased string.
+
+**Examples**
+```pure
+'TesT'->toLower()   // 'test'
+'test'->toLower()   // 'test'
+```
+
+**See also** `toUpper(String[1]):String[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::string::toLower(source:String[1]):String[1];
 
+'''
+Mixed case is lowered, and an already-lower-case string is unchanged.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::tolower::testToLower<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals('test', $f->eval(|'TesT'->toLower()));

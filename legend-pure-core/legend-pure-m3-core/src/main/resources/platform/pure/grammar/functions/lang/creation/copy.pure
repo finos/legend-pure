@@ -24,6 +24,12 @@ native function
     }
     meta::pure::functions::lang::copy<T>(object:T[1], id:String[1], keyExpressions:KeyExpression[*]):T[1];
 
+'''
+Copies an instance, giving the copy a new identifier.
+
+The reflective form of `^$object(...)`. Property values are carried over from the original and the copy
+keeps its type, so no cast is needed. The `id` identifies the new instance rather than setting any property.
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::copy<T>(object:T[1], id:String[1]):T[1];
 
 

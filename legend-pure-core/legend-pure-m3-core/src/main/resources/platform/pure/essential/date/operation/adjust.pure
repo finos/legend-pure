@@ -14,6 +14,37 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Shifts a date by a number of duration units.
+
+A negative `number` moves backwards. The unit comes from the `DurationUnit` enumeration — `YEARS`,
+`MONTHS`, `WEEKS`, `DAYS`, `HOURS`, `MINUTES`, `SECONDS` and finer.
+
+**Out-of-range results are clamped to the end of the month rather than rolling over.** Adding one year to
+29 February 2012 gives 28 February 2013, because 2013 has no 29th; adding four years gives 29 February
+2016, which does. Calendar arithmetic, not fixed-length arithmetic — so adding `1, MONTHS` moves to the
+same day of the next month where possible, not forward by 30 days.
+
+The granularity of the input is preserved.
+
+**Parameters**
+- `date` — the date to shift.
+- `number` — how many units to add; negative moves backwards.
+- `unit` — the unit to shift by.
+
+**Returns** the shifted date.
+
+**Examples**
+```pure
+%2015->adjust(1, DurationUnit.YEARS)          // %2016
+%2015->adjust(-4, DurationUnit.YEARS)         // %2011
+%2012-02-29->adjust(1, DurationUnit.YEARS)    // %2013-02-28  -- clamped
+%2012-02-29->adjust(4, DurationUnit.YEARS)    // %2016-02-29  -- leap year
+```
+
+**See also** `dateDiff(Date[1], Date[1], DurationUnit[1]):Integer[1]`,
+`date(Integer[1]):Date[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::date::adjust(date:Date[1], number:Integer[1], unit:DurationUnit[1]):Date[1];
 
 function <<PCT.test>> meta::pure::functions::date::tests::testAdjustByYears<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

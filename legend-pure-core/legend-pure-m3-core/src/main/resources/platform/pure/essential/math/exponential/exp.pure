@@ -14,6 +14,29 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Euler's number *e* raised to a power.
+
+The inverse of `log(Number[1]):Float[1]`, so `$x->exp()->log()` recovers `$x` to within floating-point
+tolerance. `exp(1)` is *e* itself, approximately `2.718281828459045`.
+
+The result is always a `Float`, whatever the input type, and carries the usual floating-point
+representation error — compare with a tolerance rather than exact equality.
+
+**Parameters**
+- `exponent` — the power to raise *e* to.
+
+**Returns** *e* raised to `exponent`.
+
+**Examples**
+```pure
+exp(1)     // 2.718281828459045
+exp(1.0)   // 2.718281828459045
+4->exp()->log()   // 4.0, within tolerance
+```
+
+**See also** `log(Number[1]):Float[1]`, `pow(Number[1], Number[1]):Number[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::exp(exponent:Number[1]):Float[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::exp::testNumberExp<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

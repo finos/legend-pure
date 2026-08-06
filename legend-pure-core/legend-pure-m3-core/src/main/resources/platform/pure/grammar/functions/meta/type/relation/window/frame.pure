@@ -45,6 +45,12 @@ Class meta::pure::functions::relation::UnboundedFrameValue extends meta::pure::f
 {
 }
 
+'''
+The unbounded boundary of a window frame.
+
+Used where a window frame has no limit in one direction — from the start of the partition, or through to
+its end — rather than a fixed offset. Pass it as a frame boundary instead of a row count.
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::relation::unbounded():meta::pure::functions::relation::UnboundedFrameValue[1]
 {
     ^meta::pure::functions::relation::UnboundedFrameValue();

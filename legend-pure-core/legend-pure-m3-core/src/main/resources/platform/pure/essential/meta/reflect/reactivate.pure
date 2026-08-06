@@ -15,6 +15,36 @@
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
+'''
+Evaluates a syntax tree, supplying values for any variables it refers to but does not define.
+
+The counterpart of `deactivate(Any[*]):ValueSpecification[1]`: that captures an expression as structure,
+this runs the structure. Together they let a query be inspected or rewritten and then executed.
+
+A captured expression may mention variables from the scope it was written in — its *open* variables.
+Those are not part of the tree, so their values must be supplied here, keyed by name. Use
+`openVariableValues(Function<Any>[1]):Map<String, List<Any>>[1]` to collect them from the original
+function rather than assembling the map by hand. The single-argument overload in this package passes an
+empty map, which is enough when the tree has no open variables.
+
+The result is `Any[*]`, so callers normally cast it.
+
+**Parameters**
+- `vs` — the syntax tree to evaluate.
+- `vars` — values for the tree's open variables, keyed by name.
+
+**Returns** the values the expression produces.
+
+**Examples**
+```pure
+let f = [^CC_Person(firstName='ok', lastName='a')]->map(p | $p.lastName)->deactivate()->cast(@FunctionExpression);
+$f->reactivate();   // ['a']
+```
+
+**See also** `deactivate(Any[*]):ValueSpecification[1]`,
+`openVariableValues(Function<Any>[1]):Map<String, List<Any>>[1]`,
+`canReactivateDynamically(ValueSpecification[1]):Boolean[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::reactivate(vs:ValueSpecification[1], vars:Map<String, List<Any>>[1]):Any[*];
 
 function meta::pure::functions::meta::reactivate(vs:ValueSpecification[1]):Any[*]

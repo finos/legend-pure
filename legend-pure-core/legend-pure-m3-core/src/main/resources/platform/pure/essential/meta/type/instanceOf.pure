@@ -16,6 +16,34 @@ import meta::pure::functions::meta::tests::instanceOf::*;
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
+'''
+Whether a value is an instance of a type, including through inheritance.
+
+The value-level counterpart of `subTypeOf(Type[1], Type[1]):Boolean[1]`: this tests a *value*, that one
+tests two *types*. A value of a subclass satisfies its superclass, so an `Integer` is an instance of
+`Number`.
+
+For dispatching on type, prefer `meta::pure::functions::lang::match(Any[*], Function<{Nil[n]->T[m]}>[1..*]):T[m]`
+— it selects a branch and hands you the value already typed, where this returns only a boolean and
+leaves you to cast.
+
+**Parameters**
+- `instance` — the value to test.
+- `type` — the type to test against.
+
+**Returns** `true` when the value is an instance of the type.
+
+**Examples**
+```pure
+1->instanceOf(Integer)   // true
+1->instanceOf(Number)    // true  -- through inheritance
+1->instanceOf(String)    // false
+```
+
+**See also** `subTypeOf(Type[1], Type[1]):Boolean[1]`,
+`type(Any[*]):Type[1]`,
+`meta::pure::functions::lang::cast(Any[m], T[1]):T[m]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::instanceOf(instance:Any[1], type:Type[1]):Boolean[1];
 
 Enum meta::pure::functions::meta::tests::instanceOf::InstanceOfEnumA { VALUE1, VALUE2 }

@@ -14,6 +14,27 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The zero-based position of the first occurrence of a value in a collection, or `-1` if absent.
+
+Because a miss returns `-1` rather than an empty value, test the result explicitly rather than
+relying on it being empty.
+
+**Parameters**
+- `set` — the collection to search.
+- `value` — the element to locate.
+
+**Returns** the index of the first occurrence, or `-1` when there is none.
+
+**Examples**
+```pure
+['a', 'b', 'c', 'd']->indexOf('c')   // 2
+['a', 'b']->indexOf('z')             // -1
+```
+
+**See also** `at(T[*], Integer[1]):T[1]`,
+`contains(Any[*], Any[1]):Boolean[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::collection::indexOf<T>(set:T[*], value:T[1]):Integer[1];
 
 function <<PCT.test>> meta::pure::functions::collection::tests::indexof::testIndexOf<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

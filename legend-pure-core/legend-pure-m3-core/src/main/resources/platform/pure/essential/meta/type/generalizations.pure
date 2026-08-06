@@ -15,6 +15,31 @@
 import meta::pure::functions::meta::tests::generalizations::*;
 import meta::pure::test::pct::*;
 
+'''
+A type together with all of its supertypes, in inheritance order. That is, the order in which types are searched when trying to resolve something (such as a property) through inheritance.
+
+**The type itself is the first element**, which is why the result is `[1..*]` and never empty — every
+type generalises to at least itself. The chain always ends at `Any`.
+
+Useful for walking an inheritance chain, or for a subtype test by membership; for the latter,
+`subTypeOf(Type[1], Type[1]):Boolean[1]` says the same thing more directly.
+
+**Parameters**
+- `class` — the type to inspect.
+
+**Returns** the type and its supertypes, most specific first.
+
+**Examples**
+```pure
+Integer->generalizations()   // [Integer, Number, Any]
+Boolean->generalizations()   // [Boolean, Any]
+Any->generalizations()       // [Any]
+```
+
+**See also** `subTypeOf(Type[1], Type[1]):Boolean[1]`,
+`type(Any[*]):Type[1]`,
+`instanceOf(Any[1], Type[1]):Boolean[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::generalizations(class:Type[1]):Type[1..*];
 
 Class meta::pure::functions::meta::tests::generalizations::G_A {}

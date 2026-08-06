@@ -14,6 +14,28 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Builds a `Pair` holding two values, which may be of different types.
+
+A convenience for `^Pair(first=…, second=…)`. Pairs are the entries a `Map` is built from and the
+elements `zip` produces.
+
+**Parameters**
+- `first` — the first component.
+- `second` — the second component.
+
+**Returns** the pair.
+
+**Examples**
+```pure
+pair('a', 1)                          // ^Pair(first='a', second=1)
+[pair('a', 1), pair('b', 2)]->newMap()
+```
+
+**See also** `newMap(Pair<U, V>[*]):Map<U, V>[1]`,
+`zip(T[*], U[*]):Pair<T, U>[*]`,
+`keyValues(Map<U, V>[1]):Pair<U, V>[*]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::pair<U,V>(first:U[1], second:V[1]):Pair<U,V>[1]
 {
    ^Pair<U,V>(first=$first, second=$second);

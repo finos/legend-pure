@@ -15,14 +15,52 @@
 import meta::pure::test::pct::*;
 
 // For Milestoning generated properties & Support function for inequalities definition
+'''
+Asserts a collection holds exactly one value and returns it.
+
+The way to move from a collection to a single value where the surrounding code requires `[1]` — after
+`filter`, after `first`, or on a property whose declared multiplicity is wider than the use site needs.
+
+**It fails rather than yielding empty when the collection does not hold exactly one value**, so it is an
+assertion and not a conversion: both `[]->toOne()` and `['a', 'b', 'c']->toOne()` raise. Reach for
+`meta::pure::functions::collection::first(T[*]):T[0..1]` when an empty collection is an acceptable
+outcome, and for `toOne(T[*], String[1]):T[1]` when the failure deserves a message of its own.
+
+**Parameters**
+- `values` — the collection expected to hold exactly one value.
+
+**Returns** the single value.
+
+**Examples**
+```pure
+'a'->toOne()                  // 'a'
+[1, 2, 3]->first()->toOne()   // 1
+[]->toOne()                   // fails: Cannot cast a collection of size 0 to multiplicity [1]
+['a', 'b']->toOne()           // fails: Cannot cast a collection of size 2 to multiplicity [1]
+```
+
+**See also** `toOne(T[*], String[1]):T[1]`,
+`meta::pure::functions::multiplicity::toOneMany(T[*]):T[1..*]`,
+`meta::pure::functions::collection::first(T[*]):T[0..1]`
+'''
 native function
     <<PCT.function>>
     {
-        doc.doc='Cast the result of a function to [1]',
         PCT.grammarDoc='toOne is leveraged in milestoning generated derived properties'
     }
     meta::pure::functions::multiplicity::toOne<T>(values:T[*]):T[1];
 
+'''
+As `toOne(T[*]):T[1]`, but you supply the error message. Worth using wherever the failure would otherwise
+be hard to trace back — the default message says only that the multiplicity was wrong, not which value
+was missing or why it mattered.
+
+**Parameters**
+- `values` — the collection expected to hold exactly one value.
+- `message` — the error to raise when it does not.
+
+**Returns** the single value.
+'''
 native function <<PCT.function>> meta::pure::functions::multiplicity::toOne<T>(values:T[*], message: String[1]): T[1];
 
 function <<test.Test>> meta::pure::functions::multiplicity::tests::toOne::testToOneMultiplicity():Boolean[1]

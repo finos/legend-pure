@@ -14,6 +14,30 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The cosine of an angle.
+
+**Angles are in radians, not degrees.** Convert with `$degrees * 3.141592653589793 / 180` if your
+input is in degrees.
+
+The result is always a `Float` and carries floating-point representation error, so compare with a
+tolerance rather than exact equality.
+
+**Parameters**
+- `number` — the angle, in radians.
+
+**Returns** its cosine, between -1 and 1.
+
+**Examples**
+```pure
+cos(0)      // 1.0
+cos(-1)     // 0.540302305868
+cos(-1.5)   // 0.070737201667
+```
+
+**See also** `sin(Number[1]):Float[1]`, `tan(Number[1]):Float[1]`,
+`acos(Number[1]):Float[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::cos(number:Number[1]):Float[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testCosine<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

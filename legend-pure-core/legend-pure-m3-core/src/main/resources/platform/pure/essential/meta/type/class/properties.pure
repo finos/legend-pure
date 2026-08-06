@@ -15,6 +15,33 @@
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
+'''
+Every property of a class, including inherited ones and those contributed by associations.
+
+Three sources are combined, which is what makes this more useful than reading `.properties` directly:
+the class's own properties, the properties it gains from `Association` declarations, and — walking the
+generalisation chain — everything inherited from its supertypes.
+
+Qualified properties are not included; those are a separate member list on the class.
+
+Each result is a `Property` metamodel object, so `.name` gives its name and
+`meta::pure::functions::lang::eval(Function<{T[n]->V[m]}>[1], T[n]):V[m]` reads it off an instance.
+
+**Parameters**
+- `genericType` — the generic type whose class should be inspected.
+
+**Returns** the properties, in no guaranteed order.
+
+**Examples**
+```pure
+$address->genericType()->properties()                      // own + association + inherited
+$address->genericType()->properties()->map(p | $p.name)
+```
+
+**See also** `genericType(Any[*]):GenericType[1]`,
+`genericTypeClass(GenericType[1]):Class<Any>[1]`,
+`generalizations(Type[1]):Type[1..*]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::properties(genericType:GenericType[1]):Property<Nil,Any|*>[*]
 {
     // TODO use this once problems with compiled execution are fixed

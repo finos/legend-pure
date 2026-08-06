@@ -14,14 +14,42 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Whether `source` contains `val` anywhere within it.
+
+The match is literal and case-sensitive; `val` is not treated as a regular expression.
+Every string contains the empty string.
+
+**Parameters**
+- `source` — the string to search in.
+- `val` — the substring to look for.
+
+**Returns** `true` if `val` occurs anywhere in `source`.
+
+**Examples**
+```pure
+'the quick brown fox'->contains('brown')   // true
+'the quick brown fox'->contains('lazy')    // false
+```
+
+**See also** `startsWith(String[1], String[1]):Boolean[1]`,
+`endsWith(String[1], String[1]):Boolean[1]`,
+`indexOf(String[1], String[1]):Integer[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::string::contains(source:String[1], val:String[1]):Boolean[1];
 
+'''
+A substring occurring in the middle or at the end is found.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::contains::testTrueContains<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assert($f->eval(|contains('the quick brown fox jumps over the lazy dog', 'lazy dog')));
     assert($f->eval(|contains('the quick brown fox jumps over the lazy dog', 'brown fox')));
 }
 
+'''
+Words present separately but not as a contiguous substring do not match.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::contains::testFalseContains<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertFalse($f->eval(|contains('the quick brown fox jumps over the lazy dog', 'lazy fox')));

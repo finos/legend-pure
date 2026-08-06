@@ -14,6 +14,30 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Whether a syntax tree can be evaluated dynamically.
+
+Not every captured expression can be run back: a tree may refer to something the dynamic evaluator
+cannot resolve. This is the guard to call before
+`reactivate(ValueSpecification[1], Map<String, List<Any>>[1]):Any[*]` when the tree came from somewhere
+you do not control — user input, generated code, a stored query — so you can fail gracefully instead of
+erroring mid-evaluation.
+
+**Parameters**
+- `vs` — the syntax tree to test.
+
+**Returns** `true` when the tree can be evaluated dynamically.
+
+**Examples**
+```pure
+canReactivateDynamically({|1}->evaluateAndDeactivate().expressionSequence->toOne())   // true
+
+if($vs->canReactivateDynamically(), |$vs->reactivate(), |[])
+```
+
+**See also** `reactivate(ValueSpecification[1], Map<String, List<Any>>[1]):Any[*]`,
+`deactivate(Any[*]):ValueSpecification[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::canReactivateDynamically(vs:ValueSpecification[1]):Boolean[1];
 
 function <<test.Test>> meta::pure::functions::meta::tests::canReactivateDynamically::testBasicInstanceValue():Boolean[1]

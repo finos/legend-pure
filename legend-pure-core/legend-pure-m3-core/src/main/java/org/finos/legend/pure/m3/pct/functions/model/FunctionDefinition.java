@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.pct.functions.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.eclipse.collections.api.factory.Lists;
 
 import java.util.List;
@@ -25,8 +26,13 @@ public class FunctionDefinition
     public String sourceId;
 
     public List<Signature> signatures = Lists.mutable.empty();
-    public int testCount;
-    public int pctTestCount;
+
+    /**
+     * Every test exercising this function, PCT and non-PCT alike, documented or not. This is the
+     * sole representation of a function's tests; the counts below are derived from it on demand
+     * rather than stored, so they cannot drift out of step with the list.
+     */
+    public List<TestDefinition> tests = Lists.mutable.empty();
 
     public FunctionDefinition()
     {
@@ -35,5 +41,33 @@ public class FunctionDefinition
     public FunctionDefinition(String sourceId)
     {
         this.sourceId = sourceId;
+    }
+
+    /**
+     * The number of non-PCT ({@code <<test.Test>>}) tests. PCT tests are deliberately excluded,
+     * preserving the meaning this count has always had for downstream consumers.
+     * <p>
+     * Not serialized: {@link #tests} is what the report carries, and a derived value written into
+     * it could not be read back without a field to hold it.
+     */
+    @JsonIgnore
+    public int getTestCount()
+    {
+        return count(false);
+    }
+
+    /**
+     * The number of {@code <<PCT.test>>} tests. Not serialized, for the same reason as
+     * {@link #getTestCount()}.
+     */
+    @JsonIgnore
+    public int getPctTestCount()
+    {
+        return count(true);
+    }
+
+    private int count(boolean pct)
+    {
+        return (int) this.tests.stream().filter(t -> t.pct == pct).count();
     }
 }

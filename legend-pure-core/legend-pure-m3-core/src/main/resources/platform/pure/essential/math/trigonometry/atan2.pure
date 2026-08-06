@@ -14,6 +14,35 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The angle to the point `(x, y)` from the positive x-axis, given y and x separately.
+
+**Note the argument order: y comes first, then x.** `atan2(1, 0)` is π/2, the angle straight up.
+
+Preferred over `atan(Number[1]):Float[1]` for converting coordinates to an angle, because keeping y and x
+apart preserves the quadrant — a single ratio cannot distinguish `(1, 1)` from `(-1, -1)`. It also handles
+`x = 0` without dividing by zero.
+
+The result is **in radians**, over the full circle from -π to π.
+
+The result is always a `Float` and carries floating-point representation error, so compare with a
+tolerance rather than exact equality.
+
+**Parameters**
+- `number1` — the y coordinate.
+- `number2` — the x coordinate.
+
+**Returns** the angle in radians, between -π and π.
+
+**Examples**
+```pure
+atan2(0, 1)       // 0.0              -- along the positive x-axis
+atan2(1, 0)       // 1.570796326794   -- π/2, straight up
+atan2(0.5, 3.5)   // 0.141897054604
+```
+
+**See also** `atan(Number[1]):Float[1]`, `asin(Number[1]):Float[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::atan2(number1:Number[1], number2:Number[1]):Float[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testArcTangent2<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

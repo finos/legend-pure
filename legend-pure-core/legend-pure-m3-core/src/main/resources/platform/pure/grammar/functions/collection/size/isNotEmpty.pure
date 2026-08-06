@@ -25,6 +25,12 @@ function
     !isEmpty($p)
 }
 
+'''
+Whether an optional value is present.
+
+The `[0..1]` overload, and the negation of `isEmpty(Any[0..1]):Boolean[1]`. Commonly the guard before
+`meta::pure::functions::multiplicity::toOne(T[*]):T[1]`.
+'''
 function <<PCT.function>> meta::pure::functions::collection::isNotEmpty(p:Any[0..1]):Boolean[1]
 {
     !isEmpty($p)

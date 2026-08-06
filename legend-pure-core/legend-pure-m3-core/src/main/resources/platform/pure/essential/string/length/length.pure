@@ -14,18 +14,38 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The number of characters in a string.
+
+**Parameters**
+- `str` — the string to measure.
+
+**Returns** the character count; `0` for the empty string.
+
+**Examples**
+```pure
+'hello'->length()   // 5
+''->length()        // 0
+```
+
+**See also** `substring(String[1], Integer[1]):String[1]`,
+`indexOf(String[1], String[1]):Integer[1]`
+'''
 native function
     <<PCT.function>>
-    {
-        doc.doc=''
-    }
     meta::pure::functions::string::length(str:String[1]):Integer[1];
 
+'''
+Length counts every character, spaces included.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::length::testLength<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals(43, $f->eval(|length('the quick brown fox jumps over the lazy dog')));
 }
 
+'''
+The empty string has length zero rather than being an empty value.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::length::testEmptyLength<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals(0, $f->eval(|length('')));

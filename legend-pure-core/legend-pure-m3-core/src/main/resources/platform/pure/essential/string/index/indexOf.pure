@@ -14,11 +14,40 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The zero-based position of the first occurrence of `toFind` in `str`, or `-1` if it does not occur.
+
+Because a miss returns `-1` rather than an empty value, test the result explicitly rather than
+relying on it being empty.
+
+**Parameters**
+- `str` — the string to search in.
+- `toFind` — the substring to locate.
+
+**Returns** the index of the first occurrence, or `-1` when there is none.
+
+**Examples**
+```pure
+'the quick brown fox'->indexOf('quick')   // 4
+'the quick brown fox'->indexOf('fox')     // 16
+'the quick brown fox'->indexOf('happy')   // -1
+```
+
+**See also** `contains(String[1], String[1]):Boolean[1]`,
+`substring(String[1], Integer[1], Integer[1]):String[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::string::indexOf(str:String[1], toFind:String[1]):Integer[1];
 
+'''
+As `indexOf(String[1], String[1]):Integer[1]`, but begins searching at `fromIndex` rather than at
+the start of the string. Still returns `-1` when there is no occurrence at or after that position.
+'''
 native function <<PCT.function>> meta::pure::functions::string::indexOf(str:String[1], toFind:String[1], fromIndex:Integer[1]):Integer[1];
 
 
+'''
+Positions are zero-based, and a substring that is absent gives -1.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::indexOf::testSimple<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let string = 'the quick brown fox jumps over the lazy dog';
@@ -29,6 +58,9 @@ function <<PCT.test>> meta::pure::functions::string::tests::indexOf::testSimple<
 }
 
 
+'''
+Raising `fromIndex` past the first occurrence finds the next one instead.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::indexOf::testFromIndex<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let string = 'the the';

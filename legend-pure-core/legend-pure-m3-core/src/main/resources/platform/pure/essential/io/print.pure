@@ -14,8 +14,49 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Writes a value to standard output, following object references to a bounded depth.
+
+`max` limits how far object graphs are expanded: at depth `1` an object's own properties are shown but
+referenced objects are summarised rather than expanded. Raising it reveals more of the graph, at the
+cost of much larger output — and it is what stops a cyclic model printing forever.
+
+The return type is `Nil[0]`, meaning nothing: this is called for its side effect, so it cannot be used
+as a value. Intended for debugging, not for building output — use
+`meta::pure::functions::string::format(String[1], Any[*]):String[1]` to produce a string.
+
+Adds no trailing newline; use `println(Any[*], Integer[1]):Nil[0]` for that.
+
+**Parameters**
+- `param` — the values to write.
+- `max` — how many levels of object reference to expand.
+
+**Returns** nothing.
+
+**Examples**
+```pure
+print('hello', 1)
+print($person, 1)   // the person's own properties
+print($person, 3)   // and three levels of referenced objects
+```
+
+**See also** `println(Any[*], Integer[1]):Nil[0]`,
+`meta::pure::functions::string::toString(Any[1]):String[1]`,
+`meta::pure::functions::string::toRepresentation(Any[1]):String[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::io::print(param:Any[*], max:Integer[1]):Nil[0];
 
+'''
+Writes a value to standard output, expanding object references one level deep.
+
+Equivalent to `print($param, 1)`. Pass an explicit depth via
+`print(Any[*], Integer[1]):Nil[0]` when you need to see further into a graph.
+
+**Examples**
+```pure
+print('hello')
+```
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::io::print(param:Any[*]):Nil[0]
 {
     print($param, 1);

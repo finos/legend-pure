@@ -15,6 +15,32 @@
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
+'''
+The type of a value, as a metamodel `Type` object.
+
+The starting point for reflection: the result is the `Type` itself, so it can be compared with a class
+or primitive by name, or passed to `instanceOf(Any[1], Type[1]):Boolean[1]` and
+`subTypeOf(Type[1], Type[1]):Boolean[1]`.
+
+This discards type arguments — a `List<String>` reports `List`. Use
+`genericType(Any[*]):GenericType[1]` when the type parameters matter.
+
+**Parameters**
+- `any` — the value to inspect.
+
+**Returns** its type.
+
+**Examples**
+```pure
+1->type()        // Integer
+'abc'->type()    // String
+$person->type()  // Person
+```
+
+**See also** `genericType(Any[*]):GenericType[1]`,
+`instanceOf(Any[1], Type[1]):Boolean[1]`,
+`generalizations(Type[1]):Type[1..*]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::type(any:Any[*]):Type[1]
 {
     $any->genericType().rawType->toOne()

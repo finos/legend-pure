@@ -15,15 +15,53 @@
 import meta::pure::test::pct::*;
 import meta::pure::functions::lang::tests::model::*;
 
+'''
+Looks up an enumeration value by name.
+
+The way to turn a string — from parsing, configuration, or user input — into an enum value, and the
+function the `Enum.value` syntax stands for: writing `LA_GeographicEntityType.COUNTRY` is the same lookup
+with the name written as a literal. Going through the function instead is what lets the name be decided
+at runtime.
+
+The name must be one of the enumeration's values; the return multiplicity is `[1]`, so there is no
+"not found" result to test for. Use `enumValues(Enumeration<T>[1]):T[*]` when you need to know which
+names are valid.
+
+**Parameters**
+- `enum` — the enumeration to search.
+- `value` — the name of the value to look up.
+
+**Returns** the matching enum value.
+
+**Examples**
+```pure
+extractEnumValue(LA_GeographicEntityType, 'COUNTRY')   // LA_GeographicEntityType.COUNTRY
+LA_GeographicEntityType.COUNTRY                        // the same lookup, name written as a literal
+$enumeration->extractEnumValue($name)                  // both decided at runtime
+```
+
+**See also** `extractEnumValue(Enumeration<T>[1], String[0..1]):T[0..1]`,
+`meta::pure::functions::meta::enumValues(Enumeration<T>[1]):T[*]`
+'''
 native function
     <<PCT.function, PCT.platformOnly>>
     {
-        doc.doc='Extract a value from the Enumeration',
         PCT.grammarDoc='Enum.value',
         PCT.grammarCharacters='.'
     }
     meta::pure::functions::lang::extractEnumValue<T>(enum:Enumeration<T>[1], value:String[1]):T[1];
 
+'''
+As `extractEnumValue(Enumeration<T>[1], String[1]):T[1]`, for a name that may be absent. **An empty input
+gives an empty result** rather than failing, which is why both the parameter and the return are `[0..1]`:
+the optionality passes straight through. A name that is present is looked up exactly as above.
+
+**Parameters**
+- `enum` — the enumeration to search.
+- `value` — the value's name, or empty.
+
+**Returns** the matching enum value, or empty.
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::extractEnumValue<T>(enum:Enumeration<T>[1], value:String[0..1]):T[0..1]
 {
     if ($value->isEmpty(), | [], | $enum->extractEnumValue($value->toOne()));

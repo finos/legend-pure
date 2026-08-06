@@ -14,86 +14,227 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Whether the first number precedes or equals the second, in numeric order.
+
+Written `<=` in Pure: `$a <= $b`. Both operands are present, so the comparison is always decided; it
+is not strict, so equal numbers give `true`.
+
+**Parameters**
+- `left` — the first operand.
+- `right` — the second operand.
+
+**Returns** `true` when `left` is less than or equal to `right`.
+
+**Examples**
+```pure
+1 <= 2   // true
+3 <= 3   // true, the comparison is not strict
+4 <= 3   // false
+```
+
+**See also** `lessThanEqual(Date[1], Date[1]):Boolean[1]`,
+`lessThanEqual(String[1], String[1]):Boolean[1]`,
+`lessThanEqual(Boolean[1], Boolean[1]):Boolean[1]`,
+`lessThanEqual(Number[0..1], Number[0..1]):Boolean[1]`,
+`greaterThanEqual(Number[1], Number[1]):Boolean[1]`,
+`meta::pure::functions::collection::sort(T[m], Function<{T[1], T[1]->Integer[1]}>[0..1]):T[m]`
+'''
 native function
     <<PCT.function>>
     {
-        doc.doc='Returns true if, according to the type order, $left precedes or is equal to $right',
         PCT.grammarDoc='$first <= $second',
         PCT.grammarCharacters='<='
     }
     meta::pure::functions::boolean::lessThanEqual(left:Number[1], right:Number[1]):Boolean[1];
 
 
+'''
+As `lessThanEqual(Number[1], Number[1]):Boolean[1]`, for `Number` operands where a value may be missing.
+Either operand may be absent.
+
+An absent operand makes the result `false`, **not** empty — the comparison does not propagate
+emptiness the way arithmetic does. Each `[0..1]` operand is tested with `isNotEmpty()` before being
+compared, so a missing value never satisfies the comparison and `$a <= $b` is false whenever either
+side is empty. Test with `isEmpty()` first when you need to distinguish "absent" from "present but
+not less than or equal to". The other overloads taking `[0..1]` operands behave the same way.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::lessThanEqual(left:Number[0..1], right:Number[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && lessThanEqual($left->toOne(), $right->toOne())
 }
 
+'''
+As `lessThanEqual(Number[1], Number[1]):Boolean[1]`, for `Number` operands where a value may be missing.
+The second operand may be absent; absent operands are treated as described in
+`lessThanEqual(Number[0..1], Number[0..1]):Boolean[1]`.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::lessThanEqual(left:Number[1], right:Number[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && lessThanEqual($left, $right->toOne())
 }
 
+'''
+As `lessThanEqual(Number[1], Number[1]):Boolean[1]`, for `Number` operands where a value may be missing.
+The first operand may be absent; absent operands are treated as described in
+`lessThanEqual(Number[0..1], Number[0..1]):Boolean[1]`.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::lessThanEqual(left:Number[0..1], right:Number[1]):Boolean[1]
 {
     $left->isNotEmpty() && lessThanEqual($left->toOne(), $right)
 }
 
+'''
+As `lessThanEqual(Date[1], Date[1]):Boolean[1]`, for `Date` operands where a value may be missing.
+Either operand may be absent; absent operands are treated as described in
+`lessThanEqual(Number[0..1], Number[0..1]):Boolean[1]`.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::lessThanEqual(left:Date[0..1], right:Date[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && lessThanEqual($left->toOne(), $right->toOne())
 }
 
+'''
+As `lessThanEqual(Date[1], Date[1]):Boolean[1]`, for `Date` operands where a value may be missing.
+The second operand may be absent; absent operands are treated as described in
+`lessThanEqual(Number[0..1], Number[0..1]):Boolean[1]`.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::lessThanEqual(left:Date[1], right:Date[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && lessThanEqual($left, $right->toOne())
 }
 
+'''
+As `lessThanEqual(Date[1], Date[1]):Boolean[1]`, for `Date` operands where a value may be missing.
+The first operand may be absent; absent operands are treated as described in
+`lessThanEqual(Number[0..1], Number[0..1]):Boolean[1]`.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::lessThanEqual(left:Date[0..1], right:Date[1]):Boolean[1]
 {
     $left->isNotEmpty() && lessThanEqual($left->toOne(), $right)
 }
 
+'''
+As `lessThanEqual(String[1], String[1]):Boolean[1]`, for `String` operands where a value may be missing.
+Either operand may be absent; absent operands are treated as described in
+`lessThanEqual(Number[0..1], Number[0..1]):Boolean[1]`.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::lessThanEqual(left:String[0..1], right:String[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && lessThanEqual($left->toOne(), $right->toOne())
 }
 
+'''
+As `lessThanEqual(String[1], String[1]):Boolean[1]`, for `String` operands where a value may be missing.
+The second operand may be absent; absent operands are treated as described in
+`lessThanEqual(Number[0..1], Number[0..1]):Boolean[1]`.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::lessThanEqual(left:String[1], right:String[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && lessThanEqual($left, $right->toOne())
 }
 
+'''
+As `lessThanEqual(String[1], String[1]):Boolean[1]`, for `String` operands where a value may be missing.
+The first operand may be absent; absent operands are treated as described in
+`lessThanEqual(Number[0..1], Number[0..1]):Boolean[1]`.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::lessThanEqual(left:String[0..1], right:String[1]):Boolean[1]
 {
     $left->isNotEmpty() && lessThanEqual($left->toOne(), $right)
 }
 
+'''
+As `lessThanEqual(Boolean[1], Boolean[1]):Boolean[1]`, for `Boolean` operands where a value may be missing.
+Either operand may be absent; absent operands are treated as described in
+`lessThanEqual(Number[0..1], Number[0..1]):Boolean[1]`.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::lessThanEqual(left:Boolean[0..1], right:Boolean[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && lessThanEqual($left->toOne(), $right->toOne())
 }
 
+'''
+As `lessThanEqual(Boolean[1], Boolean[1]):Boolean[1]`, for `Boolean` operands where a value may be missing.
+The second operand may be absent; absent operands are treated as described in
+`lessThanEqual(Number[0..1], Number[0..1]):Boolean[1]`.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::lessThanEqual(left:Boolean[1], right:Boolean[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && lessThanEqual($left, $right->toOne())
 }
 
+'''
+As `lessThanEqual(Boolean[1], Boolean[1]):Boolean[1]`, for `Boolean` operands where a value may be missing.
+The first operand may be absent; absent operands are treated as described in
+`lessThanEqual(Number[0..1], Number[0..1]):Boolean[1]`.
+'''
 function <<PCT.function>> meta::pure::functions::boolean::lessThanEqual(left:Boolean[0..1], right:Boolean[1]):Boolean[1]
 {
     $left->isNotEmpty() && lessThanEqual($left->toOne(), $right)
 }
 
+'''
+Compares two dates chronologically. For dates of the same granularity, this is true when `left` falls at
+or before `right`. The general case is that it is true when `left` starts strictly before the start of
+`right`, or when they start at the same time and `left` ends at the same time as or after the end of
+`right`.
+
+As `lessThanEqual(Number[1], Number[1]):Boolean[1]`, the operator is written `<=` — `$a <= $b` — but
+the order is chronological rather than numeric.
+
+**Examples**
+```pure
+%2012-10-01 <= %2012-10-02   // true
+%2015-01-01 <= %2016-01-01   // true
+%2012-10-02 <= %2012-10-02   // true, the comparison is not strict
+%2012-10-03 <= %2012-10-02   // false
+%2015 <= %2015-01-01         // true, both start together but %2015 ends later
+```
+
+**See also** `lessThanEqual(Number[1], Number[1]):Boolean[1]`
+'''
 function <<PCT.function>> meta::pure::functions::boolean::lessThanEqual(left:Date[1], right:Date[1]):Boolean[1]
 {
     compare($left, $right) <= 0
 }
 
+'''
+Compares two strings lexicographically, character by character.
+
+As `lessThanEqual(Number[1], Number[1]):Boolean[1]`, the operator is written `<=` — `$a <= $b` — but
+the order is lexicographic rather than numeric.
+
+**Examples**
+```pure
+'a' <= 'b'   // true
+'a' <= 'a'   // true, the comparison is not strict
+'b' <= 'a'   // false
+```
+
+**See also** `lessThanEqual(Number[1], Number[1]):Boolean[1]`
+'''
 function <<PCT.function>> meta::pure::functions::boolean::lessThanEqual(left:String[1], right:String[1]):Boolean[1]
 {
     compare($left, $right) <= 0
 }
 
+'''
+Orders booleans with `false` before `true`, so `true <= false` is the only case that does not hold.
+
+As `lessThanEqual(Number[1], Number[1]):Boolean[1]`, the operator is written `<=` — `$a <= $b` — but
+the order is over the two boolean values rather than numeric.
+
+**Examples**
+```pure
+false <= true    // true
+false <= false   // true, the comparison is not strict
+true <= true     // true
+true <= false    // false
+```
+
+**See also** `lessThanEqual(Number[1], Number[1]):Boolean[1]`
+'''
 function <<PCT.function>> meta::pure::functions::boolean::lessThanEqual(left:Boolean[1], right:Boolean[1]):Boolean[1]
 {
     !$left || $right

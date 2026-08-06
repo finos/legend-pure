@@ -14,13 +14,54 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Chooses between two values according to a condition.
+
+Both branches are passed as zero-argument functions, written `|expression`, so **only the chosen
+branch is evaluated**. That laziness is the point: the untaken branch may safely be expensive, or
+invalid for the current data.
+
+Both branches must share a type and multiplicity, which becomes the result's.
+
+**Parameters**
+- `test` — the condition.
+- `valid` — evaluated when `test` is true.
+- `invalid` — evaluated when `test` is false.
+
+**Returns** the value of whichever branch was taken.
+
+**Examples**
+```pure
+if(true, |'yes', |'no')                         // 'yes'
+if($x->isEmpty(), |0, |$x->toOne())             // the second branch is never evaluated when empty
+```
+
+**See also** `if(Pair<Function<{->Boolean[1]}>, Function<{->T[m]}>>[*], Function<{->T[m]}>[1]):T[m]`,
+`match(Any[*], Function<{Nil[n]->T[m]}>[1..*]):T[m]`,
+`meta::pure::functions::collection::filter(T[*], Function<{T[1]->Boolean[1]}>[1]):T[*]`
+'''
 native function
     <<PCT.function>>
-    {
-        doc.doc=''
-    }
     meta::pure::functions::lang::if<T|m>(test:Boolean[1], valid:Function<{->T[m]}>[1], invalid:Function<{->T[m]}>[1]):T[m];
 
+'''
+Chooses among many conditions, returning the value for the first that holds — an if/else-if chain.
+
+Each pair couples a condition with the value to use when it is true. The conditions are tested in
+order and evaluation stops at the first match; `last` supplies the fallback when none match. As with
+the two-branch form, everything is lazy, so only the matching branch is evaluated.
+
+**Parameters**
+- `condList` — condition/value pairs, tested in order.
+- `last` — the fallback when no condition holds.
+
+**Returns** the value paired with the first true condition, or `last`.
+
+**Examples**
+```pure
+if([pair(|$n < 0, |'negative'), pair(|$n == 0, |'zero')], |'positive')
+```
+'''
 function <<PCT.function>> meta::pure::functions::lang::if<T|m>(condList:Pair<Function<{->Boolean[1]}>, Function<{->T[m]}>>[*], last:Function<{->T[m]}>[1]):T[m]
 {
   let matchCond = $condList->find(f|$f.first->eval());

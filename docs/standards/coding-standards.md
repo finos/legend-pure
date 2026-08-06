@@ -240,4 +240,18 @@ repository. API conventions apply to Java public APIs:
 
 ---
 
+## Documentation in Pure source
+
+Prose on `<<PCT.function>>` declarations and `<<PCT.test>>` cases is published to end users and has its
+own standard: [PCT Function Documentation](pct-documentation.md). Documentation is a `'''…'''` literal
+placed before the declaration, not a comment — see
+[Pure Language Reference § Documentation](../reference/pure-language-reference.md#documentation) for the
+mechanics.
+
+Two things to note: an element may not carry **both** documentation and an explicit `{doc.doc=…}` tagged
+value, and adding documentation shifts the lines below it, which breaks the position assertions some
+platform tests make. The standard lists the affected files.
+
+---
+
 *Back: [Build & CI Guide](../guides/build-and-ci.md) · Next: [Testing Strategy](../testing/testing-strategy.md)*

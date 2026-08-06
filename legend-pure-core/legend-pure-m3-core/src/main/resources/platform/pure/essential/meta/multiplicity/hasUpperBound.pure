@@ -14,6 +14,31 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Whether a multiplicity is bounded above.
+
+The guard to call before `getUpperBound(Multiplicity[1]):Integer[1]`, since an unbounded multiplicity
+has no upper bound to report. Note that `PureZero` (`[0]`) *is* bounded — its upper bound is `0` — so
+"has an upper bound" is not the same as "can hold a value".
+
+**Parameters**
+- `multiplicity` — the multiplicity to inspect.
+
+**Returns** `true` when there is a concrete upper bound.
+
+**Examples**
+```pure
+PureZero->hasUpperBound()   // true  -- bounded at 0
+ZeroOne->hasUpperBound()    // true
+PureOne->hasUpperBound()    // true
+ZeroMany->hasUpperBound()   // false -- [*]
+OneMany->hasUpperBound()    // false -- [1..*]
+```
+
+**See also** `getUpperBound(Multiplicity[1]):Integer[1]`,
+`hasToOneUpperBound(Multiplicity[1]):Boolean[1]`,
+`isToMany(Multiplicity[1]):Boolean[1]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::hasUpperBound(multiplicity:Multiplicity[1]):Boolean[1]
 {
     let upperBound = $multiplicity.upperBound;

@@ -14,6 +14,29 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The cube root of a number.
+
+Always returns a `Float`, even for a perfect cube — `cbrt(27)` is `3.0`, not `3`. Unlike a square root, a
+cube root is defined for negative numbers.
+
+Results carry floating-point representation error, so compare with a tolerance rather than exact
+equality.
+
+**Parameters**
+- `number` — the number whose cube root is wanted.
+
+**Returns** the cube root, as a `Float`.
+
+**Examples**
+```pure
+cbrt(0)       // 0.0
+cbrt(27)      // 3.0, within tolerance
+cbrt(0.001)   // 0.1, within tolerance
+```
+
+**See also** `sqrt(Number[1]):Float[1]`, `pow(Number[1], Number[1]):Number[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::cbrt(number:Number[1]):Float[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::testCubeRoot<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

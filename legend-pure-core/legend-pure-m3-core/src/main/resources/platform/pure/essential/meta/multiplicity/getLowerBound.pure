@@ -14,6 +14,32 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The minimum number of values a multiplicity permits.
+
+Multiplicities are metamodel objects, reached by reflecting over a property or function parameter, and
+the named constants `PureZero`, `ZeroOne`, `PureOne`, `ZeroMany` and `OneMany` correspond to the
+familiar `[0]`, `[0..1]`, `[1]`, `[*]` and `[1..*]`.
+
+A lower bound of `0` means the value is optional; `1` or more means at least that many are required.
+
+**Parameters**
+- `multiplicity` — the multiplicity to inspect.
+
+**Returns** the lower bound.
+
+**Examples**
+```pure
+PureZero->getLowerBound()   // 0
+ZeroOne->getLowerBound()    // 0
+PureOne->getLowerBound()    // 1
+ZeroMany->getLowerBound()   // 0
+OneMany->getLowerBound()    // 1
+```
+
+**See also** `getUpperBound(Multiplicity[1]):Integer[1]`,
+`isToOne(Multiplicity[1]):Boolean[1]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::getLowerBound(multiplicity:Multiplicity[1]):Integer[1]
 {
     $multiplicity.lowerBound->toOne().value->toOne()

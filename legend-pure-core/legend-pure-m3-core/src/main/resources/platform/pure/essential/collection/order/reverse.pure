@@ -14,6 +14,26 @@
 
 import meta::pure::test::pct::*;
 
+'''
+A collection with its elements in the opposite order.
+
+The multiplicity is preserved, so reversing a `[1]` value gives a `[1]` value and reversing an empty
+collection gives an empty collection.
+
+**Parameters**
+- `set` — the collection to reverse.
+
+**Returns** the elements in reverse order.
+
+**Examples**
+```pure
+['a', 'b', 'c']->reverse()   // ['c', 'b', 'a']
+[]->reverse()                // []
+```
+
+**See also** `sort(T[m]):T[m]`,
+`meta::pure::functions::string::reverseString(String[1]):String[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::collection::reverse<T|m>(set:T[m]):T[m];
 
 function <<PCT.test>> meta::pure::functions::collection::tests::reverse::testReverse<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

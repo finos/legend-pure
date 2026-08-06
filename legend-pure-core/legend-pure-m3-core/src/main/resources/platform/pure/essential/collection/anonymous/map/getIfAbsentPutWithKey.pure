@@ -15,6 +15,32 @@
 import meta::pure::test::pct::*;
 import meta::pure::functions::asserts::*;
 
+'''
+Looks up a key, computing and storing a value if it is not already present.
+
+Unlike most collection functions this **mutates the map**: on a miss the computed value is inserted,
+so a later lookup of the same key returns it. `func` receives the key and is called only on a miss —
+a second call with a different `func` returns the stored value and ignores the new function. That
+makes this the building block for memoisation and lazy caches.
+
+**Parameters**
+- `m` — the map to read and, on a miss, update.
+- `key` — the key to look up.
+- `func` — computes the value from the key, called only when the key is absent.
+
+**Returns** the existing value, or the newly computed and stored one.
+
+**Examples**
+```pure
+let m = newMap([pair(1, '_1')]);
+$m->getIfAbsentPutWithKey(3, {k | '_' + $k->toString()});   // '_3', now stored
+$m->get(3);                                                 // '_3'
+$m->getIfAbsentPutWithKey(3, {k | 'something else'});       // '_3' -- func not called
+```
+
+**See also** `newMap(Pair<U, V>[*]):Map<U, V>[1]`,
+`getMapStats(Map<U, V>[1]):MapStats[0..1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::getIfAbsentPutWithKey<U,V>(m:Map<U,V>[1], key:U[1], func:Function<{U[1]->V[0..1]}>[1]):V[0..1];
 
 function <<test.Test>> meta::pure::functions::collection::tests::map::testGetIfAbsentPutWithKey():Boolean[1]

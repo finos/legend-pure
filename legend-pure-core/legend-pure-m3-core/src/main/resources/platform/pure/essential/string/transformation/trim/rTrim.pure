@@ -14,8 +14,27 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Removes whitespace from the end of a string, leaving the start untouched.
+
+**Parameters**
+- `str` — the string to trim.
+
+**Returns** the string without trailing whitespace; any leading whitespace is preserved.
+
+**Examples**
+```pure
+'  hello  '->rtrim()   // '  hello'
+'  hello'->rtrim()     // '  hello'
+```
+
+**See also** `ltrim(String[1]):String[1]`, `trim(String[1]):String[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::string::rtrim(str:String[1]):String[1];
 
+'''
+Only the trailing whitespace goes; leading whitespace survives.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::trim::testRTrim<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals(' A Simple Text To Trim', $f->eval(|' A Simple Text To Trim    '->rtrim()));

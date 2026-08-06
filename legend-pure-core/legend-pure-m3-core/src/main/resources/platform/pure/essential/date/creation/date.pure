@@ -15,11 +15,72 @@
 import meta::pure::test::pct::*;
 
 // Functions for constructing dates
+'''
+Builds a date from its numeric components.
+
+Use this when the components are computed at runtime; write a literal such as `%2015-04-15` when they are
+known. **How many arguments you pass decides both the granularity and the resulting type**, which is why
+there are six overloads:
+
+| Arguments | Result type |
+|---|---|
+| year | `Date` |
+| year, month | `Date` |
+| year, month, day | `StrictDate` — a date with no time |
+| year, month, day, hour (and beyond) | `DateTime` |
+
+Components are validated, so an out-of-range value fails rather than rolling over: month `13` gives
+`Invalid month: 13` rather than becoming January of the next year.
+
+**Parameters**
+- `year` — the year.
+
+**Returns** a date with year granularity.
+
+**Examples**
+```pure
+date(2015)                       // %2015
+date(2016, 13)                   // fails: Invalid month: 13
+date(2016, 12, 32)               // fails: Invalid day: 2016-12-32
+date(2016, 12, 31, 24)           // fails: Invalid hour: 24
+```
+
+**See also** `date(Integer[1], Integer[1], Integer[1]):StrictDate[1]`,
+`adjust(Date[1], Integer[1], DurationUnit[1]):Date[1]`,
+`meta::pure::functions::string::parseDate(String[1]):Date[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::date::date(year:Integer[1]):Date[1];
+'''
+Builds a date with year and month granularity, as `Date`.
+
+The month is validated: a value outside 1 to 12 fails rather than rolling into an adjacent year.
+'''
 native function <<PCT.function>> meta::pure::functions::date::date(year:Integer[1], month:Integer[1]):Date[1];
+'''
+Builds a calendar day, as `StrictDate` — a date that carries no time component.
+
+The narrower return type is the point: `StrictDate` states in the type system that there is no
+time-of-day, so `hasHour(Date[1]):Boolean[1]` is false and `hour(Date[1]):Integer[1]` would fail. The day
+is validated against the month and year, so 29 February is accepted only in a leap year.
+'''
 native function <<PCT.function>> meta::pure::functions::date::date(year:Integer[1], month:Integer[1], day:Integer[1]):StrictDate[1];
+'''
+Builds an instant with hour granularity, as `DateTime`.
+
+The hour is on a 24-hour clock and validated to 0 through 23, so `24` fails rather than becoming midnight
+of the following day.
+'''
 native function <<PCT.function>> meta::pure::functions::date::date(year:Integer[1], month:Integer[1], day:Integer[1], hour:Integer[1]):DateTime[1];
+'''
+Builds an instant with minute granularity, as `DateTime`.
+'''
 native function <<PCT.function>> meta::pure::functions::date::date(year:Integer[1], month:Integer[1], day:Integer[1], hour:Integer[1], minute:Integer[1]):DateTime[1];
+'''
+Builds an instant with second or sub-second granularity, as `DateTime`.
+
+`second` is a `Number`, not an `Integer`, so a fractional value carries sub-second precision — `21.398`
+gives the same instant as the literal `%…T…:21.398`, and `hasSubsecond(Date[1]):Boolean[1]` is then true.
+'''
 native function <<PCT.function>> meta::pure::functions::date::date(year:Integer[1], month:Integer[1], day:Integer[1], hour:Integer[1], minute:Integer[1], second:Number[1]):DateTime[1];
 
 
@@ -68,7 +129,7 @@ function <<PCT.test>> meta::pure::functions::date::tests::testDateFromSubSecond<
 
 function <<PCT.test>> meta::pure::functions::date::tests::testNewDateError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertError(| $f->eval(|date(2016, 13)), 'Invalid month: 13', 71, 29);
-    assertError(| $f->eval(|date(2016, 12, 32)), 'Invalid day: 2016-12-32', 72, 29);
-    assertError(| $f->eval(|date(2016, 12, 31, 24)), 'Invalid hour: 24', 73, 29);
+    assertError(| $f->eval(|date(2016, 13)), 'Invalid month: 13', 132, 29);
+    assertError(| $f->eval(|date(2016, 12, 32)), 'Invalid day: 2016-12-32', 133, 29);
+    assertError(| $f->eval(|date(2016, 12, 31, 24)), 'Invalid hour: 24', 134, 29);
 }

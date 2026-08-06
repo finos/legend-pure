@@ -15,11 +15,30 @@
 import meta::pure::test::pct::*;
 import meta::pure::functions::collection::tests::model::*;
 
+'''
+Joins two collections end to end.
+
+Order is preserved: every element of `set1` comes before every element of `set2`. Duplicates are
+kept — nothing is de-duplicated.
+
+**Parameters**
+- `set1` — the leading collection.
+- `set2` — the collection appended to it.
+
+**Returns** the combined collection.
+
+**Examples**
+```pure
+concatenate([1, 2, 3], [4, 5])   // [1, 2, 3, 4, 5]
+concatenate([1], [])             // [1]
+```
+
+**See also** `add(T[*], T[1]):T[1..*]`,
+`removeDuplicates(T[*]):T[*]`,
+`zip(T[*], U[*]):Pair<T, U>[*]`
+'''
 native function
     <<PCT.function>>
-    {
-        doc.doc=''
-    }
     meta::pure::functions::collection::concatenate<T>(set1:T[*], set2:T[*]):T[*];
 
 function <<PCT.test>> meta::pure::functions::collection::tests::concatenate::testConcatenateSimple<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

@@ -14,8 +14,27 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Reverses the order of the characters in a string.
+
+**Parameters**
+- `str` — the string to reverse.
+
+**Returns** the string with its characters in reverse order; the empty string reverses to itself.
+
+**Examples**
+```pure
+'cba'->reverseString()   // 'abc'
+''->reverseString()      // ''
+```
+
+**See also** `meta::pure::functions::collection::reverse(T[m]):T[m]`
+'''
 native function <<PCT.function>> meta::pure::functions::string::reverseString(str:String[1]):String[1];
 
+'''
+Characters are reversed, and the empty string is returned unchanged.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::reverse::testReverseString<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals('', $f->eval(|''->reverseString()));

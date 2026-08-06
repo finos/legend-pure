@@ -14,7 +14,27 @@
 
 import meta::pure::test::pct::*;
 
-// Return the last element of the collection, or nothing if the collection is empty
+'''
+The last element of a collection, or nothing when it is empty.
+
+The result has multiplicity `[0..1]`, so an empty collection yields an empty result rather than an
+error. Use `toOne(…)` when you need to assert that a value is present.
+
+**Parameters**
+- `set` — the collection to read from.
+
+**Returns** the final element, or an empty value for an empty collection.
+
+**Examples**
+```pure
+['a', 'b', 'c']->last()   // 'c'
+['a']->last()             // 'a'
+[]->last()                // empty
+```
+
+**See also** `meta::pure::functions::collection::first(T[*]):T[0..1]`,
+`at(T[*], Integer[1]):T[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::collection::last<T>(set:T[*]):T[0..1];
 
 function <<PCT.test>> meta::pure::functions::collection::tests::last::testLast<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

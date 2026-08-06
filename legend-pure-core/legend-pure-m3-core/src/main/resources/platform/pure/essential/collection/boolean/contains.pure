@@ -17,11 +17,45 @@ import meta::pure::test::pct::*;
 import meta::pure::functions::collection::tests::contains::*;
 import meta::pure::functions::collection::tests::model::*;
 
+'''
+Whether a collection contains a given value, compared with `==`.
+
+The collection is untyped, so a mixed collection may be searched for a value of any type. An empty
+collection contains nothing.
+
+**Parameters**
+- `collection` — the collection to search.
+- `value` — the value to look for.
+
+**Returns** `true` if any element equals `value`.
+
+**Examples**
+```pure
+[1, 2, 5]->contains(2)         // true
+['a', 'b']->contains('z')      // false
+```
+
+**See also** `contains(Z[*], Z[1], Function<{Z[1], Z[1]->Boolean[1]}>[1]):Boolean[1]`,
+`exists(T[*], Function<{T[1]->Boolean[1]}>[1]):Boolean[1]`,
+`indexOf(T[*], T[1]):Integer[1]`
+'''
 function <<PCT.function>> meta::pure::functions::collection::contains(collection:Any[*], value:Any[1]):Boolean[1]
 {
     $collection->exists(x | $value == $x)
 }
 
+'''
+Whether a collection contains a given value, compared with a supplied equality function.
+
+Use this when `==` is not the comparison you want — for example matching objects on one property,
+or comparing strings case-insensitively. The comparator is called as
+`comparator($value, $element)`.
+
+**Examples**
+```pure
+$people->contains($target, {a, b | $a.lastName == $b.lastName})
+```
+'''
 function <<PCT.function>> meta::pure::functions::collection::contains<Z>(collection:Z[*], value:Z[1], comparator:Function<{Z[1],Z[1]->Boolean[1]}>[1]):Boolean[1]
 {
     $collection->exists(x | $comparator->eval($value, $x))

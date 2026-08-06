@@ -14,6 +14,28 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The natural logarithm of a number — logarithm to base *e*, not base 10.
+
+The inverse of `exp(Number[1]):Float[1]`, so `log(4->exp())` recovers `4.0` to within floating-point
+tolerance. For base 10 use `log10(Number[1]):Float[1]`.
+
+The result is always a `Float` and carries the usual floating-point representation error — compare with a
+tolerance rather than exact equality.
+
+**Parameters**
+- `value` — the number whose natural logarithm is wanted.
+
+**Returns** the natural logarithm of `value`.
+
+**Examples**
+```pure
+log(2.718281828459045)   // 1.0
+log(4->exp())            // 4.0, within tolerance
+```
+
+**See also** `exp(Number[1]):Float[1]`, `log10(Number[1]):Float[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::log(value:Number[1]):Float[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::log::testNumberLog<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

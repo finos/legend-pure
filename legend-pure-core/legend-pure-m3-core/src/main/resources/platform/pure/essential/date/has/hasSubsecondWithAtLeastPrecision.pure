@@ -14,6 +14,30 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Whether a date's fractional second is given to at least a number of decimal places.
+
+Stricter than `hasSubsecond(Date[1]):Boolean[1]`, which only asks whether *any* fractional second is
+present. Use this when downstream processing needs a minimum precision — millisecond, microsecond — and a
+coarser timestamp would silently lose information.
+
+`minPrecision` counts decimal places, so a date written `.398` satisfies 1, 2 and 3 but not 4.
+
+**Parameters**
+- `d` — the date to test.
+- `minPrecision` — the minimum number of fractional-second digits required.
+
+**Returns** `true` when the fractional second has at least that many digits.
+
+**Examples**
+```pure
+%2015-04-15T17:09:21.398->hasSubsecondWithAtLeastPrecision(3)   // true
+%2015-04-15T17:09:21.398->hasSubsecondWithAtLeastPrecision(4)   // false
+%2015-04-15T17:09:21->hasSubsecondWithAtLeastPrecision(1)       // false -- no fraction at all
+```
+
+**See also** `hasSubsecond(Date[1]):Boolean[1]`, `hasSecond(Date[1]):Boolean[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::date::hasSubsecondWithAtLeastPrecision(d:Date[1], minPrecision:Integer[1]):Boolean[1];
 
 function <<PCT.test>> meta::pure::functions::date::tests::testHasSubsecondWithAtLeastPrecision<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

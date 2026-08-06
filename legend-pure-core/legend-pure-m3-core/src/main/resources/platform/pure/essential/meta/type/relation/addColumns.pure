@@ -15,6 +15,34 @@
 import meta::pure::test::pct::*;
 import meta::pure::metamodel::relation::*;
 
+'''
+Extends a relation type with additional columns.
+
+Operates on the *type*, not on data: it computes the `RelationType` you get by appending columns to an
+existing one. That is what lets a function that adds columns to a relation describe its own return type,
+so the extra columns are known statically rather than only at runtime.
+
+New columns are appended after the existing ones, and each keeps the multiplicity its column
+specification declares — a column written `ab:String[1]` stays `[1..1]`, while one written without a
+multiplicity, such as `z:Integer`, is `[0..1]`.
+
+Column specifications are written with the `~[…]` array syntax.
+
+**Parameters**
+- `source` — the relation type to extend.
+- `colSpec` — the columns to append.
+
+**Returns** the extended relation type.
+
+**Examples**
+```pure
+addColumns(@(x:String)->genericType().rawType->cast(@RelationType<Any>)->toOne(), ~[ab:String[1], z:Integer])
+// x:String[0..1], ab:String[1..1], z:Integer[0..1]
+```
+
+**See also** `genericType(Any[*]):GenericType[1]`,
+`type(Any[*]):Type[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::addColumns(source:RelationType<Any>[1], colSpec:ColSpecArray<Any>[1]):RelationType<Any>[1];
 
 function <<test.Test>> meta::pure::functions::meta::tests::addColumns():Boolean[1]

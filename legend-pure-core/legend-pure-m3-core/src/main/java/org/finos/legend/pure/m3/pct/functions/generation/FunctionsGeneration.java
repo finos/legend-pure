@@ -34,6 +34,7 @@ import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.pct.functions.model.FunctionDefinition;
 import org.finos.legend.pure.m3.pct.functions.model.Functions;
 import org.finos.legend.pure.m3.pct.functions.model.Signature;
+import org.finos.legend.pure.m3.pct.functions.model.TestDefinition;
 import org.finos.legend.pure.m3.pct.shared.PCTTools;
 import org.finos.legend.pure.m3.pct.shared.generation.Shared;
 import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
@@ -136,13 +137,14 @@ public class FunctionsGeneration
     {
         FunctionDefinition functionInfo = functionsDB.get(_function.getSourceInformation().getSourceId());
         // FunctionDefinition can be null if the PCT Tests are meant to test functions composition.
+        // Documentation on such a test is dropped here, just as its count is.
         if (functionInfo != null)
         {
             if (functionInfo.signatures.get(0).platformOnly)
             {
                 throw new RuntimeException("The test " + _function._functionName() + " in the source " + _function.getSourceInformation().getSourceId() + " is a PCT test for platform-only functions.");
             }
-            functionInfo.pctTestCount++;
+            functionInfo.tests.add(testDefinition(_function, ps, true));
         }
     }
 
@@ -151,8 +153,14 @@ public class FunctionsGeneration
         FunctionDefinition functionInfo = functionsDB.get(_function.getSourceInformation().getSourceId());
         if (functionInfo != null)
         {
-            functionInfo.testCount++;
+            functionInfo.tests.add(testDefinition(_function, ps, false));
         }
+    }
+
+    private static TestDefinition testDefinition(PackageableFunction<?> _function, ProcessorSupport ps, boolean pct)
+    {
+        String documentation = PCTTools.getDoc(_function, ps);
+        return new TestDefinition(_function._functionName(), (documentation == null || documentation.isEmpty()) ? null : documentation, pct);
     }
 
     private static void addPCTFunctionToFunctionsDB(PackageableFunction<?> _function, MutableMap<String, FunctionDefinition> functionsDB, ProcessorSupport ps)

@@ -14,4 +14,26 @@
 
 import meta::pure::test::pct::*;
 
+'''
+A pseudo-random number in the half-open interval from 0 inclusive to 1 exclusive.
+
+Marked as a side-effecting function because it returns a different value on each call: it is not
+referentially transparent, so an expression containing it cannot be assumed to be repeatable or safely
+cached.
+
+Scale it to the range you need — `$lo + random() * ($hi - $lo)` — and note that `1.0` never occurs, so
+`floor(random() * $n)` yields `0` to `n - 1`.
+
+Not suitable for cryptographic use.
+
+**Returns** a pseudo-random value in `[0, 1)`.
+
+**Examples**
+```pure
+random()                           // e.g. 0.7208...
+floor(random() * 6) + 1            // a die roll, 1 to 6
+```
+
+**See also** `floor(Number[1]):Integer[1]`
+'''
 native function <<functionType.SideEffectFunction, PCT.function>> meta::pure::functions::math::random():Float[1];

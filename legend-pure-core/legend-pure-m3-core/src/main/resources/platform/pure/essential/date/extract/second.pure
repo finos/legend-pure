@@ -14,6 +14,27 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The second component of a date.
+
+Pure dates carry **variable granularity** — `%2015`, `%2015-04`, `%2015-04-15`, `%2015-04-15T17` and
+so on are all valid `Date` values, each knowing only as much as was written. A date that carries no time — or a time less precise than the second — **fails rather than
+returning empty**, with an error such as `Cannot get second for 2017`. Guard with `hasSecond(Date[1]):Boolean[1]`
+when the granularity is not known.
+
+**Parameters**
+- `d` — the date to read.
+
+**Returns** its second.
+
+**Examples**
+```pure
+%2015-04-15T17:09:21.398->second()
+%2017->second()   // fails: Cannot get second for 2017
+```
+
+**See also** `hasSecond(Date[1]):Boolean[1]`, `datePart(Date[1]):Date[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::date::second(d:Date[1]):Integer[1];
 
 function <<PCT.test>> meta::pure::functions::date::tests::testSecond<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
@@ -24,5 +45,5 @@ function <<PCT.test>> meta::pure::functions::date::tests::testSecond<Z|y>(f:Func
 
 function <<PCT.test>> meta::pure::functions::date::tests::testSecondError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertError(| $f->eval(|%2017->second()), 'Cannot get second for 2017', 27, 36);
+    assertError(| $f->eval(|%2017->second()), 'Cannot get second for 2017', 48, 36);
 }

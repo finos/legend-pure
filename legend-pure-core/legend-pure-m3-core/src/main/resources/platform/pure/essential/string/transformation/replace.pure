@@ -14,13 +14,36 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Replaces every occurrence of a substring within a string.
+
+Matching is literal, not a regular expression, and every occurrence is replaced.
+If `toReplace` does not occur in `source`, the source string is returned unchanged.
+
+**Parameters**
+- `source` — the string to search in.
+- `toReplace` — the literal substring to look for.
+- `replacement` — the string to substitute in its place.
+
+**Returns** a new string with the replacements applied.
+
+**Examples**
+```pure
+'abcde'->replace('ab', 'fg')      // 'fgcde'
+'a-b-c'->replace('-', '')         // 'abc'
+'hello'->replace('z', 'y')        // 'hello'
+```
+
+**See also** `split(String[1], String[1]):String[*]`,
+`substring(String[1], Integer[1], Integer[1]):String[1]`
+'''
 native function
     <<PCT.function>>
-    {
-        doc.doc=''
-    }
     meta::pure::functions::string::replace(source:String[1], toReplace:String[1], replacement:String[1]):String[1];
 
+'''
+Replacing a leading substring rewrites only that occurrence.
+'''
 function <<PCT.test>> meta::pure::functions::string::tests::replace::testReplace<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals('fgcde', $f->eval(|'abcde'->replace('ab', 'fg')));

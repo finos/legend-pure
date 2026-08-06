@@ -15,6 +15,29 @@
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
+'''
+Extracts the plain magnitude from a unit-carrying value, discarding the unit.
+
+The inverse of `meta::pure::functions::meta::newUnit(Unit[1], Number[1]):Any[1]`. No conversion is
+performed — the number returned is the one the value was created with, in its own unit, so a value in
+`Cubitum` yields its Cubitum magnitude rather than a canonical one.
+
+Because the unit is dropped, mixing results from different units silently discards the distinction;
+convert first if the values are not already in the same unit.
+
+**Parameters**
+- `unit` — the unit-carrying value.
+
+**Returns** its magnitude, keeping the original numeric type.
+
+**Examples**
+```pure
+getUnitValue(5 RomanLength~Pes)           // 5
+getUnitValue(10.5D RomanLength~Cubitum)   // 10.5D
+```
+
+**See also** `meta::pure::functions::meta::newUnit(Unit[1], Number[1]):Any[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::getUnitValue(unit:Any[1]):Number[1];
 
 

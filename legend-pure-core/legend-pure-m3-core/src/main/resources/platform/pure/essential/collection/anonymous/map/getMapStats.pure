@@ -15,6 +15,27 @@
 import meta::pure::test::pct::*;
 import meta::pure::functions::asserts::*;
 
+'''
+Diagnostic counters for a map: its size, and how many times a value has been computed on a miss.
+
+Intended for inspecting cache behaviour when a map is used with
+`getIfAbsentPutWithKey(Map<U, V>[1], U[1], Function<{U[1]->V[0..1]}>[1]):V[0..1]` — a rising
+`getIfAbsentCounter` relative to `size` indicates repeated misses. The result is `[0..1]`, so a map
+that keeps no statistics yields an empty value.
+
+**Parameters**
+- `m` — the map to inspect.
+
+**Returns** the map's statistics, or an empty value if none are recorded.
+
+**Examples**
+```pure
+$m->getMapStats().size
+$m->getMapStats().getIfAbsentCounter
+```
+
+**See also** `getIfAbsentPutWithKey(Map<U, V>[1], U[1], Function<{U[1]->V[0..1]}>[1]):V[0..1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::getMapStats<U,V>(m:Map<U,V>[1]):MapStats[0..1];
 
 Class meta::pure::functions::collection::MapStats

@@ -15,11 +15,31 @@
 import meta::pure::test::pct::*;
 import meta::pure::functions::asserts::*;
 
+'''
+The element at a zero-based position in a collection.
+
+The result has multiplicity `[1]`, so unlike most collection accessors this always yields exactly
+one value — an index outside the collection is an error rather than an empty result. A single value
+behaves as a one-element collection, so `'a'->at(0)` is `'a'`.
+
+**Parameters**
+- `set` — the collection to read from.
+- `key` — zero-based position of the element to return.
+
+**Returns** the element at that position.
+
+**Examples**
+```pure
+['a', 'b', 'c']->at(0)   // 'a'
+['a', 'b', 'c']->at(2)   // 'c'
+```
+
+**See also** `indexOf(T[*], T[1]):Integer[1]`,
+`slice(T[*], Integer[1], Integer[1]):T[*]`,
+`meta::pure::functions::collection::first(T[*]):T[0..1]`
+'''
 native function
     <<PCT.function>>
-    {
-        doc.doc=''
-    }
     meta::pure::functions::collection::at<T>(set:T[*], key:Integer[1]):T[1];
 
 function <<PCT.test>> meta::pure::functions::collection::tests::at::testAt<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
@@ -49,5 +69,5 @@ function <<PCT.test>> meta::pure::functions::collection::tests::at::testAtWithVa
 }
 function <<PCT.test>> meta::pure::functions::collection::tests::at::testAtError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertError(| $f->eval(|[1, 2]->at(2)), 'The system is trying to get an element at offset 2 where the collection is of size 2', 52, 37);
+    assertError(| $f->eval(|[1, 2]->at(2)), 'The system is trying to get an element at offset 2 where the collection is of size 2', 72, 37);
 }

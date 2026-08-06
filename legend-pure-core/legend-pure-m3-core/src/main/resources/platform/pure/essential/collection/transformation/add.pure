@@ -14,13 +14,45 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Inserts a value into a collection at a given position, returning a new collection.
+
+The input is not modified — Pure collections are immutable, so the original is unchanged and the
+result is a new collection. `offset` is zero-based: `0` places the value at the front, and the
+collection's size places it at the end.
+
+The `[1..*]` result records that the outcome always holds at least the inserted value.
+
+**Parameters**
+- `set` — the collection to insert into.
+- `offset` — zero-based position at which the value should appear.
+- `val` — the value to insert.
+
+**Returns** a new collection with `val` at `offset`.
+
+**Examples**
+```pure
+['a', 'b']->add(0, 'c')   // ['c', 'a', 'b']
+['a', 'b']->add(1, 'c')   // ['a', 'c', 'b']
+```
+
+**See also** `add(T[*], T[1]):T[1..*]`,
+`concatenate(T[*], T[*]):T[*]`
+'''
 native function
     <<PCT.function>>
-    {
-        doc.doc=''
-    }
     meta::pure::functions::collection::add<T>(set:T[*], offset:Integer[1], val:T[1]):T[1..*];
 
+'''
+Appends a value to the end of a collection, returning a new collection.
+
+Equivalent to inserting at the collection's size. The original is unchanged.
+
+**Examples**
+```pure
+['a', 'b']->add('c')   // ['a', 'b', 'c']
+```
+'''
 native function <<PCT.function>> meta::pure::functions::collection::add<T>(set:T[*], val:T[1]):T[1..*];
 
 function <<PCT.test>> meta::pure::functions::collection::tests::add::testAdd<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

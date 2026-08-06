@@ -14,17 +14,47 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The magnitude of a number, discarding its sign.
+
+There is one overload per numeric type, each returning that same type, so `abs` never widens or narrows
+what you pass it — an `Integer` stays an `Integer`, a `Decimal` stays exact. That is why the overloads
+exist rather than a single `Number` version.
+
+**Parameters**
+- `int` — the value whose magnitude is wanted.
+
+**Returns** the value without its sign.
+
+**Examples**
+```pure
+abs(-2)                     // 2
+abs(2)                      // 2
+abs(-123456789123456789)    // 123456789123456789
+```
+
+**See also** `sign(Number[1]):Integer[1]`,
+`abs(Decimal[1]):Decimal[1]`,
+`abs(Float[1]):Float[1]`
+'''
 native function
     <<PCT.function>>
-    {
-        doc.doc=''
-    }
     meta::pure::functions::math::abs(int:Integer[1]):Integer[1];
 
+'''
+The magnitude of a `Float`, returning a `Float`. See `abs(Integer[1]):Integer[1]` for details.
+'''
 native function <<PCT.function>> meta::pure::functions::math::abs(float:Float[1]):Float[1];
 
+'''
+The magnitude of any number, keeping only the general `Number` type. Prefer a type-specific overload
+such as `abs(Integer[1]):Integer[1]` when the input type is known, so the result stays that type.
+'''
 native function <<PCT.function>> meta::pure::functions::math::abs(number:Number[1]):Number[1];
 
+'''
+The magnitude of a `Decimal`, returning an exact `Decimal`. See `abs(Integer[1]):Integer[1]` for details.
+'''
 native function <<PCT.function>> meta::pure::functions::math::abs(decimal:Decimal[1]):Decimal[1];
 
 

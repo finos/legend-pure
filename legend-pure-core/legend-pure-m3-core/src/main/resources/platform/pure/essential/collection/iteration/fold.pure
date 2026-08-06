@@ -15,11 +15,42 @@
 import meta::pure::test::pct::*;
 import meta::pure::functions::collection::tests::fold::*;
 
+'''
+Combines the elements of a collection into an accumulated result, one element at a time.
+
+`func` receives the current element and the accumulated value, and returns the new accumulated
+value. It is applied left to right, so the first element is combined with `accumulator` first. An
+empty collection returns `accumulator` unchanged.
+
+The accumulator is not restricted to a single value. Its multiplicity `m` is carried through to the
+result, so folding into a collection accumulator yields a collection — `fold` builds up a result of
+whatever shape the seed has, rather than always reducing to one value.
+
+Note the argument order: the element comes first, the accumulator second. This matters when the
+operation is not commutative — `{x, y | $y + $x}` concatenates in collection order, while
+`{x, y | $x + $y}` reverses it.
+
+**Parameters**
+- `value` — the collection to fold over.
+- `func` — combines an element with the accumulated value.
+- `accumulator` — the starting value, and the result for an empty collection.
+
+**Returns** the final accumulated value, with the same multiplicity as `accumulator`.
+
+**Examples**
+```pure
+[1, 2, 3, 4]->fold({x, y | $x + $y}, 0)              // 10
+[1, 2, 3, 4]->fold({x, y | $x + $y}, 7)              // 17  -- the seed participates
+['a', 'b', 'c']->fold({x, y | $y + $x}, '')          // 'abc'
+[1, 2, 3, 4]->fold({x, y | $y->add($x)}, [-1, 0])    // [-1, 0, 1, 2, 3, 4]  -- collection accumulator
+```
+
+**See also** `map(T[m], Function<{T[1]->V[1]}>[1]):V[m]`,
+`filter(T[*], Function<{T[1]->Boolean[1]}>[1]):T[*]`,
+`meta::pure::functions::string::joinStrings(String[*], String[1]):String[1]`
+'''
 native function
     <<PCT.function>>
-    {
-        doc.doc=''
-    }
     meta::pure::functions::collection::fold<T,V|m>(value:T[*], func:Function<{T[1],V[m]->V[m]}>[1], accumulator:V[m]):V[m];
 
 function <<PCT.test>> meta::pure::functions::collection::tests::fold::testIntegerSum<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

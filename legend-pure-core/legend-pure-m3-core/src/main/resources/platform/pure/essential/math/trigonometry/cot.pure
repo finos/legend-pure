@@ -14,6 +14,30 @@
 
 import meta::pure::test::pct::*;
 
+'''
+The cotangent of an angle — the reciprocal of its tangent.
+
+**Angles are in radians, not degrees.** Convert with `$degrees * 3.141592653589793 / 180` if your
+input is in degrees.
+
+Undefined at multiples of π, where the tangent is zero, and unbounded as the angle approaches them.
+
+The result is always a `Float` and carries floating-point representation error, so compare with a
+tolerance rather than exact equality.
+
+**Parameters**
+- `number` — the angle, in radians.
+
+**Returns** its cotangent.
+
+**Examples**
+```pure
+cot(1)     // 0.642092615934
+cot(1.5)   // 0.070914844302
+```
+
+**See also** `tan(Number[1]):Float[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::cot(number:Number[1]):Float[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testCoTangent<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

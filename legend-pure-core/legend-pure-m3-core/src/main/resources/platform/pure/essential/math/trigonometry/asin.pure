@@ -15,6 +15,30 @@
 import meta::pure::test::pct::*;
 import meta::pure::functions::asserts::*;
 
+'''
+The arc sine of a value — the angle whose sine it is.
+
+The inverse of `sin(Number[1]):Float[1]`. The input must be between -1 and 1, since no angle has a sine
+outside that range. The result is an angle **in radians**, in the range -π/2 to π/2.
+
+The result is always a `Float` and carries floating-point representation error, so compare with a
+tolerance rather than exact equality.
+
+**Parameters**
+- `number` — a value between -1 and 1.
+
+**Returns** the angle in radians, between -π/2 and π/2.
+
+**Examples**
+```pure
+asin(0)      // 0.0
+asin(1)      // 1.570796326794   -- π/2
+asin(-0.5)   // -0.523598775598
+```
+
+**See also** `sin(Number[1]):Float[1]`, `acos(Number[1]):Float[1]`,
+`atan2(Number[1], Number[1]):Float[1]`
+'''
 native function <<PCT.function>> meta::pure::functions::math::asin(number:Number[1]):Float[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testArcSine<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

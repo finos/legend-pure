@@ -14,6 +14,31 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Whether a multiplicity requires exactly one value.
+
+True only for `[1]`. This is the strict test — a value is both required and single — so `[0..1]` is
+false because the value is optional. When you only care that at most one value is permitted, use
+`hasToOneUpperBound(Multiplicity[1]):Boolean[1]` instead.
+
+**Parameters**
+- `multiplicity` — the multiplicity to inspect.
+
+**Returns** `true` only for exactly-one.
+
+**Examples**
+```pure
+PureOne->isToOne()    // true
+ZeroOne->isToOne()    // false -- optional
+PureZero->isToOne()   // false
+ZeroMany->isToOne()   // false
+OneMany->isToOne()    // false
+```
+
+**See also** `isToMany(Multiplicity[1]):Boolean[1]`,
+`hasToOneUpperBound(Multiplicity[1]):Boolean[1]`,
+`getLowerBound(Multiplicity[1]):Integer[1]`
+'''
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::isToOne(multiplicity:Multiplicity[1]):Boolean[1]
 {
     hasToOneUpperBound($multiplicity) && eq($multiplicity->getLowerBound(), 1)

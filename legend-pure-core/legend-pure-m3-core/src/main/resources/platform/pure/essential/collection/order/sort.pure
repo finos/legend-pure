@@ -14,18 +14,65 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Sorts a collection, optionally by a derived key and optionally with a custom comparator.
+
+This is the most general form; the shorter overloads delegate to it. Both function arguments are
+`[0..1]`, so passing `[]` for either falls back to the default: elements are compared directly when
+no `key` is given, and in natural ascending order when no `comp` is given.
+
+Supplying a `key` is the usual way to sort objects by one of their properties, and avoids writing a
+comparator by hand.
+
+**Parameters**
+- `col` — the collection to sort.
+- `key` — extracts the value to compare on, or `[]` to compare elements directly.
+- `comp` — compares two keys, returning a negative number, zero, or a positive number, or `[]` for
+  natural ascending order.
+
+**Returns** the elements in sorted order; the multiplicity is preserved.
+
+**Examples**
+```pure
+[3, 1, 2]->sort([], [])                     // [1, 2, 3]
+$people->sort(p | $p.lastName, [])          // by a derived key
+$people->sort([], {a, b | $b.age - $a.age}) // custom comparator: descending
+```
+
+**See also** `sort(T[m]):T[m]`,
+`sort(T[m], Function<{T[1], T[1]->Integer[1]}>[0..1]):T[m]`,
+`reverse(T[m]):T[m]`
+'''
 native function
     <<PCT.function>>
-    {
-        doc.doc=''
-    }
     meta::pure::functions::collection::sort<T,U|m>(col:T[m], key:Function<{T[1]->U[1]}>[0..1], comp:Function<{U[1],U[1]->Integer[1]}>[0..1]):T[m];
 
+'''
+Sorts a collection into natural ascending order, comparing elements directly.
+
+The common case; equivalent to `sort($col, [], [])`.
+
+**Examples**
+```pure
+[3, 1, 2]->sort()   // [1, 2, 3]
+```
+'''
 function <<PCT.function>> meta::pure::functions::collection::sort<T|m>(col:T[m]):T[m]
 {
     sort($col, [], [])
 }
 
+'''
+Sorts a collection using a custom comparator applied to the elements themselves.
+
+Equivalent to `sort($col, [], $comp)`. The comparator returns a negative number, zero, or a positive
+number as its first argument sorts before, with, or after its second.
+
+**Examples**
+```pure
+[3, 1, 2]->sort({a, b | $b - $a})   // [3, 2, 1]
+```
+'''
 function <<PCT.function>> meta::pure::functions::collection::sort<T|m>(col:T[m], comp:Function<{T[1],T[1]->Integer[1]}>[0..1]):T[m]
 {
     sort($col, [], $comp)

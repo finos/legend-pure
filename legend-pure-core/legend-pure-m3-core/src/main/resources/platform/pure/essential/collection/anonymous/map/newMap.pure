@@ -14,11 +14,39 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Builds a `Map` from a collection of key/value pairs.
+
+Each pair's `first` becomes a key and its `second` the value. Where two pairs share a key, the later
+one wins. An empty collection gives an empty map.
+
+**Parameters**
+- `pairs` — the entries to populate the map with.
+
+**Returns** the map.
+
+**Examples**
+```pure
+[pair('a', 1), pair('b', 2)]->newMap()   // {'a' -> 1, 'b' -> 2}
+[]->newMap()                             // empty map
+```
+
+**See also** `newMap(Pair<U, V>[*], Property<U, Any|1>[*]):Map<U, V>[1]`,
+`pair(U[1], V[1]):Pair<U, V>[1]`,
+`keyValues(Map<U, V>[1]):Pair<U, V>[*]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::newMap<U,V>(pairs:Pair<U,V>[*]):Map<U,V>[1];
 //{
 //   $pairs->fold({a,b|$b->put($a.first, $a.second)},^Map<U,V>());
 //}
 
+'''
+As `newMap(Pair<U, V>[*]):Map<U, V>[1]`, but keys are compared using the given properties rather
+than by default equality.
+
+Supply the properties that identify a key object, and two keys agreeing on all of them are treated
+as the same entry. Use this when the keys are objects and you want them matched structurally.
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::newMap<U,V>(pairs:Pair<U,V>[*], p:Property<U,Any|1>[*]):Map<U,V>[1];
 //{
 //   $pairs->fold({a,b|$b->put($a.first, $a.second)},^Map<U,V>(_func=$f));

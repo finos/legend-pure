@@ -14,6 +14,35 @@
 
 import meta::pure::test::pct::*;
 
+'''
+Evaluates a value and then makes its internals inspectable, returning it unchanged.
+
+Where `deactivate(Any[*]):ValueSpecification[1]` captures an expression *instead of* running it, this
+runs it and then exposes the resulting object's structure for reflection. The value and its type come
+back unchanged — `T[m]` in, `T[m]` out — so it drops into an expression without altering its meaning.
+
+In practice it is what makes a lambda's or function type's internals readable: after this, an
+`expressionSequence` or a parameter list can be walked, where before the parts had not been realised.
+
+**Parameters**
+- `var` — the value to evaluate and open up.
+
+**Returns** the same value, with its structure reflectable.
+
+**Examples**
+```pure
+let f = {| true};
+$f->evaluateAndDeactivate().expressionSequence->cast(@InstanceValue).values;   // true
+
+let g = {a:String[1], b:Integer[1] | true};
+$g->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType)
+  .parameters->evaluateAndDeactivate()->map(v | $v.name);                      // ['a', 'b']
+```
+
+**See also** `deactivate(Any[*]):ValueSpecification[1]`,
+`reactivate(ValueSpecification[1], Map<String, List<Any>>[1]):Any[*]`,
+`functionType(Function<Any>[1]):FunctionType[1]`
+'''
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::evaluateAndDeactivate<T|m>(var:T[m]):T[m];
 
 function <<test.Test>> meta::pure::functions::meta::tests::evaluateAndDeactivate::testEvaluateAndDeactivate():Boolean[1]
