@@ -1,0 +1,101 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::test::pct::*;
+
+'''
+The largest multiple of `width` at or below an integer, computed as `value - (value mod width)`.
+
+Values are snapped down onto a grid of points `width` apart and aligned on zero, so
+`truncate(17, 10)` gives `10`, the start of the range spanning 10 to 19.
+
+**Truncation is downward, not toward zero.** This is not the `TRUNC` of SQL, which discards a
+number's fractional part and so moves toward zero: `truncate(-1, 10)` gives `-10`, not `0`. The
+result is always the multiple at or below the input on the number line, whatever the sign.
+Snapping down is what makes every value in a range map to the same result regardless of sign,
+which is the property that makes this usable as a partition or grouping key.
+
+A value already sitting on a multiple is returned unchanged, so truncating twice gives the same
+answer as truncating once. A `width` of `1` is the identity.
+
+The `width` must be positive; `0` raises a divide-by-zero error.
+
+**Parameters**
+- `value` — the integer to truncate.
+- `width` — the spacing of the grid to truncate onto, a positive integer.
+
+**Returns** the largest multiple of `width` that is less than or equal to `value`.
+
+**Examples**
+```pure
+truncate(1, 10)      // 0
+truncate(17, 10)     // 10
+truncate(20, 10)     // 20   -- already a multiple
+truncate(-1, 10)     // -10  -- downward, not toward zero
+truncate(-17, 10)    // -20
+truncate(7, 1)       // 7    -- width 1 is the identity
+```
+
+**See also** `floor(Number[1]):Integer[1]`, `round(Number[1]):Integer[1]`,
+`mod(Integer[1], Integer[1]):Integer[1]`
+'''
+function <<PCT.function>> meta::pure::functions::math::truncate(value:Integer[1], width:Integer[1]):Integer[1]
+{
+    $value - $value->mod($width)
+}
+
+'''
+A value between two boundaries loses its remainder and falls to the lower one.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::truncate::testTruncatePositive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(0, $f->eval(|truncate(1, 10)));
+    assertEq(3, $f->eval(|truncate(5, 3)));
+    assertEq(10, $f->eval(|truncate(17, 10)));
+}
+
+'''
+Negative values move away from zero, landing on the boundary below rather than the one above.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::truncate::testTruncateNegative<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(-10, $f->eval(|truncate(-1, 10)));
+    assertEq(-6, $f->eval(|truncate(-5, 3)));
+    assertEq(-20, $f->eval(|truncate(-17, 10)));
+}
+
+'''
+A value already on a multiple is returned unchanged, so truncating twice changes nothing.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::truncate::testTruncateExactBoundary<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(20, $f->eval(|truncate(20, 10)));
+    assertEq(-10, $f->eval(|truncate(-10, 10)));
+    assertEq(0, $f->eval(|truncate(0, 10)));
+}
+
+'''
+Every integer is a multiple of `1`, so a width of `1` is the identity for both signs.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::truncate::testTruncateWidthOne<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(7, $f->eval(|truncate(7, 1)));
+    assertEq(-7, $f->eval(|truncate(-7, 1)));
+}
+
+function <<test.Test>> meta::pure::functions::math::tests::truncate::testTruncateEval():Boolean[1]
+{
+    assertEq(0, truncate_Integer_1__Integer_1__Integer_1_->eval(1, 10));
+    assertEq(-10, truncate_Integer_1__Integer_1__Integer_1_->eval(-1, 10));
+}
