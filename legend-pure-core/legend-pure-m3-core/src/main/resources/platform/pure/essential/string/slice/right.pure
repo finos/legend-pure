@@ -43,7 +43,7 @@ The `length` must not be negative; a negative value raises an error.
 ```
 
 **See also** `left(String[1], Integer[1]):String[1]`,
-`stringSlice(String[1], Integer[1]):String[1]`, `length(String[1]):Integer[1]`
+`substr(String[1], Integer[1]):String[1]`, `length(String[1]):Integer[1]`
 '''
 function <<PCT.function>> meta::pure::functions::string::right(string:String[1], length:Integer[1]):String[1]
 {
@@ -55,7 +55,7 @@ function <<PCT.function>> meta::pure::functions::string::right(string:String[1],
                               | 0,
                               | $strLength - $length);
 
-    $string->stringSlice($firstKeptIndex, $strLength);
+    $string->substr($firstKeptIndex, $strLength);
 }
 
 '''

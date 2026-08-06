@@ -25,8 +25,8 @@ rather than padded or rejected, so this is safe to apply across a column of mixe
 A `length` of `0` returns the empty string.
 
 Note that `length` is a count, not a position — unlike
-`stringSlice(String[1], Integer[1]):String[1]`, which takes an index and drops what comes before
-it. `'EURUSD'->left(3)` gives `'EUR'`, while `'EURUSD'->stringSlice(3)` gives `'USD'`.
+`substr(String[1], Integer[1]):String[1]`, which takes an index and drops what comes before
+it. `'EURUSD'->left(3)` gives `'EUR'`, while `'EURUSD'->substr(3)` gives `'USD'`.
 
 The `length` must not be negative; a negative value raises an error.
 
@@ -47,7 +47,7 @@ The `length` must not be negative; a negative value raises an error.
 ```
 
 **See also** `right(String[1], Integer[1]):String[1]`,
-`stringSlice(String[1], Integer[1]):String[1]`, `length(String[1]):Integer[1]`
+`substr(String[1], Integer[1]):String[1]`, `length(String[1]):Integer[1]`
 '''
 function <<PCT.function>> meta::pure::functions::string::left(string:String[1], length:Integer[1]):String[1]
 {
@@ -59,7 +59,7 @@ function <<PCT.function>> meta::pure::functions::string::left(string:String[1], 
                            | $strLength,
                            | $length);
 
-    $string->stringSlice(0, $charsToKeep);
+    $string->substr(0, $charsToKeep);
 }
 
 '''
