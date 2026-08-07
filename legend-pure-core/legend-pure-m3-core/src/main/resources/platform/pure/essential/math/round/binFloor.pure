@@ -1,0 +1,100 @@
+// Copyright 2026 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::test::pct::*;
+
+'''
+The largest multiple of `width` at or below an integer, computed as `value - (value mod width)`.
+
+Values are floored onto a grid of bins `width` apart and aligned on zero, so `binFloor(17, 10)`
+gives `10`, the start of the bin spanning 10 to 19.
+
+This is a floor, not a truncation toward zero: `binFloor(-1, 10)` gives `-10`, not `0`. The
+result is always the multiple at or below the input on the number line, whatever the sign. That
+is what makes every value in a bin map to the same result regardless of sign, which is the
+property that makes this usable as a partition or grouping key.
+
+A value already sitting on a multiple is returned unchanged, so binning twice gives the same
+answer as binning once. A `width` of `1` is the identity.
+
+The `width` must be positive; `0` raises a divide-by-zero error.
+
+**Parameters**
+- `value` — the integer to place in a bin.
+- `width` — the bin size, a positive integer.
+
+**Returns** the largest multiple of `width` that is less than or equal to `value`.
+
+**Examples**
+```pure
+binFloor(1, 10)      // 0
+binFloor(17, 10)     // 10
+binFloor(20, 10)     // 20   -- already a multiple
+binFloor(-1, 10)     // -10  -- floors down, not toward zero
+binFloor(-17, 10)    // -20
+binFloor(7, 1)       // 7    -- width 1 is the identity
+```
+
+**See also** `floor(Number[1]):Integer[1]`, `round(Number[1]):Integer[1]`,
+`mod(Integer[1], Integer[1]):Integer[1]`
+'''
+function <<PCT.function>> meta::pure::functions::math::binFloor(value:Integer[1], width:Integer[1]):Integer[1]
+{
+    $value - $value->mod($width)
+}
+
+'''
+A value between two bin edges loses its remainder and falls to the lower edge.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::binFloor::testBinFloorPositive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(0, $f->eval(|binFloor(1, 10)));
+    assertEq(3, $f->eval(|binFloor(5, 3)));
+    assertEq(10, $f->eval(|binFloor(17, 10)));
+}
+
+'''
+Negative values floor away from zero, landing on the bin edge below rather than the one above.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::binFloor::testBinFloorNegative<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(-10, $f->eval(|binFloor(-1, 10)));
+    assertEq(-6, $f->eval(|binFloor(-5, 3)));
+    assertEq(-20, $f->eval(|binFloor(-17, 10)));
+}
+
+'''
+A value already on a bin edge is returned unchanged, so binning twice changes nothing.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::binFloor::testBinFloorExactBoundary<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(20, $f->eval(|binFloor(20, 10)));
+    assertEq(-10, $f->eval(|binFloor(-10, 10)));
+    assertEq(0, $f->eval(|binFloor(0, 10)));
+}
+
+'''
+Every integer is a multiple of `1`, so a width of `1` is the identity for both signs.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::binFloor::testBinFloorWidthOne<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(7, $f->eval(|binFloor(7, 1)));
+    assertEq(-7, $f->eval(|binFloor(-7, 1)));
+}
+
+function <<test.Test>> meta::pure::functions::math::tests::binFloor::testBinFloorEval():Boolean[1]
+{
+    assertEq(0, binFloor_Integer_1__Integer_1__Integer_1_->eval(1, 10));
+    assertEq(-10, binFloor_Integer_1__Integer_1__Integer_1_->eval(-1, 10));
+}
