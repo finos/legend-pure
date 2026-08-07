@@ -229,7 +229,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
     {
         // The relaxation still requires the valueFn's multiplicity to be subsumed by
         // the property's. Mapping a [1] property to an expression that returns [*]
-        // (here `$src.LEGALNAME->split(',')`) must be rejected with a multiplicity
+        // (here `$row.LEGALNAME->split(',')`) must be rejected with a multiplicity
         // error.
         try
         {
@@ -239,7 +239,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                     "  *my::Firm[firm]: Relation\n" +
                     "  {\n" +
                     "    ~func my::firmFunction__Relation_1_\n" +
-                    "    legalName: $src.LEGALNAME->split(',')\n" +
+                    "    legalName: $row.LEGALNAME->split(',')\n" +
                     "  }\n" +
                     ")\n";
 
@@ -437,7 +437,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                 "  *my::FirmWithAliases[firm]: Relation\n" +
                 "  {\n" +
                 "    ~func my::firmFunction__Relation_1_\n" +
-                "    aliases: $src.LEGALNAME->split(',')\n" +
+                "    aliases: $row.LEGALNAME->split(',')\n" +
                 "  }\n" +
                 ")\n";
         try
@@ -468,7 +468,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                 "  *my::Firm[firm]: Relation\n" +
                 "  {\n" +
                 "    ~func my::firmFunction__Relation_1_\n" +
-                "    clientNames: $src.LEGALNAME->split(',')\n" +
+                "    clientNames: $row.LEGALNAME->split(',')\n" +
                 "  }\n" +
                 ")\n";
 
@@ -590,7 +590,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
     public void testRelationMappingRejectsZeroToOneExpressionForToOnePropertyWithExpressionRhs()
     {
         // Same multiplicity rejection as the bare-column form, but expressed
-        // through `$src.<col>->first()` which yields [0..1] from a [1] column.
+        // through `$row.<col>->first()` which yields [0..1] from a [1] column.
         // Demonstrates that the multiplicity check operates on the *result* of
         // the lambda, not on the column type alone.
         String mappingSource = "###Mapping\n" +
@@ -599,7 +599,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                 "  *my::Firm[firm]: Relation\n" +
                 "  {\n" +
                 "    ~func my::firmFunction__Relation_1_\n" +
-                "    legalName: $src.LEGALNAME->toOneMany()->first()\n" +
+                "    legalName: $row.LEGALNAME->toOneMany()->first()\n" +
                 "  }\n" +
                 ")\n";
         try
@@ -874,7 +874,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
     }
 
     // ------------------------------------------------------------------
-    // Incremental coverage for the new $src.<col> and ~src forms.
+    // Incremental coverage for the new $row.<col> and ~src forms.
     //
     // Each test here exercises delete-and-reload-stable across the new
     // expression-RHS / inline-source code paths, mirroring the existing
@@ -884,7 +884,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
     @Test
     public void testDeleteAndReloadEachSourceWithExpressionRhs()
     {
-        // Mixes bare-column lowering, explicit `$src.X`, and a multi-step
+        // Mixes bare-column lowering, explicit `$row.X`, and a multi-step
         // arithmetic expression in a single mapping.
         String mappingSource = "###Mapping\n" +
                 "Mapping my::testMapping\n" +
@@ -893,8 +893,8 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                 "  {\n" +
                 "    ~func my::personFunction__Relation_1_\n" +
                 "    firstName: FIRSTNAME,\n" +
-                "    age: $src.AGE,\n" +
-                "    +concatenated: String[1]: $src.FIRSTNAME + ' ' + $src.FIRSTNAME\n" +
+                "    age: $row.AGE,\n" +
+                "    +concatenated: String[1]: $row.FIRSTNAME + ' ' + $row.FIRSTNAME\n" +
                 "  }\n" +
                 ")\n";
 
@@ -942,7 +942,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
     @Test
     public void testDeleteAndReloadEachSourceWithInlineSrcAndEmbedded()
     {
-        // Inline ~src parent + embedded sub-mapping with $src.<col> RHS.
+        // Inline ~src parent + embedded sub-mapping with $row.<col> RHS.
         // Same caveat as testDeleteAndReloadEachSourceWithInlineSrc above.
         String mappingSource = "###Mapping\n" +
                 "Mapping my::testMapping\n" +
@@ -953,7 +953,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                 "    firstName: FIRSTNAME,\n" +
                 "    address\n" +
                 "    (\n" +
-                "      city: $src.CITY\n" +
+                "      city: $row.CITY\n" +
                 "    )\n" +
                 "  }\n" +
                 ")\n";
@@ -1041,7 +1041,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
     {
         // Quoted-column lowering (`'LEGAL NAME'`) must survive delete-reload.
         // The bare-column branch in the graph builder must preserve quotes
-        // when synthesizing `{| $src.'LEGAL NAME'}` so the M3 parser still
+        // when synthesizing `{| $row.'LEGAL NAME'}` so the M3 parser still
         // accepts it as a quoted property accessor on the row.
         String functionSource = "###Pure\n" +
                 "import meta::pure::metamodel::relation::*;\n" +
@@ -1070,7 +1070,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
     @Test
     public void testDeleteAndReloadEachSourceWithEnumerationTransformerOverExpression()
     {
-        // Enumeration transformer + explicit `$src.<col>` expression RHS must
+        // Enumeration transformer + explicit `$row.<col>` expression RHS must
         // also be stable across delete-reload cycles.
         String mappingSource = "###Mapping\n" +
                 "Mapping my::testMapping\n" +
@@ -1083,8 +1083,8 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                 "  *my::PersonWithGender[person]: Relation\n" +
                 "  {\n" +
                 "    ~func my::personWithGenderFunction__Relation_1_\n" +
-                "    firstName: $src.FIRSTNAME,\n" +
-                "    gender: EnumerationMapping GenderMapping: $src.GENDER\n" +
+                "    firstName: $row.FIRSTNAME,\n" +
+                "    gender: EnumerationMapping GenderMapping: $row.GENDER\n" +
                 "  }\n" +
                 ")\n";
 
