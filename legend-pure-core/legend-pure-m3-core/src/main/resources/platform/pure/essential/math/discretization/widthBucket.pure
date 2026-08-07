@@ -1,0 +1,263 @@
+// Copyright 2026 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::test::pct::*;
+
+'''
+The number of the histogram bucket a value falls into.
+
+The range `low` to `high` is divided into `count` buckets of equal width, numbered `1` to `count`.
+A value inside the range returns the number of its bucket; a value outside it returns a sentinel
+instead of an error, so a whole column can be bucketed without pre-filtering. `0` means below the
+range and `count + 1` means at or above it, which keeps the out-of-range rows visible in a group-by
+rather than silently dropping them.
+
+Buckets are half-open in the direction of travel, so a value sitting exactly on an internal edge
+belongs to the bucket above it and every value maps to exactly one bucket. `low` itself is bucket
+`1`; `high` itself is `count + 1`, not `count`.
+
+The bounds may be given in either order. When `low` is greater than `high` the buckets run
+downwards — bucket `1` is the one adjacent to `low` — and the half-open edge flips with them, so a
+value on an internal edge again belongs to the bucket further from `low`.
+
+Bucket edges are computed in floating point, so a value that sits exactly on an edge in decimal but
+is not representable in binary may land in the neighbouring bucket. Where a decimal edge has to be
+respected exactly, scale the value and the bounds to integers before bucketing.
+
+The `count` must be positive and `low` must differ from `high`; either raises an error.
+
+**Parameters**
+- `value` — the number to place in a bucket.
+- `low` — one end of the range.
+- `high` — the other end of the range, which must differ from `low`.
+- `count` — the number of equal-width buckets, a positive integer.
+
+**Returns** the bucket number, `0` when the value is beyond the `low` end, or `count + 1` when it
+is at or beyond the `high` end.
+
+**Examples**
+```pure
+widthBucket(5.0, 0.0, 10.0, 5)     // 3
+widthBucket(2.0, 0.0, 10.0, 5)     // 2    -- an internal edge belongs to the bucket above
+widthBucket(0.0, 0.0, 10.0, 5)     // 1    -- low is in the first bucket
+widthBucket(10.0, 0.0, 10.0, 5)    // 6    -- high is excluded
+widthBucket(-5.0, 0.0, 10.0, 5)    // 0    -- below the range
+widthBucket(99.0, 0.0, 10.0, 5)    // 6    -- above the range
+widthBucket(9.0, 10.0, 0.0, 5)     // 1    -- reversed bounds count downwards
+widthBucket(1.0, 10.0, 0.0, 5)     // 5
+```
+
+**See also** `widthBucket(Number[0..1], Number[1], Number[1], Integer[1]):Integer[0..1]` for a value
+that may be missing, `binFloor(Integer[1], Integer[1]):Integer[1]`, `floor(Number[1]):Integer[1]`,
+`round(Number[1]):Integer[1]`
+'''
+function <<PCT.function>> meta::pure::functions::math::widthBucket(value:Number[1], low:Number[1], high:Number[1], count:Integer[1]):Integer[1]
+{
+    assert($count > 0, 'count must be > 0');
+    assert($low != $high, 'low must not equal high');
+
+    let ascending = $low < $high;
+
+    let span = if($ascending, | $high - $low, | $low - $high);
+    let offset = if($ascending, | $value - $low, | $low - $value);
+
+    if([
+           pair(| $offset < 0,      | 0),
+           pair(| $offset >= $span, | $count + 1)
+       ],
+       | (($offset * $count / $span)->floor()) + 1);
+}
+
+'''
+As `widthBucket(Number[1], Number[1], Number[1], Integer[1]):Integer[1]`, for a value that may be
+missing.
+
+An absent `value` gives an absent result rather than a bucket number, so a column holding gaps can
+be bucketed without pre-filtering and the missing entries stay distinguishable from the
+out-of-range sentinels `0` and `count + 1` — both of which are real bucket answers about a real
+value. Emptiness propagates rather than being folded into a bucket.
+
+The bounds and `count` still have to be given. They are not checked when `value` is absent, so an
+absent value yields an absent result even where a present one would have raised.
+
+**Parameters**
+- `value` — the number to place in a bucket, or nothing.
+- `low` — one end of the range.
+- `high` — the other end of the range, which must differ from `low`.
+- `count` — the number of equal-width buckets, a positive integer.
+
+**Returns** the bucket number as described for
+`widthBucket(Number[1], Number[1], Number[1], Integer[1]):Integer[1]`, or nothing when `value` is
+absent.
+
+**Examples**
+```pure
+widthBucket([], 0.0, 10.0, 5)      // nothing
+```
+
+**See also** `widthBucket(Number[1], Number[1], Number[1], Integer[1]):Integer[1]`,
+`isEmpty(Any[0..1]):Boolean[1]`
+'''
+function <<PCT.function>> meta::pure::functions::math::widthBucket(value:Number[0..1], low:Number[1], high:Number[1], count:Integer[1]):Integer[0..1]
+{
+    if($value->isEmpty(),
+       | [],
+       | widthBucket($value->toOne(), $low, $high, $count));
+}
+
+'''
+A value inside the range gets the number of the bucket holding it, counting from `1`.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketInRange<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(2, $f->eval(|widthBucket(3.0, 0.0, 10.0, 5)));
+    assertEq(3, $f->eval(|widthBucket(5.0, 0.0, 10.0, 5)));
+}
+
+'''
+A value below the range is reported as `0` rather than raising, so it survives a group-by.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketBelowRange<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(0, $f->eval(|widthBucket(-5.0, 0.0, 10.0, 5)));
+}
+
+'''
+A value above the range is reported as `count + 1`, the sentinel beyond the last bucket.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketAboveRange<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(6, $f->eval(|widthBucket(99.0, 0.0, 10.0, 5)));
+}
+
+'''
+The `low` bound is inside the range and opens the first bucket.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketAtLowBound<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(1, $f->eval(|widthBucket(0.0, 0.0, 10.0, 5)));
+}
+
+'''
+The `high` bound is excluded, so it falls to the out-of-range sentinel rather than the last bucket.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketAtHighBound<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(6, $f->eval(|widthBucket(10.0, 0.0, 10.0, 5)));
+}
+
+'''
+A value exactly on an internal edge belongs to the bucket above it, never to both.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketOnInternalBoundary<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(2, $f->eval(|widthBucket(2.0, 0.0, 10.0, 5)));
+    assertEq(5, $f->eval(|widthBucket(8.0, 0.0, 10.0, 5)));
+}
+
+'''
+Integer arguments are accepted wherever a number is, since the bounds are continuous.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketWithIntegers<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(2, $f->eval(|widthBucket(17, 0, 100, 10)));
+}
+
+'''
+The range need not start at zero, and negative bounds bucket the same way as positive ones.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketNegativeRange<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(3, $f->eval(|widthBucket(-5.0, -10.0, 0.0, 5)));
+}
+
+'''
+A single bucket spans the whole range, so every value inside it is bucket `1`.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketSingleBucket<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(1, $f->eval(|widthBucket(5.0, 0.0, 10.0, 1)));
+}
+
+'''
+Reversed bounds count downwards, so bucket `1` is the one adjacent to `low`.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketDescending<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(1, $f->eval(|widthBucket(9.0, 10.0, 0.0, 5)));
+    assertEq(5, $f->eval(|widthBucket(1.0, 10.0, 0.0, 5)));
+}
+
+'''
+With reversed bounds the `low` end is still included, so it opens the first bucket as before.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketDescendingAtLowBound<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(1, $f->eval(|widthBucket(10.0, 10.0, 0.0, 5)));
+}
+
+'''
+The half-open edge flips with the direction, so an internal edge belongs to the bucket further from `low`.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketDescendingOnInternalBoundary<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(2, $f->eval(|widthBucket(8.0, 10.0, 0.0, 5)));
+}
+
+'''
+The sentinels follow the direction too: past `low` is `0` and at or past `high` is `count + 1`.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketDescendingOutOfRange<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEq(0, $f->eval(|widthBucket(11.0, 10.0, 0.0, 5)));
+    assertEq(6, $f->eval(|widthBucket(0.0, 10.0, 0.0, 5)));
+}
+
+'''
+An absent value gives an absent result, not a bucket number and not an out-of-range sentinel.
+'''
+function <<PCT.test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketAbsentValue<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEmpty($f->eval(|widthBucket([], 0.0, 10.0, 5)));
+}
+
+function <<test.Test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketOptionalValue():Boolean[1]
+{
+    let present = if(true, | 5.0, | []);
+    let absent = if(false, | 5.0, | []);
+
+    assertEquals(3, widthBucket($present, 0.0, 10.0, 5));
+    assertEmpty(widthBucket($absent, 0.0, 10.0, 5));
+}
+
+function <<test.Test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketAbsentValueSkipsValidation():Boolean[1]
+{
+    let absent = if(false, | 5.0, | []);
+
+    assertEmpty(widthBucket($absent, 0.0, 10.0, 0));
+    assertEmpty(widthBucket($absent, 5.0, 5.0, 3));
+}
+
+function <<test.Test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketErrors():Boolean[1]
+{
+    assertError(|widthBucket(5.0, 0.0, 10.0, 0), 'count must be > 0');
+    assertError(|widthBucket(5.0, 0.0, 10.0, -3), 'count must be > 0');
+    assertError(|widthBucket(5.0, 5.0, 5.0, 3), 'low must not equal high');
+}
+
+function <<test.Test>> meta::pure::functions::math::tests::widthBucket::testWidthBucketEval():Boolean[1]
+{
+    assertEq(3, widthBucket_Number_1__Number_1__Number_1__Integer_1__Integer_1_->eval(5.0, 0.0, 10.0, 5));
+    assertEq(0, widthBucket_Number_1__Number_1__Number_1__Integer_1__Integer_1_->eval(-5.0, 0.0, 10.0, 5));
+}
