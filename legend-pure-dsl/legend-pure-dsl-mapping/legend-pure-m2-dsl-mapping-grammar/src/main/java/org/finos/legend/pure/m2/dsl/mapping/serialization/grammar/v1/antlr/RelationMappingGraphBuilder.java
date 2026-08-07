@@ -99,7 +99,7 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
         // zero-arg lambda so the rest of the pipeline can treat both forms
         // uniformly with the `~func` ImportStub flow. The user writes a single
         // expression (`~src my::personFunction()`) and the resulting lambda's
-        // last-expression generic type drives `$src` binding for property
+        // last-expression generic type drives `$row` binding for property
         // mappings exactly as if it had come from an explicit Pure function.
         String srcLambdaText = "{| " + extractText(ctx.combinedExpression()) + "}";
         return parseLambdaTextToM4(srcLambdaText, lambdaContextId(id, classPath, "src"));
@@ -137,13 +137,13 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
         String lambdaText;
         if (ctx.columnName() != null)
         {
-            // Bare-column lowering: `prop: COL` -> `{| $src.COL}`.  Keep the
+            // Bare-column lowering: `prop: COL` -> `{| $row.COL}`.  Keep the
             // original (possibly quoted) column text so columns with spaces
             // (`'LEGAL NAME'`) still parse correctly as quoted property
             // accessors.  The M3 expression post-processor resolves the
-            // accessor once `src`'s generic type is bound to the relation's
+            // accessor once `row`'s generic type is bound to the relation's
             // last-expression type.
-            lambdaText = "{| $src." + ctx.columnName().getText() + "}";
+            lambdaText = "{| $row." + ctx.columnName().getText() + "}";
         }
         else
         {
@@ -214,7 +214,7 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
 
     /**
      * Re-enter the M3 parser to convert a Pure lambda literal text (e.g.
-     * {@code "{| $src.X + $src.Y}"}) into its M4 string form, suitable for
+     * {@code "{| $row.X + $row.Y}"}) into its M4 string form, suitable for
      * embedding back into the M4 string this graph builder is assembling.
      * <p>
      * We deliberately do NOT serialize the parsed {@code LambdaFunction} via
@@ -224,7 +224,7 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
      * {@code expressionSequence}, serialize just that, and hand-roll an empty
      * {@code FunctionType} wrapper around it — same shape the existing
      * {@code PureInstanceSetImplementation.parseMapping} produces.  The
-     * post-processor injects the {@code src} parameter and runs full type
+     * post-processor injects the {@code row} parameter and runs full type
      * inference at processing time.
      */
     private String parseLambdaTextToM4(String lambdaText, String lambdaContextSuffix)
