@@ -31,6 +31,14 @@ on:
         description: "New release version"
         required: true
 
+# Everything that writes to the repository -- the checkout, the atomic push,
+# maven-release-plugin's SCM calls -- authenticates with FINOS_GITHUB_TOKEN,
+# so GITHUB_TOKEN itself never needs more than read access. Applies to the
+# called build-and-test workflow too: a called workflow inherits the caller's
+# permissions and can only narrow them further.
+permissions:
+  contents: read
+
 # A release rewrites the branch (two version-bump commits) and creates a tag,
 # so two runs at once would race each other. Never cancel one in flight: a
 # release killed between pushing the tag and publishing needs the manual
