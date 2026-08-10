@@ -163,7 +163,7 @@ paths are always equivalent from a user's perspective.
 | [Documentation Maintenance](maintenance/maintenance.md) | Keeping docs up to date, ownership, and review cadence |
 | [Module README Template](templates/module-readme-template.md) | Standard template for per-module README files |
 | [Phased Documentation Plan](maintenance/documentation-plan.md) | The phased timeline that produced this documentation set |
-| [Architecture Decision Records](decisions/) | ADR-001 JUnit 4; ADR-002 Eclipse Collections; ADR-003 No mocking |
+| [Architecture Decision Records](decisions/) | ADR-001 JUnit 4; ADR-002 Eclipse Collections; ADR-003 No mocking; ADR-004 Date difference semantics (proposed) |
 
 ---
 
