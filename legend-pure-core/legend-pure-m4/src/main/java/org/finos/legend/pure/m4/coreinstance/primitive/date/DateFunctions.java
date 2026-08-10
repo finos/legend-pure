@@ -625,6 +625,74 @@ public class DateFunctions extends TimeFunctions
         }
     }
 
+    /**
+     * Compare two Pure dates, returning -1 if date1 sorts first, 1 if date2 sorts first, and 0 if
+     * they are the same date. This is the ordering used by {@link PureDate#compareTo(PureDate)}.
+     *
+     * <p><b>A Pure date is a span of time, not an instant.</b> A date stops at whatever granularity
+     * it was written with, and stands for everything it leaves unsaid: {@code 2014} is the whole of
+     * that year, {@code 2014-06} the whole of that month, {@code 2014-06-15T12} the whole of that
+     * hour. So every date covers a span running from the first instant it includes up to (but not
+     * including) the first instant after it. Below, s(x) is the start of x's span and e(x) is its
+     * end.
+     *
+     * <p>When two dates have the same granularity their spans are the same width, and the ordering
+     * is the obvious one: whichever span comes first on the time line sorts first. Dates of
+     * different granularities are what make this ordering surprising, because then one span can
+     * contain the other.
+     *
+     * <p><b>The rule.</b>
+     *
+     * <pre>{@code
+     * compare(a, b) <  0   iff   s(a) < s(b),   or   (s(a) == s(b) and e(a) > e(b))
+     * compare(a, b) == 0   iff   s(a) == s(b)   and   e(a) == e(b)
+     * compare(a, b) >  0   iff   s(a) > s(b),   or   (s(a) == s(b) and e(a) < e(b))
+     * }</pre>
+     *
+     * <p>In words: <b>the date that starts earlier sorts first; if both start at the same instant,
+     * the wider one sorts first.</b> Equivalently, a sorts before b if a starts before the start of
+     * b, or if a contains b without being equal to it.
+     *
+     * <p>The second half of the rule is what catches people out. Whenever one date contains
+     * another, <b>the container sorts first</b>, even though it ends after the end of the date it
+     * contains. That falls out of reading the components left to right - year, then month, then day,
+     * and so on - because a date that runs out of components sorts before one that carries on, the
+     * way "car" sorts before "cart" in a dictionary. Note that a coarse date does not sit in the
+     * middle of the finer dates inside it; it sorts before all of them, so {@code 2014} sorts before
+     * {@code 2014-12-31} just as it sorts before {@code 2014-01-01}.
+     *
+     * <p>Two tempting but wrong readings:
+     *
+     * <ul>
+     *     <li>It is <em>not</em> "a ends before the end of b". {@code compare(2014, 2014-06)} is -1,
+     *     yet 2014 ends six months after 2014-06 ends.</li>
+     *     <li>It is <em>not</em> "a starts before the start of b" on its own. {@code 2014} and
+     *     {@code 2014-01} start at the very same instant, and {@code 2014} still sorts first.</li>
+     * </ul>
+     *
+     * <p><b>Examples.</b>
+     *
+     * <pre>{@code
+     * compare(2013,       2014)                    == -1  // 2013 ends before 2014 starts
+     * compare(2014-06,    2014-07)                 == -1  // June ends before July starts
+     * compare(2014-06-15, 2014-07)                 == -1  // a day in June is before all of July
+     * compare(2014,       2014-06)                 == -1  // the year contains the month
+     * compare(2014-06,    2014)                    ==  1
+     * compare(2014,       2014-01)                 == -1  // same start, and the year is wider
+     * compare(2014,       2014-12)                 == -1  // same end, but the year starts earlier
+     * compare(2014-01-01, 2014-01-01T00)           == -1  // same start, and the day is wider
+     * compare(2014-01-01T00:00:00.1,
+     *         2014-01-01T00:00:00.10)              == -1  // same start: .1 is a tenth of a second,
+     *                                                     // .10 a hundredth, so .1 is wider
+     * }</pre>
+     *
+     * <p>This is a total order, it never returns anything but -1, 0, or 1, and it agrees with equals:
+     * it returns 0 exactly when the two dates are equal.
+     *
+     * @param date1 first date
+     * @param date2 second date
+     * @return -1, 0, or 1 as date1 sorts before, equal to, or after date2
+     */
     public static int compare(PureDate date1, PureDate date2)
     {
         if (date1 == date2)
