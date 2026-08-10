@@ -184,4 +184,9 @@ public final class YearMonth extends AbstractPureDate
         DateFunctions.validateMonth(month);
         return new YearMonth(year, month);
     }
+
+    static YearMonth fromYearMonth(java.time.YearMonth yearMonth)
+    {
+        return new YearMonth(yearMonth);
+    }
 }

@@ -19,6 +19,10 @@ import org.finos.legend.pure.m4.ModelRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.chrono.IsoChronology;
 import java.util.Calendar;
 import java.util.Date;
@@ -178,7 +182,124 @@ public class DateFunctions extends TimeFunctions
 
     public static DateTime fromInstant(Instant instant, int subsecondPrecision)
     {
-        return DateWithSubsecond.fromInstant(instant, subsecondPrecision);
+        return fromLocalDateTime(LocalDateTime.ofInstant(instant, ZoneOffset.UTC), subsecondPrecision);
+    }
+
+    /**
+     * Convert a {@link java.time.Year} to a Pure date of year granularity.
+     *
+     * @param year year
+     * @return Pure date
+     */
+    public static PureDate fromYear(java.time.Year year)
+    {
+        return Year.fromYear(year);
+    }
+
+    /**
+     * Convert a {@link java.time.YearMonth} to a Pure date of month granularity.
+     *
+     * @param yearMonth year and month
+     * @return Pure date
+     */
+    public static PureDate fromYearMonth(java.time.YearMonth yearMonth)
+    {
+        return YearMonth.fromYearMonth(yearMonth);
+    }
+
+    /**
+     * Convert a {@link LocalDate} to a Pure date of day granularity.
+     *
+     * @param date local date
+     * @return Pure date
+     */
+    public static StrictDate fromLocalDate(LocalDate date)
+    {
+        return StrictDate.fromLocalDate(date);
+    }
+
+    /**
+     * Convert a {@link LocalDateTime} to a Pure date, keeping all nine subsecond digits. Pure dates
+     * carry no time zone and are always understood as UTC, and a {@link LocalDateTime} carries no
+     * zone either, so its fields are taken as they stand.
+     *
+     * @param dateTime local date and time
+     * @return Pure date
+     */
+    public static DateTime fromLocalDateTime(LocalDateTime dateTime)
+    {
+        return fromLocalDateTime(dateTime, 9);
+    }
+
+    /**
+     * Convert a {@link LocalDateTime} to a Pure date, keeping the given number of subsecond digits.
+     * Digits beyond that number are dropped, not rounded. A precision of 0 gives a date of second
+     * granularity. Pure dates carry no time zone and are always understood as UTC, and a
+     * {@link LocalDateTime} carries no zone either, so its fields are taken as they stand.
+     *
+     * @param dateTime           local date and time
+     * @param subsecondPrecision number of subsecond digits to keep (0-9)
+     * @return Pure date
+     */
+    public static DateTime fromLocalDateTime(LocalDateTime dateTime, int subsecondPrecision)
+    {
+        return (subsecondPrecision == 0) ? DateWithSecond.fromLocalDateTime(dateTime) : DateWithSubsecond.fromLocalDateTime(dateTime, subsecondPrecision);
+    }
+
+    /**
+     * Convert an {@link OffsetDateTime} to a Pure date, keeping all nine subsecond digits. Since
+     * Pure dates are always understood as UTC, the instant is shifted to UTC first: the offset is
+     * applied, not discarded.
+     *
+     * @param dateTime date and time with a UTC offset
+     * @return Pure date
+     */
+    public static DateTime fromOffsetDateTime(OffsetDateTime dateTime)
+    {
+        return fromOffsetDateTime(dateTime, 9);
+    }
+
+    /**
+     * Convert an {@link OffsetDateTime} to a Pure date, keeping the given number of subsecond
+     * digits. Digits beyond that number are dropped, not rounded. A precision of 0 gives a date of
+     * second granularity. Since Pure dates are always understood as UTC, the instant is shifted to
+     * UTC first: the offset is applied, not discarded.
+     *
+     * @param dateTime           date and time with a UTC offset
+     * @param subsecondPrecision number of subsecond digits to keep (0-9)
+     * @return Pure date
+     */
+    public static DateTime fromOffsetDateTime(OffsetDateTime dateTime, int subsecondPrecision)
+    {
+        return fromInstant(dateTime.toInstant(), subsecondPrecision);
+    }
+
+    /**
+     * Convert a {@link ZonedDateTime} to a Pure date, keeping all nine subsecond digits. Since Pure
+     * dates are always understood as UTC, the instant is shifted to UTC first, using the offset the
+     * zone was in at that instant.
+     *
+     * @param dateTime date and time in a time zone
+     * @return Pure date
+     */
+    public static DateTime fromZonedDateTime(ZonedDateTime dateTime)
+    {
+        return fromZonedDateTime(dateTime, 9);
+    }
+
+    /**
+     * Convert a {@link ZonedDateTime} to a Pure date, keeping the given number of subsecond digits.
+     * Digits beyond that number are dropped, not rounded. A precision of 0 gives a date of second
+     * granularity. Since Pure dates are always understood as UTC, the instant is shifted to UTC
+     * first, using the offset the zone was in at that instant.
+     *
+     * @param dateTime           date and time in a time zone
+     * @param subsecondPrecision number of subsecond digits to keep (0-9)
+     * @return Pure date
+     */
+    public static DateTime fromZonedDateTime(ZonedDateTime dateTime, int subsecondPrecision)
+    {
+        return fromInstant(dateTime.toInstant(), subsecondPrecision);
     }
 
     /**
@@ -188,7 +309,7 @@ public class DateFunctions extends TimeFunctions
      */
     public static StrictDate today()
     {
-        return StrictDate.fromLocalDate(LocalDate.now(Clock.systemUTC()));
+        return fromLocalDate(LocalDate.now(Clock.systemUTC()));
     }
 
     static int getYearDays(int year)
