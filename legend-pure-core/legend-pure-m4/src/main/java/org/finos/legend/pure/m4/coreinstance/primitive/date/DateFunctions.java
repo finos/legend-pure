@@ -453,62 +453,59 @@ public class DateFunctions extends TimeFunctions
         return isLeapYear(year) ? 366 : 365;
     }
 
+    /**
+     * Get the difference between two Pure dates in the given unit. The result is positive when
+     * otherDate is the later of the two, negative when it is the earlier, and zero when neither is.
+     *
+     * <p>Each date is read as the first instant of the span it covers, so a date with no month
+     * starts in January, one with no day starts on the first, and one with no time starts at
+     * midnight. What is measured from there depends on which family the unit belongs to: YEARS
+     * through DAYS name positions in the civil calendar, while HOURS and below name a fixed quantity
+     * of elapsed time. (This is the same division {@link java.time.temporal.ChronoUnit} makes between
+     * date-based and time-based units, and {@link java.time.Period} between calendar periods and
+     * {@link java.time.Duration}, but the division is a property of the units rather than of any one
+     * library.)
+     *
+     * <p><b>The calendar units - YEARS, MONTHS, WEEKS, and DAYS - count boundaries crossed</b>,
+     * ignoring everything finer than the unit. YEARS counts new years begun, MONTHS new months, DAYS
+     * midnights passed, WEEKS Sundays reached. So 2015-12-31T23:59:59 to 2016-01-01T00:00:01 is one
+     * YEAR, though only two seconds passed, and 2016-02-01 to 2016-02-29 is zero MONTHS, though
+     * nearly a month did.
+     *
+     * <p>The counted range is half open: a boundary landing on otherDate counts, one landing on
+     * thisDate does not. For YEARS, MONTHS, and DAYS that makes no difference, because dropping the
+     * finer components already puts both dates on the unit's own boundaries, so the count is the same
+     * in either direction. <b>WEEKS is the exception</b>, since days are not aligned to weeks: a
+     * Saturday to the following Sunday is 1, while that Sunday back to the Saturday is 0 rather than
+     * -1. That asymmetry is the one place the half-open convention becomes visible.
+     *
+     * <p><b>The time units - HOURS, MINUTES, SECONDS, MILLISECONDS, MICROSECONDS, and NANOSECONDS -
+     * measure elapsed time</b>, dropping any remainder. <b>This is not the same as counting
+     * boundaries.</b> 12:59:00 to 13:01:00 crosses the 13:00 boundary yet is zero HOURS, and 12:00:00
+     * to 12:59:00 crosses none and is also zero. The two readings agree whenever thisDate falls on a
+     * boundary of the unit, which is the usual case, but they are different rules: the same two
+     * minutes from 23:59:00 to 00:01:00 the next day are one DAY and zero HOURS.
+     *
+     * <p>Subsecond digits count down to the nanosecond and anything finer is ignored. A span too
+     * large to express in the requested unit throws {@link ArithmeticException} rather than wrapping,
+     * which NANOSECONDS reaches at about 292 years.
+     *
+     * <p>This is the inverse of {@code meta::pure::functions::date::adjust} when the unit matches the
+     * granularity of both dates: for dates of day granularity,
+     * {@code adjust(a, dateDifference(a, b, "DAYS"), DAYS)} is b, and likewise for the other units
+     * that name a granularity. It is not an inverse otherwise, since a coarser unit drops the finer
+     * components and adjusting by a finer unit than the date carries is not supported at all. WEEKS
+     * is never an inverse, as adjusting by weeks adds seven days rather than moving to a Sunday.
+     *
+     * @param thisDate  date to measure from
+     * @param otherDate date to measure to
+     * @param unit      one of YEARS, MONTHS, WEEKS, DAYS, HOURS, MINUTES, SECONDS, MILLISECONDS,
+     *                  MICROSECONDS, NANOSECONDS
+     * @return difference in the given unit
+     */
     public static long dateDifference(PureDate thisDate, PureDate otherDate, String unit)
     {
-        if (thisDate.equals(otherDate))
-        {
-            return 0;
-        }
-        long result;
-        switch (unit)
-        {
-            case "YEARS":
-            {
-                result = DateDiff.getDiffYears(thisDate, otherDate);
-                break;
-            }
-            case "MONTHS":
-            {
-                result = DateDiff.getDiffMonths(thisDate, otherDate);
-                break;
-            }
-            case "WEEKS":
-            {
-                result = DateDiff.getDateDiffWeeks(thisDate, otherDate);
-                break;
-            }
-            case "DAYS":
-            {
-                result = DateDiff.getDiffDays(thisDate, otherDate);
-                break;
-            }
-            case "HOURS":
-            {
-                result = DateDiff.getDiffHours(thisDate, otherDate);
-                break;
-            }
-            case "MINUTES":
-            {
-                result = DateDiff.getDiffMinutes(thisDate, otherDate);
-                break;
-            }
-            case "SECONDS":
-            {
-                result = DateDiff.getDiffSeconds(thisDate, otherDate);
-                break;
-            }
-            case "MILLISECONDS":
-            {
-                result = DateDiff.getDiffInMilliseconds(thisDate, otherDate);
-                break;
-            }
-            default:
-            {
-                throw new IllegalArgumentException("Unsupported duration unit: " + unit);
-            }
-        }
-        int sign = otherDate.compareTo(thisDate);
-        return sign * result;
+        return DateDiff.dateDifference(thisDate, otherDate, unit);
     }
 
     /**

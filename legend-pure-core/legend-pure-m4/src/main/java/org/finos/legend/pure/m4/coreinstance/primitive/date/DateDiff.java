@@ -14,109 +14,157 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.tuple.Tuples;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.concurrent.TimeUnit;
-
+/**
+ * Implementation of {@link DateFunctions#dateDifference(PureDate, PureDate, String)}. See that
+ * method for what each unit means.
+ */
 class DateDiff
 {
+    /**
+     * Epoch day of 1970-01-04, a Sunday, used as the origin for counting weeks.
+     */
+    private static final long SUNDAY_EPOCH_DAY = 3L;
+
     private DateDiff()
     {
     }
 
-    static long getDiffYears(PureDate from, PureDate to)
+    static long dateDifference(PureDate from, PureDate to, String unit)
     {
-        return Math.abs(from.getYear() - to.getYear());
-    }
-
-    static long getDiffMonths(PureDate from, PureDate to)
-    {
-        int thisMonthTotal = (from.getYear() * 12) + from.getMonth();
-        int otherMonthTotal = (to.getYear() * 12) + to.getMonth();
-        return Math.abs(thisMonthTotal - otherMonthTotal);
-    }
-
-    static long getDateDiffWeeks(PureDate from, PureDate to)
-    {
-        long absDateDiffDays = Math.abs(getDiffDays(from, to));
-        int noDaysTillSunday = daysUntilSunday(from.getCalendar(), to.getCalendar());
-
-        if (noDaysTillSunday > absDateDiffDays)
+        switch (unit)
         {
-            return 0;
-        }
-        else
-        {
-            long fullWeeks = (absDateDiffDays - noDaysTillSunday) / 7;
-            boolean partialWeek = noDaysTillSunday > 0;
-            return fullWeeks + (partialWeek ? 1 : 0);
-        }
-    }
-
-    static long getDiffDays(PureDate first, PureDate second)
-    {
-        Pair<GregorianCalendar, PureDate> thisCalPair = Tuples.pair(first.getCalendar(), first);
-        Pair<GregorianCalendar, PureDate> otherCalPair = Tuples.pair(second.getCalendar(), second);
-        Pair<Pair<GregorianCalendar, PureDate>, Pair<GregorianCalendar, PureDate>> earlierLaterPair = thisCalPair.getOne().before(otherCalPair.getOne()) ? Tuples.pair(thisCalPair, otherCalPair) : Tuples.pair(otherCalPair, thisCalPair);
-        long result = 0;
-        if (first.getYear() != second.getYear())
-        {
-            int fromYear = earlierLaterPair.getOne().getTwo().getYear();
-            int toYear = earlierLaterPair.getTwo().getTwo().getYear();
-            result += DateFunctions.getYearDays(fromYear) - earlierLaterPair.getOne().getOne().get(Calendar.DAY_OF_YEAR);
-            int nextYear = fromYear + 1;
-            for (; nextYear != toYear; nextYear++)
+            case "YEARS":
             {
-                result += DateFunctions.getYearDays(nextYear);
+                return (long) to.getYear() - (long) from.getYear();
             }
-            result += earlierLaterPair.getTwo().getOne().get(Calendar.DAY_OF_YEAR);
+            case "MONTHS":
+            {
+                return monthNumber(to) - monthNumber(from);
+            }
+            case "WEEKS":
+            {
+                return weeksBetween(toLocalDate(from), toLocalDate(to));
+            }
+            case "DAYS":
+            {
+                return toLocalDate(to).toEpochDay() - toLocalDate(from).toEpochDay();
+            }
+            case "HOURS":
+            {
+                return elapsed(from, to, ChronoUnit.HOURS);
+            }
+            case "MINUTES":
+            {
+                return elapsed(from, to, ChronoUnit.MINUTES);
+            }
+            case "SECONDS":
+            {
+                return elapsed(from, to, ChronoUnit.SECONDS);
+            }
+            case "MILLISECONDS":
+            {
+                return elapsed(from, to, ChronoUnit.MILLIS);
+            }
+            case "MICROSECONDS":
+            {
+                return elapsed(from, to, ChronoUnit.MICROS);
+            }
+            case "NANOSECONDS":
+            {
+                return elapsed(from, to, ChronoUnit.NANOS);
+            }
+            default:
+            {
+                throw new IllegalArgumentException("Unsupported duration unit: " + unit);
+            }
         }
-        else
+    }
+
+    /**
+     * The month of the given date counted from year zero, so that subtracting two of these gives the
+     * number of month boundaries between them. A date with no month starts in January.
+     */
+    private static long monthNumber(PureDate date)
+    {
+        return (12L * date.getYear()) + (date.hasMonth() ? date.getMonth() : 1);
+    }
+
+    /**
+     * The number of Sundays passed going from one date to the other. Counting forwards, a Sunday
+     * counts if it falls after the first date and on or before the second; counting backwards, if it
+     * falls on or after the second date and before the first. The two directions are therefore not
+     * always mirror images, which is longstanding behavior pinned by the PCT tests for
+     * {@code dateDiff}.
+     */
+    private static long weeksBetween(LocalDate from, LocalDate to)
+    {
+        long fromDay = from.toEpochDay();
+        long toDay = to.toEpochDay();
+        return (toDay >= fromDay) ?
+               (weekNumber(toDay) - weekNumber(fromDay)) :
+               (weekNumber(toDay - 1) - weekNumber(fromDay - 1));
+    }
+
+    /**
+     * The Sunday-to-Saturday week the given day falls in, counted from the week of
+     * {@link #SUNDAY_EPOCH_DAY}.
+     */
+    private static long weekNumber(long epochDay)
+    {
+        return Math.floorDiv(epochDay - SUNDAY_EPOCH_DAY, 7L);
+    }
+
+    /**
+     * The time elapsed between the two dates in whole units, with any remainder dropped. Since
+     * {@link ChronoUnit#between} counts only complete units, the remainder is always dropped toward
+     * zero, which keeps the result the same size in either direction.
+     */
+    private static long elapsed(PureDate from, PureDate to, ChronoUnit unit)
+    {
+        return unit.between(toLocalDateTime(from), toLocalDateTime(to));
+    }
+
+    /**
+     * The first instant of the span the given date covers: a date with no month starts in January,
+     * one with no day starts on the first, and one with no time starts at midnight. Subsecond digits
+     * beyond the nanosecond are dropped, since that is as fine as {@link LocalDateTime} goes.
+     */
+    private static LocalDateTime toLocalDateTime(PureDate date)
+    {
+        return LocalDateTime.of(toLocalDate(date), toLocalTime(date));
+    }
+
+    private static LocalDate toLocalDate(PureDate date)
+    {
+        return LocalDate.of(date.getYear(), date.hasMonth() ? date.getMonth() : 1, date.hasDay() ? date.getDay() : 1);
+    }
+
+    private static LocalTime toLocalTime(PureDate date)
+    {
+        return LocalTime.of(
+                date.hasHour() ? date.getHour() : 0,
+                date.hasMinute() ? date.getMinute() : 0,
+                date.hasSecond() ? date.getSecond() : 0,
+                date.hasSubsecond() ? nanosecond(date.getSubsecond()) : 0);
+    }
+
+    /**
+     * Read a subsecond as a whole number of nanoseconds, padding it with zeros if it is shorter than
+     * nine digits and ignoring anything past the ninth.
+     */
+    private static int nanosecond(String subsecond)
+    {
+        int digits = subsecond.length();
+        int nanoseconds = 0;
+        for (int i = 0; i < 9; i++)
         {
-            result = (long)earlierLaterPair.getTwo().getOne().get(Calendar.DAY_OF_YEAR) - earlierLaterPair.getOne().getOne().get(Calendar.DAY_OF_YEAR);
+            nanoseconds = (nanoseconds * 10) + ((i < digits) ? (subsecond.charAt(i) - '0') : 0);
         }
-        return result;
-    }
-
-    static long getDiffHours(PureDate first, PureDate second)
-    {
-        long msDiff = getDiffInMilliseconds(first, second);
-        return TimeUnit.MILLISECONDS.toHours(msDiff);
-    }
-
-    static long getDiffMinutes(PureDate first, PureDate second)
-    {
-        long msDiff = getDiffInMilliseconds(first, second);
-        return TimeUnit.MILLISECONDS.toMinutes(msDiff);
-    }
-
-    static long getDiffSeconds(PureDate first, PureDate second)
-    {
-        long msDiff = getDiffInMilliseconds(first, second);
-        return TimeUnit.MILLISECONDS.toSeconds(msDiff);
-    }
-
-    static long getDiffInMilliseconds(PureDate date1, PureDate date2)
-    {
-        long time1 = date1.getCalendar().getTimeInMillis();
-        long time2 = date2.getCalendar().getTimeInMillis();
-        return Math.abs(time1 - time2);
-    }
-
-    private static int daysUntilSunday(Calendar start, Calendar end)
-    {
-        if (start.before(end))
-        {
-            int dayOfWeek = start.get(Calendar.DAY_OF_WEEK);
-            return 7 - (dayOfWeek - 1);
-        }
-        else
-        {
-            int dayOfWeek = start.get(Calendar.DAY_OF_WEEK);
-            return dayOfWeek - 1;
-        }
+        return nanoseconds;
     }
 }
