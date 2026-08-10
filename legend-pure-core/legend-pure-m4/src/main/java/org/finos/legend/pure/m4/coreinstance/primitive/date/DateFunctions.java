@@ -29,6 +29,16 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
+/**
+ * Functions for creating, converting, and comparing Pure dates.
+ *
+ * <p>A Pure date carries a granularity: it may stop at the year, the month, the day, the hour, the
+ * minute, the second, or a subsecond with any number of digits, and it stands for everything it
+ * leaves unsaid. It carries no time zone; every Pure date is understood as UTC, so the conversions
+ * here shift an incoming value to UTC rather than discarding its zone or offset.
+ *
+ * <p>See {@link #compare(PureDate, PureDate)} for how dates of differing granularity are ordered.
+ */
 public class DateFunctions extends TimeFunctions
 {
     private static final int MAX_YEAR = java.time.Year.MAX_VALUE;
@@ -36,46 +46,128 @@ public class DateFunctions extends TimeFunctions
 
     static final TimeZone GMT_TIME_ZONE = TimeZone.getTimeZone("GMT");
 
+    /**
+     * Create a Pure date of year granularity, standing for the whole of the given year.
+     *
+     * @param year year
+     * @return Pure date
+     */
     public static PureDate newPureDate(int year)
     {
         return Year.newYear(year);
     }
 
+    /**
+     * Create a Pure date of month granularity, standing for the whole of the given month.
+     *
+     * @param year  year
+     * @param month month (1-12)
+     * @return Pure date
+     */
     public static PureDate newPureDate(int year, int month)
     {
         return YearMonth.newYearMonth(year, month);
     }
 
+    /**
+     * Create a Pure date of day granularity, standing for the whole of the given day.
+     *
+     * @param year  year
+     * @param month month (1-12)
+     * @param day   day of the month
+     * @return Pure date
+     */
     public static StrictDate newPureDate(int year, int month, int day)
     {
         return StrictDate.newStrictDate(year, month, day);
     }
 
+    /**
+     * Create a Pure date of hour granularity, standing for the whole of the given hour UTC.
+     *
+     * @param year  year
+     * @param month month (1-12)
+     * @param day   day of the month
+     * @param hour  hour (0-23)
+     * @return Pure date
+     */
     public static DateTime newPureDate(int year, int month, int day, int hour)
     {
         return DateWithHour.newDateWithHour(year, month, day, hour);
     }
 
+    /**
+     * Create a Pure date of minute granularity, standing for the whole of the given minute UTC.
+     *
+     * @param year   year
+     * @param month  month (1-12)
+     * @param day    day of the month
+     * @param hour   hour (0-23)
+     * @param minute minute (0-59)
+     * @return Pure date
+     */
     public static DateTime newPureDate(int year, int month, int day, int hour, int minute)
     {
         return DateWithMinute.newDateWithMinute(year, month, day, hour, minute);
     }
 
+    /**
+     * Create a Pure date of second granularity, standing for the whole of the given second UTC.
+     *
+     * @param year   year
+     * @param month  month (1-12)
+     * @param day    day of the month
+     * @param hour   hour (0-23)
+     * @param minute minute (0-59)
+     * @param second second (0-59)
+     * @return Pure date
+     */
     public static DateTime newPureDate(int year, int month, int day, int hour, int minute, int second)
     {
         return DateWithSecond.newDateWithSecond(year, month, day, hour, minute, second);
     }
 
+    /**
+     * Create a Pure date of subsecond granularity UTC. The subsecond is the digits after the decimal
+     * point, so its length is the precision: "07" is a hundredth of a second and "070" a thousandth.
+     * It must be a non-empty string of digits.
+     *
+     * @param year      year
+     * @param month     month (1-12)
+     * @param day       day of the month
+     * @param hour      hour (0-23)
+     * @param minute    minute (0-59)
+     * @param second    second (0-59)
+     * @param subsecond digits after the decimal point
+     * @return Pure date
+     */
     public static DateTime newPureDate(int year, int month, int day, int hour, int minute, int second, String subsecond)
     {
         return DateWithSubsecond.newDateWithSubsecond(year, month, day, hour, minute, second, subsecond);
     }
 
+    /**
+     * Convert a calendar to a Pure date of millisecond precision, reading the instant it holds as
+     * UTC.
+     *
+     * @param calendar calendar
+     * @return Pure date
+     */
     public static PureDate fromCalendar(GregorianCalendar calendar)
     {
         return fromCalendar(calendar, Calendar.MILLISECOND);
     }
 
+    /**
+     * Convert a calendar to a Pure date of the given precision, reading the instant it holds as UTC.
+     * The calendar's time zone decides only whether its fields can be read as they stand or have to
+     * be recomputed in GMT first; it never shifts the instant.
+     *
+     * @param calendar  calendar
+     * @param precision one of the {@link Calendar} field constants from {@link Calendar#YEAR} down
+     *                  to {@link Calendar#MILLISECOND}, naming the granularity of the result
+     * @return Pure date
+     */
     public static PureDate fromCalendar(GregorianCalendar calendar, int precision)
     {
         if ((calendar.get(Calendar.ZONE_OFFSET) != 0) || (calendar.get(Calendar.DST_OFFSET) != 0))
@@ -127,6 +219,14 @@ public class DateFunctions extends TimeFunctions
         }
     }
 
+    /**
+     * Get the name of the Pure primitive type the given date belongs to, which follows from its
+     * granularity: Date for year and month granularity, StrictDate for day granularity, DateTime for
+     * anything finer, and LatestDate for {@link LatestDate}.
+     *
+     * @param pureDate Pure date
+     * @return Pure primitive type name
+     */
     public static String datePrimitiveType(PureDate pureDate)
     {
         if (LatestDate.isLatestDate(pureDate))
@@ -144,6 +244,14 @@ public class DateFunctions extends TimeFunctions
         return ModelRepository.DATE_TYPE_NAME;
     }
 
+    /**
+     * Convert a Java date to a Pure date, reading the instant it holds as UTC. A
+     * {@link java.sql.Date} yields day granularity and a {@link java.sql.Timestamp} nanosecond
+     * granularity; any other {@link Date} yields millisecond granularity.
+     *
+     * @param date Java date
+     * @return Pure date
+     */
     public static PureDate fromDate(Date date)
     {
         if (date instanceof java.sql.Date)
@@ -159,21 +267,49 @@ public class DateFunctions extends TimeFunctions
         return fromCalendar(calendar, Calendar.MILLISECOND);
     }
 
+    /**
+     * Convert a SQL date to a Pure date of day granularity, reading the instant it holds as UTC.
+     *
+     * @param date SQL date
+     * @return Pure date
+     */
     public static StrictDate fromSQLDate(java.sql.Date date)
     {
         return StrictDate.fromSQLDate(date);
     }
 
+    /**
+     * Convert a SQL timestamp to a Pure date, reading the instant it holds as UTC and keeping all
+     * nine subsecond digits.
+     *
+     * @param timestamp SQL timestamp
+     * @return Pure date
+     */
     public static DateTime fromSQLTimestamp(java.sql.Timestamp timestamp)
     {
         return DateWithSubsecond.fromSQLTimestamp(timestamp);
     }
 
+    /**
+     * Convert an {@link Instant} to a Pure date in UTC, keeping all nine subsecond digits.
+     *
+     * @param instant instant
+     * @return Pure date
+     */
     public static DateTime fromInstant(Instant instant)
     {
         return fromInstant(instant, 9);
     }
 
+    /**
+     * Convert an {@link Instant} to a Pure date in UTC, keeping the given number of subsecond
+     * digits. Digits beyond that number are dropped, not rounded. A precision of 0 gives a date of
+     * second granularity.
+     *
+     * @param instant            instant
+     * @param subsecondPrecision number of subsecond digits to keep (0-9)
+     * @return Pure date
+     */
     public static DateTime fromInstant(Instant instant, int subsecondPrecision)
     {
         return fromLocalDateTime(LocalDateTime.ofInstant(instant, ZoneOffset.UTC), subsecondPrecision);
@@ -306,6 +442,12 @@ public class DateFunctions extends TimeFunctions
         return fromLocalDate(LocalDate.now(Clock.systemUTC()));
     }
 
+    /**
+     * Get the number of days in the given year according to the Gregorian calendar.
+     *
+     * @param year Gregorian calendar year
+     * @return number of days in the year
+     */
     static int getYearDays(int year)
     {
         return isLeapYear(year) ? 366 : 365;
@@ -438,6 +580,11 @@ public class DateFunctions extends TimeFunctions
         return DateFormat.parsePureDate(string, 0, string.length());
     }
 
+    /**
+     * Throw if the given year is outside the supported range.
+     *
+     * @param year year
+     */
     static void validateYear(int year)
     {
         if ((year < MIN_YEAR) || (year > MAX_YEAR))
@@ -446,6 +593,11 @@ public class DateFunctions extends TimeFunctions
         }
     }
 
+    /**
+     * Throw if the given month is not in the range 1-12.
+     *
+     * @param month month
+     */
     static void validateMonth(int month)
     {
         if ((month < 1) || (month > 12))
@@ -454,6 +606,13 @@ public class DateFunctions extends TimeFunctions
         }
     }
 
+    /**
+     * Throw if the given day does not exist in the given month of the given year.
+     *
+     * @param year  year
+     * @param month month (1-12)
+     * @param day   day of the month
+     */
     static void validateDay(int year, int month, int day)
     {
         if (day < 1)
