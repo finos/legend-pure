@@ -78,18 +78,12 @@ public class DateFunctions extends TimeFunctions
 
     public static PureDate fromCalendar(GregorianCalendar calendar, int precision)
     {
-        TimeZone timeZone = calendar.getTimeZone();
-        if (!GMT_TIME_ZONE.equals(timeZone))
+        if ((calendar.get(Calendar.ZONE_OFFSET) != 0) || (calendar.get(Calendar.DST_OFFSET) != 0))
         {
             // Possibly adjust to UTC
-            long time = calendar.getTimeInMillis();
-            int offset = timeZone.getOffset(time);
-            if (offset != 0)
-            {
-                // Adjust to UTC
-                calendar = new GregorianCalendar(GMT_TIME_ZONE);
-                calendar.setTimeInMillis(time - offset);
-            }
+            GregorianCalendar newCalendar = new GregorianCalendar(GMT_TIME_ZONE);
+            newCalendar.setTimeInMillis(calendar.getTimeInMillis());
+            calendar = newCalendar;
         }
 
         switch (precision)
