@@ -179,6 +179,26 @@ jobs:
             exit 1
           fi
 
+      - name: Restore Maven dependencies
+        # release:perform forks a full build in target/checkout against this
+        # runner's ~/.m2, so without this it resolves every dependency cold.
+        # Restore-only: the poms here are the ones the `verify` build already
+        # cached under this exact key, so there is never anything new to save.
+        uses: actions/cache/restore@v5
+        env:
+          cache-name: cache-mvn-deps
+        with:
+          # Never restore this project's own artifacts: release:perform has to
+          # build its own from the tag, not pick up a cached copy.
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/finos/legend/pure
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
