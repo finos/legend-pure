@@ -535,6 +535,67 @@ public class TestDateCompare
                 sorted.collect(PureDate::toString));
     }
 
+    // LatestDate
+
+    /**
+     * {@link LatestDate} has no components to compare and no fixed position on the time line, so it
+     * is ordered after every other date. That is a sorting convention, adopted so that any two dates
+     * can be ordered, rather than a claim about when {@code %latest} falls.
+     */
+    @Test
+    public void testLatestDateSortsAfterEveryOtherDate()
+    {
+        Assert.assertEquals(0, DateFunctions.compare(LatestDate.instance, LatestDate.instance));
+        Assert.assertEquals(0, LatestDate.instance.compareTo(LatestDate.instance));
+
+        for (PureDate date : DATES)
+        {
+            String message = date.toString();
+            Assert.assertEquals(message, 1, DateFunctions.compare(LatestDate.instance, date));
+            Assert.assertEquals(message, -1, DateFunctions.compare(date, LatestDate.instance));
+            Assert.assertEquals(message, 1, LatestDate.instance.compareTo(date));
+            Assert.assertEquals(message, -1, date.compareTo(LatestDate.instance));
+        }
+
+        // including the latest date the platform can represent
+        PureDate maxDate = DateFunctions.newPureDate(java.time.Year.MAX_VALUE);
+        Assert.assertEquals(1, DateFunctions.compare(LatestDate.instance, maxDate));
+        Assert.assertEquals(-1, DateFunctions.compare(maxDate, LatestDate.instance));
+    }
+
+    /**
+     * {@link LatestDate} is equal only to itself, and answers from either side rather than throwing.
+     * Ordering it after every other date is only useful if {@code equals} agrees that it is not any
+     * of them, and {@code equals} has to be symmetric even where {@code %latest} has no components
+     * to offer.
+     */
+    @Test
+    public void testLatestDateEqualsOnlyItself()
+    {
+        Assert.assertEquals(LatestDate.instance, LatestDate.instance);
+
+        for (PureDate date : DATES)
+        {
+            String message = date.toString();
+            Assert.assertNotEquals(message, date, LatestDate.instance);
+            Assert.assertNotEquals(message, LatestDate.instance, date);
+            Assert.assertNotEquals(message, 0, DateFunctions.compare(date, LatestDate.instance));
+        }
+    }
+
+    @Test
+    public void testSortingWithLatestDate()
+    {
+        MutableList<PureDate> sorted = Lists.mutable.<PureDate>with(
+                parse("2015"),
+                LatestDate.instance,
+                parse("2014-06-15"),
+                parse("2013-12-31")).sortThis();
+        Assert.assertEquals(
+                Lists.mutable.with("2013-12-31", "2014-06-15", "2015", "%latest"),
+                sorted.collect(PureDate::toString));
+    }
+
     // Helpers
 
     private static PureDate parse(String string)

@@ -689,6 +689,12 @@ public class DateFunctions extends TimeFunctions
      * <p>This is a total order, it never returns anything but -1, 0, or 1, and it agrees with equals:
      * it returns 0 exactly when the two dates are equal.
      *
+     * <p><b>{@link LatestDate} sorts after every other date.</b> It has no components to compare and
+     * no fixed position on the time line: what {@code %latest} stands for is decided by the context
+     * it appears in. Ordering it last is a sorting convention rather than a claim about when it
+     * falls, chosen so that any two dates can be sorted. It is a singleton, so it is equal only to
+     * itself.
+     *
      * @param date1 first date
      * @param date2 second date
      * @return -1, 0, or 1 as date1 sorts before, equal to, or after date2
@@ -698,6 +704,17 @@ public class DateFunctions extends TimeFunctions
         if (date1 == date2)
         {
             return 0;
+        }
+
+        // LatestDate sorts last. It is a singleton, so the check above has already dealt with it
+        // against itself, and at most one of the two can be it here.
+        if (LatestDate.isLatestDate(date1))
+        {
+            return 1;
+        }
+        if (LatestDate.isLatestDate(date2))
+        {
+            return -1;
         }
 
         // Compare year
