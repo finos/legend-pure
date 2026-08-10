@@ -44,13 +44,13 @@ public class SourceMutationService
 
     public LegendPureSession.CompileResult modifyAndCompile(String sourceId, String content)
     {
-        this.session.graphWriteLock().lock();
-        try
+        try (LegendPureSession.LockHandle lockHandle = this.session.acquireGraphWriteLock())
         {
-            if (!this.session.isInitialized())
+            if (!this.session.isInitialized() || sourceId == null)
             {
                 return LegendPureSession.CompileResult.notReady();
             }
+            this.session.markGraphDirty();
             PureRuntime runtime = this.session.getPureRuntime();
             String effectiveSourceId = sourceId;
             SourceSnapshot snapshot = null;
@@ -58,6 +58,17 @@ public class SourceMutationService
             {
                 SourceMutation mutation;
                 String resolvedId = this.session.resolveSourceId(sourceId);
+                // Snapshot BEFORE the loadSourceIfLoadable() below, which - for a source that has never
+                // been loaded this session - is itself the first thing to introduce it into the runtime
+                // (from whatever's currently on disk). Snapshotting after that call would capture the
+                // just-loaded (possibly already-broken) content as the "good" state to restore to; if
+                // this compile then fails, restoreSnapshots() would try to "restore" to that same broken
+                // content, fail its own verification recompile, and get misreported as an internal error
+                // instead of the plain compile error it actually is. Snapshotting first means a source
+                // that didn't exist before this call correctly restores via delete (undoing the load),
+                // not via a self-referential modify-back-to-broken-content.
+                String preLoadSnapshotId = resolvedId == null ? sourceId : resolvedId;
+                snapshot = snapshot(preLoadSnapshotId);
 
                 if (resolvedId == null && sourceId.startsWith("/"))
                 {
@@ -85,7 +96,10 @@ public class SourceMutationService
                     }
                 }
                 effectiveSourceId = resolvedId == null ? sourceId : resolvedId;
-                snapshot = snapshot(effectiveSourceId);
+                if (!effectiveSourceId.equals(preLoadSnapshotId))
+                {
+                    snapshot = snapshot(effectiveSourceId);
+                }
 
                 if (resolvedId != null)
                 {
@@ -93,10 +107,26 @@ public class SourceMutationService
                     if (existingSource != null && existingSource.isImmutable())
                     {
                         LspLog.debug("Skipping modification of immutable source: " + resolvedId);
+                        this.session.markGraphCompiled();
                         return LegendPureSession.CompileResult.success(Collections.emptyList());
                     }
 
-                    runtime.modify(resolvedId, content);
+                    // resolveSourceId() only confirms the path matches a known repo/pattern - it says
+                    // nothing about whether this source has ever actually been loaded. Calling modify()
+                    // on one that hasn't (e.g. a file just created on disk, opened here for the first
+                    // time) leaves the runtime in a state the "missing" snapshot branch of
+                    // restoreSnapshots() can't correctly undo if this compile then fails, which
+                    // surfaces as a genuine PureCompilationException being misreported as an internal
+                    // error (and needlessly triggering full recovery). Mirrors the same
+                    // already-correct create-vs-modify branch in applyBulkChangesAndCompile().
+                    if (existingSource == null)
+                    {
+                        runtime.createInMemorySource(resolvedId, content);
+                    }
+                    else
+                    {
+                        runtime.modify(resolvedId, content);
+                    }
                     mutation = runtime.compile();
                 }
                 else if (isOverlayBackedSource(runtime, sourceId))
@@ -110,6 +140,7 @@ public class SourceMutationService
                     }
                     if (workspaceSource.isImmutable())
                     {
+                        this.session.markGraphCompiled();
                         return LegendPureSession.CompileResult.success(Collections.emptyList());
                     }
                     mutation = runtime.compile();
@@ -121,6 +152,7 @@ public class SourceMutationService
                     snapshot = snapshot(effectiveSourceId);
                     mutation = runtime.createInMemoryAndCompile(Tuples.pair(inMemoryId, content));
                 }
+                this.session.markGraphCompiled();
                 return LegendPureSession.CompileResult.success(mutation.getModifiedFiles());
             }
             catch (Exception e)
@@ -128,21 +160,17 @@ public class SourceMutationService
                 return restoreAfterFailure(Collections.singletonList(snapshot == null ? snapshot(effectiveSourceId) : snapshot), e);
             }
         }
-        finally
-        {
-            this.session.graphWriteLock().unlock();
-        }
     }
 
     public LegendPureSession.CompileResult applyBulkChangesAndCompile(List<LegendPureSession.FileChange> changes)
     {
-        this.session.graphWriteLock().lock();
-        try
+        try (LegendPureSession.LockHandle lockHandle = this.session.acquireGraphWriteLock())
         {
             if (!this.session.isInitialized())
             {
                 return LegendPureSession.CompileResult.notReady();
             }
+            this.session.markGraphDirty();
             PureRuntime runtime = this.session.getPureRuntime();
             List<SourceSnapshot> snapshots = snapshot(changes);
             try
@@ -189,6 +217,7 @@ public class SourceMutationService
                     }
                 }
                 SourceMutation mutation = runtime.compile();
+                this.session.markGraphCompiled();
                 clearOverlayForAcceptedDiskChanges(changes);
                 return LegendPureSession.CompileResult.success(mutation.getModifiedFiles());
             }
@@ -197,21 +226,17 @@ public class SourceMutationService
                 return restoreAfterFailure(snapshots, e);
             }
         }
-        finally
-        {
-            this.session.graphWriteLock().unlock();
-        }
     }
 
     public LegendPureSession.CompileResult restoreFromDisk(String sourceId)
     {
-        this.session.graphWriteLock().lock();
-        try
+        try (LegendPureSession.LockHandle lockHandle = this.session.acquireGraphWriteLock())
         {
             if (!this.session.isInitialized() || sourceId == null)
             {
                 return LegendPureSession.CompileResult.notReady();
             }
+            this.session.markGraphDirty();
             PureRuntime runtime = this.session.getPureRuntime();
             SourceSnapshot snapshot = snapshot(sourceId);
             try
@@ -221,12 +246,14 @@ public class SourceMutationService
                 Source source = resolvedId == null ? null : runtime.getSourceById(resolvedId);
                 if (source != null && source.isImmutable())
                 {
+                    this.session.markGraphCompiled();
                     return LegendPureSession.CompileResult.success(Collections.emptyList());
                 }
                 if (source != null && source.isInMemory())
                 {
                     runtime.delete(effectiveId);
                     SourceMutation mutation = runtime.compile();
+                    this.session.markGraphCompiled();
                     return LegendPureSession.CompileResult.success(mutation.getModifiedFiles());
                 }
 
@@ -243,15 +270,23 @@ public class SourceMutationService
                         runtime.delete(effectiveId);
                     }
                     SourceMutation mutation = runtime.compile();
+                    this.session.markGraphCompiled();
                     return LegendPureSession.CompileResult.success(mutation.getModifiedFiles());
                 }
 
                 if (source == null)
                 {
-                    runtime.loadSourceIfLoadable(effectiveId);
-                    source = runtime.getSourceById(effectiveId);
+                    // Only disk-anchored ids are loadable from storage - a bare/in-memory scratch id
+                    // (e.g. welcome.pure) whose live Source was already removed by a race (such as a
+                    // legend/deleteFile racing this didClose) has nothing to restore from disk.
+                    if (effectiveId.startsWith("/"))
+                    {
+                        runtime.loadSourceIfLoadable(effectiveId);
+                        source = runtime.getSourceById(effectiveId);
+                    }
                     if (source == null)
                     {
+                        this.session.markGraphCompiled();
                         return LegendPureSession.CompileResult.success(Collections.emptyList());
                     }
                 }
@@ -261,6 +296,7 @@ public class SourceMutationService
                     runtime.modify(effectiveId, diskContent);
                 }
                 SourceMutation mutation = runtime.compile();
+                this.session.markGraphCompiled();
                 clearOverlayIfDiskMatches(effectiveId, diskContent);
                 return LegendPureSession.CompileResult.success(mutation.getModifiedFiles());
             }
@@ -269,10 +305,6 @@ public class SourceMutationService
                 LspLog.debug("restoreFromDisk failed for " + sourceId + ": " + e.getMessage());
                 return restoreAfterFailure(Collections.singletonList(snapshot), e);
             }
-        }
-        finally
-        {
-            this.session.graphWriteLock().unlock();
         }
     }
 
@@ -345,10 +377,15 @@ public class SourceMutationService
                 }
             }
             runtime.compile();
+            this.session.markGraphCompiled();
             return true;
         }
         catch (Exception restoreError)
         {
+            // Deliberately do NOT mark the graph compiled here - a genuine "modifyAndCompile AND its
+            // own recovery both failed" leaves graphDirty=true, which is correct: the caller already
+            // treats this as an internal error and triggers a full reinitialize() (which itself clears
+            // graphDirty on success) - see restoreAfterFailure()/CompileResult.error(..., true).
             LOGGER.warn("Failed to restore runtime after bulk compile failure", restoreError);
             return false;
         }

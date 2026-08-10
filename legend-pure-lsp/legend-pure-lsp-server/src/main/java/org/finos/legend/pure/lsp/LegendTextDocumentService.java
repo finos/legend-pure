@@ -37,6 +37,8 @@ import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.DidSaveTextDocumentParams;
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.DocumentSymbolParams;
+import org.eclipse.lsp4j.FoldingRange;
+import org.eclipse.lsp4j.FoldingRangeRequestParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
@@ -76,7 +78,7 @@ public class LegendTextDocumentService implements TextDocumentService
     public void didOpen(DidOpenTextDocumentParams params)
     {
         String uri = params.getTextDocument().getUri();
-        if (uri.startsWith("pure://"))
+        if (uri.startsWith("pure://") || isIgnored(uri))
         {
             return;
         }
@@ -89,7 +91,7 @@ public class LegendTextDocumentService implements TextDocumentService
     public void didChange(DidChangeTextDocumentParams params)
     {
         String uri = params.getTextDocument().getUri();
-        if (uri.startsWith("pure://"))
+        if (uri.startsWith("pure://") || isIgnored(uri))
         {
             return;
         }
@@ -113,9 +115,24 @@ public class LegendTextDocumentService implements TextDocumentService
         if (session != null && session.isInitialized() && this.server.getMutationService() != null && !uri.startsWith("pure://"))
         {
             String sourceId = this.server.getUriMapper().toSourceId(uri);
+            if (sourceId == null)
+            {
+                return;
+            }
             LegendPureSession.CompileResult result = this.server.getMutationService().restoreFromDisk(sourceId);
             handleResult(uri, result);
         }
+    }
+
+    /**
+     * True if this uri is not part of any registered Pure module (a fixture/resource file that merely
+     * has a .pure extension, e.g. a ###Lakehouse test template read as raw text by a Java test harness).
+     * Such files must never be compiled, diagnosed, or restored-from-disk - they are opaque to the LSP,
+     * exactly like a .java file would be. See UriMapper.deriveSourceId for the actual determination.
+     */
+    private boolean isIgnored(String uri)
+    {
+        return this.server.getUriMapper().toSourceId(uri) == null;
     }
 
     @Override
@@ -411,6 +428,40 @@ public class LegendTextDocumentService implements TextDocumentService
         });
     }
 
+    @Override
+    public CompletableFuture<List<FoldingRange>> foldingRange(FoldingRangeRequestParams params)
+    {
+        return this.server.supplyAsync(() ->
+        {
+            try
+            {
+                LegendPureSession session = this.server.getSession();
+                if (session == null || !session.isInitialized())
+                {
+                    return Collections.<FoldingRange>emptyList();
+                }
+
+                String uri = params.getTextDocument().getUri();
+                String sourceId = uri.startsWith("pure://")
+                        ? uri.substring("pure://".length())
+                        : this.server.getUriMapper().toSourceId(uri);
+                String resolvedId = session.resolveSourceId(sourceId);
+                if (resolvedId == null)
+                {
+                    return Collections.<FoldingRange>emptyList();
+                }
+
+                return session.withGraphReadLock(() ->
+                        FoldingRangeProvider.getFoldingRanges(session.getPureRuntime(), resolvedId));
+            }
+            catch (Exception e)
+            {
+                LOGGER.error("Error in folding range", e);
+                return Collections.<FoldingRange>emptyList();
+            }
+        });
+    }
+
     private void scheduleCompile(String uri, String content)
     {
         cancelPending(uri);
@@ -522,7 +573,15 @@ public class LegendTextDocumentService implements TextDocumentService
             String uri = entry.getKey();
             if (!uri.startsWith("pure://"))
             {
-                snapshot.put(this.server.getUriMapper().toSourceId(uri), entry.getValue());
+                // openDocuments is only ever populated via didOpen/didChange, both already gated by
+                // isIgnored - toSourceId(uri) is non-null in practice - but snapshot is a TreeMap, whose
+                // natural-ordering put() rejects a null key outright, so guard here too rather than lean
+                // on that invariant holding forever.
+                String sourceId = this.server.getUriMapper().toSourceId(uri);
+                if (sourceId != null)
+                {
+                    snapshot.put(sourceId, entry.getValue());
+                }
             }
         }
         return snapshot;

@@ -46,6 +46,7 @@ public class PureRuntimeManager
     private final UriMapper uriMapper;
     private final WorkspaceSymbolProvider symbolProvider;
     private final Runnable openDocumentCompiler;
+    private final DiagnosticService diagnosticService;
     private final AtomicBoolean recoveryInProgress = new AtomicBoolean(false);
 
     private volatile LegendLanguageClient client;
@@ -62,12 +63,14 @@ public class PureRuntimeManager
     private final CompileProgressTracker progressTracker = new CompileProgressTracker();
 
     public PureRuntimeManager(RepositoryScanner repositoryScanner, UriMapper uriMapper,
-                              WorkspaceSymbolProvider symbolProvider, Runnable openDocumentCompiler)
+                              WorkspaceSymbolProvider symbolProvider, Runnable openDocumentCompiler,
+                              DiagnosticService diagnosticService)
     {
         this.repositoryScanner = repositoryScanner;
         this.uriMapper = uriMapper;
         this.symbolProvider = symbolProvider;
         this.openDocumentCompiler = openDocumentCompiler;
+        this.diagnosticService = diagnosticService;
     }
 
     public void setClient(LegendLanguageClient client)
@@ -182,6 +185,7 @@ public class PureRuntimeManager
         LegendPureSession nextSession = this.session == null ? new LegendPureSession() : this.session;
         nextSession.setClasspathRepositoryNames(this.classpathRepositoryNames);
         nextSession.setProgressListener(this::onCompileProgress);
+        nextSession.setClient(this.client);
         if (nextSession.isInitialized())
         {
             nextSession.reinitialize();
@@ -242,17 +246,10 @@ public class PureRuntimeManager
         }
         Exception exception = (Exception) e;
 
-        LegendLanguageClient currentClient = this.client;
-        if (currentClient == null)
-        {
-            return;
-        }
-
-        DiagnosticService diagnosticService = new DiagnosticService(currentClient, this.uriMapper);
-        String errorUri = diagnosticService.resolveErrorUri(exception);
+        String errorUri = this.diagnosticService.resolveErrorUri(exception);
         if (errorUri != null)
         {
-            diagnosticService.publishException(errorUri, exception, this.session);
+            this.diagnosticService.publishException(errorUri, exception, this.session);
         }
     }
 
@@ -275,6 +272,11 @@ public class PureRuntimeManager
     public LegendPureSession getSession()
     {
         return this.session;
+    }
+
+    public List<Path> getWorkspaceRoots()
+    {
+        return this.workspaceRoots;
     }
 
     public SourceMutationService getMutationService()

@@ -21,4 +21,13 @@ public interface LegendLanguageClient extends LanguageClient
 {
     @JsonNotification("legend/statusChanged")
     void statusChanged(LspStatus status);
+
+    @JsonNotification("legend/logOutput")
+    void logOutput(LegendLogEvent event);
+
+    @JsonNotification("legend/workspaceDriftDetected")
+    void workspaceDriftDetected(WorkspaceDriftEvent event);
+
+    @JsonNotification("legend/lockContention")
+    void lockContention(LockContentionEvent event);
 }

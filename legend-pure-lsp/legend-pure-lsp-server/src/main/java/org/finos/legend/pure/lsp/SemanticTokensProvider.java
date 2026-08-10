@@ -66,6 +66,10 @@ public class SemanticTokensProvider
 
     private static final int MAX_WALK_DEPTH = 50;
 
+    // Kept tight so a token can only ever move across adjacent punctuation ('.', '::', '->'),
+    // never onto an unrelated identifier that happens to repeat the same name
+    private static final int NAME_SNAP_WINDOW = 4;
+
     public static List<Integer> getTokens(PureRuntime runtime, String sourceId)
     {
         Source source = runtime.getSourceById(sourceId);
@@ -75,7 +79,7 @@ public class SemanticTokensProvider
         }
 
         List<RawToken> tokens = new ArrayList<>();
-        collectTokensFromSource(source, runtime, tokens);
+        collectTokensFromSource(new SourceContext(source), runtime, tokens);
 
         tokens.sort(Comparator.comparingInt((RawToken t) -> t.line)
                 .thenComparingInt(t -> t.column));
@@ -83,7 +87,7 @@ public class SemanticTokensProvider
         return encodeDelta(tokens);
     }
 
-    private static void collectTokensFromSource(Source source, PureRuntime runtime, List<RawToken> tokens)
+    private static void collectTokensFromSource(SourceContext source, PureRuntime runtime, List<RawToken> tokens)
     {
         ListIterable<? extends CoreInstance> newInstances = source.getNewInstances();
         if (newInstances == null)
@@ -108,26 +112,26 @@ public class SemanticTokensProvider
             switch (classifierName)
             {
                 case "Class":
-                    addDefinitionToken(tokens, instance, TYPE_CLASS);
+                    addDefinitionToken(tokens, instance, TYPE_CLASS, source);
                     addClassMembers(tokens, instance, runtime, source);
                     break;
                 case "Enumeration":
-                    addDefinitionToken(tokens, instance, TYPE_ENUM);
+                    addDefinitionToken(tokens, instance, TYPE_ENUM, source);
                     addEnumValues(tokens, instance, source);
                     break;
                 case "ConcreteFunctionDefinition":
-                    addDefinitionToken(tokens, instance, TYPE_FUNCTION);
+                    addDefinitionToken(tokens, instance, TYPE_FUNCTION, source);
                     addFunctionSignatureTokens(tokens, instance, runtime, source);
                     addFunctionBodyTokens(tokens, instance, runtime, source);
                     break;
                 case "NativeFunction":
-                    addDefinitionToken(tokens, instance, TYPE_FUNCTION);
+                    addDefinitionToken(tokens, instance, TYPE_FUNCTION, source);
                     break;
                 case "Profile":
-                    addDefinitionToken(tokens, instance, TYPE_INTERFACE);
+                    addDefinitionToken(tokens, instance, TYPE_INTERFACE, source);
                     break;
                 case "Association":
-                    addDefinitionToken(tokens, instance, TYPE_STRUCT);
+                    addDefinitionToken(tokens, instance, TYPE_STRUCT, source);
                     addClassMembers(tokens, instance, runtime, source);
                     break;
                 default:
@@ -136,7 +140,7 @@ public class SemanticTokensProvider
         }
     }
 
-    private static void addDefinitionToken(List<RawToken> tokens, CoreInstance element, int tokenType)
+    private static void addDefinitionToken(List<RawToken> tokens, CoreInstance element, int tokenType, SourceContext source)
     {
         SourceInformation si = element.getSourceInformation();
         if (si == null)
@@ -161,10 +165,10 @@ public class SemanticTokensProvider
             }
         }
 
-        tokens.add(new RawToken(si.getLine(), si.getColumn(), shortName.length(), tokenType, MOD_DEFINITION));
+        tokens.add(source.token(si.getLine(), si.getColumn(), shortName, tokenType, MOD_DEFINITION));
     }
 
-    private static void addClassMembers(List<RawToken> tokens, CoreInstance classElement, PureRuntime runtime, Source source)
+    private static void addClassMembers(List<RawToken> tokens, CoreInstance classElement, PureRuntime runtime, SourceContext source)
     {
         try
         {
@@ -182,8 +186,8 @@ public class SemanticTokensProvider
                     String propName = prop.getName();
                     if (propName != null && !propName.startsWith("@"))
                     {
-                        tokens.add(new RawToken(propSi.getStartLine(), propSi.getStartColumn(),
-                                propName.length(), TYPE_PROPERTY, MOD_DEFINITION));
+                        tokens.add(source.token(propSi.getStartLine(), propSi.getStartColumn(),
+                                propName, TYPE_PROPERTY, MOD_DEFINITION));
                     }
 
                     addTypeReference(tokens, prop, runtime, source);
@@ -196,7 +200,7 @@ public class SemanticTokensProvider
         }
     }
 
-    private static void addTypeReference(List<RawToken> tokens, CoreInstance prop, PureRuntime runtime, Source source)
+    private static void addTypeReference(List<RawToken> tokens, CoreInstance prop, PureRuntime runtime, SourceContext source)
     {
         try
         {
@@ -222,8 +226,8 @@ public class SemanticTokensProvider
             String typeName = rawType.getName();
             if (typeName != null && !typeName.startsWith("@"))
             {
-                tokens.add(new RawToken(typeSi.getStartLine(), typeSi.getStartColumn(),
-                        typeName.length(), TYPE_TYPE, 0));
+                tokens.add(source.token(typeSi.getStartLine(), typeSi.getStartColumn(),
+                        typeName, TYPE_TYPE, 0));
             }
         }
         catch (Exception ignored)
@@ -232,7 +236,7 @@ public class SemanticTokensProvider
         }
     }
 
-    private static void addEnumValues(List<RawToken> tokens, CoreInstance enumeration, Source source)
+    private static void addEnumValues(List<RawToken> tokens, CoreInstance enumeration, SourceContext source)
     {
         try
         {
@@ -249,8 +253,8 @@ public class SemanticTokensProvider
                     String valName = val.getName();
                     if (valName != null)
                     {
-                        tokens.add(new RawToken(valSi.getStartLine(), valSi.getStartColumn(),
-                                valName.length(), TYPE_ENUM_MEMBER, 0));
+                        tokens.add(source.token(valSi.getStartLine(), valSi.getStartColumn(),
+                                valName, TYPE_ENUM_MEMBER, 0));
                     }
                 }
             }
@@ -262,7 +266,7 @@ public class SemanticTokensProvider
     }
 
     private static void addFunctionSignatureTokens(List<RawToken> tokens, CoreInstance function,
-                                                    PureRuntime runtime, Source source)
+                                                    PureRuntime runtime, SourceContext source)
     {
         try
         {
@@ -298,8 +302,8 @@ public class SemanticTokensProvider
                     String paramName = nameCI != null ? nameCI.getName() : null;
                     if (paramName != null)
                     {
-                        tokens.add(new RawToken(paramSi.getLine(), paramSi.getColumn(),
-                                paramName.length(), TYPE_PARAMETER, 0));
+                        tokens.add(source.token(paramSi.getLine(), paramSi.getColumn(),
+                                paramName, TYPE_PARAMETER, 0));
                     }
                     addTypeReference(tokens, param, runtime, source);
                 }
@@ -321,8 +325,8 @@ public class SemanticTokensProvider
                         String typeName = rawReturnType.getName();
                         if (typeName != null && !typeName.startsWith("@"))
                         {
-                            tokens.add(new RawToken(retSi.getStartLine(), retSi.getStartColumn(),
-                                    typeName.length(), TYPE_TYPE, 0));
+                            tokens.add(source.token(retSi.getStartLine(), retSi.getStartColumn(),
+                                    typeName, TYPE_TYPE, 0));
                         }
                     }
                 }
@@ -337,7 +341,7 @@ public class SemanticTokensProvider
     // ── Function body expression tree walker ──────────────────────────────────
 
     private static void addFunctionBodyTokens(List<RawToken> tokens, CoreInstance function,
-                                               PureRuntime runtime, Source source)
+                                               PureRuntime runtime, SourceContext source)
     {
         try
         {
@@ -356,7 +360,7 @@ public class SemanticTokensProvider
     }
 
     private static void walkExpression(List<RawToken> tokens, CoreInstance expr,
-                                        PureRuntime runtime, Source source, int depth)
+                                        PureRuntime runtime, SourceContext source, int depth)
     {
         if (expr == null || depth > MAX_WALK_DEPTH)
         {
@@ -386,7 +390,7 @@ public class SemanticTokensProvider
     }
 
     private static void walkSimpleFunctionExpression(List<RawToken> tokens, CoreInstance expr,
-                                                      PureRuntime runtime, Source source, int depth)
+                                                      PureRuntime runtime, SourceContext source, int depth)
     {
         try
         {
@@ -407,8 +411,7 @@ public class SemanticTokensProvider
                     String propName = func.getName();
                     if (propName != null && !propName.startsWith("@"))
                     {
-                        tokens.add(new RawToken(si.getLine(), si.getColumn(),
-                                propName.length(), TYPE_PROPERTY, 0));
+                        tokens.add(source.token(si.getLine(), si.getColumn(), propName, TYPE_PROPERTY, 0));
                     }
                 }
                 else
@@ -424,8 +427,7 @@ public class SemanticTokensProvider
                     }
                     else if (fnName != null && !OPERATOR_FUNCTION_NAMES.contains(fnName))
                     {
-                        tokens.add(new RawToken(si.getLine(), si.getColumn(),
-                                fnName.length(), TYPE_FUNCTION, 0));
+                        tokens.add(source.token(si.getLine(), si.getColumn(), fnName, TYPE_FUNCTION, 0));
                     }
                 }
             }
@@ -446,7 +448,7 @@ public class SemanticTokensProvider
     }
 
     // In letFunction, the variable name is the first InstanceValue argument
-    private static void addLetVariableName(List<RawToken> tokens, CoreInstance letExpr, Source source)
+    private static void addLetVariableName(List<RawToken> tokens, CoreInstance letExpr, SourceContext source)
     {
         try
         {
@@ -463,8 +465,8 @@ public class SemanticTokensProvider
                         String varName = vals.get(0).getName();
                         if (varName != null)
                         {
-                            tokens.add(new RawToken(nameSi.getLine(), nameSi.getColumn(),
-                                    varName.length(), TYPE_VARIABLE, MOD_DEFINITION));
+                            tokens.add(source.token(nameSi.getLine(), nameSi.getColumn(),
+                                    varName, TYPE_VARIABLE, MOD_DEFINITION));
                         }
                     }
                 }
@@ -475,7 +477,7 @@ public class SemanticTokensProvider
         }
     }
 
-    private static void walkVariableExpression(List<RawToken> tokens, CoreInstance expr, Source source)
+    private static void walkVariableExpression(List<RawToken> tokens, CoreInstance expr, SourceContext source)
     {
         try
         {
@@ -488,8 +490,7 @@ public class SemanticTokensProvider
             String varName = nameCI != null ? nameCI.getName() : null;
             if (varName != null)
             {
-                tokens.add(new RawToken(si.getLine(), si.getColumn(),
-                        varName.length(), TYPE_VARIABLE, 0));
+                tokens.add(source.token(si.getLine(), si.getColumn(), varName, TYPE_VARIABLE, 0));
             }
         }
         catch (Exception ignored)
@@ -498,7 +499,7 @@ public class SemanticTokensProvider
     }
 
     private static void walkInstanceValue(List<RawToken> tokens, CoreInstance expr,
-                                           PureRuntime runtime, Source source, int depth)
+                                           PureRuntime runtime, SourceContext source, int depth)
     {
         try
         {
@@ -522,10 +523,12 @@ public class SemanticTokensProvider
     }
 
     private static void walkLambdaFunction(List<RawToken> tokens, CoreInstance expr,
-                                            PureRuntime runtime, Source source, int depth)
+                                            PureRuntime runtime, SourceContext source, int depth)
     {
         try
         {
+            addLambdaParameterTokens(tokens, expr, source);
+
             ListIterable<? extends CoreInstance> exprs = expr.getValueForMetaPropertyToMany(M3Properties.expressionSequence);
             if (exprs != null)
             {
@@ -540,8 +543,56 @@ public class SemanticTokensProvider
         }
     }
 
+    // A lambda's own bound parameters (e.g. "a" in "a | $a->..." ) live before the expressionSequence,
+    // reached the same way a top-level function's parameters are in addFunctionSignatureTokens().
+    private static void addLambdaParameterTokens(List<RawToken> tokens, CoreInstance lambda, SourceContext source)
+    {
+        try
+        {
+            CoreInstance classifierGT = lambda.getValueForMetaPropertyToOne(M3Properties.classifierGenericType);
+            if (classifierGT == null)
+            {
+                return;
+            }
+            ListIterable<? extends CoreInstance> typeArgs = classifierGT.getValueForMetaPropertyToMany(M3Properties.typeArguments);
+            if (typeArgs == null || typeArgs.isEmpty())
+            {
+                return;
+            }
+            CoreInstance functionTypeGT = typeArgs.get(0);
+            CoreInstance functionType = functionTypeGT.getValueForMetaPropertyToOne(M3Properties.rawType);
+            if (functionType == null)
+            {
+                return;
+            }
+
+            ListIterable<? extends CoreInstance> params = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
+            if (params != null)
+            {
+                for (CoreInstance param : params)
+                {
+                    SourceInformation paramSi = param.getSourceInformation();
+                    if (paramSi == null || !sourceId(source).equals(paramSi.getSourceId()))
+                    {
+                        continue;
+                    }
+                    CoreInstance nameCI = param.getValueForMetaPropertyToOne(M3Properties.name);
+                    String paramName = nameCI != null ? nameCI.getName() : null;
+                    if (paramName != null)
+                    {
+                        tokens.add(source.token(paramSi.getLine(), paramSi.getColumn(),
+                                paramName, TYPE_PARAMETER, 0));
+                    }
+                }
+            }
+        }
+        catch (Exception ignored)
+        {
+        }
+    }
+
     private static void walkChildren(List<RawToken> tokens, CoreInstance expr,
-                                      PureRuntime runtime, Source source, int depth)
+                                      PureRuntime runtime, SourceContext source, int depth)
     {
         try
         {
@@ -567,9 +618,130 @@ public class SemanticTokensProvider
         }
     }
 
-    private static String sourceId(Source source)
+    private static String sourceId(SourceContext source)
     {
-        return source.getId();
+        return source.id;
+    }
+
+    /**
+     * Resolves the 1-based column at which {@code name} actually starts on the given line.
+     *
+     * <p>A Pure {@code SourceInformation} column can point at the punctuation introducing the
+     * identifier rather than the identifier itself (the {@code .} of a property access, the
+     * {@code ::} before a function's simple name), which would paint the token's fixed length
+     * starting too early. Falls back to the reported column when the name cannot be located,
+     * so a token is never moved somewhere less accurate than before.</p>
+     */
+    static int snapToNameColumn(String[] sourceLines, int line1Based, int reportedColumn1Based, String name)
+    {
+        if (sourceLines == null || name == null || name.isEmpty()
+                || line1Based < 1 || line1Based > sourceLines.length || reportedColumn1Based < 1)
+        {
+            return Math.max(1, reportedColumn1Based);
+        }
+
+        String lineText = sourceLines[line1Based - 1];
+        int reportedIndex = reportedColumn1Based - 1;
+        if (lineText == null || reportedIndex >= lineText.length())
+        {
+            return reportedColumn1Based;
+        }
+
+        if (lineText.startsWith(name, reportedIndex))
+        {
+            return reportedColumn1Based;
+        }
+
+        // Nearest occurrence within the window, preferring one after the reported column
+        for (int offset = 1; offset <= NAME_SNAP_WINDOW; offset++)
+        {
+            if (lineText.startsWith(name, reportedIndex + offset))
+            {
+                return reportedIndex + offset + 1;
+            }
+            if (reportedIndex - offset >= 0 && lineText.startsWith(name, reportedIndex - offset))
+            {
+                return reportedIndex - offset + 1;
+            }
+        }
+        return reportedColumn1Based;
+    }
+
+    /**
+     * Measures the identifier that actually starts at the given column, so a token paints exactly
+     * that identifier.
+     *
+     * <p>A name taken from the model can be longer than the text at the token's column — a call's
+     * {@code functionName} is package-qualified and a qualified property's name carries its
+     * parameter types — which would spill the token over the following punctuation. Falls back to
+     * {@code fallbackLength} whenever the column does not begin an identifier.</p>
+     *
+     * <p>Matches the M3 grammar's {@code ValidString}: {@code [A-Za-z0-9_] [A-Za-z0-9_$]*}.</p>
+     */
+    static int identifierLengthAt(String[] sourceLines, int line1Based, int column1Based, int fallbackLength)
+    {
+        if (sourceLines == null || line1Based < 1 || line1Based > sourceLines.length || column1Based < 1)
+        {
+            return Math.max(1, fallbackLength);
+        }
+
+        String lineText = sourceLines[line1Based - 1];
+        int start = column1Based - 1;
+        if (lineText == null || start >= lineText.length() || !isIdentifierStart(lineText.charAt(start)))
+        {
+            return Math.max(1, fallbackLength);
+        }
+
+        int end = start + 1;
+        while (end < lineText.length() && isIdentifierPart(lineText.charAt(end)))
+        {
+            end++;
+        }
+        return end - start;
+    }
+
+    private static boolean isIdentifierStart(char c)
+    {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c == '_');
+    }
+
+    private static boolean isIdentifierPart(char c)
+    {
+        return isIdentifierStart(c) || (c == '$');
+    }
+
+    // Splits the source once per request; snapping every named token would otherwise re-split the whole file
+    private static final class SourceContext
+    {
+        private final String id;
+        private final String[] lines;
+        private final Source source;
+
+        SourceContext(Source source)
+        {
+            this.source = source;
+            this.id = source.getId();
+            String content = source.getContent();
+            this.lines = (content == null) ? new String[0] : content.split("\\R", -1);
+        }
+
+        ListIterable<? extends CoreInstance> getNewInstances()
+        {
+            return this.source.getNewInstances();
+        }
+
+        int snap(int line1Based, int reportedColumn1Based, String name)
+        {
+            return snapToNameColumn(this.lines, line1Based, reportedColumn1Based, name);
+        }
+
+        // Column and length are resolved together so a token always spans exactly the identifier it lands on
+        RawToken token(int line1Based, int reportedColumn1Based, String name, int tokenType, int tokenModifiers)
+        {
+            int column = snap(line1Based, reportedColumn1Based, name);
+            int length = identifierLengthAt(this.lines, line1Based, column, name.length());
+            return new RawToken(line1Based, column, length, tokenType, tokenModifiers);
+        }
     }
 
     /**

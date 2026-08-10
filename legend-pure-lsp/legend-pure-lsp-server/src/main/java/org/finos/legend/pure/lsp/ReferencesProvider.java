@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 public class ReferencesProvider
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReferencesProvider.class);
+    // Silent cap: results beyond this are dropped rather than reported as truncated to the client.
     private static final int MAX_REFERENCES = 1000;
 
     public static List<Location> references(PureRuntime runtime, UriMapper uriMapper,
@@ -75,9 +76,14 @@ public class ReferencesProvider
             }
         }
 
-        // Check classifier name (not Java instanceof) — Pure graph objects are plain CoreInstance
+        // Check classifier name (not Java instanceof) — Pure graph objects are plain CoreInstance.
+        // Property/QualifiedProperty are invocable Functions too (via .prop or ->prop()), so call
+        // sites are tracked through 'applications' the same way as ConcreteFunctionDefinition/NativeFunction;
+        // Association end properties are plain Property/QualifiedProperty instances, so no separate case is needed.
         if ("ConcreteFunctionDefinition".equals(classifierName)
-                || "NativeFunction".equals(classifierName))
+                || "NativeFunction".equals(classifierName)
+                || "Property".equals(classifierName)
+                || "QualifiedProperty".equals(classifierName))
         {
             ListIterable<? extends CoreInstance> applications =
                     element.getValueForMetaPropertyToMany(M3Properties.applications);
@@ -96,6 +102,18 @@ public class ReferencesProvider
                     }
                 }
             }
+        }
+
+        // Enum literal (e.g. Country.US): the literal carries no back-references of its own —
+        // Pure compiles the access to a call taking the Enumeration and the literal's name as a
+        // plain string (see Source.navigate()'s "extractEnumValue" handling for the resolve-side
+        // counterpart), so a reference usage only tells us the Enumeration was accessed. Walk the
+        // Enumeration's own referenceUsages and filter down to accesses naming this specific literal.
+        CoreInstance elementClassifier = element.getClassifier();
+        if (elementClassifier != null && elementClassifier.getClassifier() != null
+                && "Enumeration".equals(elementClassifier.getClassifier().getName()))
+        {
+            addEnumLiteralUsages(locations, seen, elementClassifier, element.getName(), uriMapper);
         }
 
         // For all elements: read 'referenceUsages' (structural type references)
@@ -134,6 +152,85 @@ public class ReferencesProvider
         }
 
         return locations;
+    }
+
+    // Mirrors the approach of meta::pure::ide::findusages::findUsagesForEnum (legend-engine, Pure-level):
+    // walk the Enumeration's referenceUsages, then for each usage owned by an InstanceValue used as a
+    // function parameter, check whether the enclosing call is the compiled enum accessor and whether its
+    // literal-name argument matches the target value — that's the only way to tell which literal was used.
+    private static void addEnumLiteralUsages(List<Location> locations, Set<String> seen,
+                                             CoreInstance enumeration, String enumValueName, UriMapper uriMapper)
+    {
+        if (enumValueName == null)
+        {
+            return;
+        }
+        try
+        {
+            ListIterable<? extends CoreInstance> refUsages =
+                    enumeration.getValueForMetaPropertyToMany(M3Properties.referenceUsages);
+            if (refUsages == null)
+            {
+                return;
+            }
+            for (CoreInstance refUsage : refUsages)
+            {
+                if (locations.size() >= MAX_REFERENCES)
+                {
+                    LspLog.debug("references: truncated at " + MAX_REFERENCES + " results");
+                    break;
+                }
+                SourceInformation accessSi = matchEnumLiteralAccess(refUsage, enumValueName);
+                if (accessSi != null)
+                {
+                    addLocation(locations, seen, accessSi, uriMapper);
+                }
+            }
+        }
+        catch (Exception ignored)
+        {
+            // Reference usage shape not as expected; skip enum-literal-specific matching
+        }
+    }
+
+    private static SourceInformation matchEnumLiteralAccess(CoreInstance refUsage, String enumValueName)
+    {
+        try
+        {
+            CoreInstance owner = refUsage.getValueForMetaPropertyToOne(M3Properties.owner);
+            if (owner == null || owner.getClassifier() == null || !"InstanceValue".equals(owner.getClassifier().getName()))
+            {
+                return null;
+            }
+            CoreInstance usageContext = owner.getValueForMetaPropertyToOne(M3Properties.usageContext);
+            if (usageContext == null || usageContext.getClassifier() == null
+                    || !"ParameterValueSpecificationContext".equals(usageContext.getClassifier().getName()))
+            {
+                return null;
+            }
+            CoreInstance functionExpression = usageContext.getValueForMetaPropertyToOne(M3Properties.functionExpression);
+            if (functionExpression == null || functionExpression.getClassifier() == null
+                    || !"SimpleFunctionExpression".equals(functionExpression.getClassifier().getName()))
+            {
+                return null;
+            }
+            ListIterable<? extends CoreInstance> params =
+                    functionExpression.getValueForMetaPropertyToMany(M3Properties.parametersValues);
+            if (params == null || params.size() < 2)
+            {
+                return null;
+            }
+            ListIterable<? extends CoreInstance> nameValues = params.get(1).getValueForMetaPropertyToMany(M3Properties.values);
+            if (nameValues == null || nameValues.size() != 1 || !enumValueName.equals(nameValues.get(0).getName()))
+            {
+                return null;
+            }
+            return functionExpression.getSourceInformation();
+        }
+        catch (Exception ignored)
+        {
+            return null;
+        }
     }
 
     private static void addLocation(List<Location> locations, Set<String> seen,

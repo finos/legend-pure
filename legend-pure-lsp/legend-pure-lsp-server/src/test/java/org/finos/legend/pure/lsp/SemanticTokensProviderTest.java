@@ -14,7 +14,10 @@
 
 package org.finos.legend.pure.lsp;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -61,6 +64,33 @@ public class SemanticTokensProviderTest
             "  $nm->toUpper();\n" +                                                  // line 4
             "}\n";                                                                   // line 5
 
+    private static final String SNAP_CLS_SOURCE_ID = "sem_test_snap_cls.pure";
+    private static final String SNAP_CLS_CODE =
+            "Class test::snap::Holder\n" +
+            "{\n" +
+            "  someProperty: String[1];\n" +
+            "  decorated(prefix: String[1]) {$prefix + $this.someProperty}: String[1];\n" +
+            "}\n";
+
+    private static final String SNAP_SOURCE_ID = "sem_test_snap.pure";
+    private static final String SNAP_CODE =
+            "function test::snap::deep::myFunction(x: test::snap::Holder[1]): String[1]\n" +  // line 1
+            "{\n" +                                                                           // line 2
+            "  $x.someProperty->toUpper()\n" +                                                // line 3
+            "}\n";                                                                            // line 4
+
+    private static final String LEN_SOURCE_ID = "sem_test_len.pure";
+    private static final String LEN_CODE =
+            "function test::snap::helper(s: String[1]): String[1]\n" +               // line 1
+            "{\n" +                                                                  // line 2
+            "  $s\n" +                                                               // line 3
+            "}\n" +                                                                  // line 4
+            "function test::snap::useQualified(h: test::snap::Holder[1]): String[1]\n" + // line 5
+            "{\n" +                                                                  // line 6
+            "  let a = test::snap::helper($h.someProperty);\n" +                     // line 7
+            "  $h.decorated('p');\n" +                                               // line 8
+            "}\n";                                                                   // line 9
+
     @BeforeClass
     public static void init()
     {
@@ -85,6 +115,17 @@ public class SemanticTokensProviderTest
         LegendPureSession.CompileResult r5 = session.modifyAndCompile(BODY_SOURCE_ID, BODY_CODE);
         Assert.assertTrue("process should compile: " +
                 (r5.getError() != null ? r5.getError().getMessage() : ""), r5.isSuccess());
+
+        LegendPureSession.CompileResult r6 = session.modifyAndCompile(SNAP_CLS_SOURCE_ID, SNAP_CLS_CODE);
+        Assert.assertTrue("Holder should compile: " +
+                (r6.getError() != null ? r6.getError().getMessage() : ""), r6.isSuccess());
+        LegendPureSession.CompileResult r7 = session.modifyAndCompile(SNAP_SOURCE_ID, SNAP_CODE);
+        Assert.assertTrue("myFunction should compile: " +
+                (r7.getError() != null ? r7.getError().getMessage() : ""), r7.isSuccess());
+
+        LegendPureSession.CompileResult r8 = session.modifyAndCompile(LEN_SOURCE_ID, LEN_CODE);
+        Assert.assertTrue("useQualified should compile: " +
+                (r8.getError() != null ? r8.getError().getMessage() : ""), r8.isSuccess());
     }
 
     @AfterClass
@@ -431,5 +472,280 @@ public class SemanticTokensProviderTest
             }
         }
         Assert.assertTrue("Should contain a variable definition token for let binding", foundLetVar);
+    }
+
+    // ── Token start column lands on the identifier, not on preceding punctuation ──
+
+    @Test
+    public void propertyAccessToken_startsAtPropertyName_notAtDot()
+    {
+        // "  $x.someProperty->toUpper()" — the token must cover "someProperty", never start on the '.'
+        String line = SNAP_CODE.split("\\R", -1)[2];
+        int expectedCol = line.indexOf("someProperty");
+
+        int[] token = findToken(decode(snapTokens()), 2, 4, false); // property, not a definition
+        Assert.assertNotNull("Did not find a property access token on line 3", token);
+        Assert.assertEquals("Property token should start at 'someProperty', not at the '.'",
+                expectedCol, token[1]);
+        Assert.assertEquals("Property token should cover the whole identifier",
+                expectedCol + "someProperty".length(), token[1] + token[2]);
+    }
+
+    @Test
+    public void packageQualifiedFunctionDefinitionToken_startsAtSimpleName_notAtPackageSeparator()
+    {
+        // "function test::snap::deep::myFunction(...)" — the token must cover "myFunction",
+        // never start on the '::' that precedes it.
+        String line = SNAP_CODE.split("\\R", -1)[0];
+        int expectedCol = line.indexOf("myFunction");
+
+        int[] token = findToken(decode(snapTokens()), 0, 3, true); // function definition
+        Assert.assertNotNull("Did not find a function definition token on line 1", token);
+        Assert.assertEquals("Function definition token should start at 'myFunction', not at the '::'",
+                expectedCol, token[1]);
+        Assert.assertEquals("Function definition token should cover the whole simple name",
+                expectedCol + "myFunction".length(), token[1] + token[2]);
+    }
+
+    @Test
+    public void unqualifiedFunctionCallToken_startsAtCallName()
+    {
+        // "  $x.someProperty->toUpper()" — an unqualified call already reports the name's own
+        // column; snapping must leave it exactly where it was.
+        String line = SNAP_CODE.split("\\R", -1)[2];
+        int expectedCol = line.indexOf("toUpper");
+
+        int[] token = findToken(decode(snapTokens()), 2, 3, false); // function call, not a definition
+        Assert.assertNotNull("Did not find a function call token on line 3", token);
+        Assert.assertEquals("Function call token should start at 'toUpper'", expectedCol, token[1]);
+        Assert.assertEquals("Function call token should cover the whole call name",
+                expectedCol + "toUpper".length(), token[1] + token[2]);
+    }
+
+    @Test
+    public void variableToken_startsAtVariableName_notAtDollarSign()
+    {
+        // "  $x.someProperty->toUpper()" — the variable token covers "x", not the '$' sigil
+        String line = SNAP_CODE.split("\\R", -1)[2];
+        int expectedCol = line.indexOf("$x") + 1;
+
+        int[] token = findToken(decode(snapTokens()), 2, 10, false); // variable reference
+        Assert.assertNotNull("Did not find a variable token on line 3", token);
+        Assert.assertEquals("Variable token should start at 'x', not at the '$'", expectedCol, token[1]);
+    }
+
+    @Test
+    public void snapToNameColumn_movesPastLeadingPunctuation()
+    {
+        String[] lines = {
+                "  $x.someProperty->toUpper()",
+                "function a::b::c::myFunction():Any[*]"
+        };
+
+        // '.' reported instead of the property name (1-based column 5 is the '.')
+        Assert.assertEquals(6, SemanticTokensProvider.snapToNameColumn(lines, 1, 5, "someProperty"));
+        // '::' reported instead of the simple function name (1-based column 17 starts that "::")
+        Assert.assertEquals(19, SemanticTokensProvider.snapToNameColumn(lines, 2, 17, "myFunction"));
+        // '->' reported instead of the call name
+        Assert.assertEquals(20, SemanticTokensProvider.snapToNameColumn(lines, 1, 18, "toUpper"));
+    }
+
+    @Test
+    public void snapToNameColumn_leavesAlreadyCorrectColumnsUntouched()
+    {
+        String[] lines = {"  $x.someProperty->toUpper()"};
+        Assert.assertEquals(6, SemanticTokensProvider.snapToNameColumn(lines, 1, 6, "someProperty"));
+        Assert.assertEquals(20, SemanticTokensProvider.snapToNameColumn(lines, 1, 20, "toUpper"));
+    }
+
+    @Test
+    public void snapToNameColumn_fallsBackToReportedColumn()
+    {
+        String[] lines = {"  $x.someProperty->toUpper()"};
+
+        // Name not present anywhere near the reported column
+        Assert.assertEquals(6, SemanticTokensProvider.snapToNameColumn(lines, 1, 6, "Absent"));
+        // Name present but beyond the search window
+        Assert.assertEquals(1, SemanticTokensProvider.snapToNameColumn(lines, 1, 1, "toUpper"));
+        // Out-of-range line, missing line array, empty/null name, and degenerate columns
+        Assert.assertEquals(6, SemanticTokensProvider.snapToNameColumn(lines, 9, 6, "someProperty"));
+        Assert.assertEquals(6, SemanticTokensProvider.snapToNameColumn(null, 1, 6, "someProperty"));
+        Assert.assertEquals(6, SemanticTokensProvider.snapToNameColumn(lines, 1, 6, null));
+        Assert.assertEquals(6, SemanticTokensProvider.snapToNameColumn(lines, 1, 6, ""));
+        Assert.assertEquals(1, SemanticTokensProvider.snapToNameColumn(lines, 1, 0, "someProperty"));
+        Assert.assertEquals(99, SemanticTokensProvider.snapToNameColumn(lines, 1, 99, "someProperty"));
+    }
+
+    @Test
+    public void identifierLengthAt_measuresTheIdentifierAtTheColumn()
+    {
+        String[] lines = {"  let a$1 = test::snap::helper($h.decorated('p'));"};
+
+        // Stops at the '(' rather than painting the qualified name's full length
+        Assert.assertEquals(6, SemanticTokensProvider.identifierLengthAt(lines, 1, lines[0].indexOf("helper") + 1, 18));
+        Assert.assertEquals(9, SemanticTokensProvider.identifierLengthAt(lines, 1, lines[0].indexOf("decorated") + 1, 11));
+        // '$' is a valid identifier character after the first one
+        Assert.assertEquals(3, SemanticTokensProvider.identifierLengthAt(lines, 1, lines[0].indexOf("a$1") + 1, 1));
+    }
+
+    @Test
+    public void identifierLengthAt_fallsBackWhenColumnIsNotAnIdentifier()
+    {
+        String[] lines = {"  $h.decorated('p');"};
+
+        // A '$' cannot start an identifier, so a column landing on the sigil keeps the reported length
+        Assert.assertEquals(7, SemanticTokensProvider.identifierLengthAt(lines, 1, lines[0].indexOf('$') + 1, 7));
+        Assert.assertEquals(7, SemanticTokensProvider.identifierLengthAt(lines, 1, lines[0].indexOf('.') + 1, 7));
+        Assert.assertEquals(7, SemanticTokensProvider.identifierLengthAt(lines, 9, 3, 7));
+        Assert.assertEquals(7, SemanticTokensProvider.identifierLengthAt(null, 1, 3, 7));
+        Assert.assertEquals(7, SemanticTokensProvider.identifierLengthAt(lines, 1, 999, 7));
+        // Never returns a length below 1, whatever the caller reported
+        Assert.assertEquals(1, SemanticTokensProvider.identifierLengthAt(lines, 1, 0, 0));
+    }
+
+    // ── Token length spans exactly the identifier at the token's column ──
+
+    @Test
+    public void packageQualifiedCallToken_lengthCoversSimpleNameOnly()
+    {
+        // "  let a = test::snap::helper($h.someProperty);" — the model reports the call name as
+        // "test::snap::helper", but the token starts at "helper" and must stop before the '('.
+        String line = LEN_CODE.split("\\R", -1)[6];
+        int expectedCol = line.indexOf("helper");
+
+        int[] token = findToken(decode(lenTokens()), 6, 3, false); // function call, not a definition
+        Assert.assertNotNull("Did not find a qualified call token on line 7", token);
+        Assert.assertEquals("Call token should start at 'helper'", expectedCol, token[1]);
+        Assert.assertEquals("Call token should be as long as the simple name",
+                "helper".length(), token[2]);
+        Assert.assertEquals("Call token must stop at the '(', not paint into it",
+                line.indexOf('('), token[1] + token[2]);
+    }
+
+    @Test
+    public void qualifiedPropertyToken_lengthCoversPropertyNameOnly()
+    {
+        // "  $h.decorated('p');" — a qualified property's name carries its parameter types,
+        // but the token must cover only the "decorated" identifier.
+        String line = LEN_CODE.split("\\R", -1)[7];
+        int expectedCol = line.indexOf("decorated");
+
+        int[] token = findToken(decode(lenTokens()), 7, 4, false); // property, not a definition
+        Assert.assertNotNull("Did not find a qualified property token on line 8", token);
+        Assert.assertEquals("Property token should start at 'decorated'", expectedCol, token[1]);
+        Assert.assertEquals("Property token should be as long as the property name",
+                "decorated".length(), token[2]);
+        Assert.assertEquals("Property token must stop at the '(', not paint into it",
+                line.indexOf('('), token[1] + token[2]);
+    }
+
+    @Test
+    public void unqualifiedTokens_keepTheirLengths()
+    {
+        List<int[]> tokens = decode(snapTokens());
+
+        Assert.assertEquals("Unqualified call token length unchanged",
+                "toUpper".length(), findToken(tokens, 2, 3, false)[2]);
+        Assert.assertEquals("Function definition token length unchanged",
+                "myFunction".length(), findToken(tokens, 0, 3, true)[2]);
+        Assert.assertEquals("Parameter token length unchanged", "x".length(), findToken(tokens, 0, 7, false)[2]);
+        Assert.assertEquals("Variable token length unchanged", "x".length(), findToken(tokens, 2, 10, false)[2]);
+        Assert.assertEquals("Property token length unchanged",
+                "someProperty".length(), findToken(tokens, 2, 4, false)[2]);
+    }
+
+    @Test
+    public void enumMemberAndClassMemberTokens_keepTheirLengths()
+    {
+        List<int[]> enumTokens = decode(SemanticTokensProvider.getTokens(session.getPureRuntime(), ENUM_SOURCE_ID));
+        Assert.assertEquals("Enum definition token length unchanged", "Color".length(), findToken(enumTokens, 0, 2, true)[2]);
+        Assert.assertEquals("Red token length unchanged", "Red".length(), findToken(enumTokens, 2, 5, false)[2]);
+        Assert.assertEquals("Green token length unchanged", "Green".length(), findToken(enumTokens, 3, 5, false)[2]);
+        Assert.assertEquals("Blue token length unchanged", "Blue".length(), findToken(enumTokens, 4, 5, false)[2]);
+
+        List<int[]> classTokens = decode(SemanticTokensProvider.getTokens(session.getPureRuntime(), CLASS_SOURCE_ID));
+        Assert.assertEquals("Class definition token length unchanged", "Person".length(), findToken(classTokens, 0, 1, true)[2]);
+        Assert.assertEquals("Property definition token length unchanged", "name".length(), findToken(classTokens, 2, 4, true)[2]);
+        Assert.assertEquals("Type reference token length unchanged", "String".length(), findToken(classTokens, 2, 6, false)[2]);
+    }
+
+    @Test
+    public void everyToken_spansExactlyOneIdentifier()
+    {
+        Map<String, String> sources = new LinkedHashMap<>();
+        sources.put(CLASS_SOURCE_ID, CLASS_CODE);
+        sources.put(ENUM_SOURCE_ID, ENUM_CODE);
+        sources.put(FUNC_SOURCE_ID, FUNC_CODE);
+        sources.put(BODY_SOURCE_ID, BODY_CODE);
+        sources.put(SNAP_CLS_SOURCE_ID, SNAP_CLS_CODE);
+        sources.put(SNAP_SOURCE_ID, SNAP_CODE);
+        sources.put(LEN_SOURCE_ID, LEN_CODE);
+
+        for (Map.Entry<String, String> entry : sources.entrySet())
+        {
+            String[] lines = entry.getValue().split("\\R", -1);
+            for (int[] token : decode(SemanticTokensProvider.getTokens(session.getPureRuntime(), entry.getKey())))
+            {
+                String where = entry.getKey() + " line " + token[0] + " col " + token[1];
+                Assert.assertTrue(where + ": line out of range", token[0] < lines.length);
+                String line = lines[token[0]];
+                Assert.assertTrue(where + ": token runs past end of line", token[1] + token[2] <= line.length());
+
+                String text = line.substring(token[1], token[1] + token[2]);
+                Assert.assertTrue(where + ": token text '" + text + "' is not an identifier",
+                        text.matches("[A-Za-z0-9_][A-Za-z0-9_$]*"));
+
+                int after = token[1] + token[2];
+                Assert.assertFalse(where + ": token stops mid-identifier before '" + line.substring(after) + "'",
+                        after < line.length() && isIdentifierChar(line.charAt(after)));
+            }
+        }
+    }
+
+    private static boolean isIdentifierChar(char c)
+    {
+        return Character.toString(c).matches("[A-Za-z0-9_$]");
+    }
+
+    private static List<Integer> lenTokens()
+    {
+        return SemanticTokensProvider.getTokens(session.getPureRuntime(), LEN_SOURCE_ID);
+    }
+
+    private static List<Integer> snapTokens()
+    {
+        return SemanticTokensProvider.getTokens(session.getPureRuntime(), SNAP_SOURCE_ID);
+    }
+
+    /**
+     * Decodes the LSP delta-encoded 5-tuples into absolute {line, column, length, type, modifiers},
+     * with line and column 0-based as the protocol reports them.
+     */
+    private static List<int[]> decode(List<Integer> data)
+    {
+        List<int[]> tokens = new ArrayList<>();
+        int absLine = 0;
+        int absCol = 0;
+        for (int i = 0; i < data.size(); i += 5)
+        {
+            int deltaLine = data.get(i);
+            int deltaCol = data.get(i + 1);
+            absLine += deltaLine;
+            absCol = (deltaLine == 0) ? absCol + deltaCol : deltaCol;
+            tokens.add(new int[]{absLine, absCol, data.get(i + 2), data.get(i + 3), data.get(i + 4)});
+        }
+        return tokens;
+    }
+
+    private static int[] findToken(List<int[]> tokens, int line, int tokenType, boolean definition)
+    {
+        for (int[] token : tokens)
+        {
+            if (token[0] == line && token[3] == tokenType && (((token[4] & 1) != 0) == definition))
+            {
+                return token;
+            }
+        }
+        return null;
     }
 }

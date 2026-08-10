@@ -130,4 +130,63 @@ public class LegendPureLspServerTest
             }
         }
     }
+
+    @Test
+    public void resolveRequestPoolSize_noPropertySet_returnsDefaultOfTwelve()
+    {
+        withRequestPoolSizeProperty(null, () ->
+                Assert.assertEquals(12, LegendPureLspServer.resolveRequestPoolSize()));
+    }
+
+    @Test
+    public void resolveRequestPoolSize_readsValidPropertyOverride()
+    {
+        withRequestPoolSizeProperty("20", () ->
+                Assert.assertEquals(20, LegendPureLspServer.resolveRequestPoolSize()));
+    }
+
+    @Test
+    public void resolveRequestPoolSize_invalidProperty_fallsBackToDefault()
+    {
+        withRequestPoolSizeProperty("notanumber", () ->
+                Assert.assertEquals(12, LegendPureLspServer.resolveRequestPoolSize()));
+    }
+
+    @Test
+    public void resolveRequestPoolSize_nonPositiveProperty_fallsBackToDefault()
+    {
+        withRequestPoolSizeProperty("0", () ->
+                Assert.assertEquals(12, LegendPureLspServer.resolveRequestPoolSize()));
+        withRequestPoolSizeProperty("-5", () ->
+                Assert.assertEquals(12, LegendPureLspServer.resolveRequestPoolSize()));
+    }
+
+    private static void withRequestPoolSizeProperty(String value, Runnable assertion)
+    {
+        String propertyName = "legend.lsp.requestPoolSize";
+        String saved = System.getProperty(propertyName);
+        if (value == null)
+        {
+            System.clearProperty(propertyName);
+        }
+        else
+        {
+            System.setProperty(propertyName, value);
+        }
+        try
+        {
+            assertion.run();
+        }
+        finally
+        {
+            if (saved == null)
+            {
+                System.clearProperty(propertyName);
+            }
+            else
+            {
+                System.setProperty(propertyName, saved);
+            }
+        }
+    }
 }

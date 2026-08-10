@@ -16,33 +16,42 @@ package org.finos.legend.pure.lsp;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.lsp.mutation.SourceMutationService;
+import org.finos.legend.pure.lsp.protocol.LegendLanguageClient;
+import org.finos.legend.pure.lsp.protocol.LockContentionEvent;
 import org.finos.legend.pure.m3.execution.Console;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.execution.test.TestTools;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
+import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.MutableRuntimeOptions;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m3.serialization.runtime.RuntimeOptions;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.mixed.LegendCompileMixedProcessorSupport;
 import org.slf4j.Logger;
@@ -67,17 +76,93 @@ public class LegendPureSession
     // what guarantees "no mutation while an execution is in flight": a compile must acquire the write
     // lock, which cannot be granted while any execution holds a read lock, and vice versa. Fair mode
     // prevents a stream of executions from starving a pending compile (the auto-sync hook compiles
-    // often). Replaces the old blanket `synchronized` that serialized everything.
-    private final java.util.concurrent.locks.ReadWriteLock graphLock =
+    // often). Replaces the old blanket `synchronized` that serialized everything. Declared as the
+    // concrete ReentrantReadWriteLock (not the ReadWriteLock interface) so isWriteLocked()/
+    // getReadLockCount()/getQueueLength() are available to describe contention in legend/lockContention.
+    private final java.util.concurrent.locks.ReentrantReadWriteLock graphLock =
             new java.util.concurrent.locks.ReentrantReadWriteLock(true);
+
+    // Count of threads currently blocked waiting to acquire the read/write side of graphLock. A
+    // 0->1 transition means a caller just started waiting with nothing previously waiting - the
+    // moment worth telling clients about; a 1->0 transition clears it. See acquireLock().
+    private final AtomicInteger blockedReaders = new AtomicInteger();
+    private final AtomicInteger blockedWriters = new AtomicInteger();
+
+    // Most contention episodes clear within a few hundred ms (a routine auto-compile racing a hover/
+    // definition request) and are not worth interrupting a client about. The active notification is
+    // debounced behind this delay - see scheduleLockContentionNotification() - so only genuinely
+    // long stalls get reported. Package-private (not final) so tests can shrink it instead of
+    // sleeping for the real default.
+    private static final long DEFAULT_LOCK_CONTENTION_NOTIFICATION_DELAY_MS = 5_000L;
+    private long lockContentionNotificationDelayMs = DEFAULT_LOCK_CONTENTION_NOTIFICATION_DELAY_MS;
+
+    private static final ScheduledExecutorService LOCK_CONTENTION_SCHEDULER = Executors.newSingleThreadScheduledExecutor(r ->
+    {
+        Thread t = new Thread(r, "legend-pure-lsp-lock-contention-notifier");
+        t.setDaemon(true);
+        return t;
+    });
+
+    private final AtomicReference<ScheduledFuture<?>> pendingReadContentionNotification = new AtomicReference<>();
+    private final AtomicReference<ScheduledFuture<?>> pendingWriteContentionNotification = new AtomicReference<>();
+    private final AtomicBoolean readContentionPublished = new AtomicBoolean(false);
+    private final AtomicBoolean writeContentionPublished = new AtomicBoolean(false);
+
+    // Tracks whether the graph might have an uncompiled mutation pending - see ensureCompiled().
+    // Conservative by construction: SourceMutationService marks this true before attempting any
+    // runtime mutation and clears it only once that same mutation's own compile() call actually
+    // succeeds (markGraphDirty()/markGraphCompiled()). A caller that marks dirty but never confirms
+    // compiled (an early "nothing to do" return, or a failure) just costs the next ensureCompiled()
+    // one extra (harmless) write-lock round-trip - it can never incorrectly report clean.
+    private final AtomicBoolean graphDirty = new AtomicBoolean(false);
 
     private volatile RepositoryScanner workspaceScanner;
     private volatile Set<String> classpathRepositoryNames = Collections.emptySet();
     private volatile java.util.function.Consumer<String> progressListener;
+    private volatile LegendLanguageClient client;
 
     public void setProgressListener(java.util.function.Consumer<String> progressListener)
     {
         this.progressListener = progressListener;
+    }
+
+    /**
+     * Wired by whoever owns this session's client connection(s) (see LegendPureLspServer/
+     * PureRuntimeManager) so that lock-contention events (see acquireLock()) can be pushed to
+     * connected clients the same way status/log/drift notifications already are.
+     */
+    public void setClient(LegendLanguageClient client)
+    {
+        this.client = client;
+    }
+
+    /**
+     * Test seam for {@link #DEFAULT_LOCK_CONTENTION_NOTIFICATION_DELAY_MS} - lets tests exercise the
+     * debounce without a real multi-second sleep.
+     */
+    void setLockContentionNotificationDelayMs(long delayMs)
+    {
+        this.lockContentionNotificationDelayMs = delayMs;
+    }
+
+    /**
+     * Called by SourceMutationService before it attempts any runtime mutation, so a concurrent
+     * caller's ensureCompiled() knows it can no longer take the fast (no-write-lock) path. Paired
+     * with markGraphCompiled().
+     */
+    public void markGraphDirty()
+    {
+        this.graphDirty.set(true);
+    }
+
+    /**
+     * Called by SourceMutationService once its own compile() call has actually succeeded (or once
+     * it's confirmed nothing needed to change, e.g. an edit to an immutable source). Must NOT be
+     * called from a failure path - see the class javadoc on graphDirty.
+     */
+    public void markGraphCompiled()
+    {
+        this.graphDirty.set(false);
     }
 
     public void initialize()
@@ -106,6 +191,7 @@ public class LegendPureSession
         LspLog.info("StackPreservingFunctionExecutionInterpreted initialized");
 
         this.initialized = true;
+        this.graphDirty.set(false);
         long elapsed = (System.currentTimeMillis() - start) / 1000;
         LOGGER.info("Pure runtime initialized in {}s", elapsed);
     }
@@ -118,8 +204,13 @@ public class LegendPureSession
     public static PureRuntime newDebugRuntime(RepositoryScanner scanner, Collection<String> classpathRepositoryNames)
     {
         Set<String> normalizedClasspathRepositoryNames = normalizeRepositoryNames(classpathRepositoryNames);
+        // excludedWorkspaceRepositoryNames must stay empty here: classpathRepositoryNames is only meant to
+        // identify which repos are classpath-sourced, not to strip same-named repos out of the workspace
+        // definition set. Passing it as both caused those repos to load wholesale from the classpath JAR
+        // instead of the small scoped workspace directory, ballooning the debug compile far beyond what's
+        // actually open (e.g. 2775 sources instead of ~261).
         return newRuntime(scanner, true, normalizedClasspathRepositoryNames, Collections.emptySet(),
-                true, normalizedClasspathRepositoryNames);
+                true, Collections.emptySet());
     }
 
     public static <T extends FunctionExecutionInterpreted> T initializeFunctionExecution(T functionExecution, PureRuntime runtime, Message message)
@@ -262,29 +353,31 @@ public class LegendPureSession
 
     public void reinitialize()
     {
-        this.graphLock.writeLock().lock();
-        try
+        try (LockHandle ignored = acquireGraphWriteLock())
         {
-            this.initialized = false;
-            this.pureRuntime = null;
-            initialize(this.workspaceScanner, this.classpathRepositoryNames);
-        }
-        finally
-        {
-            this.graphLock.writeLock().unlock();
+            // Deliberately do not clear pureRuntime/initialized up front: initialize() only
+            // overwrites those fields once the new compile actually succeeds (each assignment
+            // completes or not atomically), so a bad reindex/warm-up - e.g. a newly-scanned module
+            // with one unparsable fixture file - leaves the previous, still-working session serving
+            // requests instead of going permanently dark until a manual restart. Mirrors
+            // SourceMutationService's restore-on-failure behavior for incremental edits.
+            try
+            {
+                initialize(this.workspaceScanner, this.classpathRepositoryNames);
+            }
+            catch (Throwable e)
+            {
+                LspLog.warn("Reinitialize failed, keeping previous compiled session: " + e.getMessage());
+                throw e;
+            }
         }
     }
 
     public void setClasspathRepositoryNames(Collection<String> classpathRepositoryNames)
     {
-        this.graphLock.writeLock().lock();
-        try
+        try (LockHandle ignored = acquireGraphWriteLock())
         {
             this.classpathRepositoryNames = normalizeRepositoryNames(classpathRepositoryNames);
-        }
-        finally
-        {
-            this.graphLock.writeLock().unlock();
         }
     }
 
@@ -295,21 +388,25 @@ public class LegendPureSession
 
     /**
      * The compiled graph is guarded by a single fair {@link java.util.concurrent.locks.ReadWriteLock}
-     * ({@code graphLock}): every graph MUTATION (compile/reinitialize) takes {@link #graphWriteLock()}
+     * ({@code graphLock}): every graph MUTATION (compile/reinitialize) takes {@link #acquireGraphWriteLock()}
      * (exclusive) and every graph READ - function execution AND the LSP providers (hover, completion,
-     * references, ...) - takes {@link #graphReadLock()}. This single mechanism guarantees no mutation
+     * references, ...) - takes {@link #acquireGraphReadLock()}. This single mechanism guarantees no mutation
      * runs while a read/execution is in flight, while still letting independent reads/executions run
      * concurrently. All production mutation paths funnel through {@link SourceMutationService}, which
      * acquires the write lock, so callers must NOT rely on the object monitor for graph exclusion.
+     * <p>
+     * Both accessors route through {@link #acquireLock(java.util.concurrent.locks.Lock, LockKind)} so
+     * that a caller forced to actually wait (as opposed to acquiring immediately) is reflected in a
+     * {@code legend/lockContention} notification to connected clients - see that method's javadoc.
      */
-    public java.util.concurrent.locks.Lock graphReadLock()
+    public LockHandle acquireGraphReadLock()
     {
-        return this.graphLock.readLock();
+        return acquireLock(this.graphLock.readLock(), LockKind.READ);
     }
 
-    public java.util.concurrent.locks.Lock graphWriteLock()
+    public LockHandle acquireGraphWriteLock()
     {
-        return this.graphLock.writeLock();
+        return acquireLock(this.graphLock.writeLock(), LockKind.WRITE);
     }
 
     /**
@@ -318,15 +415,141 @@ public class LegendPureSession
      */
     public <T> T withGraphReadLock(java.util.function.Supplier<T> action)
     {
-        this.graphLock.readLock().lock();
-        try
+        try (LockHandle ignored = acquireGraphReadLock())
         {
             return action.get();
         }
-        finally
+    }
+
+    private enum LockKind
+    {
+        READ, WRITE
+    }
+
+    /**
+     * A held graphLock permit; {@link #close()} releases it (equivalent to {@code Lock.unlock()}). A
+     * plain method reference to {@code Lock::unlock} is enough to implement this, so callers get a
+     * try-with-resources-friendly handle without any extra wrapper object.
+     */
+    public interface LockHandle extends AutoCloseable
+    {
+        @Override
+        void close();
+    }
+
+    /**
+     * Acquires {@code lock}, but only broadcasts a {@code legend/lockContention} notification if this
+     * call actually has to wait for it (a caller granted the lock immediately produces no event, since
+     * there is nothing to tell a client about). Concurrent waiters collapse to a single active/cleared
+     * pair via {@link #blockedReaders}/{@link #blockedWriters}: the notification fires on the 0-&gt;1
+     * transition (first waiter) and clears on the 1-&gt;0 transition (last waiter granted the lock), so
+     * a burst of contending callers produces one "please wait" / one "cleared" pair rather than one
+     * per thread. The active side of that pair is itself debounced - see scheduleLockContentionNotification().
+     */
+    private LockHandle acquireLock(java.util.concurrent.locks.Lock lock, LockKind kind)
+    {
+        if (!lock.tryLock())
         {
-            this.graphLock.readLock().unlock();
+            onBlockStart(kind);
+            lock.lock();
+            onBlockEnd(kind);
         }
+        return lock::unlock;
+    }
+
+    private void onBlockStart(LockKind kind)
+    {
+        AtomicInteger gauge = kind == LockKind.READ ? this.blockedReaders : this.blockedWriters;
+        if (gauge.incrementAndGet() == 1)
+        {
+            scheduleLockContentionNotification(kind);
+        }
+    }
+
+    private void onBlockEnd(LockKind kind)
+    {
+        AtomicInteger gauge = kind == LockKind.READ ? this.blockedReaders : this.blockedWriters;
+        if (gauge.decrementAndGet() == 0)
+        {
+            ScheduledFuture<?> pending = pendingNotificationRef(kind).getAndSet(null);
+            if (pending != null)
+            {
+                pending.cancel(false);
+            }
+            if (publishedFlag(kind).getAndSet(false))
+            {
+                publishLockContention(false, kind);
+            }
+        }
+    }
+
+    /**
+     * Delays the "active" half of the notification pair by {@link #lockContentionNotificationDelayMs}:
+     * most contention clears before the timer fires (a routine compile racing a hover/definition call),
+     * in which case onBlockEnd() cancels this task and neither half of the pair is ever published - a
+     * client only hears about contention that actually outlasts the debounce window.
+     */
+    private void scheduleLockContentionNotification(LockKind kind)
+    {
+        AtomicInteger gauge = kind == LockKind.READ ? this.blockedReaders : this.blockedWriters;
+        ScheduledFuture<?> future = LOCK_CONTENTION_SCHEDULER.schedule(() ->
+        {
+            if (gauge.get() > 0)
+            {
+                publishedFlag(kind).set(true);
+                publishLockContention(true, kind);
+            }
+        }, this.lockContentionNotificationDelayMs, TimeUnit.MILLISECONDS);
+        pendingNotificationRef(kind).set(future);
+    }
+
+    private AtomicReference<ScheduledFuture<?>> pendingNotificationRef(LockKind kind)
+    {
+        return kind == LockKind.READ ? this.pendingReadContentionNotification : this.pendingWriteContentionNotification;
+    }
+
+    private AtomicBoolean publishedFlag(LockKind kind)
+    {
+        return kind == LockKind.READ ? this.readContentionPublished : this.writeContentionPublished;
+    }
+
+    private void publishLockContention(boolean active, LockKind kind)
+    {
+        LegendLanguageClient currentClient = this.client;
+        if (currentClient == null)
+        {
+            return;
+        }
+        try
+        {
+            currentClient.lockContention(new LockContentionEvent(active, kind == LockKind.READ ? "read" : "write",
+                    lockContentionReason(), this.graphLock.getQueueLength()));
+        }
+        catch (Exception e)
+        {
+            LOGGER.debug("Failed to publish lock contention notification", e);
+        }
+    }
+
+    /**
+     * Whether some caller is currently blocked waiting on either side of graphLock - folded into
+     * legend/status (see LspStatus) so a client polling status, not just one live-streaming
+     * legend/lockContention notifications, can also see it.
+     */
+    public boolean isLockContended()
+    {
+        return this.blockedReaders.get() > 0 || this.blockedWriters.get() > 0;
+    }
+
+    public String lockContentionReason()
+    {
+        if (!isLockContended())
+        {
+            return null;
+        }
+        return this.graphLock.isWriteLocked()
+                ? "write lock held (a compile is running)"
+                : "read lock(s) held (an execution is running)";
     }
 
     // These delegate straight to SourceMutationService, which takes the write lock itself (the single
@@ -351,29 +574,38 @@ public class LegendPureSession
      * Execution paths call this first (outside their read lock) so that by the time they hold the read
      * lock the graph is fully compiled and stable. When nothing is pending, compile() is a no-op.
      */
+    /**
+     * Compile any pending (uncompiled) sources. Every SourceMutationService mutation already
+     * compiles before releasing the write lock (the graphLock javadoc's single chokepoint), so by
+     * the time any caller reaches here the graph is provably already compiled in the common case -
+     * graphDirty lets that common case skip the write lock entirely instead of paying for a
+     * round-trip that can only ever find nothing to do. See the graphDirty field javadoc for why
+     * this is still correct (not just "usually correct") even if that invariant is ever violated by
+     * a future change.
+     */
     private void ensureCompiled()
     {
-        this.graphLock.writeLock().lock();
-        try
+        if (!this.graphDirty.get())
         {
-            if (this.pureRuntime != null)
+            return;
+        }
+        try (LockHandle ignored = acquireGraphWriteLock())
+        {
+            if (this.graphDirty.compareAndSet(true, false) && this.pureRuntime != null)
             {
                 this.pureRuntime.compile();
             }
-        }
-        finally
-        {
-            this.graphLock.writeLock().unlock();
         }
     }
 
     public ExecuteResult executeGo()
     {
-        return executeFunctionByCandidates(
+        FunctionCandidates candidates = new FunctionCandidates(
                 Lists.mutable.with("go():Any[*]", "go():String[*]", "go():String[1]"),
-                Lists.mutable.with("go__Any_MANY_", "go__String_MANY_", "go__String_1_"),
-                "go()",
-                "No go() function found in compiled sources. Define: function go():Any[*] { ... }");
+                Lists.mutable.with("go__Any_MANY_", "go__String_MANY_", "go__String_1_"));
+        return executeFunctionByCandidates(candidates, "go()",
+                "No go() function found in compiled sources. Define: function go():Any[*] { ... }",
+                null, null, null);
     }
 
     /**
@@ -388,12 +620,92 @@ public class LegendPureSession
      */
     public ExecuteResult executeFunction(String functionPath)
     {
+        return executeFunction(functionPath, null);
+    }
+
+    /**
+     * Same as {@link #executeFunction(String)}, but for a &lt;&lt;PCT.test&gt;&gt; function that takes
+     * exactly one parameter: the adapter {@code Function} resolved from {@code pctAdapterPath} (e.g.
+     * an in-memory vs. a real relational execution strategy). Mirrors the substitution
+     * {@code TestRunner#executeTestFunc} already performs for bulk PCT runs
+     * (org.finos.legend.pure.m3.execution.test.TestRunner in legend-pure-core) - resolve the adapter
+     * by path and pass it as the sole wrapped argument - without pulling in that class's
+     * TestCollection/TestCallBack machinery, which is built for running a whole suite rather than one
+     * function invoked from an IDE gutter icon. A null/blank pctAdapterPath behaves exactly like
+     * {@link #executeFunction(String)} (zero-argument call).
+     */
+    public ExecuteResult executeFunction(String functionPath, String pctAdapterPath)
+    {
+        return executeFunction(functionPath, pctAdapterPath, null, null);
+    }
+
+    /**
+     * Same as {@link #executeFunction(String, String)}, but additionally runs {@code beforeFunctionPath}
+     * (if set) immediately before, and {@code afterFunctionPath} (if set) immediately after, the target
+     * function - all three within the same read-lock/transaction/console-capture as a single atomic
+     * call. Mirrors {@code TestRunner#runTestsFromCollection}'s bracketing semantics at single-test
+     * granularity: a before-function failure aborts the whole call (the target function and after are
+     * never run); an after-function failure is appended to the output but never flips an otherwise
+     * successful target-function result to failure. Either path may be null/blank to skip that step.
+     */
+    public ExecuteResult executeFunction(String functionPath, String pctAdapterPath, String beforeFunctionPath, String afterFunctionPath)
+    {
         if (functionPath == null || functionPath.trim().isEmpty())
         {
             return new ExecuteResult(false, "Function path is required", null);
         }
         String path = functionPath.trim();
-        // Derive candidate lookups: the caller may pass a signature ("a::b():Any[*]") or a mangled id.
+        return executeFunctionByCandidates(buildFunctionCandidates(path), path,
+                "No function '" + path + "' found in compiled sources.", pctAdapterPath,
+                blankToNull(beforeFunctionPath), blankToNull(afterFunctionPath));
+    }
+
+    /**
+     * Finds the nearest {@code <<test.BeforePackage>>}/{@code <<test.AfterPackage>>} functions to
+     * {@code functionPath} (see {@link TestTools#findNearestBeforePackageFunction}) - used by the IDE
+     * gutter's "Run/Debug with Setup/Teardown" actions to discover what to bracket a test with before
+     * offering it as a follow-up execution.
+     */
+    public SetupTeardownResult findSetupTeardown(String functionPath)
+    {
+        if (functionPath == null || functionPath.trim().isEmpty() || !this.initialized)
+        {
+            return new SetupTeardownResult(null, null, null, null);
+        }
+
+        ensureCompiled();
+        try (LockHandle ignored = acquireGraphReadLock())
+        {
+            PureRuntime runtime = this.pureRuntime;
+            if (runtime == null)
+            {
+                return new SetupTeardownResult(null, null, null, null);
+            }
+            CoreInstance function = resolveFunction(runtime, buildFunctionCandidates(functionPath.trim()));
+            if (function == null)
+            {
+                return new SetupTeardownResult(null, null, null, null);
+            }
+            ProcessorSupport processorSupport = runtime.getProcessorSupport();
+            CoreInstance before = TestTools.findNearestBeforePackageFunction(function, processorSupport);
+            CoreInstance after = TestTools.findNearestAfterPackageFunction(function, processorSupport);
+            return new SetupTeardownResult(
+                    before == null ? null : PackageableElement.getUserPathForPackageableElement(before),
+                    before == null ? null : DocumentOutlineProvider.getSimpleFunctionName(before),
+                    after == null ? null : PackageableElement.getUserPathForPackageableElement(after),
+                    after == null ? null : DocumentOutlineProvider.getSimpleFunctionName(after));
+        }
+    }
+
+    private static String blankToNull(String value)
+    {
+        return (value == null || value.trim().isEmpty()) ? null : value.trim();
+    }
+
+    // Derive candidate lookups: the caller may pass a signature ("a::b():Any[*]"), a mangled id
+    // ("a::b__Any_MANY_"), or a bare path ("a::b") in which case common zero-arg return shapes are tried.
+    private static FunctionCandidates buildFunctionCandidates(String path)
+    {
         MutableList<String> signatureCandidates = Lists.mutable.empty();
         MutableList<String> idCandidates = Lists.mutable.empty();
         if (path.contains("("))
@@ -406,7 +718,6 @@ public class LegendPureSession
         }
         else
         {
-            // Bare path with no signature/mangling: try common zero-arg return shapes.
             signatureCandidates.add(path + "():Any[*]");
             signatureCandidates.add(path + "():Boolean[1]");
             signatureCandidates.add(path + "():String[*]");
@@ -416,13 +727,47 @@ public class LegendPureSession
             idCandidates.add(path + "__String_MANY_");
             idCandidates.add(path + "__String_1_");
         }
-        return executeFunctionByCandidates(signatureCandidates, idCandidates, path,
-                "No function '" + path + "' found in compiled sources.");
+        return new FunctionCandidates(signatureCandidates, idCandidates);
     }
 
-    private ExecuteResult executeFunctionByCandidates(MutableList<String> signatureCandidates,
-                                                      MutableList<String> idCandidates,
-                                                      String label, String notFoundMessage)
+    // Resolves a function against an already-fully-compiled runtime by trying each signature
+    // candidate first, then each mangled-id candidate. Caller must hold graphLock.readLock().
+    private static CoreInstance resolveFunction(PureRuntime runtime, FunctionCandidates candidates)
+    {
+        for (String sig : candidates.signatures)
+        {
+            CoreInstance function = runtime.getFunction(sig);
+            if (function != null)
+            {
+                return function;
+            }
+        }
+        for (String id : candidates.ids)
+        {
+            CoreInstance function = runtime.getCoreInstance(id);
+            if (function != null)
+            {
+                return function;
+            }
+        }
+        return null;
+    }
+
+    private static final class FunctionCandidates
+    {
+        final MutableList<String> signatures;
+        final MutableList<String> ids;
+
+        FunctionCandidates(MutableList<String> signatures, MutableList<String> ids)
+        {
+            this.signatures = signatures;
+            this.ids = ids;
+        }
+    }
+
+    private ExecuteResult executeFunctionByCandidates(FunctionCandidates candidates, String label,
+                                                        String notFoundMessage, String pctAdapterPath,
+                                                        String beforeFunctionPath, String afterFunctionPath)
     {
         if (!this.initialized)
         {
@@ -433,38 +778,54 @@ public class LegendPureSession
         // against a stable, fully-compiled graph.
         ensureCompiled();
 
-        this.graphLock.readLock().lock();
-        try
+        try (LockHandle ignored = acquireGraphReadLock())
         {
             PureRuntime runtime = this.pureRuntime;
             if (runtime == null)
             {
                 return new ExecuteResult(false, "Runtime not initialized", null);
             }
-            CoreInstance function = null;
-            for (String sig : signatureCandidates)
-            {
-                function = runtime.getFunction(sig);
-                if (function != null)
-                {
-                    break;
-                }
-            }
-            if (function == null)
-            {
-                for (String id : idCandidates)
-                {
-                    function = runtime.getCoreInstance(id);
-                    if (function != null)
-                    {
-                        break;
-                    }
-                }
-            }
+            CoreInstance function = resolveFunction(runtime, candidates);
             if (function == null)
             {
                 LspLog.info("execute: no function found for " + label);
                 return new ExecuteResult(false, notFoundMessage, null);
+            }
+
+            // Resolved eagerly (before anything runs) so a missing setup/teardown function fails fast
+            // rather than after the target function has already produced side effects/output.
+            CoreInstance beforeFunction = null;
+            if (beforeFunctionPath != null)
+            {
+                beforeFunction = resolveFunction(runtime, buildFunctionCandidates(beforeFunctionPath));
+                if (beforeFunction == null)
+                {
+                    return new ExecuteResult(false, "Before function '" + beforeFunctionPath + "' not found in compiled sources", null);
+                }
+            }
+            CoreInstance afterFunction = null;
+            if (afterFunctionPath != null)
+            {
+                afterFunction = resolveFunction(runtime, buildFunctionCandidates(afterFunctionPath));
+                if (afterFunction == null)
+                {
+                    return new ExecuteResult(false, "After function '" + afterFunctionPath + "' not found in compiled sources", null);
+                }
+            }
+
+            // A <<PCT.test>> function takes exactly one parameter: the adapter Function itself
+            // (see TestRunner#executeTestFunc in legend-pure-core, which this mirrors). Resolving the
+            // adapter and wrapping it as the sole argument here - rather than always calling with zero
+            // args - is what lets a PCT test be run directly by path from this session.
+            MutableList<CoreInstance> args = Lists.mutable.empty();
+            if (pctAdapterPath != null && !pctAdapterPath.trim().isEmpty())
+            {
+                CoreInstance adapter = _Package.getByUserPath(pctAdapterPath.trim(), runtime.getProcessorSupport());
+                if (adapter == null)
+                {
+                    return new ExecuteResult(false, "PCT adapter '" + pctAdapterPath.trim() + "' not found in compiled sources", null);
+                }
+                args.add(ValueSpecificationBootstrap.wrapValueSpecification(adapter, false, runtime.getProcessorSupport()));
             }
 
             // Fresh executor per call => own console + own cancelExecution flag (no cross-talk between
@@ -480,27 +841,67 @@ public class LegendPureSession
                     runtime.getModelRepository().newTransaction(false);
             try (org.finos.legend.pure.m4.transaction.framework.ThreadLocalTransactionContext ignore = txn.openInCurrentThread())
             {
-                LspLog.debug("execute: found " + label + " at "
-                        + (function.getSourceInformation() != null ? function.getSourceInformation().getSourceId() : "unknown"));
                 PrintStream capturePrintStream = new PrintStream(baos, true);
                 console.setPrintStream(capturePrintStream);
                 console.setConsole(true);
 
-                exec.start(function, FastList.newList());
-
-                String consoleOutput = baosToString(baos);
-                if (consoleOutput.isEmpty())
+                // Before-function failure aborts the whole call (target function and after never run) -
+                // mirrors TestRunner#runTestsFromCollection's fail-fast setup handling.
+                if (beforeFunction != null)
                 {
-                    consoleOutput = "(" + label + " returned successfully with no console output. Use print() to see results.)";
+                    try
+                    {
+                        exec.start(beforeFunction, Lists.mutable.empty());
+                    }
+                    catch (Exception e)
+                    {
+                        LOGGER.error("execute: before-function '" + beforeFunctionPath + "' failed for " + label, e);
+                        String errorText = "Setup function '" + beforeFunctionPath + "' failed:\n"
+                                + ExecutionFailureFormatter.format(e, baosToString(baos), this.functionExecution.getProcessorSupport());
+                        return new ExecuteResult(false, errorText, errorText);
+                    }
                 }
-                LspLog.debug("execute completed for " + label + ", output length: " + consoleOutput.length());
-                return new ExecuteResult(true, null, consoleOutput);
-            }
-            catch (Exception e)
-            {
-                LOGGER.error("execute failed for " + label, e);
-                String errorText = formatExecutionFailure(e, baos);
-                return new ExecuteResult(false, errorText, errorText);
+
+                LspLog.debug("execute: found " + label + " at "
+                        + (function.getSourceInformation() != null ? function.getSourceInformation().getSourceId() : "unknown"));
+
+                ExecuteResult mainResult;
+                try
+                {
+                    exec.start(function, args);
+                    String consoleOutput = baosToString(baos);
+                    if (consoleOutput.isEmpty())
+                    {
+                        consoleOutput = "(" + label + " returned successfully with no console output. Use print() to see results.)";
+                    }
+                    LspLog.debug("execute completed for " + label + ", output length: " + consoleOutput.length());
+                    mainResult = new ExecuteResult(true, null, consoleOutput);
+                }
+                catch (Exception e)
+                {
+                    LOGGER.error("execute failed for " + label, e);
+                    String errorText = ExecutionFailureFormatter.format(e, baosToString(baos), this.functionExecution.getProcessorSupport());
+                    mainResult = new ExecuteResult(false, errorText, errorText);
+                }
+
+                // After-function failure never overrides the target function's own success/failure -
+                // mirrors TestRunner#runTestsFromCollection, which likewise swallows teardown failures.
+                if (afterFunction != null)
+                {
+                    try
+                    {
+                        exec.start(afterFunction, Lists.mutable.empty());
+                    }
+                    catch (Exception e)
+                    {
+                        LOGGER.warn("execute: after-function '" + afterFunctionPath + "' failed for " + label, e);
+                        String afterError = "Teardown function '" + afterFunctionPath + "' failed: " + e.getMessage();
+                        String combinedOutput = (mainResult.getOutput() == null ? "" : mainResult.getOutput() + "\n") + afterError;
+                        mainResult = new ExecuteResult(mainResult.isSuccess(), mainResult.getError(), combinedOutput);
+                    }
+                }
+
+                return mainResult;
             }
             finally
             {
@@ -509,59 +910,6 @@ public class LegendPureSession
                 txn.rollback();
             }
         }
-        finally
-        {
-            this.graphLock.readLock().unlock();
-        }
-    }
-
-    private String formatExecutionFailure(Exception e, ByteArrayOutputStream consoleOutput)
-    {
-        StringBuilder builder = new StringBuilder();
-        String printed = baosToString(consoleOutput);
-        if (!printed.isEmpty())
-        {
-            builder.append(printed);
-            if (!printed.endsWith("\n"))
-            {
-                builder.append('\n');
-            }
-        }
-
-        PureException pureException = PureException.findPureException(e);
-        if (pureException != null)
-        {
-            PureException original = pureException.getOriginatingPureException();
-            if (original == null)
-            {
-                original = pureException;
-            }
-            if (pureException instanceof PureExecutionException)
-            {
-                builder.append(original.getMessage()).append('\n');
-                StringBuffer buffer = new StringBuffer();
-                ((PureExecutionException) pureException).printPureStackTrace(
-                        buffer, "", this.functionExecution.getProcessorSupport());
-                builder.append(buffer);
-            }
-            else if (pureException.hasPureStackTrace())
-            {
-                builder.append(original.getMessage()).append('\n')
-                        .append(pureException.getPureStackTrace("    "));
-            }
-            else
-            {
-                builder.append(original.getMessage());
-            }
-        }
-        else
-        {
-            StringWriter writer = new StringWriter();
-            e.printStackTrace(new PrintWriter(writer));
-            builder.append(writer);
-        }
-
-        return builder.toString();
     }
 
     private static String baosToString(ByteArrayOutputStream baos)
@@ -639,6 +987,10 @@ public class LegendPureSession
 
     public String resolveSourceId(String sourceId)
     {
+        if (sourceId == null)
+        {
+            return null;
+        }
         if (this.pureRuntime.getSourceById(sourceId) != null)
         {
             return sourceId;
@@ -677,6 +1029,42 @@ public class LegendPureSession
         public String getOutput()
         {
             return this.output;
+        }
+    }
+
+    public static class SetupTeardownResult
+    {
+        private final String beforeFunctionPath;
+        private final String beforeFunctionName;
+        private final String afterFunctionPath;
+        private final String afterFunctionName;
+
+        SetupTeardownResult(String beforeFunctionPath, String beforeFunctionName, String afterFunctionPath, String afterFunctionName)
+        {
+            this.beforeFunctionPath = beforeFunctionPath;
+            this.beforeFunctionName = beforeFunctionName;
+            this.afterFunctionPath = afterFunctionPath;
+            this.afterFunctionName = afterFunctionName;
+        }
+
+        public String getBeforeFunctionPath()
+        {
+            return this.beforeFunctionPath;
+        }
+
+        public String getBeforeFunctionName()
+        {
+            return this.beforeFunctionName;
+        }
+
+        public String getAfterFunctionPath()
+        {
+            return this.afterFunctionPath;
+        }
+
+        public String getAfterFunctionName()
+        {
+            return this.afterFunctionName;
         }
     }
 

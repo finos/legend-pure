@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.finos.legend.pure.lsp.LegendPureSession;
@@ -330,6 +331,92 @@ public class LegendDebugSessionTest
     }
 
     @Test(timeout = 60_000)
+    public void sharedModeAttachesToMainRuntimeAndDebugsAlreadyCompiledFunction()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_shared_go.pure";
+        String uri = "file:///workspace/debug_shared_go.pure";
+        String code =
+                "function go():Any[*]\n" +
+                        "{\n" +
+                        "  let x = 'shared';\n" +
+                        "  $x;\n" +
+                        "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        LegendDebugSession debug = LegendDebugSession.createShared(
+                session,
+                null,
+                uriMapper,
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, zeroBasedLine(code, "  $x;"))));
+
+        LegendDebug.Response paused = debug.start();
+        Assert.assertTrue(paused.isSuccess());
+        Assert.assertEquals("paused", paused.getState());
+        Assert.assertEquals("breakpoint", paused.getReason());
+        Assert.assertTrue(debug.variables().stream().anyMatch(variable -> "x".equals(variable.getName())));
+
+        LegendDebug.Response completed = debug.continueExecution();
+        Assert.assertTrue(completed.isSuccess());
+        Assert.assertEquals("completed", completed.getState());
+    }
+
+    @Test(timeout = 60_000)
+    public void sharedModeBlocksMainSessionCompileWhilePausedAndReleasesOnStop() throws Exception
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_shared_paused_go.pure";
+        String uri = "file:///workspace/debug_shared_paused_go.pure";
+        String code =
+                "function go():Any[*]\n" +
+                        "{\n" +
+                        "  let x = 'done';\n" +
+                        "  $x;\n" +
+                        "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        LegendDebugSession debug = LegendDebugSession.createShared(
+                session,
+                null,
+                uriMapper,
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, zeroBasedLine(code, "  $x;"))));
+        LegendDebug.Response paused = debug.start();
+        Assert.assertEquals("paused", paused.getState());
+
+        java.util.concurrent.CountDownLatch compileFinished = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicReference<LegendPureSession.CompileResult> compileResult = new java.util.concurrent.atomic.AtomicReference<>();
+        Thread compileThread = new Thread(() ->
+        {
+            compileResult.set(session.modifyAndCompile(
+                    "debug_shared_main_blocked.pure",
+                    "Class test::debug::SharedBlocked\n{\n  name: String[1];\n}\n"));
+            compileFinished.countDown();
+        });
+        compileThread.start();
+        try
+        {
+            Assert.assertFalse("Main session compile should be blocked while a SHARED debug session is paused",
+                    compileFinished.await(500, java.util.concurrent.TimeUnit.MILLISECONDS));
+
+            debug.stop();
+
+            Assert.assertTrue("Main session compile should complete once the SHARED debug session releases the graph lock",
+                    compileFinished.await(30, java.util.concurrent.TimeUnit.SECONDS));
+            Assert.assertTrue("Expected compile success: " + errorMessage(compileResult.get()), compileResult.get().isSuccess());
+        }
+        finally
+        {
+            compileThread.join(30_000);
+        }
+    }
+
+    @Test(timeout = 60_000)
     public void stepOverStaysInTheCurrentFunction()
     {
         LegendPureSession session = newInitializedSession();
@@ -377,6 +464,93 @@ public class LegendDebugSessionTest
         LegendDebug.Response stepped = debug.stepIn();
         Assert.assertEquals("step", stepped.getReason());
         Assert.assertEquals(3, stepped.getStackFrames().get(0).getLine());
+
+        debug.stop();
+    }
+
+    @Test(timeout = 60_000)
+    public void stepInEntersLambdaBodyPassedToNativeHigherOrderFunction()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_step_in_lambda_go.pure";
+        String uri = "file:///workspace/debug_step_in_lambda_go.pure";
+        String code =
+                "function go():Any[*]\n" +
+                        "{\n" +
+                        "  let x = [1, 2];\n" +
+                        "  let y = $x->map(i |\n" +
+                        "    print('mapping', 1);\n" +
+                        "    $i + 1;);\n" +
+                        "  print($y, 1);\n" +
+                        "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        LegendDebugSession debug = LegendDebugSession.create(
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, 3)));
+
+        Assert.assertEquals("let y = ...", 4, debug.start().getStackFrames().get(0).getLine());
+
+        LegendDebug.Response steppedIntoLambda = debug.stepIn();
+        Assert.assertEquals("step", steppedIntoLambda.getReason());
+        Assert.assertEquals("step into map's lambda should stop on its first statement",
+                5, steppedIntoLambda.getStackFrames().get(0).getLine());
+
+        LegendDebug.Response steppedToSecondStatement = debug.stepIn();
+        Assert.assertEquals("step", steppedToSecondStatement.getReason());
+        Assert.assertEquals("stepping again should advance to the lambda's second statement",
+                6, steppedToSecondStatement.getStackFrames().get(0).getLine());
+
+        debug.stop();
+    }
+
+    @Test(timeout = 60_000)
+    public void stepInEntersEachBranchLambdaOfIfAndFollowsLetStatements()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_step_in_if_lambda_go.pure";
+        String uri = "file:///workspace/debug_step_in_if_lambda_go.pure";
+        String code =
+                "function go():Any[*]\n" +
+                        "{\n" +
+                        "  let flag = true;\n" +
+                        "  if($flag,\n" +
+                        "     | let a = 1;\n" +
+                        "       let b = $a + 1;\n" +
+                        "       print($b, 1);,\n" +
+                        "     | print('false', 1););\n" +
+                        "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        LegendDebugSession debug = LegendDebugSession.create(
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, 3)));
+
+        Assert.assertEquals(4, debug.start().getStackFrames().get(0).getLine());
+
+        LegendDebug.Response first = debug.stepIn();
+        Assert.assertEquals("step into the true-branch lambda should stop on its first (let) statement",
+                5, first.getStackFrames().get(0).getLine());
+
+        LegendDebug.Response second = debug.stepIn();
+        Assert.assertEquals("stepping should follow subsequent let statements inside the lambda",
+                6, second.getStackFrames().get(0).getLine());
+
+        LegendDebug.Response third = debug.stepIn();
+        Assert.assertEquals("stepping should reach the lambda's final statement",
+                7, third.getStackFrames().get(0).getLine());
 
         debug.stop();
     }
@@ -555,6 +729,54 @@ public class LegendDebugSessionTest
     }
 
     @Test(timeout = 60_000)
+    public void variablesPanelSupportsMultiLevelNestedExpansion()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_multi_level_nested_locals.pure";
+        String uri = "file:///workspace/debug_multi_level_nested_locals.pure";
+        String code =
+                "###Pure\n" +
+                        "Class test::debug::nested::Address\n" +
+                        "{\n" +
+                        "  city: String[1];\n" +
+                        "}\n" +
+                        "Class test::debug::nested::Person\n" +
+                        "{\n" +
+                        "  name: String[1];\n" +
+                        "  address: test::debug::nested::Address[1];\n" +
+                        "}\n" +
+                        "function go():Any[*]\n" +
+                        "{\n" +
+                        "  let address = ^test::debug::nested::Address(city='London');\n" +
+                        "  let person = ^test::debug::nested::Person(name='Ada', address=$address);\n" +
+                        "  $person;\n" +
+                        "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        LegendDebugSession debug = debugAtBreakpoint(session, sourceId, uri, code, "  $person;");
+
+        LegendDebug.Response paused = debug.start();
+        Assert.assertTrue(paused.isSuccess());
+        Assert.assertEquals("paused", paused.getState());
+
+        List<LegendDebug.Variable> locals = debug.variables(1);
+        LegendDebug.Variable person = variable(locals, "person");
+        Assert.assertTrue("A Person instance should be expandable", person.getVariablesReference() > 0);
+
+        List<LegendDebug.Variable> personChildren = debug.variables(person.getVariablesReference());
+        Assert.assertEquals("Ada", variable(personChildren, "name").getValue());
+        LegendDebug.Variable address = variable(personChildren, "address");
+        Assert.assertTrue("A nested Address instance should itself be expandable, not flattened to a leaf",
+                address.getVariablesReference() > 0);
+
+        List<LegendDebug.Variable> addressChildren = debug.variables(address.getVariablesReference());
+        Assert.assertEquals("Real grandchild data should be reachable, not just the top level",
+                "London", variable(addressChildren, "city").getValue());
+
+        debug.stop();
+    }
+
+    @Test(timeout = 60_000)
     public void localsAppearOnlyAfterAssignmentHasExecuted()
     {
         LegendPureSession session = newInitializedSession();
@@ -608,6 +830,408 @@ public class LegendDebugSessionTest
         assertCompiled(session.modifyAndCompile(sourceId, code));
 
         assertBreakpointLine(session, sourceId, uri, 3, 4);
+    }
+
+    @Test(timeout = 60_000)
+    public void updatingBreakpointsToRemoveMidSessionStopsFurtherPausesOnThatLine()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_update_breakpoints_remove_go.pure";
+        String uri = "file:///workspace/debug_update_breakpoints_remove_go.pure";
+        String code = mapPrintCode(new int[] {1, 2});
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        int breakpointLine = zeroBasedLine(code, "    print($n, 1);");
+        LegendDebugSession debug = LegendDebugSession.create(
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, breakpointLine)));
+
+        LegendDebug.Response firstPause = debug.start();
+        Assert.assertEquals("paused", firstPause.getState());
+        Assert.assertEquals("breakpoint", firstPause.getReason());
+        Assert.assertEquals("1", variable(debug.variables(), "n").getValue());
+
+        debug.updateBreakpoints(Collections.emptyList());
+
+        LegendDebug.Response completed = debug.continueExecution();
+        Assert.assertTrue(completed.isSuccess());
+        Assert.assertEquals("Second iteration should not re-pause once the breakpoint was removed mid-session",
+                "completed", completed.getState());
+    }
+
+    @Test(timeout = 60_000)
+    public void updatingBreakpointsToAddMidSessionPausesOnTheNewLine()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_update_breakpoints_add_go.pure";
+        String uri = "file:///workspace/debug_update_breakpoints_add_go.pure";
+        String code =
+                "function go():Any[*]\n" +
+                        "{\n" +
+                        "  print('start', 1);\n" +
+                        "  let numbers = [1, 2];\n" +
+                        "  $numbers->map(n |\n" +
+                        "    print($n, 1);\n" +
+                        "    $n;\n" +
+                        "  );\n" +
+                        "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        int startBreakpointLine = zeroBasedLine(code, "  print('start', 1);");
+        int loopBreakpointLine = zeroBasedLine(code, "    print($n, 1);");
+        LegendDebugSession debug = LegendDebugSession.create(
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, startBreakpointLine)));
+
+        LegendDebug.Response firstPause = debug.start();
+        Assert.assertEquals("paused", firstPause.getState());
+        Assert.assertEquals(startBreakpointLine + 1, firstPause.getStackFrames().get(0).getLine());
+
+        debug.updateBreakpoints(Arrays.asList(
+                new LegendDebug.Breakpoint(uri, startBreakpointLine),
+                new LegendDebug.Breakpoint(uri, loopBreakpointLine)));
+
+        LegendDebug.Response secondPause = debug.continueExecution();
+        Assert.assertEquals("Newly-added breakpoint should pause once execution reaches it",
+                "paused", secondPause.getState());
+        Assert.assertEquals("breakpoint", secondPause.getReason());
+        Assert.assertEquals(loopBreakpointLine + 1, secondPause.getStackFrames().get(0).getLine());
+
+        debug.stop();
+    }
+
+    @Test(timeout = 60_000)
+    public void conditionalBreakpointOnlyPausesWhenConditionIsTrue()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_conditional_breakpoint_go.pure";
+        String uri = "file:///workspace/debug_conditional_breakpoint_go.pure";
+        String code = mapPrintCode(new int[] {1, 2, 3});
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        int breakpointLine = zeroBasedLine(code, "    print($n, 1);");
+        LegendDebugSession debug = LegendDebugSession.create(
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, breakpointLine, "$n == 2")));
+
+        LegendDebug.Response paused = debug.start();
+        Assert.assertTrue("Expected a conditional pause: " + paused.getMessage(), paused.isSuccess());
+        Assert.assertEquals("paused", paused.getState());
+        Assert.assertEquals("breakpoint", paused.getReason());
+        Assert.assertEquals("2", variable(debug.variables(), "n").getValue());
+
+        LegendDebug.Response completed = debug.continueExecution();
+        Assert.assertTrue(completed.isSuccess());
+        Assert.assertEquals("Only the iteration matching the condition should pause",
+                "completed", completed.getState());
+    }
+
+    @Test(timeout = 60_000)
+    public void conditionalBreakpointThatIsAlwaysFalseNeverPauses()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_conditional_breakpoint_always_false_go.pure";
+        String uri = "file:///workspace/debug_conditional_breakpoint_always_false_go.pure";
+        String code = mapPrintCode(new int[] {1, 2});
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        int breakpointLine = zeroBasedLine(code, "    print($n, 1);");
+        LegendDebugSession debug = LegendDebugSession.create(
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, breakpointLine, "false")));
+
+        LegendDebug.Response result = debug.start();
+        Assert.assertTrue("Expected the run to complete: " + result.getMessage(), result.isSuccess());
+        Assert.assertEquals("A breakpoint with condition `false` should never pause, on either iteration",
+                "completed", result.getState());
+    }
+
+    @Test(timeout = 60_000)
+    public void conditionalBreakpointOnNestedCallLineThatIsAlwaysFalseNeverPauses()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_conditional_breakpoint_nested_go.pure";
+        String uri = "file:///workspace/debug_conditional_breakpoint_nested_go.pure";
+        // Two FunctionExpression nodes on one line (toString, then print) - per Phase 1, each
+        // nested call is its own pause-checkpoint, so this line yields 2 condition evaluations
+        // per loop iteration, not 1.
+        String code = "function go():Any[*]\n" +
+                "{\n" +
+                "  let numbers = [1, 2];\n" +
+                "  $numbers->map(n |\n" +
+                "    print($n->toString(), 1);\n" +
+                "  );\n" +
+                "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        int breakpointLine = zeroBasedLine(code, "    print($n->toString(), 1);");
+        LegendDebugSession debug = LegendDebugSession.create(
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, breakpointLine, "false")));
+
+        LegendDebug.Response result = debug.start();
+        Assert.assertTrue("Expected the run to complete: " + result.getMessage(), result.isSuccess());
+        Assert.assertEquals("A breakpoint with condition `false` on a line with nested calls should never pause",
+                "completed", result.getState());
+    }
+
+    @Test(timeout = 60_000)
+    public void conditionalBreakpointWithVariableConditionNeverTrueNeverPauses()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_conditional_breakpoint_never_true_go.pure";
+        String uri = "file:///workspace/debug_conditional_breakpoint_never_true_go.pure";
+        String code = mapPrintCode(new int[] {1, 2, 3, 4, 5});
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        int breakpointLine = zeroBasedLine(code, "    print($n, 1);");
+        LegendDebugSession debug = LegendDebugSession.create(
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, breakpointLine, "$n == 99")));
+
+        LegendDebug.Response result = debug.start();
+        Assert.assertTrue("Expected the run to complete: " + result.getMessage(), result.isSuccess());
+        Assert.assertEquals("A never-true condition must not pause on any of the 5 iterations",
+                "completed", result.getState());
+    }
+
+    @Test(timeout = 60_000)
+    public void conditionalBreakpointInFunctionCalledTwiceNeverPausesWhenFalse()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_conditional_breakpoint_two_calls_go.pure";
+        String uri = "file:///workspace/debug_conditional_breakpoint_two_calls_go.pure";
+        // A line hit twice via two separate calls (two distinct frames), rather than a loop.
+        String code = "function helper(x:Integer[1]):Any[*]\n" +
+                "{\n" +
+                "  print($x, 1);\n" +
+                "}\n" +
+                "\n" +
+                "function go():Any[*]\n" +
+                "{\n" +
+                "  helper(1);\n" +
+                "  helper(2);\n" +
+                "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        int breakpointLine = zeroBasedLine(code, "  print($x, 1);");
+        LegendDebugSession debug = LegendDebugSession.create(
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, breakpointLine, "$x == 99")));
+
+        LegendDebug.Response result = debug.start();
+        Assert.assertTrue("Expected the run to complete: " + result.getMessage(), result.isSuccess());
+        Assert.assertEquals("A never-true condition must not pause on either call",
+                "completed", result.getState());
+    }
+
+    @Test(timeout = 60_000)
+    public void sharedModeConditionalBreakpointThatIsAlwaysFalseNeverPauses()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_shared_conditional_false_go.pure";
+        String uri = "file:///workspace/debug_shared_conditional_false_go.pure";
+        String code = mapPrintCode(new int[] {1, 2});
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        int breakpointLine = zeroBasedLine(code, "    print($n, 1);");
+        // SHARED is what the IntelliJ client actually launches with, and unlike FORKED it evaluates
+        // conditions against the live main runtime while holding its graph read lock.
+        LegendDebugSession debug = LegendDebugSession.createShared(
+                session,
+                null,
+                uriMapper,
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, breakpointLine, "false")));
+
+        LegendDebug.Response result = debug.start();
+        Assert.assertTrue("Expected the run to complete: " + result.getMessage(), result.isSuccess());
+        Assert.assertEquals("A `false` condition must not pause on either iteration in SHARED mode",
+                "completed", result.getState());
+    }
+
+    @Test(timeout = 60_000)
+    public void sharedModeConditionalBreakpointWithVariableConditionNeverTrueNeverPauses()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_shared_conditional_never_true_go.pure";
+        String uri = "file:///workspace/debug_shared_conditional_never_true_go.pure";
+        String code = mapPrintCode(new int[] {1, 2, 3});
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        int breakpointLine = zeroBasedLine(code, "    print($n, 1);");
+        LegendDebugSession debug = LegendDebugSession.createShared(
+                session,
+                null,
+                uriMapper,
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, breakpointLine, "$n == 99")));
+
+        LegendDebug.Response result = debug.start();
+        Assert.assertTrue("Expected the run to complete: " + result.getMessage(), result.isSuccess());
+        Assert.assertEquals("A never-true condition must not pause on any iteration in SHARED mode",
+                "completed", result.getState());
+    }
+
+    @Test(timeout = 60_000)
+    public void logpointLogsInterpolatedMessageWithoutPausing()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_logpoint_go.pure";
+        String uri = "file:///workspace/debug_logpoint_go.pure";
+        String code = mapPrintCode(new int[] {1, 2});
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        int breakpointLine = zeroBasedLine(code, "    print($n, 1);");
+        LegendDebug.Breakpoint logpoint = new LegendDebug.Breakpoint(uri, breakpointLine, null, "n is {$n}");
+        LegendDebugSession debug = LegendDebugSession.create(
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(logpoint));
+
+        LegendDebug.Response result = debug.start();
+        Assert.assertTrue("Expected the run to complete: " + result.getMessage(), result.isSuccess());
+        Assert.assertEquals("A logpoint must never suspend", "completed", result.getState());
+        Assert.assertTrue("Expected the interpolated logpoint output, got: " + result.getOutput(),
+                result.getOutput() != null && result.getOutput().contains("n is 1"));
+        Assert.assertTrue("Expected the logpoint to fire on every iteration, got: " + result.getOutput(),
+                result.getOutput().contains("n is 2"));
+    }
+
+    @Test(timeout = 60_000)
+    public void breakpointWithUnevaluableConditionExplainsWhyItPaused()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_condition_failure_note_go.pure";
+        String uri = "file:///workspace/debug_condition_failure_note_go.pure";
+        String code =
+                "function go():Any[*]\n" +
+                        "{\n" +
+                        "  print('value', 1);\n" +
+                        "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        int breakpointLine = zeroBasedLine(code, "  print('value', 1);");
+        LegendDebugSession debug = LegendDebugSession.create(
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, breakpointLine, "$nope == 2")));
+
+        LegendDebug.Response paused = debug.start();
+        Assert.assertEquals("paused", paused.getState());
+        Assert.assertTrue("A fail-open pause must say why on the console, got: " + paused.getOutput(),
+                paused.getOutput() != null && paused.getOutput().contains("could not be evaluated"));
+
+        debug.stop();
+    }
+
+    @Test(timeout = 60_000)
+    public void conditionalBreakpointWithMalformedConditionFailsOpenAndPauses()
+    {
+        LegendPureSession session = newInitializedSession();
+        String sourceId = "debug_conditional_breakpoint_malformed_go.pure";
+        String uri = "file:///workspace/debug_conditional_breakpoint_malformed_go.pure";
+        String code =
+                "function go():Any[*]\n" +
+                        "{\n" +
+                        "  print('value', 1);\n" +
+                        "}\n";
+        assertCompiled(session.modifyAndCompile(sourceId, code));
+
+        UriMapper uriMapper = new UriMapper();
+        uriMapper.register(uri, sourceId);
+        int breakpointLine = zeroBasedLine(code, "  print('value', 1);");
+        LegendDebugSession debug = LegendDebugSession.create(
+                session,
+                null,
+                uriMapper,
+                Collections.emptyMap(),
+                "go():Any[*]",
+                Collections.singletonList(new LegendDebug.Breakpoint(uri, breakpointLine, "$undefinedVariable == 2")));
+
+        LegendDebug.Response paused = debug.start();
+        Assert.assertTrue("A broken condition should fail open and still pause: " + paused.getMessage(), paused.isSuccess());
+        Assert.assertEquals("paused", paused.getState());
+        Assert.assertEquals("breakpoint", paused.getReason());
+
+        debug.stop();
+    }
+
+    private static String mapPrintCode(int[] values)
+    {
+        StringBuilder literal = new StringBuilder();
+        for (int i = 0; i < values.length; i++)
+        {
+            if (i > 0)
+            {
+                literal.append(", ");
+            }
+            literal.append(values[i]);
+        }
+        return "function go():Any[*]\n" +
+                "{\n" +
+                "  let numbers = [" + literal + "];\n" +
+                "  $numbers->map(n |\n" +
+                "    print($n, 1);\n" +
+                "    $n;\n" +
+                "  );\n" +
+                "}\n";
     }
 
     private static String steppingCode()

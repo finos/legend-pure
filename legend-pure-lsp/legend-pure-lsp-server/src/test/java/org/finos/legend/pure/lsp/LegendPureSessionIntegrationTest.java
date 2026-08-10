@@ -69,6 +69,16 @@ public class LegendPureSessionIntegrationTest
     }
 
     @Test
+    public void modifyAndCompile_nullSourceId_isSafeNoOp()
+    {
+        // UriMapper.toSourceId() returns null for a .pure file that isn't part of any registered Pure
+        // module (a fixture resource that merely has the extension) - modifyAndCompile must treat that
+        // the same as "not ready" rather than dereferencing the null sourceId.
+        LegendPureSession.CompileResult result = session.modifyAndCompile(null, "irrelevant content");
+        Assert.assertFalse("Null sourceId means nothing to compile", result.isReady());
+    }
+
+    @Test
     public void compile_invalidPureCode_returnsCompileError()
     {
         LegendPureSession.CompileResult result = session.modifyAndCompile(
@@ -152,6 +162,48 @@ public class LegendPureSessionIntegrationTest
         Assert.assertEquals("Invalid background edit must remain on disk", invalidDiskContent, new String(Files.readAllBytes(sourceFile)));
         Assert.assertEquals("Runtime should keep last good source content after failed background compile",
                 originalContent, workspaceSession.getPureRuntime().getSourceById(sourceId).getContent());
+    }
+
+    @Test
+    public void modifyAndCompile_neverBeforeCompiledSourceWithCompileError_isNotInternalAndRuntimeStaysUsable() throws Exception
+    {
+        // Reproduces a source that is on disk, backed by a real workspace repo, but has never been
+        // loaded/compiled this session (e.g. a file the agent just wrote, then immediately pushed via
+        // textDocument/didChange). Its first-ever compile attempt failing used to be misclassified as
+        // an internal error - see SourceMutationService#modifyAndCompile's snapshot-before-load fix.
+        Path workspaceRoot = Files.createTempDirectory("pure-lsp-never-compiled-error-test");
+        Path resourcesDir = workspaceRoot.resolve("new-module/src/main/resources");
+        Path repoDir = resourcesDir.resolve("never_compiled_repo");
+        Files.createDirectories(repoDir);
+
+        String brokenContent = "function test::neverbefore::dummySix():String[1]\n{\n  dummyMissingPiece();\n}\n";
+        Files.write(resourcesDir.resolve("never_compiled_repo.definition.json"),
+                ("{\"name\":\"never_compiled_repo\","
+                        + "\"pattern\":\"(test::neverbefore)(::.*)?\","
+                        + "\"dependencies\":[\"platform\"]}").getBytes());
+        // Deliberately no BrandNew.pure written to disk yet - the whole point is that this source has
+        // never existed anywhere (not on disk, not in the runtime) until the modifyAndCompile call below
+        // introduces it live, matching a freshly-created file pushed via textDocument/didChange before
+        // it's ever been part of a scan.
+
+        RepositoryScanner scanner = new RepositoryScanner();
+        scanner.scan(Collections.singletonList(workspaceRoot));
+
+        LegendPureSession workspaceSession = new LegendPureSession();
+        workspaceSession.initialize(scanner);
+
+        String sourceId = "/never_compiled_repo/BrandNew.pure";
+        LegendPureSession.CompileResult result = workspaceSession.modifyAndCompile(sourceId, brokenContent);
+
+        Assert.assertFalse("A plain unresolved-function error must not be misreported as internal", result.isInternalError());
+        Assert.assertFalse("Compile should be reported as failed", result.isSuccess());
+        Assert.assertNotNull(result.getError());
+
+        String validContent = "function test::neverbefore::workingFunc():Boolean[1]\n{\n  true;\n}\n";
+        LegendPureSession.CompileResult secondResult = workspaceSession.modifyAndCompile(
+                "/never_compiled_repo/Working.pure", validContent);
+        Assert.assertTrue("Runtime must still be healthy for a subsequent, unrelated, valid source: "
+                + (secondResult.getError() == null ? null : secondResult.getError().getMessage()), secondResult.isSuccess());
     }
 
     @Test
@@ -312,6 +364,37 @@ public class LegendPureSessionIntegrationTest
         Assert.assertTrue("Safe class should still compile after immutable source modification attempt, got: "
                 + (r2.getError() != null ? r2.getError().getMessage() : ""),
                 r2.isSuccess());
+    }
+
+    // -- restoreFromDisk race tests --
+
+    @Test
+    public void restoreFromDisk_inMemorySourceAlreadyDeleted_isSafeNoOp()
+    {
+        // Reproduces the didClose/legend-deleteFile race: a bare in-memory scratch source (e.g.
+        // welcome.pure) whose live Source is removed (simulated here via a direct runtime.delete)
+        // before restoreFromDisk runs for the same id. restoreFromDisk must not fall through to a
+        // disk reload for a bare id - that used to throw "'welcome.pure' should not be in memory!"
+        // and get misclassified as an internal error, triggering full session recovery.
+        session.reinitialize();
+
+        LegendPureSession.CompileResult created = session.modifyAndCompile(
+                "welcome.pure",
+                "function go():Any[*]\n{\n  'scratch'\n}\n"
+        );
+        Assert.assertTrue("Scratch source should compile", created.isSuccess());
+
+        session.getPureRuntime().delete("welcome.pure");
+        session.getPureRuntime().compile();
+
+        LegendPureSession.CompileResult result = session.restoreFromDisk("welcome.pure");
+
+        Assert.assertFalse("Restoring an already-deleted in-memory source is not an internal error: "
+                + (result.getError() == null ? null : result.getError().getMessage()),
+                result.isInternalError());
+        Assert.assertTrue("Session must stay healthy, not enter recovery", session.isInitialized());
+        Assert.assertNull("Nothing should be reloaded for the bare in-memory id",
+                session.getPureRuntime().getSourceById("welcome.pure"));
     }
 
     // -- Execute go() tests --

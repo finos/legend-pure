@@ -50,6 +50,12 @@ public class FileChangeHandler
             }
 
             String sourceId = this.uriMapper.toSourceId(event.getUri());
+            if (sourceId == null)
+            {
+                // Not part of any registered Pure module (e.g. a fixture resource that merely has a
+                // .pure extension) - nothing for the runtime to create, modify, or delete.
+                continue;
+            }
 
             if (event.getType() == FileChangeType.Deleted)
             {
