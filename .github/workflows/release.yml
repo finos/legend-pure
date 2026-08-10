@@ -289,3 +289,47 @@ jobs:
         run: mvn -B release:perform -P release -Darguments="-DskipTests"
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
+
+      - name: Explain how to recover
+        # Deliberately advice, not an automatic rollback: autoPublish is on and
+        # a release that reached Maven Central cannot be withdrawn, so whether
+        # the tag survives is a human decision. What this can do is remove the
+        # guesswork -- `Clean repo after failed release` infers "the last two
+        # commits" and "the latest tag", where the exact refs are known here.
+        if: failure()
+        run: |
+          set -euo pipefail
+          remote_tag="$(git ls-remote origin "refs/tags/${RELEASE_TAG}" 2> /dev/null | awk -v ref="refs/tags/${RELEASE_TAG}" '$2 == ref { print $1 }')" || true
+          {
+            echo "## Release ${RELEASE_VERSION} failed"
+            echo
+            if [ -z "${remote_tag}" ]; then
+              echo "**Nothing was pushed.** The tag ${RELEASE_TAG} does not exist on the remote,"
+              echo "and ${RELEASE_BRANCH} is still at ${RELEASE_SHA}. Nothing needs cleaning up:"
+              echo "fix the cause and dispatch the release again."
+            else
+              echo "**The tag and the version bumps are already pushed**, so this failed during"
+              echo "release:perform. Recover by hand, in this order:"
+              echo
+              echo "1. Work out whether anything reached Maven Central. This project publishes"
+              echo "   with autoPublish enabled and publishing cannot be undone:"
+              echo
+              echo "       https://repo1.maven.org/maven2/org/finos/legend/pure/legend-pure/${RELEASE_VERSION}/"
+              echo
+              echo "   Check the Central portal too, for a deployment stuck in validation."
+              echo "2. If ${RELEASE_VERSION} **was** published, leave the tag and the commits"
+              echo "   alone and release the next patch version instead."
+              echo "3. Only if nothing was published, undo exactly what this run pushed:"
+              echo
+              echo "       git push --delete origin ${RELEASE_TAG}"
+              echo "       git push --force-with-lease=refs/heads/${RELEASE_BRANCH}:$(git rev-parse HEAD) \\"
+              echo "           origin ${RELEASE_SHA}:refs/heads/${RELEASE_BRANCH}"
+              echo
+              echo "   The lease makes the rewind fail if anything landed on ${RELEASE_BRANCH}"
+              echo "   after this run pushed. Do not force past it without first working out"
+              echo "   what that commit was."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${remote_tag}" ]; then
+            echo "::error::Release ${RELEASE_VERSION} failed after pushing ${RELEASE_TAG}. See the job summary for recovery steps."
+          fi
