@@ -30,6 +30,11 @@ on:
       releaseVersion:
         description: "New release version"
         required: true
+      dryRun:
+        description: "Rehearse the release without pushing or publishing anything"
+        type: boolean
+        required: false
+        default: false
 
 # Everything that writes to the repository -- the checkout, the atomic push,
 # maven-release-plugin's SCM calls -- authenticates with FINOS_GITHUB_TOKEN,
@@ -43,8 +48,10 @@ permissions:
 # so two runs at once would race each other. Never cancel one in flight: a
 # release killed between pushing the tag and publishing needs the manual
 # `Clean repo after failed release` workflow to recover.
+# Dry runs get their own lane -- they push nothing, so there is no reason to
+# make a real release queue behind an hour of rehearsal.
 concurrency:
-  group: release-${{ github.repository }}
+  group: release-${{ github.repository }}-${{ inputs.dryRun }}
   cancel-in-progress: false
 
 jobs:
@@ -98,6 +105,7 @@ jobs:
           # Via the environment, never interpolated into the script: a
           # workflow input is attacker-controlled as far as the shell cares.
           RELEASE_VERSION: ${{ inputs.releaseVersion }}
+          DRY_RUN: ${{ inputs.dryRun }}
         run: |
           set -euo pipefail
           if ! printf '%s' "${RELEASE_VERSION}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
@@ -118,7 +126,11 @@ jobs:
           echo "release=${RELEASE_VERSION}" >> "$GITHUB_OUTPUT"
           echo "development=${development}" >> "$GITHUB_OUTPUT"
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
-          echo "Releasing ${GITHUB_REF#refs/heads/} at ${GITHUB_SHA} as ${tag} (next development version ${development})." >> "$GITHUB_STEP_SUMMARY"
+          if [ "${DRY_RUN}" = "true" ]; then
+            echo "Dry run: would release ${GITHUB_REF#refs/heads/} at ${GITHUB_SHA} as ${tag} (next development version ${development}). Nothing will be pushed or published." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Releasing ${GITHUB_REF#refs/heads/} at ${GITHUB_SHA} as ${tag} (next development version ${development})." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   verify:
     # The build-once, test-on-every-JDK pipeline, shared with `Build CI` so
@@ -261,7 +273,29 @@ jobs:
             exit 1
           fi
 
+      - name: Report the dry run
+        if: ${{ inputs.dryRun }}
+        run: |
+          set -euo pipefail
+          tagged="$(git rev-parse "${RELEASE_TAG}^{commit}")"
+          poms="$(git diff --name-only "${RELEASE_SHA}" "${tagged}" | wc -l)"
+          {
+            echo "## Dry run: release ${RELEASE_VERSION} would have gone ahead"
+            echo
+            echo "Checked, without touching the remote:"
+            echo
+            echo "- ${RELEASE_BRANCH} pinned at ${RELEASE_SHA}, green on every supported JDK"
+            echo "- ${RELEASE_BRANCH} has not moved since, and ${RELEASE_TAG} does not exist yet"
+            echo "- release:prepare produced ${RELEASE_TAG} as ${tagged}, a direct child of the tested commit"
+            echo "- it rewrote ${poms} pom files and nothing else"
+            echo "- the next development version would be ${DEVELOPMENT_VERSION}"
+            echo
+            echo "Not run: the atomic push of ${RELEASE_BRANCH} and ${RELEASE_TAG}, and release:perform."
+            echo "Dispatch again with dryRun unchecked to release for real."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Push the release commits and tag
+        if: ${{ !inputs.dryRun }}
         run: |
           set -euo pipefail
           # The point of no return, and the last gate. The branch update is a
@@ -286,6 +320,7 @@ jobs:
         # there because the `test` jobs above already ran the whole suite on
         # every supported JDK against this exact code; this fork only needs to
         # compile and publish.
+        if: ${{ !inputs.dryRun }}
         run: mvn -B release:perform -P release -Darguments="-DskipTests"
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
