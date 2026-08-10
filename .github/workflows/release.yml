@@ -112,6 +112,23 @@ jobs:
             echo "::error::releaseVersion must be MAJOR.MINOR.PATCH; got '${RELEASE_VERSION}'."
             exit 1
           fi
+          # The branch has to be on a snapshot, and the release must not go
+          # backwards from it. The tag check below catches re-releasing a
+          # version that shipped; this catches a typo that names one which
+          # never did, which nothing else would notice.
+          current="$(python3 -c 'import xml.etree.ElementTree as ET; ns="{http://maven.apache.org/POM/4.0.0}"; print(ET.parse("pom.xml").getroot().find(ns + "version").text)')"
+          case "${current}" in
+            *-SNAPSHOT) ;;
+            *)
+              echo "::error::The root pom is at ${current}, not a snapshot; this branch is not in a releasable state."
+              exit 1
+              ;;
+          esac
+          base="${current%-SNAPSHOT}"
+          if [ "$(printf '%s\n%s\n' "${base}" "${RELEASE_VERSION}" | sort -V | head -n 1)" != "${base}" ]; then
+            echo "::error::releaseVersion ${RELEASE_VERSION} is below the branch's current version ${current}."
+            exit 1
+          fi
           IFS=. read -r major minor patch <<< "${RELEASE_VERSION}"
           development="${major}.${minor}.$((patch + 1))-SNAPSHOT"
           # maven-release-plugin's default tagNameFormat is
@@ -174,7 +191,11 @@ jobs:
           # maven-release-plugin needs a branch to commit the version bumps
           # onto. Base that branch on the tested commit, never on whatever the
           # remote tip has become in the meantime.
-          test "$(git rev-parse HEAD)" = "${RELEASE_SHA}"
+          head="$(git rev-parse HEAD)"
+          if [ "${head}" != "${RELEASE_SHA}" ]; then
+            echo "::error::Checkout is at ${head}, not the pinned commit ${RELEASE_SHA}."
+            exit 1
+          fi
           git checkout -B "${RELEASE_BRANCH}" "${RELEASE_SHA}"
 
       - name: Configure git
@@ -248,7 +269,6 @@ jobs:
           -DreleaseVersion="${RELEASE_VERSION}"
           -DdevelopmentVersion="${DEVELOPMENT_VERSION}"
           -Dtag="${RELEASE_TAG}"
-          -Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports-aggregate
           -P release
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=25.0

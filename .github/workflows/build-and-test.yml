@@ -174,12 +174,14 @@ jobs:
       - name: Extract build output
         run: tar -xf build-output.tar
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v5
+      - name: Restore Maven dependencies
+        # Restore-only: the build job already saved this exact key, so there
+        # is nothing here that could be new.
+        uses: actions/cache/restore@v5
         env:
           cache-name: cache-mvn-deps
         with:
-          # Never cache this project's own artifacts (see the build job).
+          # Never restore this project's own artifacts (see the build job).
           path: |
             ~/.m2/repository
             !~/.m2/repository/org/finos/legend/pure
@@ -272,12 +274,13 @@ jobs:
           name: test-results-jdk25
           path: ${{ github.workspace }}/surefire-reports-aggregate-jdk25
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v5
+      - name: Restore Maven dependencies
+        # Restore-only, as in the test job.
+        uses: actions/cache/restore@v5
         env:
           cache-name: cache-mvn-deps
         with:
-          # Never cache this project's own artifacts (see the build job).
+          # Never restore this project's own artifacts (see the build job).
           path: |
             ~/.m2/repository
             !~/.m2/repository/org/finos/legend/pure
