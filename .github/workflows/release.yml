@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# The whole workflow releases one commit, pinned by the `prepare` job and
+# checked out by SHA everywhere else. Nothing reaches the remote -- no commit,
+# no tag, nothing published -- until every JDK in the matrix has gone green
+# against that exact commit, and the branch is proven not to have moved since.
 name: Release
 
 env:
@@ -26,157 +30,215 @@ on:
       releaseVersion:
         description: "New release version"
         required: true
+      dryRun:
+        description: "Rehearse the release without pushing or publishing anything"
+        type: boolean
+        required: false
+        default: false
+
+# Everything that writes to the repository -- the checkout, the atomic push,
+# maven-release-plugin's SCM calls -- authenticates with FINOS_GITHUB_TOKEN,
+# so GITHUB_TOKEN itself never needs more than read access. Applies to the
+# called build-and-test workflow too: a called workflow inherits the caller's
+# permissions and can only narrow them further.
+permissions:
+  contents: read
+
+# A release rewrites the branch (two version-bump commits) and creates a tag,
+# so two runs at once would race each other. Never cancel one in flight: a
+# release killed between pushing the tag and publishing needs the manual
+# `Clean repo after failed release` workflow to recover.
+# Dry runs get their own lane -- they push nothing, so there is no reason to
+# make a real release queue behind an hour of rehearsal.
+concurrency:
+  group: release-${{ github.repository }}-${{ inputs.dryRun }}
+  cancel-in-progress: false
 
 jobs:
-  build:
-    name: Build
+  prepare:
+    name: Prepare
     runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.pin.outputs.sha }}
+      branch: ${{ steps.pin.outputs.branch }}
+      release-version: ${{ steps.versions.outputs.release }}
+      development-version: ${{ steps.versions.outputs.development }}
+      tag: ${{ steps.versions.outputs.tag }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v5
-        env:
-          cache-name: cache-mvn-deps
-        with:
-          # Never cache this project's own artifacts: the cache is only
-          # refreshed when a pom.xml changes, so cached project jars go stale
-          # on Java-only commits and would shadow the current build's output.
-          path: |
-            ~/.m2/repository
-            !~/.m2/repository/org/finos/legend/pure
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
-
-      - name: Set up JDK
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: 25
-          java-package: jdk
-
-      - name: Download deps and plugins
-        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
-        env:
-          MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
-
-      - name: Build
-        env:
-          MAVEN_OPTS: -XX:MaxRAMPercentage=80.0
-        run: mvn -B -e -DskipTests=true -T 4 install -Dorg.slf4j.simpleLogger.showThreadName=true
-
-      - name: Archive build output
-        # Bundle the whole workspace (compiled classes, generated sources, PAR
-        # archives, etc.) into one file so the test jobs can reuse this build
-        # instead of recompiling. The .git dir isn't needed downstream.
-        # Also bundle the project's own artifacts that `mvn install` put in the
-        # local repository: `mvn surefire:test` resolves inter-module
-        # dependencies from ~/.m2, so the test jobs must get THIS build's jars
-        # rather than whatever project jars the Maven dependency cache carries.
+      - name: Pin the commit to release
+        id: pin
         run: |
-          cp -r ~/.m2/repository/org/finos/legend/pure project-artifacts
-          tar -cf build-output.tar --exclude='.git' .
+          set -euo pipefail
+          # Everything downstream checks this SHA out explicitly, so the code
+          # that gets tagged and published is the code the matrix tested.
+          # actions/checkout already pins to GITHUB_SHA rather than the branch
+          # tip, but that is an implicit default; if it ever stopped holding,
+          # an untested commit could be published. Assert it rather than
+          # trusting it.
+          case "${GITHUB_REF}" in
+            refs/heads/*) ;;
+            *)
+              echo "::error::A release must be dispatched from a branch; got ${GITHUB_REF}."
+              exit 1
+              ;;
+          esac
+          branch="${GITHUB_REF#refs/heads/}"
+          head="$(git rev-parse HEAD)"
+          if [ "${head}" != "${GITHUB_SHA}" ]; then
+            echo "::error::Working tree is at ${head}, but this run was triggered for ${GITHUB_SHA}."
+            exit 1
+          fi
+          tip="$(git ls-remote origin "refs/heads/${branch}" | cut -f1)"
+          if [ "${tip}" != "${GITHUB_SHA}" ]; then
+            echo "::error::${branch} already moved to ${tip} after this run was dispatched for ${GITHUB_SHA}. Re-run the release."
+            exit 1
+          fi
+          echo "sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "branch=${branch}" >> "$GITHUB_OUTPUT"
 
-      - name: Upload build output
-        uses: actions/upload-artifact@v7
-        with:
-          name: build-output
-          path: build-output.tar
-          retention-days: 1
-
-  test:
-    name: Test (JDK ${{ matrix.jdk }})
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        jdk: [25, 21, 17, 11, 8]
-    steps:
-      - name: Download build output
-        uses: actions/download-artifact@v7
-        with:
-          name: build-output
-
-      - name: Extract build output
-        run: tar -xf build-output.tar
-
-      - name: Cache Maven dependencies
-        uses: actions/cache@v5
+      - name: Compute versions
+        id: versions
         env:
-          cache-name: cache-mvn-deps
-        with:
-          # Never cache this project's own artifacts (see the build job).
-          path: |
-            ~/.m2/repository
-            !~/.m2/repository/org/finos/legend/pure
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
-
-      - name: Set up JDKs
-        uses: actions/setup-java@v5
-        with:
-          # 25 always: Maven itself has to run on a JDK the enforcer accepts.
-          # The matrix JDK is what the forked test JVM will use. When the
-          # matrix leg *is* 25 the duplicate is a no-op (second install is a
-          # tool-cache hit).
-          distribution: 'temurin'
-          java-version: |
-            25
-            ${{ matrix.jdk }}
-
-      - name: Install project artifacts from this build
-        # Inter-module dependencies resolve from ~/.m2 during surefire:test,
-        # so they must be the jars installed by this run's build job — never
-        # project jars left over in the restored dependency cache.
+          # Via the environment, never interpolated into the script: a
+          # workflow input is attacker-controlled as far as the shell cares.
+          RELEASE_VERSION: ${{ inputs.releaseVersion }}
+          DRY_RUN: ${{ inputs.dryRun }}
         run: |
-          rm -rf ~/.m2/repository/org/finos/legend/pure
-          mkdir -p ~/.m2/repository/org/finos/legend
-          cp -r project-artifacts ~/.m2/repository/org/finos/legend/pure
+          set -euo pipefail
+          if ! printf '%s' "${RELEASE_VERSION}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::releaseVersion must be MAJOR.MINOR.PATCH; got '${RELEASE_VERSION}'."
+            exit 1
+          fi
+          # The branch has to be on a snapshot, and the release must not go
+          # backwards from it. The tag check below catches re-releasing a
+          # version that shipped; this catches a typo that names one which
+          # never did, which nothing else would notice.
+          current="$(python3 -c 'import xml.etree.ElementTree as ET; ns="{http://maven.apache.org/POM/4.0.0}"; print(ET.parse("pom.xml").getroot().find(ns + "version").text)')"
+          case "${current}" in
+            *-SNAPSHOT) ;;
+            *)
+              echo "::error::The root pom is at ${current}, not a snapshot; this branch is not in a releasable state."
+              exit 1
+              ;;
+          esac
+          base="${current%-SNAPSHOT}"
+          if [ "$(printf '%s\n%s\n' "${base}" "${RELEASE_VERSION}" | sort -V | head -n 1)" != "${base}" ]; then
+            echo "::error::releaseVersion ${RELEASE_VERSION} is below the branch's current version ${current}."
+            exit 1
+          fi
+          IFS=. read -r major minor patch <<< "${RELEASE_VERSION}"
+          development="${major}.${minor}.$((patch + 1))-SNAPSHOT"
+          # maven-release-plugin's default tagNameFormat is
+          # @{project.artifactId}-@{project.version}. release:prepare is passed
+          # this name explicitly so the tag checked for here is the tag it
+          # creates, whatever the format is configured to be.
+          tag="legend-pure-${RELEASE_VERSION}"
+          if git ls-remote --exit-code origin "refs/tags/${tag}" > /dev/null 2>&1; then
+            echo "::error::Tag ${tag} already exists; ${RELEASE_VERSION} has been released."
+            exit 1
+          fi
+          echo "release=${RELEASE_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "development=${development}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          if [ "${DRY_RUN}" = "true" ]; then
+            echo "Dry run: would release ${GITHUB_REF#refs/heads/} at ${GITHUB_SHA} as ${tag} (next development version ${development}). Nothing will be pushed or published." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Releasing ${GITHUB_REF#refs/heads/} at ${GITHUB_SHA} as ${tag} (next development version ${development})." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
-      - name: Test
-        env:
-          MAVEN_OPTS: -XX:MaxRAMPercentage=25.0
-        run: |
-          # Maven itself must run on a JDK the enforcer plugin accepts (25),
-          # regardless of which JDK we want to run the tests on. The compiled
-          # test classes already target Java 8 bytecode, so every leg just
-          # points Surefire's forked test JVM at the matrix JDK's install.
-          export JAVA_HOME="$JAVA_HOME_25_X64"
-          test_jvm_home="JAVA_HOME_${{ matrix.jdk }}_X64"
-          TEST_JVM="${!test_jvm_home}/bin/java"
-          mvn -B -e surefire:test -Djvm="${TEST_JVM}" -DargLine="-XX:MaxRAMPercentage=25.0" -DforkCount=3 -DreuseForks=true -Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports-aggregate-jdk${{ matrix.jdk }}
-
-      - name: Upload Test Results
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: test-results-jdk${{ matrix.jdk }}
-          path: ${{ github.workspace }}/surefire-reports-aggregate-jdk${{ matrix.jdk }}/*.xml
+  verify:
+    # The build-once, test-on-every-JDK pipeline, shared with `Build CI` so
+    # that a release is tested exactly the way ordinary CI tests. Pinned to
+    # the one commit the `prepare` job resolved.
+    needs: prepare
+    uses: ./.github/workflows/build-and-test.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+      # A release always exercises every supported JDK, whatever branch it
+      # was cut from.
+      jdks: '[25, 21, 17, 11, 8]'
+    secrets: inherit
 
   release:
     name: Release
-    # Publish only once every JDK has gone green. The release itself rebuilds
-    # from scratch, which is cheap enough with tests skipped.
-    needs: test
+    # Publish only once every JDK has gone green against the pinned commit.
+    needs: [prepare, verify]
     runs-on: ubuntu-latest
+    env:
+      RELEASE_BRANCH: ${{ needs.prepare.outputs.branch }}
+      RELEASE_SHA: ${{ needs.prepare.outputs.sha }}
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+      RELEASE_VERSION: ${{ needs.prepare.outputs.release-version }}
+      DEVELOPMENT_VERSION: ${{ needs.prepare.outputs.development-version }}
     steps:
-      - name: Checkout repo
+      - name: Checkout the pinned commit
         uses: actions/checkout@v6
         with:
+          ref: ${{ needs.prepare.outputs.sha }}
           token: ${{ secrets.FINOS_GITHUB_TOKEN }}
+          # The token has to stay in the working copy's git config: both the
+          # push below and maven-release-plugin's SCM calls authenticate with
+          # it from inside this checkout.
+          persist-credentials: true
+
+      - name: Re-create the release branch at the tested commit
+        run: |
+          set -euo pipefail
+          # Checking out by SHA leaves a detached HEAD, and
+          # maven-release-plugin needs a branch to commit the version bumps
+          # onto. Base that branch on the tested commit, never on whatever the
+          # remote tip has become in the meantime.
+          head="$(git rev-parse HEAD)"
+          if [ "${head}" != "${RELEASE_SHA}" ]; then
+            echo "::error::Checkout is at ${head}, not the pinned commit ${RELEASE_SHA}."
+            exit 1
+          fi
+          git checkout -B "${RELEASE_BRANCH}" "${RELEASE_SHA}"
 
       - name: Configure git
         run: |
           git config --global user.email "37706051+finos-admin@users.noreply.github.com"
           git config --global user.name "FINOS Administrator"
+
+      - name: Verify nothing landed while the tests ran
+        run: |
+          set -euo pipefail
+          # Fail here, with a message that says what happened, rather than
+          # part way through release:prepare. This is not the only guard: the
+          # push further down is a plain fast-forward from a branch based
+          # exactly on ${RELEASE_SHA}, so git rejects it if this check races.
+          tip="$(git ls-remote origin "refs/heads/${RELEASE_BRANCH}" | cut -f1)"
+          if [ "${tip}" != "${RELEASE_SHA}" ]; then
+            echo "::error::${RELEASE_BRANCH} moved from ${RELEASE_SHA} to ${tip} while the build and test jobs ran. Nothing has been tagged or published; re-run the release so the new commits get built and tested too."
+            exit 1
+          fi
+          if git ls-remote --exit-code origin "refs/tags/${RELEASE_TAG}" > /dev/null 2>&1; then
+            echo "::error::Tag ${RELEASE_TAG} appeared while this run was in flight."
+            exit 1
+          fi
+
+      - name: Restore Maven dependencies
+        # release:perform forks a full build in target/checkout against this
+        # runner's ~/.m2, so without this it resolves every dependency cold.
+        # Restore-only: the poms here are the ones the `verify` build already
+        # cached under this exact key, so there is never anything new to save.
+        uses: actions/cache/restore@v5
+        env:
+          cache-name: cache-mvn-deps
+        with:
+          # Never restore this project's own artifacts: release:perform has to
+          # build its own from the tag, not pick up a cached copy.
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/finos/legend/pure
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
 
       - name: Set up JDK
         uses: actions/setup-java@v5
@@ -190,29 +252,139 @@ jobs:
           gpg-private-key: ${{ secrets.CI_GPG_PRIVATE_KEY }}
           gpg-passphrase: CI_GPG_PASSPHRASE
 
-      - name: Compute next development version
-        run: |
-          releaseVersion=${{ github.event.inputs.releaseVersion }}
-          n=${releaseVersion//[!0-9]/ }
-          a=(${n//\./ })
-          nextPatch=$((${a[2]} + 1))
-          developmentVersion="${a[0]}.${a[1]}.${nextPatch}-SNAPSHOT"
-          echo "DEVELOPMENT_VERSION=${developmentVersion}" >> $GITHUB_ENV
-
       - name: Collect Workflow Telemetry
         uses: runforesight/workflow-telemetry-action@v1
         with:
           theme: dark
 
       - name: Prepare release
-        run: mvn -B -DpreparationGoals="clean -N" release:prepare -DreleaseVersion=${{ github.event.inputs.releaseVersion }} -DdevelopmentVersion=${{ env.DEVELOPMENT_VERSION }} -DargLine="-XX:MaxRAMPercentage=25.0" -DforkCount=3 -DreuseForks=true -Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports-aggregate -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat="yyyy-MM-dd HH:mm:ss.SSSZ" -P release
+        # -DpushChanges=false keeps the version-bump commits and the tag on
+        # this runner. They only leave it once the checks in the next two
+        # steps have confirmed the tag really is the tested commit plus a
+        # version bump, so a failure anywhere in here leaves the repository
+        # untouched and needs no cleanup.
+        run: >
+          mvn -B -DpreparationGoals="clean -N" release:prepare
+          -DpushChanges=false
+          -DreleaseVersion="${RELEASE_VERSION}"
+          -DdevelopmentVersion="${DEVELOPMENT_VERSION}"
+          -Dtag="${RELEASE_TAG}"
+          -P release
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=25.0
+
+      - name: Verify the tag is the tested commit
+        run: |
+          set -euo pipefail
+          tagged="$(git rev-parse "${RELEASE_TAG}^{commit}")"
+          parent="$(git rev-parse "${tagged}^")"
+          if [ "${parent}" != "${RELEASE_SHA}" ]; then
+            echo "::error::${RELEASE_TAG} sits on ${parent}, not on the tested commit ${RELEASE_SHA}."
+            exit 1
+          fi
+          # release:prepare only rewrites <version> and <scm><tag>, so every
+          # file that goes into the published artifacts must be byte-identical
+          # to the one the matrix tested. Anything else in the diff means what
+          # is about to be published is not what was tested.
+          changed="$(git diff --name-only "${RELEASE_SHA}" "${tagged}" | grep -v -E '(^|/)pom\.xml$' || true)"
+          if [ -n "${changed}" ]; then
+            echo "::error::The release commit changes files other than poms:"
+            printf '%s\n' "${changed}"
+            exit 1
+          fi
+
+      - name: Report the dry run
+        if: ${{ inputs.dryRun }}
+        run: |
+          set -euo pipefail
+          tagged="$(git rev-parse "${RELEASE_TAG}^{commit}")"
+          poms="$(git diff --name-only "${RELEASE_SHA}" "${tagged}" | wc -l)"
+          {
+            echo "## Dry run: release ${RELEASE_VERSION} would have gone ahead"
+            echo
+            echo "Checked, without touching the remote:"
+            echo
+            echo "- ${RELEASE_BRANCH} pinned at ${RELEASE_SHA}, green on every supported JDK"
+            echo "- ${RELEASE_BRANCH} has not moved since, and ${RELEASE_TAG} does not exist yet"
+            echo "- release:prepare produced ${RELEASE_TAG} as ${tagged}, a direct child of the tested commit"
+            echo "- it rewrote ${poms} pom files and nothing else"
+            echo "- the next development version would be ${DEVELOPMENT_VERSION}"
+            echo
+            echo "Not run: the atomic push of ${RELEASE_BRANCH} and ${RELEASE_TAG}, and release:perform."
+            echo "Dispatch again with dryRun unchecked to release for real."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Push the release commits and tag
+        if: ${{ !inputs.dryRun }}
+        run: |
+          set -euo pipefail
+          # The point of no return, and the last gate. The branch update is a
+          # plain, never forced, push from a branch based exactly on
+          # ${RELEASE_SHA}: if anyone landed a commit since, git rejects it as
+          # a non-fast-forward, and --atomic means the tag is not created
+          # either. Everything up to here was local, so a rejection leaves the
+          # repository exactly as it was.
+          git push --atomic origin \
+            "refs/heads/${RELEASE_BRANCH}:refs/heads/${RELEASE_BRANCH}" \
+            "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
+          # release:perform builds from its own fresh clone of the tag, so
+          # confirm the tag it is going to fetch is the one just verified.
+          pushed="$(git ls-remote origin "refs/tags/${RELEASE_TAG}" | awk -v ref="refs/tags/${RELEASE_TAG}" '$2 == ref { print $1 }')"
+          if [ "${pushed}" != "$(git rev-parse "${RELEASE_TAG}")" ]; then
+            echo "::error::Remote tag ${RELEASE_TAG} is ${pushed}, not the tag created by this run."
+            exit 1
+          fi
 
       - name: Perform release
         # `-Darguments` reaches the forked `deploy` build. Tests are skipped
         # there because the `test` jobs above already ran the whole suite on
-        # every supported JDK; this fork only needs to compile and publish.
+        # every supported JDK against this exact code; this fork only needs to
+        # compile and publish.
+        if: ${{ !inputs.dryRun }}
         run: mvn -B release:perform -P release -Darguments="-DskipTests"
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
+
+      - name: Explain how to recover
+        # Deliberately advice, not an automatic rollback: autoPublish is on and
+        # a release that reached Maven Central cannot be withdrawn, so whether
+        # the tag survives is a human decision. What this can do is remove the
+        # guesswork -- `Clean repo after failed release` infers "the last two
+        # commits" and "the latest tag", where the exact refs are known here.
+        if: failure()
+        run: |
+          set -euo pipefail
+          remote_tag="$(git ls-remote origin "refs/tags/${RELEASE_TAG}" 2> /dev/null | awk -v ref="refs/tags/${RELEASE_TAG}" '$2 == ref { print $1 }')" || true
+          {
+            echo "## Release ${RELEASE_VERSION} failed"
+            echo
+            if [ -z "${remote_tag}" ]; then
+              echo "**Nothing was pushed.** The tag ${RELEASE_TAG} does not exist on the remote,"
+              echo "and ${RELEASE_BRANCH} is still at ${RELEASE_SHA}. Nothing needs cleaning up:"
+              echo "fix the cause and dispatch the release again."
+            else
+              echo "**The tag and the version bumps are already pushed**, so this failed during"
+              echo "release:perform. Recover by hand, in this order:"
+              echo
+              echo "1. Work out whether anything reached Maven Central. This project publishes"
+              echo "   with autoPublish enabled and publishing cannot be undone:"
+              echo
+              echo "       https://repo1.maven.org/maven2/org/finos/legend/pure/legend-pure/${RELEASE_VERSION}/"
+              echo
+              echo "   Check the Central portal too, for a deployment stuck in validation."
+              echo "2. If ${RELEASE_VERSION} **was** published, leave the tag and the commits"
+              echo "   alone and release the next patch version instead."
+              echo "3. Only if nothing was published, undo exactly what this run pushed:"
+              echo
+              echo "       git push --delete origin ${RELEASE_TAG}"
+              echo "       git push --force-with-lease=refs/heads/${RELEASE_BRANCH}:$(git rev-parse HEAD) \\"
+              echo "           origin ${RELEASE_SHA}:refs/heads/${RELEASE_BRANCH}"
+              echo
+              echo "   The lease makes the rewind fail if anything landed on ${RELEASE_BRANCH}"
+              echo "   after this run pushed. Do not force past it without first working out"
+              echo "   what that commit was."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${remote_tag}" ]; then
+            echo "::error::Release ${RELEASE_VERSION} failed after pushing ${RELEASE_TAG}. See the job summary for recovery steps."
+          fi
