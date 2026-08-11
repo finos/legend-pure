@@ -70,13 +70,10 @@ public class DateWithSubsecond extends AbstractDateWithSubsecond
 
     private static String getSubsecond(LocalDateTime time, int subsecondPrecision)
     {
-        if ((subsecondPrecision < 0) || (subsecondPrecision > 9))
+        // 0 is not valid here: a date with no subsecond is a DateWithSecond, not a DateWithSubsecond
+        if ((subsecondPrecision < 1) || (subsecondPrecision > 9))
         {
             throw new IllegalArgumentException("Invalid subsecond precision: " + subsecondPrecision);
-        }
-        if (subsecondPrecision == 0)
-        {
-            return null;
         }
         String string = String.format("%09d", time.getNano());
         return (subsecondPrecision == 9) ? string : string.substring(0, subsecondPrecision);

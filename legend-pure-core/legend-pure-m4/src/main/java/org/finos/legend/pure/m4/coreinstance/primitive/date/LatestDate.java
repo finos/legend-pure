@@ -200,12 +200,6 @@ public class LatestDate implements PureDate
     }
 
     @Override
-    public int compareTo(PureDate pureDate)
-    {
-        throw new UnsupportedOperationException("Invalid operation for LatestDate");
-    }
-
-    @Override
     public String toString()
     {
         return latestDateConstant;
