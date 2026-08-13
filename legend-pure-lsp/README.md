@@ -35,6 +35,23 @@ java -cp "legend-pure-lsp-server/target/legend-pure-lsp-server-<version>.jar:leg
 
 `target/dependency/*` is produced during `package`; it keeps runtime dependencies separate from the server jar so host repositories can add language/store extensions dynamically.
 
+### Shaded Jar
+
+`package` also produces a self-contained jar at `legend-pure-lsp-server/target/legend-pure-lsp-server-<version>-shaded.jar`, with every runtime dependency and a `Main-Class` manifest entry:
+
+```bash
+java -jar legend-pure-lsp-server/target/legend-pure-lsp-server-<version>-shaded.jar
+```
+
+Use it where a single artifact is easier to distribute than a jar plus a dependency directory. To add host language or store extensions on top of it, put it on an explicit classpath instead of using `-jar`:
+
+```bash
+java -cp "legend-pure-lsp-server/target/legend-pure-lsp-server-<version>-shaded.jar:<extension jars/classes>" \
+  org.finos.legend.pure.lsp.LegendPureLspServer
+```
+
+The thin jar remains the default: the VS Code extension ignores `-shaded.jar` when it auto-discovers a server jar in `target`, so point `legendPure.server.jarPath` at the shaded jar explicitly if you want the extension to use it.
+
 Workspace repositories are discovered from `*.definition.json` files under the opened workspace. Runtime extensions and any classpath repositories not already represented by the workspace are discovered from the Java classpath.
 
 ## VS Code Packaging
