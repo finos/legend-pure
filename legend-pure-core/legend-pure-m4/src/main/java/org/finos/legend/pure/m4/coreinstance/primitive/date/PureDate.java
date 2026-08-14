@@ -84,7 +84,10 @@ public interface PureDate extends Comparable<PureDate>
      * Retained temporarily for callers that have not moved.
      */
     @Deprecated
-    GregorianCalendar getCalendar();
+    default GregorianCalendar getCalendar()
+    {
+        throw new UnsupportedOperationException();
+    }
 
     default <T extends Appendable> T appendString(T appendable)
     {
