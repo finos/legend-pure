@@ -20,6 +20,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
@@ -229,7 +230,6 @@ public class TestDateFormat
 
         Assert.assertEquals("CET", format("[CET]z", DATE));
         Assert.assertEquals("CET", format("[CE\\T]z", DATE));
-        Assert.assertEquals("+01", format("[CET]X", DATE));
 
         // an unknown zone is GMT, but a general time zone still renders the name as given
         Assert.assertEquals("2014-03-10 16:12:35.070+0000", format("[Europe/Lissabon]yyyy-MM-dd HH:mm:ss.SSSZ", DATE));
@@ -242,15 +242,49 @@ public class TestDateFormat
     }
 
     /**
+     * The two numeric time zone notations differ in how they write UTC and in what they leave out:
+     * RFC 822 always writes a sign, two digits of hours and two of minutes, while ISO 8601 writes
+     * UTC as Z and omits the minutes of an offset that has none. Neither may drop minutes an offset
+     * does have, and plenty of zones have them: India is five and a half hours ahead of UTC, not
+     * five.
+     */
+    @Test
+    public void testFormatNumericTimeZones()
+    {
+        Assert.assertEquals("+0000", format("Z", DATE));
+        Assert.assertEquals("Z", format("X", DATE));
+        Assert.assertEquals("+0000", format("[GMT]Z", DATE));
+        Assert.assertEquals("Z", format("[GMT]X", DATE));
+
+        // a whole number of hours
+        Assert.assertEquals("-0500", format("[EST]Z", DATE));
+        Assert.assertEquals("-05", format("[EST]X", DATE));
+        Assert.assertEquals("+0100", format("[CET]Z", DATE));
+        Assert.assertEquals("+01", format("[CET]X", DATE));
+
+        // and half or a quarter of one
+        Assert.assertEquals("+0530", format("[Asia/Kolkata]Z", DATE));
+        Assert.assertEquals("+0530", format("[Asia/Kolkata]X", DATE));
+        Assert.assertEquals("+0545", format("[Asia/Kathmandu]Z", DATE));
+        Assert.assertEquals("+0545", format("[Asia/Kathmandu]X", DATE));
+        Assert.assertEquals("-0230", format("[America/St_Johns]Z", DATE));
+        Assert.assertEquals("-0230", format("[America/St_Johns]X", DATE));
+        Assert.assertEquals("+1345", format("[Pacific/Chatham]Z", DATE));
+        Assert.assertEquals("+1345", format("[Pacific/Chatham]X", DATE));
+    }
+
+    /**
      * A zone need not be a whole number of minutes from UTC: Liberia was 44 minutes and 30 seconds
      * behind it until 1972. The second is part of the shift there, so it comes from the shifted
-     * time along with every other component.
+     * time along with every other component, and neither notation can express it, so both round
+     * the offset towards UTC.
      */
     @Test
     public void testFormatWithATimeZoneThatIsNotAWholeNumberOfMinutesFromUTC()
     {
         PureDate date = DateFunctions.parsePureDate("1960-01-01T12:00:30");
         Assert.assertEquals("1960-01-01 11:16:00 -0044", format("[Africa/Monrovia]yyyy-MM-dd HH:mm:ss Z", date));
+        Assert.assertEquals("1960-01-01 11:16:00 -0044", format("[Africa/Monrovia]yyyy-MM-dd HH:mm:ss X", date));
     }
 
     /**
@@ -262,7 +296,7 @@ public class TestDateFormat
     @Test
     public void testFormatWithTimeZoneAgreesWithJavaTime()
     {
-        String[] zoneIds = {"GMT", "UTC", "EST", "CET", "America/New_York", "Europe/London", "Asia/Tokyo", "Australia/Adelaide", "Africa/Monrovia"};
+        String[] zoneIds = {"GMT", "UTC", "EST", "CET", "America/New_York", "Europe/London", "Asia/Tokyo", "Australia/Adelaide", "Asia/Kathmandu", "Pacific/Chatham", "Africa/Monrovia"};
         PureDate[] dates = {
                 DateFunctions.parsePureDate("1960-01-01T12:00:30"),   // Monrovia, not a whole minute from UTC
                 DateFunctions.parsePureDate("2014-01-15T23:45:00"),
@@ -273,14 +307,16 @@ public class TestDateFormat
                 DateFunctions.parsePureDate("2014-03-30T01:30:00"),   // London, an hour into summer time
                 DateFunctions.parsePureDate("2014-07-04T12:00:00")
         };
-        DateTimeFormatter expectedFormat = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss Z");
+        DateTimeFormatter rfc822 = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss Z");
+        DateTimeFormatter iso8601 = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss X");
         for (String zoneId : zoneIds)
         {
             ZoneId zone = TimeZone.getTimeZone(zoneId).toZoneId();
             for (PureDate date : dates)
             {
-                String expected = PureDateToJava.start().toInstant(date).atZone(zone).format(expectedFormat);
-                Assert.assertEquals(zoneId + " " + date, expected, format("[" + zoneId + "]yyyy-MM-dd HH:mm:ss Z", date));
+                ZonedDateTime zoned = PureDateToJava.start().toInstant(date).atZone(zone);
+                Assert.assertEquals(zoneId + " " + date, zoned.format(rfc822), format("[" + zoneId + "]yyyy-MM-dd HH:mm:ss Z", date));
+                Assert.assertEquals(zoneId + " " + date, zoned.format(iso8601), format("[" + zoneId + "]yyyy-MM-dd HH:mm:ss X", date));
             }
         }
     }

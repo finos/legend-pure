@@ -17,7 +17,6 @@ package org.finos.legend.pure.m4.coreinstance.primitive.date;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
@@ -268,16 +267,7 @@ public class DateFormat
                 case 'Z':
                 {
                     int count = getCharCountFrom(character, formatString, i);
-                    if (calendar == null)
-                    {
-                        safeAppendable.append("+0000");
-                    }
-                    else
-                    {
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("Z");
-                        dateFormat.setTimeZone(calendar.getTimeZone());
-                        safeAppendable.append(dateFormat.format(calendar.getTime()));
-                    }
+                    appendRFC822TimeZone(safeAppendable, getOffsetInMinutes(calendar));
                     i += count;
                     break;
                 }
@@ -285,16 +275,7 @@ public class DateFormat
                 case 'X':
                 {
                     int count = getCharCountFrom(character, formatString, i);
-                    if (calendar == null)
-                    {
-                        safeAppendable.append("Z");
-                    }
-                    else
-                    {
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("X");
-                        dateFormat.setTimeZone(calendar.getTimeZone());
-                        safeAppendable.append(dateFormat.format(calendar.getTime()));
-                    }
+                    appendISO8601TimeZone(safeAppendable, getOffsetInMinutes(calendar));
                     i += count;
                     break;
                 }
@@ -644,6 +625,61 @@ public class DateFormat
         int minuteOffset = Integer.parseInt(string.substring(start + 2, end));
         int totalOffset = (hourOffset * 60) + minuteOffset;
         return negative ? -totalOffset : totalOffset;
+    }
+
+    /**
+     * Get the offset from UTC the given calendar is rendering at, in whole minutes. A null calendar
+     * means no time zone was asked for, and a Pure date with no time zone is UTC. Time zones that
+     * are not a whole number of minutes from UTC are rounded towards it, as neither notation below
+     * can express the seconds.
+     *
+     * @param calendar calendar being rendered, or null for UTC
+     * @return offset from UTC in minutes
+     */
+    private static int getOffsetInMinutes(Calendar calendar)
+    {
+        return (calendar == null) ? 0 : ((calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET)) / 60_000);
+    }
+
+    /**
+     * Append an offset in the RFC 822 notation, which is a sign, two digits of hours, and two of
+     * minutes, with no separator and nothing omitted: UTC is written {@code +0000}.
+     *
+     * @param appendable      appendable to write to
+     * @param offsetInMinutes offset from UTC in minutes
+     */
+    private static void appendRFC822TimeZone(SafeAppendable appendable, int offsetInMinutes)
+    {
+        int absolute = Math.abs(offsetInMinutes);
+        appendable.append((offsetInMinutes < 0) ? '-' : '+');
+        appendNonNegTwoDigitInt(appendable, absolute / 60);
+        appendNonNegTwoDigitInt(appendable, absolute % 60);
+    }
+
+    /**
+     * Append an offset in the ISO 8601 notation, which writes UTC as {@code Z} and omits the
+     * minutes of an offset that has none, but keeps them where there are any: an offset of five and
+     * a half hours is {@code +0530}, not {@code +05}.
+     *
+     * @param appendable      appendable to write to
+     * @param offsetInMinutes offset from UTC in minutes
+     */
+    private static void appendISO8601TimeZone(SafeAppendable appendable, int offsetInMinutes)
+    {
+        if (offsetInMinutes == 0)
+        {
+            appendable.append('Z');
+            return;
+        }
+
+        int absolute = Math.abs(offsetInMinutes);
+        appendable.append((offsetInMinutes < 0) ? '-' : '+');
+        appendNonNegTwoDigitInt(appendable, absolute / 60);
+        int minutes = absolute % 60;
+        if (minutes != 0)
+        {
+            appendNonNegTwoDigitInt(appendable, minutes);
+        }
     }
 
     private static void appendNonNegTwoDigitInt(SafeAppendable appendable, int integer)
