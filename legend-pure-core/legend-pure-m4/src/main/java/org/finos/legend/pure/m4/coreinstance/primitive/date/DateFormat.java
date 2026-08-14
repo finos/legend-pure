@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
 import org.finos.legend.pure.m4.tools.SafeAppendable;
+import org.finos.legend.pure.m4.tools.TextTools;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
@@ -392,136 +393,135 @@ public class DateFormat
     public static PureDate parsePureDate(String string, int start, int end)
     {
         // Skip whitespace at start and end
-        while ((start < end) && (string.charAt(start) <= ' '))
+        int low = TextTools.indexOfNonWhitespace(string, start, end);
+        if (low < 0)
         {
-            start++;
+            throwInvalidDateString(string, start, end);
         }
-
-        do
+        int high = TextTools.lastIndexOfNonWhitespace(string, low, end);
+        if (high < 0)
         {
-            end--;
+            throwInvalidDateString(string, low, high);
         }
-        while ((end > start) && (string.charAt(end) <= ' '));
-
-        end++;
-        if (start >= end)
+        high += Character.charCount(string.codePointAt(high));
+        if (low >= high)
         {
-            throwInvalidDateString(string);
+            throwInvalidDateString(string, start, end);
         }
 
         // Skip Pure date prefix character if present
-        if (string.charAt(start) == DATE_PREFIX)
+        if (string.charAt(low) == DATE_PREFIX)
         {
-            start++;
-            if (start >= end)
+            low++;
+            if (low >= high)
             {
-                throwInvalidDateString(string);
+                throwInvalidDateString(string, start, end);
             }
         }
 
         // Year
         int year = -1;
-        int previous = (string.charAt(start) == '-') ? start + 1 : start;
-        int index = findNonDigit(string, previous, end);
+        int previous = (string.charAt(low) == '-') ? low + 1 : low;
+        int index = findNonDigit(string, previous, high);
         try
         {
-            year = Integer.parseInt(string.substring(start, index));
+            year = Integer.parseInt(string.substring(low, index));
         }
         catch (NumberFormatException e)
         {
-            throwInvalidDateString("Error parsing year", string, start, end);
+            throwInvalidDateString("Error parsing year", string, low, high);
         }
 
-        if (index == end)
+        if (index == high)
         {
             return Year.newYear(year);
         }
         if (string.charAt(index++) != DATE_SEPARATOR)
         {
-            throwInvalidDateString(string, start, end);
+            throwInvalidDateString(string, low, high);
         }
 
         // Month
         int month = -1;
         previous = index;
-        index = findNonDigit(string, previous, end);
+        index = findNonDigit(string, previous, high);
         try
         {
             month = Integer.parseInt(string.substring(previous, index));
         }
         catch (NumberFormatException e)
         {
-            throwInvalidDateString("Error parsing month", string, start, end);
+            throwInvalidDateString("Error parsing month", string, low, high);
         }
 
-        if (index == end)
+        if (index == high)
         {
             return YearMonth.newYearMonth(year, month);
         }
         if (string.charAt(index++) != DATE_SEPARATOR)
         {
-            throwInvalidDateString(string, start, end);
+            throwInvalidDateString(string, low, high);
         }
 
         // Day
         int day = -1;
         previous = index;
-        index = findNonDigit(string, previous, end);
+        index = findNonDigit(string, previous, high);
         try
         {
             day = Integer.parseInt(string.substring(previous, index));
         }
         catch (NumberFormatException e)
         {
-            throwInvalidDateString("Error parsing day", string, start, end);
+            throwInvalidDateString("Error parsing day", string, low, high);
         }
 
-        if (index == end)
+        if (index == high)
         {
             return StrictDate.newStrictDate(year, month, day);
         }
         if (string.charAt(index++) != DATE_TIME_SEPARATOR)
         {
-            throwInvalidDateString(string, start, end);
+            throwInvalidDateString(string, low, high);
         }
 
         // Hour
         int hour = -1;
         previous = index;
-        index = findNonDigit(string, previous, end);
+        index = findNonDigit(string, previous, high);
         try
         {
             hour = Integer.parseInt(string.substring(previous, index));
         }
         catch (NumberFormatException e)
         {
-            throwInvalidDateString("Error parsing hour", string, start, end);
+            throwInvalidDateString("Error parsing hour", string, low, high);
         }
 
-        if (index == end)
+        if (index == high)
         {
             return DateWithHour.newDateWithHour(year, month, day, hour);
         }
 
         if (string.charAt(index++) != TIME_SEPARATOR)
         {
-            throwInvalidDateString(string, start, end);
+            throwInvalidDateString(string, low, high);
         }
 
         // Minute
         int minute = -1;
         previous = index;
-        index = findNonDigit(string, previous, end);
+        index = findNonDigit(string, previous, high);
         try
         {
             minute = Integer.parseInt(string.substring(previous, index));
         }
         catch (NumberFormatException e)
         {
-            throwInvalidDateString("Error parsing minute", string, start, end);
+            throwInvalidDateString("Error parsing minute", string, low, high);
         }
 
-        if (index == end)
+        if (index == high)
         {
             return DateWithMinute.newDateWithMinute(year, month, day, hour, minute);
         }
@@ -530,24 +530,24 @@ public class DateFormat
         {
             // Time zone
             DateWithMinute date = DateWithMinute.newDateWithMinute(year, month, day, hour, minute);
-            int offsetInMinutes = getTimeZoneOffsetInMinutes(string, index - 1, end);
+            int offsetInMinutes = getTimeZoneOffsetInMinutes(string, index - 1, high);
             return date.addMinutes(-offsetInMinutes);
         }
 
         // Second
         int second = -1;
         previous = index;
-        index = findNonDigit(string, previous, end);
+        index = findNonDigit(string, previous, high);
         try
         {
             second = Integer.parseInt(string.substring(previous, index));
         }
         catch (NumberFormatException e)
         {
-            throwInvalidDateString("Error parsing second", string, start, end);
+            throwInvalidDateString("Error parsing second", string, low, high);
         }
 
-        if (index == end)
+        if (index == high)
         {
             return DateWithSecond.newDateWithSecond(year, month, day, hour, minute, second);
         }
@@ -557,10 +557,10 @@ public class DateFormat
         {
             // Subsecond
             previous = index + 1;
-            index = findNonDigit(string, previous, end);
+            index = findNonDigit(string, previous, high);
             if (index == previous)
             {
-                throwInvalidDateString(string, start, end);
+                throwInvalidDateString(string, low, high);
             }
             String subsecond = string.substring(previous, index);
             date = DateWithSubsecond.newDateWithSubsecond(year, month, day, hour, minute, second, subsecond);
@@ -570,10 +570,10 @@ public class DateFormat
             date = DateWithSecond.newDateWithSecond(year, month, day, hour, minute, second);
         }
 
-        if (index < end)
+        if (index < high)
         {
             // Time zone
-            int offsetInMinutes = getTimeZoneOffsetInMinutes(string, index, end);
+            int offsetInMinutes = getTimeZoneOffsetInMinutes(string, index, high);
             return date.addMinutes(-offsetInMinutes);
         }
 
@@ -732,11 +732,6 @@ public class DateFormat
     private static boolean isDigit(char character)
     {
         return ('0' <= character) && (character <= '9');
-    }
-
-    private static void throwInvalidDateString(String string)
-    {
-        throwInvalidDateString(string, 0, string.length());
     }
 
     private static void throwInvalidDateString(String string, int start, int end)
