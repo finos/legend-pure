@@ -242,6 +242,33 @@ public class TestDateFormat
     }
 
     /**
+     * A Pure date is a proleptic Gregorian date, which is the calendar it is built on, and asking
+     * for a time zone does not change the calendar it is read in. The Gregorian calendar was not
+     * adopted until 1582, so a date before that is nine days from what the same date would be on
+     * the Julian calendar in use at the time, but it is the Pure date that is being written out.
+     */
+    @Test
+    public void testFormatBeforeTheGregorianCalendarWasAdopted()
+    {
+        PureDate date = DateFunctions.parsePureDate("1500-01-15T12:00:00");
+        Assert.assertEquals("1500-01-15 12:00:00 +0000", format("yyyy-MM-dd HH:mm:ss Z", date));
+        Assert.assertEquals("1500-01-15 12:00:00 +0000", format("[GMT]yyyy-MM-dd HH:mm:ss Z", date));
+        Assert.assertEquals("1500-01-15 17:00:00 +0500", format("[GMT+5]yyyy-MM-dd HH:mm:ss Z", date));
+    }
+
+    /**
+     * Before standard time a zone was whatever its own noon made it, which was rarely a whole
+     * number of hours from UTC: New York was 4 hours 56 minutes behind it until 1883.
+     */
+    @Test
+    public void testFormatBeforeStandardTime()
+    {
+        PureDate date = DateFunctions.parsePureDate("1800-01-15T12:00:00");
+        Assert.assertEquals("1800-01-15 07:03:58 -0456", format("[America/New_York]yyyy-MM-dd HH:mm:ss Z", date));
+        Assert.assertEquals("1800-01-15 11:58:45 -0001", format("[Europe/London]yyyy-MM-dd HH:mm:ss Z", date));
+    }
+
+    /**
      * The two numeric time zone notations differ in how they write UTC and in what they leave out:
      * RFC 822 always writes a sign, two digits of hours and two of minutes, while ISO 8601 writes
      * UTC as Z and omits the minutes of an offset that has none. Neither may drop minutes an offset
@@ -298,6 +325,8 @@ public class TestDateFormat
     {
         String[] zoneIds = {"GMT", "UTC", "EST", "CET", "America/New_York", "Europe/London", "Asia/Tokyo", "Australia/Adelaide", "Asia/Kathmandu", "Pacific/Chatham", "Africa/Monrovia"};
         PureDate[] dates = {
+                DateFunctions.parsePureDate("1500-01-15T12:00:00"),   // before the Gregorian calendar was adopted
+                DateFunctions.parsePureDate("1800-01-15T12:00:00"),   // before standard time
                 DateFunctions.parsePureDate("1960-01-01T12:00:30"),   // Monrovia, not a whole minute from UTC
                 DateFunctions.parsePureDate("2014-01-15T23:45:00"),
                 DateFunctions.parsePureDate("2014-03-09T02:30:00"),   // in the hour New York skips

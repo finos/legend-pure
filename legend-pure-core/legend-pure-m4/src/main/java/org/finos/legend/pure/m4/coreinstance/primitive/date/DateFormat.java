@@ -17,8 +17,7 @@ package org.finos.legend.pure.m4.coreinstance.primitive.date;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 import java.io.IOException;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
+import java.time.ZonedDateTime;
 import java.util.TimeZone;
 
 public class DateFormat
@@ -33,7 +32,7 @@ public class DateFormat
     {
         SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
         int length = formatString.length();
-        GregorianCalendar calendar = null;
+        ZonedDateTime zoned = null;
         StringBuilder timeZoneId = new StringBuilder();
         int i = 0;
         while (i < length)
@@ -97,12 +96,11 @@ public class DateFormat
 
                     if (date.hasHour())
                     {
-                        if (calendar == null)
+                        if (zoned == null)
                         {
                             // A Pure date is always understood as UTC, so the instant it starts at
                             // is what the requested zone renders.
-                            calendar = new GregorianCalendar(timeZone);
-                            calendar.setTimeInMillis(PureDateToJava.start().toInstant(date).toEpochMilli());
+                            zoned = PureDateToJava.start().toInstant(date).atZone(timeZone.toZoneId());
                         }
                     }
                     break;
@@ -110,7 +108,7 @@ public class DateFormat
                 // Year
                 case 'y':
                 {
-                    int displayYear = (calendar == null) ? date.getYear() : calendar.get(Calendar.YEAR);
+                    int displayYear = (zoned == null) ? date.getYear() : zoned.getYear();
                     int count = getCharCountFrom(character, formatString, i);
                     if (count < 3)
                     {
@@ -133,7 +131,7 @@ public class DateFormat
                     {
                         throw new IllegalArgumentException("Date has no month: " + date);
                     }
-                    int displayMonth = (calendar == null) ? date.getMonth() : (calendar.get(Calendar.MONTH) + 1);
+                    int displayMonth = (zoned == null) ? date.getMonth() : zoned.getMonthValue();
                     int count = getCharCountFrom(character, formatString, i);
                     appendZeroPaddedInt(safeAppendable, displayMonth, count + 1);
                     i += count;
@@ -146,7 +144,7 @@ public class DateFormat
                     {
                         throw new IllegalArgumentException("Date has no day: " + date);
                     }
-                    int displayDay = (calendar == null) ? date.getDay() : calendar.get(Calendar.DAY_OF_MONTH);
+                    int displayDay = (zoned == null) ? date.getDay() : zoned.getDayOfMonth();
                     int count = getCharCountFrom(character, formatString, i);
                     appendZeroPaddedInt(safeAppendable, displayDay, count + 1);
                     i += count;
@@ -159,7 +157,7 @@ public class DateFormat
                     {
                         throw new IllegalArgumentException("Date has no hour: " + date);
                     }
-                    int preDisplayHour = (calendar == null) ? date.getHour() : calendar.get(Calendar.HOUR_OF_DAY);
+                    int preDisplayHour = (zoned == null) ? date.getHour() : zoned.getHour();
                     int displayHour = (preDisplayHour == 0) ? 12 : ((preDisplayHour > 12) ? (preDisplayHour - 12) : preDisplayHour);
                     int count = getCharCountFrom(character, formatString, i);
                     appendZeroPaddedInt(safeAppendable, displayHour, count + 1);
@@ -173,7 +171,7 @@ public class DateFormat
                     {
                         throw new IllegalArgumentException("Date has no hour: " + date);
                     }
-                    int displayHour = (calendar == null) ? date.getHour() : calendar.get(Calendar.HOUR_OF_DAY);
+                    int displayHour = (zoned == null) ? date.getHour() : zoned.getHour();
                     int count = getCharCountFrom(character, formatString, i);
                     appendZeroPaddedInt(safeAppendable, displayHour, count + 1);
                     i += count;
@@ -186,7 +184,7 @@ public class DateFormat
                     {
                         throw new IllegalArgumentException("Date has no hour: " + date);
                     }
-                    int displayHour = (calendar == null) ? date.getHour() : calendar.get(Calendar.HOUR_OF_DAY);
+                    int displayHour = (zoned == null) ? date.getHour() : zoned.getHour();
                     safeAppendable.append((displayHour < 12) ? "AM" : "PM");
                     break;
                 }
@@ -197,7 +195,7 @@ public class DateFormat
                     {
                         throw new IllegalArgumentException("Date has no minute: " + date);
                     }
-                    int displayMinute = (calendar == null) ? date.getMinute() : calendar.get(Calendar.MINUTE);
+                    int displayMinute = (zoned == null) ? date.getMinute() : zoned.getMinute();
                     int count = getCharCountFrom(character, formatString, i);
                     appendZeroPaddedInt(safeAppendable, displayMinute, count + 1);
                     i += count;
@@ -210,7 +208,7 @@ public class DateFormat
                     {
                         throw new IllegalArgumentException("Date has no second: " + date);
                     }
-                    int displaySecond = (calendar == null) ? date.getSecond() : calendar.get(Calendar.SECOND);
+                    int displaySecond = (zoned == null) ? date.getSecond() : zoned.getSecond();
                     int count = getCharCountFrom(character, formatString, i);
                     appendZeroPaddedInt(safeAppendable, displaySecond, count + 1);
                     i += count;
@@ -252,7 +250,7 @@ public class DateFormat
                 case 'z':
                 {
                     int count = getCharCountFrom(character, formatString, i);
-                    safeAppendable.append((calendar == null) ? "GMT" : timeZoneId);
+                    safeAppendable.append((zoned == null) ? "GMT" : timeZoneId);
                     i += count;
                     break;
                 }
@@ -260,7 +258,7 @@ public class DateFormat
                 case 'Z':
                 {
                     int count = getCharCountFrom(character, formatString, i);
-                    appendRFC822TimeZone(safeAppendable, getOffsetInMinutes(calendar));
+                    appendRFC822TimeZone(safeAppendable, getOffsetInMinutes(zoned));
                     i += count;
                     break;
                 }
@@ -268,7 +266,7 @@ public class DateFormat
                 case 'X':
                 {
                     int count = getCharCountFrom(character, formatString, i);
-                    appendISO8601TimeZone(safeAppendable, getOffsetInMinutes(calendar));
+                    appendISO8601TimeZone(safeAppendable, getOffsetInMinutes(zoned));
                     i += count;
                     break;
                 }
@@ -621,17 +619,17 @@ public class DateFormat
     }
 
     /**
-     * Get the offset from UTC the given calendar is rendering at, in whole minutes. A null calendar
+     * Get the offset from UTC the given date and time is at, in whole minutes. A null argument
      * means no time zone was asked for, and a Pure date with no time zone is UTC. Time zones that
      * are not a whole number of minutes from UTC are rounded towards it, as neither notation below
      * can express the seconds.
      *
-     * @param calendar calendar being rendered, or null for UTC
+     * @param zoned date and time being rendered, or null for UTC
      * @return offset from UTC in minutes
      */
-    private static int getOffsetInMinutes(Calendar calendar)
+    private static int getOffsetInMinutes(ZonedDateTime zoned)
     {
-        return (calendar == null) ? 0 : ((calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET)) / 60_000);
+        return (zoned == null) ? 0 : (zoned.getOffset().getTotalSeconds() / 60);
     }
 
     /**
