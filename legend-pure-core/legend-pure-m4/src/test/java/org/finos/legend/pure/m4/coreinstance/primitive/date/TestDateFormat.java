@@ -84,6 +84,24 @@ public class TestDateFormat
     }
 
     /**
+     * A year before the era has last two digits like any other. They used to be written as the two
+     * characters below '0' by however much the year was negative, so -44 wrote a start of text
+     * control character and -1 wrote a slash.
+     */
+    @Test
+    public void testFormatTwoDigitYearBeforeTheEra()
+    {
+        Assert.assertEquals("44", format("yy", DateFunctions.newPureDate(-44, 3, 10)));
+        Assert.assertEquals("01", format("yy", DateFunctions.newPureDate(-1, 3, 10)));
+        Assert.assertEquals("14", format("yy", DateFunctions.newPureDate(-2014, 3, 10)));
+        Assert.assertEquals("00", format("yy", DateFunctions.newPureDate(-100, 3, 10)));
+
+        // the full form keeps the sign
+        Assert.assertEquals("-1", format("yyyy", DateFunctions.newPureDate(-1, 3, 10)));
+        Assert.assertEquals("-2014", format("yyyy", DateFunctions.newPureDate(-2014, 3, 10)));
+    }
+
+    /**
      * The month, day, hour, minute, and second are padded to one more digit than the format string
      * repeats the letter, so a single letter gives no padding at all.
      */

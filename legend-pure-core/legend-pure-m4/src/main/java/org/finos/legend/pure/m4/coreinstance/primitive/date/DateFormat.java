@@ -115,7 +115,10 @@ public class DateFormat
                     int count = getCharCountFrom(character, formatString, i);
                     if (count < 3)
                     {
-                        appendNonNegTwoDigitInt(safeAppendable, displayYear % 100);
+                        // The two digit form is the last two digits of the year, which a year
+                        // before the era has as much as one after it: it drops the sign along with
+                        // the century, as it already drops the difference between 1914 and 2014.
+                        appendNonNegTwoDigitInt(safeAppendable, Math.abs(displayYear % 100));
                     }
                     else
                     {
