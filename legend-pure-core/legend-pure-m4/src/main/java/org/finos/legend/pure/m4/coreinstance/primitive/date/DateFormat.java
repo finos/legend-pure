@@ -100,9 +100,10 @@ public class DateFormat
                     {
                         if (calendar == null)
                         {
-                            calendar = date.getCalendar();
-                            calendar.setTimeZone(timeZone);
-                            calendar.add(Calendar.MILLISECOND, timeZone.getOffset(calendar.getTimeInMillis()));
+                            // A Pure date is always understood as UTC, so the instant it starts at
+                            // is what the requested zone renders.
+                            calendar = new GregorianCalendar(timeZone);
+                            calendar.setTimeInMillis(PureDateToJava.start().toInstant(date).toEpochMilli());
                         }
                     }
                     break;
