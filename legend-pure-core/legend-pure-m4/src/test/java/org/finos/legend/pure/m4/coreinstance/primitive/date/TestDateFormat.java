@@ -84,9 +84,8 @@ public class TestDateFormat
     }
 
     /**
-     * A year before the era has last two digits like any other. They used to be written as the two
-     * characters below '0' by however much the year was negative, so -44 wrote a start of text
-     * control character and -1 wrote a slash.
+     * A year before the era has last two digits like any other, and the two digit form drops the
+     * sign along with the century.
      */
     @Test
     public void testFormatTwoDigitYearBeforeTheEra()
