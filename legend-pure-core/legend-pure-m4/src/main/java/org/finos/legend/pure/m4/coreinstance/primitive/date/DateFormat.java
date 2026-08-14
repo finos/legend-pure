@@ -211,8 +211,9 @@ public class DateFormat
                     {
                         throw new IllegalArgumentException("Date has no second: " + date);
                     }
+                    int displaySecond = (calendar == null) ? date.getSecond() : calendar.get(Calendar.SECOND);
                     int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(safeAppendable, date.getSecond(), count + 1);
+                    appendZeroPaddedInt(safeAppendable, displaySecond, count + 1);
                     i += count;
                     break;
                 }

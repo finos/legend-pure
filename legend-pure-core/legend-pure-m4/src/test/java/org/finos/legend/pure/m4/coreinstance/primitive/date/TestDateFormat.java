@@ -243,6 +243,18 @@ public class TestDateFormat
     }
 
     /**
+     * A zone need not be a whole number of minutes from UTC: Liberia was 44 minutes and 30 seconds
+     * behind it until 1972. The second is part of the shift there, so it comes from the shifted
+     * time along with every other component.
+     */
+    @Test
+    public void testFormatWithATimeZoneThatIsNotAWholeNumberOfMinutesFromUTC()
+    {
+        PureDate date = DateFunctions.parsePureDate("1960-01-01T12:00:30");
+        Assert.assertEquals("1960-01-01 11:16:00 -0044", format("[Africa/Monrovia]yyyy-MM-dd HH:mm:ss Z", date));
+    }
+
+    /**
      * A shifted date is rendered at the instant it stands for, whatever the zone happens to be
      * doing around it, so it has to agree with {@code java.time} for the same instant and zone -
      * including across the hour a zone skips when daylight saving time begins and the hour it
@@ -251,8 +263,9 @@ public class TestDateFormat
     @Test
     public void testFormatWithTimeZoneAgreesWithJavaTime()
     {
-        String[] zoneIds = {"GMT", "UTC", "EST", "CET", "America/New_York", "Europe/London", "Asia/Tokyo", "Australia/Adelaide"};
+        String[] zoneIds = {"GMT", "UTC", "EST", "CET", "America/New_York", "Europe/London", "Asia/Tokyo", "Australia/Adelaide", "Africa/Monrovia"};
         PureDate[] dates = {
+                DateFunctions.parsePureDate("1960-01-01T12:00:30"),   // Monrovia, not a whole minute from UTC
                 DateFunctions.parsePureDate("2014-01-15T23:45:00"),
                 DateFunctions.parsePureDate("2014-03-09T02:30:00"),   // in the hour New York skips
                 DateFunctions.parsePureDate("2014-03-09T07:00:00"),   // the instant it skips to
