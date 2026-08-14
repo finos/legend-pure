@@ -175,6 +175,7 @@ public class LatestDate implements PureDate
         throw new UnsupportedOperationException("Invalid operation for LatestDate");
     }
 
+    @Deprecated
     @Override
     public GregorianCalendar getCalendar()
     {
