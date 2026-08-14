@@ -252,14 +252,7 @@ public class DateFormat
                 case 'z':
                 {
                     int count = getCharCountFrom(character, formatString, i);
-                    if (calendar == null)
-                    {
-                        safeAppendable.append("GMT");
-                    }
-                    else
-                    {
-                        safeAppendable.append(timeZoneId);
-                    }
+                    safeAppendable.append((calendar == null) ? "GMT" : timeZoneId);
                     i += count;
                     break;
                 }
