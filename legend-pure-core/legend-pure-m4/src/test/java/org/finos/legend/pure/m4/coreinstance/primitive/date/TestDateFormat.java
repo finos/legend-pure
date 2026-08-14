@@ -1,0 +1,455 @@
+// Copyright 2026 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package org.finos.legend.pure.m4.coreinstance.primitive.date;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.TimeZone;
+
+/**
+ * Tests for {@link DateFormat}: rendering a Pure date through a format string, writing the
+ * canonical Pure date string, and parsing one back.
+ *
+ * <p>{@link TestPureDate} covers the rendering through {@link PureDate#format(String)} and
+ * {@link PureDate#toString()}, which delegate here. These tests go at {@link DateFormat} directly,
+ * so they can also reach the parse methods and the substring overload nothing else exercises.
+ */
+public class TestDateFormat
+{
+    private static final PureDate DATE = DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35, "070004235");
+
+    /**
+     * The same date at every granularity, each rendered as the canonical Pure date string.
+     */
+    private static final PureDate[] DATES = {
+            DateFunctions.newPureDate(2014),
+            DateFunctions.newPureDate(2014, 3),
+            DateFunctions.newPureDate(2014, 3, 10),
+            DateFunctions.newPureDate(2014, 3, 10, 16),
+            DateFunctions.newPureDate(2014, 3, 10, 16, 12),
+            DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35),
+            DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35, "070004235")
+    };
+
+    private static final String[] CANONICAL_STRINGS = {
+            "2014",
+            "2014-03",
+            "2014-03-10",
+            "2014-03-10T16",
+            "2014-03-10T16:12+0000",
+            "2014-03-10T16:12:35+0000",
+            "2014-03-10T16:12:35.070004235+0000"
+    };
+
+    // Format: date components
+
+    /**
+     * The year is written in full only from four letters on, and the full form is not padded, so a
+     * year of fewer than four digits is shorter than the format string suggests.
+     */
+    @Test
+    public void testFormatYear()
+    {
+        Assert.assertEquals("14", format("y", DATE));
+        Assert.assertEquals("14", format("yy", DATE));
+        Assert.assertEquals("14", format("yyy", DATE));
+        Assert.assertEquals("2014", format("yyyy", DATE));
+        Assert.assertEquals("2014", format("yyyyy", DATE));
+
+        Assert.assertEquals("00", format("yy", DateFunctions.newPureDate(2000, 3, 10)));
+        Assert.assertEquals("05", format("yy", DateFunctions.newPureDate(5, 3, 10)));
+        Assert.assertEquals("5", format("yyyy", DateFunctions.newPureDate(5, 3, 10)));
+        Assert.assertEquals("23", format("yy", DateFunctions.newPureDate(123, 3, 10)));
+        Assert.assertEquals("123", format("yyyy", DateFunctions.newPureDate(123, 3, 10)));
+        Assert.assertEquals("00", format("yy", DateFunctions.newPureDate(0, 3, 10)));
+        Assert.assertEquals("0", format("yyyy", DateFunctions.newPureDate(0, 3, 10)));
+        Assert.assertEquals("-44", format("yyyy", DateFunctions.newPureDate(-44, 3, 10)));
+    }
+
+    /**
+     * The month, day, hour, minute, and second are padded to one more digit than the format string
+     * repeats the letter, so a single letter gives no padding at all.
+     */
+    @Test
+    public void testFormatZeroPaddedComponents()
+    {
+        Assert.assertEquals("3", format("M", DATE));
+        Assert.assertEquals("03", format("MM", DATE));
+        Assert.assertEquals("003", format("MMM", DATE));
+
+        Assert.assertEquals("10", format("d", DATE));
+        Assert.assertEquals("10", format("dd", DATE));
+        Assert.assertEquals("010", format("ddd", DATE));
+
+        Assert.assertEquals("12", format("m", DATE));
+        Assert.assertEquals("12", format("mm", DATE));
+        Assert.assertEquals("012", format("mmm", DATE));
+
+        Assert.assertEquals("35", format("s", DATE));
+        Assert.assertEquals("35", format("ss", DATE));
+        Assert.assertEquals("035", format("sss", DATE));
+
+        // a single digit component is padded only as far as it is asked to be
+        PureDate single = DateFunctions.newPureDate(2014, 3, 5, 6, 7, 8);
+        Assert.assertEquals("3", format("M", single));
+        Assert.assertEquals("03", format("MM", single));
+        Assert.assertEquals("5", format("d", single));
+        Assert.assertEquals("05", format("dd", single));
+        Assert.assertEquals("7", format("m", single));
+        Assert.assertEquals("07", format("mm", single));
+        Assert.assertEquals("8", format("s", single));
+        Assert.assertEquals("08", format("ss", single));
+    }
+
+    /**
+     * The hour is written either on the 24 hour clock, or on the 12 hour clock with midnight and
+     * noon both written as 12.
+     */
+    @Test
+    public void testFormatHourAndAmPm()
+    {
+        int[] hours = {0, 1, 11, 12, 13, 23};
+        String[] onTwelveHourClock = {"12", "1", "11", "12", "1", "11"};
+        String[] onTwelveHourClockPadded = {"12", "01", "11", "12", "01", "11"};
+        String[] onTwentyFourHourClock = {"0", "1", "11", "12", "13", "23"};
+        String[] amPm = {"AM", "AM", "AM", "PM", "PM", "PM"};
+        for (int i = 0; i < hours.length; i++)
+        {
+            PureDate date = DateFunctions.newPureDate(2014, 3, 10, hours[i], 12);
+            Assert.assertEquals(date.toString(), onTwelveHourClock[i], format("h", date));
+            Assert.assertEquals(date.toString(), onTwelveHourClockPadded[i], format("hh", date));
+            Assert.assertEquals(date.toString(), onTwentyFourHourClock[i], format("H", date));
+            Assert.assertEquals(date.toString(), amPm[i], format("a", date));
+        }
+    }
+
+    /**
+     * The subsecond is cut to one more digit than the format string repeats the letter, but from
+     * four letters on it is written in full however many digits it has. It is never padded, so a
+     * date with fewer digits than were asked for gives all it has and no more.
+     */
+    @Test
+    public void testFormatSubsecond()
+    {
+        Assert.assertEquals("0", format("S", DATE));
+        Assert.assertEquals("07", format("SS", DATE));
+        Assert.assertEquals("070", format("SSS", DATE));
+        Assert.assertEquals("070004235", format("SSSS", DATE));
+        Assert.assertEquals("070004235", format("SSSSSSSSSS", DATE));
+
+        PureDate hundredths = DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35, "07");
+        Assert.assertEquals("0", format("S", hundredths));
+        Assert.assertEquals("07", format("SS", hundredths));
+        Assert.assertEquals("07", format("SSS", hundredths));
+        Assert.assertEquals("07", format("SSSS", hundredths));
+    }
+
+    // Format: literals
+
+    @Test
+    public void testFormatSeparatorsAndLiteralText()
+    {
+        Assert.assertEquals("2014-03-10", format("yyyy-MM-dd", DATE));
+        Assert.assertEquals("2014/03/10", format("yyyy/MM/dd", DATE));
+        Assert.assertEquals("2014.03.10", format("yyyy.MM.dd", DATE));
+        Assert.assertEquals("16:12:35", format("HH:mm:ss", DATE));
+        Assert.assertEquals("2014 03 10", format("yyyy MM dd", DATE));
+        Assert.assertEquals("2014\t03", format("yyyy\tMM", DATE));
+        Assert.assertEquals("", format("", DATE));
+
+        // quoted text is written out as it stands, and a backslash escapes a quote within it
+        Assert.assertEquals("2014T03", format("yyyy\"T\"MM", DATE));
+        Assert.assertEquals("at 16", format("\"at\" HH", DATE));
+        Assert.assertEquals("a\"b 16", format("\"a\\\"b\" HH", DATE));
+        Assert.assertEquals("yyyy", format("\"yyyy\"", DATE));
+    }
+
+    // Format: time zones
+
+    /**
+     * Without a time zone the date is written as what it is, a time in UTC, in each of the three
+     * time zone notations.
+     */
+    @Test
+    public void testFormatTimeZoneOfADateWithNoTimeZoneGiven()
+    {
+        Assert.assertEquals("GMT", format("z", DATE));
+        Assert.assertEquals("GMT", format("zzzz", DATE));
+        Assert.assertEquals("+0000", format("Z", DATE));
+        Assert.assertEquals("Z", format("X", DATE));
+        Assert.assertEquals("2014-03-10 16:12:35.070+0000", format("yyyy-MM-dd HH:mm:ss.SSSZ", DATE));
+    }
+
+    /**
+     * A time zone at the head of the format string shifts the date into that zone. The zone name
+     * may be quoted, and a backslash escapes a character within it; whichever way it is written, it
+     * is the text as given that a general time zone renders.
+     */
+    @Test
+    public void testFormatWithTimeZone()
+    {
+        Assert.assertEquals("2014-03-10 11:12:35.070-0500", format("[EST]yyyy-MM-dd HH:mm:ss.SSSZ", DATE));
+        Assert.assertEquals("2014-03-10 17:12:35.070+0100", format("[CET]yyyy-MM-dd HH:mm:ss.SSSZ", DATE));
+        Assert.assertEquals("2014-03-10 17:12:35.070+0100", format("[\"CET\"]yyyy-MM-dd HH:mm:ss.SSSZ", DATE));
+        Assert.assertEquals("2014-03-10 17:12:35.070+0100", format("[CE\\T]yyyy-MM-dd HH:mm:ss.SSSZ", DATE));
+
+        Assert.assertEquals("CET", format("[CET]z", DATE));
+        Assert.assertEquals("CET", format("[CE\\T]z", DATE));
+        Assert.assertEquals("+01", format("[CET]X", DATE));
+
+        // an unknown zone is GMT, but a general time zone still renders the name as given
+        Assert.assertEquals("2014-03-10 16:12:35.070+0000", format("[Europe/Lissabon]yyyy-MM-dd HH:mm:ss.SSSZ", DATE));
+        Assert.assertEquals("Europe/Lissabon", format("[Europe/Lissabon]z", DATE));
+
+        // a date with no hour is never shifted
+        PureDate day = DateFunctions.newPureDate(2015, 8, 15);
+        Assert.assertEquals("2015-08-15", format("[EST]yyyy-MM-dd", day));
+        Assert.assertEquals("GMT", format("[EST]z", day));
+    }
+
+    /**
+     * A shifted date is rendered at the instant it stands for, whatever the zone happens to be
+     * doing around it, so it has to agree with {@code java.time} for the same instant and zone -
+     * including across the hour a zone skips when daylight saving time begins and the hour it
+     * repeats when it ends, where a wall clock reading of the date would not.
+     */
+    @Test
+    public void testFormatWithTimeZoneAgreesWithJavaTime()
+    {
+        String[] zoneIds = {"GMT", "UTC", "EST", "CET", "America/New_York", "Europe/London", "Asia/Tokyo", "Australia/Adelaide"};
+        PureDate[] dates = {
+                DateFunctions.parsePureDate("2014-01-15T23:45:00"),
+                DateFunctions.parsePureDate("2014-03-09T02:30:00"),   // in the hour New York skips
+                DateFunctions.parsePureDate("2014-03-09T07:00:00"),   // the instant it skips to
+                DateFunctions.parsePureDate("2014-11-02T05:30:00"),   // the first pass through the hour it repeats
+                DateFunctions.parsePureDate("2014-11-02T06:30:00"),   // the second
+                DateFunctions.parsePureDate("2014-03-30T01:30:00"),   // London, an hour into summer time
+                DateFunctions.parsePureDate("2014-07-04T12:00:00")
+        };
+        DateTimeFormatter expectedFormat = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss Z");
+        for (String zoneId : zoneIds)
+        {
+            ZoneId zone = TimeZone.getTimeZone(zoneId).toZoneId();
+            for (PureDate date : dates)
+            {
+                String expected = PureDateToJava.start().toInstant(date).atZone(zone).format(expectedFormat);
+                Assert.assertEquals(zoneId + " " + date, expected, format("[" + zoneId + "]yyyy-MM-dd HH:mm:ss Z", date));
+            }
+        }
+    }
+
+    // Format: errors
+
+    /**
+     * A format string may only ask for components the date has, since there is nothing to write for
+     * one it does not carry and no reason to think a date of that granularity was intended.
+     */
+    @Test
+    public void testFormatOfAComponentTheDateDoesNotHave()
+    {
+        assertFormatFails("Date has no month: 2014", "yyyy-MM", DATES[0]);
+        assertFormatFails("Date has no day: 2014-03", "yyyy-MM-dd", DATES[1]);
+        assertFormatFails("Date has no hour: 2014-03-10", "yyyy-MM-dd HH", DATES[2]);
+        assertFormatFails("Date has no hour: 2014-03-10", "h", DATES[2]);
+        assertFormatFails("Date has no hour: 2014-03-10", "a", DATES[2]);
+        assertFormatFails("Date has no minute: 2014-03-10T16", "HH:mm", DATES[3]);
+        assertFormatFails("Date has no second: 2014-03-10T16:12+0000", "HH:mm:ss", DATES[4]);
+        assertFormatFails("Date has no sub-second: 2014-03-10T16:12:35+0000", "HH:mm:ss.SSS", DATES[5]);
+    }
+
+    @Test
+    public void testFormatWithAnInvalidFormatString()
+    {
+        assertFormatFails("Invalid format control character 'Q' in format string: yyyy-Q", "yyyy-Q", DATE);
+        assertFormatFails("Invalid format control character '#' in format string: #", "#", DATE);
+        assertFormatFails("Missing closing quote in format string: \"abc", "\"abc", DATE);
+        assertFormatFails("Missing closing bracket in format string: [EST", "[EST", DATE);
+        assertFormatFails("Missing closing quotes in time zone definition: [\"EST]yyyy", "[\"EST]yyyy", DATE);
+        assertFormatFails("Time zone can only be set at the beginning of the format string", "yyyy[EST]", DATE);
+        assertFormatFails("Time zone can only be set at the beginning of the format string", "[EST]yyyy[EST]", DATE);
+    }
+
+    /**
+     * {@link LatestDate} has no components to write, so it can be neither formatted nor appended.
+     */
+    @Test
+    public void testLatestDateCannotBeWritten()
+    {
+        Assert.assertEquals(
+                "Invalid operation for LatestDate",
+                Assert.assertThrows(UnsupportedOperationException.class, () -> format("yyyy", LatestDate.instance)).getMessage());
+        Assert.assertEquals(
+                "Invalid operation for LatestDate",
+                Assert.assertThrows(UnsupportedOperationException.class, () -> DateFormat.append(new StringBuilder(), LatestDate.instance)).getMessage());
+    }
+
+    // Append
+
+    @Test
+    public void testAppendWritesTheCanonicalString()
+    {
+        for (int i = 0; i < DATES.length; i++)
+        {
+            Assert.assertEquals(CANONICAL_STRINGS[i], DateFormat.append(new StringBuilder(), DATES[i]).toString());
+
+            // which is what the date renders itself as
+            Assert.assertEquals(CANONICAL_STRINGS[i], DATES[i].toString());
+        }
+
+        // the offset is written from minute granularity on, where there is a time to which it applies
+        Assert.assertEquals("2014-03-10T16", DateFormat.append(new StringBuilder(), DATES[3]).toString());
+        Assert.assertEquals("-44-03-10", DateFormat.append(new StringBuilder(), DateFunctions.newPureDate(-44, 3, 10)).toString());
+    }
+
+    /**
+     * Both writers append to what they are given and hand it back, rather than returning something
+     * of their own, so a caller can keep building on it.
+     */
+    @Test
+    public void testTheWritersReturnTheAppendableTheyWereGiven()
+    {
+        StringBuilder builder = new StringBuilder("date: ");
+        Assert.assertSame(builder, DateFormat.append(builder, DATE));
+        Assert.assertSame(builder, DateFormat.format(builder, " \"(\"yyyy\")\"", DATE));
+        Assert.assertEquals("date: 2014-03-10T16:12:35.070004235+0000 (2014)", builder.toString());
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testWriteWritesTheCanonicalString() throws IOException
+    {
+        StringWriter writer = new StringWriter();
+        DateFormat.write(writer, DATE);
+        Assert.assertEquals("2014-03-10T16:12:35.070004235+0000", writer.toString());
+    }
+
+    // Parse
+
+    @Test
+    public void testParsePureDateAtEachGranularity()
+    {
+        for (int i = 0; i < DATES.length; i++)
+        {
+            Assert.assertEquals(CANONICAL_STRINGS[i], DATES[i], DateFormat.parsePureDate(CANONICAL_STRINGS[i]));
+        }
+    }
+
+    /**
+     * Parsing and appending are inverse: every date writes a string that parses back to it.
+     */
+    @Test
+    public void testAppendAndParseRoundTrip()
+    {
+        for (PureDate date : DATES)
+        {
+            Assert.assertEquals(date, DateFormat.parsePureDate(DateFormat.append(new StringBuilder(), date).toString()));
+        }
+    }
+
+    /**
+     * The overload taking a range parses a date out of the middle of a larger string, which is how
+     * a date embedded in Pure source is read.
+     */
+    @Test
+    public void testParsePureDateWithinALargerString()
+    {
+        String string = "xx%2014-03-10T16:12:35zz";
+        Assert.assertEquals(DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35), DateFormat.parsePureDate(string, 2, 22));
+
+        // the range decides what is parsed, not the string
+        Assert.assertEquals(DateFunctions.newPureDate(2014), DateFormat.parsePureDate("2014-03-10", 0, 4));
+        Assert.assertEquals(DateFunctions.newPureDate(2014, 3), DateFormat.parsePureDate("2014-03-10", 0, 7));
+
+        // whitespace within the range is skipped, at either end
+        Assert.assertEquals(DateFunctions.newPureDate(2014, 3), DateFormat.parsePureDate("  2014-03  ", 0, 11));
+        Assert.assertEquals(DateFunctions.newPureDate(2014, 3), DateFormat.parsePureDate("\t2014-03\n", 0, 9));
+    }
+
+    /**
+     * The typed parse methods are the plain one with a cast, so a string of the wrong granularity
+     * fails as a cast rather than as a parse.
+     */
+    @Test
+    public void testParseStrictDateAndParseDateTime()
+    {
+        Assert.assertEquals(DateFunctions.newPureDate(2014, 3, 10), DateFormat.parseStrictDate("2014-03-10"));
+        Assert.assertEquals(DateFunctions.newPureDate(2014, 3, 10), DateFormat.parseStrictDate("%2014-03-10"));
+        Assert.assertEquals(DateFunctions.newPureDate(2014, 3, 10, 16), DateFormat.parseDateTime("2014-03-10T16"));
+        Assert.assertEquals(DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35, "070"), DateFormat.parseDateTime("2014-03-10T16:12:35.070"));
+
+        Assert.assertThrows(ClassCastException.class, () -> DateFormat.parseStrictDate("2014"));
+        Assert.assertThrows(ClassCastException.class, () -> DateFormat.parseStrictDate("2014-03-10T16"));
+        Assert.assertThrows(ClassCastException.class, () -> DateFormat.parseDateTime("2014-03-10"));
+    }
+
+    @Test
+    public void testParseTimeZoneOffsets()
+    {
+        PureDate expected = DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35);
+        Assert.assertEquals(expected, DateFormat.parsePureDate("2014-03-10T16:12:35"));
+        Assert.assertEquals(expected, DateFormat.parsePureDate("2014-03-10T16:12:35Z"));
+        Assert.assertEquals(expected, DateFormat.parsePureDate("2014-03-10T16:12:35+0000"));
+        Assert.assertEquals(expected, DateFormat.parsePureDate("2014-03-10T11:12:35-0500"));
+        Assert.assertEquals(expected, DateFormat.parsePureDate("2014-03-10T17:12:35+0100"));
+        Assert.assertEquals(expected, DateFormat.parsePureDate("2014-03-10T16:42:35+0030"));
+
+        // an offset can carry the date into the next day
+        Assert.assertEquals(
+                DateFunctions.newPureDate(2014, 3, 11, 2, 12),
+                DateFormat.parsePureDate("2014-03-10T21:12-0500"));
+    }
+
+    @Test
+    public void testParseInvalidDateStrings()
+    {
+        assertParseFails("Invalid date string: ''", "");
+        assertParseFails("Invalid date string: '   '", "   ");
+        assertParseFails("Invalid date string: '%'", "%");
+        assertParseFails("Error parsing year: 'not a date'", "not a date");
+        assertParseFails("Invalid date string: '2014/03'", "2014/03");
+        assertParseFails("Invalid time zone: +5", "2014-03-10T16:12:35+5");
+
+        // a quote in the offending string is escaped in the message
+        assertParseFails("Error parsing month: '2014-\\'x'", "2014-'x");
+    }
+
+    // Helpers
+
+    private static String format(String formatString, PureDate date)
+    {
+        return DateFormat.format(new StringBuilder(), formatString, date).toString();
+    }
+
+    private static void assertFormatFails(String expectedMessage, String formatString, PureDate date)
+    {
+        Assert.assertEquals(
+                formatString,
+                expectedMessage,
+                Assert.assertThrows(formatString, IllegalArgumentException.class, () -> format(formatString, date)).getMessage());
+    }
+
+    private static void assertParseFails(String expectedMessage, String string)
+    {
+        Assert.assertEquals(
+                string,
+                expectedMessage,
+                Assert.assertThrows(string, IllegalArgumentException.class, () -> DateFormat.parsePureDate(string)).getMessage());
+    }
+}
