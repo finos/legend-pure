@@ -129,6 +129,7 @@ class FunctionMatch implements Comparable<FunctionMatch>
         GenericTypeMatch[] typeMatches = new GenericTypeMatch[parameterCount];
         MultiplicityMatch[] multiplicityMatches = new MultiplicityMatch[parameterCount];
         NullMatchBehavior nullMatchBehavior = lenient ? NullMatchBehavior.MATCH_ANYTHING : NullMatchBehavior.MATCH_NOTHING;
+        ParameterMatchBehavior valueParameterMatchBehavior = lenient ? ParameterMatchBehavior.MATCH_ANYTHING : ParameterMatchBehavior.MATCH_CAUTIOUSLY;
         for (int i = 0; i < parameterCount; i++)
         {
             CoreInstance parameter = parameters.get(i);
@@ -136,7 +137,7 @@ class FunctionMatch implements Comparable<FunctionMatch>
 
             CoreInstance paramGenericType = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.genericType, processorSupport);
             CoreInstance valueGenericType = Instance.getValueForMetaPropertyToOneResolved(value, M3Properties.genericType, processorSupport);
-            GenericTypeMatch typeMatch = GenericTypeMatch.newGenericTypeMatch(paramGenericType, valueGenericType, true, nullMatchBehavior, ParameterMatchBehavior.MATCH_ANYTHING, ParameterMatchBehavior.MATCH_CAUTIOUSLY, processorSupport);
+            GenericTypeMatch typeMatch = GenericTypeMatch.newGenericTypeMatch(paramGenericType, valueGenericType, true, nullMatchBehavior, ParameterMatchBehavior.MATCH_ANYTHING, valueParameterMatchBehavior, processorSupport);
             if (typeMatch == null)
             {
                 return null;

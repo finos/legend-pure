@@ -18,6 +18,11 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.impl.tuple.Tuples;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
+import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
@@ -921,6 +926,91 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                         "    |$r->cast(@Relation<(a:Integer, f:String)>)->test(~id);\n" +
                         "}"));
         Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:5 column:55), \"The column 'id' can't be found in the relation (a:Integer, f:String)\"", e.getMessage());
+    }
+
+    @Test
+    public void testFuncColSpecWithRelationScopedLambda()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "native function zzRelSize<T>(r:Relation<T>[1]):Integer[1];\n" +
+                        "native function zzRelAgg<T,R>(r:Relation<T>[1], agg:FuncColSpec<{Relation<T>[1]->Any[0..1]}, R>[1]):Relation<R>[1];\n" +
+                        "function x<T>(r:Relation<T>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    let x = {|$r->cast(@Relation<(a:Integer, b:Integer)>)->zzRelAgg(~c : g | $g->zzRelSize())};\n" +
+                        "    true;\n" +
+                        "}"
+        );
+    }
+
+    @Test
+    public void testFuncColSpecRelationScopedLambdaInferredTypeInGraph()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "native function zzRelSize<T>(r:Relation<T>[1]):Integer[1];\n" +
+                        "native function zzRelAgg<T,R>(r:Relation<T>[1], agg:FuncColSpec<{Relation<T>[1]->Any[0..1]}, R>[1]):Relation<R>[1];\n" +
+                        "function zzRelAggFn():Relation<(c:Integer)>[1]\n" +
+                        "{\n" +
+                        "    []->cast(@Relation<(a:Integer, b:Integer)>)->toOne()->zzRelAgg(~c : g | $g->zzRelSize());\n" +
+                        "}"
+        );
+
+        ConcreteFunctionDefinition<?> function = (ConcreteFunctionDefinition<?>) runtime.getFunction("zzRelAggFn__Relation_1_");
+        Assert.assertNotNull(function);
+
+        SimpleFunctionExpression aggCall = (SimpleFunctionExpression) function._expressionSequence().getOnly();
+        SimpleFunctionExpression colSpecCall = (SimpleFunctionExpression) aggCall._parametersValues().toList().get(1);
+        LambdaFunction<?> lambda = (LambdaFunction<?>) ((InstanceValue) colSpecCall._parametersValues().toList().get(0))._values().getOnly();
+
+        Assert.assertEquals(
+                "meta::pure::metamodel::function::LambdaFunction<{meta::pure::metamodel::relation::Relation<(a:Integer, b:Integer)>[1]->Integer[1]}>",
+                GenericType.print(lambda._classifierGenericType(), true, processorSupport));
+    }
+
+    @Test
+    public void testFuncColSpecWithRelationScopedLambdaBindsRelationType()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "native function zzNeedsString(s:String[1]):Integer[1];\n" +
+                        "native function zzRelAgg<T,R>(r:Relation<T>[1], agg:FuncColSpec<{Relation<T>[1]->Any[0..1]}, R>[1]):Relation<R>[1];\n" +
+                        "function x<T>(r:Relation<T>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    let x = {|$r->cast(@Relation<(a:Integer, b:Integer)>)->zzRelAgg(~c : g | $g->zzNeedsString())};\n" +
+                        "    true;\n" +
+                        "}"));
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("zzNeedsString(_:Relation<(a:Integer, b:Integer)>[1])"));
+    }
+
+    @Test
+    public void testFuncColSpecWithRelationScopedLambdaResolvesColumnsAgainstRelation()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "native function zzCols<T,W>(r:Relation<T>[1], cols:ColSpec<W⊆T>[1]):Integer[1];\n" +
+                        "native function zzRelAgg<T,R>(r:Relation<T>[1], agg:FuncColSpec<{Relation<T>[1]->Any[0..1]}, R>[1]):Relation<R>[1];\n" +
+                        "function x<T>(r:Relation<T>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    let x = {|$r->cast(@Relation<(a:Integer, b:Integer)>)->zzRelAgg(~c : g | $g->zzCols(~nope))};\n" +
+                        "    true;\n" +
+                        "}"));
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("The column 'nope' can't be found in the relation (a:Integer, b:Integer)"));
+    }
+
+    @Test
+    public void testFuncColSpecWithRowScopedLambdaStillBindsRowType()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "native function zzNeedsString(s:String[1]):Integer[1];\n" +
+                        "native function zzRowAgg<T,R>(r:Relation<T>[1], agg:FuncColSpec<{T[1]->Any[0..1]}, R>[1]):Relation<R>[1];\n" +
+                        "function x<T>(r:Relation<T>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    let x = {|$r->cast(@Relation<(a:Integer, b:Integer)>)->zzRowAgg(~c : g | $g->zzNeedsString())};\n" +
+                        "    true;\n" +
+                        "}"));
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("zzNeedsString(_:(a:Integer, b:Integer)[1])"));
     }
 
     @Test
