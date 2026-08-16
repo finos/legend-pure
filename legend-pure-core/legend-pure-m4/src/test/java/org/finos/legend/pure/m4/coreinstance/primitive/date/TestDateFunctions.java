@@ -238,6 +238,7 @@ public class TestDateFunctions
      * to the millisecond precision a {@link GregorianCalendar} can carry.
      */
     @Test
+    @SuppressWarnings("deprecation")
     public void testFromCalendarRoundTripsGetCalendar()
     {
         assertRoundTripsThroughCalendar(DateFunctions.newPureDate(2014), Calendar.YEAR);
@@ -556,6 +557,7 @@ public class TestDateFunctions
 
     // Helpers
 
+    @SuppressWarnings("deprecation")
     private static void assertRoundTripsThroughCalendar(PureDate date, int precision)
     {
         Assert.assertEquals(date, DateFunctions.fromCalendar(date.getCalendar(), precision));

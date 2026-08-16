@@ -74,8 +74,20 @@ public interface PureDate extends Comparable<PureDate>
      * precision greater than millisecond.
      *
      * @return Gregorian calendar for Pure date
+     * @deprecated Use {@link PureDateToJava} instead. A Pure date is a span of time rather than an
+     * instant, and this method resolves it to the start of that span, so
+     * {@code PureDateToJava.start().toInstant(date)} is the same instant without the loss of
+     * precision below the millisecond; {@link PureDateToJava#end()} and
+     * {@link PureDateToJava#exclusiveEnd()} give the other end of the span, which a calendar cannot
+     * express at all. A {@link GregorianCalendar} also reads dates before 1582 on the Julian
+     * calendar and knows no time zone history before 1900, neither of which is true of a Pure date.
+     * Retained temporarily for callers that have not moved.
      */
-    GregorianCalendar getCalendar();
+    @Deprecated
+    default GregorianCalendar getCalendar()
+    {
+        throw new UnsupportedOperationException();
+    }
 
     default <T extends Appendable> T appendString(T appendable)
     {
