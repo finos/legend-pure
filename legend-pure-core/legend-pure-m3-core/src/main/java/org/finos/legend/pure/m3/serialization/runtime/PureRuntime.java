@@ -113,7 +113,7 @@ public class PureRuntime
 
         this.executedTestTracker = executedTestTracker;
 
-        this.options = options;
+        this.options = (options == null) ? RuntimeOptions.defaultOptions() : options;
     }
 
     public void initialize()

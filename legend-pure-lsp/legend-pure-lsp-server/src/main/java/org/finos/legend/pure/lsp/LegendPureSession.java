@@ -37,8 +37,10 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.Reposit
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
+import org.finos.legend.pure.m3.serialization.runtime.MutableRuntimeOptions;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
+import org.finos.legend.pure.m3.serialization.runtime.RuntimeOptions;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
@@ -53,6 +55,11 @@ public class LegendPureSession
     private volatile PureRuntime pureRuntime;
     private volatile FunctionExecution functionExecution;
     private volatile boolean initialized;
+
+    // Session-scoped and mutable, so legend/setOption can toggle options live without writing JVM system
+    // properties. Created eagerly and never replaced, so toggles survive a runtime rebuild.
+    private final MutableRuntimeOptions runtimeOptions = MutableRuntimeOptions.fromSystemProperties();
+
     private final SourceMutationService mutationService = new SourceMutationService(this);
 
     // Readers-writers lock protecting the compiled graph. Graph MUTATION (compile/reinitialize) is a
@@ -90,7 +97,7 @@ public class LegendPureSession
         this.classpathRepositoryNames = normalizeRepositoryNames(classpathRepositoryNames);
 
         this.pureRuntime = newRuntime(scanner, true, this.classpathRepositoryNames, Collections.emptySet(),
-                false, Collections.emptySet(), this.progressListener);
+                false, Collections.emptySet(), this.progressListener, this.runtimeOptions);
 
         this.functionExecution = initializeFunctionExecution(
                 new StackPreservingFunctionExecutionInterpreted(),
@@ -143,13 +150,14 @@ public class LegendPureSession
                                           Collection<String> excludedWorkspaceRepositoryNames)
     {
         return newRuntime(scanner, includeWorkspaceStorages, classpathRepositoryNames, additionalWorkspaceDependencies,
-                workspaceDefinitionsOnly, excludedWorkspaceRepositoryNames, null);
+                workspaceDefinitionsOnly, excludedWorkspaceRepositoryNames, null, RuntimeOptions.defaultOptions());
     }
 
     private static PureRuntime newRuntime(RepositoryScanner scanner, boolean includeWorkspaceStorages, Collection<String> classpathRepositoryNames,
                                           Collection<String> additionalWorkspaceDependencies, boolean workspaceDefinitionsOnly,
                                           Collection<String> excludedWorkspaceRepositoryNames,
-                                          java.util.function.Consumer<String> progressListener)
+                                          java.util.function.Consumer<String> progressListener,
+                                          RuntimeOptions options)
     {
         Set<String> normalizedClasspathRepositoryNames = normalizeRepositoryNames(classpathRepositoryNames);
         MutableList<RepositoryCodeStorage> storages = Lists.mutable.empty();
@@ -216,6 +224,7 @@ public class LegendPureSession
         PureRuntime runtime = new PureRuntimeBuilder(codeStorage)
                 .withMessage(new Message(""))
                 .setUseFastCompiler(true)
+                .withOptions(options)
                 .build();
 
         LOGGER.info("Initializing Pure runtime...");
@@ -597,6 +606,20 @@ public class LegendPureSession
     public PureRuntime getPureRuntime()
     {
         return this.pureRuntime;
+    }
+
+    public MutableRuntimeOptions getRuntimeOptions()
+    {
+        return this.runtimeOptions;
+    }
+
+    /**
+     * Sets or clears a Pure runtime option for this session, returning its new effective value. In-memory
+     * only: no system property is written, and the change is visible to this session's runtime immediately.
+     */
+    public boolean setOption(String name, boolean value)
+    {
+        return this.runtimeOptions.setOption(name, value);
     }
 
     public FunctionExecution getFunctionExecution()

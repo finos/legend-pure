@@ -16,13 +16,11 @@ package org.finos.legend.pure.lsp.protocol;
 
 /**
  * Params for legend/setOption. Sets or clears a Pure runtime option so isOptionSet('&lt;name&gt;')
- * reflects it live in this JVM, without a restart.
+ * reflects it live in the session, without a restart.
  * <p>
- * The Pure runtime resolves options via RuntimeOptions.systemPropertyOptions("pure.options."),
- * i.e. isOptionSet("X") == Boolean.getBoolean("pure.options.X"), read on every call. So this handler
- * maps to a System.setProperty("pure.options." + name, "true") when value is true, and a
- * System.clearProperty("pure.options." + name) when value is false (clearing, not "false", so
- * Boolean.getBoolean returns false either way but the property does not linger).
+ * The session's runtime resolves options against a MutableRuntimeOptions, seeded once from the
+ * "pure.options.*" system properties and thereafter mutated in memory. No system property is written,
+ * so the toggle is scoped to the session rather than the JVM.
  */
 public class SetOptionParams
 {

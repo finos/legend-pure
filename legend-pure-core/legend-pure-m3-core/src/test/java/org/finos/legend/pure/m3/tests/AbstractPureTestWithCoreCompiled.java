@@ -308,7 +308,7 @@ public abstract class AbstractPureTestWithCoreCompiled
 
     protected static RuntimeOptions getOptions()
     {
-        return RuntimeOptions.noOptionsSet();
+        return RuntimeOptions.defaultOptions();
     }
 
     /**

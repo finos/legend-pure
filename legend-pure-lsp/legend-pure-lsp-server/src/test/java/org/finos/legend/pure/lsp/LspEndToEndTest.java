@@ -476,22 +476,20 @@ public class LspEndToEndTest
     {
         String optionName = "E2eTestOption" + System.currentTimeMillis();
         String key = "pure.options." + optionName;
-        try
-        {
-            SetOptionResult on = server.setOption(new SetOptionParams(optionName, true)).get(10, TimeUnit.SECONDS);
-            Assert.assertTrue("setOption(true) should succeed", on.isSuccess());
-            Assert.assertTrue("Option should now be effective", on.isEffective());
-            Assert.assertEquals("System property should be set", "true", System.getProperty(key));
 
-            SetOptionResult off = server.setOption(new SetOptionParams(optionName, false)).get(10, TimeUnit.SECONDS);
-            Assert.assertTrue("setOption(false) should succeed", off.isSuccess());
-            Assert.assertFalse("Option should no longer be effective", off.isEffective());
-            Assert.assertNull("Property should be cleared, not stored as 'false'", System.getProperty(key));
-        }
-        finally
-        {
-            System.clearProperty(key);
-        }
+        SetOptionResult on = server.setOption(new SetOptionParams(optionName, true)).get(10, TimeUnit.SECONDS);
+        Assert.assertTrue("setOption(true) should succeed", on.isSuccess());
+        Assert.assertTrue("Option should now be effective", on.isEffective());
+        Assert.assertTrue("The session runtime should see the option",
+                server.getSession().getPureRuntime().getOptions().isOptionSet(optionName));
+        Assert.assertNull("setOption must not write a system property", System.getProperty(key));
+
+        SetOptionResult off = server.setOption(new SetOptionParams(optionName, false)).get(10, TimeUnit.SECONDS);
+        Assert.assertTrue("setOption(false) should succeed", off.isSuccess());
+        Assert.assertFalse("Option should no longer be effective", off.isEffective());
+        Assert.assertFalse("The session runtime should no longer see the option",
+                server.getSession().getPureRuntime().getOptions().isOptionSet(optionName));
+        Assert.assertNull("setOption must not write a system property", System.getProperty(key));
     }
 
     @Test

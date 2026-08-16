@@ -39,7 +39,7 @@ public class PureRuntimeBuilder
     private boolean isTransactionalByDefault = true;
     private boolean useFastCompiler = true;
     private ExecutedTestTracker executedTestTracker;
-    private RuntimeOptions options = RuntimeOptions.systemPropertyOptions("pure.options.");
+    private RuntimeOptions options = RuntimeOptions.defaultOptions();
 
     public PureRuntimeBuilder(MutableRepositoryCodeStorage codeStorage)
     {
@@ -103,7 +103,7 @@ public class PureRuntimeBuilder
 
     public PureRuntimeBuilder withOptions(RuntimeOptions options)
     {
-        this.options = options;
+        this.options = (options == null) ? RuntimeOptions.defaultOptions() : options;
         return this;
     }
 
