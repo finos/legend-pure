@@ -16,6 +16,8 @@ package org.finos.legend.pure.m3.serialization.runtime;
 
 public interface RuntimeOptions
 {
+    String DEFAULT_OPTION_PREFIX = "pure.options.";
+
     boolean isOptionSet(String name);
 
     static RuntimeOptions noOptionsSet()
@@ -31,5 +33,16 @@ public interface RuntimeOptions
     static RuntimeOptions systemPropertyOptions(String prefix)
     {
         return (prefix == null) ? Boolean::getBoolean : name -> Boolean.getBoolean(prefix + name);
+    }
+
+    /**
+     * The options used wherever none are explicitly supplied: the system properties prefixed with
+     * {@value #DEFAULT_OPTION_PREFIX}, snapshotted once per VM on first use of the default options.
+     * Properties set after that snapshot are not visible; use {@link MutableRuntimeOptions} where options
+     * must be togglable at runtime.
+     */
+    static RuntimeOptions defaultOptions()
+    {
+        return CachedSystemPropertyOptions.DEFAULT;
     }
 }

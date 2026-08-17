@@ -333,19 +333,14 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         });
     }
 
-    static final String PURE_OPTION_PREFIX = "pure.options.";
-
     /**
-     * Sets or clears a Pure runtime option in this JVM so that isOptionSet('&lt;name&gt;') reflects it
-     * live, without restarting the server. The Pure runtime resolves options through
-     * RuntimeOptions.systemPropertyOptions(PURE_OPTION_PREFIX) - i.e. isOptionSet("X") is
-     * Boolean.getBoolean("pure.options.X"), read on every call - so toggling the system property here
-     * takes effect immediately for subsequent go()/execute() runs in this session.
+     * Sets or clears a Pure runtime option so that isOptionSet('&lt;name&gt;') reflects it live, without
+     * restarting the server. The session holds a MutableRuntimeOptions, seeded once from the
+     * "pure.options.*" system properties and thereafter mutated in memory, so the change takes effect
+     * immediately for subsequent go()/execute() runs.
      * <p>
-     * value == true  -&gt; System.setProperty("pure.options." + name, "true")
-     * value == false -&gt; System.clearProperty("pure.options." + name)
-     * (clearing rather than storing "false" keeps the property table clean; Boolean.getBoolean
-     * returns false for an absent property either way.)
+     * The option is scoped to this session: no system property is written, so other code in this JVM
+     * reading "pure.options.*" directly will not observe the toggle.
      */
     @JsonRequest("legend/setOption")
     public CompletableFuture<SetOptionResult> setOption(SetOptionParams params)
@@ -356,17 +351,13 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
             {
                 return new SetOptionResult(false, params == null ? null : params.getName(), false, "Option name is required");
             }
+            LegendPureSession session = getSession();
+            if (session == null)
+            {
+                return new SetOptionResult(false, params.getName(), false, "Session is not available");
+            }
             String name = params.getName().trim();
-            String key = PURE_OPTION_PREFIX + name;
-            if (params.isValue())
-            {
-                System.setProperty(key, "true");
-            }
-            else
-            {
-                System.clearProperty(key);
-            }
-            boolean effective = Boolean.getBoolean(key);
+            boolean effective = session.setOption(name, params.isValue());
             LspLog.info("setOption: " + name + " -> " + effective + " (isOptionSet('" + name + "') now returns " + effective + ")");
             return new SetOptionResult(true, name, effective, null);
         });

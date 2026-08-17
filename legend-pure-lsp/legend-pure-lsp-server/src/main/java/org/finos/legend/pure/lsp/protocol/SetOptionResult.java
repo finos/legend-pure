@@ -16,7 +16,7 @@ package org.finos.legend.pure.lsp.protocol;
 
 /**
  * Result of legend/setOption. Echoes back the resolved state so a caller can confirm
- * isOptionSet('&lt;name&gt;') now returns {@link #isEffective()} in this JVM.
+ * isOptionSet('&lt;name&gt;') now returns {@link #isEffective()} in this session.
  */
 public class SetOptionResult
 {

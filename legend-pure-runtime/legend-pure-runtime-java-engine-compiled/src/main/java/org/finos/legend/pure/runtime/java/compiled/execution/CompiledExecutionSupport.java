@@ -84,7 +84,7 @@ public class CompiledExecutionSupport implements ExecutionSupport
         this.processorSupport = processorSupport;
         this.metadataAccessor = new MetadataHolder(processorSupport.getMetadata());
         this.extraSupportedTypes = extraSupportedTypes;
-        this.options = (options == null) ? name -> false : options;
+        this.options = (options == null) ? RuntimeOptions.defaultOptions() : options;
         this.compiledExtensions = compiledExtensions;
     }
 
