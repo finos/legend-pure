@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2026 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
 package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.eclipse.collections.api.factory.Sets;
-import org.eclipse.collections.api.map.ConcurrentMutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
+import org.finos.legend.pure.m4.tools.ConcurrentHashSet;
 
 import java.util.Properties;
 
@@ -29,17 +29,17 @@ import java.util.Properties;
  */
 public final class MutableRuntimeOptions implements RuntimeOptions
 {
-    private final ConcurrentMutableMap<String, Boolean> options = ConcurrentHashMap.newMap();
+    private final MutableSet<String> options = ConcurrentHashSet.newSet();
 
     private MutableRuntimeOptions(SetIterable<String> initiallySet)
     {
-        initiallySet.forEach(name -> this.options.put(name, Boolean.TRUE));
+        this.options.addAllIterable(initiallySet);
     }
 
     @Override
     public boolean isOptionSet(String name)
     {
-        return this.options.containsKey(name);
+        return this.options.contains(name);
     }
 
     /**
@@ -49,7 +49,7 @@ public final class MutableRuntimeOptions implements RuntimeOptions
     {
         if (value)
         {
-            this.options.put(name, Boolean.TRUE);
+            this.options.add(name);
         }
         else
         {
@@ -63,7 +63,7 @@ public final class MutableRuntimeOptions implements RuntimeOptions
      */
     public SetIterable<String> getSetOptions()
     {
-        return this.options.keysView().toSet();
+        return this.options.toSet();
     }
 
     @Override
