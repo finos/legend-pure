@@ -258,6 +258,10 @@ public class DateFormat
                 // RFC 822 time zone
                 case 'Z':
                 {
+                    if (!date.hasHour())
+                    {
+                        throw new IllegalArgumentException("Date has no hour (required for Z): " + date);
+                    }
                     int count = getCharCountFrom(character, formatString, i);
                     appendRFC822TimeZone(safeAppendable, getOffsetInMinutes(zoned));
                     i += count;
@@ -266,6 +270,10 @@ public class DateFormat
                 // ISO 8601 time zone
                 case 'X':
                 {
+                    if (!date.hasHour())
+                    {
+                        throw new IllegalArgumentException("Date has no hour (required for X): " + date);
+                    }
                     int count = getCharCountFrom(character, formatString, i);
                     appendISO8601TimeZone(safeAppendable, getOffsetInMinutes(zoned));
                     i += count;
@@ -627,6 +635,7 @@ public class DateFormat
      * @param zoned date and time being rendered, or null for UTC
      * @return offset from UTC in minutes
      */
+
     private static int getOffsetInMinutes(ZonedDateTime zoned)
     {
         return (zoned == null) ? 0 : (zoned.getOffset().getTotalSeconds() / 60);

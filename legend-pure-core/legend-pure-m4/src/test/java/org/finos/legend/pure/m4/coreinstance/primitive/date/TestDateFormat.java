@@ -323,6 +323,88 @@ public class TestDateFormat
     }
 
     /**
+     * A date with no hour is not an instant, so no offset from UTC belongs to it: a zone can be
+     * keeping several across a date that broad, and which one it is keeping is just what knowing the
+     * time would have told us. The numeric notations therefore fail on such a date, exactly as
+     * asking for the hour itself does, whether or not a zone was named. The general notation still
+     * works, because it names a zone rather than measuring one.
+     */
+    @Test
+    public void testFormatOffsetOfADateWithNoHour()
+    {
+        PureDate day = DateFunctions.newPureDate(2015, 8, 15);
+        PureDate month = DateFunctions.newPureDate(2015, 8);
+        PureDate year = DateFunctions.newPureDate(2015);
+
+        assertFormatFails("Date has no hour (required for Z): 2015-08-15", "[America/New_York]Z", day);
+        assertFormatFails("Date has no hour (required for X): 2015-08-15", "[America/New_York]X", day);
+        assertFormatFails("Date has no hour (required for Z): 2015-08", "[America/New_York]Z", month);
+        assertFormatFails("Date has no hour (required for Z): 2015", "[America/New_York]Z", year);
+
+        // a zone that never moves is no different: the date still does not say when
+        assertFormatFails("Date has no hour (required for Z): 2015-08-15", "[Asia/Kolkata]Z", day);
+        assertFormatFails("Date has no hour (required for Z): 2015-08-15", "[GMT]Z", day);
+        assertFormatFails("Date has no hour (required for X): 2015-08-15", "[+05:30]X", day);
+
+        // nor is naming no zone at all, since the offset is still not a thing the date carries
+        assertFormatFails("Date has no hour (required for Z): 2015-08-15", "Z", day);
+        assertFormatFails("Date has no hour (required for X): 2015-08-15", "X", day);
+        assertFormatFails("Date has no hour (required for Z): 2015-08-15", "yyyy-MM-dd Z", day);
+
+        // the general notation asks only what the format string said, so it still answers
+        Assert.assertEquals("2015-08-15 America/New_York", format("[America/New_York]yyyy-MM-dd z", day));
+        Assert.assertEquals("2015-08 America/New_York", format("[America/New_York]yyyy-MM z", month));
+        Assert.assertEquals("2015 America/New_York", format("[America/New_York]yyyy z", year));
+        Assert.assertEquals("2015-08-15 GMT", format("yyyy-MM-dd z", day));
+
+        // and the date itself is not shifted by naming a zone
+        Assert.assertEquals("2015-08-15", format("[Pacific/Auckland]yyyy-MM-dd", day));
+        Assert.assertEquals("2015-08-15", format("[Pacific/Honolulu]yyyy-MM-dd", day));
+    }
+
+    /**
+     * Once a date has an hour it stands for an instant, and every zone the format string can name
+     * renders it the same way: the general notation gives back the name as written, and the two
+     * numeric notations agree with each other and with the offset the zone was keeping then.
+     */
+    @Test
+    public void testFormatTimeZoneIsConsistentAcrossZones()
+    {
+        MutableList<String> zoneIds = Lists.mutable.with("GMT", "UTC", "CET", "America/New_York", "Asia/Kolkata", "Australia/Lord_Howe", "GMT+5", "UTC+3", "+05:30", "Etc/GMT+5");
+        zoneIds.addAllIterable(ZoneId.SHORT_IDS.keySet());
+        for (String zoneId : zoneIds)
+        {
+            ZoneId zone = ZoneId.of(zoneId, ZoneId.SHORT_IDS);
+            for (PureDate date : DATES)
+            {
+                String context = zoneId + " " + date;
+
+                // the general notation is the name as written, whatever the date carries
+                Assert.assertEquals(context, zoneId, format("[" + zoneId + "]z", date));
+
+                if (!date.hasHour())
+                {
+                    assertFormatFails("Date has no hour (required for Z): " + date, "[" + zoneId + "]Z", date);
+                    assertFormatFails("Date has no hour (required for X): " + date, "[" + zoneId + "]X", date);
+                    continue;
+                }
+
+                // the numeric notations agree with each other, and with the offset java.time gives
+                // for the instant the date stands for
+                int offsetSeconds = PureDateToJava.start().toInstant(date).atZone(zone).getOffset().getTotalSeconds();
+                int minutes = Math.abs(offsetSeconds / 60);
+                String sign = (offsetSeconds < 0) ? "-" : "+";
+                String rfc822 = String.format("%s%02d%02d", sign, minutes / 60, minutes % 60);
+                String iso8601 = (offsetSeconds == 0) ? "Z" :
+                        ((minutes % 60 == 0) ? String.format("%s%02d", sign, minutes / 60) : rfc822);
+
+                Assert.assertEquals(context, rfc822, format("[" + zoneId + "]Z", date));
+                Assert.assertEquals(context, iso8601, format("[" + zoneId + "]X", date));
+            }
+        }
+    }
+
+    /**
      * A zone need not be a whole number of minutes from UTC: Liberia was 44 minutes and 30 seconds
      * behind it until 1972. The second is part of the shift there, so it comes from the shifted
      * time along with every other component, and neither notation can express it, so both round
@@ -387,6 +469,8 @@ public class TestDateFormat
         assertFormatFails("Date has no hour: 2014-03-10", "yyyy-MM-dd HH", DATES[2]);
         assertFormatFails("Date has no hour: 2014-03-10", "h", DATES[2]);
         assertFormatFails("Date has no hour: 2014-03-10", "a", DATES[2]);
+        assertFormatFails("Date has no hour (required for Z): 2014-03-10", "Z", DATES[2]);
+        assertFormatFails("Date has no hour (required for X): 2014-03-10", "X", DATES[2]);
         assertFormatFails("Date has no minute: 2014-03-10T16", "HH:mm", DATES[3]);
         assertFormatFails("Date has no second: 2014-03-10T16:12+0000", "HH:mm:ss", DATES[4]);
         assertFormatFails("Date has no sub-second: 2014-03-10T16:12:35+0000", "HH:mm:ss.SSS", DATES[5]);
