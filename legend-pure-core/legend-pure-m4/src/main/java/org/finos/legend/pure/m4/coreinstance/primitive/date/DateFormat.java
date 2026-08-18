@@ -30,6 +30,61 @@ public class DateFormat
 
     private static final char DATE_PREFIX = '%';
 
+    /**
+     * Write a Pure date to an appendable in the form a format string describes.
+     *
+     * <p>Each character of the format string is a control character standing for one component of
+     * the date, except for the separators {@code - / : . }, tab and space, which are written out as
+     * they appear, and text in double quotes, which is written out without them. A backslash escapes
+     * the character after it. Repeating a control character widens the field it writes: {@code d}
+     * gives 1 where {@code dd} gives 01.
+     *
+     * <table border="1">
+     * <caption>Control characters</caption>
+     * <tr><th>Character</th><th>Component</th><th>Example</th></tr>
+     * <tr><td>{@code y}</td><td>year; one or two of them write the last two digits, three or more
+     * the whole year</td><td>{@code yy} 14, {@code yyyy} 2014</td></tr>
+     * <tr><td>{@code M}</td><td>month</td><td>{@code MM} 03</td></tr>
+     * <tr><td>{@code d}</td><td>day of the month</td><td>{@code dd} 10</td></tr>
+     * <tr><td>{@code H}</td><td>hour, 0 to 23</td><td>{@code HH} 16</td></tr>
+     * <tr><td>{@code h}</td><td>hour, 1 to 12</td><td>{@code hh} 04</td></tr>
+     * <tr><td>{@code a}</td><td>AM or PM</td><td>PM</td></tr>
+     * <tr><td>{@code m}</td><td>minute</td><td>{@code mm} 12</td></tr>
+     * <tr><td>{@code s}</td><td>second</td><td>{@code ss} 35</td></tr>
+     * <tr><td>{@code S}</td><td>sub-second; up to three of them truncate the date's own digits,
+     * more write them all</td><td>{@code SSS} 070</td></tr>
+     * <tr><td>{@code z}</td><td>general time zone: the zone as written in the format string, or GMT
+     * if none was</td><td>{@code z} EST</td></tr>
+     * <tr><td>{@code Z}</td><td>RFC 822 time zone: always a sign, two digits of hours and two of
+     * minutes; requires an hour</td><td>{@code Z} -0500</td></tr>
+     * <tr><td>{@code X}</td><td>ISO 8601 time zone: Z for UTC, otherwise a sign, hours, and minutes
+     * only when the offset has them; requires an hour</td><td>{@code X} -05</td></tr>
+     * </table>
+     *
+     * <p>A format string may open with a time zone in square brackets, as in
+     * {@code [America/New_York]yyyy-MM-dd HH:mm:ss}, and only open with one: a zone appearing after
+     * anything has been written is an error, since the components before it would already have been
+     * written in another zone. The name may be anything {@link ZoneId#of(String, java.util.Map)}
+     * accepts against {@link ZoneId#SHORT_IDS} - a region such as {@code America/New_York}, one of
+     * the three letter abbreviations such as {@code EST}, or an offset such as {@code GMT+5} or
+     * {@code +05:30} - and a name it does not accept is an error rather than a silent fall back to
+     * UTC.
+     *
+     * <p>A Pure date is always understood as UTC, so a zone shifts the date to the instant it
+     * stands for as that zone reads it, and every component comes from the shifted reading. A date
+     * with no hour is not an instant and so is never shifted; {@code z} still names the zone that
+     * was asked for, but {@code Z} and {@code X} are an error, since an offset belongs to an
+     * instant and a zone can be keeping more than one over a date that broad.
+     *
+     * @param appendable   appendable to write to
+     * @param formatString format string
+     * @param date         date to write
+     * @param <T>          appendable type
+     * @return the appendable
+     * @throws IllegalArgumentException if the format string is malformed, names a time zone that
+     *                                  cannot be resolved, sets a time zone anywhere but at the
+     *                                  start, or asks for a component the date does not have
+     */
     public static <T extends Appendable> T format(T appendable, String formatString, PureDate date)
     {
         SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
