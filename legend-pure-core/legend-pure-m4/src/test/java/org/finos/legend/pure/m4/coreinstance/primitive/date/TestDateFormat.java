@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -22,7 +24,6 @@ import java.io.StringWriter;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.TimeZone;
 
 /**
  * Tests for {@link DateFormat}: rendering a Pure date through a format string, writing the
@@ -301,6 +302,27 @@ public class TestDateFormat
     }
 
     /**
+     * A zone may be named by an offset rather than a place, in any of the forms
+     * {@link ZoneId#of(String, java.util.Map)} takes, and the offset is then fixed rather than
+     * something the zone varies over the year. Note that the Etc zones invert the sign, as POSIX
+     * has them count hours west of Greenwich: Etc/GMT+5 is five hours behind UTC, not ahead.
+     */
+    @Test
+    public void testFormatWithATimeZoneNamedByItsOffset()
+    {
+        Assert.assertEquals("2014-03-10 21:12:35 +0500", format("[GMT+5]yyyy-MM-dd HH:mm:ss Z", DATE));
+        Assert.assertEquals("2014-03-10 21:12:35 +0500", format("[GMT+05:00]yyyy-MM-dd HH:mm:ss Z", DATE));
+        Assert.assertEquals("2014-03-10 19:12:35 +0300", format("[UTC+3]yyyy-MM-dd HH:mm:ss Z", DATE));
+        Assert.assertEquals("2014-03-10 21:42:35 +0530", format("[+05:30]yyyy-MM-dd HH:mm:ss Z", DATE));
+        Assert.assertEquals("2014-03-10 11:12:35 -0500", format("[Etc/GMT+5]yyyy-MM-dd HH:mm:ss Z", DATE));
+
+        // UTC by any of its names leaves the date where it is
+        Assert.assertEquals("2014-03-10 16:12:35 +0000", format("[UTC]yyyy-MM-dd HH:mm:ss Z", DATE));
+        Assert.assertEquals("2014-03-10 16:12:35 +0000", format("[UT]yyyy-MM-dd HH:mm:ss Z", DATE));
+        Assert.assertEquals("2014-03-10 16:12:35 +0000", format("[Z]yyyy-MM-dd HH:mm:ss Z", DATE));
+    }
+
+    /**
      * A zone need not be a whole number of minutes from UTC: Liberia was 44 minutes and 30 seconds
      * behind it until 1972. The second is part of the shift there, so it comes from the shifted
      * time along with every other component, and neither notation can express it, so both round
@@ -323,7 +345,8 @@ public class TestDateFormat
     @Test
     public void testFormatWithTimeZoneAgreesWithJavaTime()
     {
-        String[] zoneIds = {"GMT", "UTC", "EST", "CET", "America/New_York", "Europe/London", "Asia/Tokyo", "Australia/Adelaide", "Asia/Kathmandu", "Pacific/Chatham", "Africa/Monrovia"};
+        MutableList<String> zoneIds = Lists.mutable.with("GMT", "UTC", "CET", "America/New_York", "Europe/London", "Asia/Tokyo", "Australia/Adelaide", "Asia/Kathmandu", "Pacific/Chatham", "Africa/Monrovia", "Australia/Lord_Howe");
+        zoneIds.addAllIterable(ZoneId.SHORT_IDS.keySet());
         PureDate[] dates = {
                 DateFunctions.parsePureDate("1500-01-15T12:00:00"),   // before the Gregorian calendar was adopted
                 DateFunctions.parsePureDate("1800-01-15T12:00:00"),   // before standard time
@@ -340,7 +363,7 @@ public class TestDateFormat
         DateTimeFormatter iso8601 = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss X");
         for (String zoneId : zoneIds)
         {
-            ZoneId zone = TimeZone.getTimeZone(zoneId).toZoneId();
+            ZoneId zone = ZoneId.of(zoneId, ZoneId.SHORT_IDS);
             for (PureDate date : dates)
             {
                 ZonedDateTime zoned = PureDateToJava.start().toInstant(date).atZone(zone);
