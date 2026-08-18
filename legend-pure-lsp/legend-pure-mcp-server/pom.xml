@@ -26,16 +26,6 @@
     <packaging>jar</packaging>
     <name>Legend Pure - LSP - MCP Server</name>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.google.errorprone</groupId>
-                <artifactId>error_prone_annotations</artifactId>
-                <version>2.48.0</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <build>
         <plugins>
             <plugin>
@@ -66,7 +56,16 @@
                     </execution>
                     <execution>
                         <id>dependency-analyze</id>
-                        <phase>none</phase>
+                        <configuration>
+                            <!-- The dependency plugin analyzer raises these as false positives -->
+                            <ignoredUnusedDeclaredDependencies>
+                                <dependency>org.finos.legend.pure:legend-pure-lsp-server</dependency>
+                                <dependency>com.google.code.gson:gson</dependency>
+                                <dependency>org.eclipse.collections:eclipse-collections-api</dependency>
+                                <dependency>org.eclipse.collections:eclipse-collections</dependency>
+                                <dependency>org.slf4j:slf4j-api</dependency>
+                            </ignoredUnusedDeclaredDependencies>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -81,6 +80,16 @@
             </plugin>
         </plugins>
     </build>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>2.48.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
