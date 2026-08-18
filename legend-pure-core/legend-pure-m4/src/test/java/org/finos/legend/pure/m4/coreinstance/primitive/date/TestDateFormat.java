@@ -231,14 +231,14 @@ public class TestDateFormat
         Assert.assertEquals("CET", format("[CET]z", DATE));
         Assert.assertEquals("CET", format("[CE\\T]z", DATE));
 
-        // an unknown zone is GMT, but a general time zone still renders the name as given
-        Assert.assertEquals("2014-03-10 16:12:35.070+0000", format("[Europe/Lissabon]yyyy-MM-dd HH:mm:ss.SSSZ", DATE));
-        Assert.assertEquals("Europe/Lissabon", format("[Europe/Lissabon]z", DATE));
+        // an unknown zone results in an error
+        assertFormatFails("Unknown time zone: Europe/Lissabon", "[Europe/Lissabon]yyyy-MM-dd HH:mm:ss.SSSZ", DATE);
+        assertFormatFails("Unknown time zone: Europe/Lissabon", "[Europe/Lissabon]z", DATE);
 
         // a date with no hour is never shifted
         PureDate day = DateFunctions.newPureDate(2015, 8, 15);
         Assert.assertEquals("2015-08-15", format("[EST]yyyy-MM-dd", day));
-        Assert.assertEquals("GMT", format("[EST]z", day));
+        Assert.assertEquals("EST", format("[EST]z", day));
     }
 
     /**

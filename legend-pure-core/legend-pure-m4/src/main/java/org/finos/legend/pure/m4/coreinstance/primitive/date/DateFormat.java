@@ -18,8 +18,9 @@ import org.finos.legend.pure.m4.tools.SafeAppendable;
 import org.finos.legend.pure.m4.tools.TextTools;
 
 import java.io.IOException;
+import java.time.DateTimeException;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.TimeZone;
 
 public class DateFormat
 {
@@ -34,7 +35,7 @@ public class DateFormat
         SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
         int length = formatString.length();
         ZonedDateTime zoned = null;
-        StringBuilder timeZoneId = new StringBuilder();
+        String timeZoneId = null;
         int i = 0;
         while (i < length)
         {
@@ -49,6 +50,7 @@ public class DateFormat
                         throw new IllegalArgumentException("Time zone can only be set at the beginning of the format string");
                     }
 
+                    StringBuilder tzBuilder = new StringBuilder();
                     boolean done = false;
                     boolean escaped = false;
                     boolean inQuotes = false;
@@ -57,7 +59,7 @@ public class DateFormat
                         char next = formatString.charAt(i++);
                         if (escaped)
                         {
-                            timeZoneId.append(next);
+                            tzBuilder.append(next);
                             escaped = false;
                         }
                         else if (next == '"')
@@ -74,7 +76,7 @@ public class DateFormat
                         }
                         else
                         {
-                            timeZoneId.append(next);
+                            tzBuilder.append(next);
                         }
                     }
                     if (inQuotes)
@@ -85,24 +87,22 @@ public class DateFormat
                     {
                         throw new IllegalArgumentException("Missing closing bracket in format string: " + formatString);
                     }
-                    TimeZone timeZone;
+                    timeZoneId = tzBuilder.toString();
+                    ZoneId timeZone;
                     try
                     {
-                        timeZone = TimeZone.getTimeZone(timeZoneId.toString());
+                        timeZone = ZoneId.of(timeZoneId, ZoneId.SHORT_IDS);
                     }
-                    catch (RuntimeException e)
+                    catch (DateTimeException e)
                     {
-                        throw new IllegalArgumentException("Unknown time zone: " + timeZoneId);
+                        throw new IllegalArgumentException("Unknown time zone: " + timeZoneId, e);
                     }
 
                     if (date.hasHour())
                     {
-                        if (zoned == null)
-                        {
-                            // A Pure date is always understood as UTC, so the instant it starts at
-                            // is what the requested zone renders.
-                            zoned = PureDateToJava.start().toInstant(date).atZone(timeZone.toZoneId());
-                        }
+                        // A Pure date is always understood as UTC, so the instant it starts at
+                        // is what the requested zone renders.
+                        zoned = PureDateToJava.start().toInstant(date).atZone(timeZone);
                     }
                     break;
                 }
@@ -251,7 +251,7 @@ public class DateFormat
                 case 'z':
                 {
                     int count = getCharCountFrom(character, formatString, i);
-                    safeAppendable.append((zoned == null) ? "GMT" : timeZoneId);
+                    safeAppendable.append((timeZoneId == null) ? "GMT" : timeZoneId);
                     i += count;
                     break;
                 }
