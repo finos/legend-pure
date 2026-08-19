@@ -46,10 +46,21 @@ public abstract class TimeFunctions
         {
             throw new IllegalArgumentException("Invalid subsecond value: null");
         }
-        if (subsecond.isEmpty() || !subsecond.codePoints().allMatch(Character::isDigit))
+        if (subsecond.isEmpty() || !subsecond.codePoints().allMatch(TimeFunctions::isAsciiDigit))
         {
             throw new IllegalArgumentException("Invalid subsecond value: \"" + subsecond + "\"");
         }
+    }
+
+    /**
+     * A subsecond has to be written in the digits it will be read in. Character.isDigit is true of
+     * every decimal digit Unicode has, so it would accept a subsecond written in, say, Persian or
+     * Devanagari digits, which the code that adds to one a character at a time would then read as
+     * something other than a number.
+     */
+    private static boolean isAsciiDigit(int codePoint)
+    {
+        return ('0' <= codePoint) && (codePoint <= '9');
     }
 
     /**

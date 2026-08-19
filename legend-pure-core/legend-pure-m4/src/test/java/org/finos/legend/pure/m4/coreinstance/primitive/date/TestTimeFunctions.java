@@ -22,6 +22,40 @@ import java.util.Locale;
 public class TestTimeFunctions
 {
     /**
+     * A subsecond is only the digits 0 to 9. Unicode has decimal digits beyond those, and the code
+     * that adds to a subsecond a character at a time would read them as something other than a
+     * number, so they are rejected rather than stored and misread later.
+     */
+    @Test
+    public void testValidateSubsecondTakesOnlyASCIIDigits()
+    {
+        TimeFunctions.validateSubsecond("0");
+        TimeFunctions.validateSubsecond("000");
+        TimeFunctions.validateSubsecond("123456789");
+
+        assertInvalidSubsecond("\u06F1\u06F2\u06F3");   // Persian
+        assertInvalidSubsecond("\u0967\u0968\u0969");   // Devanagari
+        assertInvalidSubsecond("\u0661\u0662\u0663");   // Arabic-Indic
+        assertInvalidSubsecond("12\u06F3");             // one stray digit is enough
+        assertInvalidSubsecond("1 2");
+        assertInvalidSubsecond("1.2");
+        assertInvalidSubsecond("-12");
+        assertInvalidSubsecond("");
+
+        Assert.assertEquals(
+                "Invalid subsecond value: null",
+                Assert.assertThrows(IllegalArgumentException.class, () -> TimeFunctions.validateSubsecond(null)).getMessage());
+    }
+
+    private static void assertInvalidSubsecond(String subsecond)
+    {
+        Assert.assertEquals(
+                subsecond,
+                "Invalid subsecond value: \"" + subsecond + "\"",
+                Assert.assertThrows(IllegalArgumentException.class, () -> TimeFunctions.validateSubsecond(subsecond)).getMessage());
+    }
+
+    /**
      * Each takes a whole quantity and gives back the part of it below a second, padded out to the
      * digits that quantity measures in.
      */
