@@ -21,7 +21,8 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
         PureToolRegistryTest.class,
         McpStdioServerTest.class,
-        WorkspaceSyncTest.class
+        WorkspaceSyncTest.class,
+        PureToolsIntegrationTest.class
 })
 public class McpTestSuite
 {
