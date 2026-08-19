@@ -53,7 +53,11 @@ public class WorkspaceSync
     public void seed() throws IOException
     {
         this.knownHashes.clear();
-        this.knownHashes.putAll(scanDisk());
+        Map<String, String> onDisk = scanDisk();
+        for (Map.Entry<String, String> entry : onDisk.entrySet())
+        {
+            this.knownHashes.put(entry.getKey(), hash(entry.getValue()));
+        }
         LOGGER.info("WorkspaceSync seeded with {} sources", this.knownHashes.size());
     }
 
@@ -64,10 +68,10 @@ public class WorkspaceSync
         for (Map.Entry<String, String> entry : onDisk.entrySet())
         {
             String sourceId = entry.getKey();
-            if (!entry.getValue().equals(this.knownHashes.get(sourceId)))
+            String content = entry.getValue();
+            String contentHash = hash(content);
+            if (!contentHash.equals(this.knownHashes.get(sourceId)))
             {
-                Path file = this.scanner.resolve(sourceId);
-                String content = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
                 changes.add(new LegendPureSession.FileChange(
                         sourceId, content, LegendPureSession.FileChangeType.CREATE_OR_MODIFY));
             }
@@ -100,7 +104,7 @@ public class WorkspaceSync
 
     private Map<String, String> scanDisk() throws IOException
     {
-        Map<String, String> hashes = new LinkedHashMap<>();
+        Map<String, String> contents = new LinkedHashMap<>();
         for (Map.Entry<String, Path> entry : this.scanner.getMappings().entrySet())
         {
             Path repoDir = entry.getValue().resolve(entry.getKey());
@@ -118,15 +122,15 @@ public class WorkspaceSync
                         String sourceId = WorkspaceSync.this.scanner.deriveSourceIdFromPath(file);
                         if (sourceId != null)
                         {
-                            hashes.put(sourceId,
-                                    hash(new String(Files.readAllBytes(file), StandardCharsets.UTF_8)));
+                            String content = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
+                            contents.put(sourceId, content);
                         }
                     }
                     return FileVisitResult.CONTINUE;
                 }
             });
         }
-        return hashes;
+        return contents;
     }
 
     private static String hash(String content)
