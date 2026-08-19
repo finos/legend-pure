@@ -107,9 +107,12 @@ public final class PureTools
                     if (!result.isSuccess())
                     {
                         StringBuilder error = new StringBuilder("Execution failed: ").append(result.getError());
-                        if (result.getOutput() != null && !result.getOutput().isEmpty())
+                        String output = result.getOutput();
+                        // On execution failure, LegendPureSession.executeFunctionByCandidates returns the
+                        // SAME string for both getError() and getOutput() - only append it once.
+                        if (output != null && !output.isEmpty() && !output.equals(result.getError()))
                         {
-                            error.append('\n').append(result.getOutput());
+                            error.append('\n').append(output);
                         }
                         return ToolResult.error(error.toString());
                     }
@@ -220,7 +223,7 @@ public final class PureTools
                             anyUsages = true;
                             for (Location location : locations)
                             {
-                                text.append("\n - ").append(formatLspLocation(location));
+                                text.append("\n - ").append(formatUsageLocation(location, runtime, uriMapper));
                             }
                         }
                         if (!anyUsages)
@@ -288,9 +291,12 @@ public final class PureTools
                         return ToolResult.error(initError);
                     }
                     String query = requiredString(arguments, "query");
-                    int maxResults = (arguments.has("maxResults") && arguments.get("maxResults").isJsonPrimitive())
-                            ? arguments.get("maxResults").getAsInt()
-                            : 50;
+                    int maxResults = 50;
+                    if (arguments.has("maxResults") && arguments.get("maxResults").isJsonPrimitive()
+                            && arguments.get("maxResults").getAsJsonPrimitive().isNumber())
+                    {
+                        maxResults = Math.max(1, arguments.get("maxResults").getAsInt());
+                    }
                     // No graph read lock needed here: WorkspaceSymbolProvider.search reads only its
                     // own CopyOnWriteArrayList index of primitive fields, never a CoreInstance.
                     List<SymbolInformation> results = symbols.search(uriMapper, query, maxResults);
@@ -655,5 +661,38 @@ public final class PureTools
         String where = uri.startsWith("file://") ? uri.substring("file://".length()) : uri;
         return where + ":" + (location.getRange().getStart().getLine() + 1)
                 + ":" + (location.getRange().getStart().getCharacter() + 1);
+    }
+
+    /**
+     * Spec: pure_find_usages reports "one location per line with a source-line excerpt", locations
+     * carrying the sourceId. Appends the sourceId and, when the source is available, the trimmed
+     * text of the usage's line so an agent can see the call site without a follow-up
+     * pure_get_source round trip.
+     */
+    private static String formatUsageLocation(Location location, PureRuntime runtime, UriMapper uriMapper)
+    {
+        StringBuilder text = new StringBuilder(formatLspLocation(location));
+        String sourceId = uriMapper.toSourceId(location.getUri());
+        if (sourceId == null)
+        {
+            return text.toString();
+        }
+        text.append("  (sourceId: ").append(sourceId).append(')');
+        Source source = runtime.getSourceById(sourceId);
+        if (source == null)
+        {
+            return text.toString();
+        }
+        int lineNumber = location.getRange().getStart().getLine();
+        String[] lines = source.getContent().split("\n", -1);
+        if (lineNumber >= 0 && lineNumber < lines.length)
+        {
+            String lineText = lines[lineNumber].trim();
+            if (!lineText.isEmpty())
+            {
+                text.append(" - ").append(lineText);
+            }
+        }
+        return text.toString();
     }
 }

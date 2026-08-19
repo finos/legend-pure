@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -83,6 +85,10 @@ public class LegendPureMcpServer
                 workspace = Paths.get(args[i + 1]);
                 i++;
             }
+            else
+            {
+                throw new IllegalArgumentException("Unknown argument: " + args[i]);
+            }
         }
         Path normalized = workspace.toAbsolutePath().normalize();
         if (!Files.isDirectory(normalized))
@@ -119,7 +125,9 @@ public class LegendPureMcpServer
             catch (Throwable t)
             {
                 LOGGER.error("Pure runtime initialization failed", t);
-                gate.fail("Pure runtime initialization failed: " + t);
+                StringWriter stack = new StringWriter();
+                t.printStackTrace(new PrintWriter(stack));
+                gate.fail("Pure runtime initialization failed: " + t + "\n" + stack);
             }
         }, "pure-mcp-init");
         initThread.setDaemon(true);

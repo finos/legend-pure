@@ -161,6 +161,8 @@ public class PureToolsIntegrationTest
         Assert.assertTrue("Failure must be an error result", executed.isError());
         Assert.assertTrue("Must include the failure text, got: " + executed.getText(),
                 executed.getText().contains("mcp-boom"));
+        Assert.assertEquals("Failure text must not be duplicated", executed.getText().indexOf("mcp-boom"),
+                executed.getText().lastIndexOf("mcp-boom"));
     }
 
     @Test
@@ -224,6 +226,10 @@ public class PureToolsIntegrationTest
         Assert.assertFalse("Got: " + result.getText(), result.isError());
         Assert.assertTrue("Usage location should be in usages.pure, got: " + result.getText(),
                 result.getText().contains("usages.pure"));
+        Assert.assertTrue("Usage location should carry the sourceId, got: " + result.getText(),
+                result.getText().contains("(sourceId: /mcp_test_repo/model/usages.pure)"));
+        Assert.assertTrue("Usage location should include the calling line's text, got: " + result.getText(),
+                result.getText().contains("test::mcp::mcpUsedFunction()"));
     }
 
     @Test

@@ -67,4 +67,17 @@ public class LegendPureMcpServerTest
         {
         }
     }
+
+    @Test
+    public void unknownArgumentRejected()
+    {
+        try
+        {
+            LegendPureMcpServer.resolveWorkspace(new String[]{"--workspce", "/tmp"});
+            Assert.fail("Expected IllegalArgumentException");
+        }
+        catch (IllegalArgumentException expected)
+        {
+        }
+    }
 }

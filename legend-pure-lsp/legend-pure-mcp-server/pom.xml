@@ -64,6 +64,10 @@
                                 <dependency>org.eclipse.collections:eclipse-collections-api</dependency>
                                 <dependency>org.eclipse.collections:eclipse-collections</dependency>
                                 <dependency>org.slf4j:slf4j-api</dependency>
+                                <!-- Runtime-only logging binding: SLF4J needs one on the classpath or
+                                     all logging silently becomes a NOP, so it is never a compile-time
+                                     dependency the analyzer can see used. -->
+                                <dependency>org.slf4j:slf4j-simple</dependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>
@@ -126,6 +130,15 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <!-- Logs to stderr by default - exactly what the stdout-protocol discipline requires.
+             Without a binding SLF4J falls back to a NOP logger and all logging (including the
+             init-failure stack trace) is silently discarded. -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
