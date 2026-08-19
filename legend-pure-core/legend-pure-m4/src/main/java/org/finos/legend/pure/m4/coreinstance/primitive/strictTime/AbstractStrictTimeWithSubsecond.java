@@ -62,7 +62,7 @@ abstract class AbstractStrictTimeWithSubsecond extends AbstractStrictTimeWithSec
         }
 
         int secondsToAdd = milliseconds / 1000;
-        String subseconds = String.format("%03d", Math.abs(milliseconds % 1000L));
+        String subseconds = StrictTimeFunctions.subsecondFromMilliseconds(milliseconds);
         return adjustSubseconds(subseconds, milliseconds > 0).addSeconds(secondsToAdd);
     }
 
@@ -80,7 +80,7 @@ abstract class AbstractStrictTimeWithSubsecond extends AbstractStrictTimeWithSec
         }
 
         int secondsToAdd = microseconds / 1_000_000;
-        String subseconds = String.format("%06d", Math.abs(microseconds % 1_000_000L));
+        String subseconds = StrictTimeFunctions.subsecondFromMicroseconds(microseconds);
         return adjustSubseconds(subseconds, microseconds > 0).addSeconds(secondsToAdd);
     }
 
@@ -98,7 +98,7 @@ abstract class AbstractStrictTimeWithSubsecond extends AbstractStrictTimeWithSec
         }
 
         long secondsToAdd = (nanoseconds / 1_000_000_000L);
-        String subseconds = String.format("%09d", Math.abs(nanoseconds % 1_000_000_000L));
+        String subseconds = StrictTimeFunctions.subsecondFromNanoseconds(nanoseconds);
         PureStrictTime result = adjustSubseconds(subseconds, nanoseconds > 0);
         if (secondsToAdd > 0)
         {
