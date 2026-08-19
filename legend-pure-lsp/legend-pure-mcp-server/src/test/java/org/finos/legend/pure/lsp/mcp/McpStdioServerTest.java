@@ -123,4 +123,19 @@ public class McpStdioServerTest
                 responses.get(3).has("result"));
         Assert.assertEquals(4, responses.get(3).get("id").getAsInt());
     }
+
+    @Test
+    public void nonStringMethodDoesNotKillLoop() throws IOException
+    {
+        List<JsonObject> responses = serve(
+                "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":null}",
+                "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":{\"x\":1}}",
+                "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"ping\"}");
+
+        Assert.assertEquals(-32601, responses.get(0).getAsJsonObject("error").get("code").getAsInt());
+        Assert.assertEquals(-32601, responses.get(1).getAsJsonObject("error").get("code").getAsInt());
+        JsonObject last = responses.get(responses.size() - 1).getAsJsonObject();
+        Assert.assertTrue("Loop must survive and answer ping", last.has("result"));
+        Assert.assertEquals(3, last.get("id").getAsInt());
+    }
 }

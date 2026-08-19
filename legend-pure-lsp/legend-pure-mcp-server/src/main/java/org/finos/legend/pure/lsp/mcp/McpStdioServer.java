@@ -84,7 +84,7 @@ public class McpStdioServer
             return;
         }
 
-        String method = message.has("method") ? message.get("method").getAsString() : null;
+        String method = (message.has("method") && message.get("method").isJsonPrimitive()) ? message.get("method").getAsString() : null;
         JsonElement id = message.get("id");
         boolean isNotification = (id == null || id.isJsonNull());
 
