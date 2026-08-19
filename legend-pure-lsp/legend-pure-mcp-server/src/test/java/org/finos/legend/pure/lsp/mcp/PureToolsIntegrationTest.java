@@ -258,4 +258,40 @@ public class PureToolsIntegrationTest
         ToolResult result = call("pure_get_source", "sourceId", "/mcp_test_repo/model/Nope.pure");
         Assert.assertTrue(result.isError());
     }
+
+    @Test
+    public void findElementAndUsagesHandleOverloadedFunctions() throws IOException
+    {
+        writePure("model/overloads.pure",
+                "function test::mcp::mcpOverloaded(s:String[1]):String[1]\n{\n  'string:' + $s\n}\n"
+                        + "\n"
+                        + "function test::mcp::mcpOverloaded(i:Integer[1]):String[1]\n{\n  'int:' + $i->toString()\n}\n"
+                        + "\n"
+                        + "function test::mcp::mcpOverloadCaller():String[1]\n{\n"
+                        + "  let a = test::mcp::mcpOverloaded('x');\n"
+                        + "  let b = test::mcp::mcpOverloaded(1);\n"
+                        + "  $a + $b;\n}\n");
+        ToolResult compiled = call("pure_compile");
+        Assert.assertFalse("Got: " + compiled.getText(), compiled.isError());
+
+        // pure_find_element must list both overloads, not silently pick one.
+        ToolResult found = call("pure_find_element", "path", "test::mcp::mcpOverloaded");
+        Assert.assertFalse("Got: " + found.getText(), found.isError());
+        Assert.assertTrue("Should report both overloads, got: " + found.getText(),
+                found.getText().contains("2 elements match"));
+        Assert.assertTrue("Should show the String overload's parameter, got: " + found.getText(),
+                found.getText().contains("s:String[1]"));
+        Assert.assertTrue("Should show the Integer overload's parameter, got: " + found.getText(),
+                found.getText().contains("i:Integer[1]"));
+
+        // pure_find_usages must aggregate usages across every overload, not just one.
+        ToolResult usages = call("pure_find_usages", "path", "test::mcp::mcpOverloaded");
+        Assert.assertFalse("Got: " + usages.getText(), usages.isError());
+        int firstHeader = usages.getText().indexOf("Overload ");
+        int secondHeader = usages.getText().indexOf("Overload ", firstHeader + 1);
+        Assert.assertTrue("Should have a header for each overload, got: " + usages.getText(),
+                firstHeader >= 0 && secondHeader > firstHeader);
+        Assert.assertTrue("Both call sites should be reported in overloads.pure, got: " + usages.getText(),
+                usages.getText().contains("overloads.pure"));
+    }
 }

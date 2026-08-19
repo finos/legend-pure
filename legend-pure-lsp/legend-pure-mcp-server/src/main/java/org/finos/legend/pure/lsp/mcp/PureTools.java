@@ -15,6 +15,8 @@
 package org.finos.legend.pure.lsp.mcp;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import com.google.gson.JsonObject;
 import org.eclipse.collections.api.list.ListIterable;
@@ -120,7 +122,8 @@ public final class PureTools
         registry.register(new McpTool(
                 "pure_find_element",
                 "Resolve a Pure element by its full path and return its kind, source location, "
-                        + "and definition text.",
+                        + "and definition text. If the path is overloaded (multiple functions "
+                        + "sharing the same name in a package), every overload is returned.",
                 objectSchema(pathProps, "path"),
                 arguments ->
                 {
@@ -132,27 +135,20 @@ public final class PureTools
                     String path = requiredString(arguments, "path");
                     return session.withGraphReadLock(() ->
                     {
-                        CoreInstance element = findElement(session.getPureRuntime(), path);
-                        if (element == null)
+                        List<CoreInstance> elements = findElements(session.getPureRuntime(), path);
+                        if (elements.isEmpty())
                         {
                             return ToolResult.error(unknownElementMessage(path, symbols, uriMapper));
                         }
-                        String kind = (element.getClassifier() != null)
-                                ? element.getClassifier().getName() : "Unknown";
-                        StringBuilder text = new StringBuilder(kind).append(' ').append(path);
-                        SourceInformation si = element.getSourceInformation();
-                        if (si == null)
+                        if (elements.size() == 1)
                         {
-                            text.append("\n(no source information available)");
-                            return ToolResult.ok(text.toString());
+                            return ToolResult.ok(describeElement(elements.get(0), path, session, scanner, true));
                         }
-                        text.append('\n').append(describeLocation(si, scanner))
-                                .append("  (sourceId: ").append(si.getSourceId()).append(')');
-                        Source source = session.getPureRuntime().getSourceById(si.getSourceId());
-                        if (source != null)
+                        StringBuilder text = new StringBuilder()
+                                .append(elements.size()).append(" elements match '").append(path).append("':");
+                        for (CoreInstance element : elements)
                         {
-                            text.append("\n\n").append(extractLines(
-                                    source.getContent(), si.getStartLine(), si.getEndLine()));
+                            text.append("\n\n").append(describeElement(element, path, session, scanner, false));
                         }
                         return ToolResult.ok(text.toString());
                     });
@@ -160,7 +156,10 @@ public final class PureTools
 
         registry.register(new McpTool(
                 "pure_find_usages",
-                "Find all usages of a Pure element (given by full path) across the compiled workspace.",
+                "Find all usages of a Pure element (given by full path) across the compiled "
+                        + "workspace. If the path is overloaded (multiple functions sharing the "
+                        + "same name in a package), usages are aggregated across every overload, "
+                        + "each listed under its own 'Overload' header so none are silently omitted.",
                 objectSchema(pathProps, "path"),
                 arguments ->
                 {
@@ -173,37 +172,60 @@ public final class PureTools
                     return session.withGraphReadLock(() ->
                     {
                         PureRuntime runtime = session.getPureRuntime();
-                        CoreInstance element = findElement(runtime, path);
-                        if (element == null)
+                        List<CoreInstance> elements = findElements(runtime, path);
+                        if (elements.isEmpty())
                         {
                             return ToolResult.error(unknownElementMessage(path, symbols, uriMapper));
                         }
-                        SourceInformation si = element.getSourceInformation();
-                        if (si == null)
+                        if (elements.size() == 1 && elements.get(0).getSourceInformation() == null)
                         {
                             return ToolResult.error("Element '" + path + "' has no source information.");
                         }
-                        List<Location> locations = ReferencesProvider.references(runtime, uriMapper,
-                                si.getSourceId(), si.getStartLine(), si.getStartColumn(), false);
-                        if (locations.isEmpty())
+                        boolean multipleOverloads = elements.size() > 1;
+                        StringBuilder text = new StringBuilder("Usages of ").append(path).append(':');
+                        boolean anyUsages = false;
+                        for (CoreInstance element : elements)
                         {
-                            // The declaration's start position may point at a keyword rather than the
-                            // element's name token; retry at the name's column on the same line.
-                            int nameColumn = findNameColumn(runtime, si, path);
-                            if (nameColumn > 0)
+                            SourceInformation si = element.getSourceInformation();
+                            if (si == null)
                             {
-                                locations = ReferencesProvider.references(runtime, uriMapper,
-                                        si.getSourceId(), si.getStartLine(), nameColumn, false);
+                                continue;
+                            }
+                            if (multipleOverloads)
+                            {
+                                text.append("\n\nOverload ").append(element.getName()).append("  ")
+                                        .append(describeLocation(si, scanner)).append(':');
+                            }
+                            List<Location> locations = ReferencesProvider.references(runtime, uriMapper,
+                                    si.getSourceId(), si.getStartLine(), si.getStartColumn(), false);
+                            if (locations.isEmpty())
+                            {
+                                // The declaration's start position may point at a keyword rather than
+                                // the element's name token; retry at the name's column on the same line.
+                                int nameColumn = findNameColumn(runtime, si, path);
+                                if (nameColumn > 0)
+                                {
+                                    locations = ReferencesProvider.references(runtime, uriMapper,
+                                            si.getSourceId(), si.getStartLine(), nameColumn, false);
+                                }
+                            }
+                            if (locations.isEmpty())
+                            {
+                                if (multipleOverloads)
+                                {
+                                    text.append("\n (no usages found for this overload)");
+                                }
+                                continue;
+                            }
+                            anyUsages = true;
+                            for (Location location : locations)
+                            {
+                                text.append("\n - ").append(formatLspLocation(location));
                             }
                         }
-                        if (locations.isEmpty())
+                        if (!anyUsages)
                         {
                             return ToolResult.ok("No usages found for '" + path + "'.");
-                        }
-                        StringBuilder text = new StringBuilder("Usages of ").append(path).append(':');
-                        for (Location location : locations)
-                        {
-                            text.append("\n - ").append(formatLspLocation(location));
                         }
                         return ToolResult.ok(text.toString());
                     });
@@ -269,6 +291,8 @@ public final class PureTools
                     int maxResults = (arguments.has("maxResults") && arguments.get("maxResults").isJsonPrimitive())
                             ? arguments.get("maxResults").getAsInt()
                             : 50;
+                    // No graph read lock needed here: WorkspaceSymbolProvider.search reads only its
+                    // own CopyOnWriteArrayList index of primitive fields, never a CoreInstance.
                     List<SymbolInformation> results = symbols.search(uriMapper, query, maxResults);
                     if (results.isEmpty())
                     {
@@ -430,14 +454,23 @@ public final class PureTools
         return value.isEmpty() ? null : value;
     }
 
-    private static CoreInstance findElement(PureRuntime runtime, String path)
+    /**
+     * Resolve a Pure path to every element it names. Almost always a single element, but Pure
+     * allows function overloading - multiple functions sharing one name in the same package,
+     * disambiguated only by parameter types (e.g. the standard library's
+     * meta::pure::functions::math::plus has 4 overloads) - so a bare functional path can be
+     * genuinely ambiguous. Callers must handle a multi-element result rather than assuming the
+     * first match is "the" answer, or usages/definitions for the other overloads go missing
+     * silently.
+     */
+    private static List<CoreInstance> findElements(PureRuntime runtime, String path)
     {
         try
         {
             CoreInstance direct = runtime.getCoreInstance(path);
             if (direct != null)
             {
-                return direct;
+                return Collections.singletonList(direct);
             }
         }
         catch (Exception ignored)
@@ -448,49 +481,63 @@ public final class PureTools
         // raw CoreInstance name of a package's children. That works for classes/associations/
         // enums (whose name IS their simple name) but not for functions, whose child name is
         // the classifier-mangled id (e.g. "myFunc_String_1_"), not the bare simple name used in
-        // a Pure path. Walk the package tree ourselves, matching each segment against the
-        // *display* name (the function name for functions, the raw name otherwise) so that
-        // 'my::pkg::myFunc' also resolves.
+        // a Pure path - and it cannot return more than one match anyway. Walk the package tree
+        // ourselves, matching each segment against the *display* name (the function name for
+        // functions, the raw name otherwise) so that 'my::pkg::myFunc' also resolves, and so
+        // that every overload sharing that display name in the final package is returned.
         return findByQualifiedPathWalk(runtime, path);
     }
 
-    private static CoreInstance findByQualifiedPathWalk(PureRuntime runtime, String path)
+    private static List<CoreInstance> findByQualifiedPathWalk(PureRuntime runtime, String path)
     {
         CoreInstance current = runtime.getCoreInstance("::");
         if (!(current instanceof Package))
         {
-            return null;
+            return Collections.emptyList();
         }
+        List<String> segments = new ArrayList<>();
         for (String segment : path.split("::"))
         {
-            if (segment.isEmpty())
+            if (!segment.isEmpty())
             {
-                continue;
-            }
-            current = findChildByDisplayName(current, segment);
-            if (current == null)
-            {
-                return null;
+                segments.add(segment);
             }
         }
-        return current;
+        if (segments.isEmpty())
+        {
+            return Collections.emptyList();
+        }
+        // All but the last segment are packages: names are unique there, so take the sole/first
+        // match and keep walking down. Only the final segment can legitimately fan out to
+        // multiple matches (function overloads), so that is the one we return in full.
+        for (int i = 0; i < segments.size() - 1; i++)
+        {
+            List<CoreInstance> matches = findChildrenByDisplayName(current, segments.get(i));
+            if (matches.isEmpty())
+            {
+                return Collections.emptyList();
+            }
+            current = matches.get(0);
+        }
+        return findChildrenByDisplayName(current, segments.get(segments.size() - 1));
     }
 
-    private static CoreInstance findChildByDisplayName(CoreInstance parent, String name)
+    private static List<CoreInstance> findChildrenByDisplayName(CoreInstance parent, String name)
     {
         ListIterable<? extends CoreInstance> children = parent.getValueForMetaPropertyToMany(M3Properties.children);
         if (children == null)
         {
-            return null;
+            return Collections.emptyList();
         }
+        List<CoreInstance> matches = new ArrayList<>();
         for (CoreInstance child : children)
         {
             if (name.equals(elementDisplayName(child)))
             {
-                return child;
+                matches.add(child);
             }
         }
-        return null;
+        return matches;
     }
 
     private static String elementDisplayName(CoreInstance element)
@@ -505,6 +552,35 @@ public final class PureTools
             }
         }
         return element.getName();
+    }
+
+    /**
+     * Kind + source location + definition text for one element. {@code fullBody} extracts the
+     * whole declaration (used when the path resolved to a single, unambiguous element); when
+     * false, only the declaration's first source line is extracted - enough to distinguish
+     * overload signatures from each other without dumping every overload's full body into one
+     * response.
+     */
+    private static String describeElement(CoreInstance element, String path, LegendPureSession session,
+                                          RepositoryScanner scanner, boolean fullBody)
+    {
+        String kind = (element.getClassifier() != null) ? element.getClassifier().getName() : "Unknown";
+        StringBuilder text = new StringBuilder(kind).append(' ').append(path);
+        SourceInformation si = element.getSourceInformation();
+        if (si == null)
+        {
+            text.append("\n(no source information available)");
+            return text.toString();
+        }
+        text.append('\n').append(describeLocation(si, scanner))
+                .append("  (sourceId: ").append(si.getSourceId()).append(')');
+        Source source = session.getPureRuntime().getSourceById(si.getSourceId());
+        if (source != null)
+        {
+            int endLine = fullBody ? si.getEndLine() : si.getStartLine();
+            text.append("\n\n").append(extractLines(source.getContent(), si.getStartLine(), endLine));
+        }
+        return text.toString();
     }
 
     /**
