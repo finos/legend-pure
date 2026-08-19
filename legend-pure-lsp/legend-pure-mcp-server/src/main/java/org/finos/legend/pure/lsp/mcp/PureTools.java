@@ -17,10 +17,21 @@ package org.finos.legend.pure.lsp.mcp;
 import java.nio.file.Path;
 import java.util.List;
 import com.google.gson.JsonObject;
+import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.SymbolInformation;
 import org.finos.legend.pure.lsp.LegendPureSession;
+import org.finos.legend.pure.lsp.PackageChildInfo;
+import org.finos.legend.pure.lsp.PackageTreeProvider;
+import org.finos.legend.pure.lsp.ReferencesProvider;
 import org.finos.legend.pure.lsp.RepositoryScanner;
 import org.finos.legend.pure.lsp.UriMapper;
 import org.finos.legend.pure.lsp.WorkspaceSymbolProvider;
+import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
+import org.finos.legend.pure.m3.serialization.runtime.Source;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureException;
 
@@ -102,6 +113,212 @@ public final class PureTools
                     }
                     String output = result.getOutput();
                     return ToolResult.ok((output == null || output.isEmpty()) ? "(no output)" : output);
+                }));
+
+        JsonObject pathProps = new JsonObject();
+        pathProps.add("path", stringProp("Full Pure path of the element, e.g. 'my::pkg::MyClass'."));
+        registry.register(new McpTool(
+                "pure_find_element",
+                "Resolve a Pure element by its full path and return its kind, source location, "
+                        + "and definition text.",
+                objectSchema(pathProps, "path"),
+                arguments ->
+                {
+                    String initError = gate.await();
+                    if (initError != null)
+                    {
+                        return ToolResult.error(initError);
+                    }
+                    String path = requiredString(arguments, "path");
+                    return session.withGraphReadLock(() ->
+                    {
+                        CoreInstance element = findElement(session.getPureRuntime(), path);
+                        if (element == null)
+                        {
+                            return ToolResult.error(unknownElementMessage(path, symbols, uriMapper));
+                        }
+                        String kind = (element.getClassifier() != null)
+                                ? element.getClassifier().getName() : "Unknown";
+                        StringBuilder text = new StringBuilder(kind).append(' ').append(path);
+                        SourceInformation si = element.getSourceInformation();
+                        if (si == null)
+                        {
+                            text.append("\n(no source information available)");
+                            return ToolResult.ok(text.toString());
+                        }
+                        text.append('\n').append(describeLocation(si, scanner))
+                                .append("  (sourceId: ").append(si.getSourceId()).append(')');
+                        Source source = session.getPureRuntime().getSourceById(si.getSourceId());
+                        if (source != null)
+                        {
+                            text.append("\n\n").append(extractLines(
+                                    source.getContent(), si.getStartLine(), si.getEndLine()));
+                        }
+                        return ToolResult.ok(text.toString());
+                    });
+                }));
+
+        registry.register(new McpTool(
+                "pure_find_usages",
+                "Find all usages of a Pure element (given by full path) across the compiled workspace.",
+                objectSchema(pathProps, "path"),
+                arguments ->
+                {
+                    String initError = gate.await();
+                    if (initError != null)
+                    {
+                        return ToolResult.error(initError);
+                    }
+                    String path = requiredString(arguments, "path");
+                    return session.withGraphReadLock(() ->
+                    {
+                        PureRuntime runtime = session.getPureRuntime();
+                        CoreInstance element = findElement(runtime, path);
+                        if (element == null)
+                        {
+                            return ToolResult.error(unknownElementMessage(path, symbols, uriMapper));
+                        }
+                        SourceInformation si = element.getSourceInformation();
+                        if (si == null)
+                        {
+                            return ToolResult.error("Element '" + path + "' has no source information.");
+                        }
+                        List<Location> locations = ReferencesProvider.references(runtime, uriMapper,
+                                si.getSourceId(), si.getStartLine(), si.getStartColumn(), false);
+                        if (locations.isEmpty())
+                        {
+                            // The declaration's start position may point at a keyword rather than the
+                            // element's name token; retry at the name's column on the same line.
+                            int nameColumn = findNameColumn(runtime, si, path);
+                            if (nameColumn > 0)
+                            {
+                                locations = ReferencesProvider.references(runtime, uriMapper,
+                                        si.getSourceId(), si.getStartLine(), nameColumn, false);
+                            }
+                        }
+                        if (locations.isEmpty())
+                        {
+                            return ToolResult.ok("No usages found for '" + path + "'.");
+                        }
+                        StringBuilder text = new StringBuilder("Usages of ").append(path).append(':');
+                        for (Location location : locations)
+                        {
+                            text.append("\n - ").append(formatLspLocation(location));
+                        }
+                        return ToolResult.ok(text.toString());
+                    });
+                }));
+
+        JsonObject packageProps = new JsonObject();
+        packageProps.add("package", stringProp(
+                "Package path to list, e.g. 'my::pkg'. Omit for the root package."));
+        registry.register(new McpTool(
+                "pure_list_package",
+                "List the children (subpackages and elements) of a Pure package.",
+                objectSchema(packageProps),
+                arguments ->
+                {
+                    String initError = gate.await();
+                    if (initError != null)
+                    {
+                        return ToolResult.error(initError);
+                    }
+                    String packagePath = optionalString(arguments, "package");
+                    String effectivePath = (packagePath == null) ? "::" : packagePath;
+                    return session.withGraphReadLock(() ->
+                    {
+                        List<PackageChildInfo> children = PackageTreeProvider.getChildren(
+                                session.getPureRuntime(), uriMapper, effectivePath);
+                        if (children.isEmpty())
+                        {
+                            return ToolResult.ok("Package '" + effectivePath
+                                    + "' has no children (or does not exist).");
+                        }
+                        StringBuilder text = new StringBuilder("Children of ").append(effectivePath).append(':');
+                        for (PackageChildInfo child : children)
+                        {
+                            text.append("\n - ").append(child.getKind()).append(' ')
+                                    .append(child.getQualifiedPath());
+                            if (child.getIsPackage())
+                            {
+                                text.append(" (").append(child.getChildCount()).append(" children)");
+                            }
+                        }
+                        return ToolResult.ok(text.toString());
+                    });
+                }));
+
+        JsonObject searchProps = new JsonObject();
+        searchProps.add("query", stringProp("Case-insensitive name fragment to search for."));
+        JsonObject maxResultsProp = new JsonObject();
+        maxResultsProp.addProperty("type", "integer");
+        maxResultsProp.addProperty("description", "Maximum results to return (default 50).");
+        searchProps.add("maxResults", maxResultsProp);
+        registry.register(new McpTool(
+                "pure_search_symbols",
+                "Search all compiled elements (classes, functions, enums, ...) by name fragment.",
+                objectSchema(searchProps, "query"),
+                arguments ->
+                {
+                    String initError = gate.await();
+                    if (initError != null)
+                    {
+                        return ToolResult.error(initError);
+                    }
+                    String query = requiredString(arguments, "query");
+                    int maxResults = (arguments.has("maxResults") && arguments.get("maxResults").isJsonPrimitive())
+                            ? arguments.get("maxResults").getAsInt()
+                            : 50;
+                    List<SymbolInformation> results = symbols.search(uriMapper, query, maxResults);
+                    if (results.isEmpty())
+                    {
+                        return ToolResult.ok("No symbols match '" + query + "'.");
+                    }
+                    StringBuilder text = new StringBuilder("Symbols matching '").append(query).append("':");
+                    for (SymbolInformation symbol : results)
+                    {
+                        text.append("\n - ").append(symbol.getKind()).append(' ');
+                        if (symbol.getContainerName() != null && !symbol.getContainerName().isEmpty())
+                        {
+                            text.append(symbol.getContainerName()).append("::");
+                        }
+                        text.append(symbol.getName())
+                                .append("  ").append(formatLspLocation(symbol.getLocation()));
+                    }
+                    return ToolResult.ok(text.toString());
+                }));
+
+        JsonObject sourceProps = new JsonObject();
+        sourceProps.add("sourceId", stringProp(
+                "Pure source id, e.g. '/my_repo/model/File.pure'. Works for platform/library "
+                        + "sources that have no file on disk."));
+        registry.register(new McpTool(
+                "pure_get_source",
+                "Get the full content of a Pure source by its source id.",
+                objectSchema(sourceProps, "sourceId"),
+                arguments ->
+                {
+                    String initError = gate.await();
+                    if (initError != null)
+                    {
+                        return ToolResult.error(initError);
+                    }
+                    String sourceId = requiredString(arguments, "sourceId");
+                    String id = sourceId.startsWith("pure://")
+                            ? sourceId.substring("pure://".length())
+                            : sourceId;
+                    return session.withGraphReadLock(() ->
+                    {
+                        String resolvedId = session.resolveSourceId(id);
+                        Source source = (resolvedId == null)
+                                ? null
+                                : session.getPureRuntime().getSourceById(resolvedId);
+                        if (source == null)
+                        {
+                            return ToolResult.error("Unknown source id: " + sourceId);
+                        }
+                        return ToolResult.ok(source.getContent());
+                    });
                 }));
 
         return registry;
@@ -211,5 +428,156 @@ public final class PureTools
         }
         String value = arguments.get(name).getAsString().trim();
         return value.isEmpty() ? null : value;
+    }
+
+    private static CoreInstance findElement(PureRuntime runtime, String path)
+    {
+        try
+        {
+            CoreInstance direct = runtime.getCoreInstance(path);
+            if (direct != null)
+            {
+                return direct;
+            }
+        }
+        catch (Exception ignored)
+        {
+            // Fall through to the qualified-path walk below.
+        }
+        // PureRuntime.getCoreInstance() resolves by matching each path segment against the
+        // raw CoreInstance name of a package's children. That works for classes/associations/
+        // enums (whose name IS their simple name) but not for functions, whose child name is
+        // the classifier-mangled id (e.g. "myFunc_String_1_"), not the bare simple name used in
+        // a Pure path. Walk the package tree ourselves, matching each segment against the
+        // *display* name (the function name for functions, the raw name otherwise) so that
+        // 'my::pkg::myFunc' also resolves.
+        return findByQualifiedPathWalk(runtime, path);
+    }
+
+    private static CoreInstance findByQualifiedPathWalk(PureRuntime runtime, String path)
+    {
+        CoreInstance current = runtime.getCoreInstance("::");
+        if (!(current instanceof Package))
+        {
+            return null;
+        }
+        for (String segment : path.split("::"))
+        {
+            if (segment.isEmpty())
+            {
+                continue;
+            }
+            current = findChildByDisplayName(current, segment);
+            if (current == null)
+            {
+                return null;
+            }
+        }
+        return current;
+    }
+
+    private static CoreInstance findChildByDisplayName(CoreInstance parent, String name)
+    {
+        ListIterable<? extends CoreInstance> children = parent.getValueForMetaPropertyToMany(M3Properties.children);
+        if (children == null)
+        {
+            return null;
+        }
+        for (CoreInstance child : children)
+        {
+            if (name.equals(elementDisplayName(child)))
+            {
+                return child;
+            }
+        }
+        return null;
+    }
+
+    private static String elementDisplayName(CoreInstance element)
+    {
+        String classifierName = (element.getClassifier() != null) ? element.getClassifier().getName() : null;
+        if ("ConcreteFunctionDefinition".equals(classifierName) || "NativeFunction".equals(classifierName))
+        {
+            CoreInstance functionName = element.getValueForMetaPropertyToOne(M3Properties.functionName);
+            if (functionName != null)
+            {
+                return functionName.getName();
+            }
+        }
+        return element.getName();
+    }
+
+    /**
+     * Spec: unknown paths return near-miss suggestions from the symbol index when available.
+     */
+    private static String unknownElementMessage(String path, WorkspaceSymbolProvider symbols,
+                                                UriMapper uriMapper)
+    {
+        StringBuilder text = new StringBuilder("No element found at path '").append(path)
+                .append("'. Use pure_search_symbols to locate elements by name fragment.");
+        int separator = path.lastIndexOf("::");
+        String simpleName = (separator < 0) ? path : path.substring(separator + 2);
+        List<SymbolInformation> nearMisses = symbols.search(uriMapper, simpleName, 5);
+        if (!nearMisses.isEmpty())
+        {
+            text.append("\nDid you mean:");
+            for (SymbolInformation symbol : nearMisses)
+            {
+                text.append("\n - ");
+                if (symbol.getContainerName() != null && !symbol.getContainerName().isEmpty())
+                {
+                    text.append(symbol.getContainerName()).append("::");
+                }
+                text.append(symbol.getName());
+            }
+        }
+        return text.toString();
+    }
+
+    /**
+     * 1-based column of the element's simple name on its declaration's first line,
+     * or -1 if not found.
+     */
+    private static int findNameColumn(PureRuntime runtime, SourceInformation si, String path)
+    {
+        Source source = runtime.getSourceById(si.getSourceId());
+        if (source == null)
+        {
+            return -1;
+        }
+        String[] lines = source.getContent().split("\n", -1);
+        if (si.getStartLine() < 1 || si.getStartLine() > lines.length)
+        {
+            return -1;
+        }
+        int separator = path.lastIndexOf("::");
+        String simpleName = (separator < 0) ? path : path.substring(separator + 2);
+        int index = lines[si.getStartLine() - 1].indexOf(simpleName);
+        return (index < 0) ? -1 : (index + 1);
+    }
+
+    private static String extractLines(String content, int startLine, int endLine)
+    {
+        String[] lines = content.split("\n", -1);
+        int start = Math.max(startLine, 1);
+        int end = Math.min(Math.max(endLine, start), lines.length);
+        StringBuilder text = new StringBuilder();
+        for (int i = start; i <= end; i++)
+        {
+            if (text.length() > 0)
+            {
+                text.append('\n');
+            }
+            text.append(lines[i - 1]);
+        }
+        return text.toString();
+    }
+
+    private static String formatLspLocation(Location location)
+    {
+        String uri = location.getUri();
+        String where = uri.startsWith("file://") ? uri.substring("file://".length()) : uri;
+        return where + ":" + (location.getRange().getStart().getLine() + 1)
+                + ":" + (location.getRange().getStart().getCharacter() + 1);
     }
 }

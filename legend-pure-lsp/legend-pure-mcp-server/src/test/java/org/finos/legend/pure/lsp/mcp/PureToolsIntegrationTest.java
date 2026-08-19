@@ -177,4 +177,85 @@ public class PureToolsIntegrationTest
         ToolResult cleaned = call("pure_compile");
         Assert.assertFalse("Got: " + cleaned.getText(), cleaned.isError());
     }
+
+    @Test
+    public void findElementReturnsLocationAndDefinition()
+    {
+        ToolResult result = call("pure_find_element", "path", "test::mcp::McpPerson");
+        Assert.assertFalse("Got: " + result.getText(), result.isError());
+        Assert.assertTrue("Must name the kind, got: " + result.getText(),
+                result.getText().contains("Class"));
+        Assert.assertTrue("Must include the location, got: " + result.getText(),
+                result.getText().contains("Person.pure"));
+        Assert.assertTrue("Must include the definition text, got: " + result.getText(),
+                result.getText().contains("fullName: String[1]"));
+    }
+
+    @Test
+    public void findElementUnknownPathIsError()
+    {
+        ToolResult result = call("pure_find_element", "path", "test::mcp::DoesNotExist");
+        Assert.assertTrue(result.isError());
+        Assert.assertTrue("Should suggest pure_search_symbols, got: " + result.getText(),
+                result.getText().contains("pure_search_symbols"));
+    }
+
+    @Test
+    public void findElementWrongPackageSuggestsNearMiss()
+    {
+        ToolResult result = call("pure_find_element", "path", "test::wrongpkg::McpPerson");
+        Assert.assertTrue(result.isError());
+        Assert.assertTrue("Should offer a near-miss from the symbol index, got: " + result.getText(),
+                result.getText().contains("Did you mean"));
+        Assert.assertTrue("Got: " + result.getText(), result.getText().contains("McpPerson"));
+    }
+
+    @Test
+    public void findUsagesFindsFunctionCallSites() throws IOException
+    {
+        writePure("model/usages.pure",
+                "function test::mcp::mcpUsedFunction():String[1]\n{\n  'used'\n}\n"
+                        + "\n"
+                        + "function test::mcp::mcpCallerFunction():String[1]\n{\n  test::mcp::mcpUsedFunction()\n}\n");
+        ToolResult compiled = call("pure_compile");
+        Assert.assertFalse("Got: " + compiled.getText(), compiled.isError());
+
+        ToolResult result = call("pure_find_usages", "path", "test::mcp::mcpUsedFunction");
+        Assert.assertFalse("Got: " + result.getText(), result.isError());
+        Assert.assertTrue("Usage location should be in usages.pure, got: " + result.getText(),
+                result.getText().contains("usages.pure"));
+    }
+
+    @Test
+    public void listPackageShowsChildren()
+    {
+        ToolResult result = call("pure_list_package", "package", "test::mcp");
+        Assert.assertFalse("Got: " + result.getText(), result.isError());
+        Assert.assertTrue("Got: " + result.getText(), result.getText().contains("McpPerson"));
+        Assert.assertTrue("Got: " + result.getText(), result.getText().contains("Class"));
+    }
+
+    @Test
+    public void searchSymbolsFindsClassByFragment()
+    {
+        ToolResult result = call("pure_search_symbols", "query", "McpPerson");
+        Assert.assertFalse("Got: " + result.getText(), result.isError());
+        Assert.assertTrue("Got: " + result.getText(), result.getText().contains("McpPerson"));
+        Assert.assertTrue("Got: " + result.getText(), result.getText().contains("Person.pure"));
+    }
+
+    @Test
+    public void getSourceReturnsContent()
+    {
+        ToolResult result = call("pure_get_source", "sourceId", "/mcp_test_repo/model/Person.pure");
+        Assert.assertFalse("Got: " + result.getText(), result.isError());
+        Assert.assertTrue("Got: " + result.getText(), result.getText().contains("Class test::mcp::McpPerson"));
+    }
+
+    @Test
+    public void getSourceUnknownIdIsError()
+    {
+        ToolResult result = call("pure_get_source", "sourceId", "/mcp_test_repo/model/Nope.pure");
+        Assert.assertTrue(result.isError());
+    }
 }
