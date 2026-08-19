@@ -19,7 +19,8 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        PureToolRegistryTest.class
+        PureToolRegistryTest.class,
+        McpStdioServerTest.class
 })
 public class McpTestSuite
 {
