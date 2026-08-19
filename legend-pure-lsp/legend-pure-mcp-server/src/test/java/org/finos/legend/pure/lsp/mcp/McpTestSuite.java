@@ -22,7 +22,9 @@ import org.junit.runners.Suite;
         PureToolRegistryTest.class,
         McpStdioServerTest.class,
         WorkspaceSyncTest.class,
-        PureToolsIntegrationTest.class
+        PureToolsIntegrationTest.class,
+        LegendPureMcpServerTest.class,
+        McpEndToEndTest.class
 })
 public class McpTestSuite
 {
