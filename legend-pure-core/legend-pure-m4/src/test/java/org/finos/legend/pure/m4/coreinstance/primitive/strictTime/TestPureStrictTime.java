@@ -17,6 +17,8 @@ package org.finos.legend.pure.m4.coreinstance.primitive.strictTime;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Locale;
+
 public class TestPureStrictTime
 {
     @Test
@@ -33,6 +35,39 @@ public class TestPureStrictTime
         Assert.assertEquals("16:12:35", strictTimeWithHourMinSecSubSec.format("H:mm:ss"));
         Assert.assertEquals("16:12:35.070004235", strictTimeWithHourMinSecSubSec.format("HH:mm:ss.SSSS"));
         Assert.assertEquals("16:12:35.070", strictTimeWithHourMinSecSubSec.format("HH:mm:ss.SSS"));
+    }
+
+    /**
+     * A subsecond is a run of digits that the rest of the class reads back as digits, so it has to
+     * be written in the digits it will be read in. Some locales number in something other than
+     * 0 to 9, and a subsecond written in those is not merely printed oddly: incrementing one does
+     * arithmetic on the characters, so the answer comes back wrong rather than failing.
+     */
+    @Test
+    public void testSubsecondsAreWrittenInASCIIDigitsWhateverTheLocale()
+    {
+        Locale before = Locale.getDefault();
+        try
+        {
+            for (String tag : new String[]{"en-US", "fa-IR", "hi-IN-u-nu-deva", "ar-EG-u-nu-arab", "bn-IN-u-nu-beng"})
+            {
+                Locale.setDefault(Locale.forLanguageTag(tag));
+
+                PureStrictTime millis = StrictTimeFunctions.parsePureStrictTime("10:20:30.000");
+                Assert.assertEquals(tag, "10:20:30.001", millis.addMilliseconds(1).toString());
+                Assert.assertEquals(tag, "10:20:29.999", millis.addMilliseconds(-1).toString());
+
+                PureStrictTime micros = StrictTimeFunctions.parsePureStrictTime("10:20:30.000000");
+                Assert.assertEquals(tag, "10:20:30.000001", micros.addMicroseconds(1).toString());
+
+                PureStrictTime nanos = StrictTimeFunctions.parsePureStrictTime("10:20:30.000000000");
+                Assert.assertEquals(tag, "10:20:30.000000001", nanos.addNanoseconds(1).toString());
+            }
+        }
+        finally
+        {
+            Locale.setDefault(before);
+        }
     }
 
     @Test

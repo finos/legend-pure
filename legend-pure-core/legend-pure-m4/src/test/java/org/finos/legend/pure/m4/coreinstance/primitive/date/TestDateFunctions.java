@@ -28,6 +28,7 @@ import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -102,11 +103,59 @@ public class TestDateFunctions
         Assert.assertNotEquals(DateFunctions.newPureDate(2014, 1, 1), DateFunctions.newPureDate(2014, 1, 1, 0));
     }
 
+    /**
+     * A subsecond is a run of digits that the rest of the class reads back as digits, so it has to
+     * be written in the digits it will be read in. Some locales number in something other than
+     * 0 to 9 - Persian and any locale asking for a numbering system, as the tags below do - and a
+     * subsecond written in those is not merely printed oddly: incrementing one does arithmetic on
+     * the characters, so the answer comes back wrong rather than failing.
+     */
+    @Test
+    public void testSubsecondsAreWrittenInASCIIDigitsWhateverTheLocale()
+    {
+        Locale before = Locale.getDefault();
+        try
+        {
+            for (String tag : new String[]{"en-US", "fa-IR", "hi-IN-u-nu-deva", "ar-EG-u-nu-arab", "bn-IN-u-nu-beng"})
+            {
+                Locale.setDefault(Locale.forLanguageTag(tag));
+
+                // built from an instant, where the subsecond is written straight into the date
+                PureDate fromInstant = DateFunctions.fromInstant(Instant.parse("2015-08-15T10:20:30.123456789Z"), 9);
+                Assert.assertEquals(tag, "123456789", fromInstant.getSubsecond());
+                Assert.assertEquals(tag, "2015-08-15T10:20:30.123456789+0000", fromInstant.toString());
+
+                // and from a calendar, which keeps only milliseconds
+                GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+                calendar.clear();
+                calendar.set(2015, Calendar.AUGUST, 15, 10, 20, 30);
+                calendar.set(Calendar.MILLISECOND, 7);
+                Assert.assertEquals(tag, "007", DateFunctions.fromCalendar(calendar).getSubsecond());
+
+                // incrementing reads the digits back, so a subsecond written in any other numbering
+                // system would come out wrong here rather than throwing
+                PureDate base = DateFunctions.parsePureDate("2015-08-15T10:20:30.000");
+                Assert.assertEquals(tag, "2015-08-15T10:20:30.001+0000", base.addMilliseconds(1).toString());
+                Assert.assertEquals(tag, "2015-08-15T10:20:29.999+0000", base.addMilliseconds(-1).toString());
+
+                PureDate micros = DateFunctions.parsePureDate("2015-08-15T10:20:30.000000");
+                Assert.assertEquals(tag, "2015-08-15T10:20:30.000001+0000", micros.addMicroseconds(1).toString());
+
+                PureDate nanos = DateFunctions.parsePureDate("2015-08-15T10:20:30.000000000");
+                Assert.assertEquals(tag, "2015-08-15T10:20:30.000000001+0000", nanos.addNanoseconds(1).toString());
+            }
+        }
+        finally
+        {
+            Locale.setDefault(before);
+        }
+    }
+
     @Test
     public void testNewPureDateValidation()
     {
         Assert.assertEquals(
-                String.format("Invalid year (valid [%,d, %,d]): %,d", java.time.Year.MIN_VALUE, java.time.Year.MAX_VALUE, java.time.Year.MAX_VALUE + 1L),
+                String.format(Locale.ROOT, "Invalid year (valid [%,d, %,d]): %,d", java.time.Year.MIN_VALUE, java.time.Year.MAX_VALUE, java.time.Year.MAX_VALUE + 1L),
                 Assert.assertThrows(IllegalArgumentException.class, () -> DateFunctions.newPureDate(java.time.Year.MAX_VALUE + 1)).getMessage());
         Assert.assertEquals("Invalid month: 13", Assert.assertThrows(IllegalArgumentException.class, () -> DateFunctions.newPureDate(2014, 13)).getMessage());
         Assert.assertEquals("Invalid month: 0", Assert.assertThrows(IllegalArgumentException.class, () -> DateFunctions.newPureDate(2014, 0)).getMessage());
