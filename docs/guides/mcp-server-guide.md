@@ -28,12 +28,17 @@ mvn install -DskipTests -pl legend-pure-lsp/legend-pure-mcp-server -am
 
 This produces:
 
+- `legend-pure-lsp/legend-pure-mcp-server/target/legend-pure-mcp-server-5.96.1-SNAPSHOT-standalone.jar`
+  — a self-contained shaded jar (recommended for launching the server; built
+  with the ServiceLoader `META-INF/services` files of all bundled jars
+  correctly merged, which Pure's repository/parser discovery depends on)
 - `legend-pure-lsp/legend-pure-mcp-server/target/legend-pure-mcp-server-5.96.1-SNAPSHOT.jar`
-- `legend-pure-lsp/legend-pure-mcp-server/target/dependency/` — the runtime
-  classpath (`maven-dependency-plugin` copies all runtime dependency JARs
-  here during the build)
+  — the thin jar, plus `target/dependency/` holding the runtime classpath
+  (`maven-dependency-plugin` copies all runtime dependency JARs here during
+  the build)
 
-Both are required at launch time; the server has no fat/shaded jar.
+Use the standalone jar unless you have a reason to manage the classpath
+yourself.
 
 ## 3. Configure in Claude Code
 
@@ -47,9 +52,8 @@ Add a `.mcp.json` at the Pure project root (the directory you want passed as
       "command": "java",
       "args": [
         "-Xmx4g",
-        "-cp",
-        "/path/to/legend-pure/legend-pure-lsp/legend-pure-mcp-server/target/legend-pure-mcp-server-5.96.1-SNAPSHOT.jar:/path/to/legend-pure/legend-pure-lsp/legend-pure-mcp-server/target/dependency/*",
-        "org.finos.legend.pure.lsp.mcp.LegendPureMcpServer",
+        "-jar",
+        "/path/to/legend-pure/legend-pure-lsp/legend-pure-mcp-server/target/legend-pure-mcp-server-5.96.1-SNAPSHOT-standalone.jar",
         "--workspace",
         "."
       ]
@@ -58,10 +62,23 @@ Add a `.mcp.json` at the Pure project root (the directory you want passed as
 }
 ```
 
-Adjust both jar paths to match the built `target/` directories from Step 2,
-and `--workspace` to the directory containing your repositories (`.` if
+Adjust the jar path to match the built `target/` directory from Step 2, and
+`--workspace` to the directory containing your repositories (`.` if
 `.mcp.json` lives at the workspace root). `-Xmx4g` is not optional in
 practice — see [Caveats](#7-caveats).
+
+To add extra jars to the runtime (for example legend-engine interpreted
+extensions providing native function implementations), switch from `-jar` to
+the classpath form — `java -jar` ignores `-cp`, but the standalone jar works
+fine as a classpath entry:
+
+```
+java -Xmx4g -cp "/path/to/legend-pure-mcp-server-5.96.1-SNAPSHOT-standalone.jar:/path/to/extra/*" \
+    org.finos.legend.pure.lsp.mcp.LegendPureMcpServer --workspace .
+```
+
+(The thin jar + `target/dependency/*` combination remains a valid classpath
+form as well.)
 
 `stdout` carries only the MCP protocol; all server logging (including init
 progress and repository-scan warnings) goes to `stderr`.
