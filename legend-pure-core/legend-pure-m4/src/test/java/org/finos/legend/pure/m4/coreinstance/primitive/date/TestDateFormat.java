@@ -240,6 +240,12 @@ public class TestDateFormat
         PureDate day = DateFunctions.newPureDate(2015, 8, 15);
         Assert.assertEquals("2015-08-15", format("[EST]yyyy-MM-dd", day));
         Assert.assertEquals("EST", format("[EST]z", day));
+
+        // date is shifted even if zone is not printed
+        Assert.assertEquals("2014-03-10 21:42:35.070004235", format("[+0530]yyyy-MM-dd HH:mm:ss.SSSSSS", DATE));
+        Assert.assertEquals("2014-03-10 21:42:35", format("[+0530]yyyy-MM-dd HH:mm:ss", DATE));
+        Assert.assertEquals("2014-03-10 21:42:35.070004235", format("[Asia/Kolkata]yyyy-MM-dd HH:mm:ss.SSSSSS", DATE));
+        Assert.assertEquals("2014-03-10 21:42:35", format("[Asia/Kolkata]yyyy-MM-dd HH:mm:ss", DATE));
     }
 
     /**
@@ -314,6 +320,7 @@ public class TestDateFormat
         Assert.assertEquals("2014-03-10 21:12:35 +0500", format("[GMT+05:00]yyyy-MM-dd HH:mm:ss Z", DATE));
         Assert.assertEquals("2014-03-10 19:12:35 +0300", format("[UTC+3]yyyy-MM-dd HH:mm:ss Z", DATE));
         Assert.assertEquals("2014-03-10 21:42:35 +0530", format("[+05:30]yyyy-MM-dd HH:mm:ss Z", DATE));
+        Assert.assertEquals("2014-03-10 21:42:35 +0530", format("[+0530]yyyy-MM-dd HH:mm:ss Z", DATE));
         Assert.assertEquals("2014-03-10 11:12:35 -0500", format("[Etc/GMT+5]yyyy-MM-dd HH:mm:ss Z", DATE));
 
         // UTC by any of its names leaves the date where it is
