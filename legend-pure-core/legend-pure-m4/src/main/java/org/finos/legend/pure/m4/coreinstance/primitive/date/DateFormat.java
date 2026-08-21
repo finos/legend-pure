@@ -690,7 +690,6 @@ public class DateFormat
      * @param zoned date and time being rendered, or null for UTC
      * @return offset from UTC in minutes
      */
-
     private static int getOffsetInMinutes(ZonedDateTime zoned)
     {
         return (zoned == null) ? 0 : (zoned.getOffset().getTotalSeconds() / 60);
