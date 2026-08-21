@@ -18,8 +18,9 @@ import org.finos.legend.pure.m4.tools.SafeAppendable;
 import org.finos.legend.pure.m4.tools.TextTools;
 
 import java.io.IOException;
+import java.time.DateTimeException;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.TimeZone;
 
 public class DateFormat
 {
@@ -29,12 +30,67 @@ public class DateFormat
 
     private static final char DATE_PREFIX = '%';
 
+    /**
+     * Write a Pure date to an appendable in the form a format string describes.
+     *
+     * <p>Each character of the format string is a control character standing for one component of
+     * the date, except for the separators {@code - / : . }, tab and space, which are written out as
+     * they appear, and text in double quotes, which is written out without them. A backslash escapes
+     * the character after it. Repeating a control character widens the field it writes: {@code d}
+     * gives 1 where {@code dd} gives 01.
+     *
+     * <table border="1">
+     * <caption>Control characters</caption>
+     * <tr><th>Character</th><th>Component</th><th>Example</th></tr>
+     * <tr><td>{@code y}</td><td>year; one or two of them write the last two digits, three or more
+     * the whole year</td><td>{@code yy} 14, {@code yyyy} 2014</td></tr>
+     * <tr><td>{@code M}</td><td>month</td><td>{@code MM} 03</td></tr>
+     * <tr><td>{@code d}</td><td>day of the month</td><td>{@code dd} 10</td></tr>
+     * <tr><td>{@code H}</td><td>hour, 0 to 23</td><td>{@code HH} 16</td></tr>
+     * <tr><td>{@code h}</td><td>hour, 1 to 12</td><td>{@code hh} 04</td></tr>
+     * <tr><td>{@code a}</td><td>AM or PM</td><td>PM</td></tr>
+     * <tr><td>{@code m}</td><td>minute</td><td>{@code mm} 12</td></tr>
+     * <tr><td>{@code s}</td><td>second</td><td>{@code ss} 35</td></tr>
+     * <tr><td>{@code S}</td><td>sub-second; up to three of them truncate the date's own digits,
+     * more write them all</td><td>{@code SSS} 070</td></tr>
+     * <tr><td>{@code z}</td><td>general time zone: the zone as written in the format string, or GMT
+     * if none was</td><td>{@code z} EST</td></tr>
+     * <tr><td>{@code Z}</td><td>RFC 822 time zone: always a sign, two digits of hours and two of
+     * minutes; requires an hour</td><td>{@code Z} -0500</td></tr>
+     * <tr><td>{@code X}</td><td>ISO 8601 time zone: Z for UTC, otherwise a sign, hours, and minutes
+     * only when the offset has them; requires an hour</td><td>{@code X} -05</td></tr>
+     * </table>
+     *
+     * <p>A format string may open with a time zone in square brackets, as in
+     * {@code [America/New_York]yyyy-MM-dd HH:mm:ss}, and only open with one: a zone appearing after
+     * anything has been written is an error, since the components before it would already have been
+     * written in another zone. The name may be anything {@link ZoneId#of(String, java.util.Map)}
+     * accepts against {@link ZoneId#SHORT_IDS} - a region such as {@code America/New_York}, one of
+     * the three letter abbreviations such as {@code EST}, or an offset such as {@code GMT+5} or
+     * {@code +05:30} - and a name it does not accept is an error rather than a silent fall back to
+     * UTC.
+     *
+     * <p>A Pure date is always understood as UTC, so a zone shifts the date to the instant it
+     * stands for as that zone reads it, and every component comes from the shifted reading. A date
+     * with no hour is not an instant and so is never shifted; {@code z} still names the zone that
+     * was asked for, but {@code Z} and {@code X} are an error, since an offset belongs to an
+     * instant and a zone can be keeping more than one over a date that broad.
+     *
+     * @param appendable   appendable to write to
+     * @param formatString format string
+     * @param date         date to write
+     * @param <T>          appendable type
+     * @return the appendable
+     * @throws IllegalArgumentException if the format string is malformed, names a time zone that
+     *                                  cannot be resolved, sets a time zone anywhere but at the
+     *                                  start, or asks for a component the date does not have
+     */
     public static <T extends Appendable> T format(T appendable, String formatString, PureDate date)
     {
         SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
         int length = formatString.length();
         ZonedDateTime zoned = null;
-        StringBuilder timeZoneId = new StringBuilder();
+        String timeZoneId = null;
         int i = 0;
         while (i < length)
         {
@@ -49,6 +105,7 @@ public class DateFormat
                         throw new IllegalArgumentException("Time zone can only be set at the beginning of the format string");
                     }
 
+                    StringBuilder tzBuilder = new StringBuilder();
                     boolean done = false;
                     boolean escaped = false;
                     boolean inQuotes = false;
@@ -57,7 +114,7 @@ public class DateFormat
                         char next = formatString.charAt(i++);
                         if (escaped)
                         {
-                            timeZoneId.append(next);
+                            tzBuilder.append(next);
                             escaped = false;
                         }
                         else if (next == '"')
@@ -74,7 +131,7 @@ public class DateFormat
                         }
                         else
                         {
-                            timeZoneId.append(next);
+                            tzBuilder.append(next);
                         }
                     }
                     if (inQuotes)
@@ -85,24 +142,22 @@ public class DateFormat
                     {
                         throw new IllegalArgumentException("Missing closing bracket in format string: " + formatString);
                     }
-                    TimeZone timeZone;
+                    timeZoneId = tzBuilder.toString();
+                    ZoneId timeZone;
                     try
                     {
-                        timeZone = TimeZone.getTimeZone(timeZoneId.toString());
+                        timeZone = ZoneId.of(timeZoneId, ZoneId.SHORT_IDS);
                     }
-                    catch (RuntimeException e)
+                    catch (DateTimeException e)
                     {
-                        throw new IllegalArgumentException("Unknown time zone: " + timeZoneId);
+                        throw new IllegalArgumentException("Unknown time zone: " + timeZoneId, e);
                     }
 
                     if (date.hasHour())
                     {
-                        if (zoned == null)
-                        {
-                            // A Pure date is always understood as UTC, so the instant it starts at
-                            // is what the requested zone renders.
-                            zoned = PureDateToJava.start().toInstant(date).atZone(timeZone.toZoneId());
-                        }
+                        // A Pure date is always understood as UTC, so the instant it starts at
+                        // is what the requested zone renders.
+                        zoned = PureDateToJava.start().toInstant(date).atZone(timeZone);
                     }
                     break;
                 }
@@ -251,13 +306,17 @@ public class DateFormat
                 case 'z':
                 {
                     int count = getCharCountFrom(character, formatString, i);
-                    safeAppendable.append((zoned == null) ? "GMT" : timeZoneId);
+                    safeAppendable.append((timeZoneId == null) ? "GMT" : timeZoneId);
                     i += count;
                     break;
                 }
                 // RFC 822 time zone
                 case 'Z':
                 {
+                    if (!date.hasHour())
+                    {
+                        throw new IllegalArgumentException("Date has no hour (required for Z): " + date);
+                    }
                     int count = getCharCountFrom(character, formatString, i);
                     appendRFC822TimeZone(safeAppendable, getOffsetInMinutes(zoned));
                     i += count;
@@ -266,6 +325,10 @@ public class DateFormat
                 // ISO 8601 time zone
                 case 'X':
                 {
+                    if (!date.hasHour())
+                    {
+                        throw new IllegalArgumentException("Date has no hour (required for X): " + date);
+                    }
                     int count = getCharCountFrom(character, formatString, i);
                     appendISO8601TimeZone(safeAppendable, getOffsetInMinutes(zoned));
                     i += count;
