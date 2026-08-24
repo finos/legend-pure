@@ -389,7 +389,8 @@ function resolveServerJar(): string | undefined {
                 f.endsWith('.jar') &&
                 !f.endsWith('-sources.jar') &&
                 !f.endsWith('-javadoc.jar') &&
-                !f.endsWith('-tests.jar')
+                !f.endsWith('-tests.jar') &&
+                !f.endsWith('-shaded.jar')
         );
         if (mainJar) {
             return path.join(serverTargetDir, mainJar);
@@ -414,7 +415,8 @@ function resolveServerJar(): string | undefined {
                         f.endsWith('.jar') &&
                         !f.endsWith('-sources.jar') &&
                         !f.endsWith('-javadoc.jar') &&
-                        !f.endsWith('-tests.jar')
+                        !f.endsWith('-tests.jar') &&
+                        !f.endsWith('-shaded.jar')
                 );
                 if (mainJar) {
                     return path.join(targetDir, mainJar);
