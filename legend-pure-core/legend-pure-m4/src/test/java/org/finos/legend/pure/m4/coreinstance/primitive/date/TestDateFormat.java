@@ -160,6 +160,27 @@ public class TestDateFormat
     }
 
     /**
+     * Every control character consumes the run of itself that follows it, whether or not the count
+     * means anything to it: a field with no width to widen, and the three time zone notations,
+     * write the same thing however many times the letter is repeated.
+     */
+    @Test
+    public void testFormatRepeatingAControlCharacterWithNoWidth()
+    {
+        Assert.assertEquals("PM", format("a", DATE));
+        Assert.assertEquals("PM", format("aa", DATE));
+        Assert.assertEquals("PM", format("aaaa", DATE));
+        Assert.assertEquals("16 PM", format("HH aaa", DATE));
+
+        Assert.assertEquals("GMT", format("z", DATE));
+        Assert.assertEquals("GMT", format("zzzz", DATE));
+        Assert.assertEquals("+0000", format("Z", DATE));
+        Assert.assertEquals("+0000", format("ZZZZ", DATE));
+        Assert.assertEquals("Z", format("X", DATE));
+        Assert.assertEquals("Z", format("XXXX", DATE));
+    }
+
+    /**
      * The subsecond is cut to one more digit than the format string repeats the letter, but from
      * four letters on it is written in full however many digits it has. It is never padded, so a
      * date with fewer digits than were asked for gives all it has and no more.
