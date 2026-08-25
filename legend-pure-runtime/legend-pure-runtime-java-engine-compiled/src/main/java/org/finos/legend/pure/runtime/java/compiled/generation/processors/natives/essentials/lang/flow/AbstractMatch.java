@@ -50,14 +50,24 @@ public abstract class AbstractMatch extends AbstractNativeFunctionGeneric
         String type = TypeProcessor.typeToJavaObjectWithMul(Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.genericType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.multiplicity, processorSupport), processorSupport);
         String input = transformedParams.get(0);
 
+        // Always assign input to a temp variable so it is evaluated exactly once,
+        // even when the generated code references it multiple times (e.g. in the
+        // type-check, the valueOf call, and the matchFailure fallback).
+        String inputType = TypeProcessor.typeToJavaObjectWithMul(
+                Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(0), M3Properties.genericType, processorSupport),
+                Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(0), M3Properties.multiplicity, processorSupport),
+                processorSupport);
+        String inputVar = "_matchInput_" + System.identityHashCode(functionExpression);
+
         SourceInformation sourceInformation = functionExpression.getSourceInformation();
 
-        String match = "(" + type + ")";
         if (Instance.instanceOf(parametersValues.get(1), M3Paths.InstanceValue, processorSupport))
         {
             ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(parametersValues.get(1), M3Properties.values, processorSupport);
             String endBrackets = "";
 
+            // Build inner match expression using inputVar
+            String match = "(" + type + ")";
             for (CoreInstance matchFunc : values)
             {
                 CoreInstance matchFunctionType = Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToManyResolved(Instance.getValueForMetaPropertyToOneResolved(matchFunc, M3Properties.classifierGenericType, processorSupport), M3Properties.typeArguments, processorSupport).getFirst(), M3Properties.rawType, processorSupport);
@@ -77,11 +87,11 @@ public abstract class AbstractMatch extends AbstractNativeFunctionGeneric
                 if (Instance.instanceOf(sourceRawType, M3Paths.Enumeration, processorSupport))
                 {
                     String enumerationSystemPath = PackageableElement.getSystemPathForPackageableElement(sourceRawType);
-                    match += "(Pure.matchesEnumeration(" + input + ",\"" + enumerationSystemPath + "\"," + lowerBound + "," + upperBound + ")?\n";
+                    match += "(Pure.matchesEnumeration(" + inputVar + ",\"" + enumerationSystemPath + "\"," + lowerBound + "," + upperBound + ")?\n";
                 }
                 else
                 {
-                    match += "(Pure.matches(" + input + "," + sourceType + ".class," + lowerBound + "," + upperBound + ")?\n";
+                    match += "(Pure.matches(" + inputVar + "," + sourceType + ".class," + lowerBound + "," + upperBound + ")?\n";
                 }
                 match += (resultMany ? "CompiledSupport.toPureCollection(" : "") +
                         "   (new DefendedFunction" + (isMatchWith ? "2<Object," + otherType + ", Object>" : "") + "()\n" +
@@ -95,16 +105,16 @@ public abstract class AbstractMatch extends AbstractNativeFunctionGeneric
                         ) +
                         "            " + value + "\n" +
                         "       }\n" +
-
-                        "   }).value" + (isMatchWith ? "" : "Of") + "(" + ((upperBound == 1) ? "CompiledSupport.first(" : "CompiledSupport.toPureCollection(") + input + ")" + (isMatchWith ? ", " + transformedParams.get(2) : "") + ")" + (resultMany ? ")" : "") + "\n" +
+                        "   }).value" + (isMatchWith ? "" : "Of") + "(" + ((upperBound == 1) ? "CompiledSupport.first(" : "CompiledSupport.toPureCollection(") + inputVar + ")" + (isMatchWith ? ", " + transformedParams.get(2) : "") + ")" + (resultMany ? ")" : "") + "\n" +
                         ":\n";
-
 
                 endBrackets += ")";
             }
+            match += "CompiledSupport.matchFailure(" + inputVar + "," + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ")" + endBrackets + "\n";
 
-            match += "CompiledSupport.matchFailure(" + input + "," + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ")" + endBrackets + "\n";
-            return match;
+            // Wrap in a Function lambda so `input` is assigned to `inputVar` exactly once,
+            // regardless of how many times `inputVar` appears in `match`.
+            return "((java.util.function.Function<" + inputType + ", " + type + ">)((" + inputType + " " + inputVar + ") -> " + match + ")).apply(" + input + ")";
         }
         else
         {

@@ -493,7 +493,7 @@ public class Pure
             }
             else
             {
-                pureFunc.execute(Lists.fixedSize.with(instances), es);
+                return pureFunc.execute(Lists.fixedSize.with(instances), es);
             }
         }
         SharedPureFunction<?> reflectiveNative = getSharedPureFunction(func, bridge, es);
