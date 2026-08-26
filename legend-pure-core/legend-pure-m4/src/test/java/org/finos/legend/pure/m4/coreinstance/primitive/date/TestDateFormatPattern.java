@@ -35,6 +35,7 @@ public class TestDateFormatPattern
 {
     private static final PureDate NANO = DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35, "070004235");
     private static final PureDate MILLI = DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35, "070");
+    private static final PureDate ONE_MILLI = DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35, "001");
     private static final PureDate HUNDREDTH = DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35, "07");
     private static final PureDate ZERO = DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35, "000");
     private static final PureDate SECOND = DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35);
@@ -67,6 +68,13 @@ public class TestDateFormatPattern
             "z",
             "yyyy-MM-dd HH:mm:ss.SSS yy/MM/dd hh:mm a z Z X",
             "SSS.S",
+            "HH:mm:ss.S*",
+            "HH:mm:ss.S<6",
+            "HH:mm:ss.S>3",
+            "HH:mm:ss.S9",
+            "HH:mm:ss.S!3",
+            "HH:mm:ss.S(3!,9!,\"_\")",
+            "S<3.S*",
             "yyyy yyyy yy",
             "z z Z Z X X",
             "\"one\" HH \"two\" HH \"three\""
@@ -433,8 +441,6 @@ public class TestDateFormatPattern
     public void testPatternNormalizesWhatSaysTheSameThing()
     {
         Assert.assertEquals("yyyy-MM-dd", DateFormatPattern.parse("yyyy-MM-dd").pattern());
-        Assert.assertEquals("SSS", DateFormatPattern.parse("SSS").pattern());
-        Assert.assertEquals("SSSS", DateFormatPattern.parse("SSSS").pattern());
 
         // a year of three letters or fewer is the two digit form, and four or more is the whole one
         Assert.assertEquals("yy", DateFormatPattern.parse("y").pattern());
@@ -442,7 +448,6 @@ public class TestDateFormatPattern
         Assert.assertEquals("yyyy", DateFormatPattern.parse("yyyyy").pattern());
 
         // a repeated character with no width to widen writes itself once
-        Assert.assertEquals("SSSS", DateFormatPattern.parse("SSSSSSSSS").pattern());
         Assert.assertEquals("a", DateFormatPattern.parse("aaa").pattern());
         Assert.assertEquals("z", DateFormatPattern.parse("zzz").pattern());
         Assert.assertEquals("Z", DateFormatPattern.parse("ZZ").pattern());
@@ -469,28 +474,37 @@ public class TestDateFormatPattern
     }
 
     /**
-     * A sub-second field the format string spells writes itself that way; one only the builder can
-     * ask for writes the general form, which the format string is to gain and does not yet take
-     * back.
+     * A sub-second field a shorthand covers exactly writes itself that way, and everything else
+     * writes the general form. The repetition form is never written: every field it can spell has a
+     * shorthand meaning precisely the same thing, so a pattern read from a legacy string writes the
+     * modern spelling of what it already meant.
      */
     @Test
     public void testPatternWritesSubsecondFields()
     {
-        Assert.assertEquals("S", builder().subsecond().atMost(1).endSubsecond().build().pattern());
-        Assert.assertEquals("SSS", builder().subsecond().atMost(3).endSubsecond().build().pattern());
-        Assert.assertEquals("SSSS", builder().subsecond().asStored().endSubsecond().build().pattern());
-        Assert.assertEquals("SSSS", builder().subsecond().endSubsecond().build().pattern());
+        Assert.assertEquals("S*", builder().subsecond().asStored().endSubsecond().build().pattern());
+        Assert.assertEquals("S*", builder().subsecond().endSubsecond().build().pattern());
+        Assert.assertEquals("S<1", builder().subsecond().atMost(1).endSubsecond().build().pattern());
+        Assert.assertEquals("S<3", builder().subsecond().atMost(3).endSubsecond().build().pattern());
+        Assert.assertEquals("S<6", builder().subsecond().atMost(6).endSubsecond().build().pattern());
+        Assert.assertEquals("S>3", builder().subsecond().atLeast(3).endSubsecond().build().pattern());
+        Assert.assertEquals("S3", builder().subsecond().exactly(3).endSubsecond().build().pattern());
+        Assert.assertEquals("S!3", builder().subsecond().exactly(3).failBelowMinimum().endSubsecond().build().pattern());
 
-        Assert.assertEquals("S(0,6)", builder().subsecond().atMost(6).endSubsecond().build().pattern());
-        Assert.assertEquals("S(3,3)", builder().subsecond().exactly(3).endSubsecond().build().pattern());
-        Assert.assertEquals("S(3,*)", builder().subsecond().atLeast(3).endSubsecond().build().pattern());
+        // and the general form carries what no shorthand can say
         Assert.assertEquals("S(2,4)", builder().subsecond().between(2, 4).endSubsecond().build().pattern());
-        Assert.assertEquals("S(3!,3)", builder().subsecond().exactly(3).failBelowMinimum().endSubsecond().build().pattern());
         Assert.assertEquals("S(0,3!)", builder().subsecond().atMost(3).failAboveMaximum().endSubsecond().build().pattern());
+        Assert.assertEquals("S(3!,*)", builder().subsecond().atLeast(3).failBelowMinimum().endSubsecond().build().pattern());
         Assert.assertEquals("S(4,4,\"_\")", builder().subsecond().exactly(4).padWith('_').endSubsecond().build().pattern());
         Assert.assertEquals(
                 "S(3!,9!,\"_\")",
                 builder().subsecond().between(3, 9).failBelowMinimum().failAboveMaximum().padWith('_').endSubsecond().build().pattern());
+
+        // a marker with nothing to act on is kept rather than erased, so the field says what it was
+        // asked for even where a shorter spelling would render the same
+        Assert.assertEquals("S(0!,3)", builder().subsecond().atMost(3).failBelowMinimum().endSubsecond().build().pattern());
+        Assert.assertEquals("S(0,*!)", builder().subsecond().asStored().failAboveMaximum().endSubsecond().build().pattern());
+        Assert.assertEquals("S(0,3,\"_\")", builder().subsecond().atMost(3).padWith('_').endSubsecond().build().pattern());
     }
 
     @Test
@@ -624,6 +638,199 @@ public class TestDateFormatPattern
         Assert.assertEquals("S(2,4)", builder().subsecond().exactly(9).between(2, 4).endSubsecond().build().pattern());
     }
 
+    // The sub-second syntax
+
+    /**
+     * Each shorthand is the field the builder describes the same way, reached through the format
+     * string rather than through Java.
+     */
+    @Test
+    public void testTheSubsecondShorthands()
+    {
+        assertSameAs("S*", builder().subsecond().asStored().endSubsecond());
+        assertSameAs("S<3", builder().subsecond().atMost(3).endSubsecond());
+        assertSameAs("S>3", builder().subsecond().atLeast(3).endSubsecond());
+        assertSameAs("S3", builder().subsecond().exactly(3).endSubsecond());
+        assertSameAs("S!3", builder().subsecond().exactly(3).failBelowMinimum().endSubsecond());
+
+        // a width is a number rather than a digit, and a field is an element like any other
+        assertSameAs("S12", builder().subsecond().exactly(12).endSubsecond());
+        assertSameAs("S<10", builder().subsecond().atMost(10).endSubsecond());
+        assertSameAs("HH:mm:ss.S<6", builder()
+                .hour24().literal(':').minute().literal(':').second()
+                .literal('.').subsecond().atMost(6).endSubsecond());
+        assertSameAs("S<3.S*", builder()
+                .subsecond().atMost(3).endSubsecond()
+                .literal('.').subsecond().asStored().endSubsecond());
+    }
+
+    /**
+     * The general form says both bounds, both policies, and the fill at once, which is the whole of
+     * the model and the nine fields it makes.
+     */
+    @Test
+    public void testTheSubsecondGeneralForm()
+    {
+        assertSameAs("S(0,*)", builder().subsecond().asStored().endSubsecond());
+        assertSameAs("S(0,3)", builder().subsecond().atMost(3).endSubsecond());
+        assertSameAs("S(0,3!)", builder().subsecond().atMost(3).failAboveMaximum().endSubsecond());
+        assertSameAs("S(3,*)", builder().subsecond().atLeast(3).endSubsecond());
+        assertSameAs("S(3!,*)", builder().subsecond().atLeast(3).failBelowMinimum().endSubsecond());
+        assertSameAs("S(3,9)", builder().subsecond().between(3, 9).endSubsecond());
+        assertSameAs("S(3,9!)", builder().subsecond().between(3, 9).failAboveMaximum().endSubsecond());
+        assertSameAs("S(3!,9)", builder().subsecond().between(3, 9).failBelowMinimum().endSubsecond());
+        assertSameAs("S(3!,9!)", builder().subsecond().between(3, 9).failBelowMinimum().failAboveMaximum().endSubsecond());
+
+        // a marker with nothing to act on is legal and does nothing, since a format string may be
+        // built at run time and its validity must not turn on how it was written
+        assertSameAs("S(1!,3)", builder().subsecond().between(1, 3).failBelowMinimum().endSubsecond());
+        assertSameAs("S(3,*!)", builder().subsecond().atLeast(3).failAboveMaximum().endSubsecond());
+        assertSameAs("S(0,3,\"_\")", builder().subsecond().atMost(3).padWith('_').endSubsecond());
+    }
+
+    /**
+     * The fill is one character, which a backslash escapes, so every character can be a fill -
+     * including the quote that ends it and the parenthesis that ends the field.
+     */
+    @Test
+    public void testTheSubsecondFill()
+    {
+        assertSameAs("S(3,3,\"_\")", builder().subsecond().exactly(3).padWith('_').endSubsecond());
+        assertSameAs("S(3,3,\" \")", builder().subsecond().exactly(3).padWith(' ').endSubsecond());
+        assertSameAs("S(3,3,\")\")", builder().subsecond().exactly(3).padWith(')').endSubsecond());
+        assertSameAs("S(3,3,\",\")", builder().subsecond().exactly(3).padWith(',').endSubsecond());
+        assertSameAs("S(3,3,\"\\\"\")", builder().subsecond().exactly(3).padWith('"').endSubsecond());
+        assertSameAs("S(3,3,\"\\\\\")", builder().subsecond().exactly(3).padWith('\\').endSubsecond());
+
+        Assert.assertEquals("07_", DateFormatPattern.parse("S(3,3,\"_\")").render(HUNDREDTH));
+        Assert.assertEquals("07\"", DateFormatPattern.parse("S(3,3,\"\\\"\")").render(HUNDREDTH));
+
+        // an escape is only needed for the two characters that would otherwise end it
+        Assert.assertEquals("07_", DateFormatPattern.parse("S(3,3,\"\\_\")").render(HUNDREDTH));
+    }
+
+    /**
+     * Every field of the worked table in the design, against the fractions it works. The last column
+     * of that table is left out because it is uniform: no field decides for itself what a date with
+     * no fraction at all looks like, which {@link #assertWorkedRow} asserts of every row.
+     */
+    @Test
+    public void testEverySubsecondFieldOfTheWorkedTable()
+    {
+        assertWorkedRow("S3", "070", "001", "070");
+        assertWorkedRow("S9", "070004235", "001000000", "070000000");
+        assertWorkedRow("S!3", "070", "001", null);
+        assertWorkedRow("S<3", "070", "001", "07");
+        assertWorkedRow("S>3", "070004235", "001", "070");
+        assertWorkedRow("S*", "070004235", "001", "07");
+        assertWorkedRow("S(0,3!)", null, "001", "07");
+        assertWorkedRow("S(3!,*)", "070004235", "001", null);
+        assertWorkedRow("S(3,3!)", null, "001", "070");
+        assertWorkedRow("S(3!,3!)", null, "001", null);
+        assertWorkedRow("SSS", "070", "001", "07");
+        assertWorkedRow("SSSSSSSSS", "070004235", "001", "07");
+    }
+
+    /**
+     * Every form the repetition spelling can take has a shorthand that means precisely the same
+     * thing, so the older form can be deprecated without anything losing a way to be said. That
+     * equivalence is also what makes {@code pattern()} a migration: it writes the modern spelling of
+     * a field it read from a legacy one.
+     */
+    @Test
+    public void testEveryLegacySubsecondFormHasAModernSpellingThatMeansTheSame()
+    {
+        assertSameField("S", "S<1");
+        assertSameField("SS", "S<2");
+        assertSameField("SSS", "S<3");
+        assertSameField("SSSS", "S*");
+        assertSameField("SSSSS", "S*");
+        assertSameField("SSSSSSSSS", "S*");
+
+        // the discontinuity the modern spellings make visible: the count stops meaning a width at
+        // four letters, where S<3 turns into S*
+        Assert.assertNotEquals(DateFormatPattern.parse("SSS"), DateFormatPattern.parse("SSSS"));
+
+        // and the hazard the design names: S3 is exactly three digits where SSS is at most three
+        Assert.assertNotEquals(DateFormatPattern.parse("S3"), DateFormatPattern.parse("SSS"));
+        Assert.assertEquals("070", DateFormatPattern.parse("S3").render(HUNDREDTH));
+        Assert.assertEquals("07", DateFormatPattern.parse("SSS").render(HUNDREDTH));
+    }
+
+    /**
+     * A sub-second field is rejected where it is incoherent or ambiguous, and nowhere else.
+     */
+    @Test
+    public void testSubsecondSyntaxErrors()
+    {
+        assertValidationFails("Expected a digit count after 'S<' in format string: S<", "S<");
+        assertValidationFails("Expected a digit count after 'S>' in format string: S>", "S>");
+        assertValidationFails("Expected a digit count after 'S!' in format string: S!", "S!");
+        assertValidationFails("Expected a digit count after 'S!' in format string: S!x", "S!x");
+        assertValidationFails("Expected a digit count after 'S(' in format string: S(", "S(");
+        assertValidationFails("Expected a digit count after 'S(' in format string: S(-1,3)", "S(-1,3)");
+        assertValidationFails("Expected ',' after the sub-second minimum in format string: S(3", "S(3");
+        assertValidationFails("Expected ',' after the sub-second minimum in format string: S(3)", "S(3)");
+        assertValidationFails("Expected a digit count or '*' for the sub-second maximum in format string: S(3,", "S(3,");
+        assertValidationFails("Expected a digit count or '*' for the sub-second maximum in format string: S(3,x)", "S(3,x)");
+        assertValidationFails("Missing closing parenthesis in format string: S(3,3", "S(3,3");
+        assertValidationFails("Missing closing parenthesis in format string: S(3,3,\"_\"", "S(3,3,\"_\"");
+        assertValidationFails("Expected a quoted sub-second fill character in format string: S(3,3,x)", "S(3,3,x)");
+        assertValidationFails("Missing closing quote in format string: S(3,3,\"_", "S(3,3,\"_");
+        assertValidationFails("Sub-second fill must be a single character in format string: S(3,3,\"\")", "S(3,3,\"\")");
+        assertValidationFails("Sub-second fill must be a single character in format string: S(3,3,\"ab\")", "S(3,3,\"ab\")");
+
+        // a width nothing satisfies, named against the string the caller wrote
+        assertValidationFails("Sub-second minimum 5 exceeds maximum 3 in format string: S(5,3)", "S(5,3)");
+        assertValidationFails("Sub-second maximum must be at least 1: 0 in format string: S<0", "S<0");
+        assertValidationFails("Sub-second maximum must be at least 1: 0 in format string: S0", "S0");
+        assertValidationFails("Sub-second maximum must be at least 1: 0 in format string: S(0,0)", "S(0,0)");
+        assertValidationFails("Sub-second maximum must be at least 1: 0 in format string: S!0", "S!0");
+
+        // a count too large to tell from the number standing for an unbounded maximum
+        assertValidationFails("Sub-second digit count is too large in format string: S99999999999", "S99999999999");
+        assertValidationFails("Sub-second digit count is too large in format string: S<2147483647", "S<2147483647");
+        DateFormat.validate("S<2147483646");
+
+        // a width follows the S rather than a run of them, so a run and then a width is neither
+        assertValidationFails("Invalid format control character '3' in format string: SS3", "SS3");
+    }
+
+    /**
+     * Every sub-second field the builder can reach writes a format string the parser takes back as
+     * the same field, and writing that field again gives the same string. This is the round trip the
+     * sub-second syntax exists to close: before it, the builder could describe fields no format
+     * string could spell.
+     */
+    @Test
+    public void testEverySubsecondFieldTheBuilderCanReachRoundTrips()
+    {
+        int[] widths = {0, 1, 2, 3, 9, 12};
+        char[] fills = {'0', '_', ' ', '"', '\\', ')', '(', ',', '*', '!', 'S', '\t', '\n', '3'};
+        int round = 0;
+        for (int minimum : widths)
+        {
+            for (int maximum : widths)
+            {
+                if ((maximum >= 1) && (minimum <= maximum))
+                {
+                    for (boolean failBelow : new boolean[]{false, true})
+                    {
+                        for (boolean failAbove : new boolean[]{false, true})
+                        {
+                            char fill = fills[round++ % fills.length];
+                            assertRoundTrips(field(minimum, maximum, failBelow, failAbove, fill));
+                            assertRoundTrips(field(minimum, -1, failBelow, failAbove, fill));
+                        }
+                    }
+                }
+            }
+        }
+
+        // sub-second precision is unbounded, so a width is capped only by what a number can carry
+        assertRoundTrips(field(0, Integer.MAX_VALUE - 1, false, false, '0'));
+    }
+
     // Equality and description
 
     @Test
@@ -719,6 +926,102 @@ public class TestDateFormatPattern
         // and no field decides for itself what a date with no fraction at all looks like
         assertSubsecond(pattern, SECOND, null);
         assertSubsecond(pattern, DAY, null);
+    }
+
+    /**
+     * Assert that a format string holding one sub-second field writes what the design's worked
+     * table says of it, a null standing for a field that refuses the date rather than writing it.
+     * The table's last column is not a parameter because it is uniform: no field decides for itself
+     * what a date with no fraction at all looks like.
+     *
+     * @param formatString format string holding the field
+     * @param nano         what it writes for {@code .070004235}
+     * @param oneMilli     what it writes for {@code .001}
+     * @param hundredth    what it writes for {@code .07}
+     */
+    private static void assertWorkedRow(String formatString, String nano, String oneMilli, String hundredth)
+    {
+        DateFormatPattern pattern = DateFormatPattern.parse(formatString);
+        assertSubsecond(pattern, NANO, nano);
+        assertSubsecond(pattern, ONE_MILLI, oneMilli);
+        assertSubsecond(pattern, HUNDREDTH, hundredth);
+        assertSubsecond(pattern, SECOND, null);
+        assertSubsecond(pattern, DAY, null);
+    }
+
+    /**
+     * Assert that two format strings hold the same field, and that the second is the spelling the
+     * pattern writes for it.
+     *
+     * @param legacy format string in the repetition form
+     * @param modern format string in the form that replaces it
+     */
+    private static void assertSameField(String legacy, String modern)
+    {
+        DateFormatPattern read = DateFormatPattern.parse(legacy);
+        Assert.assertEquals(legacy, DateFormatPattern.parse(modern), read);
+        Assert.assertEquals(legacy, DateFormatPattern.parse(modern).hashCode(), read.hashCode());
+        Assert.assertEquals(legacy, modern, read.pattern());
+    }
+
+    /**
+     * Build a pattern holding one sub-second field.
+     *
+     * @param minimum   fewest digits to write
+     * @param maximum   most digits to write, or a negative number for an unbounded maximum
+     * @param failBelow whether to fail rather than pad below the minimum
+     * @param failAbove whether to fail rather than truncate above the maximum
+     * @param fill      character to pad with
+     * @return pattern holding the field
+     */
+    private static DateFormatPattern field(int minimum, int maximum, boolean failBelow, boolean failAbove, char fill)
+    {
+        SubsecondBuilder field = builder().subsecond();
+        if (maximum < 0)
+        {
+            field.atLeast(minimum);
+        }
+        else
+        {
+            field.between(minimum, maximum);
+        }
+        if (failBelow)
+        {
+            field.failBelowMinimum();
+        }
+        if (failAbove)
+        {
+            field.failAboveMaximum();
+        }
+        return field.padWith(fill).endSubsecond().build();
+    }
+
+    /**
+     * Assert that a pattern writes a format string the parser takes back as the same pattern, that
+     * writing it again gives the same string, and that the string renders through {@code format}
+     * what the pattern renders directly.
+     *
+     * @param pattern pattern to round trip
+     */
+    private static void assertRoundTrips(DateFormatPattern pattern)
+    {
+        String written = pattern.pattern();
+        DateFormatPattern read = DateFormatPattern.parse(written);
+        Assert.assertEquals(written, pattern, read);
+        Assert.assertEquals(written, pattern.hashCode(), read.hashCode());
+        Assert.assertEquals(written, written, read.pattern());
+        for (PureDate date : new PureDate[]{NANO, MILLI, ONE_MILLI, HUNDREDTH, ZERO, SECOND})
+        {
+            String context = written + " on " + date;
+            Assert.assertEquals(context, pattern.canRender(date), read.canRender(date));
+            if (pattern.canRender(date))
+            {
+                Assert.assertEquals(
+                        context,
+                        pattern.render(date),
+                        DateFormat.format(new StringBuilder(), written, date).toString());
+            }
+        }
     }
 
     private static void assertSubsecond(DateFormatPattern pattern, PureDate date, String expected)

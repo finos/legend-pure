@@ -201,6 +201,53 @@ public class TestDateFormat
         Assert.assertEquals("07", format("SSSS", hundredths));
     }
 
+    /**
+     * A sub-second field takes a width, which is the one place the format language says more than a
+     * run of letters can. The run of letters is two of these widths: one to three letters is
+     * {@code S<N}, and four or more is {@code S*}.
+     */
+    @Test
+    public void testFormatSubsecondWidths()
+    {
+        PureDate hundredths = DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35, "07");
+
+        Assert.assertEquals("070", format("S3", DATE));
+        Assert.assertEquals("070", format("S3", hundredths));
+        Assert.assertEquals("070004235", format("S9", DATE));
+        Assert.assertEquals("070000000", format("S9", hundredths));
+
+        Assert.assertEquals("070", format("S<3", DATE));
+        Assert.assertEquals("07", format("S<3", hundredths));
+        Assert.assertEquals("070004235", format("S>3", DATE));
+        Assert.assertEquals("070", format("S>3", hundredths));
+        Assert.assertEquals("070004235", format("S*", DATE));
+        Assert.assertEquals("07", format("S*", hundredths));
+
+        Assert.assertEquals("2014-03-10 16:12:35.070004", format("yyyy-MM-dd HH:mm:ss.S<6", DATE));
+        Assert.assertEquals("2014-03-10 16:12:35.070000", format("yyyy-MM-dd HH:mm:ss.S6", hundredths));
+        Assert.assertEquals("2014-03-10T16:12:35.070004235", format("yyyy-MM-dd\"T\"HH:mm:ss.S9", DATE));
+
+        // and refusing to pad is a field of its own, since padding claims a precision the date lacks
+        Assert.assertEquals("070", format("S!3", DATE));
+        assertFormatFails(
+                "Date has a 2 digit sub-second, but 3 are required: 2014-03-10T16:12:35.07+0000",
+                "S!3",
+                hundredths);
+        assertFormatFails(
+                "Date has a 9 digit sub-second, but at most 3 may be written: 2014-03-10T16:12:35.070004235+0000",
+                "S(0,3!)",
+                DATE);
+
+        // every form fails on a date with no fraction, whatever width it asks for
+        for (String formatString : new String[]{"S", "SSSS", "S3", "S<3", "S>3", "S*", "S!3", "S(3!,9!,\"_\")"})
+        {
+            assertFormatFails(
+                    "Date has no sub-second: 2014-03-10T16:12:35+0000",
+                    formatString,
+                    DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35));
+        }
+    }
+
     // Format: literals
 
     @Test

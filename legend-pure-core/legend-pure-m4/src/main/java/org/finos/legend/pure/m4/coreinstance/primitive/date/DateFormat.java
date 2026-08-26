@@ -52,8 +52,8 @@ public class DateFormat
      * widen</td><td>PM</td></tr>
      * <tr><td>{@code m}</td><td>minute</td><td>{@code mm} 12</td></tr>
      * <tr><td>{@code s}</td><td>second</td><td>{@code ss} 35</td></tr>
-     * <tr><td>{@code S}</td><td>sub-second; up to three of them truncate the date's own digits,
-     * more write them all</td><td>{@code SSS} 070</td></tr>
+     * <tr><td>{@code S}</td><td>sub-second; this one takes a width rather than a run of letters,
+     * and the forms it takes are below</td><td>{@code S3} 070</td></tr>
      * <tr><td>{@code z}</td><td>general time zone: the zone as written in the format string, or GMT
      * if none was</td><td>{@code z} EST</td></tr>
      * <tr><td>{@code Z}</td><td>RFC 822 time zone: always a sign, two digits of hours and two of
@@ -61,6 +61,43 @@ public class DateFormat
      * <tr><td>{@code X}</td><td>ISO 8601 time zone: Z for UTC, otherwise a sign, hours, and minutes
      * only when the offset has them; requires an hour</td><td>{@code X} -05</td></tr>
      * </table>
+     *
+     * <p>A sub-second field says how many digits of the fraction of a second to write, which is
+     * the one place the format language says more than a run of letters can. Every form of it fails
+     * on a date with no fraction at all: how many digits to write is the field's business, and
+     * whether there are any to write is not.
+     *
+     * <table border="1">
+     * <caption>Sub-second widths</caption>
+     * <tr><th>Field</th><th>Digits written</th><th>{@code .070004235}</th><th>{@code .07}</th></tr>
+     * <tr><td>{@code SN}</td><td>exactly N, padding a shorter fraction</td><td>{@code S3} 070</td>
+     * <td>{@code S3} 070</td></tr>
+     * <tr><td>{@code S<N}</td><td>at most N, and fewer where that is all there is</td>
+     * <td>{@code S<3} 070</td><td>{@code S<3} 07</td></tr>
+     * <tr><td>{@code S>N}</td><td>at least N, padding a shorter fraction, and everything beyond</td>
+     * <td>{@code S>3} 070004235</td><td>{@code S>3} 070</td></tr>
+     * <tr><td>{@code S*}</td><td>however many the date has</td><td>{@code S*} 070004235</td>
+     * <td>{@code S*} 07</td></tr>
+     * <tr><td>{@code S!N}</td><td>exactly N, failing rather than padding a shorter fraction</td>
+     * <td>{@code S!3} 070</td><td>{@code S!3} fails</td></tr>
+     * <tr><td>{@code S} to {@code SSS}</td><td>at most one, two, or three; the same fields as
+     * {@code S<1} to {@code S<3}</td><td>{@code SSS} 070</td><td>{@code SSS} 07</td></tr>
+     * <tr><td>{@code SSSS} and longer</td><td>however many the date has; the same field as
+     * {@code S*}</td><td>{@code SSSS} 070004235</td><td>{@code SSSS} 07</td></tr>
+     * </table>
+     *
+     * <p>The general form, {@code S(min,max)}, says both bounds at once: {@code *} for an unbounded
+     * maximum, {@code !} after either bound to fail rather than pad or truncate there, and an
+     * optional third part naming a fill character other than the zero padding otherwise uses. So
+     * {@code S(3!,9,"_")} writes between three and nine digits, refuses a fraction shorter than
+     * three rather than padding it, and pads with underscores. A marker with nothing to act on is
+     * legal and does nothing.
+     *
+     * <p>Truncating and padding are not two sides of one thing. A Pure date is a span of time rather
+     * than an instant, and the number of digits it stores is the precision of that span, so
+     * {@code .07} contains {@code .070}, {@code .071}, and {@code .0712}. Truncating widens the
+     * span, which loses precision but stays true; padding narrows it, which claims a precision the
+     * date does not have. That is why only padding has a short spelling for refusing it.
      *
      * <p>A format string may open with a time zone in square brackets, as in
      * {@code [America/New_York]yyyy-MM-dd HH:mm:ss}, and only open with one: a zone appearing after

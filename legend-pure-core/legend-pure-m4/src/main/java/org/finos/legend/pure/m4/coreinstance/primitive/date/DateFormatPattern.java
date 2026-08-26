@@ -46,9 +46,9 @@ import java.util.function.ToIntFunction;
  * </pre>
  *
  * <p>The builder reaches everything a format string reaches and a little it does not: a literal may
- * hold any text at all, where a format string has to quote it and escape the quotes within it, and
- * a sub-second field may take any width and policy {@link SubsecondBuilder} describes, where the
- * format string spells only some of them.
+ * hold any text at all, where a format string has to quote it and escape the quotes within it. Every
+ * sub-second field {@link SubsecondBuilder} describes has a spelling in the format string, so the
+ * two reach the same fields by different routes.
  *
  * <p>{@link #pattern()} goes the other way, writing the format string a pattern stands for. Every
  * pattern {@link #parse} produces writes a string {@code parse} takes back, and reading that back
@@ -124,12 +124,13 @@ public final class DateFormatPattern
     /**
      * Write the format string this pattern stands for, which {@link #parse} reads back into an
      * equal pattern. Where a pattern can be spelled in more than one way this writes one of them,
-     * so the string need not be the one the pattern came from: {@code SSS} and {@code yyyy} come
-     * back as they went in, but {@code "a"" b"} comes back as {@code "a" "b"}.
+     * so the string need not be the one the pattern came from: {@code yyyy} comes back as it went
+     * in, but {@code "a"" b"} comes back as {@code "a" "b"}.
      *
-     * <p>A pattern the builder made can hold a sub-second field the format string has no spelling
-     * for. Those write the spelling the format string is to gain, which is not yet one it takes
-     * back.
+     * <p>A sub-second field is never written as a run of letters, since every field that run can
+     * spell has a width form meaning precisely the same thing: {@code SSS} comes back as
+     * {@code S<3} and {@code SSSS} as {@code S*}. Reading a format string and writing it back is
+     * therefore the rewrite from the older spelling to the newer one.
      *
      * @param appendable appendable to write to
      * @param <T>        appendable type
@@ -770,21 +771,41 @@ public final class DateFormatPattern
         @Override
         void appendPattern(SafeAppendable appendable)
         {
-            // the repetition form is all the format string spells today, so it is what a field it
-            // covers exactly is written as; the shorthands should be preferred once they parse
-            if (!this.failBelow && !this.failAbove && (this.fill == DEFAULT_FILL) && (this.minimum == 0))
+            // a shorthand says in two or three characters what the general form spells out, so a
+            // field one of them covers exactly is written that way; the repetition form is never
+            // written, since every field it can spell has a shorthand that means precisely the same
+            // thing and it is the form to be deprecated
+            if (this.fill == DEFAULT_FILL)
             {
-                if (this.maximum == UNBOUNDED)
+                if (!this.failBelow && !this.failAbove)
                 {
-                    appendable.append("SSSS");
-                    return;
-                }
-                if (this.maximum <= 3)
-                {
-                    for (int i = 0; i < this.maximum; i++)
+                    if (this.minimum == 0)
                     {
                         appendable.append('S');
+                        if (this.maximum == UNBOUNDED)
+                        {
+                            appendable.append('*');
+                        }
+                        else
+                        {
+                            appendable.append('<').append(this.maximum);
+                        }
+                        return;
                     }
+                    if (this.maximum == UNBOUNDED)
+                    {
+                        appendable.append("S>").append(this.minimum);
+                        return;
+                    }
+                    if (this.minimum == this.maximum)
+                    {
+                        appendable.append('S').append(this.minimum);
+                        return;
+                    }
+                }
+                else if (this.failBelow && !this.failAbove && (this.minimum == this.maximum))
+                {
+                    appendable.append("S!").append(this.minimum);
                     return;
                 }
             }
@@ -809,7 +830,12 @@ public final class DateFormatPattern
             }
             if (this.fill != DEFAULT_FILL)
             {
-                appendable.append(",\"").append(this.fill).append('"');
+                appendable.append(",\"");
+                if ((this.fill == '"') || (this.fill == '\\'))
+                {
+                    appendable.append('\\');
+                }
+                appendable.append(this.fill).append('"');
             }
             appendable.append(')');
         }
@@ -872,26 +898,44 @@ public final class DateFormatPattern
         }
 
         /**
-         * Check that some width satisfies both bounds, which is where a field is rejected: the
-         * policies and the fill are markers rather than requirements, and cannot make a field
-         * that means nothing.
+         * Return what is wrong with a pair of bounds, or null where some width satisfies both. This
+         * is the only thing a field is rejected for: the policies and the fill are markers rather
+         * than requirements, and cannot make a field that means nothing.
+         *
+         * @param minimum fewest digits to write
+         * @param maximum most digits to write
+         * @return what is wrong with the bounds, or null
+         */
+        static String widthProblem(int minimum, int maximum)
+        {
+            if (minimum < 0)
+            {
+                return "Sub-second minimum may not be negative: " + minimum;
+            }
+            if (maximum < 1)
+            {
+                return "Sub-second maximum must be at least 1: " + maximum;
+            }
+            if (minimum > maximum)
+            {
+                return "Sub-second minimum " + minimum + " exceeds maximum " + maximum;
+            }
+            return null;
+        }
+
+        /**
+         * Check that some width satisfies both bounds, which is what a caller with nothing further
+         * to say about where the bounds came from does.
          *
          * @param minimum fewest digits to write
          * @param maximum most digits to write
          */
         static void checkWidth(int minimum, int maximum)
         {
-            if (minimum < 0)
+            String problem = widthProblem(minimum, maximum);
+            if (problem != null)
             {
-                throw new IllegalArgumentException("Sub-second minimum may not be negative: " + minimum);
-            }
-            if (maximum < 1)
-            {
-                throw new IllegalArgumentException("Sub-second maximum must be at least 1: " + maximum);
-            }
-            if (minimum > maximum)
-            {
-                throw new IllegalArgumentException("Sub-second minimum " + minimum + " exceeds maximum " + maximum);
+                throw new IllegalArgumentException(problem);
             }
         }
     }
@@ -1589,10 +1633,7 @@ public final class DateFormatPattern
                     }
                     case 'S':
                     {
-                        // up to three letters cut the fraction down to that many digits; from four
-                        // on the count stops meaning anything and the whole fraction is written
-                        int count = runLength(character);
-                        this.builder.subsecond().atMost((count < 4) ? count : Subsecond.UNBOUNDED).endSubsecond();
+                        parseSubsecond();
                         break;
                     }
                     case 'z':
@@ -1653,6 +1694,211 @@ public final class DateFormatPattern
                 count++;
             }
             return count;
+        }
+
+        /**
+         * Read a sub-second field, the {@code S} having been taken. What follows it decides which of
+         * the three spellings this is: a bracket opens the general form, one of the bound characters
+         * opens a shorthand, and anything else - another {@code S} included - is the run of letters
+         * the language has always had.
+         */
+        private void parseSubsecond()
+        {
+            if (this.index < this.end)
+            {
+                switch (this.formatString.charAt(this.index))
+                {
+                    case '(':
+                    {
+                        this.index++;
+                        parseSubsecondGeneralForm();
+                        return;
+                    }
+                    case '*':
+                    {
+                        this.index++;
+                        addSubsecond(0, Subsecond.UNBOUNDED, false, false, Subsecond.DEFAULT_FILL);
+                        return;
+                    }
+                    case '<':
+                    {
+                        this.index++;
+                        addSubsecond(0, parseDigits("S<"), false, false, Subsecond.DEFAULT_FILL);
+                        return;
+                    }
+                    case '>':
+                    {
+                        this.index++;
+                        addSubsecond(parseDigits("S>"), Subsecond.UNBOUNDED, false, false, Subsecond.DEFAULT_FILL);
+                        return;
+                    }
+                    case '!':
+                    {
+                        this.index++;
+                        int digits = parseDigits("S!");
+                        addSubsecond(digits, digits, true, false, Subsecond.DEFAULT_FILL);
+                        return;
+                    }
+                    default:
+                    {
+                        if (isDigit(this.formatString.charAt(this.index)))
+                        {
+                            int digits = parseDigits("S");
+                            addSubsecond(digits, digits, false, false, Subsecond.DEFAULT_FILL);
+                            return;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // up to three letters cut the fraction down to that many digits; from four on the count
+            // stops meaning anything and the whole fraction is written
+            int count = runLength('S');
+            addSubsecond(0, (count < 4) ? count : Subsecond.UNBOUNDED, false, false, Subsecond.DEFAULT_FILL);
+        }
+
+        /**
+         * Read the body of a general form sub-second field, {@code S(} having been taken.
+         */
+        private void parseSubsecondGeneralForm()
+        {
+            int minimum = parseDigits("S(");
+            boolean failBelow = takeIf('!');
+            if (!takeIf(','))
+            {
+                throw new IllegalArgumentException("Expected ',' after the sub-second minimum in format string: " + text());
+            }
+
+            int maximum;
+            if (takeIf('*'))
+            {
+                maximum = Subsecond.UNBOUNDED;
+            }
+            else if ((this.index < this.end) && isDigit(this.formatString.charAt(this.index)))
+            {
+                maximum = parseDigits(",");
+            }
+            else
+            {
+                throw new IllegalArgumentException("Expected a digit count or '*' for the sub-second maximum in format string: " + text());
+            }
+            boolean failAbove = takeIf('!');
+
+            char fill = takeIf(',') ? parseSubsecondFill() : Subsecond.DEFAULT_FILL;
+            if (!takeIf(')'))
+            {
+                throw new IllegalArgumentException("Missing closing parenthesis in format string: " + text());
+            }
+            addSubsecond(minimum, maximum, failBelow, failAbove, fill);
+        }
+
+        /**
+         * Read the quoted fill character of a general form sub-second field. A backslash escapes the
+         * character after it, so every character can be a fill, the quote and the backslash
+         * included.
+         *
+         * @return fill character
+         */
+        private char parseSubsecondFill()
+        {
+            if (!takeIf('"'))
+            {
+                throw new IllegalArgumentException("Expected a quoted sub-second fill character in format string: " + text());
+            }
+
+            char fill = Subsecond.DEFAULT_FILL;
+            int count = 0;
+            boolean done = false;
+            while (!done && (this.index < this.end))
+            {
+                char next = this.formatString.charAt(this.index++);
+                if (next == '"')
+                {
+                    done = true;
+                }
+                else
+                {
+                    if ((next == '\\') && (this.index < this.end))
+                    {
+                        next = this.formatString.charAt(this.index++);
+                    }
+                    fill = next;
+                    count++;
+                }
+            }
+            if (!done)
+            {
+                throw new IllegalArgumentException("Missing closing quote in format string: " + text());
+            }
+            if (count != 1)
+            {
+                throw new IllegalArgumentException("Sub-second fill must be a single character in format string: " + text());
+            }
+            return fill;
+        }
+
+        /**
+         * Read a run of digits as a count.
+         *
+         * @param after what the count was expected after, for the error where there is none
+         * @return the count
+         */
+        private int parseDigits(String after)
+        {
+            if ((this.index >= this.end) || !isDigit(this.formatString.charAt(this.index)))
+            {
+                throw new IllegalArgumentException("Expected a digit count after '" + after + "' in format string: " + text());
+            }
+
+            long count = 0;
+            while ((this.index < this.end) && isDigit(this.formatString.charAt(this.index)))
+            {
+                count = (count * 10) + (this.formatString.charAt(this.index++) - '0');
+                if (count >= Subsecond.UNBOUNDED)
+                {
+                    // a bound of its own is what an unbounded maximum is written as, so a count that
+                    // reaches the number standing for one cannot be told apart from it
+                    throw new IllegalArgumentException("Sub-second digit count is too large in format string: " + text());
+                }
+            }
+            return (int) count;
+        }
+
+        /**
+         * Add a sub-second field, having read one, checking the bounds here so that the error names
+         * the format string the caller wrote rather than the numbers it was read as.
+         *
+         * @param minimum   fewest digits to write
+         * @param maximum   most digits to write
+         * @param failBelow whether to fail rather than pad below the minimum
+         * @param failAbove whether to fail rather than truncate above the maximum
+         * @param fill      character to pad with
+         */
+        private void addSubsecond(int minimum, int maximum, boolean failBelow, boolean failAbove, char fill)
+        {
+            String problem = Subsecond.widthProblem(minimum, maximum);
+            if (problem != null)
+            {
+                throw new IllegalArgumentException(problem + " in format string: " + text());
+            }
+            this.builder.element(new Subsecond(minimum, maximum, failBelow, failAbove, fill));
+        }
+
+        /**
+         * Take the given character where it is the next one, and say whether it was.
+         *
+         * @param character character to take
+         * @return whether it was there
+         */
+        private boolean takeIf(char character)
+        {
+            if ((this.index < this.end) && (this.formatString.charAt(this.index) == character))
+            {
+                this.index++;
+                return true;
+            }
+            return false;
         }
 
         private void parseTimeZone()
@@ -1764,6 +2010,11 @@ public final class DateFormatPattern
      * @param character character to test
      * @return whether the character is a separator
      */
+    private static boolean isDigit(char character)
+    {
+        return (character >= '0') && (character <= '9');
+    }
+
     private static boolean isSeparator(char character)
     {
         return (character == '-') || (character == '/') || (character == ':') ||
