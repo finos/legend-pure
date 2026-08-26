@@ -21,18 +21,44 @@ Builds a string by substituting values into a format template.
 Each specifier in `format` consumes the next value from `args`, in order.
 
 **Specifiers**
-- `%s` — the value as a string.
-- `%d` — an integer; width and zero-padding may be given, as in `%05d`.
-- `%f` — a floating-point number; precision may be given, as in `%.2f`.
-- `%r` — the value's Pure representation, quoting strings as they would be written in source.
-- `%t` — a date. A pattern may follow in braces, as in `%t{yyyy-MM-dd}`, optionally opening with a
-  timezone, as in `%t{[CET]yyyy-MM-dd HH:mm:ss.SSSZ}`.
+- `%s`: the value as a string.
+- `%d`: an integer; width and zero-padding may be given, as in `%05d`.
+- `%f`: a floating-point number; precision may be given, as in `%.2f`.
+- `%r`: the value's Pure representation, quoting strings as they would be written in source.
+- `%t`: a date. A pattern may follow in braces, as in `%t{yyyy-MM-dd}`, optionally opening with a
+  timezone, as in `%t{[CET]yyyy-MM-dd HH:mm:ss.SSSZ}`. See **Date patterns** below.
 
 **Parameters**
-- `format` — the template.
-- `args` — the values to substitute, in the order their specifiers appear.
+- `format`: the template.
+- `args`: the values to substitute, in the order their specifiers appear.
 
 **Returns** the formatted string.
+
+**Date patterns**
+
+`y M d H h a m s S z Z X` stand for the components of a date, the separators `- / : .`, tab, and
+space stand for themselves, and text in double quotes is written without them. Repeating a character
+widens the field it writes, so `d` gives 1 where `dd` gives 01. Every part of a pattern is required,
+so a date that does not carry it is an error.
+
+Two parts of a pattern say more than a run of letters can.
+
+A **sub-second field** takes a width. `S3` writes exactly three digits, padding a shorter fraction;
+`S<3` writes at most three; `S>3` at least three and everything beyond; `S*` however many the date
+has; and `S!3` exactly three, failing rather than padding one that is shorter. `S(m,n)` gives both
+bounds at once, with `*` for no maximum, `!` after either bound to fail rather than pad or truncate
+there, and an optional third part naming a fill other than zero. A run of `S` keeps the meaning it
+has always had: one to three letters are `S<1` to `S<3`, and four or more is `S*`.
+
+An **optional section**, written `?[...]`, is put in where the date can carry it and left out where
+it cannot, with `|` between alternatives: the first alternative the date can carry is the one
+written, and where the date can carry none of them the section writes nothing. Sections nest, and a
+section is what lets one pattern serve dates that do not agree on precision.
+
+A sub-second field says how wide a fraction is, never whether there is one, so what to write for a
+date with no fraction at all is a question for the section around it. That is why the decimal point
+belongs inside the section: `?[.S3]` writes `.070` or nothing, where `.?[S3]` would leave a bare
+point behind.
 
 **Examples**
 ```pure
@@ -40,6 +66,9 @@ format('Hello %s %s', ['John', 'Roe'])                  // 'Hello John Roe'
 format('%s scored %.2f', ['Pierre', 3.14159])           // 'Pierre scored 3.14'
 format('%s has %05d points', ['Pierre', 42])            // 'Pierre has 00042 points'
 format('on %t{yyyy-MM-dd}', %2014-02-27T10:01:35.231)   // 'on 2014-02-27'
+format('%t{yyyy?[-MM?[-dd]]}', %2014-02)                // '2014-02'
+format('%t{HH:mm:ss?[.S3]}', %2014-02-27T10:01:35.2)    // '10:01:35.200'
+format('%t{HH:mm:ss?[.S3]}', %2014-02-27T10:01:35)      // '10:01:35'
 ```
 
 **See also** `meta::pure::functions::string::toString(Any[1]):String[1]`,
@@ -119,6 +148,35 @@ function <<PCT.test>> meta::pure::functions::string::tests::format::testFormatDa
     assertEq('on 2014-03-10 13:07:44.001Z', $f->eval(|format('on %t{yyyy-MM-dd HH:mm:ss.SSSX}', %2014-03-10T13:07:44.001)));
     assertEq('on 2014-03-10 08:07:44.001-0500', $f->eval(|format('on %t{[EST]yyyy-MM-dd HH:mm:ss.SSSZ}', %2014-03-10T13:07:44.001)));
     assertEq('on 2014-03-10 14:07:44.001+0100', $f->eval(|format('on %t{[CET]yyyy-MM-dd HH:mm:ss.SSSZ}', %2014-03-10T13:07:44.001)));
+
+    // A run of four or more S writes the fraction the date stores rather than that many digits,
+    // which is what it has always done here. Any platform that writes 001000000 for this is running
+    // a different implementation of the format language, not this one.
+    assertEq('on 001', $f->eval(|format('on %t{SSSSSSSSS}', %2014-03-10T13:07:44.001)));
+
+    // A sub-second field takes a width of its own, which a run of letters cannot state.
+    assertEq('on 070', $f->eval(|format('on %t{S3}', %2014-03-10T13:07:44.07)));
+    assertEq('on 07', $f->eval(|format('on %t{S<3}', %2014-03-10T13:07:44.07)));
+    assertEq('on 070004235', $f->eval(|format('on %t{S*}', %2014-03-10T13:07:44.070004235)));
+    assertEq('on 2014-03-10T13:07:44.001000000', $f->eval(|format('on %t{yyyy-MM-dd"T"HH:mm:ss.S9}', %2014-03-10T13:07:44.001)));
+
+    // An optional section is written where the date can carry it and left out where it cannot, so
+    // one pattern serves every granularity.
+    assertEq('on 2014', $f->eval(|format('on %t{yyyy?[-MM?[-dd]]}', %2014)));
+    assertEq('on 2014-03', $f->eval(|format('on %t{yyyy?[-MM?[-dd]]}', %2014-03)));
+    assertEq('on 2014-03-10', $f->eval(|format('on %t{yyyy?[-MM?[-dd]]}', %2014-03-10)));
+    assertEq('on 2014-03-10', $f->eval(|format('on %t{yyyy?[-MM?[-dd]]}', %2014-03-10T13:07:44.001)));
+
+    // Alternatives are tried in the order they are written, and the first the date can carry wins.
+    assertEq('on 13:07:44', $f->eval(|format('on %t{?[HH:mm:ss|HH:mm|"--"]}', %2014-03-10T13:07:44)));
+    assertEq('on 13:07', $f->eval(|format('on %t{?[HH:mm:ss|HH:mm|"--"]}', %2014-03-10T13:07)));
+    assertEq('on --', $f->eval(|format('on %t{?[HH:mm:ss|HH:mm|"--"]}', %2014-03-10)));
+
+    // A field says how wide a fraction is and a section says what to do when there is none, so a
+    // fixed width fraction that survives a date without one takes both.
+    assertEq('on 2014-03-10T13:07:44.001000000', $f->eval(|format('on %t{yyyy-MM-dd"T"HH:mm:ss?[.S9|".000000000"]}', %2014-03-10T13:07:44.001)));
+    assertEq('on 2014-03-10T13:07:44.070000000', $f->eval(|format('on %t{yyyy-MM-dd"T"HH:mm:ss?[.S9|".000000000"]}', %2014-03-10T13:07:44.07)));
+    assertEq('on 2014-03-10T13:07:44.000000000', $f->eval(|format('on %t{yyyy-MM-dd"T"HH:mm:ss?[.S9|".000000000"]}', %2014-03-10T13:07:44)));
 }
 
 function <<PCT.test>> meta::pure::functions::string::tests::format::testFormatBoolean<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
