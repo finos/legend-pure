@@ -20,6 +20,88 @@ import org.junit.Test;
 
 public class TestFormatTools
 {
+    /**
+     * Every specifier the two engines render, and nothing else.
+     */
+    @Test
+    public void testValidateSpecifiers()
+    {
+        FormatTools.validate("");
+        FormatTools.validate("no specifiers at all");
+        FormatTools.validate("%s %d %f %r %t");
+        FormatTools.validate("%05d %.2f %00d %.0f");
+        FormatTools.validate("100%% and %s");
+        FormatTools.validate("%s%s%s");
+
+        // the second % of %% cannot open a specifier, so what follows it is text
+        FormatTools.validate("%%q");
+        FormatTools.validate("%%t{not a pattern}");
+
+        assertInvalid("Invalid format specifier: %q", "%q");
+        assertInvalid("Invalid format specifier: %S", "a %S b");
+        assertInvalid("Invalid format specifier: % ", "% s");
+        assertInvalid("Format string ends with '%': ends with %", "ends with %");
+    }
+
+    /**
+     * A width is written between the character that opens it and the one that closes it, and there
+     * has to be one: the digits are read as a number, and there is no number in none of them.
+     */
+    @Test
+    public void testValidateWidths()
+    {
+        FormatTools.validate("%0100d");
+        FormatTools.validate("%.11f");
+
+        assertInvalid("Invalid format specifier: %0d", "%0d");
+        assertInvalid("Invalid format specifier: %.f", "%.f");
+        assertInvalid("Invalid format specifier: %05x", "%05x");
+        assertInvalid("Invalid format specifier: %.2d", "%.2d");
+        assertInvalid("Invalid format specifier: %05", "%05");
+        assertInvalid("Invalid format specifier: %.", "%.");
+    }
+
+    /**
+     * A date pattern is checked where one is written, and every pattern in the string is.
+     */
+    @Test
+    public void testValidateDatePatterns()
+    {
+        FormatTools.validate("%t");
+        FormatTools.validate("%t and %t");
+        FormatTools.validate("on %t{yyyy-MM-dd} at %t{HH:mm:ss?[.S3]}");
+        FormatTools.validate("%t{[America/New_York]yyyy-MM-dd\"T\"HH:mm:ssX}");
+        FormatTools.validate("%t{S(3!,9,\"_\")}");
+
+        assertInvalid("Invalid format control character 'Q' in format string: yyyy-Q", "%t{yyyy-Q}");
+        assertInvalid("Invalid format control character 'Q' in format string: yyyy-Q", "%t{yyyy-MM-dd} %t{yyyy-Q}");
+        assertInvalid("Unknown time zone: Europe/Lissabon", "%t{[Europe/Lissabon]yyyy}");
+        assertInvalid("Sub-second minimum 5 exceeds maximum 3 in format string: S(5,3)", "%t{S(5,3)}");
+        assertInvalid("Empty alternative in optional section in format string: ?[|HH]", "%t{?[|HH]}");
+        assertInvalid("Could not find end of date format starting at index 2 of: %t{yyyy-MM-dd", "%t{yyyy-MM-dd");
+    }
+
+    /**
+     * How many arguments a format string wants, and of what kind, is not this check's business: the
+     * arguments are often computed, so a format string has to be free to be right for arguments
+     * this cannot see.
+     */
+    @Test
+    public void testValidateSaysNothingAboutArguments()
+    {
+        FormatTools.validate("%s %s %s %s");
+        FormatTools.validate("no arguments wanted");
+        FormatTools.validate("%d");
+    }
+
+    private static void assertInvalid(String expectedMessage, String formatString)
+    {
+        Assert.assertEquals(
+                formatString,
+                expectedMessage,
+                Assert.assertThrows(formatString, IllegalArgumentException.class, () -> FormatTools.validate(formatString)).getMessage());
+    }
+
     @Test
     public void testIntegerZeroPadding()
     {

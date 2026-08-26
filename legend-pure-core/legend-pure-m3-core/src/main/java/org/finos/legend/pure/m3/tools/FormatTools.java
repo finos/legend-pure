@@ -14,12 +14,126 @@
 
 package org.finos.legend.pure.m3.tools;
 
+import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFormat;
+
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 
 public class FormatTools
 {
+    /**
+     * Check that a format string is one {@code format} can use, and do nothing else. Everything this
+     * reports is a property of the format string alone: that each specifier in it is one that exists
+     * and is written the way that specifier is written, and that each date pattern in it could write
+     * some date.
+     *
+     * <p>What it deliberately does not report is whether the specifiers and the arguments agree, in
+     * number or in kind. The arguments are an {@code Any[*]} that is frequently computed, so a
+     * format string has to be free to be right for arguments this cannot see.
+     *
+     * <p>This is the specifier grammar the two engines implement as they render, in
+     * {@code PureStringFormat} for the compiled engine and {@code Format} for the interpreted one,
+     * written once more so that it can be checked without a date to write or an argument to take.
+     * The two must agree; a format string this accepts and they reject is a fault here.
+     *
+     * @param formatString format string
+     * @throws IllegalArgumentException if the format string holds something that is not a
+     *                                  specifier, a specifier that is not written the way that one
+     *                                  is written, or a date pattern that could never write a date
+     */
+    public static void validate(String formatString)
+    {
+        int length = formatString.length();
+        int index = 0;
+        while (index < length)
+        {
+            if (formatString.charAt(index++) == '%')
+            {
+                index = validateSpecifier(formatString, index);
+            }
+        }
+    }
+
+    /**
+     * Check the specifier beginning at the given index, the {@code %} having been taken.
+     *
+     * @param formatString format string
+     * @param index        index just past the {@code %}
+     * @return index to go on reading the format string from
+     */
+    private static int validateSpecifier(String formatString, int index)
+    {
+        if (index >= formatString.length())
+        {
+            throw new IllegalArgumentException("Format string ends with '%': " + formatString);
+        }
+
+        // the character after the % is taken either way, so the second % of %% cannot begin one
+        char specifier = formatString.charAt(index++);
+        switch (specifier)
+        {
+            case '%':
+            case 's':
+            case 'r':
+            case 'd':
+            case 'f':
+            {
+                return index;
+            }
+            case 't':
+            {
+                int end = findEndOfDateFormatString(formatString, index);
+                if (end == -1)
+                {
+                    // no pattern follows, so the date is written in its canonical form and there is
+                    // nothing here to be wrong
+                    return index;
+                }
+                DateFormat.validate(formatString, index + 1, end);
+                return end + 1;
+            }
+            case '0':
+            {
+                return validateWidth(formatString, index - 1, 'd');
+            }
+            case '.':
+            {
+                return validateWidth(formatString, index - 1, 'f');
+            }
+            default:
+            {
+                throw new IllegalArgumentException("Invalid format specifier: %" + specifier);
+            }
+        }
+    }
+
+    /**
+     * Check the digits and the closing character of a specifier that takes a width, which is
+     * {@code %0<digits>d} and {@code %.<digits>f}. At least one digit is required, since the digits
+     * are read as a number and there is no number to read where there are none.
+     *
+     * @param formatString format string
+     * @param start        index of the character that opened the width, the {@code 0} or the dot
+     * @param closer       character the specifier ends with
+     * @return index to go on reading the format string from
+     */
+    private static int validateWidth(String formatString, int start, char closer)
+    {
+        int length = formatString.length();
+        int end = start + 1;
+        while ((end < length) && Character.isDigit(formatString.charAt(end)))
+        {
+            end++;
+        }
+        if ((end == (start + 1)) || (end >= length) || (formatString.charAt(end) != closer))
+        {
+            int stop = Math.min(end + 1, length);
+            throw new IllegalArgumentException("Invalid format specifier: %" + formatString.substring(start, stop));
+        }
+        return end + 1;
+    }
+
     public static int findEndOfDateFormatString(String formatString, int start)
     {
         int length = formatString.length();
