@@ -248,6 +248,55 @@ public class TestDateFormat
         }
     }
 
+    // Format: optional sections
+
+    /**
+     * A section is written where the date can carry it and left out where it cannot, so one format
+     * string serves a collection whose dates do not agree on precision.
+     */
+    @Test
+    public void testFormatOptionalSections()
+    {
+        String everything = "yyyy?[-MM?[-dd?[\"T\"HH?[:mm?[:ss?[.S*]]]]]]";
+        Assert.assertEquals("2014", format(everything, DateFunctions.newPureDate(2014)));
+        Assert.assertEquals("2014-03", format(everything, DateFunctions.newPureDate(2014, 3)));
+        Assert.assertEquals("2014-03-10", format(everything, DateFunctions.newPureDate(2014, 3, 10)));
+        Assert.assertEquals("2014-03-10T16", format(everything, DateFunctions.newPureDate(2014, 3, 10, 16)));
+        Assert.assertEquals("2014-03-10T16:12", format(everything, DateFunctions.newPureDate(2014, 3, 10, 16, 12)));
+        Assert.assertEquals("2014-03-10T16:12:35", format(everything, DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35)));
+        Assert.assertEquals("2014-03-10T16:12:35.070004235", format(everything, DATE));
+
+        // alternatives are tried in the order they are written, and the first the date can carry wins
+        String time = "?[HH:mm:ss|HH:mm|HH|\"--\"]";
+        Assert.assertEquals("16:12:35", format(time, DATE));
+        Assert.assertEquals("16:12", format(time, DateFunctions.newPureDate(2014, 3, 10, 16, 12)));
+        Assert.assertEquals("16", format(time, DateFunctions.newPureDate(2014, 3, 10, 16)));
+        Assert.assertEquals("--", format(time, DateFunctions.newPureDate(2014, 3, 10)));
+
+        // a fraction and the point that goes with it are the section's business, not the field's
+        Assert.assertEquals("16:12:35.070", format("HH:mm:ss?[.S3]", DATE));
+        Assert.assertEquals("16:12:35", format("HH:mm:ss?[.S3]", DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35)));
+        Assert.assertEquals("16:12:35.000", format("HH:mm:ss?[.S3|\".000\"]", DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35)));
+
+        // an offset inside a section is what lets a zoned format string take a date with no hour
+        Assert.assertEquals(
+                "2014-03-10T12:12:35-04",
+                format("[America/New_York]yyyy-MM-dd?[\"T\"HH:mm:ssX]", DATE));
+        Assert.assertEquals(
+                "2014-03-10",
+                format("[America/New_York]yyyy-MM-dd?[\"T\"HH:mm:ssX]", DateFunctions.newPureDate(2014, 3, 10)));
+    }
+
+    @Test
+    public void testFormatWithAMalformedOptionalSection()
+    {
+        assertFormatFails("Expected '[' after '?' in format string: yyyy?", "yyyy?", DATE);
+        assertFormatFails("Missing closing bracket for optional section in format string: ?[HH:mm", "?[HH:mm", DATE);
+        assertFormatFails("Unmatched ']' in format string: HH]", "HH]", DATE);
+        assertFormatFails("'|' outside an optional section in format string: HH|mm", "HH|mm", DATE);
+        assertFormatFails("Empty alternative in optional section in format string: ?[|HH]", "?[|HH]", DATE);
+    }
+
     // Format: literals
 
     @Test

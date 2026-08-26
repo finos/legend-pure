@@ -326,38 +326,43 @@ public final class DateFormatPattern
         @Override
         void appendPattern(SafeAppendable appendable)
         {
-            // a separator stands for itself and anything else has to be quoted, so a literal
-            // holding both is written as runs of each
-            int length = this.text.length();
-            int index = 0;
-            while (index < length)
+            if (this.text.isEmpty())
             {
-                boolean separators = isSeparator(this.text.charAt(index));
-                int runEnd = index + 1;
-                while ((runEnd < length) && (isSeparator(this.text.charAt(runEnd)) == separators))
-                {
-                    runEnd++;
-                }
-                if (separators)
-                {
-                    appendable.append(this.text, index, runEnd);
-                }
-                else
-                {
-                    appendable.append('"');
-                    for (int i = index; i < runEnd; i++)
-                    {
-                        char character = this.text.charAt(i);
-                        if ((character == '"') || (character == '\\'))
-                        {
-                            appendable.append('\\');
-                        }
-                        appendable.append(character);
-                    }
-                    appendable.append('"');
-                }
-                index = runEnd;
+                // an empty literal writes nothing, and still has to be written: it is how an
+                // alternative that renders nothing is spelled, and writing nothing for it would
+                // leave an alternative with no elements, which is not a format string at all
+                appendable.append("\"\"");
+                return;
             }
+
+            // separators stand for themselves, so text made only of them is written bare; anything
+            // else is quoted whole rather than split into runs, which would turn " at " into the
+            // three pieces " "at" " and make a literal harder to read the more ordinary it is
+            int length = this.text.length();
+            for (int i = 0; i < length; i++)
+            {
+                if (!isSeparator(this.text.charAt(i)))
+                {
+                    appendQuoted(appendable);
+                    return;
+                }
+            }
+            appendable.append(this.text);
+        }
+
+        private void appendQuoted(SafeAppendable appendable)
+        {
+            appendable.append('"');
+            for (int i = 0; i < this.text.length(); i++)
+            {
+                char character = this.text.charAt(i);
+                if ((character == '"') || (character == '\\'))
+                {
+                    appendable.append('\\');
+                }
+                appendable.append(character);
+            }
+            appendable.append('"');
         }
 
         @Override
@@ -941,6 +946,130 @@ public final class DateFormatPattern
     }
 
     /**
+     * A run of the pattern written where the date can carry it and left out where it cannot, with
+     * alternatives to choose between.
+     *
+     * <p>A section writes the first of its alternatives every element of which can write the date,
+     * and writes nothing at all where none of them can. It therefore never fails, whatever it holds:
+     * a section is the one construct that turns a date the pattern cannot carry into silence rather
+     * than into an error. That is also what it costs - a throwing sub-second bound inside a section
+     * selects the next alternative where outside one it would raise.
+     *
+     * <p>A section nested inside another asks the date for nothing on its own account, since it can
+     * always write. {@code ?[" at "?[HH:mm]]} on a date with no hour therefore writes {@code " at "}
+     * and stops: the outer alternative holds a literal and a section, and both of those can always
+     * write. Hoisting the literal out, as {@code ?[" at "HH:mm]}, is what makes the two rise and
+     * fall together. The alternative - letting a nested section refuse on its parent's behalf -
+     * would make viability depend on a whole subtree, and would make {@code ?[X]} and
+     * {@code ?[X|""]} mean different things.
+     */
+    private static final class OptionalSection extends Element
+    {
+        private final Element[][] alternatives;
+
+        OptionalSection(Element[][] alternatives)
+        {
+            this.alternatives = alternatives;
+        }
+
+        @Override
+        boolean canRender(PureDate date)
+        {
+            return true;
+        }
+
+        @Override
+        void render(SafeAppendable appendable, PureDate date, ZonedDateTime zoned, String timeZoneId)
+        {
+            for (Element[] alternative : this.alternatives)
+            {
+                if (canRenderAll(alternative, date))
+                {
+                    for (Element element : alternative)
+                    {
+                        element.render(appendable, date, zoned, timeZoneId);
+                    }
+                    return;
+                }
+            }
+        }
+
+        @Override
+        void appendPattern(SafeAppendable appendable)
+        {
+            appendable.append("?[");
+            for (int i = 0; i < this.alternatives.length; i++)
+            {
+                if (i > 0)
+                {
+                    appendable.append('|');
+                }
+                for (Element element : this.alternatives[i])
+                {
+                    element.appendPattern(appendable);
+                }
+            }
+            appendable.append(']');
+        }
+
+        @Override
+        public boolean equals(Object other)
+        {
+            return (this == other) ||
+                    ((other instanceof OptionalSection) &&
+                            Arrays.deepEquals(this.alternatives, ((OptionalSection) other).alternatives));
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Arrays.deepHashCode(this.alternatives);
+        }
+
+        @Override
+        public String toString()
+        {
+            StringBuilder builder = new StringBuilder("OptionalSection(");
+            for (int i = 0; i < this.alternatives.length; i++)
+            {
+                if (i > 0)
+                {
+                    builder.append(" | ");
+                }
+                for (int j = 0; j < this.alternatives[i].length; j++)
+                {
+                    if (j > 0)
+                    {
+                        builder.append(", ");
+                    }
+                    builder.append(this.alternatives[i][j]);
+                }
+            }
+            return builder.append(')').toString();
+        }
+
+        /**
+         * Return whether every element of an alternative can write the given date, which is what
+         * makes the alternative the one to write.
+         *
+         * @param elements elements of the alternative
+         * @param date     date to write
+         * @return whether the alternative can be written
+         */
+        private static boolean canRenderAll(Element[] elements, PureDate date)
+        {
+            for (Element element : elements)
+            {
+                if (!element.canRender(date))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    /**
      * Assembles a pattern element by element. A builder may be built from more than once, and each
      * pattern it gives out stands on its own.
      *
@@ -948,12 +1077,18 @@ public final class DateFormatPattern
      * out and {@link SubsecondBuilder#endSubsecond()} hands back. Nothing reaches the pattern until
      * the field is finished, so a field is either wholly described or not there at all, and a
      * pattern may hold as many of them as it likes.
+     *
+     * <p>An optional section is described in place instead, since everything it can hold is what
+     * the builder already writes: {@link #optional()} opens one, {@link #or()} begins its next
+     * alternative, and {@link #endOptional()} closes it. Elements added while a section is open
+     * belong to the alternative being described, and sections may be nested.
      */
     public static final class Builder
     {
         private static final int DEFAULT_DIGITS = 2;
 
         private final List<Element> elements = new ArrayList<>();
+        private final List<OpenSection> openSections = new ArrayList<>();
         private final StringBuilder pendingLiteral = new StringBuilder();
         private SubsecondBuilder openSubsecond;
         private String timeZoneId;
@@ -1251,14 +1386,70 @@ public final class DateFormatPattern
         }
 
         /**
+         * Open an optional section, which writes the first of its alternatives the date can carry
+         * and nothing at all where the date can carry none of them. Elements added from here on
+         * belong to the section's first alternative, {@link #or()} begins the next one, and
+         * {@link #endOptional()} closes the section. Sections may be nested.
+         *
+         * <pre>
+         * builder.year().optional().literal('-').month().endOptional()
+         * </pre>
+         *
+         * @return this builder
+         * @throws IllegalStateException if a sub-second field is still open
+         */
+        public Builder optional()
+        {
+            requireNoOpenSubsecond();
+            flushLiteral();
+            this.openSections.add(new OpenSection());
+            return this;
+        }
+
+        /**
+         * End the alternative being described and begin the next one.
+         *
+         * @return this builder
+         * @throws IllegalStateException if a sub-second field is still open, if no optional section
+         *                               is open, or if the alternative being ended holds nothing
+         */
+        public Builder or()
+        {
+            requireNoOpenSubsecond();
+            endAlternative(requireOpenSection("or()"));
+            return this;
+        }
+
+        /**
+         * Close the optional section being described, adding it to whatever surrounds it.
+         *
+         * @return this builder
+         * @throws IllegalStateException if a sub-second field is still open, if no optional section
+         *                               is open, or if the alternative being ended holds nothing
+         */
+        public Builder endOptional()
+        {
+            requireNoOpenSubsecond();
+            OpenSection section = requireOpenSection("endOptional()");
+            endAlternative(section);
+            this.openSections.remove(this.openSections.size() - 1);
+            return add(new OptionalSection(section.alternatives.toArray(new Element[0][])));
+        }
+
+        /**
          * Build the pattern.
          *
          * @return pattern
          * @throws IllegalArgumentException if a time zone was named that cannot be resolved
+         * @throws IllegalStateException if a sub-second field or an optional section is still open
          */
         public DateFormatPattern build()
         {
             requireNoOpenSubsecond();
+            if (!this.openSections.isEmpty())
+            {
+                throw new IllegalStateException("An optional section is still open: call endOptional() before anything else");
+            }
             flushLiteral();
             if ((this.timeZoneId != null) && (this.timeZone == null))
             {
@@ -1292,7 +1483,7 @@ public final class DateFormatPattern
         private Builder add(Element element)
         {
             flushLiteral();
-            this.elements.add(element);
+            currentElements().add(element);
             return this;
         }
 
@@ -1309,14 +1500,69 @@ public final class DateFormatPattern
             }
         }
 
+        private OpenSection requireOpenSection(String call)
+        {
+            if (this.openSections.isEmpty())
+            {
+                throw new IllegalStateException("No optional section is open: call optional() before " + call);
+            }
+            return this.openSections.get(this.openSections.size() - 1);
+        }
+
+        /**
+         * End the alternative a section is describing. An alternative holding nothing is refused
+         * rather than dropped: one at the front would make the whole section write nothing, which
+         * is a silent bug, and one at the back says what the section without it already says.
+         *
+         * @param section section being described
+         */
+        private void endAlternative(OpenSection section)
+        {
+            flushLiteral();
+            if (section.current.isEmpty())
+            {
+                throw new IllegalStateException("An optional section may not hold an alternative with nothing in it");
+            }
+            section.alternatives.add(section.current.toArray(new Element[0]));
+            section.current.clear();
+        }
+
+        /**
+         * Return the elements being added to, which is the alternative of the innermost open
+         * section, or the pattern itself where no section is open.
+         *
+         * @return elements being added to
+         */
+        private List<Element> currentElements()
+        {
+            return this.openSections.isEmpty()
+                    ? this.elements
+                    : this.openSections.get(this.openSections.size() - 1).current;
+        }
+
+        private boolean currentAlternativeIsEmpty()
+        {
+            return (this.pendingLiteral.length() == 0) && currentElements().isEmpty();
+        }
+
         private void flushLiteral()
         {
             if (this.pendingLiteral.length() > 0)
             {
-                this.elements.add(new Literal(this.pendingLiteral.toString()));
+                currentElements().add(new Literal(this.pendingLiteral.toString()));
                 this.pendingLiteral.setLength(0);
             }
         }
+    }
+
+    /**
+     * An optional section part way through being described: the alternatives already ended, and the
+     * elements of the one being described now.
+     */
+    private static final class OpenSection
+    {
+        private final List<Element[]> alternatives = new ArrayList<>();
+        private final List<Element> current = new ArrayList<>();
     }
 
     /**
@@ -1568,6 +1814,7 @@ public final class DateFormatPattern
         private final int end;
         private final Builder builder = new Builder();
         private int index;
+        private int sectionDepth;
 
         Parser(String formatString, int start, int end)
         {
@@ -1669,13 +1916,60 @@ public final class DateFormatPattern
                         parseQuotedText();
                         break;
                     }
+                    case '?':
+                    {
+                        if (!takeIf('['))
+                        {
+                            throw new IllegalArgumentException("Expected '[' after '?' in format string: " + text());
+                        }
+                        this.builder.optional();
+                        this.sectionDepth++;
+                        break;
+                    }
+                    case '|':
+                    {
+                        if (this.sectionDepth == 0)
+                        {
+                            throw new IllegalArgumentException("'|' outside an optional section in format string: " + text());
+                        }
+                        requireNonEmptyAlternative();
+                        this.builder.or();
+                        break;
+                    }
+                    case ']':
+                    {
+                        if (this.sectionDepth == 0)
+                        {
+                            throw new IllegalArgumentException("Unmatched ']' in format string: " + text());
+                        }
+                        requireNonEmptyAlternative();
+                        this.builder.endOptional();
+                        this.sectionDepth--;
+                        break;
+                    }
                     default:
                     {
                         throw new IllegalArgumentException("Invalid format control character '" + character + "' in format string: " + text());
                     }
                 }
             }
+            if (this.sectionDepth > 0)
+            {
+                throw new IllegalArgumentException("Missing closing bracket for optional section in format string: " + text());
+            }
             return this.builder.build();
+        }
+
+        /**
+         * Refuse an alternative with nothing in it, which the builder would refuse too, so that the
+         * error names the format string rather than the half-built pattern.
+         */
+        private void requireNonEmptyAlternative()
+        {
+            if (this.builder.currentAlternativeIsEmpty())
+            {
+                throw new IllegalArgumentException("Empty alternative in optional section in format string: " + text());
+            }
         }
 
         /**
@@ -1978,7 +2272,16 @@ public final class DateFormatPattern
             {
                 throw new IllegalArgumentException("Missing closing quote in format string: " + text());
             }
-            this.builder.literal(literal.toString());
+            if (literal.length() == 0)
+            {
+                // an empty literal writes nothing and is an element all the same, since it is how an
+                // alternative that renders nothing is spelled
+                this.builder.element(new Literal(""));
+            }
+            else
+            {
+                this.builder.literal(literal.toString());
+            }
         }
 
         private String text()

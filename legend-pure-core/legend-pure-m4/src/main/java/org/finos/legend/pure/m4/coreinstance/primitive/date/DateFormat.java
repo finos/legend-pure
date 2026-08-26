@@ -38,6 +38,9 @@ public class DateFormat
      * a backslash escapes the character after it, so a quote may be written {@code \"}; a backslash
      * outside quotes is an error, as is any other character with no meaning here. Repeating a
      * control character widens the field it writes: {@code d} gives 1 where {@code dd} gives 01.
+     * Two things are not control characters at all: a sub-second field takes a width instead of a
+     * run of letters, and {@code ?[}, {@code |}, and {@code ]} open, divide, and close an optional
+     * section. Both are described below.
      *
      * <table border="1">
      * <caption>Control characters</caption>
@@ -98,6 +101,42 @@ public class DateFormat
      * {@code .07} contains {@code .070}, {@code .071}, and {@code .0712}. Truncating widens the
      * span, which loses precision but stays true; padding narrows it, which claims a precision the
      * date does not have. That is why only padding has a short spelling for refusing it.
+     *
+     * <p>A run of the format string in {@code ?[...]} is an optional section, written where the date
+     * can carry it and left out where it cannot. Within one, {@code |} separates alternatives: the
+     * first alternative every element of which can write the date is the one written, and where none
+     * of them can, the section writes nothing. So {@code yyyy-MM-dd?[" at "HH:mm]} writes the time
+     * where the date has one and the date alone where it does not, and
+     * {@code ?[HH:mm:ss|HH:mm|HH|"--"]} writes as much of the time as the date carries. A section
+     * never fails, so a pattern whose date-dependent parts all sit inside one writes any date at
+     * all.
+     *
+     * <p>Sections nest, and there is one thing to know about nesting: a section asks the date for
+     * nothing on its own account, so it adds no requirement to the alternative holding it.
+     *
+     * <pre>
+     * ?[HH:mm?[:ss]]        on 13:07 writes 13:07     -- inner writes nothing, outer unaffected
+     * ?[" at "?[HH:mm]]     on a date with no hour writes " at "
+     * ?[" at "HH:mm]        on a date with no hour writes nothing
+     * </pre>
+     *
+     * <p>The second line is the one that surprises. The outer alternative holds a literal and a
+     * section, both of which can always write, so the outer section writes and the inner one does
+     * not. Hoisting the literal out, as the third line does, is what makes the two rise and fall
+     * together.
+     *
+     * <p>Sections are also how a date with no fraction of a second is written, since a sub-second
+     * field says only how wide a fraction is and never whether there is one:
+     * {@code HH:mm:ss?[.S3]} writes {@code 13:07:44.070} or {@code 13:07:44}, and the decimal point
+     * goes with the digits because the section carries both. {@code ?[.S3|".000"]} invents the
+     * fraction instead, which is worth writing out rather than abbreviating, since it claims a
+     * precision the date does not have.
+     *
+     * <p>An alternative may not be empty: {@code ?[|HH]} and {@code ?[HH|]} are errors, the first
+     * because it would write nothing whatever the date, and the second because it says what
+     * {@code ?[HH]} already says. {@code ""} spells an empty alternative where one is meant.
+     * A throwing sub-second bound inside a section selects the next alternative rather than raising,
+     * which is the one thing a section takes away.
      *
      * <p>A format string may open with a time zone in square brackets, as in
      * {@code [America/New_York]yyyy-MM-dd HH:mm:ss}, and only open with one: a zone appearing after

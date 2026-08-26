@@ -39,6 +39,7 @@ public class TestDateFormatPattern
     private static final PureDate HUNDREDTH = DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35, "07");
     private static final PureDate ZERO = DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35, "000");
     private static final PureDate SECOND = DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35);
+    private static final PureDate MINUTE = DateFunctions.newPureDate(2014, 3, 10, 16, 12);
     private static final PureDate DAY = DateFunctions.newPureDate(2014, 3, 10);
     private static final PureDate YEAR = DateFunctions.newPureDate(2014);
 
@@ -75,6 +76,15 @@ public class TestDateFormatPattern
             "HH:mm:ss.S!3",
             "HH:mm:ss.S(3!,9!,\"_\")",
             "S<3.S*",
+            "yyyy?[-MM?[-dd?[\"T\"HH:mm:ss]]]",
+            "?[HH:mm:ss|HH:mm|HH|--]",
+            "yyyy-MM-dd?[\" at \"HH:mm]",
+            "yyyy?[-MM?[-dd?[\"T\"HH?[:mm?[:ss?[.S*]]]]]]",
+            "?[yyyy-MM-dd|\"(no day)\"]",
+            "?[HH|\"\"]",
+            "?[\"\"|HH]",
+            "?[?[HH]|\"x\"]",
+            "[America/New_York]yyyy-MM-dd?[\"T\"HH:mm:ssX]",
             "yyyy yyyy yy",
             "z z Z Z X X",
             "\"one\" HH \"two\" HH \"three\""
@@ -231,6 +241,9 @@ public class TestDateFormatPattern
         assertOpenSubsecondRefuses(Builder::rfc822TimeZoneOffset);
         assertOpenSubsecondRefuses(Builder::iso8601TimeZoneOffset);
         assertOpenSubsecondRefuses(Builder::subsecond);
+        assertOpenSubsecondRefuses(Builder::optional);
+        assertOpenSubsecondRefuses(Builder::or);
+        assertOpenSubsecondRefuses(Builder::endOptional);
         assertOpenSubsecondRefuses(Builder::build);
     }
 
@@ -453,10 +466,13 @@ public class TestDateFormatPattern
         Assert.assertEquals("Z", DateFormatPattern.parse("ZZ").pattern());
         Assert.assertEquals("X", DateFormatPattern.parse("XX").pattern());
 
-        // a separator stands for itself, quoted or not, and adjacent text is one run
+        // a separator stands for itself, quoted or not, and adjacent text is one run, quoted whole
         Assert.assertEquals("-", DateFormatPattern.parse("\"-\"").pattern());
-        Assert.assertEquals("\"at\" \"T\" HH", DateFormatPattern.parse("\"at\" \"T\" HH").pattern());
+        Assert.assertEquals("--", DateFormatPattern.parse("\"--\"").pattern());
+        Assert.assertEquals("\"at T \"HH", DateFormatPattern.parse("\"at\" \"T\" HH").pattern());
         Assert.assertEquals("\"abc\"", builder().literal('a').literal("b").literal('c').build().pattern());
+        Assert.assertEquals("\" at \"", builder().literal(" at ").build().pattern());
+        Assert.assertEquals("\".000\"", builder().literal(".000").build().pattern());
     }
 
     /**
@@ -831,6 +847,202 @@ public class TestDateFormatPattern
         assertRoundTrips(field(0, Integer.MAX_VALUE - 1, false, false, '0'));
     }
 
+    // Optional sections
+
+    /**
+     * A section writes the first alternative the date can carry, and nothing at all where the date
+     * can carry none of them.
+     */
+    @Test
+    public void testOptionalSections()
+    {
+        assertSection("yyyy?[-MM?[-dd?[\"T\"HH:mm:ss]]]",
+                "2014-03-10T16:12:35", "2014-03-10T16:12:35", "2014-03-10", "2014");
+        assertSection("?[HH:mm:ss|HH:mm|HH|--]",
+                "16:12:35", "16:12:35", "--", "--");
+        assertSection("yyyy-MM-dd?[\" at \"HH:mm]",
+                "2014-03-10 at 16:12", "2014-03-10 at 16:12", "2014-03-10", null);
+        assertSection("yyyy-MM-dd\"T\"HH:mm:ss?[.S*]",
+                "2014-03-10T16:12:35.070004235", "2014-03-10T16:12:35", null, null);
+
+        // nested to the full depth of the type, this writes a date at whatever precision it carries,
+        // which is the shape a format string could not previously take
+        assertSection("yyyy?[-MM?[-dd?[\"T\"HH?[:mm?[:ss?[.S*]]]]]]",
+                "2014-03-10T16:12:35.070004235", "2014-03-10T16:12:35", "2014-03-10", "2014");
+    }
+
+    /**
+     * A section asks the date for nothing on its own account, so one nested inside another adds no
+     * requirement to the alternative holding it. That is the one surprise in nesting, and hoisting
+     * the literal out of the inner section is what makes the two rise and fall together.
+     */
+    @Test
+    public void testANestedSectionAddsNoRequirementToTheOneHoldingIt()
+    {
+        Assert.assertEquals("16:12", DateFormatPattern.parse("?[HH:mm?[:ss]]").render(MINUTE));
+        Assert.assertEquals("16:12:00", DateFormatPattern.parse("?[HH:mm?[:ss|\":00\"]]").render(MINUTE));
+        Assert.assertEquals("16:12:35", DateFormatPattern.parse("?[HH:mm?[:ss]]").render(SECOND));
+
+        Assert.assertEquals(" at ", DateFormatPattern.parse("?[\" at \"?[HH:mm]]").render(DAY));
+        Assert.assertEquals("", DateFormatPattern.parse("?[\" at \"HH:mm]").render(DAY));
+        Assert.assertEquals(" at 16:12", DateFormatPattern.parse("?[\" at \"?[HH:mm]]").render(SECOND));
+
+        // and an alternative that is only a nested section can always write, so what follows it is
+        // dead
+        Assert.assertEquals("16", DateFormatPattern.parse("?[?[HH]|\"x\"]").render(SECOND));
+        Assert.assertEquals("", DateFormatPattern.parse("?[?[HH]|\"x\"]").render(DAY));
+    }
+
+    /**
+     * A section never fails, whatever it holds, so a pattern whose date-dependent parts all sit
+     * inside one writes any date at all.
+     */
+    @Test
+    public void testASectionNeverFails()
+    {
+        assertCanRender("?[HH:mm:ss]", true, true, true, true);
+        assertCanRender("?[HH:mm:ss|\"--\"]", true, true, true, true);
+        assertCanRender("?[.S!9]", true, true, true, true);
+        assertCanRender("yyyy?[-MM-dd]", true, true, true, true);
+
+        // what is outside a section still fails, section or no section
+        assertCanRender("yyyy-MM-dd?[\" at \"HH:mm]", false, true, true, true);
+    }
+
+    /**
+     * A throwing sub-second bound inside a section selects the next alternative where outside one it
+     * would raise, which makes a section that falls back because the date carries too much rather
+     * than too little. That is a new kind of conditionality and worth pinning rather than
+     * discovering.
+     */
+    @Test
+    public void testAThrowingSubsecondBoundInsideASectionSelectsRatherThanRaises()
+    {
+        DateFormatPattern pattern = DateFormatPattern.parse("?[.S(0,3!)|\".(truncated)\"]");
+        Assert.assertEquals(".(truncated)", pattern.render(NANO));
+        Assert.assertEquals(".070", pattern.render(MILLI));
+        Assert.assertEquals(".07", pattern.render(HUNDREDTH));
+        Assert.assertEquals(".(truncated)", pattern.render(SECOND));
+
+        // outside a section the same field raises rather than selecting
+        Assert.assertThrows(IllegalArgumentException.class, () -> DateFormatPattern.parse(".S(0,3!)").render(NANO));
+
+        // and the same holds of the lower bound
+        DateFormatPattern atLeastMillis = DateFormatPattern.parse("?[.S!3|\".000\"]");
+        Assert.assertEquals(".070", atLeastMillis.render(MILLI));
+        Assert.assertEquals(".000", atLeastMillis.render(HUNDREDTH));
+        Assert.assertEquals(".000", atLeastMillis.render(SECOND));
+    }
+
+    /**
+     * An alternative that writes nothing has to be spelled out, since an empty one is refused. It
+     * says what the section without it already says at the back, and short-circuits the whole
+     * section at the front.
+     */
+    @Test
+    public void testAnAlternativeThatWritesNothingIsSpelledOut()
+    {
+        Assert.assertEquals("16", DateFormatPattern.parse("?[HH|\"\"]").render(SECOND));
+        Assert.assertEquals("", DateFormatPattern.parse("?[HH|\"\"]").render(DAY));
+
+        // at the front it wins outright, which is what writing it rather than leaving a gap admits
+        Assert.assertEquals("", DateFormatPattern.parse("?[\"\"|HH]").render(SECOND));
+
+        // and an empty literal is an element, so it is written back rather than vanishing
+        Assert.assertEquals("?[HH|\"\"]", DateFormatPattern.parse("?[HH|\"\"]").pattern());
+        Assert.assertEquals("\"\"", DateFormatPattern.parse("\"\"").pattern());
+        Assert.assertNotEquals(DateFormatPattern.parse("\"\""), DateFormatPattern.parse(""));
+    }
+
+    /**
+     * A section built element by element is the section the same format string parses into.
+     */
+    @Test
+    public void testTheBuilderAndTheParserAgreeOnSections()
+    {
+        assertSameAs("yyyy-MM-dd?[\" at \"HH:mm]", builder()
+                .year().literal('-').month().literal('-').day()
+                .optional().literal(" at ").hour24().literal(':').minute().endOptional());
+
+        assertSameAs("?[HH:mm:ss|HH:mm|HH|--]", builder()
+                .optional()
+                .hour24().literal(':').minute().literal(':').second()
+                .or().hour24().literal(':').minute()
+                .or().hour24()
+                .or().literal("--")
+                .endOptional());
+
+        assertSameAs("yyyy?[-MM?[-dd?[\"T\"HH:mm:ss]]]", builder()
+                .year()
+                .optional().literal('-').month()
+                .optional().literal('-').day()
+                .optional().literal('T').hour24().literal(':').minute().literal(':').second()
+                .endOptional()
+                .endOptional()
+                .endOptional());
+
+        assertSameAs("[America/New_York]yyyy-MM-dd?[\"T\"HH:mm:ssX]", builder()
+                .timeZone("America/New_York")
+                .year().literal('-').month().literal('-').day()
+                .optional().literal('T').hour24().literal(':').minute().literal(':').second()
+                .iso8601TimeZoneOffset().endOptional());
+
+        assertSameAs("HH:mm?[.S3]", builder()
+                .hour24().literal(':').minute()
+                .optional().literal('.').subsecond().exactly(3).endSubsecond().endOptional());
+    }
+
+    /**
+     * A section is refused where it is not closed, not opened, or holds an alternative with nothing
+     * in it.
+     */
+    @Test
+    public void testSectionSyntaxErrors()
+    {
+        assertValidationFails("Expected '[' after '?' in format string: yyyy?", "yyyy?");
+        assertValidationFails("Expected '[' after '?' in format string: yyyy?x", "yyyy?x");
+        assertValidationFails("Missing closing bracket for optional section in format string: ?[HH:mm", "?[HH:mm");
+        assertValidationFails("Missing closing bracket for optional section in format string: ?[HH:mm?[:ss]", "?[HH:mm?[:ss]");
+        assertValidationFails("Unmatched ']' in format string: HH]", "HH]");
+        assertValidationFails("Unmatched ']' in format string: ?[HH]]", "?[HH]]");
+        assertValidationFails("'|' outside an optional section in format string: HH|mm", "HH|mm");
+        assertValidationFails("Empty alternative in optional section in format string: ?[|HH]", "?[|HH]");
+        assertValidationFails("Empty alternative in optional section in format string: ?[HH|]", "?[HH|]");
+        assertValidationFails("Empty alternative in optional section in format string: ?[]", "?[]");
+
+        // a zone still opens the whole string and nothing else, which a section does not change
+        assertValidationFails("Time zone can only be set at the beginning of the format string", "?[[EST]HH]");
+    }
+
+    /**
+     * A section is closed by the builder that opened it, and an alternative reaches the pattern only
+     * with something in it.
+     */
+    @Test
+    public void testTheBuilderRefusesASectionItCannotBuild()
+    {
+        assertBuilderFailsWithState("No optional section is open: call optional() before or()", () -> builder().or());
+        assertBuilderFailsWithState("No optional section is open: call optional() before endOptional()", () -> builder().endOptional());
+        assertBuilderFailsWithState(
+                "No optional section is open: call optional() before endOptional()",
+                () -> builder().optional().hour24().endOptional().endOptional());
+        assertBuilderFailsWithState(
+                "An optional section is still open: call endOptional() before anything else",
+                () -> builder().optional().hour24().build());
+        assertBuilderFailsWithState(
+                "An optional section may not hold an alternative with nothing in it",
+                () -> builder().optional().or());
+        assertBuilderFailsWithState(
+                "An optional section may not hold an alternative with nothing in it",
+                () -> builder().optional().endOptional());
+        assertBuilderFailsWithState(
+                "An optional section may not hold an alternative with nothing in it",
+                () -> builder().optional().hour24().or().endOptional());
+
+        // and a builder that closed its sections builds as it always did
+        Assert.assertEquals("16", builder().optional().hour24().endOptional().build().render(SECOND));
+    }
+
     // Equality and description
 
     @Test
@@ -1110,6 +1322,32 @@ public class TestDateFormatPattern
         Assert.assertEquals(
                 "This sub-second field has already been ended",
                 Assert.assertThrows(IllegalStateException.class, () -> call.accept(field)).getMessage());
+    }
+
+    /**
+     * Assert that a pattern holding one optional section writes what is expected of each of the
+     * four granularities the tests use, a null standing for a pattern that refuses the date.
+     *
+     * @param formatString format string holding the section
+     * @param nano         what it writes for a date with a nine digit fraction
+     * @param second       what it writes for a date to the second
+     * @param day          what it writes for a date to the day
+     * @param year         what it writes for a date to the year
+     */
+    private static void assertSection(String formatString, String nano, String second, String day, String year)
+    {
+        DateFormatPattern pattern = DateFormatPattern.parse(formatString);
+        assertSubsecond(pattern, NANO, nano);
+        assertSubsecond(pattern, SECOND, second);
+        assertSubsecond(pattern, DAY, day);
+        assertSubsecond(pattern, YEAR, year);
+    }
+
+    private static void assertBuilderFailsWithState(String expectedMessage, Runnable builderCall)
+    {
+        Assert.assertEquals(
+                expectedMessage,
+                Assert.assertThrows(expectedMessage, IllegalStateException.class, builderCall::run).getMessage());
     }
 
     private static void assertBuilderFails(String expectedMessage, Runnable builderCall)
