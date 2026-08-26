@@ -955,6 +955,35 @@ public class TestDateFormatPattern
     }
 
     /**
+     * A section and a sub-second field do not do each other's work, and the two spellings that look
+     * as though they might are the ones to be careful of. Nothing a field can say answers for a date
+     * with no fraction, and nothing a section can say pads a short one, so saying both takes both.
+     */
+    @Test
+    public void testASectionAndASubsecondFieldDoNotDoEachOthersWork()
+    {
+        DateFormatPattern section = DateFormatPattern.parse("?[SSS|\"000\"]");
+        DateFormatPattern field = DateFormatPattern.parse("S3");
+
+        // they agree only where the date carries exactly what both ask for
+        Assert.assertEquals("070", section.render(MILLI));
+        Assert.assertEquals("070", field.render(MILLI));
+
+        // on a short fraction only the field pads
+        Assert.assertEquals("07", section.render(HUNDREDTH));
+        Assert.assertEquals("070", field.render(HUNDREDTH));
+
+        // and on no fraction at all only the section has anything to say
+        Assert.assertEquals("000", section.render(SECOND));
+        Assert.assertFalse(field.canRender(SECOND));
+
+        DateFormatPattern both = DateFormatPattern.parse("?[S3|\"000\"]");
+        Assert.assertEquals("070", both.render(MILLI));
+        Assert.assertEquals("070", both.render(HUNDREDTH));
+        Assert.assertEquals("000", both.render(SECOND));
+    }
+
+    /**
      * A section built element by element is the section the same format string parses into.
      */
     @Test
