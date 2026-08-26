@@ -50,14 +50,13 @@ public abstract class AbstractMatch extends AbstractNativeFunctionGeneric
         String type = TypeProcessor.typeToJavaObjectWithMul(Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.genericType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.multiplicity, processorSupport), processorSupport);
         String input = transformedParams.get(0);
 
-        // Always assign input to a temp variable so it is evaluated exactly once,
-        // even when the generated code references it multiple times (e.g. in the
-        // type-check, the valueOf call, and the matchFailure fallback).
+        // inputType is needed to declare the field that captures `input` exactly once
         String inputType = TypeProcessor.typeToJavaObjectWithMul(
                 Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(0), M3Properties.genericType, processorSupport),
                 Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(0), M3Properties.multiplicity, processorSupport),
                 processorSupport);
-        String inputVar = "_matchInput_" + System.identityHashCode(functionExpression);
+        // unique name avoids collisions when match expressions are nested
+        String inputVar = "_in_" + System.identityHashCode(functionExpression);
 
         SourceInformation sourceInformation = functionExpression.getSourceInformation();
 
@@ -66,7 +65,6 @@ public abstract class AbstractMatch extends AbstractNativeFunctionGeneric
             ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(parametersValues.get(1), M3Properties.values, processorSupport);
             String endBrackets = "";
 
-            // Build inner match expression using inputVar
             String match = "(" + type + ")";
             for (CoreInstance matchFunc : values)
             {
@@ -112,9 +110,12 @@ public abstract class AbstractMatch extends AbstractNativeFunctionGeneric
             }
             match += "CompiledSupport.matchFailure(" + inputVar + "," + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ")" + endBrackets + "\n";
 
-            // Wrap in a Function lambda so `input` is assigned to `inputVar` exactly once,
-            // regardless of how many times `inputVar` appears in `match`.
-            return "((java.util.function.Function<" + inputType + ", " + type + ">)((" + inputType + " " + inputVar + ") -> " + match + ")).apply(" + input + ")";
+            // Wrap in a bare anonymous Object subclass so `input` is evaluated exactly once
+            // and bound to `inputVar`, even when the generated match expression references it
+            // multiple times (type-check, valueOf call, matchFailure fallback).
+            // A bare Object subclass with a field+method works on all Java versions (no
+            // interface, no default methods, no lambda support required).
+            return "new Object() { final " + inputType + " " + inputVar + " = " + input + "; " + type + " _get() { return " + match + "; } }._get()";
         }
         else
         {
