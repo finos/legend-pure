@@ -18,7 +18,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure-lsp</artifactId>
-        <version>5.96.1-SNAPSHOT</version>
+        <version>5.97.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -88,9 +88,9 @@
                                 </transformer>
                                 <!-- Pure repositories are discovered via ServiceLoader; every DSL/store jar
                                      contributes its own CodeRepositoryProvider entry, so these must be merged. -->
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
                             </transformers>
                         </configuration>
                     </execution>
