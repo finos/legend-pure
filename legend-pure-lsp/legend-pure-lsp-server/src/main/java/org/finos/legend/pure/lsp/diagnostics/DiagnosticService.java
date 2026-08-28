@@ -122,7 +122,10 @@ public class DiagnosticService
     public void clear(String uri)
     {
         this.codeActionsByUri.remove(uri);
-        this.client.publishDiagnostics(new PublishDiagnosticsParams(uri, Collections.emptyList()));
+        if (this.client != null)
+        {
+            this.client.publishDiagnostics(new PublishDiagnosticsParams(uri, Collections.emptyList()));
+        }
     }
 
     public List<Either<org.eclipse.lsp4j.Command, CodeAction>> codeActions(String uri)

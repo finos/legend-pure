@@ -299,6 +299,112 @@ public class RepositoryScannerTest
         Assert.assertTrue("Resolved file should exist: " + resolved, Files.exists(resolved));
     }
 
+    @Test
+    public void deriveSourceIdFromPath_matchesFileInsideRepoDir() throws IOException
+    {
+        Path resourcesDir = tempFolder.getRoot().toPath()
+                .resolve("mod/src/main/resources");
+        Files.createDirectories(resourcesDir);
+        Files.write(resourcesDir.resolve("my_repo.definition.json"),
+                "{\"name\": \"my_repo\"}".getBytes());
+
+        Path pureFile = resourcesDir.resolve("my_repo/sub/Model.pure");
+        Files.createDirectories(pureFile.getParent());
+        Files.write(pureFile, "Class my::repo::Model {}".getBytes());
+
+        RepositoryScanner scanner = new RepositoryScanner();
+        scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));
+
+        Assert.assertEquals("/my_repo/sub/Model.pure", scanner.deriveSourceIdFromPath(pureFile));
+    }
+
+    @Test
+    public void deriveSourceIdFromPath_ignoresSiblingDirectoryWithoutOwnDefinitionFile() throws IOException
+    {
+        // A definition.json for "my_repo" lives directly under src/main/resources, alongside (not
+        // containing) a sibling "data" folder that has no definition.json of its own - that sibling is
+        // not part of the "my_repo" module just because it shares the same src/main/resources parent.
+        Path resourcesDir = tempFolder.getRoot().toPath()
+                .resolve("mod/src/main/resources");
+        Files.createDirectories(resourcesDir);
+        Files.write(resourcesDir.resolve("my_repo.definition.json"),
+                "{\"name\": \"my_repo\"}".getBytes());
+
+        Path fixtureFile = resourcesDir.resolve("data/ingest/fixture.pure");
+        Files.createDirectories(fixtureFile.getParent());
+        Files.write(fixtureFile, "###Lakehouse\n<TEST_GROUP>".getBytes());
+
+        RepositoryScanner scanner = new RepositoryScanner();
+        scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));
+
+        Assert.assertNull("Sibling directory without its own definition.json must not resolve",
+                scanner.deriveSourceIdFromPath(fixtureFile));
+    }
+
+    @Test
+    public void deriveSourceIdFromPath_excludesOwnRepoTopLevelDataFolder() throws IOException
+    {
+        // Unlike the sibling-directory case above, this fixture lives INSIDE the registered repo's own
+        // directory (my_repo/data/...) - module membership alone isn't enough to treat it as compilable
+        // source; WorkspaceDriftWatcher relies on this method to make that call for files changed outside
+        // the editor, so a gap here reintroduces the fixture-file compile crash via that path.
+        Path resourcesDir = tempFolder.getRoot().toPath()
+                .resolve("mod/src/main/resources");
+        Files.createDirectories(resourcesDir);
+        Files.write(resourcesDir.resolve("my_repo.definition.json"),
+                "{\"name\": \"my_repo\"}".getBytes());
+
+        Path fixtureFile = resourcesDir.resolve("my_repo/data/ingest/matview/fixture.pure");
+        Files.createDirectories(fixtureFile.getParent());
+        Files.write(fixtureFile, "###Lakehouse\n<TEST_GROUP>".getBytes());
+
+        RepositoryScanner scanner = new RepositoryScanner();
+        scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));
+
+        Assert.assertNull("Own repo's top-level data folder must not resolve to a compilable source",
+                scanner.deriveSourceIdFromPath(fixtureFile));
+    }
+
+    @Test
+    public void deriveSourceIdFromPath_stillIncludesWelcomePureInsideDataFolder() throws IOException
+    {
+        Path resourcesDir = tempFolder.getRoot().toPath()
+                .resolve("mod/src/main/resources");
+        Files.createDirectories(resourcesDir);
+        Files.write(resourcesDir.resolve("my_repo.definition.json"),
+                "{\"name\": \"my_repo\"}".getBytes());
+
+        Path welcomeFile = resourcesDir.resolve("my_repo/data/welcome.pure");
+        Files.createDirectories(welcomeFile.getParent());
+        Files.write(welcomeFile, "function go():Any[*] {[]}".getBytes());
+
+        RepositoryScanner scanner = new RepositoryScanner();
+        scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));
+
+        Assert.assertEquals("/my_repo/data/welcome.pure", scanner.deriveSourceIdFromPath(welcomeFile));
+    }
+
+    @Test
+    public void deriveSourceIdFromPath_includesNestedDataPackageNotAtRepoTopLevel() throws IOException
+    {
+        // A deeper, non-top-level package that happens to be named "data" (e.g. legend-engine's real
+        // core::pure::data) must not be shadowed by the top-level fixture-folder exclusion.
+        Path resourcesDir = tempFolder.getRoot().toPath()
+                .resolve("mod/src/main/resources");
+        Files.createDirectories(resourcesDir);
+        Files.write(resourcesDir.resolve("my_repo.definition.json"),
+                "{\"name\": \"my_repo\"}".getBytes());
+
+        Path nestedFile = resourcesDir.resolve("my_repo/core/pure/data/Model.pure");
+        Files.createDirectories(nestedFile.getParent());
+        Files.write(nestedFile, "Class my::repo::Model {}".getBytes());
+
+        RepositoryScanner scanner = new RepositoryScanner();
+        scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));
+
+        Assert.assertEquals("/my_repo/core/pure/data/Model.pure", scanner.deriveSourceIdFromPath(nestedFile));
+    }
+
     private static Path findLegendPureRoot()
     {
         Path current = java.nio.file.Paths.get(System.getProperty("user.dir")).toAbsolutePath();

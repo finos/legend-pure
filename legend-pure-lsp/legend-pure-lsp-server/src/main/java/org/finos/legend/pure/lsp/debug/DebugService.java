@@ -18,11 +18,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import org.finos.legend.pure.lsp.ExecutionFailureFormatter;
 import org.finos.legend.pure.lsp.LegendPureSession;
 import org.finos.legend.pure.lsp.RepositoryScanner;
 import org.finos.legend.pure.lsp.UriMapper;
 import org.finos.legend.pure.lsp.protocol.LegendDebug;
 import org.finos.legend.pure.lsp.runtime.PureRuntimeManager;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,16 +67,24 @@ public class DebugService
         }
         stopSession(previousSession);
 
+        LegendDebug.ExecutionMode mode = params == null ? LegendDebug.ExecutionMode.SHARED : params.getMode();
         LegendDebugSession nextSession = null;
         try
         {
-            nextSession = LegendDebugSession.create(
-                    session,
-                    this.repositoryScanner,
-                    this.uriMapper,
-                    this.openDocumentSourceSnapshot.get(),
-                    params == null ? null : params.getFunction(),
-                    params == null ? Collections.emptyList() : params.getBreakpoints());
+            nextSession = mode == LegendDebug.ExecutionMode.SHARED
+                    ? LegendDebugSession.createShared(
+                            session,
+                            this.repositoryScanner,
+                            this.uriMapper,
+                            params == null ? null : params.getFunction(),
+                            params == null ? Collections.emptyList() : params.getBreakpoints())
+                    : LegendDebugSession.create(
+                            session,
+                            this.repositoryScanner,
+                            this.uriMapper,
+                            this.openDocumentSourceSnapshot.get(),
+                            params == null ? null : params.getFunction(),
+                            params == null ? Collections.emptyList() : params.getBreakpoints());
             if (!setActiveSession(startGeneration, nextSession))
             {
                 nextSession.stop();
@@ -88,12 +98,29 @@ public class DebugService
         catch (Exception e)
         {
             LOGGER.error("Debug start failed", e);
+            String capturedOutput = nextSession == null ? null : nextSession.snapshotCapturedOutput();
+            ProcessorSupport processorSupport = nextSession == null ? null : nextSession.processorSupport();
             if (nextSession != null)
             {
                 clearIfTerminal(nextSession, LegendDebug.Response.completed(null));
                 nextSession.stop();
             }
-            return LegendDebug.Response.error(message(e));
+            return LegendDebug.Response.error(ExecutionFailureFormatter.format(e, capturedOutput, processorSupport));
+        }
+    }
+
+    /**
+     * Pushes a fresh full breakpoint list into the active session, if any, so add/remove/condition-edit
+     * requests that arrive after {@link #start} has already begun running take effect immediately
+     * instead of only being picked up by a future session. A no-op before a session exists - the initial
+     * breakpoint list is already correctly picked up by {@link #start}.
+     */
+    public void updateBreakpoints(List<LegendDebug.Breakpoint> breakpoints)
+    {
+        LegendDebugSession active = this.debugSession;
+        if (active != null)
+        {
+            active.updateBreakpoints(breakpoints == null ? Collections.emptyList() : breakpoints);
         }
     }
 
@@ -209,10 +236,5 @@ public class DebugService
         {
             session.stop();
         }
-    }
-
-    private static String message(Exception e)
-    {
-        return e.getMessage() == null ? e.toString() : e.getMessage();
     }
 }

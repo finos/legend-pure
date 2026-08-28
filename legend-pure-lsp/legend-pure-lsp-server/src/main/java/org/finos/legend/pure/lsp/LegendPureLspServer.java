@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -70,8 +71,17 @@ import org.finos.legend.pure.lsp.protocol.DeleteFileParams;
 import org.finos.legend.pure.lsp.protocol.DeleteFileResult;
 import org.finos.legend.pure.lsp.protocol.LegendLanguageClient;
 import org.finos.legend.pure.lsp.protocol.LspStatus;
+import org.finos.legend.pure.lsp.protocol.PCTAdapterInfo;
+import org.finos.legend.pure.lsp.protocol.ResolveSourceUriParams;
+import org.finos.legend.pure.lsp.protocol.ResolveSourceUriResult;
 import org.finos.legend.pure.lsp.protocol.SetOptionParams;
 import org.finos.legend.pure.lsp.protocol.SetOptionResult;
+import org.finos.legend.pure.lsp.protocol.SyncWorkspaceParams;
+import org.finos.legend.pure.lsp.protocol.SyncWorkspaceResult;
+import org.finos.legend.pure.lsp.protocol.GetSetupTeardownParams;
+import org.finos.legend.pure.lsp.protocol.SetupTeardownInfo;
+import org.finos.legend.pure.lsp.protocol.TestFunctionInfo;
+import org.finos.legend.pure.lsp.protocol.TestFunctionsParams;
 import org.finos.legend.pure.lsp.runtime.PureRuntimeManager;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.slf4j.Logger;
@@ -82,9 +92,19 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     private static final Logger LOGGER = LoggerFactory.getLogger(LegendPureLspServer.class);
     private static final String VERSION = "0.3.0-2026-04-01";
 
-    private LanguageClient rawClient;
-    private LegendLanguageClient client;
-    private DiagnosticService diagnosticService;
+    // Configurable at startup only (read once, here) via -Dlegend.lsp.requestPoolSize=<N> - e.g. via
+    // the launcher scripts' generic --jvm-arg passthrough. Default of 12 is deliberately well above
+    // the old hardcoded 4: this environment's cgroup caps the JVM at 16 available processors (see
+    // Runtime.getRuntime().availableProcessors()), and every LSP request type (executeGo/execute,
+    // hover, completion, diagnostics, ...) funnels through this one pool, so 4 left most of that
+    // capacity unused and made concurrent test/execute traffic queue well before hardware was the
+    // limit. 12 leaves headroom for GC and the daemon's other background threads (drift-watcher,
+    // compile-debounce) rather than claiming the full 16.
+    private static final String REQUEST_POOL_SIZE_PROPERTY = "legend.lsp.requestPoolSize";
+    private static final int DEFAULT_REQUEST_POOL_SIZE = 12;
+
+    private final ClientBroadcaster clientBroadcaster = new ClientBroadcaster();
+    private final DiagnosticService diagnosticService;
 
     private final UriMapper uriMapper = new UriMapper();
     private final RepositoryScanner repositoryScanner = new RepositoryScanner();
@@ -94,21 +114,44 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     private final PureRuntimeManager runtimeManager;
     private final DebugService debugService;
     private final LegendDebugSocketServer debugSocketServer;
-    private final ExecutorService requestExecutor = Executors.newFixedThreadPool(4, r ->
+    private final WorkspaceDriftWatcher driftWatcher;
+    private final int requestPoolSize = resolveRequestPoolSize();
+    private final ExecutorService requestExecutor = Executors.newFixedThreadPool(this.requestPoolSize, r ->
     {
         Thread t = new Thread(r, "legend-pure-lsp-request");
         t.setDaemon(true);
         return t;
     });
 
+    // Set once, by whichever fires first: preconfigureAndWarm() (a config-driven launcher) or the
+    // first connecting client's initialize/initialized. Every later connection's initialize/initialized
+    // is a pure attach to the already-warm session - see the javadoc on preconfigureAndWarm() for why
+    // this matters (a second IDE window's handshake used to silently force a full recompile).
+    private final AtomicBoolean workspaceConfigured = new AtomicBoolean(false);
+    private final AtomicBoolean runtimeInitializeStarted = new AtomicBoolean(false);
+
+    // True only for the socket-daemon accept loop (runSocketMode), never for the classic single-client
+    // stdio main() path. Guards shutdown()/exit(): in stdio mode there's exactly one client and exiting
+    // the JVM on its request is correct LSP behaviour; in daemon mode the same process outlives any one
+    // connection, so a client's own shutdown/exit must only ever end its own connection.
+    private volatile boolean daemonMode = false;
+
+    // Observability only (see status()): which port/transport this daemon is actually reachable on,
+    // so a client polling legend/status doesn't need to already know how it was launched.
+    private volatile int port = -1;
+    private volatile String transport = "stdio";
+
     public LegendPureLspServer()
     {
+        this.diagnosticService = new DiagnosticService(this.clientBroadcaster, this.uriMapper);
         this.textDocumentService = new LegendTextDocumentService(this);
         this.runtimeManager = new PureRuntimeManager(
                 this.repositoryScanner,
                 this.uriMapper,
                 this.symbolProvider,
-                this.textDocumentService::compileOpenDocuments);
+                this.textDocumentService::compileOpenDocuments,
+                this.diagnosticService);
+        this.runtimeManager.setClient(this.clientBroadcaster);
         this.debugService = new DebugService(
                 this.runtimeManager,
                 this.repositoryScanner,
@@ -116,22 +159,61 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
                 this.textDocumentService::getOpenDocumentSourceSnapshot);
         this.debugSocketServer = new LegendDebugSocketServer(this.debugService);
         this.workspaceService = new LegendWorkspaceService(this);
+        this.driftWatcher = new WorkspaceDriftWatcher(
+                this.repositoryScanner,
+                this.uriMapper,
+                this.textDocumentService::hasOpenDocument,
+                this.clientBroadcaster::workspaceDriftDetected);
+        LspLog.setSink(this.clientBroadcaster::logOutput);
+    }
+
+    /**
+     * Configures and compiles the workspace up front, from explicit roots, instead of waiting for a
+     * connecting client's {@code initialize} request to supply {@code workspaceFolders} - lets a
+     * config-driven launcher (e.g. a plain, IDE-runnable {@code main()} that isn't itself an LSP client)
+     * produce an already-warm session before any client connects. Any client that connects later - the
+     * first one, or a second/third IDE window joining an already-warm daemon - just attaches to this
+     * same session; its {@code initialize}/{@code initialized} handshake no longer reconfigures or
+     * recompiles anything (see {@link #initialize(InitializeParams)}/{@link #initialized(InitializedParams)}).
+     */
+    public void preconfigureAndWarm(List<Path> repoRoots, Set<String> classpathRepositoryNames)
+    {
+        LspLog.info("Pre-configuring workspace from " + repoRoots.size()
+                + " repo root(s) (config-driven, before any client connects)");
+        this.workspaceConfigured.set(true);
+        this.runtimeInitializeStarted.set(true);
+        this.runtimeManager.configure(repoRoots, classpathRepositoryNames);
+        this.runtimeManager.initialize();
+        startOrRestartDriftWatcher();
     }
 
     @Override
     public void connect(LanguageClient client)
     {
-        this.rawClient = client;
-        this.client = (client instanceof LegendLanguageClient)
-                ? (LegendLanguageClient) client
-                : new LegendLanguageClientAdapter(client);
-        this.runtimeManager.setClient(this.client);
-        this.diagnosticService = new DiagnosticService(client, this.uriMapper);
+        LegendLanguageClient wrapped = this.clientBroadcaster.register(client);
+        // Catch up this newly-connected client on current status right away. Without this, a client
+        // connecting to a session that's already "ready" (a reconnect, or a second client joining an
+        // existing warm daemon) never receives a legend/statusChanged notification at all - nothing
+        // has "changed" from the server's perspective - so any client-side readiness gate that waits
+        // for that notification (e.g. the IntelliJ plugin's Execute Go action awaiting whenReady())
+        // hangs indefinitely instead of observing the session is already up.
+        wrapped.statusChanged(this.runtimeManager.currentStatus());
+    }
+
+    /**
+     * Deregisters a client whose connection has ended, so future broadcasts (diagnostics, status,
+     * log output, show-message) stop targeting it - called from {@link #serveSocketConnection} once
+     * that connection's {@code startListening()} future completes. Package-private: only the socket
+     * accept loop needs this; the stdio {@code main()} path never disconnects (see its call site).
+     */
+    void disconnect(LanguageClient client)
+    {
+        this.clientBroadcaster.deregister(client);
     }
 
     LanguageClient getClient()
     {
-        return this.rawClient;
+        return this.clientBroadcaster;
     }
 
     DiagnosticService getDiagnosticService()
@@ -159,16 +241,33 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         return this.symbolProvider;
     }
 
+    RepositoryScanner getRepositoryScanner()
+    {
+        return this.repositoryScanner;
+    }
+
+    WorkspaceDriftWatcher getDriftWatcher()
+    {
+        return this.driftWatcher;
+    }
+
     @Override
     @SuppressWarnings("deprecation")
     public CompletableFuture<InitializeResult> initialize(InitializeParams params)
     {
         List<Path> workspaceRoots = extractWorkspaceRoots(params);
         Set<String> classpathRepositoryNames = new LinkedHashSet<>(extractClasspathRepositoryNames(params));
-        this.runtimeManager.configure(workspaceRoots, classpathRepositoryNames);
-
-        LspLog.info("Legend Pure LSP v" + VERSION + " starting");
-        LspLog.info("Workspace roots: " + workspaceRoots);
+        if (this.workspaceConfigured.compareAndSet(false, true))
+        {
+            this.runtimeManager.configure(workspaceRoots, classpathRepositoryNames);
+            LspLog.info("Legend Pure LSP v" + VERSION + " starting");
+            LspLog.info("Workspace roots: " + workspaceRoots);
+        }
+        else
+        {
+            LspLog.info("Legend Pure LSP v" + VERSION + ": new client attaching to the already-configured"
+                    + " session; ignoring this client's workspace roots (" + workspaceRoots + ")");
+        }
 
         ServerCapabilities caps = new ServerCapabilities();
         caps.setTextDocumentSync(TextDocumentSyncKind.Full);
@@ -179,6 +278,7 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         caps.setDocumentSymbolProvider(true);
         caps.setWorkspaceSymbolProvider(true);
         caps.setCodeActionProvider(new CodeActionOptions(Collections.singletonList(org.eclipse.lsp4j.CodeActionKind.QuickFix)));
+        caps.setFoldingRangeProvider(true);
 
         SemanticTokensLegend legend = new SemanticTokensLegend(
                 SemanticTokensProvider.TOKEN_TYPES,
@@ -194,7 +294,15 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     @Override
     public void initialized(InitializedParams params)
     {
-        runAsync(this.runtimeManager::initialize);
+        if (this.runtimeInitializeStarted.compareAndSet(false, true))
+        {
+            runAsync(this.runtimeManager::initialize).thenRun(this::startOrRestartDriftWatcher);
+        }
+        else
+        {
+            LspLog.info("Runtime already initializing/initialized; skipping a redundant full compile"
+                    + " for this newly-connected client");
+        }
     }
 
     void triggerRecovery()
@@ -202,9 +310,20 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         runAsync(this.runtimeManager::triggerRecovery);
     }
 
+    /**
+     * (Re)starts {@link #driftWatcher} against whatever resource roots {@link #repositoryScanner} just
+     * discovered - called after every full scan (initial warm-up, first client's initialize/initialized,
+     * and reindex), since a reindex can discover modules that did not exist at the previous scan.
+     */
+    private void startOrRestartDriftWatcher()
+    {
+        this.driftWatcher.stop();
+        this.driftWatcher.start(this.repositoryScanner.getMappings().values());
+    }
+
     CompletableFuture<Void> reindex()
     {
-        return runAsync(this.runtimeManager::reindex);
+        return runAsync(this.runtimeManager::reindex).thenRun(this::startOrRestartDriftWatcher);
     }
 
     @Override
@@ -215,10 +334,18 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     @Override
     public CompletableFuture<Object> shutdown()
     {
+        if (this.daemonMode)
+        {
+            // Shared across every connected client - tearing these down for one connection's shutdown
+            // request would break every other window still attached to this daemon. This connection's
+            // own teardown happens on socket close (see disconnect(LanguageClient), serveSocketConnection).
+            return CompletableFuture.completedFuture(null);
+        }
         this.debugService.shutdown();
         this.debugSocketServer.close();
         this.textDocumentService.shutdown();
         this.runtimeManager.shutdown();
+        this.driftWatcher.stop();
         this.requestExecutor.shutdownNow();
         return CompletableFuture.completedFuture(null);
     }
@@ -226,13 +353,54 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     @Override
     public void exit()
     {
+        if (this.daemonMode)
+        {
+            // A client's exit() ends its own connection, not the shared daemon process - see shutdown()
+            // above. The client is expected to close its side of the socket after this notification,
+            // which is what actually unblocks serveSocketConnection()'s accept-loop thread and runs the
+            // existing disconnect(LanguageClient) cleanup for just that one connection.
+            return;
+        }
         System.exit(0);
     }
 
     @JsonRequest("legend/status")
     public CompletableFuture<LspStatus> status()
     {
-        return CompletableFuture.completedFuture(this.runtimeManager.currentStatus());
+        return CompletableFuture.completedFuture(buildStatus());
+    }
+
+    /**
+     * Merges server/session-level observability (client count, port/transport, launch config, recent
+     * errors, live lock contention) onto PureRuntimeManager's compile-progress status, so a client
+     * polling legend/status - not just one live-streaming legend/lockContention or legend/logOutput
+     * notifications - gets the full picture in one call. Kept here (not in PureRuntimeManager) because
+     * every one of these fields describes the SERVER/session, not compile progress.
+     */
+    private LspStatus buildStatus()
+    {
+        LspStatus status = this.runtimeManager.currentStatus();
+        status.setConnectedClientCount(this.clientBroadcaster.connectedClientCount());
+        status.setPort(this.port);
+        status.setTransport(this.transport);
+        status.setRequestPoolSize(this.requestPoolSize);
+        List<Path> workspaceRoots = this.runtimeManager.getWorkspaceRoots();
+        List<String> repoRoots = new ArrayList<>(workspaceRoots.size());
+        for (Path root : workspaceRoots)
+        {
+            repoRoots.add(root.toString());
+        }
+        status.setRepoRoots(repoRoots);
+        status.setJvmArgs(new ArrayList<>(
+                java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments()));
+        status.setRecentErrors(LspLog.recentErrors());
+        LegendPureSession session = getSession();
+        if (session != null)
+        {
+            status.setLockContended(session.isLockContended());
+            status.setLockContentionReason(session.lockContentionReason());
+        }
+        return status;
     }
 
     <T> CompletableFuture<T> supplyAsync(Supplier<T> supplier)
@@ -269,6 +437,37 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
             }
             return session.withGraphReadLock(() ->
                     PackageTreeProvider.getChildren(session.getPureRuntime(), this.uriMapper, packagePath));
+        });
+    }
+
+    /**
+     * Finds real compiled functions carrying the &lt;&lt;test.Test&gt;&gt; stereotype in the given source,
+     * for gutter-icon placement client-side. See TestFunctionProvider for why this is a semantic
+     * stereotype check (TestTools#hasTestStereotype) rather than a text/regex scan.
+     */
+    @JsonRequest("legend/testFunctions")
+    public CompletableFuture<List<TestFunctionInfo>> testFunctions(TestFunctionsParams params)
+    {
+        return supplyAsync(() ->
+        {
+            LegendPureSession session = getSession();
+            if (session == null || !session.isInitialized() || params == null || params.getUri() == null)
+            {
+                return Collections.<TestFunctionInfo>emptyList();
+            }
+
+            String rawUri = params.getUri();
+            String sourceId = rawUri.startsWith("pure://")
+                    ? rawUri.substring("pure://".length())
+                    : this.uriMapper.toSourceId(rawUri);
+            String resolvedId = session.resolveSourceId(sourceId);
+            if (resolvedId == null)
+            {
+                return Collections.<TestFunctionInfo>emptyList();
+            }
+
+            return session.withGraphReadLock(() ->
+                    TestFunctionProvider.getTestFunctions(session.getPureRuntime(), resolvedId));
         });
     }
 
@@ -328,10 +527,57 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
                     return new ExecuteGoResult(false, batchResult.getError(), null, batchResult.getErrorUri());
                 }
             }
-            LegendPureSession.ExecuteResult result = session.executeFunction(params.getFunction());
+            LegendPureSession.ExecuteResult result = session.executeFunction(params.getFunction(), params.getPctAdapterPath(),
+                    params.getBeforeFunctionPath(), params.getAfterFunctionPath());
             return new ExecuteGoResult(result.isSuccess(), result.getError(), result.getOutput(), null);
         });
     }
+
+    /**
+     * Finds the nearest &lt;&lt;test.BeforePackage&gt;&gt;/&lt;&lt;test.AfterPackage&gt;&gt; functions to
+     * {@code params.functionPath} (see TestTools#findNearestBeforePackageFunction in legend-pure-core),
+     * for the gutter's "Run/Debug with Setup/Teardown" actions to discover what to bracket a test with
+     * before threading the result into {@link #execute(ExecuteFunctionParams)} via
+     * {@link ExecuteFunctionParams#setBeforeFunctionPath}/{@link ExecuteFunctionParams#setAfterFunctionPath}.
+     */
+    @JsonRequest("legend/getSetupTeardown")
+    public CompletableFuture<SetupTeardownInfo> getSetupTeardown(GetSetupTeardownParams params)
+    {
+        return supplyAsync(() ->
+        {
+            LegendPureSession session = getSession();
+            if (session == null || !session.isInitialized() || params == null || params.getFunctionPath() == null)
+            {
+                return new SetupTeardownInfo(null, null, null, null);
+            }
+            LegendPureSession.SetupTeardownResult result = session.findSetupTeardown(params.getFunctionPath());
+            return new SetupTeardownInfo(result.getBeforeFunctionPath(), result.getBeforeFunctionName(),
+                    result.getAfterFunctionPath(), result.getAfterFunctionName());
+        });
+    }
+
+    /**
+     * Finds every element in the currently-loaded graph carrying the &lt;&lt;PCT.adapter&gt;&gt;
+     * stereotype - the same discovery meta::pure::ide::testing::getPCTAdapters() performs in Pure -
+     * so a client can offer a choice of adapters (e.g. in-memory vs. a real relational execution
+     * strategy) when running a &lt;&lt;PCT.test&gt;&gt; function via {@link #execute(ExecuteFunctionParams)}.
+     */
+    @JsonRequest("legend/getPCTAdapters")
+    public CompletableFuture<List<PCTAdapterInfo>> getPCTAdapters()
+    {
+        return supplyAsync(() ->
+        {
+            LegendPureSession session = getSession();
+            if (session == null || !session.isInitialized())
+            {
+                return Collections.<PCTAdapterInfo>emptyList();
+            }
+            return session.withGraphReadLock(() ->
+                    PCTAdapterProvider.getPCTAdapters(session.getPureRuntime()));
+        });
+    }
+
+    static final String PURE_OPTION_PREFIX = "pure.options.";
 
     /**
      * Sets or clears a Pure runtime option so that isOptionSet('&lt;name&gt;') reflects it live, without
@@ -360,6 +606,29 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
             boolean effective = session.setOption(name, params.isValue());
             LspLog.info("setOption: " + name + " -> " + effective + " (isOptionSet('" + name + "') now returns " + effective + ")");
             return new SetOptionResult(true, name, effective, null);
+        });
+    }
+
+    /**
+     * Reports the live set of Pure runtime options currently in effect, closing the gap where
+     * setOption can only confirm the value it just set, never the full current state. Scans this
+     * JVM's system properties for the PURE_OPTION_PREFIX namespace and returns the bare option names
+     * - i.e. every name for which isOptionSet(name) currently returns true.
+     */
+    @JsonRequest("legend/getOptions")
+    public CompletableFuture<List<String>> getOptions()
+    {
+        return supplyAsync(() ->
+        {
+            List<String> options = new ArrayList<>();
+            for (String key : System.getProperties().stringPropertyNames())
+            {
+                if (key.startsWith(PURE_OPTION_PREFIX))
+                {
+                    options.add(key.substring(PURE_OPTION_PREFIX.length()));
+                }
+            }
+            return options;
         });
     }
 
@@ -400,9 +669,7 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
             // Drop it from the open-document set first so a subsequent compile does not re-add it.
             this.textDocumentService.removeOpenDocument(uri);
 
-            java.util.concurrent.locks.Lock writeLock = session.graphWriteLock();
-            writeLock.lock();
-            try
+            try (LegendPureSession.LockHandle ignored = session.acquireGraphWriteLock())
             {
                 // Resolve to the sourceId the runtime actually registered. The input may be a file://
                 // uri, an absolute path, or a raw sourceId, and the uriMapper's derivation for a
@@ -440,11 +707,13 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
                 LspLog.info("deleteFile: removed " + sourceId + " from session");
                 return new DeleteFileResult(true, sourceId, true, null);
             }
-            finally
-            {
-                writeLock.unlock();
-            }
         });
+    }
+
+    @JsonRequest("legend/syncWorkspace")
+    public CompletableFuture<SyncWorkspaceResult> syncWorkspace(SyncWorkspaceParams params)
+    {
+        return supplyAsync(() -> this.workspaceService.syncWorkspace(params));
     }
 
     @JsonRequest("legend/checkBatch")
@@ -484,6 +753,13 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         for (FileEntry file : files)
         {
             String sourceId = this.uriMapper.toSourceId(file.getUri());
+            if (sourceId == null)
+            {
+                // Not part of any registered Pure module (e.g. a fixture resource that merely has a
+                // .pure extension) - must not poison an otherwise-valid atomic batch compile.
+                LspLog.debug("Skipping non-module file in batch: " + file.getUri());
+                continue;
+            }
             changes.add(new LegendPureSession.FileChange(sourceId, file.getContent(), LegendPureSession.FileChangeType.CREATE_OR_MODIFY));
         }
 
@@ -491,9 +767,7 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         // refresh are one atomic unit that no mutation can interleave - which is what lets executeGo /
         // execute call this with no outer lock. applyBulkChangesAndCompile re-takes the (reentrant)
         // write lock internally.
-        java.util.concurrent.locks.Lock writeLock = session.graphWriteLock();
-        writeLock.lock();
-        try
+        try (LegendPureSession.LockHandle ignored = session.acquireGraphWriteLock())
         {
             LegendPureSession.CompileResult result = session.getMutationService().applyBulkChangesAndCompile(changes);
 
@@ -551,10 +825,6 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
             }
             return CheckBatchResult.failure(error.getMessage(), publishUri, errorDiagnostics);
         }
-        finally
-        {
-            writeLock.unlock();
-        }
     }
 
     @JsonRequest("legend/getSourceContent")
@@ -589,6 +859,24 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
 
             LspLog.debug("getSourceContent: serving " + resolvedId + " (" + source.getContent().length() + " chars)");
             return source.getContent();
+        });
+    }
+
+    /**
+     * Resolves a Pure internal sourceId (as embedded in a "resource:&lt;sourceId&gt; line:.. column:.."
+     * stack-trace location reference) to an editor-navigable URI, so a client can turn stack trace
+     * lines into clickable links. Delegates to the same {@link UriMapper#toUri} logic already used
+     * internally (see compileBatch). Null/empty uri in the result means unresolvable.
+     */
+    @JsonRequest("legend/resolveSourceUri")
+    public CompletableFuture<ResolveSourceUriResult> resolveSourceUri(ResolveSourceUriParams params)
+    {
+        return supplyAsync(() ->
+        {
+            ResolveSourceUriResult result = new ResolveSourceUriResult();
+            String sourceId = params == null ? null : params.getSourceId();
+            result.setUri(sourceId == null ? null : this.uriMapper.toUri(sourceId));
+            return result;
         });
     }
 
@@ -802,7 +1090,10 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
             Class.forName("org.finos.legend.pure.lsp.DocumentOutlineProvider");
             Class.forName("org.finos.legend.pure.lsp.PackageTreeProvider");
             Class.forName("org.finos.legend.pure.lsp.WorkspaceSymbolProvider");
+            Class.forName("org.finos.legend.pure.lsp.TestFunctionProvider");
             Class.forName("org.finos.legend.pure.lsp.CompletionProvider");
+            Class.forName("org.finos.legend.pure.lsp.FoldingRangeProvider");
+            Class.forName("org.finos.legend.pure.lsp.PCTAdapterProvider");
         }
         catch (ClassNotFoundException e)
         {
@@ -865,22 +1156,77 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         return -1;
     }
 
+    static int resolveRequestPoolSize()
+    {
+        String prop = System.getProperty(REQUEST_POOL_SIZE_PROPERTY);
+        if (prop == null || prop.trim().isEmpty())
+        {
+            return DEFAULT_REQUEST_POOL_SIZE;
+        }
+        try
+        {
+            int size = Integer.parseInt(prop.trim());
+            if (size > 0)
+            {
+                return size;
+            }
+            LspLog.warn(REQUEST_POOL_SIZE_PROPERTY + "=" + prop + " must be positive; using default " + DEFAULT_REQUEST_POOL_SIZE);
+        }
+        catch (NumberFormatException e)
+        {
+            LspLog.warn("Invalid " + REQUEST_POOL_SIZE_PROPERTY + "=" + prop + "; using default " + DEFAULT_REQUEST_POOL_SIZE);
+        }
+        return DEFAULT_REQUEST_POOL_SIZE;
+    }
+
     /**
      * Daemon mode: bind a TCP socket on 127.0.0.1:port and serve LSP JSON-RPC over accepted
      * connections instead of over System.in/out. ONE LegendPureLspServer (one warm Pure runtime) is
-     * created up front and reused across every client connection, so a client (the bridge) can
-     * disconnect and reconnect without losing the compiled session - the whole point of decoupling
-     * the JVM's lifecycle from any single client. Connections are handled one at a time (the bridge
-     * holds a single long-lived connection); when a client drops, we loop back to accept the next.
+     * created up front and reused across every client connection, so a client can disconnect and
+     * reconnect without losing the compiled session - the whole point of decoupling the JVM's
+     * lifecycle from any single client.
+     * <p>
+     * Connections are accepted and served CONCURRENTLY (each on its own thread from
+     * {@code connectionExecutor}), not one-at-a-time: this lets, e.g., an IntelliJ session and a
+     * separate CLI dev-loop bridge both hold a live connection to the same warm daemon at once instead
+     * of one blocking the other's accept. All graph mutation/read still funnels through
+     * {@link LegendPureSession}'s {@code graphLock}, so concurrent requests from different connections
+     * are safe at that level. Asynchronous pushes (diagnostics, {@code legend/statusChanged}, log
+     * output, show-message) are broadcast to every currently-connected client via
+     * {@link ClientBroadcaster} - registered in {@link #connect(LanguageClient)}, deregistered in
+     * {@link #serveSocketConnection} once that connection ends - so an IntelliJ session and a
+     * separately-connected CLI/agent bridge both keep receiving live updates. A concurrent
+     * {@link DebugService} debug session remains a single active slot: two clients racing a debug
+     * start will have one preempt the other (unrelated to, and not fixed by, the broadcast above).
      */
     private static void runSocketMode(int port, PrintStream stderrOut) throws Exception
     {
-        LegendPureLspServer server = new LegendPureLspServer();
+        runSocketMode(new LegendPureLspServer(), port);
+    }
+
+    /**
+     * Same daemon loop as {@link #runSocketMode(int, PrintStream)}, but against a caller-supplied,
+     * already-constructed server instance instead of always creating a fresh one. This lets a launcher
+     * (e.g. a config-driven, IDE-runnable bootstrap) pre-configure the workspace via
+     * {@link #preconfigureAndWarm(List, Set)} before any client connects, rather than waiting on the
+     * first client's {@code initialize} request to supply workspace roots.
+     */
+    public static void runSocketMode(LegendPureLspServer server, int port) throws Exception
+    {
+        server.daemonMode = true;
+        server.port = port;
+        server.transport = "socket";
+        ExecutorService connectionExecutor = Executors.newCachedThreadPool(r ->
+        {
+            Thread t = new Thread(r, "legend-pure-lsp-socket-connection");
+            t.setDaemon(true);
+            return t;
+        });
         // Bind only on loopback: this is a local dev-loop daemon, never exposed off-box.
         try (ServerSocket serverSocket = new ServerSocket(port, 0, InetAddress.getByName("127.0.0.1")))
         {
             System.err.println("[LSP] socket daemon listening on 127.0.0.1:" + port
-                    + " (pid decoupled from any launcher; reconnectable)");
+                    + " (pid decoupled from any launcher; reconnectable; concurrent connections supported)");
             // Signal readiness to a spawner watching stderr for a fixed marker.
             System.err.println("[LSP] SOCKET_READY " + port);
             while (true)
@@ -893,83 +1239,56 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
                 catch (Exception e)
                 {
                     System.err.println("[LSP] accept failed, daemon exiting: " + e.getMessage());
+                    connectionExecutor.shutdownNow();
                     return;
                 }
-                socket.setTcpNoDelay(true);
                 System.err.println("[LSP] client connected from " + socket.getRemoteSocketAddress());
-                try
-                {
-                    Launcher<LegendLanguageClient> launcher = new Launcher.Builder<LegendLanguageClient>()
-                            .setLocalService(server)
-                            .setRemoteInterface(LegendLanguageClient.class)
-                            .setInput(socket.getInputStream())
-                            .setOutput(socket.getOutputStream())
-                            .create();
-                    server.connect(launcher.getRemoteProxy());
-                    // Blocks until this client disconnects (stream EOF); then we loop to accept again.
-                    launcher.startListening().get();
-                }
-                catch (Exception e)
-                {
-                    System.err.println("[LSP] client session ended: " + e.getMessage());
-                }
-                finally
-                {
-                    try
-                    {
-                        socket.close();
-                    }
-                    catch (Exception ignored)
-                    {
-                    }
-                    System.err.println("[LSP] client disconnected; awaiting reconnect (session kept warm)");
-                }
+                connectionExecutor.submit(() -> serveSocketConnection(server, socket));
             }
+        }
+        finally
+        {
+            connectionExecutor.shutdownNow();
         }
     }
 
-    private static class LegendLanguageClientAdapter implements LegendLanguageClient
+    private static void serveSocketConnection(LegendPureLspServer server, Socket socket)
     {
-        private final LanguageClient delegate;
-
-        private LegendLanguageClientAdapter(LanguageClient delegate)
+        LanguageClient remoteClient = null;
+        try
         {
-            this.delegate = delegate;
+            socket.setTcpNoDelay(true);
+            Launcher<LegendLanguageClient> launcher = new Launcher.Builder<LegendLanguageClient>()
+                    .setLocalService(server)
+                    .setRemoteInterface(LegendLanguageClient.class)
+                    .setInput(socket.getInputStream())
+                    .setOutput(socket.getOutputStream())
+                    .create();
+            remoteClient = launcher.getRemoteProxy();
+            server.connect(remoteClient);
+            // Blocks (on this connection's own thread) until this client disconnects (stream EOF).
+            launcher.startListening().get();
         }
-
-        @Override
-        public void telemetryEvent(Object object)
+        catch (Exception e)
         {
-            this.delegate.telemetryEvent(object);
+            System.err.println("[LSP] client session ended: " + e.getMessage());
         }
-
-        @Override
-        public void publishDiagnostics(org.eclipse.lsp4j.PublishDiagnosticsParams diagnostics)
+        finally
         {
-            this.delegate.publishDiagnostics(diagnostics);
-        }
-
-        @Override
-        public void showMessage(MessageParams messageParams)
-        {
-            this.delegate.showMessage(messageParams);
-        }
-
-        @Override
-        public CompletableFuture<org.eclipse.lsp4j.MessageActionItem> showMessageRequest(org.eclipse.lsp4j.ShowMessageRequestParams requestParams)
-        {
-            return this.delegate.showMessageRequest(requestParams);
-        }
-
-        @Override
-        public void logMessage(MessageParams message)
-        {
-            this.delegate.logMessage(message);
-        }
-
-        @Override
-        public void statusChanged(LspStatus status)
-        {
+            if (remoteClient != null)
+            {
+                // This is the only disconnect signal LSP4J gives us - startListening().get() above
+                // returning/throwing on this connection's own thread - so deregister right here.
+                server.disconnect(remoteClient);
+            }
+            try
+            {
+                socket.close();
+            }
+            catch (Exception ignored)
+            {
+            }
+            System.err.println("[LSP] client disconnected (session kept warm)");
         }
     }
 }

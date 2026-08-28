@@ -16,8 +16,11 @@ package org.finos.legend.pure.lsp;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -26,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.collection.MutableCollection;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -40,6 +44,17 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs.FSCo
  */
 public class OverlayWorkspaceCodeStorage extends FSCodeStorage implements MutableRepositoryCodeStorage
 {
+    // A repo's own top-level "data" folder is conventionally a runtime test-fixture area (e.g. a
+    // ###Lakehouse/template .pure file an integration-test harness reads as a raw string and
+    // string-substitutes, the same role ".legend" fixtures play elsewhere) rather than real package
+    // structure, so it is excluded from compilable workspace sources. Scoped to the repo root only
+    // (not any depth) so this can never shadow a legitimate nested package that happens to be named
+    // "data" (e.g. core::pure::data, a real, deeper-nested package in legend-engine's "core" repo).
+    private static final String FIXTURE_DIR_NAME = "data";
+    // Conventional go() entry-point file (see WelcomeCodeStorage) - always compilable even if it
+    // happens to sit under an otherwise-excluded fixture folder.
+    private static final String ENTRY_POINT_FILE_NAME = "welcome.pure";
+
     private final Map<String, String> contentByPath = new ConcurrentHashMap<>();
     private final Set<String> deletedPaths = ConcurrentHashMap.newKeySet();
     private final Set<String> createdFolders = ConcurrentHashMap.newKeySet();
@@ -47,6 +62,39 @@ public class OverlayWorkspaceCodeStorage extends FSCodeStorage implements Mutabl
     public OverlayWorkspaceCodeStorage(CodeRepository repository, Path root)
     {
         super(repository, root);
+    }
+
+    /**
+     * Overrides FSCodeStorage's unfiltered recursive walk (inherited by getUserFiles()/
+     * getFileOrFiles()) to apply the fixture-folder exclusion above.
+     */
+    @Override
+    protected void getFilesRecursive(Path dir, MutableCollection<String> result) throws IOException
+    {
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(dir))
+        {
+            for (Path dirEntry : dirStream)
+            {
+                if (Files.isDirectory(dirEntry))
+                {
+                    getFilesRecursive(dirEntry, result);
+                }
+                else if (CodeStorageTools.hasPureFileExtension(dirEntry.toString()) && isCompilableWorkspaceFile(dirEntry))
+                {
+                    result.add(getUserPath(dirEntry));
+                }
+            }
+        }
+    }
+
+    private boolean isCompilableWorkspaceFile(Path file)
+    {
+        if (ENTRY_POINT_FILE_NAME.equals(file.getFileName().toString()))
+        {
+            return true;
+        }
+        Path relative = getRoot().relativize(file);
+        return relative.getNameCount() == 0 || !FIXTURE_DIR_NAME.equals(relative.getName(0).toString());
     }
 
     @Override

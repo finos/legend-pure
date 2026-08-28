@@ -180,19 +180,47 @@ public class RepositoryScanner
         return (path != null) ? path.toUri().toString() : null;
     }
 
+    // Mirrors OverlayWorkspaceCodeStorage's compilable-file convention: a repo's own top-level "data"
+    // folder holds runtime fixtures (e.g. a ###Lakehouse template), never real Pure source. Callers here
+    // (WorkspaceDriftWatcher's filesystem watch, UriMapper's fallback) treat any non-null result as a
+    // real, compilable source, so this must apply the same exclusion the bulk workspace scan does -
+    // otherwise a fixture edit outside the editor (a rebase, a checkout) gets fed straight into
+    // modifyAndCompile, reintroducing the fixture-file compile crash on a path OverlayWorkspaceCodeStorage
+    // alone can't guard.
+    private static final String FIXTURE_DIR_NAME = "data";
+    private static final String ENTRY_POINT_FILE_NAME = "welcome.pure";
+
     public String deriveSourceIdFromPath(Path filePath)
     {
         Path normalized = filePath.toAbsolutePath().normalize();
         for (Map.Entry<String, Path> entry : this.repoToResourcesRoot.entrySet())
         {
+            String repoName = entry.getKey();
             Path resourcesRoot = entry.getValue().toAbsolutePath().normalize();
-            if (normalized.startsWith(resourcesRoot))
+            // Must match the repo's own directory (resourcesRoot/repoName), not merely fall anywhere
+            // under resourcesRoot - a sibling folder there (e.g. another module's data without its own
+            // definition.json) is not part of THIS repo just because it shares the same
+            // src/main/resources parent.
+            Path repoDir = resourcesRoot.resolve(repoName).toAbsolutePath().normalize();
+            if (normalized.startsWith(repoDir))
             {
-                Path relative = resourcesRoot.relativize(normalized);
-                return "/" + relative.toString().replace('\\', '/');
+                Path relative = repoDir.relativize(normalized);
+                if (isFixturePath(relative))
+                {
+                    return null;
+                }
+                String relativeStr = relative.toString().replace('\\', '/');
+                return relativeStr.isEmpty() ? "/" + repoName : "/" + repoName + "/" + relativeStr;
             }
         }
         return null;
+    }
+
+    private static boolean isFixturePath(Path pathRelativeToRepoDir)
+    {
+        return pathRelativeToRepoDir.getNameCount() > 0
+                && FIXTURE_DIR_NAME.equals(pathRelativeToRepoDir.getName(0).toString())
+                && !ENTRY_POINT_FILE_NAME.equals(pathRelativeToRepoDir.getFileName().toString());
     }
 
     public MutableList<RepositoryCodeStorage> buildWorkspaceStorages()

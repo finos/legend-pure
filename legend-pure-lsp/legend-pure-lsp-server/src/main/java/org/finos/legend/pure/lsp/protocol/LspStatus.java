@@ -14,6 +14,9 @@
 
 package org.finos.legend.pure.lsp.protocol;
 
+import java.util.Collections;
+import java.util.List;
+
 public class LspStatus
 {
     private String state;
@@ -24,6 +27,20 @@ public class LspStatus
     private String message;
     private int compiledRepositories;
     private int totalRepositories;
+
+    // Observability fields, filled in by LegendPureLspServer#status() on top of whatever
+    // PureRuntimeManager#currentStatus() already built - see that method for why these live here
+    // rather than being threaded through PureRuntimeManager itself (they describe the server/session,
+    // not compile progress).
+    private int connectedClientCount;
+    private int port = -1;
+    private String transport;
+    private int requestPoolSize;
+    private List<String> repoRoots = Collections.emptyList();
+    private List<String> jvmArgs = Collections.emptyList();
+    private List<LogErrorEntry> recentErrors = Collections.emptyList();
+    private boolean lockContended;
+    private String lockContentionReason;
 
     public LspStatus()
     {
@@ -126,5 +143,95 @@ public class LspStatus
     public void setTotalRepositories(int totalRepositories)
     {
         this.totalRepositories = totalRepositories;
+    }
+
+    public int getConnectedClientCount()
+    {
+        return this.connectedClientCount;
+    }
+
+    public void setConnectedClientCount(int connectedClientCount)
+    {
+        this.connectedClientCount = connectedClientCount;
+    }
+
+    public int getPort()
+    {
+        return this.port;
+    }
+
+    public void setPort(int port)
+    {
+        this.port = port;
+    }
+
+    public String getTransport()
+    {
+        return this.transport;
+    }
+
+    public void setTransport(String transport)
+    {
+        this.transport = transport;
+    }
+
+    public int getRequestPoolSize()
+    {
+        return this.requestPoolSize;
+    }
+
+    public void setRequestPoolSize(int requestPoolSize)
+    {
+        this.requestPoolSize = requestPoolSize;
+    }
+
+    public List<String> getRepoRoots()
+    {
+        return this.repoRoots;
+    }
+
+    public void setRepoRoots(List<String> repoRoots)
+    {
+        this.repoRoots = repoRoots == null ? Collections.emptyList() : repoRoots;
+    }
+
+    public List<String> getJvmArgs()
+    {
+        return this.jvmArgs;
+    }
+
+    public void setJvmArgs(List<String> jvmArgs)
+    {
+        this.jvmArgs = jvmArgs == null ? Collections.emptyList() : jvmArgs;
+    }
+
+    public List<LogErrorEntry> getRecentErrors()
+    {
+        return this.recentErrors;
+    }
+
+    public void setRecentErrors(List<LogErrorEntry> recentErrors)
+    {
+        this.recentErrors = recentErrors == null ? Collections.emptyList() : recentErrors;
+    }
+
+    public boolean isLockContended()
+    {
+        return this.lockContended;
+    }
+
+    public void setLockContended(boolean lockContended)
+    {
+        this.lockContended = lockContended;
+    }
+
+    public String getLockContentionReason()
+    {
+        return this.lockContentionReason;
+    }
+
+    public void setLockContentionReason(String lockContentionReason)
+    {
+        this.lockContentionReason = lockContentionReason;
     }
 }

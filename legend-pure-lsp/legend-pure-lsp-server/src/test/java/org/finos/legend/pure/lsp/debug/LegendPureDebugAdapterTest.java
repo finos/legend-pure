@@ -77,7 +77,8 @@ public class LegendPureDebugAdapterTest
             Assert.assertEquals(Boolean.TRUE, capabilities.getSupportsConfigurationDoneRequest());
             Assert.assertEquals(Boolean.TRUE, capabilities.getSupportsEvaluateForHovers());
             Assert.assertEquals(Boolean.TRUE, capabilities.getSupportsTerminateRequest());
-            Assert.assertEquals(Boolean.FALSE, capabilities.getSupportsConditionalBreakpoints());
+            Assert.assertEquals(Boolean.TRUE, capabilities.getSupportsConditionalBreakpoints());
+            Assert.assertEquals(Boolean.TRUE, capabilities.getSupportsLogPoints());
 
             Source source = new Source();
             source.setPath("/workspace/debug_dap.pure");

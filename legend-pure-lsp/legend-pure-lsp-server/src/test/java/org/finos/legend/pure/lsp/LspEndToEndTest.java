@@ -65,6 +65,8 @@ import org.finos.legend.pure.lsp.protocol.FileEntry;
 import org.finos.legend.pure.lsp.protocol.LspStatus;
 import org.finos.legend.pure.lsp.protocol.SetOptionParams;
 import org.finos.legend.pure.lsp.protocol.SetOptionResult;
+import org.finos.legend.pure.lsp.protocol.TestFunctionInfo;
+import org.finos.legend.pure.lsp.protocol.TestFunctionsParams;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -584,6 +586,37 @@ public class LspEndToEndTest
     }
 
     @Test
+    public void testFunctions_rpc_findsOnlyRealTestStereotypedFunction() throws Exception
+    {
+        long ts = System.currentTimeMillis();
+        String uri = "file:///workspace/src/main/resources/e2e_test_functions_" + ts + ".pure";
+        CheckBatchParams compile = new CheckBatchParams();
+        compile.setFiles(Collections.singletonList(new FileEntry(uri,
+                "function <<test.Test>> test::e2e::tf::realTest" + ts + "(): Boolean[1]\n"
+                        + "{\n  assert(true, |'')\n}\n"
+                        + "function test::e2e::tf::plainFn" + ts + "(): Boolean[1]\n"
+                        + "{\n  true\n}\n")));
+        CheckBatchResult compileResult = server.checkBatch(compile).get(30, TimeUnit.SECONDS);
+        Assert.assertTrue("Fixture should compile, got: " + compileResult.getError(), compileResult.isSuccess());
+
+        List<TestFunctionInfo> found = server.testFunctions(new TestFunctionsParams(uri)).get(15, TimeUnit.SECONDS);
+        Assert.assertEquals("Should find exactly the one <<test.Test>>-stereotyped function, found: " + found,
+                1, found.size());
+        Assert.assertEquals("test::e2e::tf::realTest" + ts + "__Boolean_1_", found.get(0).getFunctionPath());
+        Assert.assertEquals("realTest" + ts, found.get(0).getName());
+
+        server.deleteFile(new DeleteFileParams(uri)).get(15, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testFunctions_rpc_uninitializedOrMissingUri_returnsEmpty() throws Exception
+    {
+        List<TestFunctionInfo> result = server.testFunctions(new TestFunctionsParams()).get(10, TimeUnit.SECONDS);
+        Assert.assertNotNull("Should return an (empty) list rather than fail", result);
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
     public void status_rpc_exposesRepositoryProgressFields() throws Exception
     {
         // Plumbing/invariant check that legend/status carries the compiled/total repository fields
@@ -600,6 +633,54 @@ public class LspEndToEndTest
         Assert.assertTrue("Compiled repositories must not exceed total ("
                         + status.getCompiledRepositories() + " > " + status.getTotalRepositories() + ")",
                 status.getCompiledRepositories() <= status.getTotalRepositories());
+    }
+
+    @Test
+    public void twoConnectedClients_bothReceiveDiagnostics_disconnectStopsOnlyOne() throws Exception
+    {
+        // Regression test for the multi-client broadcast bug: a second client connecting (e.g. an
+        // agent/CLI bridge sharing the same warm socket-mode daemon as an IDE session) must not steal
+        // notifications away from the first, already-connected client.
+        MockLanguageClient secondClient = new MockLanguageClient();
+        server.connect(secondClient);
+        try
+        {
+            long ts = System.currentTimeMillis();
+            String uri = "file:///workspace/src/main/resources/e2e_multiclient_" + ts + ".pure";
+            mockClient.clearDiagnostics();
+            secondClient.clearDiagnostics();
+
+            server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(
+                    new TextDocumentItem(uri, "pure", 1,
+                            "Class test::e2e::MultiClient" + ts + "\n{\n  x: NoSuchType999[1];\n}\n")));
+            Thread.sleep(1500);
+
+            Assert.assertFalse("Original client should still receive diagnostics",
+                    mockClient.getDiagnosticsFor(uri).isEmpty());
+            Assert.assertFalse("Second client should also receive diagnostics",
+                    secondClient.getDiagnosticsFor(uri).isEmpty());
+
+            // Disconnect the second client; the first must keep receiving updates uninterrupted.
+            server.disconnect(secondClient);
+            mockClient.clearDiagnostics();
+            secondClient.clearDiagnostics();
+
+            VersionedTextDocumentIdentifier docId = new VersionedTextDocumentIdentifier(uri, 2);
+            TextDocumentContentChangeEvent fix = new TextDocumentContentChangeEvent(
+                    "Class test::e2e::MultiClient" + ts + "\n{\n  x: String[1];\n}\n");
+            server.getTextDocumentService().didChange(new DidChangeTextDocumentParams(
+                    docId, Collections.singletonList(fix)));
+            Thread.sleep(1500);
+
+            Assert.assertFalse("Still-connected original client should keep receiving diagnostics",
+                    mockClient.getDiagnosticsFor(uri).isEmpty());
+            Assert.assertTrue("Disconnected client must receive nothing further",
+                    secondClient.getDiagnosticsFor(uri).isEmpty());
+        }
+        finally
+        {
+            server.disconnect(secondClient);
+        }
     }
 
     /**

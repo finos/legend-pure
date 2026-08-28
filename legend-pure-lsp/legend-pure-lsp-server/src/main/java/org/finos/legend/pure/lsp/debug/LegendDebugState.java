@@ -738,7 +738,7 @@ class LegendDebugState
         {
             return "Nil";
         }
-        CoreInstance classifier = value.getClassifier();
+        CoreInstance classifier = this.functionExecution.getProcessorSupport().getClassifier(value);
         if (classifier == null)
         {
             return value.getClass().getSimpleName();

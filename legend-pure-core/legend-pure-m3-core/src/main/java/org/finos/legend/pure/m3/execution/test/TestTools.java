@@ -15,8 +15,10 @@
 package org.finos.legend.pure.m3.execution.test;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
@@ -82,6 +84,53 @@ public class TestTools
     public static boolean hasAfterPackageStereotype(CoreInstance node, ProcessorSupport processorSupport)
     {
         return hasTestStereotypeWithValue(node, AFTER_PACKAGE_STEREOTYPE, processorSupport);
+    }
+
+    /**
+     * Find the nearest {@code <<test.BeforePackage>>} function to {@code function}: walk up its
+     * package chain from its own package to the root, returning the first match found at the
+     * closest level. Unlike {@code TestCollection}'s suite-wide collection (which gathers every
+     * Before/After function from root to leaf for a whole-package run), this stops at the first
+     * hit - the right granularity for running/debugging a single test with just its own setup.
+     *
+     * @return the nearest before-package function, or null if none exists anywhere up the chain
+     */
+    public static CoreInstance findNearestBeforePackageFunction(CoreInstance function, ProcessorSupport processorSupport)
+    {
+        return findNearestPackageFunction(function, BEFORE_PACKAGE_STEREOTYPE, processorSupport);
+    }
+
+    /**
+     * Find the nearest {@code <<test.AfterPackage>>} function to {@code function} - see
+     * {@link #findNearestBeforePackageFunction} for the walk semantics.
+     *
+     * @return the nearest after-package function, or null if none exists anywhere up the chain
+     */
+    public static CoreInstance findNearestAfterPackageFunction(CoreInstance function, ProcessorSupport processorSupport)
+    {
+        return findNearestPackageFunction(function, AFTER_PACKAGE_STEREOTYPE, processorSupport);
+    }
+
+    private static CoreInstance findNearestPackageFunction(CoreInstance function, String stereotype, ProcessorSupport processorSupport)
+    {
+        CoreInstance functionPackage = Instance.getValueForMetaPropertyToOneResolved(function, M3Properties._package, processorSupport);
+        if (functionPackage == null)
+        {
+            return null;
+        }
+        MutableList<CoreInstance> packages = PackageableElement.getUserObjectPathForPackageableElement(functionPackage);
+        for (CoreInstance pkg : packages.asReversed())
+        {
+            for (CoreInstance child : Instance.getValueForMetaPropertyToManyResolved(pkg, M3Properties.children, processorSupport))
+            {
+                if (org.finos.legend.pure.m3.navigation.function.Function.isFunctionDefinition(child, processorSupport)
+                        && hasTestStereotypeWithValue(child, stereotype, processorSupport))
+                {
+                    return child;
+                }
+            }
+        }
+        return null;
     }
 
     public static boolean hasAnyTestStereotype(CoreInstance node, ProcessorSupport processorSupport)

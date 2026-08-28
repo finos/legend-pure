@@ -27,6 +27,8 @@ public final class LegendDebug
     {
         private String uri;
         private int line;
+        private String condition;
+        private String logMessage;
 
         public Breakpoint()
         {
@@ -34,8 +36,20 @@ public final class LegendDebug
 
         public Breakpoint(String uri, int line)
         {
+            this(uri, line, null);
+        }
+
+        public Breakpoint(String uri, int line, String condition)
+        {
+            this(uri, line, condition, null);
+        }
+
+        public Breakpoint(String uri, int line, String condition, String logMessage)
+        {
             this.uri = uri;
             this.line = line;
+            this.condition = condition;
+            this.logMessage = logMessage;
         }
 
         public String getUri()
@@ -57,12 +71,52 @@ public final class LegendDebug
         {
             this.line = line;
         }
+
+        public String getCondition()
+        {
+            return this.condition;
+        }
+
+        public void setCondition(String condition)
+        {
+            this.condition = condition;
+        }
+
+        /**
+         * DAP logpoint message: when set, hitting this line logs the (interpolated) message and keeps
+         * running instead of suspending. {@code {expression}} segments are evaluated in the paused frame.
+         */
+        public String getLogMessage()
+        {
+            return this.logMessage;
+        }
+
+        public void setLogMessage(String logMessage)
+        {
+            this.logMessage = logMessage;
+        }
+    }
+
+    /**
+     * SHARED (default): debug execution attaches directly to the main session's already-compiled
+     * PureRuntime under its graph read lock - no recompile, but the read lock is held for the whole
+     * paused-at-breakpoint duration, blocking main-session compiles until resume/stop, and only sees
+     * already-compiled (saved and previously-pushed) sources.
+     * FORKED: debug execution runs against its own isolated PureRuntime, compiled fresh from
+     * the current workspace + unsaved-editor-buffer snapshot. Slower to start, but never blocks the main
+     * session's compiles and can debug unsaved edits.
+     */
+    public enum ExecutionMode
+    {
+        FORKED,
+        SHARED
     }
 
     public static class StartParams
     {
         private String function;
         private List<Breakpoint> breakpoints = new ArrayList<>();
+        private ExecutionMode mode = ExecutionMode.SHARED;
 
         public StartParams()
         {
@@ -86,6 +140,16 @@ public final class LegendDebug
         public void setBreakpoints(List<Breakpoint> breakpoints)
         {
             this.breakpoints = breakpoints == null ? new ArrayList<>() : breakpoints;
+        }
+
+        public ExecutionMode getMode()
+        {
+            return this.mode;
+        }
+
+        public void setMode(ExecutionMode mode)
+        {
+            this.mode = mode == null ? ExecutionMode.SHARED : mode;
         }
     }
 

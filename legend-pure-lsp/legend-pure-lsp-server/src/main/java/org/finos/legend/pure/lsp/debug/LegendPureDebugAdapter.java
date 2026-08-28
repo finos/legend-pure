@@ -86,6 +86,7 @@ class LegendPureDebugAdapter implements IDebugProtocolServer
 
     private volatile IDebugProtocolClient client;
     private volatile String function = DEFAULT_FUNCTION;
+    private volatile LegendDebug.ExecutionMode mode = LegendDebug.ExecutionMode.SHARED;
     private volatile boolean configurationDone;
     private volatile boolean launched;
     private volatile boolean started;
@@ -118,7 +119,8 @@ class LegendPureDebugAdapter implements IDebugProtocolServer
         capabilities.setSupportsEvaluateForHovers(Boolean.TRUE);
         capabilities.setSupportsTerminateRequest(Boolean.TRUE);
         capabilities.setSupportsSteppingGranularity(Boolean.FALSE);
-        capabilities.setSupportsConditionalBreakpoints(Boolean.FALSE);
+        capabilities.setSupportsConditionalBreakpoints(Boolean.TRUE);
+        capabilities.setSupportsLogPoints(Boolean.TRUE);
         capabilities.setSupportsFunctionBreakpoints(Boolean.FALSE);
         capabilities.setSupportsDataBreakpoints(Boolean.FALSE);
         IDebugProtocolClient currentClient = this.client;
@@ -136,8 +138,12 @@ class LegendPureDebugAdapter implements IDebugProtocolServer
         this.function = configuredFunction == null || configuredFunction.toString().trim().isEmpty()
                 ? DEFAULT_FUNCTION
                 : configuredFunction.toString().trim();
+        Object configuredMode = args == null ? null : args.get("mode");
+        this.mode = configuredMode != null && "FORKED".equalsIgnoreCase(configuredMode.toString().trim())
+                ? LegendDebug.ExecutionMode.FORKED
+                : LegendDebug.ExecutionMode.SHARED;
         this.launched = true;
-        LOGGER.info("Legend Pure DAP launch requested for {}", this.function);
+        LOGGER.info("Legend Pure DAP launch requested for {} (mode={})", this.function, this.mode);
         maybeStart();
         return CompletableFuture.completedFuture(null);
     }
@@ -164,10 +170,12 @@ class LegendPureDebugAdapter implements IDebugProtocolServer
         {
             SourceBreakpoint requestedBreakpoint = requested[i];
             int oneBasedLine = requestedBreakpoint == null ? 1 : requestedBreakpoint.getLine();
+            String condition = requestedBreakpoint == null ? null : requestedBreakpoint.getCondition();
+            String logMessage = requestedBreakpoint == null ? null : requestedBreakpoint.getLogMessage();
             boolean verified = uri != null && path != null && path.endsWith(".pure");
             if (verified)
             {
-                accepted.add(new LegendDebug.Breakpoint(uri, Math.max(0, oneBasedLine - 1)));
+                accepted.add(new LegendDebug.Breakpoint(uri, Math.max(0, oneBasedLine - 1), condition, logMessage));
             }
             Breakpoint breakpoint = new Breakpoint();
             breakpoint.setVerified(verified);
@@ -187,6 +195,7 @@ class LegendPureDebugAdapter implements IDebugProtocolServer
         }
         LOGGER.info("Legend Pure DAP registered {} verified breakpoint(s) for {}", accepted.size(), path);
         maybeStart();
+        this.debugService.updateBreakpoints(breakpointsSnapshot());
         SetBreakpointsResponse response = new SetBreakpointsResponse();
         response.setBreakpoints(responseBreakpoints);
         return CompletableFuture.completedFuture(response);
@@ -337,9 +346,10 @@ class LegendPureDebugAdapter implements IDebugProtocolServer
         this.started = true;
         this.state = State.RUNNING;
         LegendDebug.StartParams params = startParams();
-        LOGGER.info("Legend Pure DAP starting {} with {} breakpoint(s)",
+        LOGGER.info("Legend Pure DAP starting {} with {} breakpoint(s) [mode={}]",
                 params.getFunction(),
-                params.getBreakpoints() == null ? 0 : params.getBreakpoints().size());
+                params.getBreakpoints() == null ? 0 : params.getBreakpoints().size(),
+                params.getMode());
         this.runExecutor.submit(() -> handleResponse(this.debugService.start(params)));
     }
 
@@ -347,11 +357,17 @@ class LegendPureDebugAdapter implements IDebugProtocolServer
     {
         LegendDebug.StartParams params = new LegendDebug.StartParams();
         params.setFunction(this.function);
+        params.setMode(this.mode);
+        params.setBreakpoints(breakpointsSnapshot());
+        return params;
+    }
+
+    private List<LegendDebug.Breakpoint> breakpointsSnapshot()
+    {
         synchronized (this.breakpoints)
         {
-            params.setBreakpoints(new ArrayList<>(this.breakpoints));
+            return new ArrayList<>(this.breakpoints);
         }
-        return params;
     }
 
     private void resume(String command, DebugCommand debugCommand)
@@ -421,7 +437,15 @@ class LegendPureDebugAdapter implements IDebugProtocolServer
         {
             return;
         }
-        this.debugService.stop();
+        // debugService.stop() drains and returns whatever console output was captured since the last
+        // drain (e.g. the tail of ExecDebug's verbose trace, or a plain print() call, emitted as the
+        // interpreter unwinds right at the end of execution) - forward it before terminating, or it's
+        // captured server-side and then silently discarded, never reaching the client at all.
+        LegendDebug.Response response = this.debugService.stop();
+        if (response != null && response.getOutput() != null && !response.getOutput().isEmpty())
+        {
+            sendOutput(this.client, response.getOutput(), "console");
+        }
         this.state = State.TERMINATED;
         this.stackFrames = Collections.emptyList();
         sendTerminated(this.client);

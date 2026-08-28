@@ -54,6 +54,8 @@ The thin jar remains the default: the VS Code extension ignores `-shaded.jar` wh
 
 Workspace repositories are discovered from `*.definition.json` files under the opened workspace. Runtime extensions and any classpath repositories not already represented by the workspace are discovered from the Java classpath.
 
+Add `--socket <port>` (or `-Dlegend.lsp.socketPort=<port>`) to run as a standalone TCP daemon instead of over stdio. The size of the thread pool that serves every LSP request (executions, compiles, hover, completion, ...) is configurable at startup via `-Dlegend.lsp.requestPoolSize=<N>` (default `12`) - raise it on a box with more available cores to let more concurrent executions/tests actually run in parallel instead of queuing.
+
 ## VS Code Packaging
 
 Build the server and package the extension:

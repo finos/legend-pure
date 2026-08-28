@@ -148,6 +148,121 @@ public class UriMapperTest
     }
 
     @Test
+    public void deriveSourceId_acceptsResourcesPath_whenScannerConfirmsLeadingSegmentIsARegisteredRepo() throws Exception
+    {
+        java.nio.file.Path tempDir = java.nio.file.Files.createTempDirectory("lsp_test_known_repo");
+        try
+        {
+            java.nio.file.Path resourcesDir = tempDir.resolve("core-module/src/main/resources");
+            java.nio.file.Files.createDirectories(resourcesDir.resolve("core/pure/extensions"));
+            java.nio.file.Files.write(resourcesDir.resolve("core.definition.json"), "{\"name\": \"core\"}".getBytes());
+            java.nio.file.Path pureFile = resourcesDir.resolve("core/pure/extensions/functions.pure");
+            java.nio.file.Files.write(pureFile, "Class X {}".getBytes());
+
+            RepositoryScanner scanner = new RepositoryScanner();
+            scanner.scan(java.util.Collections.singletonList(tempDir));
+
+            UriMapper mapper = new UriMapper();
+            mapper.setRepositoryScanner(scanner);
+
+            Assert.assertEquals("/core/pure/extensions/functions.pure", mapper.deriveSourceId(pureFile.toUri().toString()));
+        }
+        finally
+        {
+            deleteRecursively(tempDir);
+        }
+    }
+
+    @Test
+    public void deriveSourceId_rejectsResourcesPath_whenLeadingSegmentIsNotARegisteredRepo() throws Exception
+    {
+        java.nio.file.Path tempDir = java.nio.file.Files.createTempDirectory("lsp_test_unknown_repo");
+        try
+        {
+            // "core" is the only registered repo; the fixture module has no definition.json of its own,
+            // so its "data" folder must never be treated as a repo name just because the path happens to
+            // contain a src/main/resources segment (this is the exact shape of the alloy-lakehouse
+            // integration-test-compatibility crash: a ###Lakehouse template .pure fixture, never meant
+            // to be legend-pure-compilable, sitting under some other module's src/main/resources/data).
+            java.nio.file.Path coreResourcesDir = tempDir.resolve("core-module/src/main/resources");
+            java.nio.file.Files.createDirectories(coreResourcesDir.resolve("core"));
+            java.nio.file.Files.write(coreResourcesDir.resolve("core.definition.json"), "{\"name\": \"core\"}".getBytes());
+
+            java.nio.file.Path fixtureResourcesDir = tempDir.resolve("some-other-module/src/main/resources");
+            java.nio.file.Path fixtureFile = fixtureResourcesDir.resolve("data/ingest/matview/catalog/matview.pure");
+            java.nio.file.Files.createDirectories(fixtureFile.getParent());
+            java.nio.file.Files.write(fixtureFile, "###Lakehouse\n<TEST_GROUP>".getBytes());
+
+            RepositoryScanner scanner = new RepositoryScanner();
+            scanner.scan(java.util.Collections.singletonList(tempDir));
+
+            UriMapper mapper = new UriMapper();
+            mapper.setRepositoryScanner(scanner);
+
+            String sourceId = mapper.deriveSourceId(fixtureFile.toUri().toString());
+
+            // Must NOT resolve to "/data/ingest/matview/catalog/matview.pure" (which would imply a bogus
+            // "data" repo and get fed into modifyAndCompile against a real module's grammar). Must also
+            // NOT fall back to an anonymous scratch file ("matview.pure") - unlike a genuinely external/
+            // jar-embedded source, this file really exists on local disk, so treating it as scratch would
+            // still attempt (and fail) to compile it, and leaves a later editor-close's restoreFromDisk
+            // with nothing registered to restore, crashing the session. Must resolve to null: ignored
+            // outright, the same as a .java file would be.
+            Assert.assertNull(sourceId);
+        }
+        finally
+        {
+            deleteRecursively(tempDir);
+        }
+    }
+
+    @Test
+    public void deriveSourceId_stillScratchFallsBack_forSyntheticPathThatDoesNotExistOnDisk() throws Exception
+    {
+        // Contrast with the test above: a scanner IS configured, but the uri's path does not correspond
+        // to any real file on this disk (e.g. a jar-embedded platform source navigated to via
+        // go-to-definition, whose literal "!"-joined jar-entry-style path never exists as a real file).
+        // This must keep falling back to scratch/in-memory handling - only a file that genuinely exists
+        // on local disk and isn't part of any module gets ignored outright.
+        java.nio.file.Path tempDir = java.nio.file.Files.createTempDirectory("lsp_test_synthetic_path");
+        try
+        {
+            java.nio.file.Path resourcesDir = tempDir.resolve("core-module/src/main/resources");
+            java.nio.file.Files.createDirectories(resourcesDir.resolve("core"));
+            java.nio.file.Files.write(resourcesDir.resolve("core.definition.json"), "{\"name\": \"core\"}".getBytes());
+
+            RepositoryScanner scanner = new RepositoryScanner();
+            scanner.scan(java.util.Collections.singletonList(tempDir));
+
+            UriMapper mapper = new UriMapper();
+            mapper.setRepositoryScanner(scanner);
+
+            String sourceId = mapper.deriveSourceId("file:///nonexistent/synthetic/fail.pure");
+            Assert.assertEquals("fail.pure", sourceId);
+        }
+        finally
+        {
+            deleteRecursively(tempDir);
+        }
+    }
+
+    private static void deleteRecursively(java.nio.file.Path root) throws Exception
+    {
+        java.nio.file.Files.walk(root).sorted(java.util.Comparator.reverseOrder())
+                .forEach(p ->
+                {
+                    try
+                    {
+                        java.nio.file.Files.delete(p);
+                    }
+                    catch (Exception ignored)
+                    {
+                        // Best-effort cleanup for the temporary test workspace.
+                    }
+                });
+    }
+
+    @Test
     public void toUri_returnsPureScheme_forUnknownStorageSourceId()
     {
         UriMapper mapper = new UriMapper();
