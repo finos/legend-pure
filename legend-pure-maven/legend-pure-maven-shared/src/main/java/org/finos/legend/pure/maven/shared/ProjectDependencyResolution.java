@@ -69,8 +69,11 @@ public class ProjectDependencyResolution
                 .setResolutionFilter(dependencyResolutionScope.getScopeDependencyFilter());
 
         List<File> classpath = new ArrayList<>();
-        classpath.add(projectOutputDirectory);
-        if (inTestPhase(mojoExecution) && dependencyResolutionScope.isTestScope())
+        if (projectOutputDirectory != null)
+        {
+            classpath.add(projectOutputDirectory);
+        }
+        if (projectOutputDirectory != null && inTestPhase(mojoExecution) && dependencyResolutionScope.isTestScope())
         {
             classpath.add(projectTestOutputDirectory);
         }
