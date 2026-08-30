@@ -19,8 +19,14 @@ Enum meta::pure::functions::relation::SortType
     ASC, DESC
 }
 
+Enum meta::pure::functions::relation::NullOrder
+{
+    FIRST, LAST
+}
+
 Class meta::pure::functions::relation::SortInfo<T>
 {
    column : ColSpec<T>[1];
    direction : SortType[1];
+   nullOrder : meta::pure::functions::relation::NullOrder[0..1];
 }

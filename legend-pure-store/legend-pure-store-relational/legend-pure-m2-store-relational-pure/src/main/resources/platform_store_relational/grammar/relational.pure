@@ -535,11 +535,17 @@ Class meta::relational::metamodel::OrderBy
 {
     column : RelationalOperationElement[1];
     direction : meta::relational::metamodel::SortDirection[1];
+    nullOrder : meta::relational::metamodel::NullOrder[0..1];
 }
 
 Enum meta::relational::metamodel::SortDirection
 {
     ASC, DESC
+}
+
+Enum meta::relational::metamodel::NullOrder
+{
+    FIRST, LAST
 }
 
 Class meta::relational::metamodel::Pivot
@@ -573,6 +579,7 @@ Class meta::relational::metamodel::SortByInfo extends meta::relational::metamode
 
    sortByElement: RelationalOperationElement [1];
    sortDirection: meta::relational::metamodel::SortDirection[0..1] ;
+   nullOrder: meta::relational::metamodel::NullOrder[0..1] ;
 }
 
 Enum meta::relational::metamodel::FrameType
