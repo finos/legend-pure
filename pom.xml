@@ -347,6 +347,10 @@
                                         <!-- only the specific included logging jars are allowed -->
                                         <include>org.slf4j:jcl-over-slf4j:${slf4j.version}</include>
                                         <include>org.slf4j:slf4j-api:${slf4j.version}</include>
+                                        <!-- runtime-only SLF4J binding for legend-pure-mcp-server: logs to
+                                             stderr by default, which the module's stdout-protocol discipline
+                                             requires. Without a binding SLF4J silently becomes a NOP logger. -->
+                                        <include>org.slf4j:slf4j-simple:${slf4j.version}</include>
                                     </includes>
                                 </bannedDependencies>
                             </rules>
