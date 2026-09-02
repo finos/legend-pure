@@ -149,34 +149,8 @@ function <<PCT.test>> meta::pure::functions::string::tests::format::testFormatDa
     assertEq('on 2014-03-10 08:07:44.001-0500', $f->eval(|format('on %t{[EST]yyyy-MM-dd HH:mm:ss.SSSZ}', %2014-03-10T13:07:44.001)));
     assertEq('on 2014-03-10 14:07:44.001+0100', $f->eval(|format('on %t{[CET]yyyy-MM-dd HH:mm:ss.SSSZ}', %2014-03-10T13:07:44.001)));
 
-    // A run of four or more S writes the fraction the date stores rather than that many digits,
-    // which is what it has always done here. Any platform that writes 001000000 for this is running
-    // a different implementation of the format language, not this one.
-    assertEq('on 001', $f->eval(|format('on %t{SSSSSSSSS}', %2014-03-10T13:07:44.001)));
-
-    // A sub-second field takes a width of its own, which a run of letters cannot state.
-    assertEq('on 070', $f->eval(|format('on %t{S3}', %2014-03-10T13:07:44.07)));
-    assertEq('on 07', $f->eval(|format('on %t{S<3}', %2014-03-10T13:07:44.07)));
-    assertEq('on 070004235', $f->eval(|format('on %t{S*}', %2014-03-10T13:07:44.070004235)));
-    assertEq('on 2014-03-10T13:07:44.001000000', $f->eval(|format('on %t{yyyy-MM-dd"T"HH:mm:ss.S9}', %2014-03-10T13:07:44.001)));
-
-    // An optional section is written where the date can carry it and left out where it cannot, so
-    // one pattern serves every granularity.
-    assertEq('on 2014', $f->eval(|format('on %t{yyyy?[-MM?[-dd]]}', %2014)));
-    assertEq('on 2014-03', $f->eval(|format('on %t{yyyy?[-MM?[-dd]]}', %2014-03)));
-    assertEq('on 2014-03-10', $f->eval(|format('on %t{yyyy?[-MM?[-dd]]}', %2014-03-10)));
-    assertEq('on 2014-03-10', $f->eval(|format('on %t{yyyy?[-MM?[-dd]]}', %2014-03-10T13:07:44.001)));
-
-    // Alternatives are tried in the order they are written, and the first the date can carry wins.
-    assertEq('on 13:07:44', $f->eval(|format('on %t{?[HH:mm:ss|HH:mm|"--"]}', %2014-03-10T13:07:44)));
-    assertEq('on 13:07', $f->eval(|format('on %t{?[HH:mm:ss|HH:mm|"--"]}', %2014-03-10T13:07)));
-    assertEq('on --', $f->eval(|format('on %t{?[HH:mm:ss|HH:mm|"--"]}', %2014-03-10)));
-
-    // A field says how wide a fraction is and a section says what to do when there is none, so a
-    // fixed width fraction that survives a date without one takes both.
-    assertEq('on 2014-03-10T13:07:44.001000000', $f->eval(|format('on %t{yyyy-MM-dd"T"HH:mm:ss?[.S9|".000000000"]}', %2014-03-10T13:07:44.001)));
-    assertEq('on 2014-03-10T13:07:44.070000000', $f->eval(|format('on %t{yyyy-MM-dd"T"HH:mm:ss?[.S9|".000000000"]}', %2014-03-10T13:07:44.07)));
-    assertEq('on 2014-03-10T13:07:44.000000000', $f->eval(|format('on %t{yyyy-MM-dd"T"HH:mm:ss?[.S9|".000000000"]}', %2014-03-10T13:07:44)));
+    // Sub-second field widths and optional sections are covered by testFormatDateWithSubSecondWidth
+    // and testFormatDateWithOptionalSection, which are not PCT tests yet.
 }
 
 function <<PCT.test>> meta::pure::functions::string::tests::format::testFormatBoolean<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
@@ -219,4 +193,38 @@ function <<test.Test>> meta::pure::functions::string::tests::format::testFormatT
 function <<test.Test>> meta::pure::functions::string::tests::format::testFormatTooManyInputs():Boolean[1]
 {
     assertError(|format('Hello %s %s', ['Catherine', 'Joe', 'Katie']), 'Unused format args. [3] arguments provided to expression "Hello %s %s"');
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::format::testFormatDateWithSubSecondWidth():Boolean[1]
+{
+    // A run of four or more S writes the fraction the date stores rather than that many digits,
+    // which is what it has always done here.
+    assertEq('on 001', format('on %t{SSSSSSSSS}', %2014-03-10T13:07:44.001));
+
+    // A sub-second field takes a width of its own, which a run of letters cannot state.
+    assertEq('on 070', format('on %t{S3}', %2014-03-10T13:07:44.07));
+    assertEq('on 07', format('on %t{S<3}', %2014-03-10T13:07:44.07));
+    assertEq('on 070004235', format('on %t{S*}', %2014-03-10T13:07:44.070004235));
+    assertEq('on 2014-03-10T13:07:44.001000000', format('on %t{yyyy-MM-dd"T"HH:mm:ss.S9}', %2014-03-10T13:07:44.001));
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::format::testFormatDateWithOptionalSection():Boolean[1]
+{
+    // An optional section is written where the date can carry it and left out where it cannot, so
+    // one pattern serves every granularity.
+    assertEq('on 2014', format('on %t{yyyy?[-MM?[-dd]]}', %2014));
+    assertEq('on 2014-03', format('on %t{yyyy?[-MM?[-dd]]}', %2014-03));
+    assertEq('on 2014-03-10', format('on %t{yyyy?[-MM?[-dd]]}', %2014-03-10));
+    assertEq('on 2014-03-10', format('on %t{yyyy?[-MM?[-dd]]}', %2014-03-10T13:07:44.001));
+
+    // Alternatives are tried in the order they are written, and the first the date can carry wins.
+    assertEq('on 13:07:44', format('on %t{?[HH:mm:ss|HH:mm|"--"]}', %2014-03-10T13:07:44));
+    assertEq('on 13:07', format('on %t{?[HH:mm:ss|HH:mm|"--"]}', %2014-03-10T13:07));
+    assertEq('on --', format('on %t{?[HH:mm:ss|HH:mm|"--"]}', %2014-03-10));
+
+    // A field says how wide a fraction is and a section says what to do when there is none, so a
+    // fixed width fraction that survives a date without one takes both.
+    assertEq('on 2014-03-10T13:07:44.001000000', format('on %t{yyyy-MM-dd"T"HH:mm:ss?[.S9|".000000000"]}', %2014-03-10T13:07:44.001));
+    assertEq('on 2014-03-10T13:07:44.070000000', format('on %t{yyyy-MM-dd"T"HH:mm:ss?[.S9|".000000000"]}', %2014-03-10T13:07:44.07));
+    assertEq('on 2014-03-10T13:07:44.000000000', format('on %t{yyyy-MM-dd"T"HH:mm:ss?[.S9|".000000000"]}', %2014-03-10T13:07:44));
 }
