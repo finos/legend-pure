@@ -20,6 +20,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.statelistener.ExecutionActivityListener;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.TimeZones;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractCacheNextReadOnceForwardOnly;
 import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.RelationalNativeImplementation;
@@ -34,8 +35,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
+import java.util.Calendar;
 import java.util.function.Function;
 
 class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceForwardOnly implements ExecutionEndListener
@@ -45,7 +45,7 @@ class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceFor
     private Statement statement;
     private final Function<RichIterable<Object>, ? extends CoreInstance> processRowFunction;
     private final CoreInstance sqlNull;
-    private final GregorianCalendar calendar;
+    private final Calendar calendar;
     private final ListIterable<ResultSetValueHandler> handlers;
 
     private static final int CACHE_MAX_SIZE = 1000;
@@ -67,7 +67,7 @@ class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceFor
         this.processRowFunction = processRowFunction;
         this.sqlNull = sqlNull;
         this.handlers = handlers;
-        this.calendar = new GregorianCalendar(TimeZone.getTimeZone(tz));
+        this.calendar = TimeZones.newCalendar(tz, TimeZones.GMT);
         this.executionListeners = executionSupport.getExecutionListeners();
         this.dataSourceInfo = dataSourceInfo;
         this.executionActivityListener = executionSupport.getExecutionActivityListener();

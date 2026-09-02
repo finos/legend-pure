@@ -24,6 +24,7 @@ import org.finos.legend.pure.m3.statelistener.ExecutionActivityListener;
 import org.finos.legend.pure.m3.tools.MetricsRecorder;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.TimeZones;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.ResultLazyIterable;
 import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.RelationalNativeImplementation;
@@ -38,8 +39,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
+import java.util.Calendar;
 import java.util.function.Function;
 
 /**
@@ -113,7 +113,7 @@ public class ResultSetRowIterableProvider
 
                         try
                         {
-                            GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone(tz));
+                            Calendar calendar = TimeZones.newCalendar(tz, TimeZones.GMT);
                             boolean showCheckMaxRows = shouldThrowIfMaxRowsExceeded && maxRows > 0;
                             while (rs.next())
                             {

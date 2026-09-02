@@ -36,7 +36,12 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
-import org.finos.legend.pure.runtime.java.extension.store.relational.shared.*;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.TimeZones;
+import org.finos.legend.pure.runtime.java.extension.store.relational.shared.ConnectionWithDataSourceInfo;
+import org.finos.legend.pure.runtime.java.extension.store.relational.shared.IConnectionManagerHandler;
+import org.finos.legend.pure.runtime.java.extension.store.relational.shared.LoadToDbTableHelper;
+import org.finos.legend.pure.runtime.java.extension.store.relational.shared.PureConnectionUtils;
+import org.finos.legend.pure.runtime.java.extension.store.relational.shared.SQLExceptionHandler;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
@@ -51,12 +56,11 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.Calendar;
 import java.util.Collections;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
-import java.util.TimeZone;
 
 public class ExecuteInDb extends NativeFunction
 {
@@ -270,7 +274,7 @@ public class ExecuteInDb extends NativeFunction
             {
                 CoreInstance row = repository.newAnonymousCoreInstance(functionExpression.getSourceInformation(), rowClassifier);
                 Instance.addValueToProperty(row, "parent", pureResult, processorSupport);
-                GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone(tz));
+                Calendar calendar = TimeZones.newCalendar(tz, TimeZones.GMT);
 
                 MutableList<CoreInstance> rowValues = Lists.mutable.ofInitialCapacity(count);
                 for (int i = 1; i <= count; i++)

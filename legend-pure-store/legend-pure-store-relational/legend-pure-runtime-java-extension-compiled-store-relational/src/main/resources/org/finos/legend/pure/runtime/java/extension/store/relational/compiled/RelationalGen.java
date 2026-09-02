@@ -30,8 +30,8 @@ import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.TimeZones;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.DefendedFunction;
@@ -54,9 +54,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.GregorianCalendar;
-import java.util.Stack;
-import java.util.TimeZone;
 
 public class RelationalGen
 {
@@ -148,7 +145,7 @@ public class RelationalGen
             {
                 rowCount++;
                 ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSetMetaData);
-                MutableList<Object> rowValues = RelationalNativeImplementation.processRow(rs, handlers, sqlNull, new GregorianCalendar(TimeZone.getTimeZone(tz)));
+                MutableList<Object> rowValues = RelationalNativeImplementation.processRow(rs, handlers, sqlNull, TimeZones.newCalendar(tz, TimeZones.GMT));
                 for (Function<ListIterable<Object>, String> function : extraValueFunctions)
                 {
                     rowValues.add(function.valueOf(rowValues));
