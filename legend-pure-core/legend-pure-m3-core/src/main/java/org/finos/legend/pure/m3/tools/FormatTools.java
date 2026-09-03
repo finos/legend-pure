@@ -134,6 +134,22 @@ public class FormatTools
         return end + 1;
     }
 
+    /**
+     * Find the brace that closes the date pattern of a {@code %t} specifier, so that the pattern
+     * can be carved out and handed to {@link DateFormat}.
+     *
+     * <p>Only quoting is read here, and it is read the way the pattern parser reads it: a
+     * {@code "} opens a run of text, a second one closes it, and inside such a run a backslash
+     * makes text of whatever follows it, the quote and the backslash included. A brace inside a
+     * quoted run therefore does not end the pattern, and neither does a quote a backslash has
+     * escaped. Outside a run of quoted text a backslash is an ordinary character to this scan,
+     * which is what lets the parser report it as the invalid control character it is.
+     *
+     * @param formatString format string
+     * @param start        index of the character just after the {@code t}
+     * @return index of the closing brace, or -1 where no pattern follows the specifier
+     * @throws IllegalArgumentException if a pattern is opened and never closed
+     */
     public static int findEndOfDateFormatString(String formatString, int start)
     {
         int length = formatString.length();
@@ -147,18 +163,21 @@ public class FormatTools
         for (int i = start + 1; i < length; i++)
         {
             char next = formatString.charAt(i);
-            if (inQuotes)
+            if (escaped)
+            {
+                // the character a backslash escapes is text, whatever it is, and escapes nothing
+                // itself
+                escaped = false;
+            }
+            else if (inQuotes)
             {
                 if (next == '"')
                 {
-                    if (!escaped)
-                    {
-                        inQuotes = false;
-                    }
+                    inQuotes = false;
                 }
                 else if (next == '\\')
                 {
-                    escaped = !escaped;
+                    escaped = true;
                 }
             }
             else if (next == '"')

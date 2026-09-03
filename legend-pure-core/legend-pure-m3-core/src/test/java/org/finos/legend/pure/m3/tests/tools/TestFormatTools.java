@@ -73,12 +73,53 @@ public class TestFormatTools
         FormatTools.validate("%t{[America/New_York]yyyy-MM-dd\"T\"HH:mm:ssX}");
         FormatTools.validate("%t{S(3!,9,\"_\")}");
 
+        // a quote and a brace can be written where the pattern parser accepts them, which takes an
+        // escape inside quoted text for the first and only quoting for the second
+        FormatTools.validate("%t{yyyy\"a\\\"b\"}");
+        FormatTools.validate("%t{S(4,4,\"\\\"\")}");
+        FormatTools.validate("%t{yyyy\"}\"}");
+
         assertInvalid("Invalid format control character 'Q' in format string: yyyy-Q", "%t{yyyy-Q}");
         assertInvalid("Invalid format control character 'Q' in format string: yyyy-Q", "%t{yyyy-MM-dd} %t{yyyy-Q}");
         assertInvalid("Unknown time zone: Europe/Lissabon", "%t{[Europe/Lissabon]yyyy}");
         assertInvalid("Sub-second minimum 5 exceeds maximum 3 in format string: S(5,3)", "%t{S(5,3)}");
         assertInvalid("Empty alternative in optional section in format string: ?[|HH]", "%t{?[|HH]}");
         assertInvalid("Could not find end of date format starting at index 2 of: %t{yyyy-MM-dd", "%t{yyyy-MM-dd");
+    }
+
+    /**
+     * The scan that carves a date pattern out of a format string reads quoting, and reads it the
+     * way the pattern parser does. A brace inside a quoted run is text rather than the end of the
+     * pattern, and so is a quote a backslash has escaped.
+     */
+    @Test
+    public void testFindEndOfDateFormatString()
+    {
+        // a specifier with no pattern after it, which is a date written in its canonical form
+        assertEndOfDateFormat(-1, "%t", 2);
+        assertEndOfDateFormat(-1, "%t and text", 2);
+
+        assertEndOfDateFormat(16, "on %t{yyyy-MM-dd}", 5);
+        assertEndOfDateFormat(3, "%t{}", 2);
+
+        // quoted text runs to its closing quote, and a brace inside it is text
+        assertEndOfDateFormat(18, "%t{yyyy\"T\"HH:mm:ss}", 2);
+        assertEndOfDateFormat(12, "%t{yyyy\"a}b\"}", 2);
+
+        // a backslash inside quoted text makes text of the character after it, so an escaped quote
+        // leaves the run open and escapes nothing itself
+        assertEndOfDateFormat(13, "%t{yyyy\"a\\\"b\"}", 2);
+        assertEndOfDateFormat(13, "%t{yyyy\"a\\\\b\"}", 2);
+        assertEndOfDateFormat(12, "%t{yyyy\"a\\b\"}", 2);
+        assertEndOfDateFormat(14, "%t{S(4,4,\"\\\"\")}", 2);
+        assertEndOfDateFormat(14, "%t{S(4,4,\"\\}\")}", 2);
+
+        // the first unquoted brace ends the pattern, whatever follows it
+        assertEndOfDateFormat(16, "on %t{yyyy-MM-dd} at %t{HH:mm}", 5);
+
+        assertNoEndOfDateFormat("Could not find end of date format starting at index 2 of: %t{yyyy-MM-dd", "%t{yyyy-MM-dd", 2);
+        assertNoEndOfDateFormat("Could not find end of date format starting at index 2 of: %t{yyyy\"unclosed}", "%t{yyyy\"unclosed}", 2);
+        assertNoEndOfDateFormat("Could not find end of date format starting at index 2 of: %t{yyyy\"a\\\"}", "%t{yyyy\"a\\\"}", 2);
     }
 
     /**
@@ -92,6 +133,19 @@ public class TestFormatTools
         FormatTools.validate("%s %s %s %s");
         FormatTools.validate("no arguments wanted");
         FormatTools.validate("%d");
+    }
+
+    private static void assertEndOfDateFormat(int expectedEnd, String formatString, int start)
+    {
+        Assert.assertEquals(formatString, expectedEnd, FormatTools.findEndOfDateFormatString(formatString, start));
+    }
+
+    private static void assertNoEndOfDateFormat(String expectedMessage, String formatString, int start)
+    {
+        Assert.assertEquals(
+                formatString,
+                expectedMessage,
+                Assert.assertThrows(formatString, IllegalArgumentException.class, () -> FormatTools.findEndOfDateFormatString(formatString, start)).getMessage());
     }
 
     private static void assertInvalid(String expectedMessage, String formatString)
