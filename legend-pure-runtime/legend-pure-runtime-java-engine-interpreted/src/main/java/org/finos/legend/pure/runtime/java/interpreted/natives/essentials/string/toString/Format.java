@@ -14,22 +14,23 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.toString;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.stack.MutableStack;
-import org.eclipse.collections.impl.factory.Lists;
+import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.tools.FormatTools;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
+import org.finos.legend.pure.m3.tools.FormatTools;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
@@ -140,7 +141,7 @@ public class Format extends NativeFunction
                             {
                                 throw new IllegalArgumentException("Invalid format specifier: %" + formatString.substring(index, j + 1));
                             }
-                            int zeroPad = Integer.valueOf(formatString.substring(index, j));
+                            int zeroPad = Integer.parseInt(formatString.substring(index, j));
                             CoreInstance arg = formatArgs.get(argCounter++);
                             if (!Instance.instanceOf(arg, M3Paths.Integer, processorSupport))
                             {
@@ -171,7 +172,7 @@ public class Format extends NativeFunction
                             {
                                 throw new IllegalArgumentException("Invalid format specifier: %" + formatString.substring(index, j + 1));
                             }
-                            int precision = Integer.valueOf(formatString.substring(index, j));
+                            int precision = Integer.parseInt(formatString.substring(index, j));
                             CoreInstance arg = formatArgs.get(argCounter++);
                             if (!Instance.instanceOf(arg, M3Paths.Float, processorSupport))
                             {
@@ -196,6 +197,16 @@ public class Format extends NativeFunction
         catch (IndexOutOfBoundsException e)
         {
             throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Too few arguments passed to format function. Format expression \"" + formatString + "\", number of arguments [" + formatArgs.size() + "]", functionExpressionCallStack);
+        }
+        catch (PureException e)
+        {
+            // an error raised writing one of the arguments is already an error Pure code can catch,
+            // and already says where it came from
+            throw e;
+        }
+        catch (RuntimeException e)
+        {
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), (e.getMessage() == null) ? "Error formatting: " + formatString : e.getMessage(), e, functionExpressionCallStack);
         }
         if (argCounter < formatArgs.size())
         {

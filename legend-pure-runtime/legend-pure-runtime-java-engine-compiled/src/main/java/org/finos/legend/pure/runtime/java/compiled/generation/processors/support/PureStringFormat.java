@@ -14,12 +14,12 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support;
 
-import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.tools.FormatTools;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.exception.PureException;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -168,11 +168,21 @@ public class PureStringFormat
         }
         catch (NoSuchElementException e)
         {
-            throw new PureExecutionException("Too few arguments passed to format function. Format expression \"" + formatString + "\", number of arguments [" + Iterate.sizeOf(formatArgs) + "]", Stacks.mutable.empty());
+            throw new PureExecutionException("Too few arguments passed to format function. Format expression \"" + formatString + "\", number of arguments [" + Iterate.sizeOf(formatArgs) + "]");
+        }
+        catch (PureException e)
+        {
+            // an error raised writing one of the arguments is already an error Pure code can catch,
+            // and already says where it came from
+            throw e;
+        }
+        catch (RuntimeException e)
+        {
+            throw new PureExecutionException((e.getMessage() == null) ? "Error formatting: " + formatString : e.getMessage(), e);
         }
         if (argIterator.hasNext())
         {
-            throw new PureExecutionException("Unused format args. [" + Iterate.sizeOf(formatArgs) + "] arguments provided to expression \"" + formatString + "\"", Stacks.mutable.empty());
+            throw new PureExecutionException("Unused format args. [" + Iterate.sizeOf(formatArgs) + "] arguments provided to expression \"" + formatString + "\"");
         }
         return builder.toString();
     }
