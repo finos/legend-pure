@@ -149,8 +149,10 @@ function <<PCT.test>> meta::pure::functions::string::tests::format::testFormatDa
     assertEq('on 2014-03-10 08:07:44.001-0500', $f->eval(|format('on %t{[EST]yyyy-MM-dd HH:mm:ss.SSSZ}', %2014-03-10T13:07:44.001)));
     assertEq('on 2014-03-10 14:07:44.001+0100', $f->eval(|format('on %t{[CET]yyyy-MM-dd HH:mm:ss.SSSZ}', %2014-03-10T13:07:44.001)));
 
-    // Sub-second field widths and optional sections are covered by testFormatDateWithSubSecondWidth
-    // and testFormatDateWithOptionalSection, which are not PCT tests yet.
+    // Sub-second field widths, optional sections, and escapes in a quoted run are covered by
+    // testFormatDateWithSubSecondWidth, testFormatDateWithSubSecondGeneralForm,
+    // testFormatDateWithOptionalSection, and testFormatDateWithEscapes, which are not PCT tests
+    // yet.
 }
 
 function <<PCT.test>> meta::pure::functions::string::tests::format::testFormatBoolean<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
@@ -204,8 +206,65 @@ function <<test.Test>> meta::pure::functions::string::tests::format::testFormatD
     // A sub-second field takes a width of its own, which a run of letters cannot state.
     assertEq('on 070', format('on %t{S3}', %2014-03-10T13:07:44.07));
     assertEq('on 07', format('on %t{S<3}', %2014-03-10T13:07:44.07));
+    assertEq('on 070', format('on %t{S>3}', %2014-03-10T13:07:44.07));
+    assertEq('on 070004235', format('on %t{S>3}', %2014-03-10T13:07:44.070004235));
     assertEq('on 070004235', format('on %t{S*}', %2014-03-10T13:07:44.070004235));
     assertEq('on 2014-03-10T13:07:44.001000000', format('on %t{yyyy-MM-dd"T"HH:mm:ss.S9}', %2014-03-10T13:07:44.001));
+
+    // S!N is the one shorthand that refuses a short fraction rather than padding it, since padding
+    // claims a precision the date does not have where truncating only gives some up. It is the same
+    // field as S3 on a date that fits, and parts from it only on the date that does not: S3 writes
+    // 070 for a two digit fraction where S!3 refuses it.
+    assertEq('on 070', format('on %t{S!3}', %2014-03-10T13:07:44.070));
+    assertError(|format('on %t{S!3}', %2014-03-10T13:07:44.07), 'Date has a 2 digit sub-second, but 3 are required: 2014-03-10T13:07:44.07+0000');
+
+    // Every sub-second field fails on a date with no fraction at all, whatever width it states: how
+    // many digits to write is the field's business, and whether there are any to write is not.
+    assertError(|format('on %t{S*}', %2014-03-10T13:07:44), 'Date has no sub-second: 2014-03-10T13:07:44+0000');
+    assertError(|format('on %t{S3}', %2014-03-10), 'Date has no sub-second: 2014-03-10');
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::format::testFormatDateWithSubSecondGeneralForm():Boolean[1]
+{
+    // The general form states both bounds at once. The maximum is applied first and the minimum is
+    // tested against what it left, so one field cuts a long fraction down and pads a short one out
+    // without the two ever meeting.
+    assertEq('on 070', format('on %t{S(3,6)}', %2014-03-10T13:07:44.07));
+    assertEq('on 0700', format('on %t{S(3,6)}', %2014-03-10T13:07:44.0700));
+    assertEq('on 070004', format('on %t{S(3,6)}', %2014-03-10T13:07:44.070004235));
+
+    // A maximum of * is no maximum at all, which is what S>3 says in two characters.
+    assertEq('on 070', format('on %t{S(3,*)}', %2014-03-10T13:07:44.07));
+    assertEq('on 070004235', format('on %t{S(3,*)}', %2014-03-10T13:07:44.070004235));
+
+    // A ! after either bound refuses rather than padding or truncating there. S!3 spells the marker
+    // on the minimum; the one on the maximum has no shorthand, since truncating widens the span a
+    // date stands for and stays true where padding narrows it.
+    assertEq('on 070', format('on %t{S(3!,3)}', %2014-03-10T13:07:44.070));
+    assertError(|format('on %t{S(3!,3)}', %2014-03-10T13:07:44.07), 'Date has a 2 digit sub-second, but 3 are required: 2014-03-10T13:07:44.07+0000');
+    assertEq('on 070', format('on %t{S(0,3!)}', %2014-03-10T13:07:44.070));
+    assertError(|format('on %t{S(0,3!)}', %2014-03-10T13:07:44.070004235), 'Date has a 9 digit sub-second, but at most 3 may be written: 2014-03-10T13:07:44.070004235+0000');
+
+    // The third part names a fill other than zero, as one quoted character. It goes on the right,
+    // since sub-second digits run most significant first.
+    assertEq('on 07____', format('on %t{S(6,6,"_")}', %2014-03-10T13:07:44.07));
+
+    // All three parts at once: between three and six digits, padded with underscores where the date
+    // is short, and refused rather than cut where it is long.
+    assertEq('on 07_', format('on %t{S(3,6!,"_")}', %2014-03-10T13:07:44.07));
+    assertEq('on 070004', format('on %t{S(3,6!,"_")}', %2014-03-10T13:07:44.070004));
+    assertError(|format('on %t{S(3,6!,"_")}', %2014-03-10T13:07:44.070004235), 'Date has a 9 digit sub-second, but at most 6 may be written: 2014-03-10T13:07:44.070004235+0000');
+
+    // A marker with nothing to act on is legal and does nothing, so a format string built at run
+    // time may spell every field the same way. A date that can be written at all carries at least
+    // one sub-second digit, so a minimum of one is never short.
+    assertEq('on 07', format('on %t{S(1!,3)}', %2014-03-10T13:07:44.07));
+
+    // A section never fails, so a throwing bound inside one selects the next alternative rather
+    // than raising, whichever of the two bounds carries the marker. That is a fallback taken
+    // because the date carries too much rather than too little, which nothing else can ask for.
+    assertEq('on 13:07:44.070', format('on %t{HH:mm:ss?[.S(0,3!)|".(truncated)"]}', %2014-03-10T13:07:44.070));
+    assertEq('on 13:07:44.(truncated)', format('on %t{HH:mm:ss?[.S(0,3!)|".(truncated)"]}', %2014-03-10T13:07:44.070004235));
 }
 
 function <<test.Test>> meta::pure::functions::string::tests::format::testFormatDateWithOptionalSection():Boolean[1]
@@ -227,4 +286,21 @@ function <<test.Test>> meta::pure::functions::string::tests::format::testFormatD
     assertEq('on 2014-03-10T13:07:44.001000000', format('on %t{yyyy-MM-dd"T"HH:mm:ss?[.S9|".000000000"]}', %2014-03-10T13:07:44.001));
     assertEq('on 2014-03-10T13:07:44.070000000', format('on %t{yyyy-MM-dd"T"HH:mm:ss?[.S9|".000000000"]}', %2014-03-10T13:07:44.07));
     assertEq('on 2014-03-10T13:07:44.000000000', format('on %t{yyyy-MM-dd"T"HH:mm:ss?[.S9|".000000000"]}', %2014-03-10T13:07:44));
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::format::testFormatDateWithEscapes():Boolean[1]
+{
+    // Text in double quotes is written without them, so a brace inside a quoted run is text rather
+    // than the end of the pattern.
+    assertEq('on 2014}', format('on %t{yyyy"}"}', %2014-03-10T13:07:44.07));
+
+    // A backslash inside a quoted run makes text of whatever follows it, which is the only way to
+    // write a quote, and the only way to write a backslash before one.
+    assertEq('on 2014a"b', format('on %t{yyyy"a\\"b"}', %2014-03-10T13:07:44.07));
+    assertEq('on 2014a\\b', format('on %t{yyyy"a\\\\b"}', %2014-03-10T13:07:44.07));
+
+    // A sub-second fill is one quoted character and takes the same escape, so it can be either of
+    // them too. The fill goes on the right, so these pad .07 out to four digits.
+    assertEq('on 07""', format('on %t{S(4,4,"\\"")}', %2014-03-10T13:07:44.07));
+    assertEq('on 07\\\\', format('on %t{S(4,4,"\\\\")}', %2014-03-10T13:07:44.07));
 }
