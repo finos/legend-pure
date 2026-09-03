@@ -316,13 +316,54 @@ public class TestDateFunctions
     @Test
     public void testFromSQLDate()
     {
-        java.sql.Date sqlDate = new java.sql.Date(MILLIS_2014_03_10T16_12_35);
+        // A SQL date is normalized to midnight in the default zone, which is how a driver hands
+        // one over and what java.sql.Date.valueOf builds.
+        java.sql.Date sqlDate = java.sql.Date.valueOf("2014-03-10");
         StrictDate date = DateFunctions.fromSQLDate(sqlDate);
         Assert.assertEquals("2014-03-10", date.toString());
         Assert.assertEquals(date, DateFunctions.fromDate(sqlDate));
 
         // formatDate delegates to java.sql.Date.toString for SQL dates
         Assert.assertEquals(sqlDate.toString(), DateFunctions.formatDate(sqlDate));
+    }
+
+    /**
+     * A SQL date names a day and no zone, and so does a {@link StrictDate}, so the conversion is a
+     * copy of the year, month, and day: the same SQL date has to give the same Pure date whatever
+     * zone the JVM is running in. Reading the instant the {@link java.sql.Date} wraps back in GMT
+     * would not, since a SQL date sits at midnight in the default zone and midnight east of GMT
+     * belongs to the day before.
+     */
+    @Test
+    public void testFromSQLDateIsIndependentOfTheDefaultTimeZone()
+    {
+        String[] zoneIds = {
+                "GMT",
+                "America/New_York",   // behind GMT, where reading the instant in GMT happens to work
+                "Asia/Tokyo",         // +09:00, far enough ahead of GMT that midnight is the day before
+                "Pacific/Kiritimati", // +14:00, the furthest ahead of GMT there is
+                "America/Sao_Paulo"   // 2018-11-04 had no midnight there: the clocks sprang forward
+        };
+        TimeZone defaultTimeZone = TimeZone.getDefault();
+        try
+        {
+            for (String zoneId : zoneIds)
+            {
+                TimeZone.setDefault(TimeZone.getTimeZone(zoneId));
+                assertFromSQLDate("2014-03-10", zoneId);
+                assertFromSQLDate("2018-11-04", zoneId);
+                assertFromSQLDate("1900-01-01", zoneId);
+            }
+        }
+        finally
+        {
+            TimeZone.setDefault(defaultTimeZone);
+        }
+    }
+
+    private static void assertFromSQLDate(String day, String zoneId)
+    {
+        Assert.assertEquals(zoneId, day, DateFunctions.fromSQLDate(java.sql.Date.valueOf(day)).toString());
     }
 
     @Test
@@ -333,6 +374,30 @@ public class TestDateFunctions
         DateTime date = DateFunctions.fromSQLTimestamp(timestamp);
         Assert.assertEquals("2014-03-10T16:12:35.070004235+0000", date.toString());
         Assert.assertEquals(date, DateFunctions.fromDate(timestamp));
+    }
+
+    /**
+     * A Pure date holds a {@link java.time.LocalDate}, which is proleptic Gregorian: the Gregorian
+     * rules run backwards through the reform of 1582 and on to year one. So a moment has to be read
+     * into one the same way, and not through a {@link GregorianCalendar}, which reverts to the
+     * Julian calendar at the reform and would file a moment in the year 1000 five days early.
+     */
+    @Test
+    public void testConversionsBeforeTheGregorianReform()
+    {
+        assertConvertsInstant("2014-03-10T16:12:35Z", "2014-03-10T16:12:35");
+        assertConvertsInstant("1582-10-15T00:00:00Z", "1582-10-15T00:00:00");  // the first Gregorian day
+        assertConvertsInstant("1582-10-04T12:00:00Z", "1582-10-04T12:00:00");  // the last Julian day
+        assertConvertsInstant("1000-01-01T00:00:00Z", "1000-01-01T00:00:00");
+        assertConvertsInstant("0001-01-01T00:00:00Z", "1-01-01T00:00:00");
+    }
+
+    private static void assertConvertsInstant(String instantText, String expected)
+    {
+        Instant instant = Instant.parse(instantText);
+        Assert.assertEquals(instantText, expected + ".000000000+0000", DateFunctions.fromInstant(instant).toString());
+        Assert.assertEquals(instantText, expected + ".000000000+0000", DateFunctions.fromSQLTimestamp(java.sql.Timestamp.from(instant)).toString());
+        Assert.assertEquals(instantText, expected + ".000+0000", DateFunctions.fromDate(new Date(instant.toEpochMilli())).toString());
     }
 
     @Test

@@ -139,11 +139,20 @@ public final class StrictDate extends AbstractDateWithDay
         return new StrictDate(year, month, day);
     }
 
+    /**
+     * Convert a SQL date to the Pure date standing for the same day.
+     *
+     * <p>Neither a SQL date nor a {@link StrictDate} carries a time zone, so this is a copy of the
+     * year, month, and day. It must not run through the instant the {@link java.sql.Date} wraps: a
+     * driver normalizes a SQL date to midnight in the JVM default zone, and reading that instant
+     * back in GMT gives the day before everywhere east of GMT.
+     *
+     * @param date SQL date
+     * @return Pure date standing for the same day
+     */
     public static StrictDate fromSQLDate(java.sql.Date date)
     {
-        GregorianCalendar calendar = new GregorianCalendar(DateFunctions.GMT_TIME_ZONE);
-        calendar.setTime(date);
-        return fromCalendar(calendar);
+        return fromLocalDate(date.toLocalDate());
     }
 
     public static StrictDate fromCalendar(GregorianCalendar calendar)

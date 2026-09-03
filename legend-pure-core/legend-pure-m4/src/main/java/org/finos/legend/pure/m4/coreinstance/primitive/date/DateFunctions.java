@@ -246,9 +246,10 @@ public class DateFunctions extends TimeFunctions
     }
 
     /**
-     * Convert a Java date to a Pure date, reading the instant it holds as UTC. A
-     * {@link java.sql.Date} yields day granularity and a {@link java.sql.Timestamp} nanosecond
-     * granularity; any other {@link Date} yields millisecond granularity.
+     * Convert a Java date to a Pure date. A {@link java.sql.Date} names a day and no zone, and
+     * yields that day. Any other {@link Date} names a moment, and yields that moment read in UTC:
+     * to nanosecond granularity for a {@link java.sql.Timestamp}, and to millisecond granularity
+     * otherwise.
      *
      * @param date Java date
      * @return Pure date
@@ -263,16 +264,15 @@ public class DateFunctions extends TimeFunctions
         {
             return fromSQLTimestamp((java.sql.Timestamp)date);
         }
-        GregorianCalendar calendar = new GregorianCalendar(GMT_TIME_ZONE);
-        calendar.setTime(date);
-        return fromCalendar(calendar, Calendar.MILLISECOND);
+        return fromInstant(date.toInstant(), 3);
     }
 
     /**
-     * Convert a SQL date to a Pure date of day granularity, reading the instant it holds as UTC.
+     * Convert a SQL date to the Pure date standing for the same day. A SQL date names a day and no
+     * zone, as a Pure date of day granularity does, so this is a copy of the year, month, and day.
      *
      * @param date SQL date
-     * @return Pure date
+     * @return Pure date standing for the same day
      */
     public static StrictDate fromSQLDate(java.sql.Date date)
     {
