@@ -145,7 +145,7 @@ public class RelationalGen
             {
                 rowCount++;
                 ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSetMetaData);
-                MutableList<Object> rowValues = RelationalNativeImplementation.processRow(rs, handlers, sqlNull, TimeZones.newCalendar(tz, TimeZones.GMT));
+                MutableList<Object> rowValues = RelationalNativeImplementation.processRow(rs, handlers, sqlNull, TimeZones.newCalendar(tz));
                 for (Function<ListIterable<Object>, String> function : extraValueFunctions)
                 {
                     rowValues.add(function.valueOf(rowValues));

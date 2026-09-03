@@ -35,18 +35,12 @@ import java.util.TimeZone;
  * reporting the name as unknown. A date read or written in GMT that was meant for another zone is
  * wrong by that zone's offset, and nothing about the result says so.
  *
- * <p>{@link #parse(String)} rejects a name it cannot resolve. {@link #parse(String, ZoneId)} falls
- * back to a zone of the caller's choosing instead, which is how a caller that used to resolve
- * through {@link TimeZone#getTimeZone(String)} holds its old behavior while the callers move over.
- * New code should take the rejecting form.
+ * <p>Every method here rejects a name it cannot resolve. A caller wanting a default for an absent
+ * name chooses one itself, by naming the zone it means: a name that is present but stands for no
+ * zone is an error, not an occasion to guess.
  */
 public class TimeZones
 {
-    /**
-     * GMT, the zone a Pure date is understood to be in when no other zone is named.
-     */
-    public static final ZoneId GMT = ZoneId.of("GMT");
-
     private TimeZones()
     {
     }
@@ -75,27 +69,17 @@ public class TimeZones
     }
 
     /**
-     * Resolve a time zone name to the zone it stands for, falling back to the given zone when the
-     * name is null or stands for no zone.
+     * Resolve a time zone name to the zone it stands for, as a {@link TimeZone} for the sake of the
+     * java.util dated APIs that ask for one, {@link java.sql.ResultSet#getTimestamp(int, Calendar)}
+     * among them.
      *
-     * @param timeZone         time zone name
-     * @param whenUnresolvable zone to fall back to
-     * @return zone the name stands for, or the zone to fall back to
+     * @param timeZone time zone name
+     * @return zone the name stands for
+     * @throws IllegalArgumentException if the name is null or stands for no zone
      */
-    public static ZoneId parse(String timeZone, ZoneId whenUnresolvable)
+    public static TimeZone parseTimeZone(String timeZone)
     {
-        if (timeZone == null)
-        {
-            return whenUnresolvable;
-        }
-        try
-        {
-            return ZoneId.of(timeZone, ZoneId.SHORT_IDS);
-        }
-        catch (DateTimeException ignored)
-        {
-            return whenUnresolvable;
-        }
+        return toTimeZone(parse(timeZone));
     }
 
     /**
@@ -107,24 +91,26 @@ public class TimeZones
      */
     public static Calendar newCalendar(String timeZone)
     {
-        return newCalendar(parse(timeZone));
+        return new GregorianCalendar(parseTimeZone(timeZone));
     }
 
     /**
-     * Create a calendar in the zone a time zone name stands for, falling back to the given zone
-     * when the name is null or stands for no zone.
+     * Convert a zone to the {@link TimeZone} standing for it.
      *
-     * @param timeZone         time zone name
-     * @param whenUnresolvable zone to fall back to
-     * @return calendar in the zone the name stands for, or in the zone to fall back to
+     * <p>Before Java 21, {@link TimeZone#getTimeZone(ZoneId)} reads an offset carrying a
+     * {@code UTC} or {@code UT} prefix, such as {@code UTC+10:00}, as GMT: it prefixes a bare
+     * offset with {@code GMT}, but passes every other name through to a lookup that knows region
+     * names and {@code GMT} prefixed offsets only. Normalizing such a zone reduces it to the bare
+     * offset, the form every version reads. A zone that converts correctly on its own is left
+     * alone, so GMT keeps the name GMT rather than taking the name UTC.
      */
-    public static Calendar newCalendar(String timeZone, ZoneId whenUnresolvable)
+    private static TimeZone toTimeZone(ZoneId timeZone)
     {
-        return newCalendar(parse(timeZone, whenUnresolvable));
-    }
-
-    private static Calendar newCalendar(ZoneId timeZone)
-    {
-        return new GregorianCalendar(TimeZone.getTimeZone(timeZone));
+        TimeZone converted = TimeZone.getTimeZone(timeZone);
+        if (converted.toZoneId().getRules().equals(timeZone.getRules()))
+        {
+            return converted;
+        }
+        return TimeZone.getTimeZone(timeZone.normalized());
     }
 }

@@ -16,9 +16,13 @@ package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 
+import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Calendar;
+import java.util.TimeZone;
 
 /**
  * Tests for {@link TimeZones}: the names it resolves, the names it rejects, and the calendars it
@@ -42,11 +46,13 @@ public class TestTimeZones
     public void testParseShortId()
     {
         // These are the abbreviations ZoneId.SHORT_IDS carries; ZoneId.of rejects them on its own.
-        Assert.assertEquals(ZoneId.of("-05:00"), TimeZones.parse("EST"));
-        Assert.assertEquals(ZoneId.of("-07:00"), TimeZones.parse("MST"));
-        Assert.assertEquals(ZoneId.of("-10:00"), TimeZones.parse("HST"));
-        Assert.assertEquals(ZoneId.of("America/Los_Angeles"), TimeZones.parse("PST"));
-        Assert.assertEquals(ZoneId.of("Asia/Kolkata"), TimeZones.parse("IST"));
+        // Which zone each one names moves between Java versions: EST is the offset -05:00 through
+        // Java 21 and America/Panama from Java 25. What holds across versions is the offset.
+        assertStandardOffset("-05:00", "EST");
+        assertStandardOffset("-07:00", "MST");
+        assertStandardOffset("-10:00", "HST");
+        assertStandardOffset("-08:00", "PST");
+        assertStandardOffset("+05:30", "IST");
     }
 
     @Test
@@ -59,60 +65,56 @@ public class TestTimeZones
         Assert.assertEquals(ZoneId.of("+10:00"), TimeZones.parse("+1000"));
         Assert.assertEquals(ZoneId.of("Z"), TimeZones.parse("Z"));
 
-        // The GMT prefixed forms keep working.
+        // The prefixed forms keep working, whichever prefix is used.
         Assert.assertEquals(ZoneId.of("GMT+10:00"), TimeZones.parse("GMT+10:00"));
         Assert.assertEquals(ZoneId.of("GMT+5"), TimeZones.parse("GMT+5"));
+        Assert.assertEquals(ZoneId.of("UTC+10:00"), TimeZones.parse("UTC+10:00"));
+        Assert.assertEquals(ZoneId.of("UT-05:00"), TimeZones.parse("UT-05:00"));
     }
 
     @Test
-    public void testParseUnknown()
+    public void testParseTimeZone()
     {
-        assertParseFails("Unknown time zone: Europe/Lissabon", "Europe/Lissabon");
-        assertParseFails("Unknown time zone: Lissabon", "Lissabon");
-        assertParseFails("Unknown time zone: 0530", "0530");
-        assertParseFails("Unknown time zone: ", "");
-        assertParseFails("Unknown time zone: null", null);
-    }
+        // A name java.util resolves on its own keeps the id it knows it by.
+        Assert.assertEquals(TimeZone.getTimeZone("GMT"), TimeZones.parseTimeZone("GMT"));
+        Assert.assertEquals(TimeZone.getTimeZone("US/Arizona"), TimeZones.parseTimeZone("US/Arizona"));
+        Assert.assertEquals(TimeZone.getTimeZone("America/New_York"), TimeZones.parseTimeZone("America/New_York"));
 
-    @Test
-    public void testParseWithFallBack()
-    {
-        Assert.assertEquals(NEW_YORK, TimeZones.parse("America/New_York", TimeZones.GMT));
-        Assert.assertEquals(ZoneId.of("+10:00"), TimeZones.parse("+1000", TimeZones.GMT));
-        Assert.assertEquals(ZoneId.of("-05:00"), TimeZones.parse("EST", TimeZones.GMT));
+        // A bare offset arrives as the offset it names, where TimeZone.getTimeZone reads it as GMT.
+        assertRawOffset(19800000, "+0530");
+        assertRawOffset(36000000, "+1000");
+        assertRawOffset(-18000000, "-0500");
 
-        // Where the rejecting form throws, this one falls back.
-        Assert.assertEquals(TimeZones.GMT, TimeZones.parse("Europe/Lissabon", TimeZones.GMT));
-        Assert.assertEquals(TimeZones.GMT, TimeZones.parse("", TimeZones.GMT));
-        Assert.assertEquals(TimeZones.GMT, TimeZones.parse(null, TimeZones.GMT));
-        Assert.assertEquals(NEW_YORK, TimeZones.parse("Europe/Lissabon", NEW_YORK));
-        Assert.assertNull(TimeZones.parse("Europe/Lissabon", null));
+        // So does a prefixed offset: TimeZone.getTimeZone reads the UTC and UT forms as GMT before
+        // Java 21, where it has always read the GMT form as itself.
+        assertRawOffset(36000000, "GMT+10:00");
+        assertRawOffset(36000000, "UTC+10:00");
+        assertRawOffset(36000000, "UT+10:00");
+        assertRawOffset(-18000000, "UTC-05:00");
+        assertRawOffset(19800000, "UTC+05:30");
     }
 
     @Test
     public void testNewCalendar()
     {
+        // The calendar is in the zone the name stands for, whichever form the name takes.
+        Assert.assertEquals(TimeZone.getTimeZone("GMT"), TimeZones.newCalendar("GMT").getTimeZone());
         Assert.assertEquals(0, rawOffsetMillis(TimeZones.newCalendar("GMT")));
         Assert.assertEquals(-25200000, rawOffsetMillis(TimeZones.newCalendar("US/Arizona")));
         Assert.assertEquals(36000000, rawOffsetMillis(TimeZones.newCalendar("Pacific/Guam")));
         Assert.assertEquals(-18000000, rawOffsetMillis(TimeZones.newCalendar("EST")));
-
-        // An offset reaches the calendar as itself, not as GMT.
         Assert.assertEquals(19800000, rawOffsetMillis(TimeZones.newCalendar("+0530")));
-        Assert.assertEquals(36000000, rawOffsetMillis(TimeZones.newCalendar("+1000")));
-        Assert.assertEquals(-18000000, rawOffsetMillis(TimeZones.newCalendar("-0500")));
-
-        assertNewCalendarFails("Unknown time zone: Europe/Lissabon", "Europe/Lissabon");
-        assertNewCalendarFails("Unknown time zone: null", null);
+        Assert.assertEquals(36000000, rawOffsetMillis(TimeZones.newCalendar("UTC+10:00")));
     }
 
     @Test
-    public void testNewCalendarWithFallBack()
+    public void testUnresolvableName()
     {
-        Assert.assertEquals(19800000, rawOffsetMillis(TimeZones.newCalendar("+0530", TimeZones.GMT)));
-        Assert.assertEquals(0, rawOffsetMillis(TimeZones.newCalendar("Europe/Lissabon", TimeZones.GMT)));
-        Assert.assertEquals(0, rawOffsetMillis(TimeZones.newCalendar(null, TimeZones.GMT)));
-        Assert.assertEquals(-18000000, rawOffsetMillis(TimeZones.newCalendar("Europe/Lissabon", ZoneId.of("EST", ZoneId.SHORT_IDS))));
+        assertUnresolvable("Unknown time zone: Europe/Lissabon", "Europe/Lissabon");
+        assertUnresolvable("Unknown time zone: Lissabon", "Lissabon");
+        assertUnresolvable("Unknown time zone: 0530", "0530");
+        assertUnresolvable("Unknown time zone: ", "");
+        assertUnresolvable("Unknown time zone: null", null);
     }
 
     private static int rawOffsetMillis(Calendar calendar)
@@ -120,15 +122,29 @@ public class TestTimeZones
         return calendar.getTimeZone().getRawOffset();
     }
 
-    private static void assertParseFails(String expectedMessage, String timeZone)
+    private static void assertRawOffset(int expectedOffsetMillis, String timeZone)
     {
-        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> TimeZones.parse(timeZone));
-        Assert.assertEquals(expectedMessage, e.getMessage());
+        Assert.assertEquals(timeZone, expectedOffsetMillis, TimeZones.parseTimeZone(timeZone).getRawOffset());
     }
 
-    private static void assertNewCalendarFails(String expectedMessage, String timeZone)
+    private static void assertStandardOffset(String expectedOffset, String timeZone)
     {
-        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> TimeZones.newCalendar(timeZone));
-        Assert.assertEquals(expectedMessage, e.getMessage());
+        ZoneId zone = TimeZones.parse(timeZone);
+        Assert.assertEquals(timeZone, ZoneOffset.of(expectedOffset), zone.getRules().getStandardOffset(Instant.EPOCH));
+    }
+
+    /**
+     * No method here guesses at a name it cannot resolve; each rejects it, with the same message.
+     */
+    private static void assertUnresolvable(String expectedMessage, String timeZone)
+    {
+        assertThrowsWithMessage(expectedMessage, () -> TimeZones.parse(timeZone));
+        assertThrowsWithMessage(expectedMessage, () -> TimeZones.parseTimeZone(timeZone));
+        assertThrowsWithMessage(expectedMessage, () -> TimeZones.newCalendar(timeZone));
+    }
+
+    private static void assertThrowsWithMessage(String expectedMessage, ThrowingRunnable resolve)
+    {
+        Assert.assertEquals(expectedMessage, Assert.assertThrows(IllegalArgumentException.class, resolve).getMessage());
     }
 }

@@ -113,7 +113,7 @@ public class ResultSetRowIterableProvider
 
                         try
                         {
-                            Calendar calendar = TimeZones.newCalendar(tz, TimeZones.GMT);
+                            Calendar calendar = TimeZones.newCalendar(tz);
                             boolean showCheckMaxRows = shouldThrowIfMaxRowsExceeded && maxRows > 0;
                             while (rs.next())
                             {

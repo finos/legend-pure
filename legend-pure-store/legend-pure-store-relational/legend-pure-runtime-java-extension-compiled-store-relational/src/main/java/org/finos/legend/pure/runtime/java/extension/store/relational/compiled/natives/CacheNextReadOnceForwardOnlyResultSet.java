@@ -67,7 +67,7 @@ class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceFor
         this.processRowFunction = processRowFunction;
         this.sqlNull = sqlNull;
         this.handlers = handlers;
-        this.calendar = TimeZones.newCalendar(tz, TimeZones.GMT);
+        this.calendar = TimeZones.newCalendar(tz);
         this.executionListeners = executionSupport.getExecutionListeners();
         this.dataSourceInfo = dataSourceInfo;
         this.executionActivityListener = executionSupport.getExecutionActivityListener();

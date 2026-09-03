@@ -274,7 +274,7 @@ public class ExecuteInDb extends NativeFunction
             {
                 CoreInstance row = repository.newAnonymousCoreInstance(functionExpression.getSourceInformation(), rowClassifier);
                 Instance.addValueToProperty(row, "parent", pureResult, processorSupport);
-                Calendar calendar = TimeZones.newCalendar(tz, TimeZones.GMT);
+                Calendar calendar = TimeZones.newCalendar(tz);
 
                 MutableList<CoreInstance> rowValues = Lists.mutable.ofInitialCapacity(count);
                 for (int i = 1; i <= count; i++)
