@@ -16,6 +16,7 @@ package org.finos.legend.pure.m4.tools.time;
 
 import java.time.DateTimeException;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
@@ -104,14 +105,24 @@ public class TimeZones
      * names and {@code GMT} prefixed offsets only. Normalizing such a zone reduces it to the bare
      * offset, the form every version reads. A zone that converts correctly on its own is left
      * alone, so GMT keeps the name GMT rather than taking the name UTC.
+     *
+     * <p>{@link ZoneId#normalized()} answers with the zone itself unless the zone is a single fixed
+     * offset, which is both the only kind of zone java.util reads wrongly and the only kind
+     * normalizing would change. So a zone whose offset varies is a region name that needs no
+     * checking, and a zone that needs checking is one whose offset is the whole of it.
      */
     private static TimeZone toTimeZone(ZoneId timeZone)
     {
         TimeZone converted = TimeZone.getTimeZone(timeZone);
-        if (converted.toZoneId().getRules().equals(timeZone.getRules()))
+        ZoneId normalized = timeZone.normalized();
+        if (normalized == timeZone)
         {
             return converted;
         }
-        return TimeZone.getTimeZone(timeZone.normalized());
+        if (!converted.useDaylightTime() && (normalized instanceof ZoneOffset) && (converted.getRawOffset() == (((ZoneOffset) normalized).getTotalSeconds() * 1000)))
+        {
+            return converted;
+        }
+        return TimeZone.getTimeZone(normalized);
     }
 }
