@@ -18,7 +18,6 @@ import org.finos.legend.pure.m4.tools.SafeAppendable;
 import org.finos.legend.pure.m4.tools.TextTools;
 
 import java.io.IOException;
-import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
@@ -35,24 +34,29 @@ public class DateFormat
      *
      * <p>Each character of the format string is a control character standing for one component of
      * the date, except for the separators {@code - / : . }, tab and space, which are written out as
-     * they appear, and text in double quotes, which is written out without them. A backslash escapes
-     * the character after it. Repeating a control character widens the field it writes: {@code d}
-     * gives 1 where {@code dd} gives 01.
+     * they appear, and text in double quotes, which is written out without them. Within quoted text
+     * a backslash escapes the character after it, so a quote may be written {@code \"}; a backslash
+     * outside quotes is an error, as is any other character with no meaning here. Repeating a
+     * control character widens the field it writes: {@code d} gives 1 where {@code dd} gives 01.
+     * Two things are not control characters at all: a sub-second field takes a width instead of a
+     * run of letters, and {@code ?[}, {@code |}, and {@code ]} open, divide, and close an optional
+     * section. Both are described below.
      *
      * <table border="1">
      * <caption>Control characters</caption>
      * <tr><th>Character</th><th>Component</th><th>Example</th></tr>
-     * <tr><td>{@code y}</td><td>year; one or two of them write the last two digits, three or more
+     * <tr><td>{@code y}</td><td>year; one to three of them write the last two digits, four or more
      * the whole year</td><td>{@code yy} 14, {@code yyyy} 2014</td></tr>
      * <tr><td>{@code M}</td><td>month</td><td>{@code MM} 03</td></tr>
      * <tr><td>{@code d}</td><td>day of the month</td><td>{@code dd} 10</td></tr>
      * <tr><td>{@code H}</td><td>hour, 0 to 23</td><td>{@code HH} 16</td></tr>
      * <tr><td>{@code h}</td><td>hour, 1 to 12</td><td>{@code hh} 04</td></tr>
-     * <tr><td>{@code a}</td><td>AM or PM</td><td>PM</td></tr>
+     * <tr><td>{@code a}</td><td>AM or PM; repeating it makes no difference, as there is no width to
+     * widen</td><td>PM</td></tr>
      * <tr><td>{@code m}</td><td>minute</td><td>{@code mm} 12</td></tr>
      * <tr><td>{@code s}</td><td>second</td><td>{@code ss} 35</td></tr>
-     * <tr><td>{@code S}</td><td>sub-second; up to three of them truncate the date's own digits,
-     * more write them all</td><td>{@code SSS} 070</td></tr>
+     * <tr><td>{@code S}</td><td>sub-second; this one takes a width rather than a run of letters,
+     * and the forms it takes are below</td><td>{@code S3} 070</td></tr>
      * <tr><td>{@code z}</td><td>general time zone: the zone as written in the format string, or GMT
      * if none was</td><td>{@code z} EST</td></tr>
      * <tr><td>{@code Z}</td><td>RFC 822 time zone: always a sign, two digits of hours and two of
@@ -60,6 +64,79 @@ public class DateFormat
      * <tr><td>{@code X}</td><td>ISO 8601 time zone: Z for UTC, otherwise a sign, hours, and minutes
      * only when the offset has them; requires an hour</td><td>{@code X} -05</td></tr>
      * </table>
+     *
+     * <p>A sub-second field says how many digits of the fraction of a second to write, which is
+     * the one place the format language says more than a run of letters can. Every form of it fails
+     * on a date with no fraction at all: how many digits to write is the field's business, and
+     * whether there are any to write is not.
+     *
+     * <table border="1">
+     * <caption>Sub-second widths</caption>
+     * <tr><th>Field</th><th>Digits written</th><th>{@code .070004235}</th><th>{@code .07}</th></tr>
+     * <tr><td>{@code SN}</td><td>exactly N, padding a shorter fraction</td><td>{@code S3} 070</td>
+     * <td>{@code S3} 070</td></tr>
+     * <tr><td>{@code S<N}</td><td>at most N, and fewer where that is all there is</td>
+     * <td>{@code S<3} 070</td><td>{@code S<3} 07</td></tr>
+     * <tr><td>{@code S>N}</td><td>at least N, padding a shorter fraction, and everything beyond</td>
+     * <td>{@code S>3} 070004235</td><td>{@code S>3} 070</td></tr>
+     * <tr><td>{@code S*}</td><td>however many the date has</td><td>{@code S*} 070004235</td>
+     * <td>{@code S*} 07</td></tr>
+     * <tr><td>{@code S!N}</td><td>exactly N, failing rather than padding a shorter fraction</td>
+     * <td>{@code S!3} 070</td><td>{@code S!3} fails</td></tr>
+     * <tr><td>{@code S} to {@code SSS}</td><td>at most one, two, or three; the same fields as
+     * {@code S<1} to {@code S<3}</td><td>{@code SSS} 070</td><td>{@code SSS} 07</td></tr>
+     * <tr><td>{@code SSSS} and longer</td><td>however many the date has; the same field as
+     * {@code S*}</td><td>{@code SSSS} 070004235</td><td>{@code SSSS} 07</td></tr>
+     * </table>
+     *
+     * <p>The general form, {@code S(min,max)}, says both bounds at once: {@code *} for an unbounded
+     * maximum, {@code !} after either bound to fail rather than pad or truncate there, and an
+     * optional third part naming a fill character other than the zero padding otherwise uses. So
+     * {@code S(3!,9,"_")} writes between three and nine digits, refuses a fraction shorter than
+     * three rather than padding it, and pads with underscores. A marker with nothing to act on is
+     * legal and does nothing.
+     *
+     * <p>Truncating and padding are not two sides of one thing. A Pure date is a span of time rather
+     * than an instant, and the number of digits it stores is the precision of that span, so
+     * {@code .07} contains {@code .070}, {@code .071}, and {@code .0712}. Truncating widens the
+     * span, which loses precision but stays true; padding narrows it, which claims a precision the
+     * date does not have. That is why only padding has a short spelling for refusing it.
+     *
+     * <p>A run of the format string in {@code ?[...]} is an optional section, written where the date
+     * can carry it and left out where it cannot. Within one, {@code |} separates alternatives: the
+     * first alternative every element of which can write the date is the one written, and where none
+     * of them can, the section writes nothing. So {@code yyyy-MM-dd?[" at "HH:mm]} writes the time
+     * where the date has one and the date alone where it does not, and
+     * {@code ?[HH:mm:ss|HH:mm|HH|"--"]} writes as much of the time as the date carries. A section
+     * never fails, so a pattern whose date-dependent parts all sit inside one writes any date at
+     * all.
+     *
+     * <p>Sections nest, and there is one thing to know about nesting: a section asks the date for
+     * nothing on its own account, so it adds no requirement to the alternative holding it.
+     *
+     * <pre>
+     * ?[HH:mm?[:ss]]        on 13:07 writes 13:07     -- inner writes nothing, outer unaffected
+     * ?[" at "?[HH:mm]]     on a date with no hour writes " at "
+     * ?[" at "HH:mm]        on a date with no hour writes nothing
+     * </pre>
+     *
+     * <p>The second line is the one that surprises. The outer alternative holds a literal and a
+     * section, both of which can always write, so the outer section writes and the inner one does
+     * not. Hoisting the literal out, as the third line does, is what makes the two rise and fall
+     * together.
+     *
+     * <p>Sections are also how a date with no fraction of a second is written, since a sub-second
+     * field says only how wide a fraction is and never whether there is one:
+     * {@code HH:mm:ss?[.S3]} writes {@code 13:07:44.070} or {@code 13:07:44}, and the decimal point
+     * goes with the digits because the section carries both. {@code ?[.S3|".000"]} invents the
+     * fraction instead, which is worth writing out rather than abbreviating, since it claims a
+     * precision the date does not have.
+     *
+     * <p>An alternative may not be empty: {@code ?[|HH]} and {@code ?[HH|]} are errors, the first
+     * because it would write nothing whatever the date, and the second because it says what
+     * {@code ?[HH]} already says. {@code ""} spells an empty alternative where one is meant.
+     * A throwing sub-second bound inside a section selects the next alternative rather than raising,
+     * which is the one thing a section takes away.
      *
      * <p>A format string may open with a time zone in square brackets, as in
      * {@code [America/New_York]yyyy-MM-dd HH:mm:ss}, and only open with one: a zone appearing after
@@ -76,6 +153,14 @@ public class DateFormat
      * was asked for, but {@code Z} and {@code X} are an error, since an offset belongs to an
      * instant and a zone can be keeping more than one over a date that broad.
      *
+     * <p>The format string is read in full before anything is written, so a malformed one leaves
+     * the appendable as it found it. A component the date does not have is a fault of the pair
+     * rather than of the format string, and is found where it is reached, so a date short of what
+     * the string asks for may have part of itself written before the error.
+     *
+     * <p>{@link DateFormatPattern} is this method's working: it holds a format string already read,
+     * and can be built directly by a caller with no format string to hand.
+     *
      * @param appendable   appendable to write to
      * @param formatString format string
      * @param date         date to write
@@ -87,303 +172,60 @@ public class DateFormat
      */
     public static <T extends Appendable> T format(T appendable, String formatString, PureDate date)
     {
-        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
-        int length = formatString.length();
-        ZonedDateTime zoned = null;
-        String timeZoneId = null;
-        int i = 0;
-        while (i < length)
-        {
-            char character = formatString.charAt(i++);
-            switch (character)
-            {
-                // Timezone conversion
-                case '[':
-                {
-                    if (i > 1)
-                    {
-                        throw new IllegalArgumentException("Time zone can only be set at the beginning of the format string");
-                    }
+        return format(appendable, formatString, 0, formatString.length(), date);
+    }
 
-                    StringBuilder tzBuilder = new StringBuilder();
-                    boolean done = false;
-                    boolean escaped = false;
-                    boolean inQuotes = false;
-                    while (!done && (i < length))
-                    {
-                        char next = formatString.charAt(i++);
-                        if (escaped)
-                        {
-                            tzBuilder.append(next);
-                            escaped = false;
-                        }
-                        else if (next == '"')
-                        {
-                            inQuotes = !inQuotes;
-                        }
-                        else if ((next == ']') && !inQuotes)
-                        {
-                            done = true;
-                        }
-                        else if (next == '\\')
-                        {
-                            escaped = true;
-                        }
-                        else
-                        {
-                            tzBuilder.append(next);
-                        }
-                    }
-                    if (inQuotes)
-                    {
-                        throw new IllegalArgumentException("Missing closing quotes in time zone definition: " + formatString);
-                    }
-                    if (!done)
-                    {
-                        throw new IllegalArgumentException("Missing closing bracket in format string: " + formatString);
-                    }
-                    timeZoneId = tzBuilder.toString();
-                    ZoneId timeZone;
-                    try
-                    {
-                        timeZone = ZoneId.of(timeZoneId, ZoneId.SHORT_IDS);
-                    }
-                    catch (DateTimeException e)
-                    {
-                        throw new IllegalArgumentException("Unknown time zone: " + timeZoneId, e);
-                    }
+    /**
+     * Write a Pure date to an appendable in the form a portion of a string describes, which is how
+     * a format string held inside a larger one is used without first cutting it out.
+     *
+     * @param appendable   appendable to write to
+     * @param formatString string holding the format string
+     * @param start        start index of the format string (inclusive)
+     * @param end          end index of the format string (exclusive)
+     * @param date         date to write
+     * @param <T>          appendable type
+     * @return the appendable
+     * @throws IllegalArgumentException if the format string is malformed, names a time zone that
+     *                                  cannot be resolved, sets a time zone anywhere but at the
+     *                                  start, or asks for a component the date does not have
+     * @see #format(Appendable, String, PureDate)
+     */
+    public static <T extends Appendable> T format(T appendable, String formatString, int start, int end, PureDate date)
+    {
+        return DateFormatPattern.parse(formatString, start, end).render(appendable, date);
+    }
 
-                    if (date.hasHour())
-                    {
-                        // A Pure date is always understood as UTC, so the instant it starts at
-                        // is what the requested zone renders.
-                        zoned = PureDateToJava.start().toInstant(date).atZone(timeZone);
-                    }
-                    break;
-                }
-                // Year
-                case 'y':
-                {
-                    int displayYear = (zoned == null) ? date.getYear() : zoned.getYear();
-                    int count = getCharCountFrom(character, formatString, i);
-                    if (count < 3)
-                    {
-                        // The two digit form is the last two digits of the year, which a year
-                        // before the era has as much as one after it: it drops the sign along with
-                        // the century, as it already drops the difference between 1914 and 2014.
-                        appendNonNegTwoDigitInt(safeAppendable, Math.abs(displayYear % 100));
-                    }
-                    else
-                    {
-                        safeAppendable.append(displayYear);
-                    }
-                    i += count;
-                    break;
-                }
-                // Month
-                case 'M':
-                {
-                    if (!date.hasMonth())
-                    {
-                        throw new IllegalArgumentException("Date has no month: " + date);
-                    }
-                    int displayMonth = (zoned == null) ? date.getMonth() : zoned.getMonthValue();
-                    int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(safeAppendable, displayMonth, count + 1);
-                    i += count;
-                    break;
-                }
-                // Day
-                case 'd':
-                {
-                    if (!date.hasDay())
-                    {
-                        throw new IllegalArgumentException("Date has no day: " + date);
-                    }
-                    int displayDay = (zoned == null) ? date.getDay() : zoned.getDayOfMonth();
-                    int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(safeAppendable, displayDay, count + 1);
-                    i += count;
-                    break;
-                }
-                // Hour (1-12)
-                case 'h':
-                {
-                    if (!date.hasHour())
-                    {
-                        throw new IllegalArgumentException("Date has no hour: " + date);
-                    }
-                    int preDisplayHour = (zoned == null) ? date.getHour() : zoned.getHour();
-                    int displayHour = (preDisplayHour == 0) ? 12 : ((preDisplayHour > 12) ? (preDisplayHour - 12) : preDisplayHour);
-                    int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(safeAppendable, displayHour, count + 1);
-                    i += count;
-                    break;
-                }
-                // Hour (0-23)
-                case 'H':
-                {
-                    if (!date.hasHour())
-                    {
-                        throw new IllegalArgumentException("Date has no hour: " + date);
-                    }
-                    int displayHour = (zoned == null) ? date.getHour() : zoned.getHour();
-                    int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(safeAppendable, displayHour, count + 1);
-                    i += count;
-                    break;
-                }
-                // AM/PM
-                case 'a':
-                {
-                    if (!date.hasHour())
-                    {
-                        throw new IllegalArgumentException("Date has no hour: " + date);
-                    }
-                    int displayHour = (zoned == null) ? date.getHour() : zoned.getHour();
-                    safeAppendable.append((displayHour < 12) ? "AM" : "PM");
-                    break;
-                }
-                // Minute
-                case 'm':
-                {
-                    if (!date.hasMinute())
-                    {
-                        throw new IllegalArgumentException("Date has no minute: " + date);
-                    }
-                    int displayMinute = (zoned == null) ? date.getMinute() : zoned.getMinute();
-                    int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(safeAppendable, displayMinute, count + 1);
-                    i += count;
-                    break;
-                }
-                // Second
-                case 's':
-                {
-                    if (!date.hasSecond())
-                    {
-                        throw new IllegalArgumentException("Date has no second: " + date);
-                    }
-                    int displaySecond = (zoned == null) ? date.getSecond() : zoned.getSecond();
-                    int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(safeAppendable, displaySecond, count + 1);
-                    i += count;
-                    break;
-                }
-                // Subsecond
-                case 'S':
-                {
-                    if (!date.hasSubsecond())
-                    {
-                        throw new IllegalArgumentException("Date has no sub-second: " + date);
-                    }
-                    int count = getCharCountFrom(character, formatString, i);
-                    if (count < 3)
-                    {
-                        int maxLen = count + 1;
-                        int len = date.getSubsecond().length();
-                        if (len <= maxLen)
-                        {
-                            safeAppendable.append(date.getSubsecond());
-                        }
-                        else
-                        {
-                            int j = 0;
-                            while (j < maxLen)
-                            {
-                                safeAppendable.append(date.getSubsecond().charAt(j++));
-                            }
-                        }
-                    }
-                    else
-                    {
-                        safeAppendable.append(date.getSubsecond());
-                    }
-                    i += count;
-                    break;
-                }
-                // General time zone
-                case 'z':
-                {
-                    int count = getCharCountFrom(character, formatString, i);
-                    safeAppendable.append((timeZoneId == null) ? "GMT" : timeZoneId);
-                    i += count;
-                    break;
-                }
-                // RFC 822 time zone
-                case 'Z':
-                {
-                    if (!date.hasHour())
-                    {
-                        throw new IllegalArgumentException("Date has no hour (required for Z): " + date);
-                    }
-                    int count = getCharCountFrom(character, formatString, i);
-                    appendRFC822TimeZone(safeAppendable, getOffsetInMinutes(zoned));
-                    i += count;
-                    break;
-                }
-                // ISO 8601 time zone
-                case 'X':
-                {
-                    if (!date.hasHour())
-                    {
-                        throw new IllegalArgumentException("Date has no hour (required for X): " + date);
-                    }
-                    int count = getCharCountFrom(character, formatString, i);
-                    appendISO8601TimeZone(safeAppendable, getOffsetInMinutes(zoned));
-                    i += count;
-                    break;
-                }
-                // Separator
-                case '-':
-                case '/':
-                case ':':
-                case '.':
-                case ' ':
-                case '\t':
-                {
-                    safeAppendable.append(character);
-                    break;
-                }
-                // Quote
-                case '"':
-                {
-                    boolean done = false;
-                    boolean escaped = false;
-                    while (!done && (i < length))
-                    {
-                        char next = formatString.charAt(i++);
-                        if (escaped)
-                        {
-                            safeAppendable.append(next);
-                            escaped = false;
-                        }
-                        else if (next == '"')
-                        {
-                            done = true;
-                        }
-                        else if (next == '\\')
-                        {
-                            escaped = true;
-                        }
-                        else
-                        {
-                            safeAppendable.append(next);
-                        }
-                    }
-                    if (!done)
-                    {
-                        throw new IllegalArgumentException("Missing closing quote in format string: " + formatString);
-                    }
-                    break;
-                }
-                default:
-                {
-                    throw new IllegalArgumentException("Invalid format control character '" + character + "' in format string: " + formatString);
-                }
-            }
-        }
-        return appendable;
+    /**
+     * Check that a format string is one {@link #format} can use, and do nothing else. Everything
+     * this reports is a property of the format string alone, so a string that passes will render
+     * any date carrying the components it names.
+     *
+     * @param formatString format string
+     * @throws IllegalArgumentException if the format string is malformed, names a time zone that
+     *                                  cannot be resolved, or sets a time zone anywhere but at the
+     *                                  start
+     */
+    public static void validate(String formatString)
+    {
+        validate(formatString, 0, formatString.length());
+    }
+
+    /**
+     * Check that a portion of a string is a format string {@link #format} can use, and do nothing
+     * else.
+     *
+     * @param formatString string holding the format string
+     * @param start        start index of the format string (inclusive)
+     * @param end          end index of the format string (exclusive)
+     * @throws IllegalArgumentException if the format string is malformed, names a time zone that
+     *                                  cannot be resolved, or sets a time zone anywhere but at the
+     *                                  start
+     * @see #validate(String)
+     */
+    public static void validate(String formatString, int start, int end)
+    {
+        DateFormatPattern.parse(formatString, start, end);
     }
 
     @Deprecated
@@ -690,7 +532,7 @@ public class DateFormat
      * @param zoned date and time being rendered, or null for UTC
      * @return offset from UTC in minutes
      */
-    private static int getOffsetInMinutes(ZonedDateTime zoned)
+    static int getOffsetInMinutes(ZonedDateTime zoned)
     {
         return (zoned == null) ? 0 : (zoned.getOffset().getTotalSeconds() / 60);
     }
@@ -702,7 +544,7 @@ public class DateFormat
      * @param appendable      appendable to write to
      * @param offsetInMinutes offset from UTC in minutes
      */
-    private static void appendRFC822TimeZone(SafeAppendable appendable, int offsetInMinutes)
+    static void appendRFC822TimeZone(SafeAppendable appendable, int offsetInMinutes)
     {
         int absolute = Math.abs(offsetInMinutes);
         appendable.append((offsetInMinutes < 0) ? '-' : '+');
@@ -718,7 +560,7 @@ public class DateFormat
      * @param appendable      appendable to write to
      * @param offsetInMinutes offset from UTC in minutes
      */
-    private static void appendISO8601TimeZone(SafeAppendable appendable, int offsetInMinutes)
+    static void appendISO8601TimeZone(SafeAppendable appendable, int offsetInMinutes)
     {
         if (offsetInMinutes == 0)
         {
@@ -736,7 +578,7 @@ public class DateFormat
         }
     }
 
-    private static void appendNonNegTwoDigitInt(SafeAppendable appendable, int integer)
+    static void appendNonNegTwoDigitInt(SafeAppendable appendable, int integer)
     {
         char c1;
         char c2;
@@ -753,7 +595,7 @@ public class DateFormat
         appendable.append(c1).append(c2);
     }
 
-    private static void appendZeroPaddedInt(SafeAppendable appendable, int integer, int minLength)
+    static void appendZeroPaddedInt(SafeAppendable appendable, int integer, int minLength)
     {
         String string = Integer.toString(integer);
         for (int fill = minLength - string.length(); fill > 0; fill--)
@@ -761,16 +603,6 @@ public class DateFormat
             appendable.append('0');
         }
         appendable.append(string);
-    }
-
-    private static int getCharCountFrom(char character, String string, int start)
-    {
-        int count = 0;
-        for (int i = start, length = string.length(); (i < length) && (string.charAt(i) == character); i++)
-        {
-            count++;
-        }
-        return count;
     }
 
     /**

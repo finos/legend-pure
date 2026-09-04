@@ -60,6 +60,69 @@ public class TestDateFormat
             "2014-03-10T16:12:35.070004235+0000"
     };
 
+    /**
+     * The compatibility suite: every expectation here was produced by the single pass loop this
+     * replaced, so a row that changes is a format string whose meaning changed. A null is a date the
+     * format string cannot write, whose wording
+     * {@link #testFormatOfAComponentTheDateDoesNotHave} covers.
+     *
+     * <p>One shape is deliberately absent. A run of {@code a} now writes PM once rather than once
+     * per letter, which is the one behavior this work changed on purpose, and
+     * {@link #testFormatRepeatingAControlCharacterWithNoWidth} pins it instead.
+     */
+    private static final String[][] LEGACY_COMPATIBILITY = {
+            {"y", "14", "14", "14", "14", "14", "14", "14"},
+            {"yy", "14", "14", "14", "14", "14", "14", "14"},
+            {"yyy", "14", "14", "14", "14", "14", "14", "14"},
+            {"yyyy", "2014", "2014", "2014", "2014", "2014", "2014", "2014"},
+            {"yyyyy", "2014", "2014", "2014", "2014", "2014", "2014", "2014"},
+            {"M", null, "3", "3", "3", "3", "3", "3"},
+            {"MM", null, "03", "03", "03", "03", "03", "03"},
+            {"MMM", null, "003", "003", "003", "003", "003", "003"},
+            {"d", null, null, "10", "10", "10", "10", "10"},
+            {"dd", null, null, "10", "10", "10", "10", "10"},
+            {"ddd", null, null, "010", "010", "010", "010", "010"},
+            {"H", null, null, null, "16", "16", "16", "16"},
+            {"HH", null, null, null, "16", "16", "16", "16"},
+            {"h", null, null, null, "4", "4", "4", "4"},
+            {"hh", null, null, null, "04", "04", "04", "04"},
+            {"a", null, null, null, "PM", "PM", "PM", "PM"},
+            {"m", null, null, null, null, "12", "12", "12"},
+            {"mm", null, null, null, null, "12", "12", "12"},
+            {"s", null, null, null, null, null, "35", "35"},
+            {"ss", null, null, null, null, null, "35", "35"},
+            {"S", null, null, null, null, null, null, "0"},
+            {"SS", null, null, null, null, null, null, "07"},
+            {"SSS", null, null, null, null, null, null, "070"},
+            {"SSSS", null, null, null, null, null, null, "070004235"},
+            {"SSSSSSSSS", null, null, null, null, null, null, "070004235"},
+            {"z", "GMT", "GMT", "GMT", "GMT", "GMT", "GMT", "GMT"},
+            {"Z", null, null, null, "+0000", "+0000", "+0000", "+0000"},
+            {"X", null, null, null, "Z", "Z", "Z", "Z"},
+            {"yyyy-MM-dd", null, null, "2014-03-10", "2014-03-10", "2014-03-10", "2014-03-10", "2014-03-10"},
+            {"yyyy-MM-dd HH:mm:ss", null, null, null, null, null, "2014-03-10 16:12:35", "2014-03-10 16:12:35"},
+            {"yyyy-MM-dd HH:mm:ss.SSS", null, null, null, null, null, null, "2014-03-10 16:12:35.070"},
+            {"yyyy-MM-dd HH:mm:ss.SSSSSS", null, null, null, null, null, null, "2014-03-10 16:12:35.070004235"},
+            {"yyyy-MM-dd\"T\"HH:mm:ss", null, null, null, null, null, "2014-03-10T16:12:35", "2014-03-10T16:12:35"},
+            {"yyyy-MM-dd\"T\"HH:mm:ss.SSSSSSSSSZ", null, null, null, null, null, null, "2014-03-10T16:12:35.070004235+0000"},
+            {"yyyyMMdd\"T\"HHmmssX", null, null, null, null, null, "20140310T161235Z", "20140310T161235Z"},
+            {"M/d/yyyy h:mm a", null, null, null, null, "3/10/2014 4:12 PM", "3/10/2014 4:12 PM", "3/10/2014 4:12 PM"},
+            {"dd/MM/yyyy", null, null, "10/03/2014", "10/03/2014", "10/03/2014", "10/03/2014", "10/03/2014"},
+            {"dd.MM.yyyy", null, null, "10.03.2014", "10.03.2014", "10.03.2014", "10.03.2014", "10.03.2014"},
+            {"MMM d\", \"yyyy", null, null, "003 10, 2014", "003 10, 2014", "003 10, 2014", "003 10, 2014", "003 10, 2014"},
+            {"yy/MM/dd hh:mm a z Z X", null, null, null, null, "14/03/10 04:12 PM GMT +0000 Z", "14/03/10 04:12 PM GMT +0000 Z", "14/03/10 04:12 PM GMT +0000 Z"},
+            {"\"at\" HH:mm", null, null, null, null, "at 16:12", "at 16:12", "at 16:12"},
+            {"\"a\\\"b\" HH", null, null, null, "a\"b 16", "a\"b 16", "a\"b 16", "a\"b 16"},
+            {"yyyy-.-", "2014-.-", "2014-.-", "2014-.-", "2014-.-", "2014-.-", "2014-.-", "2014-.-"},
+            {"yyyy\t MM", null, "2014\t 03", "2014\t 03", "2014\t 03", "2014\t 03", "2014\t 03", "2014\t 03"},
+            {"[EST]yyyy-MM-dd HH:mm:ss z Z", null, null, null, null, null, "2014-03-10 11:12:35 EST -0500", "2014-03-10 11:12:35 EST -0500"},
+            {"[America/New_York]yyyy-MM-dd\"T\"HH:mm:ssX", null, null, null, null, null, "2014-03-10T12:12:35-04", "2014-03-10T12:12:35-04"},
+            {"[+05:30]yyyy-MM-dd HH:mmZ", null, null, null, null, "2014-03-10 21:42+0530", "2014-03-10 21:42+0530", "2014-03-10 21:42+0530"},
+            {"[CET]HH:mm:ss.SSSZ", null, null, null, null, null, null, "17:12:35.070+0100"},
+            {"[GMT]yyyy-MM-dd HH:mm:ss.SSSSSS", null, null, null, null, null, null, "2014-03-10 16:12:35.070004235"},
+            {"[UTC]yyyy-MM-dd", null, null, "2014-03-10", "2014-03-10", "2014-03-10", "2014-03-10", "2014-03-10"},
+    };
+
     // Format: date components
 
     /**
@@ -160,6 +223,27 @@ public class TestDateFormat
     }
 
     /**
+     * Every control character consumes the run of itself that follows it, whether or not the count
+     * means anything to it: a field with no width to widen, and the three time zone notations,
+     * write the same thing however many times the letter is repeated.
+     */
+    @Test
+    public void testFormatRepeatingAControlCharacterWithNoWidth()
+    {
+        Assert.assertEquals("PM", format("a", DATE));
+        Assert.assertEquals("PM", format("aa", DATE));
+        Assert.assertEquals("PM", format("aaaa", DATE));
+        Assert.assertEquals("16 PM", format("HH aaa", DATE));
+
+        Assert.assertEquals("GMT", format("z", DATE));
+        Assert.assertEquals("GMT", format("zzzz", DATE));
+        Assert.assertEquals("+0000", format("Z", DATE));
+        Assert.assertEquals("+0000", format("ZZZZ", DATE));
+        Assert.assertEquals("Z", format("X", DATE));
+        Assert.assertEquals("Z", format("XXXX", DATE));
+    }
+
+    /**
      * The subsecond is cut to one more digit than the format string repeats the letter, but from
      * four letters on it is written in full however many digits it has. It is never padded, so a
      * date with fewer digits than were asked for gives all it has and no more.
@@ -178,6 +262,102 @@ public class TestDateFormat
         Assert.assertEquals("07", format("SS", hundredths));
         Assert.assertEquals("07", format("SSS", hundredths));
         Assert.assertEquals("07", format("SSSS", hundredths));
+    }
+
+    /**
+     * A sub-second field takes a width, which is the one place the format language says more than a
+     * run of letters can. The run of letters is two of these widths: one to three letters is
+     * {@code S<N}, and four or more is {@code S*}.
+     */
+    @Test
+    public void testFormatSubsecondWidths()
+    {
+        PureDate hundredths = DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35, "07");
+
+        Assert.assertEquals("070", format("S3", DATE));
+        Assert.assertEquals("070", format("S3", hundredths));
+        Assert.assertEquals("070004235", format("S9", DATE));
+        Assert.assertEquals("070000000", format("S9", hundredths));
+
+        Assert.assertEquals("070", format("S<3", DATE));
+        Assert.assertEquals("07", format("S<3", hundredths));
+        Assert.assertEquals("070004235", format("S>3", DATE));
+        Assert.assertEquals("070", format("S>3", hundredths));
+        Assert.assertEquals("070004235", format("S*", DATE));
+        Assert.assertEquals("07", format("S*", hundredths));
+
+        Assert.assertEquals("2014-03-10 16:12:35.070004", format("yyyy-MM-dd HH:mm:ss.S<6", DATE));
+        Assert.assertEquals("2014-03-10 16:12:35.070000", format("yyyy-MM-dd HH:mm:ss.S6", hundredths));
+        Assert.assertEquals("2014-03-10T16:12:35.070004235", format("yyyy-MM-dd\"T\"HH:mm:ss.S9", DATE));
+
+        // and refusing to pad is a field of its own, since padding claims a precision the date lacks
+        Assert.assertEquals("070", format("S!3", DATE));
+        assertFormatFails(
+                "Date has a 2 digit sub-second, but 3 are required: 2014-03-10T16:12:35.07+0000",
+                "S!3",
+                hundredths);
+        assertFormatFails(
+                "Date has a 9 digit sub-second, but at most 3 may be written: 2014-03-10T16:12:35.070004235+0000",
+                "S(0,3!)",
+                DATE);
+
+        // every form fails on a date with no fraction, whatever width it asks for
+        for (String formatString : new String[]{"S", "SSSS", "S3", "S<3", "S>3", "S*", "S!3", "S(3!,9!,\"_\")"})
+        {
+            assertFormatFails(
+                    "Date has no sub-second: 2014-03-10T16:12:35+0000",
+                    formatString,
+                    DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35));
+        }
+    }
+
+    // Format: optional sections
+
+    /**
+     * A section is written where the date can carry it and left out where it cannot, so one format
+     * string serves a collection whose dates do not agree on precision.
+     */
+    @Test
+    public void testFormatOptionalSections()
+    {
+        String everything = "yyyy?[-MM?[-dd?[\"T\"HH?[:mm?[:ss?[.S*]]]]]]";
+        Assert.assertEquals("2014", format(everything, DateFunctions.newPureDate(2014)));
+        Assert.assertEquals("2014-03", format(everything, DateFunctions.newPureDate(2014, 3)));
+        Assert.assertEquals("2014-03-10", format(everything, DateFunctions.newPureDate(2014, 3, 10)));
+        Assert.assertEquals("2014-03-10T16", format(everything, DateFunctions.newPureDate(2014, 3, 10, 16)));
+        Assert.assertEquals("2014-03-10T16:12", format(everything, DateFunctions.newPureDate(2014, 3, 10, 16, 12)));
+        Assert.assertEquals("2014-03-10T16:12:35", format(everything, DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35)));
+        Assert.assertEquals("2014-03-10T16:12:35.070004235", format(everything, DATE));
+
+        // alternatives are tried in the order they are written, and the first the date can carry wins
+        String time = "?[HH:mm:ss|HH:mm|HH|\"--\"]";
+        Assert.assertEquals("16:12:35", format(time, DATE));
+        Assert.assertEquals("16:12", format(time, DateFunctions.newPureDate(2014, 3, 10, 16, 12)));
+        Assert.assertEquals("16", format(time, DateFunctions.newPureDate(2014, 3, 10, 16)));
+        Assert.assertEquals("--", format(time, DateFunctions.newPureDate(2014, 3, 10)));
+
+        // a fraction and the point that goes with it are the section's business, not the field's
+        Assert.assertEquals("16:12:35.070", format("HH:mm:ss?[.S3]", DATE));
+        Assert.assertEquals("16:12:35", format("HH:mm:ss?[.S3]", DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35)));
+        Assert.assertEquals("16:12:35.000", format("HH:mm:ss?[.S3|\".000\"]", DateFunctions.newPureDate(2014, 3, 10, 16, 12, 35)));
+
+        // an offset inside a section is what lets a zoned format string take a date with no hour
+        Assert.assertEquals(
+                "2014-03-10T12:12:35-04",
+                format("[America/New_York]yyyy-MM-dd?[\"T\"HH:mm:ssX]", DATE));
+        Assert.assertEquals(
+                "2014-03-10",
+                format("[America/New_York]yyyy-MM-dd?[\"T\"HH:mm:ssX]", DateFunctions.newPureDate(2014, 3, 10)));
+    }
+
+    @Test
+    public void testFormatWithAMalformedOptionalSection()
+    {
+        assertFormatFails("Expected '[' after '?' in format string: yyyy?", "yyyy?", DATE);
+        assertFormatFails("Missing closing bracket for optional section in format string: ?[HH:mm", "?[HH:mm", DATE);
+        assertFormatFails("Unmatched ']' in format string: HH]", "HH]", DATE);
+        assertFormatFails("'|' outside an optional section in format string: HH|mm", "HH|mm", DATE);
+        assertFormatFails("Empty alternative in optional section in format string: ?[|HH]", "?[|HH]", DATE);
     }
 
     // Format: literals
@@ -493,6 +673,91 @@ public class TestDateFormat
         assertFormatFails("Missing closing quotes in time zone definition: [\"EST]yyyy", "[\"EST]yyyy", DATE);
         assertFormatFails("Time zone can only be set at the beginning of the format string", "yyyy[EST]", DATE);
         assertFormatFails("Time zone can only be set at the beginning of the format string", "[EST]yyyy[EST]", DATE);
+    }
+
+    // Compatibility
+
+    /**
+     * Every legacy format string still says what it said, at every granularity, which is the claim
+     * the whole of this work rests on. The table is the evidence rather than the argument: its
+     * expectations came from the implementation this replaced.
+     */
+    @Test
+    public void testEveryLegacyFormatStringStillSaysWhatItSaid()
+    {
+        for (String[] row : LEGACY_COMPATIBILITY)
+        {
+            String formatString = row[0];
+            Assert.assertEquals(formatString, DATES.length + 1, row.length);
+            DateFormat.validate(formatString);
+            for (int i = 0; i < DATES.length; i++)
+            {
+                PureDate date = DATES[i];
+                String context = formatString + " on " + date;
+                if (row[i + 1] == null)
+                {
+                    Assert.assertThrows(context, IllegalArgumentException.class, () -> format(formatString, date));
+                }
+                else
+                {
+                    Assert.assertEquals(context, row[i + 1], format(formatString, date));
+                }
+            }
+        }
+    }
+
+    /**
+     * Each run of {@code S} has a width form that means precisely the same thing, at every
+     * granularity and including the granularities where both refuse the date. That equivalence is
+     * what lets the older spelling be deprecated later without anything losing a way to be said.
+     */
+    @Test
+    public void testTheModernSubsecondSpellingsMeanWhatTheLegacyRunsMeant()
+    {
+        assertSameOnEveryDate("S", "S<1");
+        assertSameOnEveryDate("SS", "S<2");
+        assertSameOnEveryDate("SSS", "S<3");
+        assertSameOnEveryDate("SSSS", "S*");
+        assertSameOnEveryDate("SSSSS", "S*");
+        assertSameOnEveryDate("SSSSSSSSS", "S*");
+
+        assertSameOnEveryDate("yyyy-MM-dd HH:mm:ss.SSS", "yyyy-MM-dd HH:mm:ss.S<3");
+        assertSameOnEveryDate("yyyy-MM-dd HH:mm:ss.SSSSSS", "yyyy-MM-dd HH:mm:ss.S*");
+        assertSameOnEveryDate("[EST]HH:mm:ss.SSSZ", "[EST]HH:mm:ss.S<3Z");
+
+        // and the discontinuity the width forms make visible: the count stops meaning a width at
+        // four letters, which is where S<3 turns into S*
+        Assert.assertEquals("070", format("SSS", DATE));
+        Assert.assertEquals("070004235", format("SSSS", DATE));
+    }
+
+    /**
+     * Assert that two format strings say the same thing at every granularity, whether that is a
+     * string they both write or an error they both raise.
+     *
+     * @param legacy format string in the older spelling
+     * @param modern format string in the spelling that replaces it
+     */
+    private static void assertSameOnEveryDate(String legacy, String modern)
+    {
+        for (PureDate date : DATES)
+        {
+            String context = legacy + " and " + modern + " on " + date;
+            String expected;
+            try
+            {
+                expected = format(legacy, date);
+            }
+            catch (IllegalArgumentException e)
+            {
+                Assert.assertEquals(
+                        context,
+                        e.getMessage(),
+                        Assert.assertThrows(context, IllegalArgumentException.class, () -> format(modern, date)).getMessage());
+                continue;
+            }
+            Assert.assertEquals(context, expected, format(modern, date));
+        }
     }
 
     /**

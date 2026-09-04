@@ -22,6 +22,7 @@ import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.compiler.validation.functionExpression.CopyValidator;
 import org.finos.legend.pure.m3.compiler.validation.functionExpression.EnumValidator;
+import org.finos.legend.pure.m3.compiler.validation.functionExpression.FormatValidator;
 import org.finos.legend.pure.m3.compiler.validation.functionExpression.GetAllValidator;
 import org.finos.legend.pure.m3.compiler.validation.functionExpression.GetAllVersionsInRangeValidator;
 import org.finos.legend.pure.m3.compiler.validation.functionExpression.GetAllVersionsValidator;
@@ -86,6 +87,10 @@ public class FunctionExpressionValidator implements MatchRunner<FunctionExpressi
         if ("extractEnumValue_Enumeration_1__String_1__T_1_".equals(function.getName()))
         {
             EnumValidator.validateEnum(instance, processorSupport);
+        }
+        if ("format_String_1__Any_MANY__String_1_".equals(function.getName()))
+        {
+            FormatValidator.validateFormat(instance, processorSupport);
         }
         if ("subType_Any_m__T_1__T_m_".equals(function.getName()) || "whenSubType_Any_1__T_1__T_$0_1$_".equals(function.getName()) || "whenSubType_Any_$0_1$__T_1__T_$0_1$_".equals(function.getName()) || "whenSubType_Any_MANY__T_1__T_MANY_".equals(function.getName()))
         {
