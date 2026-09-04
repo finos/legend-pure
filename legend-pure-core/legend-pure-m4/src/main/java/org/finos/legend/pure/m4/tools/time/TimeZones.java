@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m4.coreinstance.primitive.date;
+package org.finos.legend.pure.m4.tools.time;
 
 import java.time.DateTimeException;
 import java.time.ZoneId;
@@ -22,7 +22,8 @@ import java.util.TimeZone;
 
 /**
  * Resolves the name of a time zone, as one is written in a date format string or on a database
- * connection, to the zone it stands for.
+ * connection, to the zone it stands for. Resolve every time zone name here, so that a name means
+ * the same zone wherever it is read.
  *
  * <p>A name may be a region such as {@code America/New_York}, one of the three letter
  * abbreviations such as {@code EST}, or an offset from UTC such as {@code +0530}, {@code +05:30},

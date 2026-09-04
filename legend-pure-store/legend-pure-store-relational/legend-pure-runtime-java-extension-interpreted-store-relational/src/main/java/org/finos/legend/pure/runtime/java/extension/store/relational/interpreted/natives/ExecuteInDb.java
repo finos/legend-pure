@@ -38,7 +38,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.TimeZones;
+import org.finos.legend.pure.m4.tools.time.TimeZones;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.ConnectionWithDataSourceInfo;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.IConnectionManagerHandler;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.LoadToDbTableHelper;
