@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ImmutableList;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.junit.Assert;
 import org.junit.Test;
@@ -316,8 +318,8 @@ public class TestDateFunctions
     @Test
     public void testFromSQLDate()
     {
-        // A SQL date is normalized to midnight in the default zone, which is how a driver hands
-        // one over and what java.sql.Date.valueOf builds.
+        // java.sql.Date.valueOf works the day into an instant through java.util, which is how
+        // fromSQLDate reads one back out.
         java.sql.Date sqlDate = java.sql.Date.valueOf("2014-03-10");
         StrictDate date = DateFunctions.fromSQLDate(sqlDate);
         Assert.assertEquals("2014-03-10", date.toString());
@@ -328,42 +330,46 @@ public class TestDateFunctions
     }
 
     /**
-     * A SQL date names a day and no zone, and so does a {@link StrictDate}, so the conversion is a
-     * copy of the year, month, and day: the same SQL date has to give the same Pure date whatever
-     * zone the JVM is running in. Reading the instant the {@link java.sql.Date} wraps back in GMT
-     * would not, since a SQL date sits at midnight in the default zone and midnight east of GMT
-     * belongs to the day before.
+     * fromSQLDate reads a {@link java.sql.Date} as java.util built it, so it gives the day back
+     * for one java.util built, whatever zone the JVM runs in. That is the whole of what it can
+     * promise. A {@link java.sql.Date} carries an instant and not a day, and which day that
+     * instant stands for depends on the zone the driver worked it out in, which the date does
+     * not carry: a driver working through java.time rather than java.util lands elsewhere, and
+     * nothing here can tell.
+     *
+     * <p>So a date built by hand settles nothing about a date from a driver. What a driver
+     * hands over is settled in TestResultSetValueHandlers, against a database, where the day is
+     * asked for directly and this reading is only the way back for a driver that will not give
+     * one.
      */
     @Test
-    public void testFromSQLDateIsIndependentOfTheDefaultTimeZone()
+    public void testFromSQLDateReadsADateBuiltTheSameWay()
     {
-        String[] zoneIds = {
+        ImmutableList<String> days = Lists.immutable.with("1753-12-31", "1900-01-01", "2018-11-04", "2014-03-10");
+        ImmutableList<String> zoneIds = Lists.immutable.with(
                 "GMT",
-                "America/New_York",   // behind GMT, where reading the instant in GMT happens to work
-                "Asia/Tokyo",         // +09:00, far enough ahead of GMT that midnight is the day before
-                "Pacific/Kiritimati", // +14:00, the furthest ahead of GMT there is
+                "America/New_York",
+                "Asia/Tokyo",
+                "Pacific/Kiritimati", // the furthest ahead of GMT there is
                 "America/Sao_Paulo"   // 2018-11-04 had no midnight there: the clocks sprang forward
-        };
+        );
         TimeZone defaultTimeZone = TimeZone.getDefault();
         try
         {
             for (String zoneId : zoneIds)
             {
                 TimeZone.setDefault(TimeZone.getTimeZone(zoneId));
-                assertFromSQLDate("2014-03-10", zoneId);
-                assertFromSQLDate("2018-11-04", zoneId);
-                assertFromSQLDate("1900-01-01", zoneId);
+                for (String day : days)
+                {
+                    Assert.assertEquals(zoneId + " " + day, day,
+                            DateFunctions.fromSQLDate(java.sql.Date.valueOf(day)).toString());
+                }
             }
         }
         finally
         {
             TimeZone.setDefault(defaultTimeZone);
         }
-    }
-
-    private static void assertFromSQLDate(String day, String zoneId)
-    {
-        Assert.assertEquals(zoneId, day, DateFunctions.fromSQLDate(java.sql.Date.valueOf(day)).toString());
     }
 
     @Test

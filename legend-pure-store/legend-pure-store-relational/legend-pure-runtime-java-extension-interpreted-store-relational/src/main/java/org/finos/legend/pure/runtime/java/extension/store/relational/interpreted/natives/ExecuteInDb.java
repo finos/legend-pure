@@ -37,6 +37,7 @@ import org.finos.legend.pure.m3.tools.MetricsRecorder;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
 import org.finos.legend.pure.m4.tools.time.TimeZones;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.ConnectionWithDataSourceInfo;
@@ -56,6 +57,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.Calendar;
@@ -63,6 +68,8 @@ import java.util.Stack;
 
 public class ExecuteInDb extends NativeFunction
 {
+    private static final int SUBSECOND_DIGITS = 9;
+
     private static final ImmutableIntObjectMap<String> sqlTypeToPureType = IntObjectMaps.mutable.<String>empty()
             .withKeyValue(Types.NULL, M3Paths.Nil)
 
@@ -265,6 +272,13 @@ public class ExecuteInDb extends NativeFunction
             MutableList<CoreInstance> rows = Lists.mutable.ofInitialCapacity(maxRows);
             int rowNum = 0;
             Calendar calendar = TimeZones.newCalendar(tz);
+            ZoneId zone = calendar.getTimeZone().toZoneId();
+            // A date column carries a day and no zone, so ask the driver for the day itself; a
+            // driver that will not give one is asked once rather than once a row. The date
+            // handler in ResultSetValueHandlers says why at greater length.
+            boolean readsLocalDate = true;
+            boolean readsLocalDateTime = true;
+            boolean readsOffsetDateTime = true;
             do
             {
                 CoreInstance row = repository.newAnonymousCoreInstance(functionExpression.getSourceInformation(), rowClassifier);
@@ -278,20 +292,101 @@ public class ExecuteInDb extends NativeFunction
                     {
                         case Types.DATE:
                         {
-                            java.sql.Date date = rs.getDate(i);
-                            if (date != null)
+                            StrictDate day = null;
+                            if (readsLocalDate)
                             {
-                                value = repository.newDateCoreInstance(StrictDate.fromSQLDate(date));
+                                try
+                                {
+                                    LocalDate localDate = rs.getObject(i, LocalDate.class);
+                                    if (localDate != null)
+                                    {
+                                        day = DateFunctions.fromLocalDate(localDate);
+                                    }
+                                }
+                                catch (SQLException | UnsupportedOperationException | AbstractMethodError unsupported)
+                                {
+                                    readsLocalDate = false;
+                                }
+                            }
+                            if (!readsLocalDate)
+                            {
+                                java.sql.Date date = rs.getDate(i);
+                                if (date != null)
+                                {
+                                    day = StrictDate.fromSQLDate(date);
+                                }
+                            }
+                            if (day != null)
+                            {
+                                value = repository.newDateCoreInstance(day);
                             }
                             break;
                         }
                         case Types.TIMESTAMP:
+                        {
+                            // The column holds a wall clock kept in the zone the connection
+                            // names, and a Pure date is that moment in UTC, so read the wall
+                            // clock and shift it rather than asking a driver to shift it.
+                            PureDate moment = null;
+                            if (readsLocalDateTime)
+                            {
+                                try
+                                {
+                                    LocalDateTime wallClock = rs.getObject(i, LocalDateTime.class);
+                                    if (wallClock != null)
+                                    {
+                                        moment = DateFunctions.fromInstant(wallClock.atZone(zone).toInstant(), SUBSECOND_DIGITS);
+                                    }
+                                }
+                                catch (SQLException | UnsupportedOperationException | AbstractMethodError unsupported)
+                                {
+                                    readsLocalDateTime = false;
+                                }
+                            }
+                            if (!readsLocalDateTime)
+                            {
+                                java.sql.Timestamp timestamp = rs.getTimestamp(i, calendar);
+                                if (timestamp != null)
+                                {
+                                    moment = DateFunctions.fromSQLTimestamp(timestamp);
+                                }
+                            }
+                            if (moment != null)
+                            {
+                                value = repository.newDateCoreInstance(moment);
+                            }
+                            break;
+                        }
                         case Types.TIMESTAMP_WITH_TIMEZONE:
                         {
-                            java.sql.Timestamp timestamp = rs.getTimestamp(i, calendar);
-                            if (timestamp != null)
+                            // The column holds a moment already, so nothing is shifted.
+                            PureDate moment = null;
+                            if (readsOffsetDateTime)
                             {
-                                value = repository.newDateCoreInstance(DateFunctions.fromSQLTimestamp(timestamp));
+                                try
+                                {
+                                    OffsetDateTime zoned = rs.getObject(i, OffsetDateTime.class);
+                                    if (zoned != null)
+                                    {
+                                        moment = DateFunctions.fromInstant(zoned.toInstant(), SUBSECOND_DIGITS);
+                                    }
+                                }
+                                catch (SQLException | UnsupportedOperationException | AbstractMethodError unsupported)
+                                {
+                                    readsOffsetDateTime = false;
+                                }
+                            }
+                            if (!readsOffsetDateTime)
+                            {
+                                java.sql.Timestamp timestamp = rs.getTimestamp(i, calendar);
+                                if (timestamp != null)
+                                {
+                                    moment = DateFunctions.fromSQLTimestamp(timestamp);
+                                }
+                            }
+                            if (moment != null)
+                            {
+                                value = repository.newDateCoreInstance(moment);
                             }
                             break;
                         }

@@ -54,6 +54,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.Calendar;
 
 public class RelationalGen
 {
@@ -141,11 +142,12 @@ public class RelationalGen
 
             int rowCount = 0;
             MutableList<Root_meta_relational_metamodel_execute_Row> rows = Lists.mutable.of();
+            ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSetMetaData);
+            Calendar calendar = TimeZones.newCalendar(tz);
             while (rs.next())
             {
                 rowCount++;
-                ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSetMetaData);
-                MutableList<Object> rowValues = RelationalNativeImplementation.processRow(rs, handlers, sqlNull, TimeZones.newCalendar(tz));
+                MutableList<Object> rowValues = RelationalNativeImplementation.processRow(rs, handlers, sqlNull, calendar);
                 for (Function<ListIterable<Object>, String> function : extraValueFunctions)
                 {
                     rowValues.add(function.valueOf(rowValues));
