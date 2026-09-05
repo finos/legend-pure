@@ -149,7 +149,7 @@ The post-release version-bump commit (message starting `Bump version to`) is ski
 | Checkout | `actions/checkout@v6` |
 | Cache Maven deps | `actions/cache@v5` |
 | Setup JDK 17 | `actions/setup-java@v5` |
-| Configure Git | Sets committer identity for release plugin |
+| Configure Git | Sets committer identity for the post-release version bump |
 | Pre-fetch deps | `mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies` |
 | Build + Test (non-master) | `mvn -B -e install -DforkCount=3 -DreuseForks=true ...` |
 | Build + Test + Sonar (master only) | `mvn -B -e install -Psonar ...` |

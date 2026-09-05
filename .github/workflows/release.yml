@@ -15,7 +15,7 @@
 # The whole workflow releases one commit, pinned by the `prepare` job and
 # checked out by SHA everywhere else. Nothing reaches the remote -- no commit,
 # no tag, nothing published -- until every JDK in the matrix has gone green
-# against that exact commit, and the branch is proven not to have moved since.
+# against that exact commit.
 name: Release
 
 env:
@@ -305,8 +305,8 @@ jobs:
         # Deliberately advice, not an automatic rollback: autoPublish is on and
         # a release that reached Maven Central cannot be withdrawn, so whether
         # the tag survives is a human decision. What this can do is remove the
-        # guesswork -- `Clean repo after failed release` infers "the last two
-        # commits" and "the latest tag", where the exact refs are known here.
+        # guesswork -- `Clean repo after failed release` infers "the latest
+        # tag", where the exact ref is known here.
         if: failure()
         run: |
           set -euo pipefail
