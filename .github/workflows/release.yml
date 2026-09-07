@@ -15,7 +15,7 @@
 # The whole workflow releases one commit, pinned by the `prepare` job and
 # checked out by SHA everywhere else. Nothing reaches the remote -- no commit,
 # no tag, nothing published -- until every JDK in the matrix has gone green
-# against that exact commit, and the branch is proven not to have moved since.
+# against that exact commit.
 name: Release
 
 env:
@@ -36,18 +36,18 @@ on:
         required: false
         default: false
 
-# Everything that writes to the repository -- the checkout, the atomic push,
-# maven-release-plugin's SCM calls -- authenticates with FINOS_GITHUB_TOKEN,
-# so GITHUB_TOKEN itself never needs more than read access. Applies to the
-# called build-and-test workflow too: a called workflow inherits the caller's
-# permissions and can only narrow them further.
+# Everything that writes to the repository -- the tag push and the version
+# bump -- authenticates with FINOS_GITHUB_TOKEN, so GITHUB_TOKEN itself never
+# needs more than read access. Applies to the called build-and-test workflow
+# too: a called workflow inherits the caller's permissions and can only
+# narrow them further.
 permissions:
   contents: read
 
-# A release rewrites the branch (two version-bump commits) and creates a tag,
-# so two runs at once would race each other. Never cancel one in flight: a
-# release killed between pushing the tag and publishing needs the manual
-# `Clean repo after failed release` workflow to recover.
+# A release pushes a tag and one version-bump commit, so two runs at once
+# would race each other. Never cancel one in flight: a release killed between
+# pushing the tag and publishing needs the manual `Clean repo after failed
+# release` workflow to recover.
 # Dry runs get their own lane -- they push nothing, so there is no reason to
 # make a real release queue behind an hour of rehearsal.
 concurrency:
@@ -116,7 +116,7 @@ jobs:
           # backwards from it. The tag check below catches re-releasing a
           # version that shipped; this catches a typo that names one which
           # never did, which nothing else would notice.
-          current="$(python3 -c 'import xml.etree.ElementTree as ET; ns="{http://maven.apache.org/POM/4.0.0}"; print(ET.parse("pom.xml").getroot().find(ns + "version").text)')"
+          current="$(python3 -c 'import xml.etree.ElementTree as ET; ns="{http://maven.apache.org/POM/4.0.0}"; print(ET.parse("pom.xml").getroot().find(ns + "properties").find(ns + "revision").text)')"
           case "${current}" in
             *-SNAPSHOT) ;;
             *)
@@ -131,10 +131,7 @@ jobs:
           fi
           IFS=. read -r major minor patch <<< "${RELEASE_VERSION}"
           development="${major}.${minor}.$((patch + 1))-SNAPSHOT"
-          # maven-release-plugin's default tagNameFormat is
-          # @{project.artifactId}-@{project.version}. release:prepare is passed
-          # this name explicitly so the tag checked for here is the tag it
-          # creates, whatever the format is configured to be.
+          # The tag is pushed onto the tested commit itself; nothing is committed first.
           tag="legend-pure-${RELEASE_VERSION}"
           if git ls-remote --exit-code origin "refs/tags/${tag}" > /dev/null 2>&1; then
             echo "::error::Tag ${tag} already exists; ${RELEASE_VERSION} has been released."
@@ -179,58 +176,34 @@ jobs:
         with:
           ref: ${{ needs.prepare.outputs.sha }}
           token: ${{ secrets.FINOS_GITHUB_TOKEN }}
-          # The token has to stay in the working copy's git config: both the
-          # push below and maven-release-plugin's SCM calls authenticate with
-          # it from inside this checkout.
+          # The token has to stay in the working copy's git config: the tag
+          # push and the version-bump push below authenticate with it from
+          # inside this checkout.
           persist-credentials: true
-
-      - name: Re-create the release branch at the tested commit
-        run: |
-          set -euo pipefail
-          # Checking out by SHA leaves a detached HEAD, and
-          # maven-release-plugin needs a branch to commit the version bumps
-          # onto. Base that branch on the tested commit, never on whatever the
-          # remote tip has become in the meantime.
-          head="$(git rev-parse HEAD)"
-          if [ "${head}" != "${RELEASE_SHA}" ]; then
-            echo "::error::Checkout is at ${head}, not the pinned commit ${RELEASE_SHA}."
-            exit 1
-          fi
-          git checkout -B "${RELEASE_BRANCH}" "${RELEASE_SHA}"
 
       - name: Configure git
         run: |
           git config --global user.email "37706051+finos-admin@users.noreply.github.com"
           git config --global user.name "FINOS Administrator"
 
-      - name: Verify nothing landed while the tests ran
+      - name: Verify the tag is still free
         run: |
           set -euo pipefail
-          # Fail here, with a message that says what happened, rather than
-          # part way through release:prepare. This is not the only guard: the
-          # push further down is a plain fast-forward from a branch based
-          # exactly on ${RELEASE_SHA}, so git rejects it if this check races.
-          tip="$(git ls-remote origin "refs/heads/${RELEASE_BRANCH}" | cut -f1)"
-          if [ "${tip}" != "${RELEASE_SHA}" ]; then
-            echo "::error::${RELEASE_BRANCH} moved from ${RELEASE_SHA} to ${tip} while the build and test jobs ran. Nothing has been tagged or published; re-run the release so the new commits get built and tested too."
-            exit 1
-          fi
           if git ls-remote --exit-code origin "refs/tags/${RELEASE_TAG}" > /dev/null 2>&1; then
             echo "::error::Tag ${RELEASE_TAG} appeared while this run was in flight."
             exit 1
           fi
 
       - name: Restore Maven dependencies
-        # release:perform forks a full build in target/checkout against this
-        # runner's ~/.m2, so without this it resolves every dependency cold.
-        # Restore-only: the poms here are the ones the `verify` build already
-        # cached under this exact key, so there is never anything new to save.
+        # The deploy below builds against this runner's ~/.m2, so without
+        # this it resolves every dependency cold. Restore-only: the poms here
+        # are the ones the `verify` build already cached under this exact key.
         uses: actions/cache/restore@v5
         env:
           cache-name: cache-mvn-deps
         with:
-          # Never restore this project's own artifacts: release:perform has to
-          # build its own from the tag, not pick up a cached copy.
+          # Never restore this project's own artifacts: the release build has
+          # to produce its own, not pick up a cached copy.
           path: |
             ~/.m2/repository
             !~/.m2/repository/org/finos/legend/pure
@@ -257,100 +230,83 @@ jobs:
         with:
           theme: dark
 
-      - name: Prepare release
-        # -DpushChanges=false keeps the version-bump commits and the tag on
-        # this runner. They only leave it once the checks in the next two
-        # steps have confirmed the tag really is the tested commit plus a
-        # version bump, so a failure anywhere in here leaves the repository
-        # untouched and needs no cleanup.
-        run: >
-          mvn -B -DpreparationGoals="clean -N" release:prepare
-          -DpushChanges=false
-          -DreleaseVersion="${RELEASE_VERSION}"
-          -DdevelopmentVersion="${DEVELOPMENT_VERSION}"
-          -Dtag="${RELEASE_TAG}"
-          -P release
+      - name: Build release
+        # Tests are skipped here because the `verify` job already ran the
+        # whole suite on every supported JDK against this exact commit; this
+        # build only needs to compile, sign and package.
+        run: mvn -B -e -T 3 -DskipTests -Drevision="${RELEASE_VERSION}" install -P release
         env:
-          MAVEN_OPTS: -XX:MaxRAMPercentage=25.0
+          MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
 
-      - name: Verify the tag is the tested commit
+      - name: Verify the release artifacts carry the release version
         run: |
           set -euo pipefail
-          tagged="$(git rev-parse "${RELEASE_TAG}^{commit}")"
-          parent="$(git rev-parse "${tagged}^")"
-          if [ "${parent}" != "${RELEASE_SHA}" ]; then
-            echo "::error::${RELEASE_TAG} sits on ${parent}, not on the tested commit ${RELEASE_SHA}."
+          if find ~/.m2/repository/org/finos/legend/pure -path "*/${RELEASE_VERSION}/*" -name '*.pom' | xargs grep -l '\${revision}'; then
+            echo "::error::A published pom still contains \${revision}; flatten-maven-plugin did not run."
             exit 1
           fi
-          # release:prepare only rewrites <version> and <scm><tag>, so every
-          # file that goes into the published artifacts must be byte-identical
-          # to the one the matrix tested. Anything else in the diff means what
-          # is about to be published is not what was tested.
-          changed="$(git diff --name-only "${RELEASE_SHA}" "${tagged}" | grep -v -E '(^|/)pom\.xml$' || true)"
-          if [ -n "${changed}" ]; then
-            echo "::error::The release commit changes files other than poms:"
-            printf '%s\n' "${changed}"
-            exit 1
-          fi
+          count="$(find ~/.m2/repository/org/finos/legend/pure -path "*/${RELEASE_VERSION}/*" -name '*.pom' | wc -l)"
+          echo "${count} poms resolved to ${RELEASE_VERSION}"
+          [ "${count}" -gt 0 ]
 
       - name: Report the dry run
         if: ${{ inputs.dryRun }}
         run: |
           set -euo pipefail
-          tagged="$(git rev-parse "${RELEASE_TAG}^{commit}")"
-          poms="$(git diff --name-only "${RELEASE_SHA}" "${tagged}" | wc -l)"
           {
             echo "## Dry run: release ${RELEASE_VERSION} would have gone ahead"
             echo
             echo "Checked, without touching the remote:"
             echo
             echo "- ${RELEASE_BRANCH} pinned at ${RELEASE_SHA}, green on every supported JDK"
-            echo "- ${RELEASE_BRANCH} has not moved since, and ${RELEASE_TAG} does not exist yet"
-            echo "- release:prepare produced ${RELEASE_TAG} as ${tagged}, a direct child of the tested commit"
-            echo "- it rewrote ${poms} pom files and nothing else"
+            echo "- ${RELEASE_TAG} does not exist yet"
+            echo "- the release build with -Drevision=${RELEASE_VERSION} succeeded and every pom resolved"
             echo "- the next development version would be ${DEVELOPMENT_VERSION}"
             echo
-            echo "Not run: the atomic push of ${RELEASE_BRANCH} and ${RELEASE_TAG}, and release:perform."
+            echo "Not run: pushing ${RELEASE_TAG}, deploying to Maven Central, and the bump to ${DEVELOPMENT_VERSION}."
             echo "Dispatch again with dryRun unchecked to release for real."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Push the release commits and tag
+      - name: Push the release tag
         if: ${{ !inputs.dryRun }}
         run: |
           set -euo pipefail
-          # The point of no return, and the last gate. The branch update is a
-          # plain, never forced, push from a branch based exactly on
-          # ${RELEASE_SHA}: if anyone landed a commit since, git rejects it as
-          # a non-fast-forward, and --atomic means the tag is not created
-          # either. Everything up to here was local, so a rejection leaves the
-          # repository exactly as it was.
-          git push --atomic origin \
-            "refs/heads/${RELEASE_BRANCH}:refs/heads/${RELEASE_BRANCH}" \
-            "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
-          # release:perform builds from its own fresh clone of the tag, so
-          # confirm the tag it is going to fetch is the one just verified.
+          # The point of no return. The tag goes on the tested commit itself;
+          # the branch is not touched here, so nothing can race it.
+          git tag "${RELEASE_TAG}" "${RELEASE_SHA}"
+          git push origin "refs/tags/${RELEASE_TAG}"
           pushed="$(git ls-remote origin "refs/tags/${RELEASE_TAG}" | awk -v ref="refs/tags/${RELEASE_TAG}" '$2 == ref { print $1 }')"
-          if [ "${pushed}" != "$(git rev-parse "${RELEASE_TAG}")" ]; then
-            echo "::error::Remote tag ${RELEASE_TAG} is ${pushed}, not the tag created by this run."
+          if [ "${pushed}" != "${RELEASE_SHA}" ]; then
+            echo "::error::Remote tag ${RELEASE_TAG} is ${pushed}, not ${RELEASE_SHA}."
             exit 1
           fi
 
-      - name: Perform release
-        # `-Darguments` reaches the forked `deploy` build. Tests are skipped
-        # there because the `test` jobs above already ran the whole suite on
-        # every supported JDK against this exact code; this fork only needs to
-        # compile and publish.
+      - name: Deploy release
         if: ${{ !inputs.dryRun }}
-        run: mvn -B release:perform -P release -Darguments="-DskipTests"
+        run: mvn -B -e -T 3 -DskipTests -Drevision="${RELEASE_VERSION}" deploy -P release
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
+
+      - name: Bump to the next development version
+        if: ${{ !inputs.dryRun }}
+        run: |
+          set -euo pipefail
+          # On the branch's current tip, not the tested commit: anything that
+          # landed during the release stays. The change is one property, so
+          # there is nothing to conflict with.
+          git fetch origin "${RELEASE_BRANCH}"
+          git checkout -B "${RELEASE_BRANCH}" "origin/${RELEASE_BRANCH}"
+          sed -i "s|<revision>.*</revision>|<revision>${DEVELOPMENT_VERSION}</revision>|" pom.xml
+          git add pom.xml
+          git commit -m "Bump version to ${DEVELOPMENT_VERSION}"
+          git push origin "${RELEASE_BRANCH}"
 
       - name: Explain how to recover
         # Deliberately advice, not an automatic rollback: autoPublish is on and
         # a release that reached Maven Central cannot be withdrawn, so whether
         # the tag survives is a human decision. What this can do is remove the
-        # guesswork -- `Clean repo after failed release` infers "the last two
-        # commits" and "the latest tag", where the exact refs are known here.
+        # guesswork -- `Clean repo after failed release` infers "the latest
+        # tag", where the exact ref is known here.
         if: failure()
         run: |
           set -euo pipefail
@@ -359,12 +315,12 @@ jobs:
             echo "## Release ${RELEASE_VERSION} failed"
             echo
             if [ -z "${remote_tag}" ]; then
-              echo "**Nothing was pushed.** The tag ${RELEASE_TAG} does not exist on the remote,"
-              echo "and ${RELEASE_BRANCH} is still at ${RELEASE_SHA}. Nothing needs cleaning up:"
+              echo "**Nothing was pushed.** The tag ${RELEASE_TAG} does not exist on the remote"
+              echo "and ${RELEASE_BRANCH} was not touched. Nothing needs cleaning up:"
               echo "fix the cause and dispatch the release again."
             else
-              echo "**The tag and the version bumps are already pushed**, so this failed during"
-              echo "release:perform. Recover by hand, in this order:"
+              echo "**The tag is already pushed**, so this failed during deploy or the"
+              echo "version bump. Recover by hand, in this order:"
               echo
               echo "1. Work out whether anything reached Maven Central. This project publishes"
               echo "   with autoPublish enabled and publishing cannot be undone:"
@@ -372,17 +328,12 @@ jobs:
               echo "       https://repo1.maven.org/maven2/org/finos/legend/pure/legend-pure/${RELEASE_VERSION}/"
               echo
               echo "   Check the Central portal too, for a deployment stuck in validation."
-              echo "2. If ${RELEASE_VERSION} **was** published, leave the tag and the commits"
-              echo "   alone and release the next patch version instead."
-              echo "3. Only if nothing was published, undo exactly what this run pushed:"
+              echo "2. If ${RELEASE_VERSION} **was** published, leave the tag alone. If the bump"
+              echo "   commit is missing, set <revision> in pom.xml to ${DEVELOPMENT_VERSION} by hand"
+              echo "   on ${RELEASE_BRANCH}."
+              echo "3. Only if nothing was published, delete the tag and dispatch again:"
               echo
               echo "       git push --delete origin ${RELEASE_TAG}"
-              echo "       git push --force-with-lease=refs/heads/${RELEASE_BRANCH}:$(git rev-parse HEAD) \\"
-              echo "           origin ${RELEASE_SHA}:refs/heads/${RELEASE_BRANCH}"
-              echo
-              echo "   The lease makes the rewind fail if anything landed on ${RELEASE_BRANCH}"
-              echo "   after this run pushed. Do not force past it without first working out"
-              echo "   what that commit was."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
           if [ -n "${remote_tag}" ]; then

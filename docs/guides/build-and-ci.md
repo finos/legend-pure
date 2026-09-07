@@ -134,7 +134,7 @@ The pipeline is defined in [`.github/workflows/build.yml`](../../.github/workflo
 ### Trigger
 
 Runs on every `push` and `pull_request` event.
-Release commits (messages containing `[maven-release-plugin]`) are skipped.
+The post-release version-bump commit (message starting `Bump version to`) is skipped.
 
 ### Environment
 
@@ -149,7 +149,7 @@ Release commits (messages containing `[maven-release-plugin]`) are skipped.
 | Checkout | `actions/checkout@v6` |
 | Cache Maven deps | `actions/cache@v5` |
 | Setup JDK 17 | `actions/setup-java@v5` |
-| Configure Git | Sets committer identity for release plugin |
+| Configure Git | Sets committer identity for the post-release version bump |
 | Pre-fetch deps | `mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies` |
 | Build + Test (non-master) | `mvn -B -e install -DforkCount=3 -DreuseForks=true ...` |
 | Build + Test + Sonar (master only) | `mvn -B -e install -Psonar ...` |
@@ -169,9 +169,14 @@ uploaded as a build artifact for the `test-result.yml` workflow to process.
 
 ### Release Process
 
-Releases are managed via `maven-release-plugin` and are triggered by the
-[`release.yml`](../../.github/workflows/release.yml) workflow. Do not trigger
-releases manually unless you are the designated release engineer.
+Releases are triggered by the [`release.yml`](../../.github/workflows/release.yml)
+workflow. The project uses Maven CI-friendly versions: every pom's version is
+`${revision}`, defined once in the root pom, and `flatten-maven-plugin` writes
+the resolved version into the published poms. A release builds and deploys the
+tested commit with `-Drevision=<version>`, pushes the tag `legend-pure-<version>`
+onto that commit, and then commits the next `-SNAPSHOT` to the branch. There are
+no release commits and nothing is rebuilt from the tag. Do not trigger releases
+manually unless you are the designated release engineer.
 
 ---
 

@@ -22,7 +22,7 @@ jobs:
     # workflow calls too, so a release is tested the same way CI tests.
     # `Publish Test Results` watches this workflow by name and needs the
     # event payload uploaded alongside the surefire reports.
-    if: "!contains(github.event.head_commit.message, '[maven-release-plugin]')"
+    if: "!startsWith(github.event.head_commit.message, 'Bump version to')"
     uses: ./.github/workflows/build-and-test.yml
     with:
       sonar: true
