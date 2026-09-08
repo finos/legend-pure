@@ -233,8 +233,9 @@ jobs:
       - name: Build release
         # Tests are skipped here because the `verify` job already ran the
         # whole suite on every supported JDK against this exact commit; this
-        # build only needs to compile, sign and package.
-        run: mvn -B -e -T 3 -DskipTests -Drevision="${RELEASE_VERSION}" install -P release
+        # build only needs to compile, sign and package. `clean` because
+        # several Pure Maven plugins fail over a pre-existing target dir.
+        run: mvn -B -e -T 3 -DskipTests -Drevision="${RELEASE_VERSION}" clean install -P release
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
 
@@ -282,15 +283,18 @@ jobs:
           fi
 
       - name: Deploy release
-        # No -T here: central-publishing-maven-plugin (extensions=true, from the
-        # org.finos:finos parent) defers every module's artifacts and uploads
-        # one bundle for the whole reactor at the end. Under Maven's parallel
-        # builder that aggregation deadlocks -- every thread ends up stuck on
-        # "Waiting for other projects build to finish..." indefinitely. The
-        # build is already done and installed by the step above; deploy only
-        # signs what is missing and uploads, so parallelism buys nothing.
+        # `clean`: several Pure Maven plugins fail over a populated target
+        # directory ("The code repository ... already exists"), so this cannot
+        # build on top of the `Build release` output -- it is a fresh build
+        # that also deploys. That step stays as the gate that a release build
+        # works before the tag is pushed.
+        # No -T: central-publishing-maven-plugin (extensions=true, from the
+        # org.finos:finos parent) aggregates the whole reactor into one bundle
+        # at the end of the build, and that deadlocks under Maven's parallel
+        # builder -- every thread ends up stuck on "Waiting for other projects
+        # build to finish..." indefinitely.
         if: ${{ !inputs.dryRun }}
-        run: mvn -B -e -DskipTests -Drevision="${RELEASE_VERSION}" deploy -P release
+        run: mvn -B -e -DskipTests -Drevision="${RELEASE_VERSION}" clean deploy -P release
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
 
