@@ -38,6 +38,21 @@ jobs:
           git config --global user.email "37706051+finos-admin@users.noreply.github.com"
           git config --global user.name "FINOS Administrator"
 
+      - name: Verify nothing landed since this run was dispatched
+        run: |
+          set -euo pipefail
+          # The version bump at the end of this run commits onto the commit
+          # built here, so a branch that has moved turns that push into a
+          # non-fast-forward. Fail now, before anything is deployed or tagged,
+          # rather than after. This is not the only guard: that push is plain
+          # and never forced, so git still rejects it if the branch moves
+          # between this check and the bump.
+          tip="$(git ls-remote origin "refs/heads/${GITHUB_REF_NAME}" | cut -f1)"
+          if [ "${tip}" != "${GITHUB_SHA}" ]; then
+            echo "::error::${GITHUB_REF_NAME} moved from ${GITHUB_SHA} to ${tip} after this run was dispatched. Nothing has been deployed or tagged; dispatch the release again."
+            exit 1
+          fi
+
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
@@ -93,9 +108,17 @@ jobs:
           set -euo pipefail
           IFS=. read -r major minor patch <<< "${RELEASE_VERSION}"
           nextSnapshot="${major}.${minor}.$((patch + 1))-SNAPSHOT"
-          git fetch origin "${GITHUB_REF_NAME}"
-          git checkout -B "${GITHUB_REF_NAME}" "origin/${GITHUB_REF_NAME}"
+          # Committed onto the commit that was built, deployed and tagged,
+          # never onto whatever the remote tip has become, so the push below is
+          # a plain fast-forward: if anything landed on the branch after the
+          # check above, git rejects it rather than reverting a <revision>
+          # somebody else changed.
+          git checkout -B "${GITHUB_REF_NAME}" "${GITHUB_SHA}"
           sed -i "s|<revision>.*</revision>|<revision>${nextSnapshot}</revision>|" pom.xml
+          if git diff --quiet -- pom.xml; then
+            echo "::error::sed left pom.xml unchanged; set <revision> to ${nextSnapshot} by hand on ${GITHUB_REF_NAME}."
+            exit 1
+          fi
           git add pom.xml
           git commit -m "Bump version to ${nextSnapshot}"
           git push origin "${GITHUB_REF_NAME}"

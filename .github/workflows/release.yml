@@ -15,7 +15,7 @@
 # The whole workflow releases one commit, pinned by the `prepare` job and
 # checked out by SHA everywhere else. Nothing reaches the remote -- no commit,
 # no tag, nothing published -- until every JDK in the matrix has gone green
-# against that exact commit.
+# against that exact commit, and the branch is proven not to have moved since.
 name: Release
 
 env:
@@ -186,9 +186,21 @@ jobs:
           git config --global user.email "37706051+finos-admin@users.noreply.github.com"
           git config --global user.name "FINOS Administrator"
 
-      - name: Verify the tag is still free
+      - name: Verify nothing landed while the tests ran
         run: |
           set -euo pipefail
+          # The version bump at the end of this run commits onto the tested
+          # commit, so a branch that has moved turns that push into a
+          # non-fast-forward and the release fails after publishing. Fail here
+          # instead, before anything has been tagged or deployed, with a
+          # message that says what happened. This is not the only guard: that
+          # push is plain and never forced, so git still rejects it if the
+          # branch moves between this check and the bump.
+          tip="$(git ls-remote origin "refs/heads/${RELEASE_BRANCH}" | cut -f1)"
+          if [ "${tip}" != "${RELEASE_SHA}" ]; then
+            echo "::error::${RELEASE_BRANCH} moved from ${RELEASE_SHA} to ${tip} while the build and test jobs ran. Nothing has been tagged or published; re-run the release so the new commits get built and tested too."
+            exit 1
+          fi
           if git ls-remote --exit-code origin "refs/tags/${RELEASE_TAG}" > /dev/null 2>&1; then
             echo "::error::Tag ${RELEASE_TAG} appeared while this run was in flight."
             exit 1
@@ -233,8 +245,9 @@ jobs:
       - name: Build release
         # Tests are skipped here because the `verify` job already ran the
         # whole suite on every supported JDK against this exact commit; this
-        # build only needs to compile, sign and package.
-        run: mvn -B -e -T 3 -DskipTests -Drevision="${RELEASE_VERSION}" install -P release
+        # build only needs to compile, sign and package. It is also the last
+        # gate before the tag push, so a failure here costs nothing.
+        run: mvn -B -e -T 4 -DskipTests -Drevision="${RELEASE_VERSION}" install -P release
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
 
@@ -259,7 +272,7 @@ jobs:
             echo "Checked, without touching the remote:"
             echo
             echo "- ${RELEASE_BRANCH} pinned at ${RELEASE_SHA}, green on every supported JDK"
-            echo "- ${RELEASE_TAG} does not exist yet"
+            echo "- ${RELEASE_BRANCH} has not moved since, and ${RELEASE_TAG} does not exist yet"
             echo "- the release build with -Drevision=${RELEASE_VERSION} succeeded and every pom resolved"
             echo "- the next development version would be ${DEVELOPMENT_VERSION}"
             echo
@@ -282,15 +295,23 @@ jobs:
           fi
 
       - name: Deploy release
-        # No -T here: central-publishing-maven-plugin (extensions=true, from the
+        # `clean` matters. `Build release` above already ran the whole
+        # lifecycle in this workspace, so target/ holds that run's output:
+        # jars maven-shade-plugin rewrote in place, and the signatures
+        # maven-gpg-plugin wrote beside them. Re-entering the lifecycle over
+        # that state lets plugins act on their own previous output -- shade
+        # re-shading an already-shaded jar, for one -- so what gets published
+        # is not a clean build of the tagged commit. release:perform used to
+        # avoid this by building in a fresh target/checkout; `clean` is the
+        # equivalent now that the deploy shares a workspace with the build.
+        #
+        # No -T: central-publishing-maven-plugin (extensions=true, from the
         # org.finos:finos parent) defers every module's artifacts and uploads
         # one bundle for the whole reactor at the end. Under Maven's parallel
         # builder that aggregation deadlocks -- every thread ends up stuck on
-        # "Waiting for other projects build to finish..." indefinitely. The
-        # build is already done and installed by the step above; deploy only
-        # signs what is missing and uploads, so parallelism buys nothing.
+        # "Waiting for other projects build to finish..." indefinitely.
         if: ${{ !inputs.dryRun }}
-        run: mvn -B -e -DskipTests -Drevision="${RELEASE_VERSION}" deploy -P release
+        run: mvn -B -e -DskipTests -Drevision="${RELEASE_VERSION}" clean deploy -P release
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
 
@@ -298,12 +319,18 @@ jobs:
         if: ${{ !inputs.dryRun }}
         run: |
           set -euo pipefail
-          # On the branch's current tip, not the tested commit: anything that
-          # landed during the release stays. The change is one property, so
-          # there is nothing to conflict with.
-          git fetch origin "${RELEASE_BRANCH}"
-          git checkout -B "${RELEASE_BRANCH}" "origin/${RELEASE_BRANCH}"
+          # Committed onto the tested commit, never onto whatever the remote
+          # tip has become, so the push below is a plain fast-forward: if
+          # anything landed on the branch after the check above, git rejects it
+          # rather than reverting a <revision> somebody else changed. The
+          # release is already published by then, which is why the recovery
+          # summary covers setting <revision> by hand.
+          git checkout -B "${RELEASE_BRANCH}" "${RELEASE_SHA}"
           sed -i "s|<revision>.*</revision>|<revision>${DEVELOPMENT_VERSION}</revision>|" pom.xml
+          if git diff --quiet -- pom.xml; then
+            echo "::error::sed left pom.xml unchanged; set <revision> to ${DEVELOPMENT_VERSION} by hand on ${RELEASE_BRANCH}."
+            exit 1
+          fi
           git add pom.xml
           git commit -m "Bump version to ${DEVELOPMENT_VERSION}"
           git push origin "${RELEASE_BRANCH}"
@@ -314,20 +341,40 @@ jobs:
         # the tag survives is a human decision. What this can do is remove the
         # guesswork -- `Clean repo after failed release` infers "the latest
         # tag", where the exact ref is known here.
-        if: failure()
+        # Cancellation as well as failure: a run killed between the tag push
+        # and the deploy is exactly the case the concurrency comment above
+        # says needs manual recovery, and `failure()` alone does not fire for
+        # it.
+        if: ${{ failure() || cancelled() }}
         run: |
           set -euo pipefail
-          remote_tag="$(git ls-remote origin "refs/tags/${RELEASE_TAG}" 2> /dev/null | awk -v ref="refs/tags/${RELEASE_TAG}" '$2 == ref { print $1 }')" || true
+          # Never claim "nothing was pushed" on a guess. A remote that cannot
+          # be reached is not a remote without the tag, and that summary tells
+          # the reader to stop looking.
+          if tag_refs="$(git ls-remote origin "refs/tags/${RELEASE_TAG}")"; then
+            remote_tag="$(awk -v ref="refs/tags/${RELEASE_TAG}" '$2 == ref { print $1 }' <<< "${tag_refs}")"
+          else
+            remote_tag=unknown
+          fi
           {
-            echo "## Release ${RELEASE_VERSION} failed"
+            echo "## Release ${RELEASE_VERSION} did not finish"
             echo
             if [ -z "${remote_tag}" ]; then
               echo "**Nothing was pushed.** The tag ${RELEASE_TAG} does not exist on the remote"
-              echo "and ${RELEASE_BRANCH} was not touched. Nothing needs cleaning up:"
-              echo "fix the cause and dispatch the release again."
+              echo "and ${RELEASE_BRANCH} was not touched. Nothing needs cleaning up: deal with"
+              echo "whatever stopped this run and dispatch the release again."
             else
-              echo "**The tag is already pushed**, so this failed during deploy or the"
-              echo "version bump. Recover by hand, in this order:"
+              if [ "${remote_tag}" = unknown ]; then
+                echo "**The remote could not be reached** to check whether ${RELEASE_TAG} was"
+                echo "pushed, so confirm it by hand first:"
+                echo
+                echo "       git ls-remote origin refs/tags/${RELEASE_TAG}"
+                echo
+                echo "The steps below assume the tag is there."
+              else
+                echo "**The tag is already pushed**, so this stopped at or after the tag push."
+              fi
+              echo "Recover by hand, in this order:"
               echo
               echo "1. Work out whether anything reached Maven Central. This project publishes"
               echo "   with autoPublish enabled and publishing cannot be undone:"
@@ -337,12 +384,15 @@ jobs:
               echo "   Check the Central portal too, for a deployment stuck in validation."
               echo "2. If ${RELEASE_VERSION} **was** published, leave the tag alone. If the bump"
               echo "   commit is missing, set <revision> in pom.xml to ${DEVELOPMENT_VERSION} by hand"
-              echo "   on ${RELEASE_BRANCH}."
+              echo "   on ${RELEASE_BRANCH} -- but look at what is on the branch first. That bump"
+              echo "   is pushed as a fast-forward from ${RELEASE_SHA}, so it is rejected when"
+              echo "   somebody else pushed while this ran; if their commit set <revision>"
+              echo "   deliberately, keep their value rather than overwriting it."
               echo "3. Only if nothing was published, delete the tag and dispatch again:"
               echo
               echo "       git push --delete origin ${RELEASE_TAG}"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
           if [ -n "${remote_tag}" ]; then
-            echo "::error::Release ${RELEASE_VERSION} failed after pushing ${RELEASE_TAG}. See the job summary for recovery steps."
+            echo "::error::Release ${RELEASE_VERSION} did not finish and may need manual cleanup. See the job summary for recovery steps."
           fi

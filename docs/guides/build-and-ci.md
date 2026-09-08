@@ -133,8 +133,9 @@ The pipeline is defined in [`.github/workflows/build.yml`](../../.github/workflo
 
 ### Trigger
 
-Runs on every `push` and `pull_request` event.
-The post-release version-bump commit (message starting `Bump version to`) is skipped.
+Runs on every branch `push` and `pull_request` event. Tag pushes are ignored,
+and the post-release version-bump commit (message starting `Bump version to`)
+is skipped.
 
 ### Environment
 
@@ -174,9 +175,11 @@ workflow. The project uses Maven CI-friendly versions: every pom's version is
 `${revision}`, defined once in the root pom, and `flatten-maven-plugin` writes
 the resolved version into the published poms. A release builds and deploys the
 tested commit with `-Drevision=<version>`, pushes the tag `legend-pure-<version>`
-onto that commit, and then commits the next `-SNAPSHOT` to the branch. There are
-no release commits and nothing is rebuilt from the tag. Do not trigger releases
-manually unless you are the designated release engineer.
+onto that commit, and then commits the next `-SNAPSHOT` to the branch. There is
+no release commit — the tag lands on the tested commit itself — and the deploy
+runs `clean deploy`, so what is published is a fresh build of that commit rather
+than the output the preceding `install` left behind in `target/`. Do not trigger
+releases manually unless you are the designated release engineer.
 
 ---
 
