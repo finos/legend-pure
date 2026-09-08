@@ -14,7 +14,15 @@
 
 name: Build CI
 
-on: [push, pull_request]
+on:
+  push:
+    # Branch pushes only. A release tag lands on a commit this workflow already
+    # built when it went onto the branch, so building it again on the tag push
+    # spends a second full matrix on it and hands `Publish Test Results` a
+    # duplicate set of results for the same commit.
+    tags-ignore:
+      - '**'
+  pull_request:
 
 jobs:
   verify:
