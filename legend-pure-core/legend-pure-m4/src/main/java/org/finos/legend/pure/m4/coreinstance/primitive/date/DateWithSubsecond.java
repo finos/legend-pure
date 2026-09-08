@@ -18,8 +18,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 
 public class DateWithSubsecond extends AbstractDateWithSubsecond
 {
@@ -52,10 +50,7 @@ public class DateWithSubsecond extends AbstractDateWithSubsecond
 
     public static DateTime fromSQLTimestamp(java.sql.Timestamp timestamp)
     {
-        GregorianCalendar calendar = new GregorianCalendar(DateFunctions.GMT_TIME_ZONE);
-        calendar.setTime(timestamp);
-        String subsecond = TimeFunctions.subsecondFromNanoseconds(timestamp.getNanos());
-        return new DateWithSubsecond(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND), subsecond);
+        return fromInstant(timestamp.toInstant(), 9);
     }
 
     public static DateTime fromInstant(Instant instant, int subsecondPrecision)

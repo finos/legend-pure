@@ -15,8 +15,8 @@
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
 import org.finos.legend.pure.m4.tools.SafeAppendable;
+import org.finos.legend.pure.m4.tools.time.TimeZones;
 
-import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -1102,11 +1102,11 @@ public final class DateFormatPattern
          * Render dates in the given time zone, rather than as the UTC times they are. A date with
          * no hour is not an instant and is never shifted, whatever zone is named here.
          *
-         * <p>The zone may be named in any form {@link ZoneId#of(String, java.util.Map)} takes
-         * against {@link ZoneId#SHORT_IDS} - a region such as {@code America/New_York}, one of the
-         * three letter abbreviations such as {@code EST}, or an offset such as {@code GMT+5} - and
-         * the name as given here is what {@link #timeZoneName} writes. Naming a zone twice keeps
-         * the second, and the name is resolved when the pattern is built.
+         * <p>The zone may be named in any form {@link TimeZones#parse(String)} takes - a region
+         * such as {@code America/New_York}, one of the three letter abbreviations such as
+         * {@code EST}, or an offset such as {@code GMT+5} - and the name as given here is what
+         * {@link #timeZoneName} writes. Naming a zone twice keeps the second, and the name is
+         * resolved when the pattern is built.
          *
          * @param timeZoneId time zone name
          * @return this builder
@@ -1453,7 +1453,7 @@ public final class DateFormatPattern
             flushLiteral();
             if ((this.timeZoneId != null) && (this.timeZone == null))
             {
-                this.timeZone = resolveTimeZone(this.timeZoneId);
+                this.timeZone = TimeZones.parse(this.timeZoneId);
             }
             return new DateFormatPattern(this.elements.toArray(new Element[0]), this.timeZone, this.timeZoneId);
         }
@@ -2344,17 +2344,5 @@ public final class DateFormatPattern
             appendable.append(character);
         }
         appendable.append(']');
-    }
-
-    private static ZoneId resolveTimeZone(String timeZoneId)
-    {
-        try
-        {
-            return ZoneId.of(timeZoneId, ZoneId.SHORT_IDS);
-        }
-        catch (DateTimeException e)
-        {
-            throw new IllegalArgumentException("Unknown time zone: " + timeZoneId, e);
-        }
     }
 }

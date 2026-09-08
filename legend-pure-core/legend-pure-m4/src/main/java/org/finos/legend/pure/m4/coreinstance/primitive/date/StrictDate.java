@@ -139,11 +139,25 @@ public final class StrictDate extends AbstractDateWithDay
         return new StrictDate(year, month, day);
     }
 
+    /**
+     * Convert a SQL date to the Pure date standing for the same day.
+     *
+     * <p>Neither a SQL date nor a {@link StrictDate} carries a time zone, but a
+     * {@link java.sql.Date} carries an instant rather than a day, so a day only comes back out of
+     * one by reading that instant in the zone the driver built it in. This reads it the way
+     * java.util built it, which is what a driver old enough to be handing over a
+     * {@link java.sql.Date} at all is most likely to have done.
+     *
+     * <p>Prefer asking the driver for the day itself, through
+     * {@link java.sql.ResultSet#getObject(int, Class)} for a {@link LocalDate}: that carries no
+     * instant, so no zone has to be guessed at. Come here only for a driver that will not.
+     *
+     * @param date SQL date
+     * @return Pure date standing for the same day
+     */
     public static StrictDate fromSQLDate(java.sql.Date date)
     {
-        GregorianCalendar calendar = new GregorianCalendar(DateFunctions.GMT_TIME_ZONE);
-        calendar.setTime(date);
-        return fromCalendar(calendar);
+        return fromLocalDate(date.toLocalDate());
     }
 
     public static StrictDate fromCalendar(GregorianCalendar calendar)
