@@ -111,11 +111,11 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
         if (getMajorVersion() == 2)
         {
             defaultH2Properties = System.getProperty("legend.test.h2.properties",
-                    ";NON_KEYWORDS=ANY,ASYMMETRIC,AUTHORIZATION,CAST,CURRENT_PATH,CURRENT_ROLE,DAY,DEFAULT,ELSE,END,HOUR,KEY,MINUTE,MONTH,SECOND,SESSION_USER,SET,SOME,SYMMETRIC,SYSTEM_USER,TO,UESCAPE,USER,VALUE,WHEN,YEAR;MODE=LEGACY");
+                    ";NON_KEYWORDS=ANY,ASYMMETRIC,AUTHORIZATION,CAST,CURRENT_PATH,CURRENT_ROLE,DAY,DEFAULT,ELSE,END,HOUR,KEY,MINUTE,MONTH,SECOND,SESSION_USER,SET,SOME,SYMMETRIC,SYSTEM_USER,TO,UESCAPE,USER,VALUE,WHEN,YEAR;MODE=LEGACY;DEFAULT_NULL_ORDERING=HIGH");
         }
         else
         {
-            defaultH2Properties = ";ALIAS_COLUMN_NAME=TRUE";
+            defaultH2Properties = ";ALIAS_COLUMN_NAME=TRUE;DEFAULT_NULL_ORDERING=HIGH";
         }
 
         String port = System.getProperty("legend.test.h2.port");
