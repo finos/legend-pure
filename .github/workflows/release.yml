@@ -16,6 +16,9 @@
 # checked out by SHA everywhere else. Nothing reaches the remote -- no commit,
 # no tag, nothing published -- until every JDK in the matrix has gone green
 # against that exact commit, and the branch is proven not to have moved since.
+# Publishing comes before tagging: the deploy is the irreversible step and the
+# only one that can realistically fail, so the tag records a release that has
+# already gone out rather than promising one that might not.
 name: Release
 
 env:
@@ -242,16 +245,46 @@ jobs:
         with:
           theme: dark
 
+      - name: Verify the release version resolves in every pom
+        # The one thing that cannot wait for the deploy. Everything else the
+        # deploy might get wrong -- a jar that will not compile, javadoc that
+        # will not build, a gpg key that is not there -- fails it before
+        # central-publishing-maven-plugin uploads anything, because that
+        # plugin assembles its bundle at the end of the reactor. A pom that
+        # still carries the revision property is different: it uploads
+        # happily, autoPublish puts it on Maven Central, and it cannot be
+        # withdrawn. So run flatten-maven-plugin on its own first -- the same
+        # goal the build runs at process-resources, and seconds rather than
+        # minutes.
+        run: |
+          set -euo pipefail
+          mvn -B -q -Drevision="${RELEASE_VERSION}" flatten:flatten
+          if grep -rlF '${revision}' --include='.flattened-pom.xml' .; then
+            echo "::error::A pom above still carries an unresolved revision property; flatten-maven-plugin did not resolve it."
+            exit 1
+          fi
+          count="$(find . -name .flattened-pom.xml | wc -l)"
+          echo "${count} poms flattened to ${RELEASE_VERSION}"
+          [ "${count}" -gt 0 ]
+
       - name: Build release
-        # Tests are skipped here because the `verify` job already ran the
-        # whole suite on every supported JDK against this exact commit; this
-        # build only needs to compile, sign and package. It is also the last
-        # gate before the tag push, so a failure here costs nothing.
-        run: mvn -B -e -T 4 -DskipTests -Drevision="${RELEASE_VERSION}" install -P release
+        # Dry runs only. On a real release the deploy below is this build --
+        # there is no reason to compile the reactor twice when nothing is
+        # tagged until the deploy has succeeded. A rehearsal still has to
+        # compile, sign and package, though, or it would stop catching the
+        # release-only failures it exists for. Tests are skipped because the
+        # `verify` job already ran the whole suite on every supported JDK
+        # against this exact commit.
+        if: ${{ inputs.dryRun }}
+        run: mvn -B -e -T 4 -DskipTests -Drevision="${RELEASE_VERSION}" clean install -P release
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
 
       - name: Verify the release artifacts carry the release version
+        # The rehearsal's stronger form of the flatten check above: these are
+        # the poms that were actually installed, which is what a real release
+        # would deploy.
+        if: ${{ inputs.dryRun }}
         run: |
           set -euo pipefail
           if find ~/.m2/repository/org/finos/legend/pure -path "*/${RELEASE_VERSION}/*" -name '*.pom' | xargs grep -l '\${revision}'; then
@@ -276,16 +309,42 @@ jobs:
             echo "- the release build with -Drevision=${RELEASE_VERSION} succeeded and every pom resolved"
             echo "- the next development version would be ${DEVELOPMENT_VERSION}"
             echo
-            echo "Not run: pushing ${RELEASE_TAG}, deploying to Maven Central, and the bump to ${DEVELOPMENT_VERSION}."
+            echo "Not run: deploying to Maven Central, pushing ${RELEASE_TAG}, and the bump to ${DEVELOPMENT_VERSION}."
             echo "Dispatch again with dryRun unchecked to release for real."
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy release
+        # The point of no return, and the gate: this is the only build a real
+        # release runs, so a failure anywhere in it -- compile, javadoc, gpg,
+        # upload, Central validation -- means nothing was published, no tag
+        # was created, and there is nothing to clean up.
+        #
+        # `clean` costs nothing on a workspace only the dry-run build above
+        # touches, and keeps what gets published independent of whatever this
+        # job grows above it. release:perform got the same guarantee by
+        # building in a fresh target/checkout.
+        #
+        # No -T: central-publishing-maven-plugin (extensions=true, from the
+        # org.finos:finos parent) defers every module's artifacts and uploads
+        # one bundle for the whole reactor at the end. Under Maven's parallel
+        # builder that aggregation deadlocks -- every thread ends up stuck on
+        # "Waiting for other projects build to finish..." indefinitely.
+        id: deploy
+        if: ${{ !inputs.dryRun }}
+        run: mvn -B -e -DskipTests -Drevision="${RELEASE_VERSION}" clean deploy -P release
+        env:
+          MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
 
       - name: Push the release tag
         if: ${{ !inputs.dryRun }}
         run: |
           set -euo pipefail
-          # The point of no return. The tag goes on the tested commit itself;
-          # the branch is not touched here, so nothing can race it.
+          # Maven Central has already validated the deploy above, so this
+          # records a release that has gone out rather than promising one.
+          # The tag goes on the tested commit itself; the branch is not
+          # touched here, so nothing can race it. If this step is what fails,
+          # the release is published and only the tag is missing -- pushing it
+          # by hand afterwards costs nothing and blocks nothing.
           git tag "${RELEASE_TAG}" "${RELEASE_SHA}"
           git push origin "refs/tags/${RELEASE_TAG}"
           pushed="$(git ls-remote origin "refs/tags/${RELEASE_TAG}" | awk -v ref="refs/tags/${RELEASE_TAG}" '$2 == ref { print $1 }')"
@@ -293,27 +352,6 @@ jobs:
             echo "::error::Remote tag ${RELEASE_TAG} is ${pushed}, not ${RELEASE_SHA}."
             exit 1
           fi
-
-      - name: Deploy release
-        # `clean` matters. `Build release` above already ran the whole
-        # lifecycle in this workspace, so target/ holds that run's output:
-        # jars maven-shade-plugin rewrote in place, and the signatures
-        # maven-gpg-plugin wrote beside them. Re-entering the lifecycle over
-        # that state lets plugins act on their own previous output -- shade
-        # re-shading an already-shaded jar, for one -- so what gets published
-        # is not a clean build of the tagged commit. release:perform used to
-        # avoid this by building in a fresh target/checkout; `clean` is the
-        # equivalent now that the deploy shares a workspace with the build.
-        #
-        # No -T: central-publishing-maven-plugin (extensions=true, from the
-        # org.finos:finos parent) defers every module's artifacts and uploads
-        # one bundle for the whole reactor at the end. Under Maven's parallel
-        # builder that aggregation deadlocks -- every thread ends up stuck on
-        # "Waiting for other projects build to finish..." indefinitely.
-        if: ${{ !inputs.dryRun }}
-        run: mvn -B -e -DskipTests -Drevision="${RELEASE_VERSION}" clean deploy -P release
-        env:
-          MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
 
       - name: Bump to the next development version
         if: ${{ !inputs.dryRun }}
@@ -337,62 +375,72 @@ jobs:
 
       - name: Explain how to recover
         # Deliberately advice, not an automatic rollback: autoPublish is on and
-        # a release that reached Maven Central cannot be withdrawn, so whether
-        # the tag survives is a human decision. What this can do is remove the
-        # guesswork -- `Clean repo after failed release` infers "the latest
-        # tag", where the exact ref is known here.
-        # Cancellation as well as failure: a run killed between the tag push
-        # and the deploy is exactly the case the concurrency comment above
-        # says needs manual recovery, and `failure()` alone does not fire for
-        # it.
+        # a release that reached Maven Central cannot be withdrawn, so what to
+        # do about it is a human decision. What this can do is remove the
+        # guesswork. Deploying before tagging makes that easy: the deploy
+        # step's own outcome says whether anything was published, so this
+        # never has to send the reader off to check Maven Central by hand.
+        # Cancellation as well as failure: a run killed between the deploy and
+        # the tag push is exactly the case the concurrency comment above says
+        # needs manual recovery, and `failure()` alone does not fire for it.
         if: ${{ failure() || cancelled() }}
+        env:
+          DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
         run: |
           set -euo pipefail
-          # Never claim "nothing was pushed" on a guess. A remote that cannot
-          # be reached is not a remote without the tag, and that summary tells
-          # the reader to stop looking.
+          # Never claim the tag is missing on a guess: a remote that cannot be
+          # reached is not a remote without the tag.
           if tag_refs="$(git ls-remote origin "refs/tags/${RELEASE_TAG}")"; then
             remote_tag="$(awk -v ref="refs/tags/${RELEASE_TAG}" '$2 == ref { print $1 }' <<< "${tag_refs}")"
           else
             remote_tag=unknown
           fi
+          bump_advice() {
+            echo "If the bump commit is missing, set <revision> in pom.xml to"
+            echo "${DEVELOPMENT_VERSION} by hand on ${RELEASE_BRANCH} -- but look at what is"
+            echo "on the branch first. That bump is pushed as a fast-forward from"
+            echo "${RELEASE_SHA}, so it is rejected when somebody else pushed while this"
+            echo "ran; if their commit set <revision> deliberately, keep their value"
+            echo "rather than overwriting it."
+          }
           {
             echo "## Release ${RELEASE_VERSION} did not finish"
             echo
-            if [ -z "${remote_tag}" ]; then
-              echo "**Nothing was pushed.** The tag ${RELEASE_TAG} does not exist on the remote"
-              echo "and ${RELEASE_BRANCH} was not touched. Nothing needs cleaning up: deal with"
-              echo "whatever stopped this run and dispatch the release again."
+            if [ "${DEPLOY_OUTCOME}" != "success" ]; then
+              echo "**Nothing was published.** The deploy did not succeed, so"
+              echo "central-publishing-maven-plugin never uploaded a bundle, ${RELEASE_TAG}"
+              echo "was never pushed, and ${RELEASE_BRANCH} was not touched. Nothing needs"
+              echo "cleaning up: deal with whatever stopped this run and dispatch the"
+              echo "release again."
+            elif [ "${remote_tag}" = unknown ]; then
+              echo "**${RELEASE_VERSION} is published**, and the remote could not be reached"
+              echo "to check whether ${RELEASE_TAG} was pushed. Confirm it by hand:"
+              echo
+              echo "       git ls-remote origin refs/tags/${RELEASE_TAG}"
+              echo
+              echo "If it is missing, push it -- the release is already out, so the tag is"
+              echo "only recording it:"
+              echo
+              echo "       git tag ${RELEASE_TAG} ${RELEASE_SHA}"
+              echo "       git push origin refs/tags/${RELEASE_TAG}"
+              echo
+              bump_advice
+            elif [ -z "${remote_tag}" ]; then
+              echo "**${RELEASE_VERSION} is published, but ${RELEASE_TAG} was not pushed.**"
+              echo "The deploy succeeded, so the release is on Maven Central and cannot be"
+              echo "withdrawn. The tag only records it, so push it by hand:"
+              echo
+              echo "       git tag ${RELEASE_TAG} ${RELEASE_SHA}"
+              echo "       git push origin refs/tags/${RELEASE_TAG}"
+              echo
+              bump_advice
             else
-              if [ "${remote_tag}" = unknown ]; then
-                echo "**The remote could not be reached** to check whether ${RELEASE_TAG} was"
-                echo "pushed, so confirm it by hand first:"
-                echo
-                echo "       git ls-remote origin refs/tags/${RELEASE_TAG}"
-                echo
-                echo "The steps below assume the tag is there."
-              else
-                echo "**The tag is already pushed**, so this stopped at or after the tag push."
-              fi
-              echo "Recover by hand, in this order:"
+              echo "**${RELEASE_VERSION} is published and tagged**, so this failed during the"
+              echo "version bump. Nothing else needs doing to the release itself."
               echo
-              echo "1. Work out whether anything reached Maven Central. This project publishes"
-              echo "   with autoPublish enabled and publishing cannot be undone:"
-              echo
-              echo "       https://repo1.maven.org/maven2/org/finos/legend/pure/legend-pure/${RELEASE_VERSION}/"
-              echo
-              echo "   Check the Central portal too, for a deployment stuck in validation."
-              echo "2. If ${RELEASE_VERSION} **was** published, leave the tag alone. If the bump"
-              echo "   commit is missing, set <revision> in pom.xml to ${DEVELOPMENT_VERSION} by hand"
-              echo "   on ${RELEASE_BRANCH} -- but look at what is on the branch first. That bump"
-              echo "   is pushed as a fast-forward from ${RELEASE_SHA}, so it is rejected when"
-              echo "   somebody else pushed while this ran; if their commit set <revision>"
-              echo "   deliberately, keep their value rather than overwriting it."
-              echo "3. Only if nothing was published, delete the tag and dispatch again:"
-              echo
-              echo "       git push --delete origin ${RELEASE_TAG}"
+              bump_advice
             fi
           } >> "$GITHUB_STEP_SUMMARY"
-          if [ -n "${remote_tag}" ]; then
-            echo "::error::Release ${RELEASE_VERSION} did not finish and may need manual cleanup. See the job summary for recovery steps."
+          if [ "${DEPLOY_OUTCOME}" = "success" ]; then
+            echo "::error::Release ${RELEASE_VERSION} was published but the run did not finish. See the job summary for what is left to do."
           fi
