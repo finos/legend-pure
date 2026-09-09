@@ -174,12 +174,21 @@ Releases are triggered by the [`release.yml`](../../.github/workflows/release.ym
 workflow. The project uses Maven CI-friendly versions: every pom's version is
 `${revision}`, defined once in the root pom, and `flatten-maven-plugin` writes
 the resolved version into the published poms. A release builds and deploys the
-tested commit with `-Drevision=<version>`, pushes the tag `legend-pure-<version>`
-onto that commit, and then commits the next `-SNAPSHOT` to the branch. There is
-no release commit — the tag lands on the tested commit itself — and the deploy
-runs `clean deploy`, so what is published is a fresh build of that commit rather
-than the output the preceding `install` left behind in `target/`. Do not trigger
-releases manually unless you are the designated release engineer.
+tested commit with `-Drevision=<version>`, then pushes the tag
+`legend-pure-<version>` onto that commit and commits the next `-SNAPSHOT` to the
+branch. There is no release commit — the tag lands on the tested commit itself.
+
+Publishing comes before tagging. The deploy is the irreversible step and the
+only one that realistically fails, so a failed release leaves nothing to clean
+up and can simply be dispatched again; the tag records a release that has
+already gone out. The single exception is a pom that still carries `${revision}`,
+which would upload happily and cannot be withdrawn, so `flatten:flatten` runs on
+its own beforehand — seconds, not minutes — and fails the release if any pom is
+unresolved. A dry run additionally does a full `clean install -P release`, so a
+rehearsal still catches the release-only failures (javadoc, gpg, source jars)
+that ordinary CI never exercises.
+
+Do not trigger releases manually unless you are the designated release engineer.
 
 ---
 
