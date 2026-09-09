@@ -16,11 +16,16 @@ name: Build CI
 
 on:
   push:
-    # Branch pushes only. A release tag lands on a commit this workflow already
-    # built when it went onto the branch, so building it again on the tag push
-    # spends a second full matrix on it and hands `Publish Test Results` a
-    # duplicate set of results for the same commit.
-    tags-ignore:
+    # Branch pushes only -- and `branches` rather than `tags-ignore` on
+    # purpose. A push filter that names only tags stops the workflow running
+    # for branch pushes as well, because branches are then the undefined ref;
+    # naming every branch here leaves *tags* undefined instead, which is what
+    # actually skips them.
+    # A release tag lands on a commit this workflow already built when it went
+    # onto the branch, so building it again on the tag push spends a second
+    # full matrix on it and hands `Publish Test Results` a duplicate set of
+    # results for the same commit.
+    branches:
       - '**'
   pull_request:
 
