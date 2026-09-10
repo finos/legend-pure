@@ -57,8 +57,12 @@ public class TestResultSetValueHandlers
      * through java.time in the zone of the calendar it is given, DuckDB through java.util in the
      * JVM default zone whatever calendar it is given. No one choice of zone reads both. So the
      * day is asked for directly, and a java.sql.Date is only the way back for a driver that will
-     * not give one -- which DuckDB 1.0.0, the version resolved here, will not. Both paths are
-     * therefore covered: H2 takes the first, DuckDB the second.
+     * not give one.
+     *
+     * <p>Both drivers resolved here answer {@link ResultSet#getObject(int, Class)} for a
+     * {@link java.time.LocalDate}, so both take the first path and the way back is not exercised.
+     * DuckDB 1.0.0 was the driver that refused, and the reason the way back is there at all; it
+     * has answered since 1.3.0.0.
      */
     @Test
     public void testDateColumnIsIndependentOfTheDefaultTimeZone() throws SQLException
@@ -131,9 +135,10 @@ public class TestResultSetValueHandlers
      * A timestamp column carries a wall clock the database keeps in the zone the connection
      * names, and a Pure date is that moment in UTC, so reading one shifts it out of that zone.
      * Asking the driver to do the shifting, by handing it a calendar, does not do that for every
-     * driver: DuckDB 1.0.0 ignores the calendar and answers as though the connection named UTC,
+     * driver: DuckDB 1.0.0 ignored the calendar and answered as though the connection named UTC,
      * so every timestamp came back short by the connection zone. Reading the wall clock and
-     * shifting it here leaves nothing for a driver to differ over.
+     * shifting it here leaves nothing for a driver to differ over, whether or not the driver
+     * resolved today is one that would have got it right.
      */
     @Test
     public void testTimestampColumnIsShiftedOutOfTheConnectionZone() throws SQLException
