@@ -203,12 +203,11 @@ public class RelationalGen
         Root_meta_relational_metamodel_execute_ResultSet pureResult = new Root_meta_relational_metamodel_execute_ResultSet_Impl("OK");
 
         Connection connection = null;
-        ConnectionWithDataSourceInfo connectionWithDataSourceInfo = null;
         try
         {
 
             long startRequestConnection = System.nanoTime();
-            connectionWithDataSourceInfo = connectionManagerHandler.getConnectionWithDataSourceInfo(pureConnection, ((CompiledExecutionSupport) es).getProcessorSupport());
+            ConnectionWithDataSourceInfo connectionWithDataSourceInfo = connectionManagerHandler.getConnectionWithDataSourceInfo(pureConnection, ((CompiledExecutionSupport) es).getProcessorSupport());
             connection = connectionWithDataSourceInfo.getConnection();
             if (!PureConnectionUtils.isPureConnectionType(pureConnection, "Hive"))
             {
@@ -252,6 +251,15 @@ public class RelationalGen
         catch (SQLException e)
         {
             throw new PureExecutionException(si, SQLExceptionHandler.buildExceptionString(e, connection), e);
+        }
+        catch (PureExecutionException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            String message = e.getMessage();
+            throw new PureExecutionException(si, (message == null) ? "Error in executeInDb" : "Error in executeInDb: " + message, e);
         }
     }
 
