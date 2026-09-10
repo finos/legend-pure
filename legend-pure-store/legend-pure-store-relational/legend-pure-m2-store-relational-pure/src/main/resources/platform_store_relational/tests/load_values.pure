@@ -15,8 +15,15 @@
 // Pure-native tests for loadValuesToDbTable.
 //
 // Uses the ###Relational DSL to declare a real Database/Schema/Table
-// chain — the populated heap rows are what the native consumes when
+// chain -- the populated heap rows are what the native consumes when
 // it reads `Table.name`.
+//
+// The values are shaped like `TestDatabaseConnection.testDataSetupCsv`,
+// which the loader was written for: three header rows -- schema name,
+// table name, column names -- and then a row per record. The loader
+// drops the first three rows, so a call that hands it bare data rows
+// loses three of them, silently and without an error. That is what left
+// these tests unable to insert anything.
 
 ###Pure
 import meta::external::store::relational::runtime::*;
@@ -37,6 +44,12 @@ function <<access.private>> meta::relational::tests::loadValues::table():Table[1
 }
 
 // Insert two rows via loadValuesToDbTable and verify the count.
+//
+// ToFix on DuckDB only, and not for anything to do with the loader.
+// bulkInsertInDb calls Connection.commit() on a connection left in
+// auto-commit mode, which H2 tolerates and DuckDB reports as "cannot
+// commit - no transaction is active". The H2 half below is the same
+// test, and runs.
 function <<test.ToFix>>
 meta::relational::tests::loadValues::testLoadValuesToDbTableInsertsRows_duckDb(): Boolean[1]
 {
@@ -44,11 +57,11 @@ meta::relational::tests::loadValues::testLoadValuesToDbTableInsertsRows_duckDb()
    $db->meta::relational::tests::loadValues::testLoadValuesToDbTableInsertsRows();
 }
 
-function <<test.ToFix>>
+function <<test.Test>>
 meta::relational::tests::loadValues::testLoadValuesToDbTableInsertsRows_h2(): Boolean[1]
 {
    let db = ^TestDatabaseConnection(type = DatabaseType.H2);
-   executeInDb('CREATE SCHEMA MAIN', $db, 0, 1000);
+   executeInDb('CREATE SCHEMA IF NOT EXISTS MAIN', $db, 0, 1000);
    $db->meta::relational::tests::loadValues::testLoadValuesToDbTableInsertsRows();
 }
 
@@ -61,7 +74,7 @@ meta::relational::tests::loadValues::afterLoad_duckdb(): Boolean[1]
 }
 
 
-function <<test.AfterPackage, test.ToFix>>
+function <<test.AfterPackage>>
 meta::relational::tests::loadValues::afterLoad_h2(): Boolean[1]
 {
    let db = ^TestDatabaseConnection(type = DatabaseType.H2);
@@ -73,12 +86,42 @@ function <<access.private>> meta::relational::tests::loadValues::testLoadValuesT
 {
    executeInDb('CREATE TABLE main.lv(a INTEGER, b VARCHAR)', $db, 0, 1000);
 
+   let header = [^List<Any>(values = ['main']), ^List<Any>(values = ['lv']), ^List<Any>(values = ['a', 'b'])];
    let row1 = ^List<Any>(values = [1, 'foo']);
    let row2 = ^List<Any>(values = [2, 'bar']);
-   let outer = ^List<List<Any>>(values = [$row1, $row2]);
+   let outer = ^List<List<Any>>(values = $header->concatenate([$row1, $row2]));
    let tbl = meta::relational::tests::loadValues::table();
    loadValuesToDbTable($outer, $tbl, $db);
 
    let rs = executeInDb('SELECT count(*) FROM main.lv', $db, 0, 1000);
    assertEquals(2, $rs.rows->at(0).values->at(0));
+}
+
+// A day written through loadValuesToDbTable and read back is the same day.
+//
+// Nothing chooses a zone on the way in: the loader hands a date column the
+// string the Pure date names itself with and lets the driver parse it, which
+// is what the comment in LoadCsvToDbTable means by keeping dates as strings.
+// Nothing chooses a zone on the way out either, since a date column carries a
+// day and no zone. So the day survives whatever zone the connection names, and
+// this is the write side of testExecuteInH2DateIgnoresTheConnectionTimeZone.
+function <<test.Test>>
+meta::relational::tests::loadValues::testLoadValuesToDbTableRoundTripsADay_h2(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.H2);
+   executeInDb('CREATE SCHEMA IF NOT EXISTS MAIN', $db, 0, 1000);
+   executeInDb('CREATE TABLE main.lv_day(recorded_on DATE)', $db, 0, 1000);
+
+   let header = [^List<Any>(values = ['main']), ^List<Any>(values = ['lv_day']), ^List<Any>(values = ['recorded_on'])];
+   let rows = [^List<Any>(values = [%1753-12-31]), ^List<Any>(values = [%2014-03-10])];
+   loadValuesToDbTable(
+      ^List<List<Any>>(values = $header->concatenate($rows)),
+      ^Table(schema = ^Schema(database = ^Database(name = 'db'), name = 'main'), name = 'lv_day', columns = [^Column(name = 'recorded_on', type = ^meta::relational::metamodel::datatype::Date())]),
+      $db);
+
+   ['GMT', 'America/New_York', 'Asia/Tokyo', '+0530']->forAll(tz |
+      assertEquals(
+         [%1753-12-31, %2014-03-10],
+         executeInDb('SELECT recorded_on FROM main.lv_day ORDER BY recorded_on', ^TestDatabaseConnection(type = DatabaseType.H2, timeZone = $tz), 0, 1000).rows->map(row | $row.values->at(0)),
+         'connection time zone %s', $tz));
 }
