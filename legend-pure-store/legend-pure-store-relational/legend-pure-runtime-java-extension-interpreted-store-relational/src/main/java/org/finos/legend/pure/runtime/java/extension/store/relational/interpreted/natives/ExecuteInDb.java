@@ -150,7 +150,6 @@ public class ExecuteInDb extends NativeFunction
         CoreInstance pureResult = this.repository.newAnonymousCoreInstance(functionExpression.getSourceInformation(), resultSetClassifier);
 
         Connection connection = null;
-        ConnectionWithDataSourceInfo connectionWithDataSourceInfo = null;
         Statement statement = null;
         try
         {
@@ -163,7 +162,7 @@ public class ExecuteInDb extends NativeFunction
                 String tz = dbTimeZone == null ? "GMT" : dbTimeZone.getName();
 
                 long startRequestConnection = System.nanoTime();
-                connectionWithDataSourceInfo = connectionManagerHandler.getConnectionWithDataSourceInfo(connectionInformation, processorSupport);
+                ConnectionWithDataSourceInfo connectionWithDataSourceInfo = connectionManagerHandler.getConnectionWithDataSourceInfo(connectionInformation, processorSupport);
                 Instance.addValueToProperty(pureResult, "connectionAcquisitionTimeInNanoSecond", this.repository.newIntegerCoreInstance(System.nanoTime() - startRequestConnection), processorSupport);
 
                 connection = connectionWithDataSourceInfo.getConnection();
@@ -181,9 +180,7 @@ public class ExecuteInDb extends NativeFunction
                 if (!PureConnectionUtils.isPureConnectionType(connectionInformation, "Hive"))
                 {
                     statement.setQueryTimeout(timeOutInSeconds);
-
                 }
-
 
                 connectionManagerHandler.addPotentialDebug(connectionInformation, statement);
                 this.message.setMessage("Executing SQL...");
@@ -243,6 +240,15 @@ public class ExecuteInDb extends NativeFunction
         catch (SQLException e)
         {
             throw new PureExecutionException(functionExpression.getSourceInformation(), SQLExceptionHandler.buildExceptionString(e, connection), e, functionExpressionCallStack);
+        }
+        catch (PureExecutionException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            String message = e.getMessage();
+            throw new PureExecutionException(functionExpression.getSourceInformation(), (message == null) ? "Error in executeInDb" : "Error in executeInDb: " + message, e, functionExpressionCallStack);
         }
 
         this.message.setMessage("Executing SQL...[DONE]");

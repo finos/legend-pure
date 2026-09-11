@@ -1,0 +1,146 @@
+// Copyright 2026 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Pure-native round trip tests for the DuckDB backend, covering how a
+// value of a date or time type survives being written and read back.
+// Companion to `h2_round_trip.pure`, which asks the same questions of H2:
+// two drivers reaching different answers is the whole reason these
+// readings are worth pinning down. `execute_in_db.pure` holds the DuckDB
+// basics, and `temp_tables.pure` the temp-table lifecycle.
+//
+// The DuckDB test database is a single file-backed connection shared by
+// the whole run, with its session time zone set to UTC, so each test
+// creates its table with CREATE OR REPLACE and drops it at the end.
+
+import meta::external::store::relational::runtime::*;
+import meta::relational::runtime::*;
+import meta::relational::metamodel::execute::*;
+
+// --- Time zones -------------------------------------------------------
+//
+// A connection's `timeZone` names the zone the database keeps its wall
+// clocks in. It settles how a TIMESTAMP is read, and must not reach a
+// DATE or a TIMESTAMPTZ, neither of which is a wall clock waiting for a
+// zone. Every name here is resolved by
+// `org.finos.legend.pure.m4.tools.time.TimeZones`.
+
+function <<access.private>> meta::relational::tests::readDuckDbColumnInZone(sql: String[1], timeZone: String[1]): Any[*]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB, timeZone = $timeZone);
+   executeInDb($sql, $db, 0, 1000).rows->map(row | $row.values->at(0));
+}
+
+// A DATE column carries a day and no zone, as a Pure StrictDate does, so
+// the zone the connection names has no bearing on it. Reading one as an
+// instant does give it a bearing, since a day only comes back out of an
+// instant once a zone is chosen to read it in, and the day that comes
+// back is a different one either side of midnight.
+function <<test.Test>>
+meta::relational::tests::testExecuteInDuckDbDateIgnoresTheConnectionTimeZone(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
+   executeInDb('CREATE OR REPLACE TABLE duckdb_tz_day (recorded_on DATE)', $db, 0, 1000);
+   executeInDb('INSERT INTO duckdb_tz_day VALUES (DATE \'1753-12-31\'), (DATE \'2014-03-10\')', $db, 0, 1000);
+
+   let ok = ['GMT', 'UTC', 'America/New_York', 'Asia/Tokyo', 'EST', '+0530']->forAll(tz |
+      assertEquals(
+         [%1753-12-31, %2014-03-10],
+         meta::relational::tests::readDuckDbColumnInZone('SELECT recorded_on FROM duckdb_tz_day ORDER BY recorded_on', $tz),
+         'connection time zone %s', $tz));
+
+   executeInDb('DROP TABLE duckdb_tz_day', $db, 0, 1000);
+   $ok;
+}
+
+// A TIMESTAMP column carries a wall clock the database keeps in the zone
+// the connection names, and a Pure DateTime is a moment, so reading one
+// shifts it out of that zone. The shift is done here rather than by
+// handing the driver a calendar, which not every driver honours: DuckDB
+// 1.0.0 ignored one entirely and answered as though the connection named
+// UTC, leaving every timestamp short by the connection's offset.
+function <<test.Test>>
+meta::relational::tests::testExecuteInDuckDbTimestampIsShiftedOutOfTheConnectionTimeZone(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
+   executeInDb('CREATE OR REPLACE TABLE duckdb_tz_moment (recorded_at TIMESTAMP)', $db, 0, 1000);
+   executeInDb('INSERT INTO duckdb_tz_moment VALUES (TIMESTAMP \'2014-03-10 12:00:00\')', $db, 0, 1000);
+   let sql = 'SELECT recorded_at FROM duckdb_tz_moment';
+
+   // 2014-03-10 is inside daylight saving time in New York, so -04:00 rather than -05:00.
+   // EST keeps no daylight saving time and is -05:00 whichever zone the running JDK reads it
+   // as: it stood for the fixed offset through Java 21 and for America/Panama from Java 25.
+   let ok = [
+      assertEquals(%2014-03-10T12:00:00.000000000+0000, meta::relational::tests::readDuckDbColumnInZone($sql, 'GMT')->toOne(), 'connection time zone %s', 'GMT'),
+      assertEquals(%2014-03-10T16:00:00.000000000+0000, meta::relational::tests::readDuckDbColumnInZone($sql, 'America/New_York')->toOne(), 'connection time zone %s', 'America/New_York'),
+      assertEquals(%2014-03-10T03:00:00.000000000+0000, meta::relational::tests::readDuckDbColumnInZone($sql, 'Asia/Tokyo')->toOne(), 'connection time zone %s', 'Asia/Tokyo'),
+      assertEquals(%2014-03-10T17:00:00.000000000+0000, meta::relational::tests::readDuckDbColumnInZone($sql, 'EST')->toOne(), 'connection time zone %s', 'EST'),
+      assertEquals(%2014-03-10T06:30:00.000000000+0000, meta::relational::tests::readDuckDbColumnInZone($sql, '+0530')->toOne(), 'connection time zone %s', '+0530')
+   ]->forAll(assertion | $assertion);
+
+   executeInDb('DROP TABLE duckdb_tz_moment', $db, 0, 1000);
+   $ok;
+}
+
+// A moment from before its zone kept standard time. java.util holds only
+// the standard offset a zone later adopted, where java.time holds the
+// mean solar offset the zone actually kept: New York is -05:00:00 by one
+// and -04:56:02 by the other in 1753. Those four minutes are what turned
+// a stored 1753-12-31 into 1753-12-30 when a date was read as an instant,
+// so the reading has to be the java.time one.
+function <<test.Test>>
+meta::relational::tests::testExecuteInDuckDbTimestampBeforeStandardTime(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
+   executeInDb('CREATE OR REPLACE TABLE duckdb_tz_old_moment (recorded_at TIMESTAMP)', $db, 0, 1000);
+   executeInDb('INSERT INTO duckdb_tz_old_moment VALUES (TIMESTAMP \'1753-12-31 00:00:00\')', $db, 0, 1000);
+
+   let ok = assertEquals(
+      %1753-12-31T04:56:02.000000000+0000,
+      meta::relational::tests::readDuckDbColumnInZone('SELECT recorded_at FROM duckdb_tz_old_moment', 'America/New_York')->toOne());
+
+   executeInDb('DROP TABLE duckdb_tz_old_moment', $db, 0, 1000);
+   $ok;
+}
+
+// A TIMESTAMPTZ column carries a moment already, so there is no wall
+// clock to place and nothing to shift into or out of. The zone the
+// connection names says where the database keeps its wall clocks, and
+// this column holds none.
+function <<test.Test>>
+meta::relational::tests::testExecuteInDuckDbTimestampTzIgnoresTheConnectionTimeZone(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
+   executeInDb('CREATE OR REPLACE TABLE duckdb_tz_zoned (recorded_at TIMESTAMPTZ)', $db, 0, 1000);
+   executeInDb('INSERT INTO duckdb_tz_zoned VALUES (TIMESTAMPTZ \'2014-03-10 12:00:00+02\')', $db, 0, 1000);
+   let sql = 'SELECT recorded_at FROM duckdb_tz_zoned';
+
+   let ok = ['GMT', 'America/New_York', 'Asia/Tokyo', '+0530']->forAll(tz |
+      assertEquals(
+         %2014-03-10T10:00:00.000000000+0000,
+         meta::relational::tests::readDuckDbColumnInZone($sql, $tz)->toOne(),
+         'connection time zone %s', $tz));
+
+   executeInDb('DROP TABLE duckdb_tz_zoned', $db, 0, 1000);
+   $ok;
+}
+
+// A name that stands for no zone is a mistake worth reporting. It used to
+// be answered with GMT, which is what kept a whole class of time zone
+// bugs out of sight: a result read in the wrong zone looks like a result.
+function <<test.Test>>
+meta::relational::tests::testExecuteInDuckDbRejectsAnUnknownTimeZone(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB, timeZone = 'Not/AZone');
+   assertError(| executeInDb('SELECT 1', $db, 0, 1000), 'Error in executeInDb: Unknown time zone: Not/AZone');
+}

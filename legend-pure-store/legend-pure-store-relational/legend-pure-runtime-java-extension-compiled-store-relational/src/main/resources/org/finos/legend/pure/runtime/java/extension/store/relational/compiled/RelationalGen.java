@@ -17,7 +17,6 @@ package org.finos.legend.pure.generated;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
@@ -153,13 +152,9 @@ public class RelationalGen
                     rowValues.add(function.valueOf(rowValues));
                 }
                 rows.add((new Root_meta_relational_metamodel_execute_Row_Impl("Anonymous_NoCounter"))._valuesAddAll(rowValues)._parent(pureResult));
-                if (RelationalExecutionProperties.shouldThrowIfMaxRowsExceeded() && rowLimit > 0)
+                if (RelationalExecutionProperties.shouldThrowIfMaxRowsExceeded() && (rowLimit > 0) && (rowCount > rowLimit))
                 {
-                    if (rowCount > rowLimit)
-                    {
-                        throw new PureExecutionException("Too many rows returned. PURE currently supports results with up to " + rowLimit + " rows. Please add a filter or use the take or limit function to limit the rows returned", Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());
-                    }
-                    ;
+                    throw new PureExecutionException("Too many rows returned. PURE currently supports results with up to " + rowLimit + " rows. Please add a filter or use the take or limit function to limit the rows returned");
                 }
             }
 
@@ -199,7 +194,7 @@ public class RelationalGen
                 {
                 }
             }
-            throw new PureExecutionException(SQLExceptionHandler.buildExceptionString(e, connection), e, Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());
+            throw new PureExecutionException(SQLExceptionHandler.buildExceptionString(e, connection), e);
         }
     }
 
@@ -208,12 +203,11 @@ public class RelationalGen
         Root_meta_relational_metamodel_execute_ResultSet pureResult = new Root_meta_relational_metamodel_execute_ResultSet_Impl("OK");
 
         Connection connection = null;
-        ConnectionWithDataSourceInfo connectionWithDataSourceInfo = null;
         try
         {
 
             long startRequestConnection = System.nanoTime();
-            connectionWithDataSourceInfo = connectionManagerHandler.getConnectionWithDataSourceInfo(pureConnection, ((CompiledExecutionSupport) es).getProcessorSupport());
+            ConnectionWithDataSourceInfo connectionWithDataSourceInfo = connectionManagerHandler.getConnectionWithDataSourceInfo(pureConnection, ((CompiledExecutionSupport) es).getProcessorSupport());
             connection = connectionWithDataSourceInfo.getConnection();
             if (!PureConnectionUtils.isPureConnectionType(pureConnection, "Hive"))
             {
@@ -256,7 +250,16 @@ public class RelationalGen
         }
         catch (SQLException e)
         {
-            throw new PureExecutionException(si, SQLExceptionHandler.buildExceptionString(e, connection), e, Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());
+            throw new PureExecutionException(si, SQLExceptionHandler.buildExceptionString(e, connection), e);
+        }
+        catch (PureExecutionException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            String message = e.getMessage();
+            throw new PureExecutionException(si, (message == null) ? "Error in executeInDb" : "Error in executeInDb: " + message, e);
         }
     }
 
@@ -316,7 +319,7 @@ public class RelationalGen
     {
         Integer rowLimit = numberOfRows == null ? null : numberOfRows.intValue();
         ListIterable<String> columnTypes = getColumnTypes(table, ((CompiledExecutionSupport) es).getProcessorSupport());
-        Iterable<ListIterable<?>> values = LoadToDbTableHelper.collectIterable(LazyIterate.drop(CsvReader.readCsv(((CompiledExecutionSupport) es).getCodeStorage(), null, filePath, 500, rowLimit, Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty()), 1), columnTypes, filePath, table._name());
+        Iterable<ListIterable<?>> values = LoadToDbTableHelper.collectIterable(LazyIterate.drop(CsvReader.readCsv(((CompiledExecutionSupport) es).getCodeStorage(), null, filePath, 500, rowLimit, null), 1), columnTypes, filePath, table._name());
         bulkInsertInDb(pureConnection, table, values, rowLimit, es);
         return Lists.mutable.empty();
     }
@@ -353,7 +356,7 @@ public class RelationalGen
     {
         if (!(pureConnection instanceof Root_meta_external_store_relational_runtime_TestDatabaseConnection))
         {
-            throw new PureExecutionException("Bulk insert is only supported for the TestDatabaseConnection", Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());
+            throw new PureExecutionException("Bulk insert is only supported for the TestDatabaseConnection");
         }
 
         String schemaName = table._schema()._name();
@@ -407,7 +410,7 @@ public class RelationalGen
         }
         catch (SQLException e)
         {
-            throw new PureExecutionException(SQLExceptionHandler.buildExceptionString(e, connection), e, Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());
+            throw new PureExecutionException(SQLExceptionHandler.buildExceptionString(e, connection), e);
         }
     }
 }
