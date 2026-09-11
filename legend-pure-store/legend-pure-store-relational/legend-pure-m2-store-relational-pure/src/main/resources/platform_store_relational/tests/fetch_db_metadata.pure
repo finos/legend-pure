@@ -1,0 +1,114 @@
+// Copyright 2026 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Pure-native tests for fetchDbTablesMetaData, fetchDbColumnsMetaData and
+// fetchDbSchemasMetaData. The three natives ask the driver for a
+// DatabaseMetaData result set and then read it with the same reader
+// executeInDb uses, so they share that reader's column handling.
+//
+// Identifiers differ by database, which is the reason for the two halves:
+// H2 folds an unquoted name to upper case, DuckDB keeps it as written.
+
+import meta::external::store::relational::runtime::*;
+import meta::relational::runtime::*;
+import meta::relational::metamodel::execute::*;
+
+function <<access.private>> meta::relational::tests::metaDataColumn(result: ResultSet[1], index: Integer[1]): Any[*]
+{
+   $result.rows->map(row | $row.values->at($index));
+}
+
+// TABLE_NAME is the third column of a getTables result, by JDBC's ordering.
+function <<test.Test>> meta::relational::tests::testFetchDbTablesMetaDataInH2(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.H2);
+   executeInDb('DROP TABLE IF EXISTS FDM_PROBE', $db, 0, 1000);
+   executeInDb('CREATE TABLE FDM_PROBE (a INTEGER, b VARCHAR(10))', $db, 0, 1000);
+
+   let res = fetchDbTablesMetaData($db, 'PUBLIC', 'FDM_PROBE');
+   let ok = [
+      assertEquals('TABLE_NAME', $res.columnNames->at(2)),
+      assertEquals(['FDM_PROBE'], meta::relational::tests::metaDataColumn($res, 2))
+   ]->forAll(assertion | $assertion);
+
+   executeInDb('DROP TABLE FDM_PROBE', $db, 0, 1000);
+   $ok;
+}
+
+// COLUMN_NAME is the fourth column of a getColumns result, and the rows
+// come back in ordinal position order.
+function <<test.Test>> meta::relational::tests::testFetchDbColumnsMetaDataInH2(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.H2);
+   executeInDb('DROP TABLE IF EXISTS FDM_PROBE', $db, 0, 1000);
+   executeInDb('CREATE TABLE FDM_PROBE (a INTEGER, b VARCHAR(10))', $db, 0, 1000);
+
+   let res = fetchDbColumnsMetaData($db, 'PUBLIC', 'FDM_PROBE', []);
+   let ok = [
+      assertEquals('COLUMN_NAME', $res.columnNames->at(3)),
+      assertEquals(['A', 'B'], meta::relational::tests::metaDataColumn($res, 3))
+   ]->forAll(assertion | $assertion);
+
+   executeInDb('DROP TABLE FDM_PROBE', $db, 0, 1000);
+   $ok;
+}
+
+// TABLE_SCHEM is the first column of a getSchemas result. Asked for by
+// name rather than counted, since a database may hold the same schema
+// name in more than one catalog.
+function <<test.Test>> meta::relational::tests::testFetchDbSchemasMetaDataInH2(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.H2);
+   let res = fetchDbSchemasMetaData($db, 'PUBLIC');
+   assertEquals('TABLE_SCHEM', $res.columnNames->at(0));
+   assertContains(meta::relational::tests::metaDataColumn($res, 0), 'PUBLIC');
+}
+
+function <<test.Test>> meta::relational::tests::testFetchDbTablesMetaDataInDuckDb(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
+   executeInDb('CREATE OR REPLACE TABLE fdm_probe (a INTEGER, b VARCHAR)', $db, 0, 1000);
+
+   let res = fetchDbTablesMetaData($db, 'main', 'fdm_probe');
+   let ok = [
+      assertEquals('TABLE_NAME', $res.columnNames->at(2)),
+      assertEquals(['fdm_probe'], meta::relational::tests::metaDataColumn($res, 2))
+   ]->forAll(assertion | $assertion);
+
+   executeInDb('DROP TABLE fdm_probe', $db, 0, 1000);
+   $ok;
+}
+
+function <<test.Test>> meta::relational::tests::testFetchDbColumnsMetaDataInDuckDb(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
+   executeInDb('CREATE OR REPLACE TABLE fdm_probe (a INTEGER, b VARCHAR)', $db, 0, 1000);
+
+   let res = fetchDbColumnsMetaData($db, 'main', 'fdm_probe', []);
+   let ok = [
+      assertEquals('COLUMN_NAME', $res.columnNames->at(3)),
+      assertEquals(['a', 'b'], meta::relational::tests::metaDataColumn($res, 3))
+   ]->forAll(assertion | $assertion);
+
+   executeInDb('DROP TABLE fdm_probe', $db, 0, 1000);
+   $ok;
+}
+
+function <<test.Test>> meta::relational::tests::testFetchDbSchemasMetaDataInDuckDb(): Boolean[1]
+{
+   let db = ^TestDatabaseConnection(type = DatabaseType.DuckDB);
+   let res = fetchDbSchemasMetaData($db, 'main');
+   assertEquals('TABLE_SCHEM', $res.columnNames->at(0));
+   assertContains(meta::relational::tests::metaDataColumn($res, 0), 'main');
+}
