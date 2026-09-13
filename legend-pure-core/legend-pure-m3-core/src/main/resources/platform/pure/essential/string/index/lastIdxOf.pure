@@ -1,0 +1,146 @@
+// Copyright 2026 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::test::pct::*;
+
+'''
+The zero-based position of the last occurrence of `toFind` in `str`, or `-1` if it does not occur.
+
+Positions are zero-based and counted from the start of the string, not from the end. An empty
+`toFind` matches at the end of the string, so the result is the length of `str`.
+
+**Parameters**
+- `str` — the string to search in.
+- `toFind` — the substring to locate.
+
+**Returns** the index at which the last occurrence begins, or `-1` when there is none.
+
+**Examples**
+```pure
+'abcbc'->lastIdxOf('b')          // 3
+'abcdefabcdef'->lastIdxOf('ab')  // 6
+'abc'->lastIdxOf('d')            // -1
+```
+
+**See also** `lastIdxOf(String[1], String[1], Integer[1]):Integer[1]`,
+`idxOf(String[1], String[1]):Integer[1]`, `substr(String[1], Integer[1], Integer[1]):String[1]`
+'''
+function <<PCT.function>> meta::pure::functions::string::lastIdxOf(str:String[1], toFind:String[1]):Integer[1]
+{
+    $str->lastIndexOf($toFind)
+}
+
+'''
+As `lastIdxOf(String[1], String[1]):Integer[1]`, but only considers occurrences that begin at or
+before `fromIndex`. Still returns `-1` when there is no such occurrence.
+
+**Examples**
+```pure
+'abcbc'->lastIdxOf('b', 3)   // 3
+'abcbc'->lastIdxOf('b', 2)   // 1
+```
+'''
+function <<PCT.function>> meta::pure::functions::string::lastIdxOf(str:String[1], toFind:String[1], fromIndex:Integer[1]):Integer[1]
+{
+    $str->lastIndexOf($toFind, $fromIndex)
+}
+
+'''
+Searching an empty string finds nothing, while an empty `toFind` matches at `fromIndex`, or at the
+end of the string when no `fromIndex` is given.
+'''
+function <<PCT.test>> meta::pure::functions::string::tests::lastIdxOf::testLastIdxOfEmptyString<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals(-1, $f->eval(|''->lastIdxOf('a')));
+    assertEquals(-1, $f->eval(|''->lastIdxOf('a', 0)));
+    assertEquals(-1, $f->eval(|''->lastIdxOf('ab')));
+    assertEquals(-1, $f->eval(|''->lastIdxOf('ab', 0)));
+    assertEquals(-1, $f->eval(|''->lastIdxOf('ab', 1)));
+
+    assertEquals(0, $f->eval(|''->lastIdxOf('')));
+    assertEquals(0, $f->eval(|''->lastIdxOf('', 0)));
+    assertEquals(1, $f->eval(|'a'->lastIdxOf('')));
+    assertEquals(0, $f->eval(|'a'->lastIdxOf('', 0)));
+    assertEquals(1, $f->eval(|'a'->lastIdxOf('', 1)));
+    assertEquals(2, $f->eval(|'ab'->lastIdxOf('')));
+    assertEquals(0, $f->eval(|'ab'->lastIdxOf('', 0)));
+    assertEquals(1, $f->eval(|'ab'->lastIdxOf('', 1)));
+    assertEquals(2, $f->eval(|'ab'->lastIdxOf('', 2)));
+    assertEquals(3, $f->eval(|'abc'->lastIdxOf('')));
+    assertEquals(0, $f->eval(|'abc'->lastIdxOf('', 0)));
+    assertEquals(1, $f->eval(|'abc'->lastIdxOf('', 1)));
+    assertEquals(2, $f->eval(|'abc'->lastIdxOf('', 2)));
+    assertEquals(3, $f->eval(|'abc'->lastIdxOf('', 3)));
+}
+
+'''
+The last of several occurrences is found, and a substring that is absent gives `-1`.
+'''
+function <<PCT.test>> meta::pure::functions::string::tests::lastIdxOf::testLastIdxOfSimple<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    let string = 'the quick brown fox jumps over the lazy dog';
+
+    assertEquals(4, $f->eval(|$string->lastIdxOf('quick')));
+    assertEquals(16, $f->eval(|$string->lastIdxOf('fox')));
+    assertEquals(-1, $f->eval(|$string->lastIdxOf('happy')));
+
+    assertEquals(-1, $f->eval(|'abc'->lastIdxOf('d')));
+    assertEquals(1, $f->eval(|'abc'->lastIdxOf('b')));
+    assertEquals(3, $f->eval(|'abcbc'->lastIdxOf('b')));
+    assertEquals(0, $f->eval(|'abcdef'->lastIdxOf('ab')));
+    assertEquals(6, $f->eval(|'abcdefabcdef'->lastIdxOf('ab')));
+    assertEquals(12, $f->eval(|'abcdefabcdefabcdef'->lastIdxOf('ab')));
+}
+
+'''
+Only occurrences beginning at or before `fromIndex` are considered.
+'''
+function <<PCT.test>> meta::pure::functions::string::tests::lastIdxOf::testLastIdxOfFromIndex<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    let string = 'the the';
+
+    assertEquals(5, $f->eval(|$string->lastIdxOf('h', 7)));
+    assertEquals(1, $f->eval(|$string->lastIdxOf('h', 3)));
+
+    assertEquals(-1, $f->eval(|'abc'->lastIdxOf('d', 3)));
+    assertEquals(1, $f->eval(|'abc'->lastIdxOf('b', 3)));
+    assertEquals(3, $f->eval(|'abcbc'->lastIdxOf('b', 5)));
+    assertEquals(3, $f->eval(|'abcbc'->lastIdxOf('b', 3)));
+    assertEquals(1, $f->eval(|'abcbc'->lastIdxOf('b', 2)));
+    assertEquals(0, $f->eval(|'abcdef'->lastIdxOf('ab', 6)));
+    assertEquals(6, $f->eval(|'abcdefabcdef'->lastIdxOf('ab', 12)));
+    assertEquals(6, $f->eval(|'abcdefabcdef'->lastIdxOf('ab', 6)));
+    assertEquals(0, $f->eval(|'abcdefabcdef'->lastIdxOf('ab', 5)));
+    assertEquals(12, $f->eval(|'abcdefabcdefabcdef'->lastIdxOf('ab', 18)));
+    assertEquals(12, $f->eval(|'abcdefabcdefabcdef'->lastIdxOf('ab', 15)));
+    assertEquals(12, $f->eval(|'abcdefabcdefabcdef'->lastIdxOf('ab', 12)));
+    assertEquals(6, $f->eval(|'abcdefabcdefabcdef'->lastIdxOf('ab', 11)));
+    assertEquals(6, $f->eval(|'abcdefabcdefabcdef'->lastIdxOf('ab', 9)));
+    assertEquals(6, $f->eval(|'abcdefabcdefabcdef'->lastIdxOf('ab', 6)));
+    assertEquals(0, $f->eval(|'abcdefabcdefabcdef'->lastIdxOf('ab', 5)));
+    assertEquals(0, $f->eval(|'abcdefabcdefabcdef'->lastIdxOf('ab', 3)));
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::lastIdxOf::testLastIdxOfMatchesLastIndexOf():Boolean[1]
+{
+    let string = 'abcdefabcdefabcdef';
+    assertEquals(lastIndexOf($string, 'ab'), lastIdxOf($string, 'ab'));
+    assertEquals(lastIndexOf($string, 'ab', 11), lastIdxOf($string, 'ab', 11));
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::lastIdxOf::testLastIdxOfEval():Boolean[1]
+{
+    assertEq(3, lastIdxOf_String_1__String_1__Integer_1_->eval('abcbc', 'b'));
+    assertEq(1, lastIdxOf_String_1__String_1__Integer_1__Integer_1_->eval('abcbc', 'b', 2));
+}

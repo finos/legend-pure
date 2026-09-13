@@ -34,7 +34,7 @@ original string — not an empty collection.
 ```
 
 **See also** `joinStrings(String[*], String[1]):String[1]`,
-`indexOf(String[1], String[1]):Integer[1]`
+`idxOf(String[1], String[1]):Integer[1]`
 '''
 native function
     <<PCT.function>>

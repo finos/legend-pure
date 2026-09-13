@@ -105,12 +105,12 @@ function <<PCT.test>> meta::pure::functions::collection::tests::sort::testMixedS
 
 function <<PCT.test>> meta::pure::functions::collection::tests::sort::testSimpleSortWithKey<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(['Smith', 'Doe', 'Branche'], $f->eval(|['Doe', 'Smith', 'Branche']->sort({s | $s->substring(1, 2)}, {x:String[1], y:String[1] | $x->compare($y)})));
+    assertEquals(['Smith', 'Doe', 'Branche'], $f->eval(|['Doe', 'Smith', 'Branche']->sort({s | $s->substr(1, 2)}, {x:String[1], y:String[1] | $x->compare($y)})));
 }
 
 function <<PCT.test>> meta::pure::functions::collection::tests::sort::testSimpleSortWithFunctionVariables<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    let key = {s:String[1] | $s->substring(1, 2)};
+    let key = {s:String[1] | $s->substr(1, 2)};
     let comp = {x:String[1], y:String[1] | $x->compare($y)};
     assertEquals(['Smith', 'Doe', 'Branche'], $f->eval(|['Doe', 'Smith', 'Branche']->sort($key, $comp)));
 }

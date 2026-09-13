@@ -35,7 +35,7 @@ If `toReplace` does not occur in `source`, the source string is returned unchang
 ```
 
 **See also** `split(String[1], String[1]):String[*]`,
-`substring(String[1], Integer[1], Integer[1]):String[1]`
+`substr(String[1], Integer[1], Integer[1]):String[1]`
 '''
 native function
     <<PCT.function>>

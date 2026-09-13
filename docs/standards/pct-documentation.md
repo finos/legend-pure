@@ -52,7 +52,7 @@ Optional paragraph on semantics, edge cases, and empty/`[0..1]` behaviour.
 ```
 
 **See also** `split(String[1], String[1]):String[*]`,
-`substring(String[1], Integer[1]):String[1]`
+`substr(String[1], Integer[1], Integer[1]):String[1]`
 '''
 native function
     <<PCT.function>>
@@ -110,7 +110,7 @@ a renderer may show each signature on its own.
 
 ```pure
 '''
-As `indexOf(String[1], String[1]):Integer[1]`, but begins searching at `fromIndex` rather than at the
+As `idxOf(String[1], String[1]):Integer[1]`, but begins searching at `fromIndex` rather than at the
 start of the string. Still returns `-1` when there is no occurrence at or after that position.
 '''
 ```
@@ -129,7 +129,7 @@ target:
 **See also** `split(String[1], String[1]):String[*]`
 ```
 
-Two reasons from the current corpus: `substring` has two overloads, and `contains` exists in both
+Two reasons from the current corpus: `substr` has two overloads, and `contains` exists in both
 `meta::pure::functions::string` and `meta::pure::functions::collection`.
 
 **Format** — match the `simple` field of `Signature` in `FUNCTIONS_*.json`: parameter types comma-space

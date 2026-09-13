@@ -32,7 +32,7 @@ objects by one of their properties. Of any group sharing a key, the first encoun
 **Examples**
 ```pure
 [1, 2, '1', '3', 1, 3]->removeDuplicatesBy({x | $x->toString()})       // [1, 2, '3']
-['hello', 'helloWorld', 'world']->removeDuplicatesBy(x:String[1] | $x->substring(0, 1))
+['hello', 'helloWorld', 'world']->removeDuplicatesBy(x:String[1] | $x->substr(0, 1))
                                                                       // ['hello', 'world']
 ```
 
@@ -48,5 +48,5 @@ function <<PCT.test>> meta::pure::functions::collection::tests::removeDuplicates
 {
     assertEquals([1, 2, '3'], $f->eval(|[1, 2, '1', '3', 1, 3, '3', 2]->removeDuplicatesBy({x | $x->toString()})));
     assertEquals(['1', 2, '3'], $f->eval(|['1', 2, '1', '3', 1, 3, '3', 2]->removeDuplicatesBy({x | $x->toString()})));
-    assertEquals(['hello', 'world'], $f->eval(|['hello', 'helloWorld', 'world']->removeDuplicatesBy(x:String[1]|$x->substring(0,1))));
+    assertEquals(['hello', 'world'], $f->eval(|['hello', 'helloWorld', 'world']->removeDuplicatesBy(x:String[1]|$x->substr(0,1))));
 }

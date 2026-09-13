@@ -44,6 +44,6 @@ function <<PCT.test>> meta::pure::functions::collection::tests::indexof::testInd
 
 function <<PCT.test>> meta::pure::functions::collection::tests::indexof::testIndexOfOneElement<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-   assertEquals(0, $f->eval(|'c'->indexOf('c')));
-   assertEquals(-1, $f->eval(|'c'->indexOf('b')));
+   assertEquals(0, $f->eval(|'c'->meta::pure::functions::collection::indexOf('c')));
+   assertEquals(-1, $f->eval(|'c'->meta::pure::functions::collection::indexOf('b')));
 }

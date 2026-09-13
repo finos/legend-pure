@@ -1681,7 +1681,7 @@ The Pure standard library is organised under `meta::pure::functions::`:
 | Category | Package | Key functions |
 |----------|---------|--------------|
 | **Collection** | `collection` | `filter`, `map`, `fold`, `find`, `exists`, `forAll`, `groupBy`, `sort`, `zip`, `removeDuplicates` |
-| **String** | `string` | `startsWith`, `endsWith`, `contains`, `substring`, `split`, `joinStrings`, `toLower`, `toUpper`, `trim`, `replace`, `format` |
+| **String** | `string` | `startsWith`, `endsWith`, `contains`, `substr`, `split`, `joinStrings`, `toLower`, `toUpper`, `trim`, `replace`, `format` |
 | **Math** | `math` | `+`, `-`, `*`, `/`, `abs`, `sqrt`, `floor`, `ceiling`, `round`, `mod`, `range` |
 | **Date** | `date` | `today`, `now`, `year`, `monthNumber`, `dayOfMonth`, `dateDiff`, `adjust` |
 | **Boolean** | `boolean` | `and`, `or`, `not`, `is`, `eq`, `equal`, `isEmpty`, `isNotEmpty` |
