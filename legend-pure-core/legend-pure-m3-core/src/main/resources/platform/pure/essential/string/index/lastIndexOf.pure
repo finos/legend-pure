@@ -12,11 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+'''
+The zero-based position of the last occurrence of `toFind` in `str`, or `-1` if it does not occur.
+
+Prefer `lastIdxOf(String[1], String[1]):Integer[1]`, which behaves identically and is the portable
+form.
+'''
 function meta::pure::functions::string::lastIndexOf(str:String[1], toFind:String[1]):Integer[1]
 {
     $str->lastIndexOf($toFind, $str->length() - $toFind->length());
 }
 
+'''
+As `lastIndexOf(String[1], String[1]):Integer[1]`, but only considers occurrences that begin at or
+before `fromIndex`.
+
+Prefer `lastIdxOf(String[1], String[1], Integer[1]):Integer[1]`, which behaves identically and is
+the portable form.
+'''
 native function meta::pure::functions::string::lastIndexOf(str:String[1], toFind:String[1], fromIndex:Integer[1]):Integer[1];
 
 function <<test.Test>> meta::pure::functions::string::tests::lastIndexOf::testEmptyString():Boolean[1]

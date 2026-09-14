@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::pure::test::pct::*;
-
 '''
 The portion of a string from `start` to its end.
 
 Positions are zero-based, so `start` is the number of characters to drop from the front. A `start`
 of `0` returns the whole string.
+
+Prefer `substr(String[1], Integer[1]):String[1]`, which behaves identically and is the portable form.
 
 **Parameters**
 - `str` — the string to take from.
@@ -32,12 +32,10 @@ of `0` returns the whole string.
 'the quick brown'->substring(4)   // 'quick brown'
 ```
 
-**See also** `substring(String[1], Integer[1], Integer[1]):String[1]`,
-`indexOf(String[1], String[1]):Integer[1]`, `length(String[1]):Integer[1]`
+**See also** `substr(String[1], Integer[1]):String[1]`,
+`idxOf(String[1], String[1]):Integer[1]`, `length(String[1]):Integer[1]`
 '''
-native function
-    <<PCT.function>>
-    meta::pure::functions::string::substring(str:String[1], start:Integer[1]):String[1];
+native function meta::pure::functions::string::substring(str:String[1], start:Integer[1]):String[1];
 
 '''
 The portion of a string between two positions: from `start` inclusive to `end` exclusive.
@@ -45,37 +43,40 @@ The portion of a string between two positions: from `start` inclusive to `end` e
 Both indexes are zero-based, so the result has `end - start` characters, and passing `length()` as
 `end` is equivalent to `substring(String[1], Integer[1]):String[1]`.
 
+Prefer `substr(String[1], Integer[1], Integer[1]):String[1]`, which behaves identically and is the
+portable form.
+
 **Examples**
 ```pure
 'the quick brown fox'->substring(4, 9)   // 'quick'
 ```
 '''
-native function <<PCT.function>> meta::pure::functions::string::substring(str:String[1], start:Integer[1], end:Integer[1]):String[1];
+native function meta::pure::functions::string::substring(str:String[1], start:Integer[1], end:Integer[1]):String[1];
 
 '''
 `start` counts characters dropped from the front, so 0 returns the whole string.
 '''
-function <<PCT.test>> meta::pure::functions::string::tests::substring::testStart<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::string::tests::substring::testStart():Boolean[1]
 {
     let string = 'the quick brown fox jumps over the lazy dog';
-    assertEquals('the quick brown fox jumps over the lazy dog', $f->eval(|substring($string, 0)));
-    assertEquals('he quick brown fox jumps over the lazy dog', $f->eval(|substring($string, 1)));
-    assertEquals('e quick brown fox jumps over the lazy dog', $f->eval(|substring($string, 2)));
-    assertEquals(' quick brown fox jumps over the lazy dog', $f->eval(|substring($string, 3)));
-    assertEquals('quick brown fox jumps over the lazy dog', $f->eval(|substring($string, 4)));
+    assertEquals('the quick brown fox jumps over the lazy dog', substring($string, 0));
+    assertEquals('he quick brown fox jumps over the lazy dog', substring($string, 1));
+    assertEquals('e quick brown fox jumps over the lazy dog', substring($string, 2));
+    assertEquals(' quick brown fox jumps over the lazy dog', substring($string, 3));
+    assertEquals('quick brown fox jumps over the lazy dog', substring($string, 4));
 }
 
 '''
 `end` is exclusive, so the slice spans `end - start` characters.
 '''
-function <<PCT.test>> meta::pure::functions::string::tests::substring::testStartEnd<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<test.Test>> meta::pure::functions::string::tests::substring::testStartEnd():Boolean[1]
 {
     let string = 'the quick brown fox jumps over the lazy dog';
-    assertEquals('the quick brown fox jumps over the lazy dog', $f->eval(|substring($string, 0, 43)));
-    assertEquals('he quick brown fox jumps over the lazy do', $f->eval(|substring($string, 1, 42)));
-    assertEquals('e quick brown fox jumps over the lazy d', $f->eval(|substring($string, 2, 41)));
-    assertEquals(' quick brown fox jumps over the lazy ', $f->eval(|substring($string, 3, 40)));
-    assertEquals('quick brown fox jumps over the lazy', $f->eval(|substring($string, 4, 39)));
+    assertEquals('the quick brown fox jumps over the lazy dog', substring($string, 0, 43));
+    assertEquals('he quick brown fox jumps over the lazy do', substring($string, 1, 42));
+    assertEquals('e quick brown fox jumps over the lazy d', substring($string, 2, 41));
+    assertEquals(' quick brown fox jumps over the lazy ', substring($string, 3, 40));
+    assertEquals('quick brown fox jumps over the lazy', substring($string, 4, 39));
 }
 
 function <<test.Test>> meta::pure::functions::string::tests::substring::testSubstringEval():Boolean[1]

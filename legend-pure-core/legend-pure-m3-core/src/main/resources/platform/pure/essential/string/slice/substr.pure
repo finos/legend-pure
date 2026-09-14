@@ -17,7 +17,6 @@ import meta::pure::test::pct::*;
 '''
 The portion of a string from `start` to its end.
 
-A synonym for `substring(String[1], Integer[1]):String[1]`, behaving identically to it.
 `left(String[1], Integer[1]):String[1]` and `right(String[1], Integer[1]):String[1]` are both
 defined in terms of `substr`, making it the single point at which the string-slicing family
 reaches the underlying platform primitive.
@@ -39,7 +38,8 @@ number of leading characters, use `left(String[1], Integer[1]):String[1]`.
 ```
 
 **See also** `substr(String[1], Integer[1], Integer[1]):String[1]`,
-`substring(String[1], Integer[1]):String[1]`, `left(String[1], Integer[1]):String[1]`
+`left(String[1], Integer[1]):String[1]`, `idxOf(String[1], String[1]):Integer[1]`,
+`length(String[1]):Integer[1]`
 '''
 function <<PCT.function>> meta::pure::functions::string::substr(str:String[1], start:Integer[1]):String[1]
 {
@@ -50,8 +50,8 @@ function <<PCT.function>> meta::pure::functions::string::substr(str:String[1], s
 The portion of a string between two positions: from `start` inclusive to `end` exclusive.
 
 As `substr(String[1], Integer[1]):String[1]`, but stopping at `end` rather than running to the
-end of the string. Both indexes are zero-based, so the result has `end - start` characters. A
-synonym for `substring(String[1], Integer[1], Integer[1]):String[1]`.
+end of the string. Both indexes are zero-based, so the result has `end - start` characters, and
+passing `length()` as `end` is equivalent to `substr(String[1], Integer[1]):String[1]`.
 
 **Examples**
 ```pure
@@ -72,6 +72,8 @@ function <<PCT.test>> meta::pure::functions::string::tests::substr::testSubstrSt
     let string = 'the quick brown fox jumps over the lazy dog';
     assertEquals('the quick brown fox jumps over the lazy dog', $f->eval(|substr($string, 0)));
     assertEquals('he quick brown fox jumps over the lazy dog', $f->eval(|substr($string, 1)));
+    assertEquals('e quick brown fox jumps over the lazy dog', $f->eval(|substr($string, 2)));
+    assertEquals(' quick brown fox jumps over the lazy dog', $f->eval(|substr($string, 3)));
     assertEquals('quick brown fox jumps over the lazy dog', $f->eval(|substr($string, 4)));
 }
 
@@ -82,6 +84,10 @@ function <<PCT.test>> meta::pure::functions::string::tests::substr::testSubstrSt
 {
     let string = 'the quick brown fox jumps over the lazy dog';
     assertEquals('the quick brown fox jumps over the lazy dog', $f->eval(|substr($string, 0, 43)));
+    assertEquals('he quick brown fox jumps over the lazy do', $f->eval(|substr($string, 1, 42)));
+    assertEquals('e quick brown fox jumps over the lazy d', $f->eval(|substr($string, 2, 41)));
+    assertEquals(' quick brown fox jumps over the lazy ', $f->eval(|substr($string, 3, 40)));
+    assertEquals('quick brown fox jumps over the lazy', $f->eval(|substr($string, 4, 39)));
     assertEquals('quick', $f->eval(|substr($string, 4, 9)));
     assertEquals('the', $f->eval(|substr($string, 0, 3)));
 }

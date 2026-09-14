@@ -28,8 +28,8 @@ The number of characters in a string.
 ''->length()        // 0
 ```
 
-**See also** `substring(String[1], Integer[1]):String[1]`,
-`indexOf(String[1], String[1]):Integer[1]`
+**See also** `substr(String[1], Integer[1]):String[1]`,
+`idxOf(String[1], String[1]):Integer[1]`
 '''
 native function
     <<PCT.function>>
