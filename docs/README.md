@@ -157,6 +157,7 @@ paths are always equivalent from a user's perspective.
 | [Build & CI Guide](guides/build-and-ci.md) | Full build lifecycle, Maven plugins, profiles, and the GitHub Actions pipeline |
 | [Contributor Workflow Guide](guides/contributor-workflow.md) | How to add a new DSL extension, native function, or store connector |
 | [Exploration & Discovery](guides/exploration.md) | Systematic approach for new engineers exploring the codebase |
+| [MCP server guide](guides/mcp-server-guide.md) | Exposing Pure compile/execute/navigation to AI coding agents |
 | [Coding Standards & Style Guide](standards/coding-standards.md) | Checkstyle rules, naming conventions, Git workflow, and PR checklist |
 | [PCT Function Documentation](standards/pct-documentation.md) | How to write the published `'''…'''` documentation on PCT functions and tests |
 | [Testing Strategy](testing/testing-strategy.md) | Testing pyramid, frameworks, coverage thresholds, and how to run tests |

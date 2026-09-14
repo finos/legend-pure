@@ -33,5 +33,6 @@
 
     <modules>
         <module>legend-pure-lsp-server</module>
+        <module>legend-pure-mcp-server</module>
     </modules>
 </project>
