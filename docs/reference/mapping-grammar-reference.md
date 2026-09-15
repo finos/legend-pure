@@ -1225,7 +1225,7 @@ Mapping my::mappings::PersonMapping
     {
         ~func my::personRelation__Relation_1_   // zero-argument function returning Relation
         firstName : FIRSTNAME,                  // property : COLUMN_NAME (bare-column form)
-        age       : $src.AGE                    // property : Pure expression over $src
+        age       : $row.AGE                    // property : Pure expression over $row
     }
 )
 ```
@@ -1240,9 +1240,16 @@ Mapping my::mappings::PersonMapping
   returns are rejected at validation with:
   *"Relation mapping function should return a Relation! Found a &lt;Type&gt; instead."*
 - Each property RHS is either a **bare column name** (§15.4) or a **Pure
-  expression over the row variable `$src`** (§15.5). Both forms compile to the
+  expression over the row variable `$row`** (§15.5). Both forms compile to the
   same underlying lambda shape (`valueFn: LambdaFunction<{Nil[1]->Any[*]}>[1]`),
-  so bare-column is simply parser sugar for `$src.<column>`.
+  so bare-column is simply parser sugar for `$row.<column>`.
+- `$row` is bound only within the property-mapping `valueFn` and gives access to
+  the columns of the source relation's row type. It is unrelated to `~src`
+  (§15.3), which is the source-declaration keyword. `$src` itself is **not**
+  bound inside a `Relation` mapping's property expressions — a reference to it
+  fails with *"The variable 'src' is unknown!"*. `$src` is reserved for a
+  separate, relation-level access pattern (e.g. `$src->modelJoin(...)`) intended
+  for cross-relation joins
 
 ### 15.2 `~func` — reference a named Pure function
 
@@ -1369,16 +1376,16 @@ Person[person]: Relation
 }
 ```
 
-- Bare column names are lowered at parse time to `{| $src.<col> }`, so §15.5
+- Bare column names are lowered at parse time to `{| $row.<col> }`, so §15.5
   applies to the resulting lambda body.
 - Quoted column names — for columns whose name contains spaces or special
   characters — use single quotes: `firstName: 'FIRST NAME'`. Both unquoted and
   quoted forms are supported.
 
-### 15.5 Property RHS — Pure expression over `$src`
+### 15.5 Property RHS — Pure expression over `$row`
 
 The RHS of a property mapping can also be **any Pure expression over an
-implicit row variable `$src`**. `$src` is bound to the row type of the relation
+implicit row variable `$row`**. `$row` is bound to the row type of the relation
 (the `T` in `Relation<T>[1]` on the source's last expression), so its
 properties are the columns of the row.
 
@@ -1386,18 +1393,18 @@ properties are the columns of the row.
 *Person[person]: Relation
 {
     ~func my::personRelation__Relation_1_
-    firstName : $src.FIRSTNAME,                                        // explicit column accessor
-    fullName  : $src.FIRSTNAME + ' ' + $src.LASTNAME,                  // concat
-    ageBucket : if($src.AGE > 65, |'senior', |'other'),                // conditional
-    aliases   : $src.LEGALNAME->split(','),                            // to-many result
-    country   : EnumerationMapping CountryEnum : $src.COUNTRY_CODE     // transformer over expression
+    firstName : $row.FIRSTNAME,                                        // explicit column accessor
+    fullName  : $row.FIRSTNAME + ' ' + $row.LASTNAME,                  // concat
+    ageBucket : if($row.AGE > 65, |'senior', |'other'),                // conditional
+    aliases   : $row.LEGALNAME->split(','),                            // to-many result
+    country   : EnumerationMapping CountryEnum : $row.COUNTRY_CODE     // transformer over expression
 }
 ```
 
-- The bare-column form (§15.4) is exactly equivalent to `$src.<col>` — writing
-  `firstName: FIRSTNAME` and `firstName: $src.FIRSTNAME` produces the same
+- The bare-column form (§15.4) is exactly equivalent to `$row.<col>` — writing
+  `firstName: FIRSTNAME` and `firstName: $row.FIRSTNAME` produces the same
   compiled graph.
-- Quoted columns work in the expression form too: `$src.'FIRST NAME'`.
+- Quoted columns work in the expression form too: `$row.'FIRST NAME'`.
 - Any function from the Pure standard library is fair game inside the
   expression, provided the result's generic type is compatible with the
   property (see §15.6).
@@ -1462,14 +1469,14 @@ Database my::mainDb
 Local properties work in `Relation` mappings exactly as in `Relational` mappings
 — see [§16 Local properties](#16-local-properties-) for the full description.
 The RHS follows §15.4 / §15.5: bare column name **or** Pure expression over
-`$src`.
+`$row`.
 
 ```pure
 Firm[f1] : Relation
 {
     ~func my::firmRelation__Relation_1_
     +id        : String[1] : ID,                          // bare-column form
-    +greeting  : String[1] : 'Hi, ' + $src.LEGALNAME,     // expression form
+    +greeting  : String[1] : 'Hi, ' + $row.LEGALNAME,     // expression form
     legalName  : LEGALNAME
 }
 ```
@@ -1479,7 +1486,7 @@ Firm[f1] : Relation
 Embedded class mappings (see [§9](#9-embedded-mapping)) work identically inside
 a `Relation` class mapping. The embedded block inherits the parent's
 `relationFunction` and its sub-property RHS follows the same bare-column /
-`$src`-expression rules:
+`$row`-expression rules:
 
 ```pure
 *Person[person]: Relation
@@ -1488,7 +1495,7 @@ a `Relation` class mapping. The embedded block inherits the parent's
     firstName : FIRSTNAME,
     address                                // embedded — inherits parent's relation function
     (
-        city : $src.CITY
+        city : $row.CITY
     )
 }
 ```
@@ -1500,7 +1507,7 @@ a `Relation` class mapping. The embedded block inherits the parent's
 | Data source | `###Relational` database table / view / join | Any Pure expression returning `Relation<Any>[1]` |
 | Source declaration | `~mainTable [db]Table` | `~func <fnRef>` **or** `~src <expression>` |
 | Store dependency | Requires a `Database` definition | None — store-agnostic (the source expression *may* reference a store, but the mapping itself does not require one) |
-| Property mapping | Column expression `[db]Table.column`, join traversal, operations | Bare column name **or** any Pure expression over `$src` |
+| Property mapping | Column expression `[db]Table.column`, join traversal, operations | Bare column name **or** any Pure expression over `$row` |
 | Non-primitive properties | Supported via joins | Supported when a Pure expression evaluates to a compatible non-primitive |
 
 ---
@@ -1520,7 +1527,7 @@ Syntax: `+<propertyName> : <Type>[<multiplicity>] : <columnExpression>`
 
 - The `+` prefix distinguishes a local property from a regular mapped property.
 - `<columnExpression>` is a full column reference for `Relational` mappings, or
-  either a bare column name or a Pure expression over `$src` for `Relation`
+  either a bare column name or a Pure expression over `$row` for `Relation`
   mappings (see below).
 - Local properties are available via `$this` and `$that` in XStore association
   expressions.
@@ -1558,7 +1565,7 @@ Mapping my::FirmMapping
 ### In a `Relation` mapping
 
 The column expression is either a bare column name from the relation returned
-by `~func` / `~src`, or a Pure expression over `$src` (see [§15.5](#155-property-rhs--pure-expression-over-src)):
+by `~func` / `~src`, or a Pure expression over `$row` (see [§15.5](#155-property-rhs--pure-expression-over-row)):
 
 ```pure
 ###Mapping
@@ -1568,7 +1575,7 @@ Mapping my::FirmMapping
     {
         ~func my::firmRelation__Relation_1_
         +id       : String[1] : ID,                              // bare-column form
-        +greeting : String[1] : 'Hi, ' + $src.LEGALNAME,         // expression form
+        +greeting : String[1] : 'Hi, ' + $row.LEGALNAME,         // expression form
         legalName : LEGALNAME
     }
 
