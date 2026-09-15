@@ -505,6 +505,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("round_Number_1__Integer_1_", new Round(this, repository));
         this.nativeFunctions.put("round_Decimal_1__Integer_1__Decimal_1_", new RoundWithScale(this, repository));
         this.nativeFunctions.put("round_Float_1__Integer_1__Float_1_", new RoundWithScale(this, repository));
+        this.nativeFunctions.put("round_Number_1__Integer_1__Number_1_", new RoundWithScale(this, repository));
         //  Trigonometry
         this.nativeFunctions.put("acos_Number_1__Float_1_", new ArcCosine(this, repository));
         this.nativeFunctions.put("asin_Number_1__Float_1_", new ArcSine(this, repository));
