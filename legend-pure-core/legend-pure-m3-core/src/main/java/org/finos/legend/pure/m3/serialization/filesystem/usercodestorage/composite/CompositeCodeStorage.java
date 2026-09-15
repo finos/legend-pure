@@ -167,12 +167,10 @@ public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
         if (CodeStorageTools.isRootPath(path))
         {
             MutableList<String> files = Lists.mutable.empty();
-            for (RepositoryCodeStorage codeStorage : this.codeStorageByName.valuesView())
+            for (String repoName : this.codeStorageByName.keySet())
             {
-                for (CodeRepository repository : codeStorage.getAllRepositories())
-                {
-                    files.addAllIterable(codeStorage.getFileOrFiles("/" + repository.getName()));
-                }
+                RepositoryCodeStorage codeStorage = this.codeStorageByName.get(repoName);
+                files.addAllIterable(codeStorage.getFileOrFiles("/" + repoName));
             }
             return files;
         }
