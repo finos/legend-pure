@@ -103,7 +103,8 @@ public class DynamicNew extends AbstractNative
                         (param3Instance == null && param4Instance == null) ? "new " + FullJavaPaths.ConstraintsOverride_Impl + "(\"\")._constraintsManager(" + param6 + ")"
                                 : "new " + FullJavaPaths.ConstraintsGetterOverride_Impl + "(\"\")._constraintsManager(" + param6 + ")";
 
-        String newObjectStatement = newObject + "," + newOverrideInstance + "," + getterOverrides + ",es)";
-        return "Pure.handleValidation(false," + newObjectStatement + "," + SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation()) + ",es)";
+        String sourceInfoStr = SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation());
+        String newObjectStatement = newObject + "," + newOverrideInstance + "," + getterOverrides + "," + sourceInfoStr + ",es)";
+        return "Pure.handleValidation(false," + newObjectStatement + "," + sourceInfoStr + ",es)";
     }
 }
