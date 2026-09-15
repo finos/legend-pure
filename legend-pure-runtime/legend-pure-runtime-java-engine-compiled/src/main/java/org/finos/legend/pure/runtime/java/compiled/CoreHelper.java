@@ -485,6 +485,10 @@ public class CoreHelper
 
     public static Number round(Number number, long scale)
     {
+        if (number instanceof Long)
+        {
+            return number;
+        }
         if (number instanceof Double)
         {
             return round((Double) number, scale);
