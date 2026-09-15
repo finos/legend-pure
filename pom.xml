@@ -41,7 +41,7 @@
 
     <properties>
         <!-- CI-Friendly Version -->
-        <revision>5.100.1-SNAPSHOT</revision>
+        <revision>5.101.1-SNAPSHOT</revision>
 
         <sonar.projectKey>legend-pure</sonar.projectKey>
         <sonar.moduleKey>${project.groupId}:${project.artifactId}</sonar.moduleKey>
