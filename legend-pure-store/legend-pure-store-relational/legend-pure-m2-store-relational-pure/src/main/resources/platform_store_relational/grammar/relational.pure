@@ -130,6 +130,18 @@ Class meta::relational::metamodel::relation::FunctionParameter
     type : meta::relational::metamodel::datatype::DataType[1];
 }
 
+Class meta::relational::metamodel::relation::TabularFunctionArgument
+{
+    parameter : FunctionParameter[1];
+    value : RelationalOperationElement[1];
+}
+
+Class meta::relational::metamodel::relation::TabularFunctionCall extends Relation
+{
+    function : TabularFunction[1];
+    arguments : TabularFunctionArgument[*];
+}
+
 Class meta::relational::mapping::ColumnMapping
 {
     columnName : String[1];
