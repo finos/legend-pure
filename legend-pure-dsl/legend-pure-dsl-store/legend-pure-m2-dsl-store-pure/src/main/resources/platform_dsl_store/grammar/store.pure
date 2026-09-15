@@ -48,4 +48,5 @@ Class meta::pure::store::RelationStoreAccessor<T> extends meta::pure::metamodel:
 {
    store : Store[1];
    path : String[*];
+   arguments: ValueSpecification[*];
 }
