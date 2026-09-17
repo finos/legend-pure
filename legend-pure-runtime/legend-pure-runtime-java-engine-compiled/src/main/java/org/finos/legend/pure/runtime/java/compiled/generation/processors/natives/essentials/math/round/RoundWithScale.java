@@ -20,6 +20,6 @@ public class RoundWithScale extends AbstractNativeFunctionGeneric
 {
     public RoundWithScale()
     {
-        super("CoreGen.round", new Class[]{Number.class, long.class}, "round_Decimal_1__Integer_1__Decimal_1_", "round_Float_1__Integer_1__Float_1_", "round_Number_1__Integer_1__Number_1_");
+        super("CoreGen.round", new Class[]{Number.class, long.class}, "round_Decimal_1__Integer_1__Decimal_1_", "round_Float_1__Integer_1__Float_1_");
     }
 }
