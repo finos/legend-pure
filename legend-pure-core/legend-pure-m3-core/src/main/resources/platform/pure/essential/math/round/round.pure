@@ -172,13 +172,13 @@ function <<PCT.test>> meta::pure::functions::math::tests::round::testNumberRound
     assertEq(0, $f->eval(|round(0->cast(@Number), 4)));
 
     // Float input cast to Number, forcing the Number overload
-    assertEq(17.4, $f->eval(|round(17.36->cast(@Number), 1)));
-    assertEq(-17.4, $f->eval(|round(-17.36->cast(@Number), 1)));
-    assertEq(17.0, $f->eval(|round(17.3->cast(@Number), 0)));
+    assertEq(17.4, $f->eval(|round(17.36->cast(@Number)->toFloat(), 1)));
+    assertEq(-17.4, $f->eval(|round(-17.36->cast(@Number)->toFloat(), 1)));
+    assertEq(17.0, $f->eval(|round(17.3->cast(@Number)->toFloat(), 0)));
 
     // Decimal input cast to Number, forcing the Number overload
-    assertEq(3.14d, $f->eval(|round(3.14159d->cast(@Number), 2)));
-    assertEq(-3.142d, $f->eval(|round(-3.14159d->cast(@Number), 3)));
+    assertEq(3.14d, $f->eval(|round(3.14159d->cast(@Number)->toDecimal(), 2)));
+    assertEq(-3.142d, $f->eval(|round(-3.14159d->cast(@Number)->toDecimal(), 3)));
 }
 
 function <<test.Test>> meta::pure::functions::math::tests::round::testRoundEval():Boolean[1]
