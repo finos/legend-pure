@@ -104,6 +104,68 @@ public class TestRelationType extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
+    public void testConcatenateStringVsVarcharWithSize()
+    {
+        compileTestSource("fromString.pure",
+                "Primitive Varchar(x:Integer[1]) extends String\n" +
+                        "[\n" +
+                        "  $this->length() <= $x\n" +
+                        "]\n" +
+                        "function funcStrOne():meta::pure::metamodel::relation::Relation<(name:String[1])>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}\n" +
+                        "function funcVarchar255():meta::pure::metamodel::relation::Relation<(name:Varchar(255)[1])>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}");
+        FunctionType fTypeStr = (FunctionType) Function.computeFunctionType(runtime.getFunction("funcStrOne__Relation_$0_1$_"), runtime.getProcessorSupport());
+        FunctionType fTypeVarchar = (FunctionType) Function.computeFunctionType(runtime.getFunction("funcVarchar255__Relation_$0_1$_"), runtime.getProcessorSupport());
+        Assert.assertTrue(
+                "String[1] and Varchar(255)[1] columns should be concatenatable",
+                _RelationType.canConcatenate(
+                        fTypeStr._returnType()._typeArguments().getFirst(),
+                        fTypeVarchar._returnType()._typeArguments().getFirst(),
+                        runtime.getProcessorSupport())
+        );
+        Assert.assertTrue(
+                "canConcatenate should be symmetric for String[1] and Varchar(255)[1]",
+                _RelationType.canConcatenate(
+                        fTypeVarchar._returnType()._typeArguments().getFirst(),
+                        fTypeStr._returnType()._typeArguments().getFirst(),
+                        runtime.getProcessorSupport())
+        );
+    }
+
+    @Test
+    public void testMergeStringVsVarcharColumns()
+    {
+        compileTestSource("fromString.pure",
+                "Primitive Varchar(x:Integer[1]) extends String\n" +
+                        "[\n" +
+                        "  $this->length() <= $x\n" +
+                        "]\n" +
+                        "function funcStr():meta::pure::metamodel::relation::Relation<(name:String[1])>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}\n" +
+                        "function funcVarchar():meta::pure::metamodel::relation::Relation<(name:Varchar(10)[1])>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}");
+        FunctionType fTypeStr = (FunctionType) Function.computeFunctionType(runtime.getFunction("funcStr__Relation_$0_1$_"), runtime.getProcessorSupport());
+        FunctionType fTypeVarchar = (FunctionType) Function.computeFunctionType(runtime.getFunction("funcVarchar__Relation_$0_1$_"), runtime.getProcessorSupport());
+        Assert.assertEquals(
+                "String[1] merged with Varchar(10) should coerce to String",
+                "(name:String[1])",
+                GenericType.print(_RelationType.merge(fTypeStr._returnType()._typeArguments().getFirst(), fTypeVarchar._returnType()._typeArguments().getFirst(), true, runtime.getProcessorSupport()), processorSupport));
+        Assert.assertEquals(
+                "merge should be symmetric for String[1] and Varchar(10)",
+                "(name:String[1])",
+                GenericType.print(_RelationType.merge(fTypeVarchar._returnType()._typeArguments().getFirst(), fTypeStr._returnType()._typeArguments().getFirst(), true, runtime.getProcessorSupport()), processorSupport));
+    }
+
+    @Test
     public void testNonExistentColumnTypeInParameter()
     {
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
