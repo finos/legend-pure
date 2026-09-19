@@ -198,7 +198,8 @@ public class _RelationType
 
         return columns1.zip(columns2).injectInto(true, (a, b) -> a &&
                 (b.getOne()._nameWildCard() || b.getTwo()._nameWildCard() || b.getOne()._name().equals(b.getTwo()._name())) &&
-                org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(_Column.getColumnType(b.getOne()), _Column.getColumnType(b.getTwo()), processorSupport));
+                (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(_Column.getColumnType(b.getOne()), _Column.getColumnType(b.getTwo()), processorSupport)
+                        || org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(_Column.getColumnType(b.getTwo()), _Column.getColumnType(b.getOne()), processorSupport)));
     }
 
     public static GenericType merge(GenericType existingGenericType, GenericType genericTypeCopy, boolean isCovariant, ProcessorSupport processorSupport)
