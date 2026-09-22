@@ -16,6 +16,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as vscode from 'vscode';
+import { ChildProcess } from 'child_process';
 import { workspace, ExtensionContext, Uri, commands, window } from 'vscode';
 import {
     LanguageClient,
@@ -25,28 +26,72 @@ import {
 import { createLegendPureDebugAdapterDescriptor, LegendPureDebugConfigurationProvider } from './debugAdapter';
 import { PureFileSystemProvider } from './pureFileSystemProvider';
 import { PurePackageTreeProvider } from './purePackageTree';
+import { PureLanguageClient } from './pureLanguageClient';
+import { loadServerConfig, PureLspServerConfig } from './serverConfig';
+import { resolveRepoRoots } from './repoRoots';
+import {
+    planTransport,
+    probePort,
+    connectStream,
+    spawnSocketDaemon,
+    TransportPlan,
+} from './serverTransport';
+import { ServerLogChannel, WorkspaceDriftHandler } from './notifications';
+import { PureStatusBar } from './statusBar';
+import { manageOptions } from './options';
+import { PureCodeLensProvider } from './codeLens';
+import { buildServerArgFileContent, toJavaArgFileReference } from './serverArgs';
+import {
+    LegendLogEvent,
+    LockContentionEvent,
+    LspStatus,
+    NOTIF_LOCK_CONTENTION,
+    NOTIF_LOG_OUTPUT,
+    NOTIF_STATUS_CHANGED,
+    NOTIF_WORKSPACE_DRIFT,
+    PCTAdapterInfo,
+    SetupTeardownInfo,
+    WorkspaceDriftEvent,
+    executeGo as requestExecuteGo,
+    executeFunction as requestExecuteFunction,
+    getPCTAdapters,
+    getSetupTeardown,
+    status as requestStatus,
+} from './protocol';
 
 let client: LanguageClient | undefined;
-let clientStatusSubscription: vscode.Disposable | undefined;
+let clientSubscriptions: vscode.Disposable[] = [];
+/** Set only when this window spawned the daemon; only then may stopping kill it. */
+let ownedProcess: ChildProcess | undefined;
+/** True when attached to a daemon this window did not start. */
+let externallyOwned = false;
 let pureFs: PureFileSystemProvider | undefined;
 let packageTree: PurePackageTreeProvider | undefined;
-let goOutputChannel: import('vscode').OutputChannel | undefined;
-const SERVER_MAIN_CLASS = 'org.finos.legend.pure.lsp.LegendPureLspServer';
+let serverLog: ServerLogChannel | undefined;
+let driftHandler: WorkspaceDriftHandler | undefined;
+let statusBar: PureStatusBar | undefined;
+let codeLensProvider: PureCodeLensProvider | undefined;
+let goOutputChannel: vscode.OutputChannel | undefined;
+let starting: Promise<void> | undefined;
 
 let serverReady: Promise<void>;
 let resolveServerReady: () => void;
 resetServerReady();
 
-interface LspStatus {
-    state: string;
-    repositoryCount: number;
-    symbolCount: number;
-    recoveryAttempts: number;
-    recoveryInProgress: boolean;
-    message?: string;
-}
-
 export function activate(context: ExtensionContext): void {
+    serverLog = new ServerLogChannel();
+    context.subscriptions.push(serverLog);
+
+    statusBar = new PureStatusBar(() => client);
+    context.subscriptions.push(statusBar);
+
+    driftHandler = new WorkspaceDriftHandler(
+        () => client,
+        () => resolveAutoSync(),
+        serverLog
+    );
+    context.subscriptions.push(driftHandler);
+
     pureFs = new PureFileSystemProvider(() => client);
     context.subscriptions.push(
         workspace.registerFileSystemProvider('pure', pureFs, {
@@ -64,11 +109,10 @@ export function activate(context: ExtensionContext): void {
         })
     );
 
-    // Register the executeGo command
     context.subscriptions.push(
         commands.registerCommand('legend.executeGo', async () => {
-            if (!client) {
-                window.showErrorMessage('Pure LSP not started');
+            const active = await requireClient();
+            if (!active) {
                 return;
             }
             if (!goOutputChannel) {
@@ -80,9 +124,7 @@ export function activate(context: ExtensionContext): void {
             out.appendLine('Executing go()...');
 
             try {
-                const result: { success: boolean; error: string | null; output: string | null } =
-                    await client.sendRequest('legend/executeGo');
-
+                const result = await requestExecuteGo(active);
                 if (result.success) {
                     out.appendLine(result.output || '(no output)');
                     out.appendLine('\n--- Execution complete ---');
@@ -96,7 +138,183 @@ export function activate(context: ExtensionContext): void {
     );
 
     context.subscriptions.push(
-        commands.registerCommand('legend.restartServer', async () => restartLegendServer(context))
+        commands.registerCommand('legend.startOrConnect', async () => {
+            if (client) {
+                const status = await currentState();
+                // Avoid churning a healthy shared session for every other connected client.
+                if (UP_OR_STARTING.has(status)) {
+                    window.showInformationMessage(
+                        `Legend Pure LSP is already ${status}.`
+                    );
+                    return;
+                }
+            }
+            await startLegendClient(context);
+        })
+    );
+
+    context.subscriptions.push(
+        commands.registerCommand('legend.stopOrDisconnect', async () => {
+            if (!client) {
+                window.showInformationMessage('Legend Pure LSP is not running.');
+                return;
+            }
+            const wasExternal = externallyOwned;
+            await stopLegendClient();
+            window.showInformationMessage(
+                wasExternal
+                    ? 'Disconnected from the Legend Pure LSP daemon. It keeps running for other clients.'
+                    : 'Legend Pure LSP stopped.'
+            );
+        })
+    );
+
+    context.subscriptions.push(
+        commands.registerCommand('legend.restartServer', async () => {
+            await stopLegendClient();
+            await startLegendClient(context);
+            if (client) {
+                window.showInformationMessage('Legend Pure LSP restarted.');
+            }
+        })
+    );
+
+    // Do not register 'legend.reindexWorkspace' here — it is a SERVER_OWNED_COMMAND (see protocol.ts).
+
+    context.subscriptions.push(
+        commands.registerCommand('legend.manageOptions', async () => {
+            const active = await requireClient();
+            if (active) {
+                await manageOptions(context, active);
+            }
+        })
+    );
+
+    context.subscriptions.push(
+        commands.registerCommand('legend.showServerLog', () => serverLog?.show())
+    );
+
+    codeLensProvider = new PureCodeLensProvider(() => client);
+    context.subscriptions.push(codeLensProvider);
+    context.subscriptions.push(
+        vscode.languages.registerCodeLensProvider(
+            [
+                { scheme: 'file', language: 'pure' },
+                { scheme: 'pure', language: 'pure' },
+            ],
+            codeLensProvider
+        )
+    );
+
+    // CodeLens-only commands; not in package.json since they need a function path argument.
+    context.subscriptions.push(
+        commands.registerCommand('legend.runFunction', (functionPath: string) =>
+            runPureFunction(functionPath, {})
+        )
+    );
+
+    context.subscriptions.push(
+        commands.registerCommand('legend.debugFunction', async (functionPath: string) => {
+            await vscode.debug.startDebugging(undefined, {
+                type: 'legend-pure',
+                request: 'launch',
+                name: `Debug ${functionPath}`,
+                function: functionPath,
+            });
+        })
+    );
+
+    context.subscriptions.push(
+        commands.registerCommand('legend.runFunctionWithAdapter', async (functionPath: string) => {
+            const active = await requireClient();
+            if (!active) {
+                return;
+            }
+            let adapters: PCTAdapterInfo[];
+            try {
+                adapters = await getPCTAdapters(active);
+            } catch (e: any) {
+                window.showErrorMessage(`Legend Pure: could not list PCT adapters: ${e?.message || e}`);
+                return;
+            }
+            if (!adapters || adapters.length === 0) {
+                window.showWarningMessage('Legend Pure: no PCT adapters are available in this session.');
+                return;
+            }
+            const picked = await window.showQuickPick(
+                adapters.map((adapter) => ({
+                    label: adapter.name,
+                    description: adapter.path,
+                    adapter,
+                })),
+                { title: `Run ${functionPath} against which PCT adapter?` }
+            );
+            if (!picked) {
+                return;
+            }
+            await runPureFunction(functionPath, { pctAdapterPath: picked.adapter.path });
+        })
+    );
+
+    context.subscriptions.push(
+        commands.registerCommand(
+            'legend.runFunctionWithSetupTeardown',
+            async (functionPath: string) => {
+                const active = await requireClient();
+                if (!active) {
+                    return;
+                }
+                let bracket: SetupTeardownInfo;
+                try {
+                    bracket = await getSetupTeardown(active, functionPath);
+                } catch (e: any) {
+                    window.showErrorMessage(
+                        `Legend Pure: could not resolve setup/teardown: ${e?.message || e}`
+                    );
+                    return;
+                }
+                if (!bracket?.beforeFunctionPath && !bracket?.afterFunctionPath) {
+                    window.showWarningMessage(
+                        `Legend Pure: no <<test.BeforePackage>>/<<test.AfterPackage>> function ` +
+                            `applies to ${functionPath}.`
+                    );
+                    return;
+                }
+                await runPureFunction(functionPath, {
+                    beforeFunctionPath: bracket.beforeFunctionPath ?? undefined,
+                    afterFunctionPath: bracket.afterFunctionPath ?? undefined,
+                });
+            }
+        )
+    );
+
+    context.subscriptions.push(
+        commands.registerCommand('legend.showStatus', async () => {
+            const active = client;
+            if (!active) {
+                await commands.executeCommand('legend.startOrConnect');
+                return;
+            }
+            try {
+                const s: LspStatus = await requestStatus(active);
+                const lines = [
+                    `State: ${s.state}`,
+                    `Workspace repos: ${s.repositoryCount}, symbols: ${s.symbolCount}`,
+                    `Transport: ${s.transport ?? 'unknown'}${s.port && s.port > 0 ? ` :${s.port}` : ''}`,
+                    `Connected clients: ${s.connectedClientCount ?? 'unknown'}`,
+                    `Ownership: ${externallyOwned ? 'attached (external)' : 'owned by this window'}`,
+                ];
+                const choice = await window.showInformationMessage(
+                    lines.join('  |  '),
+                    'Show Server Log'
+                );
+                if (choice === 'Show Server Log') {
+                    serverLog?.show();
+                }
+            } catch (e: any) {
+                window.showErrorMessage(`Legend Pure: could not read status: ${e?.message || e}`);
+            }
+        })
     );
 
     context.subscriptions.push(
@@ -188,43 +406,83 @@ export function activate(context: ExtensionContext): void {
         })
     );
 
-    // Register LLM tools (VS Code LanguageModelTool API for Copilot/agents)
     registerLanguageModelTools(context);
 
     context.subscriptions.push(
         commands.registerCommand('legend.refreshPackageTree', () => refreshPureViews())
     );
 
-    startLegendClient(context).catch((e) => {
-        window.showErrorMessage('Legend Pure LSP failed to start: ' + (e?.message || e));
-    });
+    // Off by default: starting can mean spawning a large JVM, which should be opt-in.
+    if (workspace.getConfiguration('legendPure').get<boolean>('server.autoStart', false)) {
+        startLegendClient(context).catch((e) => {
+            window.showErrorMessage('Legend Pure LSP failed to start: ' + (e?.message || e));
+        });
+    }
 }
 
-export function deactivate(): Thenable<void> | undefined {
-    if (clientStatusSubscription) {
-        clientStatusSubscription.dispose();
-        clientStatusSubscription = undefined;
-    }
-    if (pureFs) {
-        pureFs.dispose();
-        pureFs = undefined;
-    }
-    if (!client) {
-        return undefined;
-    }
-    return client.stop();
+export async function deactivate(): Promise<void> {
+    await stopLegendClient();
 }
+
+// ── Client lifecycle ───────────────────────────────────────────────
 
 async function startLegendClient(context: ExtensionContext): Promise<void> {
+    if (starting) {
+        return starting;
+    }
     if (client) {
         return;
     }
+    starting = doStartLegendClient(context).finally(() => {
+        starting = undefined;
+    });
+    return starting;
+}
 
-    const serverOptions = resolveServerOptions(context);
+async function doStartLegendClient(context: ExtensionContext): Promise<void> {
+    const settings = readTransportSettings();
+    const config = loadServerConfig(
+        settings.configPath ? expandConfiguredPath(settings.configPath) : ''
+    );
+    const plan = planTransport(settings, config);
+
+    let serverOptions: ServerOptions | undefined;
+    externallyOwned = false;
+
+    if (plan.kind === 'stdio') {
+        console.log(`[Legend Pure] Transport: stdio (${plan.reason})`);
+        serverOptions = resolveStdioServerOptions(context, config);
+    } else {
+        const listening = await probePort(plan.port);
+        if (plan.kind === 'connect') {
+            if (!listening) {
+                window.showErrorMessage(
+                    `Legend Pure LSP: nothing is listening on 127.0.0.1:${plan.port} and ` +
+                        '"legendPure.server.connectOnly" is set, so the extension will not start one. ' +
+                        'Start the daemon first.'
+                );
+                return;
+            }
+            externallyOwned = true;
+            console.log(`[Legend Pure] Transport: connect-only to :${plan.port} (${plan.reason})`);
+            serverOptions = () => connectStream(plan.port);
+        } else {
+            externallyOwned = listening;
+            console.log(
+                `[Legend Pure] Transport: socket :${plan.port} (${plan.reason}) — ` +
+                    (listening ? 'daemon already listening, connecting only' : 'nothing listening, will launch')
+            );
+            serverOptions = listening
+                ? () => connectStream(plan.port)
+                : buildSpawningServerOptions(context, config, plan.port);
+        }
+    }
+
     if (!serverOptions) {
         return;
     }
 
+    const roots = resolveConfiguredRoots(config);
     const clientOptions: LanguageClientOptions = {
         documentSelector: [
             { scheme: 'file', language: 'pure' },
@@ -235,14 +493,20 @@ async function startLegendClient(context: ExtensionContext): Promise<void> {
         },
     };
 
-    const nextClient = new LanguageClient(
+    const nextClient = new PureLanguageClient(
         'legendPureLsp',
         'Legend Pure LSP',
         serverOptions,
-        clientOptions
+        clientOptions,
+        roots,
+        config?.classpathRepositories ?? []
     );
 
+    // Register before start() so a statusChanged fired right after initialize is not missed.
+    registerNotificationHandlers(nextClient);
+
     client = nextClient;
+    driftHandler?.reset();
     resetServerReady();
     try {
         await nextClient.start();
@@ -250,68 +514,283 @@ async function startLegendClient(context: ExtensionContext): Promise<void> {
         if (client === nextClient) {
             client = undefined;
         }
+        disposeClientSubscriptions();
+        killOwnedProcess();
+        statusBar?.onDisconnected();
         throw e;
     }
     if (client !== nextClient) {
         await nextClient.stop(5000).catch(() => undefined);
         return;
     }
-    clientStatusSubscription?.dispose();
-    clientStatusSubscription = nextClient.onNotification('legend/statusChanged', (status: LspStatus) => {
-        const state = (status.state || '').toLowerCase();
-        if (state === 'ready') {
-            console.log(
-                `[Legend Pure] Server ready (${status.repositoryCount} repos, ${status.symbolCount} symbols)`
-            );
-            resolveServerReady();
-            refreshPureViews();
-        }
-        if (state === 'initializing' || state === 'recovering') {
-            resetServerReady();
-        }
-        if (state === 'failed') {
-            console.log(`[Legend Pure] Server failed: ${status.message || 'unknown error'}`);
-        }
-    });
+    statusBar?.startPolling();
+    refreshPureViews();
 }
 
-async function restartLegendServer(context: ExtensionContext): Promise<void> {
-    const previousClient = client;
+async function stopLegendClient(): Promise<void> {
+    const previous = client;
     client = undefined;
     resetServerReady();
-    clientStatusSubscription?.dispose();
-    clientStatusSubscription = undefined;
+    disposeClientSubscriptions();
+    statusBar?.stopPolling();
+    statusBar?.onDisconnected();
+    driftHandler?.reset();
     refreshPureViews();
 
-    if (previousClient) {
+    if (previous) {
         try {
-            await previousClient.stop(5000);
+            // Ends only this connection; the daemon (if shared) keeps running for other clients.
+            await previous.stop(5000);
         } catch (e: any) {
-            console.log('[Legend Pure] Failed to stop previous LSP client:', e?.message || e);
+            console.log('[Legend Pure] Failed to stop the LSP client:', e?.message || e);
         }
     }
+    killOwnedProcess();
+    externallyOwned = false;
+}
 
-    await startLegendClient(context);
-    if (client) {
-        window.showInformationMessage('Legend Pure LSP restarted.');
+function killOwnedProcess(): void {
+    if (!ownedProcess) {
+        return;
     }
+    try {
+        ownedProcess.kill();
+    } catch {
+        // already gone
+    }
+    ownedProcess = undefined;
+}
+
+function registerNotificationHandlers(target: LanguageClient): void {
+    disposeClientSubscriptions();
+    clientSubscriptions.push(
+        target.onNotification(NOTIF_STATUS_CHANGED, (s: LspStatus) => {
+            const state = (s.state || '').toLowerCase();
+            statusBar?.onStatus(s);
+            if (state === 'ready') {
+                console.log(
+                    `[Legend Pure] Server ready (${s.repositoryCount} repos, ${s.symbolCount} symbols)`
+                );
+                resolveServerReady();
+                refreshPureViews();
+            }
+            if (state === 'initializing' || state === 'recovering' || state === 'reindexing') {
+                resetServerReady();
+            }
+            if (state === 'failed') {
+                console.log(`[Legend Pure] Server failed: ${s.message || 'unknown error'}`);
+            }
+        })
+    );
+    clientSubscriptions.push(
+        target.onNotification(NOTIF_LOG_OUTPUT, (event: LegendLogEvent) => {
+            serverLog?.onLogOutput(event);
+        })
+    );
+    clientSubscriptions.push(
+        target.onNotification(NOTIF_WORKSPACE_DRIFT, (event: WorkspaceDriftEvent) => {
+            void driftHandler?.onDrift(event);
+        })
+    );
+    clientSubscriptions.push(
+        target.onNotification(NOTIF_LOCK_CONTENTION, (event: LockContentionEvent) => {
+            statusBar?.onLockContention(event);
+        })
+    );
+}
+
+function disposeClientSubscriptions(): void {
+    for (const subscription of clientSubscriptions) {
+        subscription.dispose();
+    }
+    clientSubscriptions = [];
+}
+
+async function currentState(): Promise<string> {
+    if (!client) {
+        return 'stopped';
+    }
+    try {
+        const s = await requestStatus(client);
+        return (s.state || 'unknown').toLowerCase();
+    } catch {
+        return 'unknown';
+    }
+}
+
+const UP_OR_STARTING = new Set(['ready', 'initializing', 'reindexing', 'recovering']);
+
+async function requireClient(): Promise<LanguageClient | undefined> {
+    if (client) {
+        return client;
+    }
+    const choice = await window.showErrorMessage(
+        'Legend Pure LSP is not running.',
+        'Start / Connect'
+    );
+    if (choice === 'Start / Connect') {
+        await commands.executeCommand('legend.startOrConnect');
+    }
+    return client;
 }
 
 function refreshPureViews(): void {
-    if (pureFs) {
-        pureFs.clearCache();
+    pureFs?.clearCache();
+    packageTree?.refresh();
+    codeLensProvider?.refresh();
+}
+
+interface RunOptions {
+    pctAdapterPath?: string;
+    beforeFunctionPath?: string;
+    afterFunctionPath?: string;
+}
+
+/** Shared by every Run lens: same output channel and error shape as the go() command. */
+async function runPureFunction(functionPath: string, options: RunOptions): Promise<void> {
+    const active = await requireClient();
+    if (!active) {
+        return;
     }
-    if (packageTree) {
-        packageTree.refresh();
+    if (!goOutputChannel) {
+        goOutputChannel = window.createOutputChannel('Pure Go');
+    }
+    const out = goOutputChannel;
+    out.clear();
+    out.show(true);
+    out.appendLine(`Executing ${functionPath}...`);
+    if (options.beforeFunctionPath) {
+        out.appendLine(`  setup:    ${options.beforeFunctionPath}`);
+    }
+    if (options.afterFunctionPath) {
+        out.appendLine(`  teardown: ${options.afterFunctionPath}`);
+    }
+    if (options.pctAdapterPath) {
+        out.appendLine(`  adapter:  ${options.pctAdapterPath}`);
+    }
+    try {
+        const result = await requestExecuteFunction(active, {
+            function: functionPath,
+            pctAdapterPath: options.pctAdapterPath,
+            beforeFunctionPath: options.beforeFunctionPath,
+            afterFunctionPath: options.afterFunctionPath,
+        });
+        if (result.success) {
+            out.appendLine(result.output || '(no output)');
+            out.appendLine('\n--- Execution complete ---');
+        } else {
+            out.appendLine(result.output || result.error || 'Unknown error');
+        }
+    } catch (e: any) {
+        out.appendLine('ERROR: ' + (e.message || e));
     }
 }
 
-function resolveServerOptions(context: ExtensionContext): ServerOptions | undefined {
-    const javaHome = getJavaExecutable();
+// ── Settings ───────────────────────────────────────────────────────
+
+function readTransportSettings() {
+    const config = workspace.getConfiguration('legendPure');
+    return {
+        connectOnly: config.get<boolean>('server.connectOnly', false),
+        connectPort: config.get<number>('server.connectPort', 0),
+        launchPort: config.get<number>('server.launchPort', 0),
+        configPath: config.get<string>('server.configPath', ''),
+    };
+}
+
+/** Sidecar roots win over the setting; both fall back to open workspace folders. */
+function resolveConfiguredRoots(config: PureLspServerConfig | undefined): string[] {
+    const fromConfig = (config?.repoRoots ?? []).map(expandConfiguredPath);
+    const fromSettings = getConfiguredStringArray('server.repoRoots').map(expandConfiguredPath);
+    const configured = fromConfig.length > 0 ? fromConfig : fromSettings;
+    const folders = (workspace.workspaceFolders ?? []).map((folder) => folder.uri.fsPath);
+    return resolveRepoRoots(configured, folders);
+}
+
+function resolveAutoSync(): boolean {
+    const settings = readTransportSettings();
+    const config = loadServerConfig(
+        settings.configPath ? expandConfiguredPath(settings.configPath) : ''
+    );
+    if (config && typeof config.autoSyncWorkspace === 'boolean') {
+        return config.autoSyncWorkspace;
+    }
+    return workspace.getConfiguration('legendPure').get<boolean>('server.autoSyncWorkspace', true);
+}
+
+function resolvePureOptions(config: PureLspServerConfig | undefined): Record<string, string> {
+    const fromSettings = workspace
+        .getConfiguration('legendPure')
+        .get<Record<string, unknown>>('server.pureOptions', {});
+    const merged: Record<string, string> = {};
+    for (const [key, value] of Object.entries(fromSettings ?? {})) {
+        if (value !== null && value !== undefined) {
+            merged[key] = String(value);
+        }
+    }
+    // Sidecar overrides a same-named setting.
+    for (const [key, value] of Object.entries(config?.pureOptions ?? {})) {
+        merged[key] = value;
+    }
+    return merged;
+}
+
+function resolveJvmArgs(): string[] {
+    return getConfiguredStringArray('server.jvmArgs');
+}
+
+// ── Launching ──────────────────────────────────────────────────────
+
+function resolveStdioServerOptions(
+    context: ExtensionContext,
+    config: PureLspServerConfig | undefined
+): ServerOptions | undefined {
+    const spec = resolveLaunchSpec(context, config, 0);
+    if (!spec) {
+        return undefined;
+    }
+    return {
+        command: spec.javaExe,
+        args: [toJavaArgFileReference(spec.argFile)],
+        options: { env: process.env },
+    };
+}
+
+function buildSpawningServerOptions(
+    context: ExtensionContext,
+    config: PureLspServerConfig | undefined,
+    port: number
+): ServerOptions | undefined {
+    const spec = resolveLaunchSpec(context, config, port);
+    if (!spec) {
+        return undefined;
+    }
+    return async () => {
+        const daemon = await spawnSocketDaemon({
+            javaExe: spec.javaExe,
+            argFile: spec.argFile,
+            port,
+            onStderrLine: (line) => serverLog?.append('INFO', line),
+        });
+        ownedProcess = daemon.process;
+        return daemon.stream;
+    };
+}
+
+interface LaunchSpec {
+    javaExe: string;
+    argFile: string;
+}
+
+/** Resolves the java binary, classpath and argfile for a launch. `socketPort > 0` = daemon mode. */
+function resolveLaunchSpec(
+    context: ExtensionContext,
+    config: PureLspServerConfig | undefined,
+    socketPort: number
+): LaunchSpec | undefined {
+    const javaExe = getJavaExecutable();
     const jarPath = resolveServerJar();
     console.log('[Legend Pure] Resolved server JAR:', jarPath);
-    const jarSize = jarPath ? Math.round(fs.statSync(jarPath).size / 1024 / 1024) : 0;
-    console.log(`[Legend Pure] JAR size: ${jarSize}MB; launching with generated argfile`);
     if (!jarPath) {
         window.showErrorMessage(
             'Legend Pure LSP: server JAR not found. ' +
@@ -319,6 +798,8 @@ function resolveServerOptions(context: ExtensionContext): ServerOptions | undefi
         );
         return undefined;
     }
+    const jarSize = Math.round(fs.statSync(jarPath).size / 1024 / 1024);
+    console.log(`[Legend Pure] JAR size: ${jarSize}MB; launching with generated argfile`);
 
     const extraClasspath = resolveExtraClasspath();
     if (!extraClasspath) {
@@ -331,9 +812,10 @@ function resolveServerOptions(context: ExtensionContext): ServerOptions | undefi
 
     const hostClasspath = uniqueStrings(extraClasspath.concat(classpathFileEntries));
     const serverClasspath = resolveServerClasspath(jarPath, hostClasspath, classpathFileEntries.length > 0);
-    let generatedArgFile: string;
+
+    let argFile: string;
     try {
-        generatedArgFile = writeServerArgFile(context, serverClasspath);
+        argFile = writeServerArgFile(context, serverClasspath, resolvePureOptions(config), resolveJvmArgs(), socketPort);
     } catch (e: any) {
         window.showErrorMessage(
             'Legend Pure LSP: failed to write Java argfile: ' + (e?.message || e)
@@ -341,21 +823,13 @@ function resolveServerOptions(context: ExtensionContext): ServerOptions | undefi
         return undefined;
     }
 
-    console.log('[Legend Pure] Server launch mode: generated argfile');
-    console.log('[Legend Pure] Java argfile:', generatedArgFile);
-    console.log('[Legend Pure] Resolved server classpath entries:', serverClasspath);
-    if (extraClasspath.length > 0) {
-        console.log('[Legend Pure] Resolved extra classpath:', extraClasspath);
-    }
+    console.log('[Legend Pure] Java argfile:', argFile);
+    console.log('[Legend Pure] Resolved server classpath entries:', serverClasspath.length);
     if (classpathFileEntries.length > 0) {
         console.log(`[Legend Pure] Resolved classpath file entries: ${classpathFileEntries.length}`);
     }
 
-    return {
-        command: javaHome,
-        args: [toJavaArgFileReference(generatedArgFile)],
-        options: { env: process.env },
-    };
+    return { javaExe, argFile };
 }
 
 function resolveServerJar(): string | undefined {
@@ -381,20 +855,9 @@ function resolveServerJar(): string | undefined {
         'legend-pure-lsp-server',
         'target'
     );
-    if (fs.existsSync(serverTargetDir)) {
-        const files = fs.readdirSync(serverTargetDir);
-        const mainJar = files.find(
-            (f) =>
-                f.startsWith('legend-pure-lsp-server-') &&
-                f.endsWith('.jar') &&
-                !f.endsWith('-sources.jar') &&
-                !f.endsWith('-javadoc.jar') &&
-                !f.endsWith('-tests.jar') &&
-                !f.endsWith('-shaded.jar')
-        );
-        if (mainJar) {
-            return path.join(serverTargetDir, mainJar);
-        }
+    const fromSibling = findServerJar(serverTargetDir);
+    if (fromSibling) {
+        return fromSibling;
     }
 
     // 3. Look relative to workspace folders
@@ -407,25 +870,31 @@ function resolveServerJar(): string | undefined {
                 'legend-pure-lsp-server',
                 'target'
             );
-            if (fs.existsSync(targetDir)) {
-                const files = fs.readdirSync(targetDir);
-                const mainJar = files.find(
-                    (f) =>
-                        f.startsWith('legend-pure-lsp-server-') &&
-                        f.endsWith('.jar') &&
-                        !f.endsWith('-sources.jar') &&
-                        !f.endsWith('-javadoc.jar') &&
-                        !f.endsWith('-tests.jar') &&
-                        !f.endsWith('-shaded.jar')
-                );
-                if (mainJar) {
-                    return path.join(targetDir, mainJar);
-                }
+            const found = findServerJar(targetDir);
+            if (found) {
+                return found;
             }
         }
     }
 
     return undefined;
+}
+
+function findServerJar(targetDir: string): string | undefined {
+    if (!fs.existsSync(targetDir)) {
+        return undefined;
+    }
+    const files = fs.readdirSync(targetDir);
+    const mainJar = files.find(
+        (f) =>
+            f.startsWith('legend-pure-lsp-server-') &&
+            f.endsWith('.jar') &&
+            !f.endsWith('-sources.jar') &&
+            !f.endsWith('-javadoc.jar') &&
+            !f.endsWith('-tests.jar') &&
+            !f.endsWith('-shaded.jar')
+    );
+    return mainJar ? path.join(targetDir, mainJar) : undefined;
 }
 
 function resolveServerClasspath(jarPath: string, hostClasspath: string[], hostRuntimeClasspathConfigured: boolean): string[] {
@@ -446,10 +915,6 @@ function resolveServerClasspath(jarPath: string, hostClasspath: string[], hostRu
         console.log('[Legend Pure] Server dependency directory not found:', dependencyDir);
     }
     return uniqueStrings(entries.concat(hostClasspath));
-}
-
-function buildServerArgs(classpath: string[]): string[] {
-    return ['-cp', classpath.join(path.delimiter), SERVER_MAIN_CLASS];
 }
 
 function resolveClasspathFileEntries(): string[] | undefined {
@@ -507,29 +972,24 @@ function resolveClasspathFileEntry(entry: string, classpathFileDir: string): str
         : path.resolve(classpathFileDir, expanded);
 }
 
-function writeServerArgFile(context: ExtensionContext, classpath: string[]): string {
+function writeServerArgFile(
+    context: ExtensionContext,
+    classpath: string[],
+    pureOptions: Record<string, string>,
+    jvmArgs: string[],
+    socketPort: number
+): string {
     const storageDir = context.globalStorageUri.fsPath;
     fs.mkdirSync(storageDir, { recursive: true });
-    const argFile = path.join(storageDir, 'legend-pure-lsp-server.args');
-    fs.writeFileSync(argFile, buildServerArgFileContent(classpath), { encoding: 'utf8' });
+    // Per-port filename: avoids two windows racing a launch onto the same argfile.
+    const suffix = socketPort > 0 ? `-${socketPort}` : '';
+    const argFile = path.join(storageDir, `legend-pure-lsp-server${suffix}.args`);
+    fs.writeFileSync(
+        argFile,
+        buildServerArgFileContent(classpath, pureOptions, jvmArgs, socketPort),
+        { encoding: 'utf8' }
+    );
     return argFile;
-}
-
-function buildServerArgFileContent(classpath: string[]): string {
-    return buildServerArgs(classpath)
-        .map(quoteJavaArgFileArgument)
-        .join(os.EOL) + os.EOL;
-}
-
-function quoteJavaArgFileArgument(argument: string): string {
-    if (/^[A-Za-z0-9_.$:/\\\-*]+$/.test(argument)) {
-        return argument;
-    }
-    return '"' + argument.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
-}
-
-function toJavaArgFileReference(argFile: string): string {
-    return '@' + argFile;
 }
 
 function expandConfiguredPath(configuredPath: string): string {
@@ -682,8 +1142,7 @@ function registerLanguageModelTools(context: ExtensionContext): void {
                 if (typeof readyClient === 'string') {
                     return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(readyClient)]);
                 }
-                const result: { success: boolean; error: string | null; output: string | null } =
-                    await readyClient.sendRequest('legend/executeGo');
+                const result = await requestExecuteGo(readyClient);
                 const text = result.success
                     ? (result.output || '(no output)')
                     : (result.output || result.error || 'Unknown error');
