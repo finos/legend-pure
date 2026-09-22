@@ -2,7 +2,7 @@
   "name": "legend-pure-lsp",
   "displayName": "Legend Pure Language Support",
   "description": "Language support for Legend Pure (.pure files)",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "finos",
   "license": "Apache-2.0",
   "engines": {
@@ -122,6 +122,60 @@
           "type": "string",
           "default": "",
           "description": "Path to a Java 11+ installation. If empty, 'java' from PATH is used."
+        },
+        "legendPure.server.autoStart": {
+          "type": "boolean",
+          "default": false,
+          "description": "Start (or connect to) the LSP server automatically when a .pure file is opened. Off by default: on a large workspace, starting means launching a multi-GB JVM. Use the status bar item or 'Legend Pure: Start / Connect LSP Server' instead. Workspaces configured to attach to an already-running daemon can safely turn this on."
+        },
+        "legendPure.server.connectOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "Only ever connect to an existing LSP daemon on 'legendPure.server.connectPort'; never resolve a classpath and never launch a process. Use this when the daemon's lifecycle is owned by something else, so the extension can neither start nor stop it. Takes precedence over every other connection setting."
+        },
+        "legendPure.server.connectPort": {
+          "type": "number",
+          "default": 0,
+          "description": "Loopback TCP port of the LSP daemon to attach to when 'legendPure.server.connectOnly' is set. Only 127.0.0.1 is supported; a remote server needs an SSH tunnel exposed as a local port first."
+        },
+        "legendPure.server.launchPort": {
+          "type": "number",
+          "default": 0,
+          "description": "Run the LSP server in socket mode on this port, launching it only if nothing is already listening there. Unlike connectPort, this extension still owns the process it starts. 0 keeps the default stdio child process."
+        },
+        "legendPure.server.configPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to an optional JSON sidecar describing how to reach the LSP daemon (port / repoRoots / pureOptions / connectOnly / autoSyncWorkspace). Keeping this in a file rather than editor settings lets several clients share one description of the same daemon. Settings above take precedence over the sidecar."
+        },
+        "legendPure.server.repoRoots": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Repository roots the LSP session should span, overriding this window's workspace folders. Only takes effect when this extension is the first client to reach the daemon: the server fixes its roots once and ignores later clients' roots."
+        },
+        "legendPure.server.pureOptions": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "System properties passed as -D<key>=<value> when this extension launches the server. Pure runtime options use the 'pure.options.' prefix, e.g. {\"pure.options.ForceInterpreted\": \"true\"}. Ignored when attaching to a daemon started elsewhere."
+        },
+        "legendPure.server.jvmArgs": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Extra JVM arguments for a server this extension launches, e.g. [\"-Xmx8g\", \"-Dlegend.lsp.requestPoolSize=12\"]. Ignored when attaching to a daemon started elsewhere."
+        },
+        "legendPure.server.autoSyncWorkspace": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically apply .pure changes made outside the editor (git checkout, rebase, external tools) that the server reports as workspace drift. When off, drift raises a Sync All / Review / Dismiss prompt instead."
         }
       }
     },
@@ -255,8 +309,32 @@
         "title": "Legend Pure: Execute go()"
       },
       {
+        "command": "legend.startOrConnect",
+        "title": "Legend Pure: Start / Connect LSP Server"
+      },
+      {
+        "command": "legend.stopOrDisconnect",
+        "title": "Legend Pure: Stop / Disconnect LSP Server"
+      },
+      {
         "command": "legend.restartServer",
         "title": "Legend Pure: Restart LSP Server"
+      },
+      {
+        "command": "legend.manageOptions",
+        "title": "Legend Pure: Manage Pure Runtime Options"
+      },
+      {
+        "command": "legend.showStatus",
+        "title": "Legend Pure: Show LSP Status"
+      },
+      {
+        "command": "legend.showServerLog",
+        "title": "Legend Pure: Show LSP Server Log"
+      },
+      {
+        "command": "legend.refreshPackageTree",
+        "title": "Legend Pure: Refresh Package Tree"
       },
       {
         "command": "legend.setServerJarPath",
@@ -272,7 +350,7 @@
     "vscode:prepublish": "npm run bundle",
     "compile": "tsc -p ./",
     "bundle": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
-    "test": "npm run compile && node --test test/debugAdapter.test.js",
+    "test": "npm run compile && node --test test/*.test.js",
     "watch": "tsc -watch -p ./"
   },
   "dependencies": {
