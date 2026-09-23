@@ -25,6 +25,7 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.eclipse.collections.impl.utility.LazyIterate;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.serialization.compiler.element.ConcreteElementDeserializer;
@@ -128,7 +129,14 @@ public class MetadataPelt implements Metadata
     public CoreInstance getEnum(String enumerationName, String enumName)
     {
         String enumId = enumerationName + "." + M3Properties.values + "['" + enumName + "']";
-        return getInstance(enumId);
+        try
+        {
+            return getInstance(enumId);
+        }
+        catch (Exception e)
+        {
+            throw new PureExecutionException("Enum " + enumName + " of Enumeration " + enumerationName + " does not exist", e);
+        }
     }
 
     /**

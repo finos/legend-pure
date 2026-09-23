@@ -272,7 +272,12 @@ public class Pure
 
     public static <E> E getEnumByName(Enumeration<E> enumeration, String name)
     {
-        return enumeration._values().detect(e -> name.equals(((Enum) e)._name()));
+        E value = enumeration._values().detect(e -> name.equals(((Enum) e)._name()));
+        if (value == null)
+        {
+            throw new PureExecutionException("Enum " + name + " of Enumeration " + elementToPath(enumeration, "::") + " does not exist", Stacks.mutable.empty());
+        }
+        return value;
     }
 
     public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType safeGetGenericType(Object val, Supplier<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType> genericTypeBuilder, ExecutionSupport execSupport)
