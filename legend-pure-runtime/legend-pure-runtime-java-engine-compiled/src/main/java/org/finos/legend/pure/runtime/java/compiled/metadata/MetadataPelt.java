@@ -135,7 +135,7 @@ public class MetadataPelt implements Metadata
         }
         catch (Exception e)
         {
-            throw new PureExecutionException("Enum " + enumName + " of Enumeration " + enumerationName + " does not exist", e);
+            throw new PureExecutionException("The enum value '" + enumName + "' can't be found in the enumeration " + enumerationName, e);
         }
     }
 
