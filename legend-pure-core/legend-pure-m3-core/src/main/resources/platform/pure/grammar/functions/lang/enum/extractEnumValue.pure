@@ -88,7 +88,7 @@ function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::tes
 function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::testUnknownNameFails():Boolean[1]
 {
     let enumeration = LA_GeographicEntityType;
-    assertError(|$enumeration->extractEnumValue('BOGUS'), {msg, si | assert($msg->contains('BOGUS'))});
+    assertError(|$enumeration->extractEnumValue('BOGUS'), 'The enum value \'BOGUS\' can\'t be found in the enumeration meta::pure::functions::lang::tests::model::LA_GeographicEntityType');
 }
 
 function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::testFunctionAsValue():Boolean[1]
@@ -99,16 +99,16 @@ function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::tes
 
 function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::testUnknownRuntimeNameOnLiteralEnumerationFails():Boolean[1]
 {
-    assertError(|extractEnumValue(LA_GeographicEntityType, 'BO' + 'GUS'), {msg, si | assert($msg->contains('BOGUS'))});
+    assertError(|extractEnumValue(LA_GeographicEntityType, 'BO' + 'GUS'), 'The enum value \'BOGUS\' can\'t be found in the enumeration meta::pure::functions::lang::tests::model::LA_GeographicEntityType');
 }
 
 function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::testUnknownOptionalNameFails():Boolean[1]
 {
-    assertError(|extractEnumValue(LA_GeographicEntityType, 'BOGUS'->head()), {msg, si | assert($msg->contains('BOGUS'))});
+    assertError(|extractEnumValue(LA_GeographicEntityType, 'BOGUS'->head()), 'The enum value \'BOGUS\' can\'t be found in the enumeration meta::pure::functions::lang::tests::model::LA_GeographicEntityType');
 }
 
 function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::testUnknownNameAsFunctionValueFails():Boolean[1]
 {
     let f = extractEnumValue_Enumeration_1__String_1__T_1_;
-    assertError(|$f->eval(LA_GeographicEntityType, 'BOGUS'), {msg, si | assert($msg->contains('BOGUS'))});
+    assertError(|$f->eval(LA_GeographicEntityType, 'BOGUS'), 'The enum value \'BOGUS\' can\'t be found in the enumeration meta::pure::functions::lang::tests::model::LA_GeographicEntityType');
 }

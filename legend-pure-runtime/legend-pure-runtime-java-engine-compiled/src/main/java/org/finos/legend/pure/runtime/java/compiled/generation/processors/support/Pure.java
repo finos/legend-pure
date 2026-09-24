@@ -275,7 +275,7 @@ public class Pure
         E value = enumeration._values().detect(e -> name.equals(((Enum) e)._name()));
         if (value == null)
         {
-            throw new PureExecutionException("Enum " + name + " of Enumeration " + elementToPath(enumeration, "::") + " does not exist", Stacks.mutable.empty());
+            throw new PureExecutionException("The enum value '" + name + "' can't be found in the enumeration " + elementToPath(enumeration, "::"), Stacks.mutable.empty());
         }
         return value;
     }
