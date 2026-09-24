@@ -78,3 +78,37 @@ function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::tes
     assertEquals(LA_GeographicEntityType.COUNTRY, extractEnumValue(LA_GeographicEntityType, 'COUNTRY'->head())); // force 0..1
     assertEquals([], extractEnumValue(LA_GeographicEntityType, []));
 }
+
+function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::testEnumerationFromVariable():Boolean[1]
+{
+    let enumeration = LA_GeographicEntityType;
+    assertEquals(LA_GeographicEntityType.CITY, $enumeration->extractEnumValue('CI' + 'TY'));
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::testUnknownNameFails():Boolean[1]
+{
+    let enumeration = LA_GeographicEntityType;
+    assertError(|$enumeration->extractEnumValue('BOGUS'), {msg, si | assert($msg->contains('BOGUS'))});
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::testFunctionAsValue():Boolean[1]
+{
+    let f = extractEnumValue_Enumeration_1__String_1__T_1_;
+    assertEquals(LA_GeographicEntityType.REGION, $f->eval(LA_GeographicEntityType, 'REGION'));
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::testUnknownRuntimeNameOnLiteralEnumerationFails():Boolean[1]
+{
+    assertError(|extractEnumValue(LA_GeographicEntityType, 'BO' + 'GUS'), {msg, si | assert($msg->contains('BOGUS'))});
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::testUnknownOptionalNameFails():Boolean[1]
+{
+    assertError(|extractEnumValue(LA_GeographicEntityType, 'BOGUS'->head()), {msg, si | assert($msg->contains('BOGUS'))});
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::extractEnumValue::testUnknownNameAsFunctionValueFails():Boolean[1]
+{
+    let f = extractEnumValue_Enumeration_1__String_1__T_1_;
+    assertError(|$f->eval(LA_GeographicEntityType, 'BOGUS'), {msg, si | assert($msg->contains('BOGUS'))});
+}
