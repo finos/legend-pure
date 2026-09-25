@@ -27,7 +27,9 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.Relation
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -229,7 +231,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
                 "  {\n" +
                 "    ~func my::personFunction__Relation_1_\n" +
                 "    firstName: FIRSTNAME,\n" +
-                "    +concatenated: String[1]: $src.FIRSTNAME + ' ' + $src.FIRSTNAME\n" +
+                "    +concatenated: String[1]: $row.FIRSTNAME + ' ' + $row.FIRSTNAME\n" +
                 "  }\n" +
                 ")\n";
 
@@ -241,6 +243,34 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
                 ((Mapping) runtime.getCoreInstance("my::testMapping"))._classMappings().getOnly();
         RelationFunctionPropertyMapping concat = (RelationFunctionPropertyMapping) relSet._propertyMappings().toList().get(1);
         Assert.assertEquals("String", concat._valueFn()._expressionSequence().getOnly()._genericType()._rawType()._name());
+    }
+
+    @Test
+    public void testRelationMappingRejectsLegacySrcRowAccess()
+    {
+        // no `$src.<col>` syntax for relation mappings
+        // Authored sources must migrate to `$row.<col>`
+        String mappingSource = "###Mapping\n" +
+                "Mapping my::testMapping\n" +
+                "(\n" +
+                "  *my::Person[person]: Relation\n" +
+                "  {\n" +
+                "    ~func my::personFunction__Relation_1_\n" +
+                "    firstName: $src.FIRSTNAME\n" +
+                "  }\n" +
+                ")\n";
+
+        compileTestSource("class.pure", RELATION_MAPPING_CLASS_SOURCE);
+        compileTestSource("func.pure", RELATION_MAPPING_FUNCTION_SOURCE);
+        try
+        {
+            compileTestSource("mapping.pure", mappingSource);
+            Assert.fail("Expected compilation exception ($src is no longer bound in relation mappings)");
+        }
+        catch (PureCompilationException e)
+        {
+            Assert.assertTrue("Got: " + e.getMessage(), e.getMessage().contains("The variable 'src' is unknown!"));
+        }
     }
 
     @Test
@@ -285,7 +315,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
                 "  {\n" +
                 "    ~func my::personFunction__Relation_1_\n" +
                 "    firstName: FIRSTNAME,\n" +
-                "    +ageBucket: String[1]: if($src.AGE > 65, |'senior', |'other')\n" +
+                "    +ageBucket: String[1]: if($row.AGE > 65, |'senior', |'other')\n" +
                 "  }\n" +
                 ")\n";
 
@@ -309,7 +339,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
                 "  *my::Person[person]: Relation\n" +
                 "  {\n" +
                 "    ~func my::personFunction__Relation_1_\n" +
-                "    age: $src.FIRSTNAME\n" +
+                "    age: $row.FIRSTNAME\n" +
                 "  }\n" +
                 ")\n";
 
@@ -335,7 +365,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
                 "  *my::Person[person]: Relation\n" +
                 "  {\n" +
                 "    ~func my::personFunction__Relation_1_\n" +
-                "    firstName: $src.MISSING\n" +
+                "    firstName: $row.MISSING\n" +
                 "  }\n" +
                 ")\n";
 
@@ -366,7 +396,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
                 "  *my::Person[person]: Relation\n" +
                 "  {\n" +
                 "    ~func my::personFunction__Relation_1_\n" +
-                "    firstName: [$src.FIRSTNAME, $src.FIRSTNAME]\n" +
+                "    firstName: [$row.FIRSTNAME, $row.FIRSTNAME]\n" +
                 "  }\n" +
                 ")\n";
 
@@ -401,8 +431,8 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
                 "  *my::PersonWithGender[person]: Relation\n" +
                 "  {\n" +
                 "    ~func my::personWithGenderFunction__Relation_1_\n" +
-                "    firstName: $src.FIRSTNAME,\n" +
-                "    gender: EnumerationMapping GenderMapping: $src.GENDER\n" +
+                "    firstName: $row.FIRSTNAME,\n" +
+                "    gender: EnumerationMapping GenderMapping: $row.GENDER\n" +
                 "  }\n" +
                 ")\n";
 
@@ -429,7 +459,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
                 "    firstName: FIRSTNAME,\n" +
                 "    address\n" +
                 "    (\n" +
-                "      city: $src.CITY\n" +
+                "      city: $row.CITY\n" +
                 "    )\n" +
                 "  }\n" +
                 ")\n";
@@ -494,7 +524,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
         Assert.assertTrue(funcRf._expressionSequence().getLast()._genericType()._typeArguments().getOnly()._rawType() instanceof RelationType);
         Assert.assertTrue(srcRf._expressionSequence().getLast()._genericType()._typeArguments().getOnly()._rawType() instanceof RelationType);
 
-        // Property mapping under ~src resolves $src.FIRSTNAME the same way.
+        // Property mapping under ~src resolves $row.FIRSTNAME the same way.
         RelationFunctionPropertyMapping pm = (RelationFunctionPropertyMapping) srcSet._propertyMappings().getOnly();
         Assert.assertEquals("String", pm._valueFn()._expressionSequence().getOnly()._genericType()._rawType()._name());
     }
@@ -592,7 +622,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
     public void testRelationMappingInlineSrcWithEmbeddedSubMapping()
     {
         // Embedded mapping inherits relationFunction from the ~src parent;
-        // sub-property $src.<col> must resolve against the same row type.
+        // sub-property $row.<col> must resolve against the same row type.
         String mappingSource = "###Mapping\n" +
                 "Mapping my::testMapping\n" +
                 "(\n" +
@@ -602,7 +632,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
                 "    firstName: FIRSTNAME,\n" +
                 "    address\n" +
                 "    (\n" +
-                "      city: $src.CITY\n" +
+                "      city: $row.CITY\n" +
                 "    )\n" +
                 "  }\n" +
                 ")\n";
@@ -630,7 +660,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
     @Test
     public void testIncrementalIntegrityForExpressionRhsAndInlineSrc()
     {
-        // Mixes bare-column, $src expression, ~src inline source, embedded
+        // Mixes bare-column, $row expression, ~src inline source, embedded
         // mapping, and an enumeration transformer in a single mapping. Each
         // dependency source is deleted, recompiled, and reloaded; the
         // resulting graph must remain structurally identical.
@@ -641,10 +671,10 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
                 "  {\n" +
                 "    ~src my::personFunctionTyped()\n" +
                 "    firstName: FIRSTNAME,\n" +
-                "    +concatenated: String[1]: $src.FIRSTNAME + ' ' + $src.FIRSTNAME,\n" +
+                "    +concatenated: String[1]: $row.FIRSTNAME + ' ' + $row.FIRSTNAME,\n" +
                 "    address\n" +
                 "    (\n" +
-                "      city: $src.CITY\n" +
+                "      city: $row.CITY\n" +
                 "    )\n" +
                 "  }\n" +
                 ")\n";
@@ -673,7 +703,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
 
     // ------------------------------------------------------------------
     // Quoted column names (spaces in identifiers) — both bare-column and
-    // explicit `$src.'…'` expression forms must lower to a property
+    // explicit `$row.'…'` expression forms must lower to a property
     // accessor whose name preserves the space.
     // ------------------------------------------------------------------
 
@@ -693,7 +723,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
     public void testRelationMappingWithQuotedColumnBareForm()
     {
         // Bare-column form: `firstName: 'FIRST NAME'` must lower to
-        // `{| $src.'FIRST NAME'}` and resolve to the column whose name
+        // `{| $row.'FIRST NAME'}` and resolve to the column whose name
         // contains a space.
         String mappingSource = "###Mapping\n" +
                 "Mapping my::testMapping\n" +
@@ -724,9 +754,9 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
-    public void testRelationMappingWithQuotedColumnExplicitSrcForm()
+    public void testRelationMappingWithQuotedColumnExplicitRowForm()
     {
-        // Explicit `$src.'FIRST NAME'` expression form must resolve the
+        // Explicit `$row.'FIRST NAME'` expression form must resolve the
         // quoted column against the row type and produce a String-typed
         // value, exactly like the bare-column form.
         String mappingSource = "###Mapping\n" +
@@ -735,7 +765,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
                 "  *my::Person[person]: Relation\n" +
                 "  {\n" +
                 "    ~func my::personFunctionQuoted__Relation_1_\n" +
-                "    firstName: $src.'FIRST NAME'\n" +
+                "    firstName: $row.'FIRST NAME'\n" +
                 "  }\n" +
                 ")\n";
 
@@ -752,7 +782,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
     @Test
     public void testRelationMappingWithQuotedColumnInArithmeticExpression()
     {
-        // `$src.'FIRST NAME'` participating in a multi-step expression: the
+        // `$row.'FIRST NAME'` participating in a multi-step expression: the
         // quoted column accessor inside the body must still resolve and the
         // overall expression's result type must match the property type.
         String mappingSource = "###Mapping\n" +
@@ -761,7 +791,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
                 "  *my::Person[person]: Relation\n" +
                 "  {\n" +
                 "    ~func my::personFunctionQuoted__Relation_1_\n" +
-                "    +greeted: String[1]: 'Hi ' + $src.'FIRST NAME'\n" +
+                "    +greeted: String[1]: 'Hi ' + $row.'FIRST NAME'\n" +
                 "  }\n" +
                 ")\n";
 
