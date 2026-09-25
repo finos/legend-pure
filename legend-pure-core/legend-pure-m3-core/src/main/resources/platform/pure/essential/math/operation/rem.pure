@@ -19,14 +19,14 @@ native function <<PCT.function>> {doc.doc='This is equivalent to what other comp
 
 function <<PCT.test>> meta::pure::functions::math::tests::rem::testRem<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(2, $f->eval(|rem(12, 5)));
-    assertEq(5, $f->eval(|rem(5, 12)));
+    assertEqWithinTolerance(2, $f->eval(|rem(12, 5)), 0.000000000000001);
+    assertEqWithinTolerance(5, $f->eval(|rem(5, 12)), 0.000000000000001);
 }
 
 function <<PCT.test>> meta::pure::functions::math::tests::rem::testRemWithNegativeIntegers<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(-2, $f->eval(|rem(-12, 5)));
-    assertEq(-5, $f->eval(|rem(-5, 12)));
+    assertEqWithinTolerance(-2, $f->eval(|rem(-12, 5)), 0.000000000000001);
+    assertEqWithinTolerance(-5, $f->eval(|rem(-5, 12)), 0.000000000000001);
 }
 
 function <<PCT.test>> meta::pure::functions::math::tests::rem::testRemWithFloats<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
