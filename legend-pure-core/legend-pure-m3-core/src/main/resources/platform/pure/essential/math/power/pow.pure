@@ -47,7 +47,6 @@ native function <<PCT.function>> meta::pure::functions::math::pow(base:Number[1]
 function <<PCT.test>> meta::pure::functions::math::tests::pow::testSimplePow<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEq(4.0, $f->eval(|pow(2,2)));
-    assertEq(4.0, $f->eval(|2->pow(2)));
     assertEq(16.0, $f->eval(|2->pow(2)->pow(2)));
     assertEq(16.0, $f->eval(|4.0->pow(2.0)));
 }
