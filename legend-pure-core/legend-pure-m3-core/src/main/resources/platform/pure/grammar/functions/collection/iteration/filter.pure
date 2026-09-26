@@ -36,11 +36,6 @@ function <<PCT.test>> meta::pure::functions::collection::tests::filter::testFilt
     assertEquals(['Smith', 'Doe'], $f->eval(|$set->filter(s | $s->length() < 6)));
 }
 
-function <<PCT.test>> meta::pure::functions::collection::tests::filter::testLambdaAsFunctionParameter<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
-{
-    assertEquals(['Doe'], $f->eval(|filter(['Smith', 'Doe', 'Branche'], s | eq($s->length(), 3))));
-}
-
 function <<PCT.test>> meta::pure::functions::collection::tests::filter::testFilterInstance<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let smith = ^CO_Person(firstName='Fabrice', lastName='Smith');

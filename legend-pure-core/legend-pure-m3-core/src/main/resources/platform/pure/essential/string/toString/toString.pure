@@ -137,7 +137,6 @@ function <<PCT.test>> meta::pure::functions::string::tests::toString::testDateTo
     assertEq('2014-01', $f->eval(|%2014-1->toString()));
 
     assertEq('2014', $f->eval(|%2014->toString()));
-    assertEq('2014', $f->eval(|%2014->toString()));
 }
 
 function <<PCT.test>> meta::pure::functions::string::tests::toString::testListToString<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

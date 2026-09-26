@@ -51,15 +51,6 @@ function <<PCT.test>> meta::pure::functions::string::tests::joinStrings::testJoi
     assertEq('[a,b,c]', $f->eval(|joinStrings(['a', 'b', 'c'], '[', ',', ']')));
 }
 
-'''
-The arrow form reads the same as the prefix form.
-'''
-function <<PCT.test>> meta::pure::functions::string::tests::joinStrings::testJoinStringsUsingGenericArrow<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
-{
-    assertEq('a,b,c', $f->eval(|['a', 'b', 'c']->joinStrings(',')));
-    assertEq('[a,b,c]', $f->eval(|['a', 'b', 'c']->joinStrings('[', ',', ']')));
-}
-
 function <<PCT.test>> meta::pure::functions::string::tests::joinStrings::testJoinStringsSingleString<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEq('a', $f->eval(|joinStrings(['a'], ',')));

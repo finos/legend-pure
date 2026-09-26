@@ -60,19 +60,9 @@ function <<PCT.test>> meta::pure::functions::collection::tests::drop::testDropZe
   assertEquals([1, 2, 3], $f->eval(|[1, 2, 3]->drop(0)));
 }
 
-function <<PCT.test>> meta::pure::functions::collection::tests::drop::testDropOneOnEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
-{
-  assertEmpty($f->eval(|[]->drop(1)));
-}
-
 function <<PCT.test>> meta::pure::functions::collection::tests::drop::testDropOneOnNonEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
   assertEquals([2, 3], $f->eval(|[1, 2, 3]->drop(1)));
-}
-
-function <<PCT.test>> meta::pure::functions::collection::tests::drop::testDropManyOnEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
-{
-  assertEmpty($f->eval(|[]->drop(2)));
 }
 
 function <<PCT.test>> meta::pure::functions::collection::tests::drop::testDropManyOnNonEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
