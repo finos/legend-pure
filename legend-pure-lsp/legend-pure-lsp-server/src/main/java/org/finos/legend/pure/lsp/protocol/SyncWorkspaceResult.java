@@ -17,10 +17,12 @@ package org.finos.legend.pure.lsp.protocol;
 public class SyncWorkspaceResult
 {
     private boolean success;
+    private boolean deferred;
     private int created;
     private int modified;
     private int deleted;
     private String error;
+    private String deferredReason;
 
     public SyncWorkspaceResult()
     {
@@ -43,6 +45,39 @@ public class SyncWorkspaceResult
     public static SyncWorkspaceResult failure(String error)
     {
         return new SyncWorkspaceResult(false, 0, 0, 0, error);
+    }
+
+    /**
+     * Nothing was attempted: the graph lock is currently held (see LegendPureSession#isGraphLockHeld),
+     * so nothing was applied and nothing was cleared from the drift watcher's dirty set - nothing here
+     * is actually wrong, unlike {@link #failure}, hence a distinct flag rather than reusing error.
+     */
+    public static SyncWorkspaceResult deferred(String reason)
+    {
+        SyncWorkspaceResult result = new SyncWorkspaceResult(false, 0, 0, 0, null);
+        result.deferred = true;
+        result.deferredReason = reason;
+        return result;
+    }
+
+    public boolean isDeferred()
+    {
+        return this.deferred;
+    }
+
+    public void setDeferred(boolean deferred)
+    {
+        this.deferred = deferred;
+    }
+
+    public String getDeferredReason()
+    {
+        return this.deferredReason;
+    }
+
+    public void setDeferredReason(String deferredReason)
+    {
+        this.deferredReason = deferredReason;
     }
 
     public boolean isSuccess()

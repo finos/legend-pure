@@ -24,11 +24,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -42,6 +44,7 @@ import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.InitializedParams;
 import org.eclipse.lsp4j.MessageParams;
+import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.SemanticTokensLegend;
 import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 import org.eclipse.lsp4j.ServerCapabilities;
@@ -64,12 +67,17 @@ import org.finos.legend.pure.lsp.protocol.CheckBatchResult;
 import org.finos.legend.pure.lsp.protocol.DapEndpoint;
 import org.finos.legend.pure.lsp.protocol.ExecuteFunctionParams;
 import org.finos.legend.pure.lsp.protocol.ExecuteGoParams;
+import org.finos.legend.pure.lsp.protocol.CancelTestsParams;
+import org.finos.legend.pure.lsp.protocol.CancelTestsResult;
 import org.finos.legend.pure.lsp.protocol.ExecuteGoResult;
+import org.finos.legend.pure.lsp.protocol.ExecuteTestsParams;
+import org.finos.legend.pure.lsp.protocol.ExecuteTestsResult;
 import org.finos.legend.pure.lsp.protocol.FileEntry;
 import org.finos.legend.pure.lsp.protocol.LegendDebug;
 import org.finos.legend.pure.lsp.protocol.DeleteFileParams;
 import org.finos.legend.pure.lsp.protocol.DeleteFileResult;
 import org.finos.legend.pure.lsp.protocol.LegendLanguageClient;
+import org.finos.legend.pure.lsp.protocol.LogErrorEntry;
 import org.finos.legend.pure.lsp.protocol.LspStatus;
 import org.finos.legend.pure.lsp.protocol.PCTAdapterInfo;
 import org.finos.legend.pure.lsp.protocol.ResolveSourceUriParams;
@@ -92,16 +100,19 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     private static final Logger LOGGER = LoggerFactory.getLogger(LegendPureLspServer.class);
     private static final String VERSION = "0.3.0-2026-04-01";
 
-    // Configurable at startup only (read once, here) via -Dlegend.lsp.requestPoolSize=<N> - e.g. via
-    // the launcher scripts' generic --jvm-arg passthrough. Default of 12 is deliberately well above
-    // the old hardcoded 4: this environment's cgroup caps the JVM at 16 available processors (see
-    // Runtime.getRuntime().availableProcessors()), and every LSP request type (executeGo/execute,
-    // hover, completion, diagnostics, ...) funnels through this one pool, so 4 left most of that
-    // capacity unused and made concurrent test/execute traffic queue well before hardware was the
-    // limit. 12 leaves headroom for GC and the daemon's other background threads (drift-watcher,
-    // compile-debounce) rather than claiming the full 16.
+    // Overridable via -Dlegend.lsp.requestPoolSize=<N>. Serves every request type; long-running
+    // executions use their own pool (EXECUTION_CONCURRENCY_PROPERTY) so they can't starve this one.
     private static final String REQUEST_POOL_SIZE_PROPERTY = "legend.lsp.requestPoolSize";
-    private static final int DEFAULT_REQUEST_POOL_SIZE = 12;
+
+    // Bounds concurrent Pure executions, independent of the request pool above - execution is
+    // CPU-bound, so unbounded fan-out (e.g. execute-parallel) buys contention, not throughput.
+    private static final String EXECUTION_CONCURRENCY_PROPERTY = "legend.lsp.executionConcurrency";
+
+    // Escalates a routine per-connection log line into a client-visible showMessage warning once
+    // disconnects stop looking like isolated blips - see recordAbnormalDisconnect()/connect().
+    private static final int FREQUENT_DISCONNECT_THRESHOLD = 3;
+    private static final long FREQUENT_DISCONNECT_WINDOW_MS = 5 * 60_000L;
+    private static final int MAX_TRACKED_DISCONNECTS = 20;
 
     private final ClientBroadcaster clientBroadcaster = new ClientBroadcaster();
     private final DiagnosticService diagnosticService;
@@ -123,6 +134,37 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         return t;
     });
 
+    // Separate pool rather than a semaphore on a request thread: a blocked waiter would still hold
+    // its requestExecutor thread, starving the control plane. Static because the bound is per-JVM,
+    // shared by legend/execute and every scoped test run. Test-run walker threads must never submit
+    // to this pool and then wait on it themselves - that deadlocks once walkers fill it.
+    private static final int EXECUTION_CONCURRENCY = resolveExecutionConcurrency();
+    private static final ExecutorService EXECUTION_EXECUTOR = Executors.newFixedThreadPool(EXECUTION_CONCURRENCY, r ->
+    {
+        Thread t = new Thread(r, "legend-pure-lsp-exec");
+        t.setDaemon(true);
+        return t;
+    });
+
+    // Absorbs the write-lock wait that precedes an execution. It cannot run on the execution pool
+    // (a blocked thread there starves the test walker that pool has to serve) and it cannot run on
+    // the LSP4J dispatch thread (which reads every message, so blocking it kills the connection -
+    // including the legend/cancelTests that would end the run holding the lock).
+    private static final ExecutorService COMPILE_EXECUTOR = Executors.newFixedThreadPool(
+            defaultRequestPoolSize(), r ->
+            {
+                Thread t = new Thread(r, "legend-pure-lsp-compile");
+                t.setDaemon(true);
+                return t;
+            });
+
+    static ExecutorService executionPool()
+    {
+        return EXECUTION_EXECUTOR;
+    }
+
+    private final int executionConcurrency = EXECUTION_CONCURRENCY;
+
     // Set once, by whichever fires first: preconfigureAndWarm() (a config-driven launcher) or the
     // first connecting client's initialize/initialized. Every later connection's initialize/initialized
     // is a pure attach to the already-warm session - see the javadoc on preconfigureAndWarm() for why
@@ -140,6 +182,9 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     // so a client polling legend/status doesn't need to already know how it was launched.
     private volatile int port = -1;
     private volatile String transport = "stdio";
+
+    // Bounded (see recordAbnormalDisconnect) so a noisy outage can't grow this unboundedly.
+    private final Deque<LogErrorEntry> recentAbnormalDisconnects = new ConcurrentLinkedDeque<>();
 
     public LegendPureLspServer()
     {
@@ -191,13 +236,21 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     public void connect(LanguageClient client)
     {
         LegendLanguageClient wrapped = this.clientBroadcaster.register(client);
-        // Catch up this newly-connected client on current status right away. Without this, a client
-        // connecting to a session that's already "ready" (a reconnect, or a second client joining an
-        // existing warm daemon) never receives a legend/statusChanged notification at all - nothing
-        // has "changed" from the server's perspective - so any client-side readiness gate that waits
-        // for that notification (e.g. the IntelliJ plugin's Execute Go action awaiting whenReady())
-        // hangs indefinitely instead of observing the session is already up.
+        // A client joining an already-ready session never sees a statusChanged push otherwise -
+        // nothing "changed" from the server's view - so a readiness gate waiting on it would hang.
         wrapped.statusChanged(this.runtimeManager.currentStatus());
+
+        // Can't push a showMessage at disconnect time (the socket is already dead); surface it on
+        // the next connect instead.
+        int recentDisconnectCount = countRecentAbnormalDisconnects();
+        if (recentDisconnectCount >= FREQUENT_DISCONNECT_THRESHOLD)
+        {
+            LogErrorEntry lastDisconnect = this.recentAbnormalDisconnects.peekLast();
+            wrapped.showMessage(new MessageParams(MessageType.Warning,
+                    "Legend Pure LSP: " + recentDisconnectCount + " client disconnects in the last "
+                            + (FREQUENT_DISCONNECT_WINDOW_MS / 60_000) + " minute(s). Most recent: "
+                            + (lastDisconnect == null ? "unknown" : lastDisconnect.getMessage())));
+        }
     }
 
     /**
@@ -209,6 +262,48 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     void disconnect(LanguageClient client)
     {
         this.clientBroadcaster.deregister(client);
+        // Gated on connectedClientCount() == 0 rather than client identity, since DebugService's
+        // single active slot and in-flight test runs have no per-client ownership tracking - this is
+        // the only check that never tears down a session another connected client still needs.
+        if (this.clientBroadcaster.connectedClientCount() == 0)
+        {
+            this.debugService.shutdown();
+            // An abandoned legend/executeTests run holds the graph read lock with nobody waiting on
+            // it otherwise, blocking every later compile indefinitely.
+            LegendPureSession session = getSession();
+            if (session != null)
+            {
+                session.onLastClientDisconnected();
+            }
+        }
+    }
+
+    /**
+     * Records an abnormal (exception-terminated) main-connection disconnect, for both immediate
+     * diagnosability (via {@link LspLog#error}) and later frequency escalation (see {@link #connect}).
+     */
+    void recordAbnormalDisconnect(String reason)
+    {
+        this.recentAbnormalDisconnects.addLast(new LogErrorEntry(System.currentTimeMillis(), reason));
+        while (this.recentAbnormalDisconnects.size() > MAX_TRACKED_DISCONNECTS)
+        {
+            this.recentAbnormalDisconnects.pollFirst();
+        }
+        LspLog.error(reason);
+    }
+
+    int countRecentAbnormalDisconnects()
+    {
+        long cutoff = System.currentTimeMillis() - FREQUENT_DISCONNECT_WINDOW_MS;
+        int count = 0;
+        for (LogErrorEntry entry : this.recentAbnormalDisconnects)
+        {
+            if (entry.getTimestamp() >= cutoff)
+            {
+                count++;
+            }
+        }
+        return count;
     }
 
     LanguageClient getClient()
@@ -347,6 +442,8 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         this.runtimeManager.shutdown();
         this.driftWatcher.stop();
         this.requestExecutor.shutdownNow();
+        EXECUTION_EXECUTOR.shutdownNow();
+        COMPILE_EXECUTOR.shutdownNow();
         return CompletableFuture.completedFuture(null);
     }
 
@@ -371,11 +468,8 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     }
 
     /**
-     * Merges server/session-level observability (client count, port/transport, launch config, recent
-     * errors, live lock contention) onto PureRuntimeManager's compile-progress status, so a client
-     * polling legend/status - not just one live-streaming legend/lockContention or legend/logOutput
-     * notifications - gets the full picture in one call. Kept here (not in PureRuntimeManager) because
-     * every one of these fields describes the SERVER/session, not compile progress.
+     * Merges server/session-level observability onto PureRuntimeManager's compile-progress status, so
+     * a single legend/status poll gets the full picture.
      */
     private LspStatus buildStatus()
     {
@@ -384,6 +478,7 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         status.setPort(this.port);
         status.setTransport(this.transport);
         status.setRequestPoolSize(this.requestPoolSize);
+        status.setExecutionConcurrency(this.executionConcurrency);
         List<Path> workspaceRoots = this.runtimeManager.getWorkspaceRoots();
         List<String> repoRoots = new ArrayList<>(workspaceRoots.size());
         for (Path root : workspaceRoots)
@@ -394,6 +489,9 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         status.setJvmArgs(new ArrayList<>(
                 java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments()));
         status.setRecentErrors(LspLog.recentErrors());
+        status.setRecentDisconnectCount(countRecentAbnormalDisconnects());
+        LogErrorEntry lastDisconnect = this.recentAbnormalDisconnects.peekLast();
+        status.setLastDisconnectReason(lastDisconnect == null ? null : lastDisconnect.getMessage());
         LegendPureSession session = getSession();
         if (session != null)
         {
@@ -406,6 +504,16 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     <T> CompletableFuture<T> supplyAsync(Supplier<T> supplier)
     {
         return CompletableFuture.supplyAsync(supplier, this.requestExecutor);
+    }
+
+    /**
+     * For handlers that actually run Pure. Bounded by {@link #executionConcurrency} so a client that
+     * fans out (the CLI's execute-parallel fires every function at once) cannot saturate the host or
+     * crowd out short requests.
+     */
+    <T> CompletableFuture<T> supplyAsyncExecution(Supplier<T> supplier)
+    {
+        return CompletableFuture.supplyAsync(supplier, EXECUTION_EXECUTOR);
     }
 
     CompletableFuture<Void> runAsync(Runnable runnable)
@@ -474,62 +582,191 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     @JsonRequest("legend/executeGo")
     public CompletableFuture<ExecuteGoResult> executeGo(ExecuteGoParams params)
     {
-        return supplyAsync(() ->
+        LegendPureSession session = getSession();
+        if (session == null || !session.isInitialized())
         {
-            LegendPureSession session = getSession();
-            if (session == null || !session.isInitialized())
+            return CompletableFuture.completedFuture(new ExecuteGoResult(false, "Runtime not initialized", null));
+        }
+        List<FileEntry> files = params == null ? null : params.getFiles();
+        return compilePrelude(session, files).thenCompose(batchResult ->
+        {
+            if (batchResult != null && !batchResult.isSuccess())
             {
-                return new ExecuteGoResult(false, "Runtime not initialized", null);
+                return CompletableFuture.completedFuture(
+                        new ExecuteGoResult(false, batchResult.getError(), null, batchResult.getErrorUri()));
             }
-            List<FileEntry> files = params == null ? null : params.getFiles();
-            // NOTE: no `synchronized (session)` here anymore. Compilation (compileBatch) and execution
-            // (executeGo) each acquire the session's internal ReadWriteLock (write for compile, read
-            // for execute). Dropping the object-monitor lets independent executions run concurrently
-            // on the requestExecutor pool while compiles remain exclusive.
+            return supplyAsyncExecution(() ->
+            {
+                LegendPureSession.ExecuteResult result = session.executeGo();
+                return withReturnValue(
+                        new ExecuteGoResult(result.isSuccess(), result.getError(), result.getOutput(), null),
+                        result.getReturnValue());
+            });
+        });
+    }
+
+    private static ExecuteGoResult withReturnValue(ExecuteGoResult result, PureValueExtractor.ExtractedValue value)
+    {
+        if (value != null)
+        {
+            result.setReturnKind(value.getKind());
+            result.setReturnType(value.getType());
+            result.setReturnValue(value.getValue());
+            result.setReturnSize(value.getSize());
+            result.setReturnTruncated(value.isTruncated());
+        }
+        return result;
+    }
+
+    /**
+     * Batch-compiles {@code files}, then settles any pending compile, on {@link #COMPILE_EXECUTOR}.
+     * Must stay off both the caller's thread and the execution pool: a handler that blocks before
+     * returning its future stalls the LSP4J dispatch loop and with it every other request on the
+     * connection, while blocking an execution thread starves the test walker.
+     *
+     * @return the batch result when files were supplied, otherwise null
+     */
+    private CompletableFuture<CheckBatchResult> compilePrelude(LegendPureSession session, List<FileEntry> files)
+    {
+        return CompletableFuture.supplyAsync(() ->
+        {
+            CheckBatchResult batchResult = null;
             if (files != null && !files.isEmpty())
             {
-                CheckBatchResult batchResult = compileBatch(session, files);
+                batchResult = compileBatch(session, files);
                 if (!batchResult.isSuccess())
                 {
-                    return new ExecuteGoResult(false, batchResult.getError(), null, batchResult.getErrorUri());
+                    return batchResult;
                 }
             }
-            LegendPureSession.ExecuteResult result = session.executeGo();
-            return new ExecuteGoResult(result.isSuccess(), result.getError(), result.getOutput(), null);
+            session.ensureCompiled();
+            return batchResult;
+        }, COMPILE_EXECUTOR);
+    }
+
+    /**
+     * Executes an arbitrary zero-argument function by Pure path (not just go()), up to
+     * {@link #executionConcurrency} at once. Optional files are compiled as one batch before executing.
+     */
+    @JsonRequest("legend/execute")
+    public CompletableFuture<ExecuteGoResult> execute(ExecuteFunctionParams params)
+    {
+        LegendPureSession session = getSession();
+        if (session == null || !session.isInitialized())
+        {
+            return CompletableFuture.completedFuture(new ExecuteGoResult(false, "Runtime not initialized", null));
+        }
+        if (params == null || params.getFunction() == null || params.getFunction().trim().isEmpty())
+        {
+            return CompletableFuture.completedFuture(
+                    new ExecuteGoResult(false, "Function path is required (params.function)", null));
+        }
+        return compilePrelude(session, params.getFiles()).thenCompose(batchResult ->
+        {
+            if (batchResult != null && !batchResult.isSuccess())
+            {
+                return CompletableFuture.completedFuture(
+                        new ExecuteGoResult(false, batchResult.getError(), null, batchResult.getErrorUri()));
+            }
+            return supplyAsyncExecution(() ->
+            {
+                LegendPureSession.ExecuteResult result = session.executeFunction(params.getFunction(), params.getPctAdapterPath(),
+                        params.getBeforeFunctionPath(), params.getAfterFunctionPath(), params.getArguments());
+                return withReturnValue(
+                        new ExecuteGoResult(result.isSuccess(), result.getError(), result.getOutput(), null),
+                        result.getReturnValue());
+            });
         });
     }
 
     /**
-     * Execute an arbitrary zero-argument function by Pure path (not just go()). Runs concurrently with
-     * other executeFunction/executeGo calls (the session read-locks execution; the requestExecutor is
-     * a pool). Optional files are compiled as one batch (write-locked) before executing.
+     * Discovers and runs every test in a package or a file - the batch counterpart to
+     * {@link #execute(ExecuteFunctionParams)}. Progress streams to the client as legend/testEvent
+     * notifications as the run proceeds.
      */
-    @JsonRequest("legend/execute")
-    public CompletableFuture<ExecuteGoResult> execute(ExecuteFunctionParams params)
+    private static final String SCOPE_REQUIRED =
+            "One of params.packagePath, params.uri, params.functions or params.invocations is required";
+
+    @JsonRequest("legend/executeTests")
+    public CompletableFuture<ExecuteTestsResult> executeTests(ExecuteTestsParams params)
     {
         return supplyAsync(() ->
         {
             LegendPureSession session = getSession();
             if (session == null || !session.isInitialized())
             {
-                return new ExecuteGoResult(false, "Runtime not initialized", null);
+                return ExecuteTestsResult.failure("Runtime not initialized");
             }
-            if (params == null || params.getFunction() == null || params.getFunction().trim().isEmpty())
+            if (params == null)
             {
-                return new ExecuteGoResult(false, "Function path is required (params.function)", null);
+                return ExecuteTestsResult.failure(SCOPE_REQUIRED);
             }
+
+            boolean hasPackage = params.getPackagePath() != null && !params.getPackagePath().trim().isEmpty();
+            boolean hasUri = params.getUri() != null && !params.getUri().trim().isEmpty();
+            boolean hasFunctions = params.getFunctions() != null && !params.getFunctions().isEmpty();
+            boolean hasInvocations = params.getInvocations() != null && !params.getInvocations().isEmpty();
+            int scopeCount = (hasPackage ? 1 : 0) + (hasUri ? 1 : 0) + (hasFunctions ? 1 : 0) + (hasInvocations ? 1 : 0);
+            if (scopeCount != 1)
+            {
+                return ExecuteTestsResult.failure(scopeCount == 0
+                        ? SCOPE_REQUIRED
+                        : "Specify exactly one of params.packagePath, params.uri, params.functions or params.invocations");
+            }
+
             List<FileEntry> files = params.getFiles();
             if (files != null && !files.isEmpty())
             {
                 CheckBatchResult batchResult = compileBatch(session, files);
                 if (!batchResult.isSuccess())
                 {
-                    return new ExecuteGoResult(false, batchResult.getError(), null, batchResult.getErrorUri());
+                    return ExecuteTestsResult.failure(batchResult.getError(), batchResult.getErrorUri());
                 }
             }
-            LegendPureSession.ExecuteResult result = session.executeFunction(params.getFunction(), params.getPctAdapterPath(),
-                    params.getBeforeFunctionPath(), params.getAfterFunctionPath());
-            return new ExecuteGoResult(result.isSuccess(), result.getError(), result.getOutput(), null);
+
+            String resolvedSourceId = null;
+            if (hasUri)
+            {
+                String rawUri = params.getUri().trim();
+                String sourceId = rawUri.startsWith("pure://")
+                        ? rawUri.substring("pure://".length())
+                        : this.uriMapper.toSourceId(rawUri);
+                resolvedSourceId = session.resolveSourceId(sourceId);
+                if (resolvedSourceId == null)
+                {
+                    return ExecuteTestsResult.failure("No compiled source found for uri '" + rawUri + "'");
+                }
+            }
+
+            return session.executeTests(params, resolvedSourceId);
+        });
+    }
+
+    /**
+     * Stops an in-flight {@link #executeTests} run. Must stay lock-free: the run holds the graph
+     * read lock for its whole duration, so a cancel that waited on that (fair) lock could queue
+     * behind the very run it's meant to stop. Returns as soon as the run is signalled; it unwinds
+     * (teardown hooks still run) on its own thread.
+     */
+    @JsonRequest("legend/cancelTests")
+    public CompletableFuture<CancelTestsResult> cancelTests(CancelTestsParams params)
+    {
+        return supplyAsync(() ->
+        {
+            LegendPureSession session = getSession();
+            if (session == null)
+            {
+                return new CancelTestsResult(Collections.emptyList(), "No session");
+            }
+            if (params == null || (!params.isAll() && (params.getRunId() == null || params.getRunId().trim().isEmpty())))
+            {
+                return new CancelTestsResult(Collections.emptyList(), "Either params.runId or params.all is required");
+            }
+            List<String> cancelled = session.cancelTests(
+                    params.getRunId() == null ? null : params.getRunId().trim(), params.isAll());
+            return new CancelTestsResult(cancelled, cancelled.isEmpty()
+                    ? "No matching run in flight (it may have already finished)"
+                    : "Cancelled " + cancelled.size() + " run(s)");
         });
     }
 
@@ -577,8 +814,6 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         });
     }
 
-    static final String PURE_OPTION_PREFIX = "pure.options.";
-
     /**
      * Sets or clears a Pure runtime option so that isOptionSet('&lt;name&gt;') reflects it live, without
      * restarting the server. The session holds a MutableRuntimeOptions, seeded once from the
@@ -611,24 +846,22 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
 
     /**
      * Reports the live set of Pure runtime options currently in effect, closing the gap where
-     * setOption can only confirm the value it just set, never the full current state. Scans this
-     * JVM's system properties for the PURE_OPTION_PREFIX namespace and returns the bare option names
-     * - i.e. every name for which isOptionSet(name) currently returns true.
+     * setOption can only confirm the value it just set, never the full current state. Reads the
+     * session's own MutableRuntimeOptions - i.e. every name for which isOptionSet(name) currently
+     * returns true - rather than system properties, since setOption mutates that session-scoped
+     * instance without writing any "pure.options.*" system property.
      */
     @JsonRequest("legend/getOptions")
     public CompletableFuture<List<String>> getOptions()
     {
         return supplyAsync(() ->
         {
-            List<String> options = new ArrayList<>();
-            for (String key : System.getProperties().stringPropertyNames())
+            LegendPureSession session = getSession();
+            if (session == null)
             {
-                if (key.startsWith(PURE_OPTION_PREFIX))
-                {
-                    options.add(key.substring(PURE_OPTION_PREFIX.length()));
-                }
+                return Collections.<String>emptyList();
             }
-            return options;
+            return session.getRuntimeOptions().getSetOptions().toList();
         });
     }
 
@@ -1156,12 +1389,34 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         return -1;
     }
 
+    // Deliberately above defaultExecutionConcurrency() so short requests always have a thread even
+    // while the execution pool is full.
+    static int defaultRequestPoolSize()
+    {
+        return Math.max(8, Runtime.getRuntime().availableProcessors() + 4);
+    }
+
+    static int defaultExecutionConcurrency()
+    {
+        return Math.max(2, (Runtime.getRuntime().availableProcessors() * 3) / 4);
+    }
+
     static int resolveRequestPoolSize()
     {
-        String prop = System.getProperty(REQUEST_POOL_SIZE_PROPERTY);
+        return resolvePositiveIntProperty(REQUEST_POOL_SIZE_PROPERTY, defaultRequestPoolSize());
+    }
+
+    static int resolveExecutionConcurrency()
+    {
+        return resolvePositiveIntProperty(EXECUTION_CONCURRENCY_PROPERTY, defaultExecutionConcurrency());
+    }
+
+    private static int resolvePositiveIntProperty(String property, int defaultValue)
+    {
+        String prop = System.getProperty(property);
         if (prop == null || prop.trim().isEmpty())
         {
-            return DEFAULT_REQUEST_POOL_SIZE;
+            return defaultValue;
         }
         try
         {
@@ -1170,13 +1425,13 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
             {
                 return size;
             }
-            LspLog.warn(REQUEST_POOL_SIZE_PROPERTY + "=" + prop + " must be positive; using default " + DEFAULT_REQUEST_POOL_SIZE);
+            LspLog.warn(property + "=" + prop + " must be positive; using default " + defaultValue);
         }
         catch (NumberFormatException e)
         {
-            LspLog.warn("Invalid " + REQUEST_POOL_SIZE_PROPERTY + "=" + prop + "; using default " + DEFAULT_REQUEST_POOL_SIZE);
+            LspLog.warn("Invalid " + property + "=" + prop + "; using default " + defaultValue);
         }
-        return DEFAULT_REQUEST_POOL_SIZE;
+        return defaultValue;
     }
 
     /**
@@ -1238,11 +1493,11 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
                 }
                 catch (Exception e)
                 {
-                    System.err.println("[LSP] accept failed, daemon exiting: " + e.getMessage());
+                    LspLog.error("accept failed, daemon exiting: " + e.getMessage());
                     connectionExecutor.shutdownNow();
                     return;
                 }
-                System.err.println("[LSP] client connected from " + socket.getRemoteSocketAddress());
+                LspLog.info("client connected from " + socket.getRemoteSocketAddress());
                 connectionExecutor.submit(() -> serveSocketConnection(server, socket));
             }
         }
@@ -1254,6 +1509,7 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
 
     private static void serveSocketConnection(LegendPureLspServer server, Socket socket)
     {
+        long connectedAtMs = System.currentTimeMillis();
         LanguageClient remoteClient = null;
         try
         {
@@ -1271,7 +1527,11 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         }
         catch (Exception e)
         {
-            System.err.println("[LSP] client session ended: " + e.getMessage());
+            long connectedForMs = System.currentTimeMillis() - connectedAtMs;
+            server.recordAbnormalDisconnect("Client " + socket.getRemoteSocketAddress()
+                    + " disconnected abnormally after " + connectedForMs + "ms: "
+                    + e.getClass().getSimpleName()
+                    + (e.getMessage() == null ? "" : (": " + e.getMessage())));
         }
         finally
         {
@@ -1288,7 +1548,7 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
             catch (Exception ignored)
             {
             }
-            System.err.println("[LSP] client disconnected (session kept warm)");
+            LspLog.info("client disconnected (session kept warm)");
         }
     }
 }

@@ -27,6 +27,7 @@ import org.finos.legend.pure.lsp.protocol.LegendLanguageClient;
 import org.finos.legend.pure.lsp.protocol.LegendLogEvent;
 import org.finos.legend.pure.lsp.protocol.LockContentionEvent;
 import org.finos.legend.pure.lsp.protocol.LspStatus;
+import org.finos.legend.pure.lsp.protocol.TestEvent;
 import org.finos.legend.pure.lsp.protocol.WorkspaceDriftEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,6 +129,12 @@ public class ClientBroadcaster implements LegendLanguageClient
         broadcast(c -> c.lockContention(event));
     }
 
+    @Override
+    public void testEvent(TestEvent event)
+    {
+        broadcast(c -> c.testEvent(event));
+    }
+
     /**
      * No natural multi-client fan-out for a request/response call (whose answer would win?) - this
      * method isn't actually invoked anywhere in this server today. Best-effort: delegate to any one
@@ -219,6 +226,11 @@ public class ClientBroadcaster implements LegendLanguageClient
 
         @Override
         public void lockContention(LockContentionEvent event)
+        {
+        }
+
+        @Override
+        public void testEvent(TestEvent event)
         {
         }
     }

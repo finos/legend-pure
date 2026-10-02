@@ -117,6 +117,20 @@ public class PCTTestExecutionTest
     }
 
     @Test
+    public void executesPCTTestWithBarePathOrDisplayNameAdapter()
+    {
+        LegendPureSession.ExecuteResult byBarePath =
+                session.executeFunction(pctTestFunctionPath, "test::pct::exec::myAdapter");
+        Assert.assertTrue("Execution should succeed with the bare adapter path: " + byBarePath.getError(), byBarePath.isSuccess());
+        Assert.assertTrue(byBarePath.getOutput().contains("hello-adapted"));
+
+        LegendPureSession.ExecuteResult byDisplayName =
+                session.executeFunction(pctTestFunctionPath, "Test-Custom");
+        Assert.assertTrue("Execution should succeed with the adapter's display name: " + byDisplayName.getError(), byDisplayName.isSuccess());
+        Assert.assertTrue(byDisplayName.getOutput().contains("hello-adapted"));
+    }
+
+    @Test
     public void unknownAdapterPathFailsWithClearError()
     {
         LegendPureSession.ExecuteResult result =

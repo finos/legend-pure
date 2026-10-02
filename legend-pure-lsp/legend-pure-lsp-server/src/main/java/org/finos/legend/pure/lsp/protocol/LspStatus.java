@@ -36,11 +36,14 @@ public class LspStatus
     private int port = -1;
     private String transport;
     private int requestPoolSize;
+    private int executionConcurrency;
     private List<String> repoRoots = Collections.emptyList();
     private List<String> jvmArgs = Collections.emptyList();
     private List<LogErrorEntry> recentErrors = Collections.emptyList();
     private boolean lockContended;
     private String lockContentionReason;
+    private int recentDisconnectCount;
+    private String lastDisconnectReason;
 
     public LspStatus()
     {
@@ -185,6 +188,17 @@ public class LspStatus
         this.requestPoolSize = requestPoolSize;
     }
 
+    /** How many Pure executions may run at once; the rest queue. Bounded separately from the request pool. */
+    public int getExecutionConcurrency()
+    {
+        return this.executionConcurrency;
+    }
+
+    public void setExecutionConcurrency(int executionConcurrency)
+    {
+        this.executionConcurrency = executionConcurrency;
+    }
+
     public List<String> getRepoRoots()
     {
         return this.repoRoots;
@@ -233,5 +247,25 @@ public class LspStatus
     public void setLockContentionReason(String lockContentionReason)
     {
         this.lockContentionReason = lockContentionReason;
+    }
+
+    public int getRecentDisconnectCount()
+    {
+        return this.recentDisconnectCount;
+    }
+
+    public void setRecentDisconnectCount(int recentDisconnectCount)
+    {
+        this.recentDisconnectCount = recentDisconnectCount;
+    }
+
+    public String getLastDisconnectReason()
+    {
+        return this.lastDisconnectReason;
+    }
+
+    public void setLastDisconnectReason(String lastDisconnectReason)
+    {
+        this.lastDisconnectReason = lastDisconnectReason;
     }
 }

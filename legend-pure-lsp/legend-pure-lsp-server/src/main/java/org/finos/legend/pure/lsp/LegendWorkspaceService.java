@@ -53,6 +53,10 @@ public class LegendWorkspaceService implements WorkspaceService
 
     private static final int MAX_WORKSPACE_SYMBOLS = 500;
 
+    // Long enough to ride out routine read-lock traffic, short enough that an indefinite holder
+    // (a paused SHARED debug session) still reports back rather than hanging the client.
+    private static final long SYNC_LOCK_WAIT_MS = 2000L;
+
     @SuppressWarnings("deprecation")
     @Override
     public CompletableFuture<Either<List<? extends SymbolInformation>, List<? extends WorkspaceSymbol>>> symbol(WorkspaceSymbolParams params)
@@ -213,7 +217,6 @@ public class LegendWorkspaceService implements WorkspaceService
         {
             return SyncWorkspaceResult.failure("Mutation service not available");
         }
-
         Collection<String> sourceIds = (params == null || params.getUris() == null || params.getUris().isEmpty())
                 ? this.server.getDriftWatcher().getDirtySourceIds()
                 : deriveSourceIds(params.getUris());
@@ -268,7 +271,24 @@ public class LegendWorkspaceService implements WorkspaceService
             return SyncWorkspaceResult.success(0, 0, 0);
         }
 
-        LegendPureSession.CompileResult result = applyChanges(session, filtered);
+        // Bounded wait, then hold it across the mutation. A snapshot check would be useless (routine
+        // hover/completion hold the read lock, so it reads "busy" during normal editing), and
+        // releasing before mutating would let a paused debug session take the graph in between,
+        // leaving the mutation blocked indefinitely - the case this wait exists to report instead.
+        LegendPureSession.LockHandle gate = session.tryAcquireGraphWriteLock(SYNC_LOCK_WAIT_MS);
+        if (gate == null)
+        {
+            return SyncWorkspaceResult.deferred(session.graphLockHolderDescription());
+        }
+        LegendPureSession.CompileResult result;
+        try
+        {
+            result = applyChanges(session, filtered);
+        }
+        finally
+        {
+            gate.close();
+        }
 
         if (result.isInternalError())
         {

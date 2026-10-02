@@ -33,6 +33,7 @@ import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.lsp.protocol.LegendDebug;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.lsp.PureValueExtractor;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
@@ -41,7 +42,6 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.serialization.runtime.IncrementalCompiler;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -734,31 +734,7 @@ class LegendDebugState
 
     private String typeName(CoreInstance value)
     {
-        if (value == null)
-        {
-            return "Nil";
-        }
-        CoreInstance classifier = this.functionExecution.getProcessorSupport().getClassifier(value);
-        if (classifier == null)
-        {
-            return value.getClass().getSimpleName();
-        }
-
-        try
-        {
-            if (PackageableElement.isPackageableElement(classifier, this.functionExecution.getProcessorSupport()))
-            {
-                String path = PackageableElement.getUserPathForPackageableElement(classifier);
-                if (path != null && !path.isEmpty())
-                {
-                    return path;
-                }
-            }
-        }
-        catch (Exception ignored)
-        {
-        }
-        return classifier.getName() == null ? classifier.getClass().getSimpleName() : classifier.getName();
+        return PureValueExtractor.typeName(value, this.functionExecution.getProcessorSupport());
     }
 
     private String displayNameOrId(CoreInstance value)
@@ -779,42 +755,12 @@ class LegendDebugState
 
     private static ListIterable<? extends CoreInstance> valueSpecificationValues(CoreInstance value, ProcessorSupport processorSupport)
     {
-        if (value == null)
-        {
-            return null;
-        }
-        try
-        {
-            return (ValueSpecification.isInstanceValue(value, processorSupport)
-                    || ValueSpecification.isNonExecutableValueSpecification(value, processorSupport))
-                    ? ValueSpecification.getValues(value, processorSupport)
-                    : null;
-        }
-        catch (Exception e)
-        {
-            return null;
-        }
+        return PureValueExtractor.valueSpecificationValues(value, processorSupport);
     }
 
     private static boolean isCollectionValueSpecification(CoreInstance value, ProcessorSupport processorSupport)
     {
-        if (value == null)
-        {
-            return false;
-        }
-        try
-        {
-            if (!ValueSpecification.isValueSpecification(value, processorSupport))
-            {
-                return false;
-            }
-            CoreInstance multiplicity = value.getValueForMetaPropertyToOne(M3Properties.multiplicity);
-            return multiplicity != null && !Multiplicity.isToOne(multiplicity);
-        }
-        catch (Exception e)
-        {
-            return false;
-        }
+        return PureValueExtractor.isCollectionValueSpecification(value, processorSupport);
     }
 
     private ListIterable<? extends CoreInstance> safePropertyValues(CoreInstance instance, String key)

@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionContext;
 import org.eclipse.lsp4j.CodeActionParams;
@@ -62,6 +63,7 @@ import org.finos.legend.pure.lsp.protocol.ExecuteFunctionParams;
 import org.finos.legend.pure.lsp.protocol.ExecuteGoParams;
 import org.finos.legend.pure.lsp.protocol.ExecuteGoResult;
 import org.finos.legend.pure.lsp.protocol.FileEntry;
+import org.finos.legend.pure.lsp.protocol.LegendDebug;
 import org.finos.legend.pure.lsp.protocol.LspStatus;
 import org.finos.legend.pure.lsp.protocol.SetOptionParams;
 import org.finos.legend.pure.lsp.protocol.SetOptionResult;
@@ -680,6 +682,92 @@ public class LspEndToEndTest
         finally
         {
             server.disconnect(secondClient);
+        }
+    }
+
+    // -- Debug session lifecycle across main-connection disconnects (legend/debug/start resource-leak fix) --
+
+    @Test(timeout = 60_000)
+    public void debugStart_sharedSession_readLockReleasedOnlyWhenLastClientDisconnects() throws Exception
+    {
+        // Regression test for the leak: a SHARED-mode legend/debug/start session (reachable over the
+        // plain main LSP connection, not just the dedicated DAP socket) holds the main session's graph
+        // read lock for as long as it's paused. LegendPureLspServer#disconnect(...) must release it once
+        // every client is gone, but must NOT do so while any other client (here, mockClient) is still
+        // connected - proven below by driving a real write-lock-requiring compile through both states.
+        long ts = System.currentTimeMillis();
+        String functionPath = "test::e2e::debug::debugLockLeak" + ts + "():Any[*]";
+        String uri = "file:///workspace/src/main/resources/e2e_debug_lock_leak_" + ts + ".pure";
+        String code =
+                "function test::e2e::debug::debugLockLeak" + ts + "():Any[*]\n" +
+                        "{\n" +
+                        "  let x = 'debug';\n" +
+                        "  $x;\n" +
+                        "}\n";
+
+        CheckBatchParams compileParams = new CheckBatchParams();
+        compileParams.setFiles(Collections.singletonList(new FileEntry(uri, code)));
+        CheckBatchResult compileResult = server.checkBatch(compileParams).get(30, TimeUnit.SECONDS);
+        Assert.assertTrue("Fixture should compile, got: " + compileResult.getError(), compileResult.isSuccess());
+
+        LegendDebug.StartParams startParams = new LegendDebug.StartParams();
+        startParams.setFunction(functionPath);
+        startParams.setMode(LegendDebug.ExecutionMode.SHARED);
+        startParams.setBreakpoints(Collections.singletonList(new LegendDebug.Breakpoint(uri, 3)));
+
+        MockLanguageClient secondClient = new MockLanguageClient();
+        server.connect(secondClient);
+        try
+        {
+            LegendDebug.Response paused = server.debugStart(startParams).get(30, TimeUnit.SECONDS);
+            Assert.assertTrue("Debug start should succeed: " + paused.getMessage(), paused.isSuccess());
+            Assert.assertEquals("paused", paused.getState());
+            Assert.assertEquals("breakpoint", paused.getReason());
+
+            String blockedUri = "file:///workspace/src/main/resources/e2e_debug_lock_leak_blocked_" + ts + ".pure";
+            CheckBatchParams blockedCompileParams = new CheckBatchParams();
+            blockedCompileParams.setFiles(Collections.singletonList(new FileEntry(blockedUri,
+                    "Class test::e2e::debug::DebugLockLeakBlocked" + ts + "\n{\n  name: String[1];\n}\n")));
+            CompletableFuture<CheckBatchResult> blockedCompile = server.checkBatch(blockedCompileParams);
+
+            assertStillBlocked(blockedCompile, "Main-session compile should be blocked by the paused SHARED debug session's read lock");
+
+            // Only the second client drops; mockClient (registered in @BeforeClass) is still connected,
+            // so connectedClientCount() > 0 and the fix's guard must not tear the session down yet.
+            server.disconnect(secondClient);
+            assertStillBlocked(blockedCompile, "Session must survive disconnect while another client (mockClient) is still connected");
+
+            // The last remaining client disconnects too: connectedClientCount() reaches zero, which is
+            // exactly the guard LegendPureLspServer#disconnect(...) added to release the leaked lock.
+            server.disconnect(mockClient);
+            try
+            {
+                CheckBatchResult blockedResult = blockedCompile.get(30, TimeUnit.SECONDS);
+                Assert.assertTrue("Main-session compile should complete once the held read lock is released: "
+                        + blockedResult.getError(), blockedResult.isSuccess());
+            }
+            finally
+            {
+                // Other tests in this shared-fixture class rely on mockClient staying connected.
+                server.connect(mockClient);
+            }
+        }
+        finally
+        {
+            server.disconnect(secondClient);
+        }
+    }
+
+    private static void assertStillBlocked(CompletableFuture<CheckBatchResult> future, String message) throws Exception
+    {
+        try
+        {
+            future.get(500, TimeUnit.MILLISECONDS);
+            Assert.fail(message);
+        }
+        catch (TimeoutException expected)
+        {
+            // Expected: the write lock the compile needs cannot be granted while the read lock is held.
         }
     }
 

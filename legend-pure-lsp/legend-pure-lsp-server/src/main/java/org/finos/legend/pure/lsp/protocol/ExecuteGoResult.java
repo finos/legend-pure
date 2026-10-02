@@ -20,6 +20,11 @@ public class ExecuteGoResult
     private String error;
     private String output;
     private String errorUri;
+    private String returnKind;
+    private String returnType;
+    private Object returnValue;
+    private Integer returnSize;
+    private boolean returnTruncated;
 
     public ExecuteGoResult()
     {
@@ -76,5 +81,61 @@ public class ExecuteGoResult
     public void setErrorUri(String errorUri)
     {
         this.errorUri = errorUri;
+    }
+
+    /**
+     * {@code primitive} | {@code enum} | {@code collection} | {@code empty} | {@code complex}.
+     * Null when the call failed. {@code complex} carries a type and size but a null
+     * {@link #getReturnValue()} - use print() for those.
+     */
+    public String getReturnKind()
+    {
+        return this.returnKind;
+    }
+
+    public void setReturnKind(String returnKind)
+    {
+        this.returnKind = returnKind;
+    }
+
+    public String getReturnType()
+    {
+        return this.returnType;
+    }
+
+    public void setReturnType(String returnType)
+    {
+        this.returnType = returnType;
+    }
+
+    public Object getReturnValue()
+    {
+        return this.returnValue;
+    }
+
+    public void setReturnValue(Object returnValue)
+    {
+        this.returnValue = returnValue;
+    }
+
+    /** True element count, before any truncation. */
+    public Integer getReturnSize()
+    {
+        return this.returnSize;
+    }
+
+    public void setReturnSize(Integer returnSize)
+    {
+        this.returnSize = returnSize;
+    }
+
+    public boolean isReturnTruncated()
+    {
+        return this.returnTruncated;
+    }
+
+    public void setReturnTruncated(boolean returnTruncated)
+    {
+        this.returnTruncated = returnTruncated;
     }
 }

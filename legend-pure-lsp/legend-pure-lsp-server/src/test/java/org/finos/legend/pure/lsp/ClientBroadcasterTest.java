@@ -29,6 +29,7 @@ import org.finos.legend.pure.lsp.protocol.LockContentionEvent;
 import org.finos.legend.pure.lsp.protocol.WorkspaceDriftEvent;
 import org.finos.legend.pure.lsp.protocol.LspState;
 import org.finos.legend.pure.lsp.protocol.LspStatus;
+import org.finos.legend.pure.lsp.protocol.TestEvent;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -130,6 +131,7 @@ public class ClientBroadcasterTest
         final List<MessageParams> messages = Collections.synchronizedList(new ArrayList<>());
         final List<LegendLogEvent> logs = Collections.synchronizedList(new ArrayList<>());
         final List<LockContentionEvent> lockContentions = Collections.synchronizedList(new ArrayList<>());
+        final List<TestEvent> testEvents = Collections.synchronizedList(new ArrayList<>());
 
         @Override
         public void telemetryEvent(Object object)
@@ -180,6 +182,12 @@ public class ClientBroadcasterTest
         public void lockContention(LockContentionEvent event)
         {
             this.lockContentions.add(event);
+        }
+
+        @Override
+        public void testEvent(TestEvent event)
+        {
+            this.testEvents.add(event);
         }
     }
 
@@ -234,6 +242,12 @@ public class ClientBroadcasterTest
 
         @Override
         public void lockContention(LockContentionEvent event)
+        {
+            throw new RuntimeException("simulated dead connection");
+        }
+
+        @Override
+        public void testEvent(TestEvent event)
         {
             throw new RuntimeException("simulated dead connection");
         }
