@@ -70,7 +70,7 @@ abstract class AbstractDateWithSubsecond extends AbstractDateWithSecond
         }
 
         long secondsToAdd = milliseconds / 1000L;
-        String subseconds = DateFunctions.subsecondFromMilliseconds(milliseconds);
+        String subseconds = String.format("%03d", Math.abs(milliseconds % 1000L));
         return adjustSubseconds(subseconds, milliseconds > 0).addSeconds(secondsToAdd);
     }
 
@@ -88,7 +88,7 @@ abstract class AbstractDateWithSubsecond extends AbstractDateWithSecond
         }
 
         long secondsToAdd = microseconds / 1_000_000L;
-        String subseconds = DateFunctions.subsecondFromMicroseconds(microseconds);
+        String subseconds = String.format("%06d", Math.abs(microseconds % 1_000_000L));
         return adjustSubseconds(subseconds, microseconds > 0).addSeconds(secondsToAdd);
     }
 
@@ -106,7 +106,7 @@ abstract class AbstractDateWithSubsecond extends AbstractDateWithSecond
         }
 
         long secondsToAdd = nanoseconds / 1_000_000_000L;
-        String subseconds = DateFunctions.subsecondFromNanoseconds(nanoseconds);
+        String subseconds = String.format("%09d", Math.abs(nanoseconds % 1_000_000_000L));
         return adjustSubseconds(subseconds, nanoseconds > 0).addSeconds(secondsToAdd);
     }
 

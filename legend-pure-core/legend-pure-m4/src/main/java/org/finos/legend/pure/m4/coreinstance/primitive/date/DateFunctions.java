@@ -27,7 +27,6 @@ import java.time.chrono.IsoChronology;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -211,7 +210,7 @@ public class DateFunctions extends TimeFunctions
             }
             case Calendar.MILLISECOND:
             {
-                return DateWithSubsecond.newDateWithSubsecond(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND), TimeFunctions.subsecondFromMilliseconds(calendar.get(Calendar.MILLISECOND)));
+                return DateWithSubsecond.newDateWithSubsecond(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND), String.format("%03d", calendar.get(Calendar.MILLISECOND)));
             }
             default:
             {
@@ -587,7 +586,7 @@ public class DateFunctions extends TimeFunctions
     {
         if ((year < MIN_YEAR) || (year > MAX_YEAR))
         {
-            throw new IllegalArgumentException(String.format(Locale.ROOT, "Invalid year (valid [%,d, %,d]): %,d", MIN_YEAR, MAX_YEAR, year));
+            throw new IllegalArgumentException(String.format("Invalid year (valid [%,d, %,d]): %,d", MIN_YEAR, MAX_YEAR, year));
         }
     }
 
