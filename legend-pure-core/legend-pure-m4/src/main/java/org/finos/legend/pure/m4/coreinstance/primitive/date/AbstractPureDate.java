@@ -40,15 +40,7 @@ abstract class AbstractPureDate implements PureDate, Serializable
             return false;
         }
 
-        PureDate that = (PureDate) other;
-        if (LatestDate.isLatestDate(that))
-        {
-            // LatestDate has no components to compare, and is a singleton equal only to itself,
-            // which the identity check above has already handled. Asking it for a component would
-            // throw, and equals must not.
-            return false;
-        }
-
+        PureDate that = (PureDate)other;
         return (this.getYear() == that.getYear()) &&
                 (this.getMonth() == that.getMonth()) &&
                 (this.getDay() == that.getDay()) &&
