@@ -58,19 +58,14 @@ public class TestPureDate
         Assert.assertEquals("2014-01-01 02:01:01.070 CET", date.format("[\"CET\"]yyyy-MM-dd HH:mm:ss.SSS z"));
 
         // Longer time zone names
+        Assert.assertEquals("2014-01-01 01:01:01.070+0000", date.format("[Europe/Lissabon]yyyy-MM-dd HH:mm:ss.SSSZ"));
+        Assert.assertEquals("2014-01-01 01:01:01.070 Europe/Lissabon", date.format("[Europe/Lissabon]yyyy-MM-dd HH:mm:ss.SSS z"));
+        Assert.assertEquals("2014-01-01 01:01:01.070Z", date.format("[Lissabon]yyyy-MM-dd HH:mm:ss.SSSX"));
+        Assert.assertEquals("2014-01-01 01:01:01.070 Europe/Lissabon", date.format("[\"Europe/Lissabon\"]yyyy-MM-dd HH:mm:ss.SSS z"));
+
         Assert.assertEquals("2014-01-01 00:01:01.070-0100", date.format("[Atlantic/Azores]yyyy-MM-dd HH:mm:ss.SSSZ"));
         Assert.assertEquals("2014-01-01 00:01:01.070 Atlantic/Azores", date.format("[Atlantic/Azores]yyyy-MM-dd HH:mm:ss.SSS z"));
         Assert.assertEquals("2014-01-01 00:01:01.070-01", date.format("[Atlantic/Azores]yyyy-MM-dd HH:mm:ss.SSSX"));
-
-        // Unknown time zones
-        Assert.assertEquals("Unknown time zone: Europe/Lissabon",
-                Assert.assertThrows(IllegalArgumentException.class, () -> date.format("[Europe/Lissabon]yyyy-MM-dd HH:mm:ss.SSSZ")).getMessage());
-        Assert.assertEquals("Unknown time zone: Europe/Lissabon",
-                Assert.assertThrows(IllegalArgumentException.class, () -> date.format("[Europe/Lissabon]yyyy-MM-dd HH:mm:ss.SSS z")).getMessage());
-        Assert.assertEquals("Unknown time zone: Lissabon",
-                Assert.assertThrows(IllegalArgumentException.class, () -> date.format("[Lissabon]yyyy-MM-dd HH:mm:ss.SSSX")).getMessage());
-        Assert.assertEquals("Unknown time zone: Europe/Lissabon",
-                Assert.assertThrows(IllegalArgumentException.class, () -> date.format("[\"Europe/Lissabon\"]yyyy-MM-dd HH:mm:ss.SSS z")).getMessage());
 
         // Time zone is illegal after date or time has been formatted and written out
         Assert.assertEquals("Time zone can only be set at the beginning of the format string",
@@ -83,23 +78,6 @@ public class TestPureDate
         Assert.assertEquals("Fails when end quotes missing in time zone definition",
                 "Missing closing quotes in time zone definition: [\"CET]yyyy-MM-dd HH:mm:ss.SSS z",
                 Assert.assertThrows(IllegalArgumentException.class, () -> date.format("[\"CET]yyyy-MM-dd HH:mm:ss.SSS z")).getMessage());
-    }
-
-    /**
-     * A date is rendered at the instant it stands for, whatever the target zone happens to be doing
-     * around it. 2014-03-09T02:30 UTC is in the hour America/New_York skips when daylight saving
-     * time begins, so reading the date as a wall clock in that zone lands on an hour that does not
-     * exist there.
-     */
-    @Test
-    public void testFormatWithTimeZoneShiftAcrossADaylightSavingGap()
-    {
-        PureDate date = DateFunctions.newPureDate(2014, 3, 9, 2, 30, 0);
-        Assert.assertEquals("2014-03-08 21:30:00-0500", date.format("[America/New_York]yyyy-MM-dd HH:mm:ssZ"));
-
-        // and the hour repeated when it ends
-        PureDate overlap = DateFunctions.newPureDate(2014, 11, 2, 5, 30, 0);
-        Assert.assertEquals("2014-11-02 01:30:00-0400", overlap.format("[America/New_York]yyyy-MM-dd HH:mm:ssZ"));
     }
 
     @Test

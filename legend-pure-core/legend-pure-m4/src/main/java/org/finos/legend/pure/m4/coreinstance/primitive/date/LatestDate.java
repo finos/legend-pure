@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import java.util.GregorianCalendar;
+
 public class LatestDate implements PureDate
 {
     private static final String latestDateConstant = "%latest";
@@ -174,6 +176,12 @@ public class LatestDate implements PureDate
     }
 
     @Override
+    public GregorianCalendar getCalendar()
+    {
+        throw new UnsupportedOperationException("Invalid operation for LatestDate");
+    }
+
+    @Override
     public <T extends Appendable> T appendString(T appendable)
     {
         throw new UnsupportedOperationException("Invalid operation for LatestDate");
@@ -187,6 +195,12 @@ public class LatestDate implements PureDate
 
     @Override
     public long dateDifference(PureDate otherDate, String unit)
+    {
+        throw new UnsupportedOperationException("Invalid operation for LatestDate");
+    }
+
+    @Override
+    public int compareTo(PureDate pureDate)
     {
         throw new UnsupportedOperationException("Invalid operation for LatestDate");
     }

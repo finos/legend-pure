@@ -178,9 +178,4 @@ public final class Year extends AbstractPureDate
         DateFunctions.validateYear(year);
         return new Year(java.time.Year.of(year));
     }
-
-    static Year fromYear(java.time.Year year)
-    {
-        return new Year(year);
-    }
 }

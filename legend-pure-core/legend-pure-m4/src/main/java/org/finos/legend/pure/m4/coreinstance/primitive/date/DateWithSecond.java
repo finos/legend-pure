@@ -15,7 +15,6 @@
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 public class DateWithSecond extends AbstractDateWithSecond
 {
@@ -85,10 +84,5 @@ public class DateWithSecond extends AbstractDateWithSecond
         DateFunctions.validateMinute(minute);
         DateFunctions.validateSecond(second);
         return new DateWithSecond(year, month, day, hour, minute, second);
-    }
-
-    static DateTime fromLocalDateTime(LocalDateTime time)
-    {
-        return new DateWithSecond(time.getYear(), time.getMonthValue(), time.getDayOfMonth(), time.getHour(), time.getMinute(), time.getSecond());
     }
 }
