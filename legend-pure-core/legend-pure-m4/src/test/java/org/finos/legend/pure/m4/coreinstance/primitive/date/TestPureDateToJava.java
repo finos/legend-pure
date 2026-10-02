@@ -468,13 +468,11 @@ public class TestPureDateToJava
     // getCalendar
 
     /**
-     * {@link PureDate#getCalendar()}, which this class is the replacement for, resolves a date to
-     * the start of its span, so the start resolution agrees with it wherever a
-     * {@link java.util.GregorianCalendar} can hold the answer. Beyond millisecond precision it
-     * cannot, which is one of the reasons it is deprecated.
+     * {@link PureDate#getCalendar()} resolves a date to the start of its span, so the start
+     * resolution agrees with it wherever a {@link java.util.GregorianCalendar} can hold the answer.
+     * Beyond millisecond precision it cannot, which is one of the reasons to replace it.
      */
     @Test
-    @SuppressWarnings("deprecation")
     public void testStartAgreesWithGetCalendar()
     {
         PureDate[] dates = {

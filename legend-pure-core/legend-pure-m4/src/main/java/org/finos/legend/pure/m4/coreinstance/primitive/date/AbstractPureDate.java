@@ -77,7 +77,6 @@ abstract class AbstractPureDate implements PureDate, Serializable
         return appendString(new StringBuilder(32)).toString();
     }
 
-    @Deprecated
     @Override
     public GregorianCalendar getCalendar()
     {
