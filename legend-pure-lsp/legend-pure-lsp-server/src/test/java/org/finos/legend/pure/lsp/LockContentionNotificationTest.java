@@ -28,6 +28,7 @@ import org.finos.legend.pure.lsp.protocol.LegendLanguageClient;
 import org.finos.legend.pure.lsp.protocol.LegendLogEvent;
 import org.finos.legend.pure.lsp.protocol.LockContentionEvent;
 import org.finos.legend.pure.lsp.protocol.LspStatus;
+import org.finos.legend.pure.lsp.protocol.TestEvent;
 import org.finos.legend.pure.lsp.protocol.WorkspaceDriftEvent;
 import org.junit.Assert;
 import org.junit.Test;
@@ -201,6 +202,11 @@ public class LockContentionNotificationTest
 
         @Override
         public void workspaceDriftDetected(WorkspaceDriftEvent event)
+        {
+        }
+
+        @Override
+        public void testEvent(TestEvent event)
         {
         }
     }

@@ -109,6 +109,15 @@ public class LegendDebugSocketServer implements AutoCloseable
                 LOGGER.debug("Legend Pure DAP connection ended", e);
             }
         }
+        finally
+        {
+            // A connection can end without a clean disconnect/terminate DAP request (broken pipe, IDE
+            // crash/force-close) - debugService.stop() is idempotent (no-op if already stopped), so
+            // calling it unconditionally guarantees a SHARED-mode session's held graph read lock (see
+            // LegendDebugSession#createShared) is always released here at the latest, instead of leaking
+            // until some future debug run happens to replace it.
+            this.debugService.stop();
+        }
     }
 
     @Override

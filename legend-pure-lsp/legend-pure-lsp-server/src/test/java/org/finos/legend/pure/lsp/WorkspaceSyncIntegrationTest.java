@@ -152,4 +152,45 @@ public class WorkspaceSyncIntegrationTest
         Assert.assertEquals("Open document must not be touched by sync", 0,
                 result.getCreated() + result.getModified() + result.getDeleted());
     }
+
+    @Test
+    public void syncIsDeferredRatherThanBlockingWhileTheGraphReadLockIsHeld() throws Exception
+    {
+        Path workspaceRoot = Files.createTempDirectory("pure-lsp-sync-lock-held-test");
+        Path resourcesDir = workspaceRoot.resolve("sync-module/src/main/resources");
+        Path repoDir = resourcesDir.resolve("sync_repo");
+        Path sourceFile = repoDir.resolve("model/LockHeld.pure");
+        Files.createDirectories(sourceFile.getParent());
+
+        String originalContent = "Class test::sync::LockHeld\n{\n  name: String[1];\n}\n";
+        Files.write(resourcesDir.resolve("sync_repo.definition.json"), DEFINITION.getBytes());
+        Files.write(sourceFile, originalContent.getBytes());
+
+        LegendPureLspServer server = new LegendPureLspServer();
+        server.preconfigureAndWarm(Collections.singletonList(workspaceRoot), Collections.emptySet());
+        String sourceId = "/sync_repo/model/LockHeld.pure";
+
+        String newContent = "Class test::sync::LockHeld\n{\n  name: String[1];\n  age: Integer[1];\n}\n";
+        Files.write(sourceFile, newContent.getBytes());
+        String uri = sourceFile.toUri().toString();
+
+        // Simulates an in-flight execution/paused SHARED debug session holding the read lock: sync must
+        // return immediately with a clear reason instead of blocking until the lock frees up.
+        try (LegendPureSession.LockHandle heldReadLock = server.getSession().acquireGraphReadLock())
+        {
+            SyncWorkspaceResult deferredResult = server.syncWorkspace(
+                    new SyncWorkspaceParams(Collections.singletonList(uri))).get(5, java.util.concurrent.TimeUnit.SECONDS);
+
+            Assert.assertTrue("Sync should be deferred, not failed, while the read lock is held", deferredResult.isDeferred());
+            Assert.assertFalse(deferredResult.isSuccess());
+            Assert.assertNotNull(deferredResult.getDeferredReason());
+            Assert.assertEquals(originalContent, server.getSession().getPureRuntime().getSourceById(sourceId).getContent());
+        }
+
+        // Once the lock is free, the exact same request applies normally.
+        SyncWorkspaceResult result = server.syncWorkspace(new SyncWorkspaceParams(Collections.singletonList(uri))).get();
+        Assert.assertTrue("Sync should succeed once the lock is free: " + result.getError(), result.isSuccess());
+        Assert.assertEquals(1, result.getModified());
+        Assert.assertEquals(newContent, server.getSession().getPureRuntime().getSourceById(sourceId).getContent());
+    }
 }

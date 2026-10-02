@@ -30,4 +30,11 @@ public interface LegendLanguageClient extends LanguageClient
 
     @JsonNotification("legend/lockContention")
     void lockContention(LockContentionEvent event);
+
+    /**
+     * Streams progress of an in-flight legend/executeTests run, so a client can fill in a test tree
+     * incrementally instead of waiting on the single response. See {@link TestEvent}.
+     */
+    @JsonNotification("legend/testEvent")
+    void testEvent(TestEvent event);
 }

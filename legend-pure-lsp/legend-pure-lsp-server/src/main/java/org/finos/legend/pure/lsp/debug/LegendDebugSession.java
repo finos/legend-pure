@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.lsp.ExecutionFailureFormatter;
 import org.finos.legend.pure.lsp.LegendPureSession;
@@ -62,6 +65,25 @@ class LegendDebugSession
     // the deliberate tradeoff of SHARED mode (see LegendDebug.ExecutionMode).
     private final LegendPureSession.LockHandle heldMainSessionReadLock;
     private final java.util.concurrent.atomic.AtomicBoolean sharedLockReleased = new java.util.concurrent.atomic.AtomicBoolean(false);
+
+    // The main session's graph read lock is a plain java.util.concurrent.locks.ReentrantReadWriteLock
+    // (see LegendPureSession#graphLock): its ReadLock.unlock() is JDK-enforced to run on the exact same
+    // Thread that acquired it, or it throws IllegalMonitorStateException ("attempt to unlock read lock,
+    // not locked by current thread") - and, worse, that throw happens AFTER sharedLockReleased's CAS
+    // already flipped true, so a naive retry would never fire and the lock would stay held forever.
+    // Acquire (createShared) and release (releaseSharedRuntimeLockIfHeld) are never guaranteed to run on
+    // the same caller thread - the caller is whichever request-pool thread serviced legend/debug/start,
+    // a DAP socket's own connection thread, or the main LSP connection's own thread on disconnect - so
+    // both operations are routed through this one dedicated thread instead, making them the same
+    // physical thread by construction regardless of which caller thread asked for them. Static and
+    // shared across sessions: DebugService's single active-session slot means there is never genuine
+    // concurrent demand for this thread.
+    private static final ExecutorService SHARED_LOCK_EXECUTOR = Executors.newSingleThreadExecutor(r ->
+    {
+        Thread thread = new Thread(r, "legend-pure-lsp-shared-debug-lock");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     private volatile boolean stopped;
     private volatile LegendDebugState visiblePausedState;
@@ -135,7 +157,7 @@ class LegendDebugSession
                                            UriMapper uriMapper, String functionName,
                                            List<LegendDebug.Breakpoint> breakpoints)
     {
-        LegendPureSession.LockHandle readLock = mainSession.acquireGraphReadLock();
+        LegendPureSession.LockHandle readLock = acquireSharedReadLock(mainSession);
         boolean releaseOnFailure = true;
         try
         {
@@ -183,8 +205,46 @@ class LegendDebugSession
         {
             if (releaseOnFailure)
             {
-                readLock.close();
+                releaseSharedReadLock(readLock);
             }
+        }
+    }
+
+    /**
+     * Runs the acquire on {@link #SHARED_LOCK_EXECUTOR} - see that field's javadoc for why this, and
+     * {@link #releaseSharedReadLock}, must always run on that one dedicated thread.
+     */
+    private static LegendPureSession.LockHandle acquireSharedReadLock(LegendPureSession mainSession)
+    {
+        try
+        {
+            return SHARED_LOCK_EXECUTOR.submit(mainSession::acquireGraphReadLock).get();
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while acquiring the shared debug session's graph read lock", e);
+        }
+        catch (ExecutionException e)
+        {
+            throw new IllegalStateException("Failed to acquire the shared debug session's graph read lock", e.getCause());
+        }
+    }
+
+    private static void releaseSharedReadLock(LegendPureSession.LockHandle lock)
+    {
+        try
+        {
+            SHARED_LOCK_EXECUTOR.submit(lock::close).get();
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+            LOGGER.warn("Interrupted while releasing the shared debug session's graph read lock", e);
+        }
+        catch (ExecutionException e)
+        {
+            LOGGER.warn("Failed to release the shared debug session's graph read lock", e.getCause());
         }
     }
 
@@ -289,7 +349,7 @@ class LegendDebugSession
     {
         if (this.heldMainSessionReadLock != null && this.sharedLockReleased.compareAndSet(false, true))
         {
-            this.heldMainSessionReadLock.close();
+            releaseSharedReadLock(this.heldMainSessionReadLock);
         }
     }
 

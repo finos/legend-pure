@@ -32,11 +32,16 @@ import java.util.List;
  * legend/getSetupTeardown) run immediately before/after {@code function}, within the same atomic
  * call - see {@code LegendPureSession#executeFunction(String, String, String, String)} for the
  * fail-fast/forgiving semantics of each.
+ * <p>
+ * {@code arguments} binds one {@code String[1]} literal per parameter, in order - mutually exclusive
+ * with {@code pctAdapterPath}. A call with arguments must name a signature or mangled id, since a
+ * bare path only resolves against zero-arg shapes.
  */
 public class ExecuteFunctionParams
 {
     private String function;
     private List<FileEntry> files;
+    private List<String> arguments;
     private String pctAdapterPath;
     private String beforeFunctionPath;
     private String afterFunctionPath;
@@ -63,6 +68,16 @@ public class ExecuteFunctionParams
     public void setFiles(List<FileEntry> files)
     {
         this.files = files;
+    }
+
+    public List<String> getArguments()
+    {
+        return this.arguments;
+    }
+
+    public void setArguments(List<String> arguments)
+    {
+        this.arguments = arguments;
     }
 
     public String getPctAdapterPath()
