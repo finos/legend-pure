@@ -57,7 +57,7 @@ public class RelationFunctionInstanceSetImplementationProcessor extends Processo
 
         // The relation function's last expression has generic type Relation<T>
         // where T is the structural row type (a RelationType<...>).  We bind
-        // the valueFn `src` parameter to T so `$src.<col>` resolves against
+        // the valueFn `row` parameter to T so `$row.<col>` resolves against
         // the columns of the row, mirroring how `extend`/`filter` lambdas
         // type their row parameter.
         GenericType lastExprType = (GenericType) relationFunction
@@ -67,20 +67,20 @@ public class RelationFunctionInstanceSetImplementationProcessor extends Processo
         org.eclipse.collections.api.list.ListIterable<? extends GenericType> typeArgs = lastExprType._typeArguments().toList();
         if (typeArgs.isEmpty())
         {
-            throw new org.finos.legend.pure.m4.exception.PureCompilationException(instance.getSourceInformation(), "Relation function's last expression has no Relation type argument; cannot bind property mapping `$src` parameter.");
+            throw new org.finos.legend.pure.m4.exception.PureCompilationException(instance.getSourceInformation(), "Relation function's last expression has no Relation type argument; cannot bind property mapping `$row` parameter.");
         }
-        GenericType srcType = typeArgs.getFirst();
+        GenericType rowType = typeArgs.getFirst();
 
-        processPropertyMappings(instance._propertyMappings(), instance, srcType, matcher, state, processorSupport);
+        processPropertyMappings(instance._propertyMappings(), instance, rowType, matcher, state, processorSupport);
     }
 
-    private void processPropertyMappings(Iterable<? extends PropertyMapping> propertyMappings, RelationFunctionInstanceSetImplementation owner, GenericType srcType, Matcher matcher, ProcessorState state, ProcessorSupport processorSupport)
+    private void processPropertyMappings(Iterable<? extends PropertyMapping> propertyMappings, RelationFunctionInstanceSetImplementation owner, GenericType rowType, Matcher matcher, ProcessorState state, ProcessorSupport processorSupport)
     {
         for (PropertyMapping propertyMapping : propertyMappings)
         {
             if (propertyMapping instanceof RelationFunctionPropertyMapping)
             {
-                processRelationFunctionPropertyMapping((RelationFunctionPropertyMapping) propertyMapping, srcType, matcher, state, processorSupport);
+                processRelationFunctionPropertyMapping((RelationFunctionPropertyMapping) propertyMapping, rowType, matcher, state, processorSupport);
             }
             else if (propertyMapping instanceof EmbeddedRelationFunctionSetImplementation)
             {
@@ -93,12 +93,12 @@ public class RelationFunctionInstanceSetImplementationProcessor extends Processo
                 embeddedSet._classCoreInstance(targetClass);
                 embeddedSet._relationFunctionCoreInstance(owner._relationFunctionCoreInstance());
 
-                processPropertyMappings(embeddedSet._propertyMappings(), embeddedSet, srcType, matcher, state, processorSupport);
+                processPropertyMappings(embeddedSet._propertyMappings(), embeddedSet, rowType, matcher, state, processorSupport);
             }
         }
     }
 
-    private void processRelationFunctionPropertyMapping(RelationFunctionPropertyMapping pm, GenericType srcType, Matcher matcher, ProcessorState state, ProcessorSupport processorSupport)
+    private void processRelationFunctionPropertyMapping(RelationFunctionPropertyMapping pm, GenericType rowType, Matcher matcher, ProcessorState state, ProcessorSupport processorSupport)
     {
         if (pm._transformerCoreInstance() != null)
         {
@@ -114,21 +114,21 @@ public class RelationFunctionInstanceSetImplementationProcessor extends Processo
 
         try (ProcessorState.VariableContextScope ignore = state.withNewVariableContext())
         {
-            // Inject `src` parameter typed at the relation function's last-expression
-            // generic type (mirrors PureInstanceSetImplementationProcessor's pattern
-            // for `transform` lambdas).
+            // Inject the `row` parameter typed at the relation function's
+            // last-expression row type (the first type-arg of Relation<T>) so
+            // `$row.<col>` resolves against the columns of the row.
             FunctionType ft = getFunctionType(valueFn, processorSupport);
-            ft._parametersAdd(createSrcParameter(srcType, ft.getSourceInformation(), pm.getSourceInformation(), processorSupport));
+            ft._parametersAdd(createRowParameter(rowType, ft.getSourceInformation(), pm.getSourceInformation(), processorSupport));
 
             matcher.fullMatch(valueFn, state);
         }
     }
 
-    private VariableExpression createSrcParameter(GenericType srcType, SourceInformation genericTypeSourceInfo, SourceInformation parameterSourceInformation, ProcessorSupport processorSupport)
+    private VariableExpression createRowParameter(GenericType rowType, SourceInformation genericTypeSourceInfo, SourceInformation parameterSourceInformation, ProcessorSupport processorSupport)
     {
-        GenericType copy = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(srcType, processorSupport);
-        VariableExpression srcParam = (VariableExpression) processorSupport.newAnonymousCoreInstance(parameterSourceInformation, M3Paths.VariableExpression);
-        return srcParam._name("src")
+        GenericType copy = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(rowType, processorSupport);
+        VariableExpression rowParam = (VariableExpression) processorSupport.newAnonymousCoreInstance(parameterSourceInformation, M3Paths.VariableExpression);
+        return rowParam._name("row")
                 ._genericType(copy)
                 ._multiplicity((Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne));
     }
