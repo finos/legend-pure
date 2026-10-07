@@ -1,0 +1,135 @@
+# Copyright 2026 Goldman Sachs
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Checks that a developer can build and test on Windows and macOS. This is
+# about developer usage, not production: what ships is built and tested on
+# Linux by `Build CI`, so this runs on JDK 25 only and in a single job per
+# platform (build, then test), with nothing published anywhere.
+name: Developer Platforms
+
+on:
+  pull_request:
+  push:
+    # Branch pushes only; see build.yml for why this names branches rather
+    # than ignoring tags. The job below skips pushes to the canonical repo.
+    branches:
+      - '**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # These runs are long, so a newer push to the same PR or branch supersedes
+  # an older one instead of queuing behind it.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and Test (${{ matrix.name }})
+    # Pushes run only in forks: that is where contributors develop, and it
+    # gives them a result before they open a PR. In the canonical repo a push
+    # is a merge or a release-branch commit, which the PR has already covered.
+    if: >-
+      (github.event_name != 'push' || github.repository != 'finos/legend-pure')
+      && !startsWith(github.event.head_commit.message, 'Bump version to')
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        # Sized to the standard runners: windows-latest has 4 cores and 16 GB,
+        # like the Linux runners `Build CI` uses, so it gets the same settings;
+        # macos-latest (Apple silicon) has 3 cores and 7 GB, so it runs fewer
+        # builder threads and test forks.
+        include:
+          - name: Windows
+            os: windows-latest
+            build-threads: 4
+            build-ram-percentage: 80.0
+            test-forks: 3
+            test-fork-ram-percentage: 25.0
+            test-maven-ram-percentage: 25.0
+          - name: macOS
+            os: macos-latest
+            build-threads: 2
+            build-ram-percentage: 75.0
+            test-forks: 2
+            test-fork-ram-percentage: 30.0
+            test-maven-ram-percentage: 15.0
+    defaults:
+      run:
+        # Git Bash on Windows, so both platforms share one set of scripts
+        shell: bash
+    steps:
+      - name: Enable long paths
+        # Some checked-out paths exceed Windows' 260-character limit. Line
+        # endings are deliberately left at the runner's default
+        # (core.autocrlf=true), which is also Git for Windows' default, so
+        # the build sees CRLF sources just as a Windows developer's does.
+        if: runner.os == 'Windows'
+        run: git config --global core.longpaths true
+
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v5
+        with:
+          # Never cache this project's own artifacts (see build-and-test.yml).
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/finos/legend/pure
+          key: ${{ runner.os }}-${{ runner.arch }}-developer-platforms-mvn-deps-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-developer-platforms-mvn-deps-
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: 25
+
+      - name: Build
+        env:
+          MAVEN_OPTS: -XX:MaxRAMPercentage=${{ matrix.build-ram-percentage }}
+        run: mvn -B -e -T ${{ matrix.build-threads }} install -DskipTests
+
+      - name: Test
+        # `install` above put this build's artifacts in the local repository,
+        # which is where `surefire:test` resolves inter-module dependencies.
+        env:
+          MAVEN_OPTS: -XX:MaxRAMPercentage=${{ matrix.test-maven-ram-percentage }}
+        run: >-
+          mvn -B -e -fae surefire:test
+          -DforkCount=${{ matrix.test-forks }} -DreuseForks=true
+          -DargLine=-XX:MaxRAMPercentage=${{ matrix.test-fork-ram-percentage }}
+          "-Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports"
+
+      - name: Test VS Code extension
+        # Independent of the Maven build, so it runs even when that fails.
+        if: ${{ !cancelled() }}
+        working-directory: legend-pure-lsp/legend-pure-lsp-vscode
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-${{ matrix.name }}
+          path: surefire-reports/*.xml
+          retention-days: 7
