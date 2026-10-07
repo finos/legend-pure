@@ -18,6 +18,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -68,6 +69,19 @@ public class TestPureStringFormat
         assertFormatError("Invalid format control character 'Q' in format string: yyyy-Q", "%t{yyyy-Q}", date("2014-03-10"));
         assertFormatError("Sub-second minimum 5 exceeds maximum 3 in format string: S(5,3)", "%t{S(5,3)}", date("2014-03-10T13:07:44.07"));
         assertFormatError("Invalid format specifier: %q", "%q", "anything");
+    }
+
+    /**
+     * A date is written by the format language rather than by the date's own class, so a class that
+     * would format itself differently has no say. %latest stands for no particular date: whatever a
+     * format string reads from it fails, and a format string that reads nothing from it writes what
+     * it says.
+     */
+    @Test
+    public void testDateIsWrittenByTheFormatLanguage()
+    {
+        assertFormatError("Invalid operation for LatestDate", "%t{yyyy-MM-dd}", LatestDate.instance);
+        Assert.assertEquals("on x", format("on %t{\"x\"}", LatestDate.instance));
     }
 
     @Test

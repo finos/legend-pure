@@ -16,6 +16,7 @@ package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFormatPattern.Builder;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFormatPattern.SubsecondBuilder;
+import org.finos.legend.pure.m4.tools.time.TimeZoneResolution;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -201,6 +202,37 @@ public class TestDateFormatPattern
         Assert.assertEquals("12:12", pattern.render(NANO));
         Assert.assertEquals(ZoneId.of("America/New_York"), pattern.getTimeZone());
         Assert.assertNull(DateFormatPattern.parse("HH:mm").getTimeZone());
+    }
+
+    /**
+     * A name is resolved strictly unless the builder is told otherwise, and resolving it the legacy
+     * way reads a name {@link java.util.TimeZone#getTimeZone(String)} does not know as GMT. A zone
+     * given as a {@link ZoneId} is resolved already, so neither way has any bearing on it.
+     */
+    @Test
+    public void testTheBuilderResolvesANameAsItIsTold()
+    {
+        Assert.assertEquals("21:42 +0530", builder().timeZone("+0530").hour24().literal(':').minute().literal(' ').timeZoneName().build().render(NANO));
+        Assert.assertEquals(
+                "16:12 +0530",
+                builder()
+                        .timeZone("+0530")
+                        .timeZoneResolution(TimeZoneResolution.LEGACY)
+                        .hour24().literal(':').minute().literal(' ').timeZoneName()
+                        .build()
+                        .render(NANO));
+        Assert.assertEquals(ZoneId.of("GMT"), builder().timeZone("Europe/Lissabon").timeZoneResolution(TimeZoneResolution.LEGACY).build().getTimeZone());
+
+        // regions read the same either way
+        Assert.assertEquals("12:12", builder().timeZone("America/New_York").timeZoneResolution(TimeZoneResolution.LEGACY).hour24().literal(':').minute().build().render(NANO));
+
+        // the name is resolved at each build, as the builder then says
+        Builder builder = builder().timeZone("+0530").hour24();
+        Assert.assertEquals("21", builder.build().render(NANO));
+        Assert.assertEquals("16", builder.timeZoneResolution(TimeZoneResolution.LEGACY).build().render(NANO));
+        Assert.assertEquals("21", builder.timeZoneResolution(TimeZoneResolution.STRICT).build().render(NANO));
+
+        Assert.assertEquals("21", builder().timeZone(ZoneId.of("+05:30")).timeZoneResolution(TimeZoneResolution.LEGACY).hour24().build().render(NANO));
     }
 
     @Test
@@ -1091,6 +1123,13 @@ public class TestDateFormatPattern
 
         // a quoted GMT is text that happens to read like the general notation, and is not it
         Assert.assertNotEquals(DateFormatPattern.parse("z"), DateFormatPattern.parse("\"GMT\""));
+
+        // the same name resolved to different zones is a different pattern, and to the same zone is not
+        Assert.assertNotEquals(DateFormatPattern.parse("[+0530]HH"), DateFormatPattern.parse("[+0530]HH", TimeZoneResolution.LEGACY));
+        Assert.assertEquals(DateFormatPattern.parse("[+0530]HH", TimeZoneResolution.LEGACY), DateFormatPattern.parse("[+0530]HH", TimeZoneResolution.LEGACY));
+        Assert.assertEquals(DateFormatPattern.parse("[+0530]HH", TimeZoneResolution.LEGACY).hashCode(), DateFormatPattern.parse("[+0530]HH", TimeZoneResolution.LEGACY).hashCode());
+        Assert.assertEquals(DateFormatPattern.parse("[America/New_York]HH"), DateFormatPattern.parse("[America/New_York]HH", TimeZoneResolution.LEGACY));
+        Assert.assertEquals(DateFormatPattern.parse("[America/New_York]HH").hashCode(), DateFormatPattern.parse("[America/New_York]HH", TimeZoneResolution.LEGACY).hashCode());
 
         // and every marker a sub-second field carries tells one from another
         Assert.assertEquals(builder().subsecond().exactly(3).endSubsecond().build(), builder().subsecond().between(3, 3).endSubsecond().build());

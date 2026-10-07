@@ -24,7 +24,6 @@ import org.finos.legend.pure.m3.statelistener.ExecutionActivityListener;
 import org.finos.legend.pure.m3.tools.MetricsRecorder;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.m4.tools.time.TimeZones;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.ResultLazyIterable;
 import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.RelationalNativeImplementation;
@@ -33,6 +32,7 @@ import org.finos.legend.pure.runtime.java.extension.store.relational.shared.ICon
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.PureConnectionUtils;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.SQLExceptionHandler;
 import org.finos.legend.pure.runtime.java.shared.canstreamstate.CanStreamState;
+import org.finos.legend.pure.runtime.java.shared.time.TimeZoneResolutionOption;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -113,7 +113,7 @@ public class ResultSetRowIterableProvider
 
                         try
                         {
-                            Calendar calendar = TimeZones.newCalendar(tz);
+                            Calendar calendar = TimeZoneResolutionOption.getTimeZoneResolution(executionSupport.getRuntimeOptions()).newCalendar(tz);
                             boolean showCheckMaxRows = shouldThrowIfMaxRowsExceeded && maxRows > 0;
                             while (rs.next())
                             {

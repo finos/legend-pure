@@ -26,7 +26,7 @@ import java.util.TimeZone;
 
 /**
  * Tests for {@link TimeZones}: the names it resolves, the names it rejects, and the calendars it
- * builds from them.
+ * builds from them, along with what its deprecated legacy methods do with the same names.
  */
 public class TestTimeZones
 {
@@ -115,6 +115,63 @@ public class TestTimeZones
         assertUnresolvable("Unknown time zone: 0530", "0530");
         assertUnresolvable("Unknown time zone: ", "");
         assertUnresolvable("Unknown time zone: null", null);
+    }
+
+    /**
+     * The legacy methods are {@link TimeZone#getTimeZone(String)}, so they read every name the way
+     * it does. Where it knows the name, that is the zone the strict methods find too.
+     */
+    @Test
+    public void testLegacyIsTimeZoneGetTimeZone()
+    {
+        for (String timeZone : new String[] {"America/New_York", "US/Arizona", "Pacific/Guam", "GMT", "UTC", "EST", "GMT+5", "GMT-10:00"})
+        {
+            Assert.assertEquals(timeZone, TimeZone.getTimeZone(timeZone), TimeZones.parseTimeZoneLegacy(timeZone));
+            Assert.assertEquals(timeZone, TimeZone.getTimeZone(timeZone).toZoneId(), TimeZones.parseLegacy(timeZone));
+            Assert.assertEquals(timeZone, TimeZone.getTimeZone(timeZone), TimeZones.newCalendarLegacy(timeZone).getTimeZone());
+            Assert.assertEquals(
+                    timeZone,
+                    TimeZones.parse(timeZone).getRules().getStandardOffset(Instant.EPOCH),
+                    TimeZones.parseLegacy(timeZone).getRules().getStandardOffset(Instant.EPOCH));
+        }
+        Assert.assertEquals(NEW_YORK, TimeZones.parseLegacy("America/New_York"));
+    }
+
+    /**
+     * A name java.util does not know reads as GMT, and nothing says so: a bare offset, a misspelled
+     * region, a region still carrying the quotes the connection grammar puts around it, and nothing
+     * at all. The strict methods read the bare offset as the offset it names and reject the rest.
+     */
+    @Test
+    public void testLegacyReadsWhatItDoesNotKnowAsGMT()
+    {
+        for (String timeZone : new String[] {"+0530", "-0500", "0530", "Europe/Lissabon", "'US/Arizona'", "\"US/Arizona\"", ""})
+        {
+            Assert.assertEquals(timeZone, ZoneId.of("GMT"), TimeZones.parseLegacy(timeZone));
+            Assert.assertEquals(timeZone, "GMT", TimeZones.parseTimeZoneLegacy(timeZone).getID());
+            Assert.assertEquals(timeZone, 0, TimeZones.parseTimeZoneLegacy(timeZone).getRawOffset());
+            Assert.assertEquals(timeZone, 0, rawOffsetMillis(TimeZones.newCalendarLegacy(timeZone)));
+        }
+        Assert.assertEquals(ZoneId.of("+05:30"), TimeZones.parse("+0530"));
+        Assert.assertEquals(ZoneId.of("-05:00"), TimeZones.parse("-0500"));
+        assertUnresolvable("Unknown time zone: 0530", "0530");
+        assertUnresolvable("Unknown time zone: Europe/Lissabon", "Europe/Lissabon");
+        assertUnresolvable("Unknown time zone: 'US/Arizona'", "'US/Arizona'");
+        assertUnresolvable("Unknown time zone: \"US/Arizona\"", "\"US/Arizona\"");
+        assertUnresolvable("Unknown time zone: ", "");
+    }
+
+    /**
+     * No name at all is a caller's mistake rather than a name, so the legacy methods reject it as
+     * the strict ones do, where {@link TimeZone#getTimeZone(String)} would throw a
+     * NullPointerException.
+     */
+    @Test
+    public void testLegacyRejectsNull()
+    {
+        assertThrowsWithMessage("Unknown time zone: null", () -> TimeZones.parseLegacy(null));
+        assertThrowsWithMessage("Unknown time zone: null", () -> TimeZones.parseTimeZoneLegacy(null));
+        assertThrowsWithMessage("Unknown time zone: null", () -> TimeZones.newCalendarLegacy(null));
     }
 
     private static int rawOffsetMillis(Calendar calendar)

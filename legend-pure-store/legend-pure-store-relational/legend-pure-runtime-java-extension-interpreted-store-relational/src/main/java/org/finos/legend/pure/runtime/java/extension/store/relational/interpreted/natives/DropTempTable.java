@@ -28,6 +28,7 @@ import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
@@ -38,11 +39,13 @@ import java.util.Stack;
 public class DropTempTable extends NativeFunction
 {
     private final ModelRepository repository;
+    private final FunctionExecutionInterpreted functionExecution;
     private final Message message;
 
-    public DropTempTable(ModelRepository repository, Message message)
+    public DropTempTable(ModelRepository repository, FunctionExecutionInterpreted functionExecution, Message message)
     {
         this.repository = repository;
+        this.functionExecution = functionExecution;
         this.message = message;
     }
 
@@ -53,7 +56,7 @@ public class DropTempTable extends NativeFunction
         CoreInstance connection = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
         String sqlStr = "drop table " + tableName.getName();
 
-        new ExecuteInDb(this.repository, this.message, 0).executeInDb(connection, sqlStr, 0, 0, functionExpressionCallStack.peek(), functionExpressionCallStack, processorSupport);
+        new ExecuteInDb(this.repository, this.functionExecution, this.message, 0).executeInDb(connection, sqlStr, 0, 0, functionExpressionCallStack.peek(), functionExpressionCallStack, processorSupport);
         executionSupport.unRegisterIdentifiableExecutionEndListener(tableName.getName());
 
         return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.<CoreInstance>with(), true, processorSupport);

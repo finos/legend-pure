@@ -37,9 +37,15 @@ import java.util.TimeZone;
  * reporting the name as unknown. A date read or written in GMT that was meant for another zone is
  * wrong by that zone's offset, and nothing about the result says so.
  *
- * <p>Every method here rejects a name it cannot resolve. A caller wanting a default for an absent
- * name chooses one itself, by naming the zone it means: a name that is present but stands for no
- * zone is an error, not an occasion to guess.
+ * <p>Every method here but the deprecated legacy ones rejects a name it cannot resolve. A caller
+ * wanting a default for an absent name chooses one itself, by naming the zone it means: a name that
+ * is present but stands for no zone is an error, not an occasion to guess.
+ *
+ * <p>{@link #parse(String)}, {@link #parseTimeZone(String)}, and {@link #newCalendar(String)} are
+ * {@link TimeZoneResolution#STRICT}. The deprecated {@link #parseLegacy(String)},
+ * {@link #parseTimeZoneLegacy(String)}, and {@link #newCalendarLegacy(String)} are
+ * {@link TimeZoneResolution#LEGACY}: they resolve through {@link TimeZone#getTimeZone(String)}
+ * instead, and exist only so that legend-engine can keep its old behavior in the Pure it runs.
  */
 public class TimeZones
 {
@@ -124,5 +130,64 @@ public class TimeZones
             return converted;
         }
         return TimeZone.getTimeZone(normalized);
+    }
+
+    /**
+     * Resolve a time zone name the way {@link TimeZone#getTimeZone(String)} does, flaws and all: it
+     * takes an offset only with a {@code GMT} prefix, and answers every name it does not know with
+     * GMT rather than an error. This is {@link TimeZoneResolution#LEGACY}.
+     *
+     * @param timeZone time zone name
+     * @return zone the name stands for, or GMT if java.util does not know the name
+     * @throws IllegalArgumentException if the name is null
+     * @deprecated Use {@link #parseTimeZone(String)}, which reports a name that stands for no zone
+     * rather than reading it as GMT. Retained temporarily, so that legend-engine can keep its old
+     * behavior in the Pure it runs.
+     */
+    @Deprecated
+    public static TimeZone parseTimeZoneLegacy(String timeZone)
+    {
+        if (timeZone == null)
+        {
+            throw new IllegalArgumentException("Unknown time zone: null");
+        }
+        return TimeZone.getTimeZone(timeZone);
+    }
+
+    /**
+     * Resolve a time zone name the way {@link #parseTimeZoneLegacy(String)} does, converted with
+     * {@link TimeZone#toZoneId()} so that arithmetic on the zone is done by java.time rather than by
+     * a {@link Calendar}.
+     *
+     * @param timeZone time zone name
+     * @return zone the name stands for, or GMT if java.util does not know the name
+     * @throws IllegalArgumentException if the name is null
+     * @throws DateTimeException if java.util knows the name but java.time cannot represent it, as
+     *                           with a {@code GMT} offset of more than 18 hours
+     * @deprecated Use {@link #parse(String)}, which reports a name that stands for no zone rather
+     * than reading it as GMT. Retained temporarily, so that legend-engine can keep its old behavior
+     * in the Pure it runs.
+     */
+    @Deprecated
+    public static ZoneId parseLegacy(String timeZone)
+    {
+        return parseTimeZoneLegacy(timeZone).toZoneId();
+    }
+
+    /**
+     * Create a calendar in the zone a time zone name stands for, resolving the name the way
+     * {@link #parseTimeZoneLegacy(String)} does.
+     *
+     * @param timeZone time zone name
+     * @return calendar in the zone the name stands for, or in GMT if java.util does not know the name
+     * @throws IllegalArgumentException if the name is null
+     * @deprecated Use {@link #newCalendar(String)}, which reports a name that stands for no zone
+     * rather than reading it as GMT. Retained temporarily, so that legend-engine can keep its old
+     * behavior in the Pure it runs.
+     */
+    @Deprecated
+    public static Calendar newCalendarLegacy(String timeZone)
+    {
+        return new GregorianCalendar(parseTimeZoneLegacy(timeZone));
     }
 }

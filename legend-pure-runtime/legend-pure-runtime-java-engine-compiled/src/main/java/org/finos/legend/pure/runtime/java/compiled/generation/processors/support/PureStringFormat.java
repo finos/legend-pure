@@ -18,8 +18,12 @@ import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.tools.FormatTools;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFormat;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.exception.PureException;
+import org.finos.legend.pure.m4.tools.time.TimeZoneResolution;
+import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
+import org.finos.legend.pure.runtime.java.shared.time.TimeZoneResolutionOption;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -97,7 +101,7 @@ public class PureStringFormat
                             }
                             else
                             {
-                                ((PureDate) arg).format(builder, formatString.substring(index + 1, dateFormatEnd));
+                                DateFormat.format(builder, formatString, index + 1, dateFormatEnd, (PureDate) arg, getTimeZoneResolution(executionSupport));
                                 index = dateFormatEnd + 1;
                             }
                             break;
@@ -185,5 +189,14 @@ public class PureStringFormat
             throw new PureExecutionException("Unused format args. [" + Iterate.sizeOf(formatArgs) + "] arguments provided to expression \"" + formatString + "\"");
         }
         return builder.toString();
+    }
+
+    /**
+     * How to resolve the time zone a date pattern names: as the runtime's options say, and strictly
+     * where there is no compiled runtime to ask.
+     */
+    private static TimeZoneResolution getTimeZoneResolution(ExecutionSupport executionSupport)
+    {
+        return (executionSupport instanceof CompiledExecutionSupport) ? TimeZoneResolutionOption.getTimeZoneResolution(((CompiledExecutionSupport) executionSupport).getRuntimeOptions()) : TimeZoneResolution.STRICT;
     }
 }

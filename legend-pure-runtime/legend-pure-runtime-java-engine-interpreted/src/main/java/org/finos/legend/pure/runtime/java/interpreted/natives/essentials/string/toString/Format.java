@@ -29,6 +29,7 @@ import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.tools.FormatTools;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFormat;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
@@ -37,6 +38,7 @@ import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
+import org.finos.legend.pure.runtime.java.shared.time.TimeZoneResolutionOption;
 
 import java.util.Stack;
 
@@ -125,7 +127,7 @@ public class Format extends NativeFunction
                             }
                             else
                             {
-                                date.format(builder, formatString.substring(index + 1, dateFormatEnd));
+                                DateFormat.format(builder, formatString, index + 1, dateFormatEnd, date, TimeZoneResolutionOption.getTimeZoneResolution(this.functionExecution.getRuntime().getOptions()));
                                 index = dateFormatEnd + 1;
                             }
                             break;

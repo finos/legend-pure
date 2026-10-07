@@ -29,6 +29,7 @@ import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
@@ -41,9 +42,10 @@ import java.util.Stack;
 
 public class FetchDbColumnsMetadata extends AbstractFetchDbMetadata
 {
-    public FetchDbColumnsMetadata(ModelRepository repository, Message message, int maxRows)
+    public FetchDbColumnsMetadata(ModelRepository repository, FunctionExecutionInterpreted functionExecution, Message message, int maxRows)
     {
         this.repository = repository;
+        this.functionExecution = functionExecution;
         this.message = message;
         this.maxRows = maxRows;
     }

@@ -16,6 +16,7 @@ package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
+import org.finos.legend.pure.m4.tools.time.TimeZoneResolution;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -426,6 +427,41 @@ public class TestDateFormat
         Assert.assertEquals("2014-03-10 21:42:35", format("[+0530]yyyy-MM-dd HH:mm:ss", DATE));
         Assert.assertEquals("2014-03-10 21:42:35.070004235", format("[Asia/Kolkata]yyyy-MM-dd HH:mm:ss.SSSSSS", DATE));
         Assert.assertEquals("2014-03-10 21:42:35", format("[Asia/Kolkata]yyyy-MM-dd HH:mm:ss", DATE));
+    }
+
+    /**
+     * Resolved the legacy way, a zone name is read by {@link java.util.TimeZone#getTimeZone(String)},
+     * which answers every name it does not know with GMT. The date is then not shifted at all, the
+     * offsets say so, and the general notation still writes the name as it was given. A region, and
+     * an offset with a GMT prefix, read the same either way.
+     */
+    @Test
+    public void testFormatWithLegacyTimeZoneResolution()
+    {
+        // a bare offset, a misspelled region, and a region still carrying the grammar's quotes
+        Assert.assertEquals("2014-03-10 21:42:35 +0530", format("[+0530]yyyy-MM-dd HH:mm:ss Z", DATE));
+        Assert.assertEquals("2014-03-10 16:12:35 +0000", formatLegacy("[+0530]yyyy-MM-dd HH:mm:ss Z", DATE));
+        Assert.assertEquals("16:12:35 Z +0530", formatLegacy("[+0530]HH:mm:ss X z", DATE));
+        Assert.assertEquals("2014-03-10 16:12:35 +0000", formatLegacy("[Europe/Lissabon]yyyy-MM-dd HH:mm:ss Z", DATE));
+        Assert.assertEquals("2014-03-10 16:12:35 +0000 'US/Arizona'", formatLegacy("['US/Arizona']yyyy-MM-dd HH:mm:ss Z z", DATE));
+        assertFormatFails("Unknown time zone: Europe/Lissabon", "[Europe/Lissabon]yyyy-MM-dd HH:mm:ss Z", DATE);
+        assertFormatFails("Unknown time zone: 'US/Arizona'", "['US/Arizona']yyyy-MM-dd HH:mm:ss Z", DATE);
+
+        // what java.util knows reads as it always did
+        Assert.assertEquals("2014-03-10 11:12:35.070-0500", formatLegacy("[EST]yyyy-MM-dd HH:mm:ss.SSSZ", DATE));
+        Assert.assertEquals("2014-03-10 12:12:35 -0400", formatLegacy("[America/New_York]yyyy-MM-dd HH:mm:ss Z", DATE));
+        Assert.assertEquals("2014-03-10 09:12:35 -0700", formatLegacy("[US/Arizona]yyyy-MM-dd HH:mm:ss Z", DATE));
+        Assert.assertEquals("2014-03-10 21:42:35 +0530", formatLegacy("[Asia/Kolkata]yyyy-MM-dd HH:mm:ss Z", DATE));
+        Assert.assertEquals("2014-03-10 21:12:35 +0500", formatLegacy("[GMT+5]yyyy-MM-dd HH:mm:ss Z", DATE));
+
+        // a date with no hour is not shifted under either resolution, nor is a date with no zone
+        Assert.assertEquals("2015-08-15 +0530", formatLegacy("[+0530]yyyy-MM-dd z", DateFunctions.newPureDate(2015, 8, 15)));
+        Assert.assertEquals("2014-03-10 16:12:35 +0000", formatLegacy("yyyy-MM-dd HH:mm:ss Z", DATE));
+
+        // the range overload, which is the one the format natives use, takes the resolution too
+        String held = "<[+0530]HH:mm>";
+        Assert.assertEquals("16:12", DateFormat.format(new StringBuilder(), held, 1, held.length() - 1, DATE, TimeZoneResolution.LEGACY).toString());
+        Assert.assertEquals("21:42", DateFormat.format(new StringBuilder(), held, 1, held.length() - 1, DATE, TimeZoneResolution.STRICT).toString());
     }
 
     /**
@@ -909,6 +945,11 @@ public class TestDateFormat
     private static String format(String formatString, PureDate date)
     {
         return DateFormat.format(new StringBuilder(), formatString, date).toString();
+    }
+
+    private static String formatLegacy(String formatString, PureDate date)
+    {
+        return DateFormat.format(new StringBuilder(), formatString, date, TimeZoneResolution.LEGACY).toString();
     }
 
     private static void assertFormatFails(String expectedMessage, String formatString, PureDate date)
