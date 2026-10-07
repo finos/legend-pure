@@ -14,16 +14,8 @@
 
 package org.finos.legend.pure.lsp;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import org.eclipse.collections.api.map.ConcurrentMutableMap;
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionParams;
 import org.eclipse.lsp4j.Command;
@@ -54,14 +46,27 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 public class LegendTextDocumentService implements TextDocumentService
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(LegendTextDocumentService.class);
     private static final long DEBOUNCE_MS = 300;
 
     private final LegendPureLspServer server;
-    private final Map<String, String> openDocuments = new ConcurrentHashMap<>();
-    private final Map<String, ScheduledFuture<?>> pendingCompiles = new ConcurrentHashMap<>();
+    // Both keyed by FileUris.key: documents are looked up by URIs the server derived itself (via
+    // UriMapper.toUri) as well as by the client's, and the two need not be spelled alike
+    private final ConcurrentMutableMap<String, OpenDocument> openDocuments = ConcurrentHashMap.newMap();
+    private final ConcurrentMutableMap<String, ScheduledFuture<?>> pendingCompiles = ConcurrentHashMap.newMap();
     private final ScheduledExecutorService debounceExecutor = Executors.newSingleThreadScheduledExecutor(r ->
     {
         Thread t = new Thread(r, "lsp-compile-debounce");
@@ -83,7 +88,7 @@ public class LegendTextDocumentService implements TextDocumentService
             return;
         }
         String content = params.getTextDocument().getText();
-        this.openDocuments.put(uri, content);
+        this.openDocuments.put(FileUris.key(uri), new OpenDocument(uri, content));
         scheduleCompile(uri, content);
     }
 
@@ -99,7 +104,7 @@ public class LegendTextDocumentService implements TextDocumentService
         if (!changes.isEmpty())
         {
             String content = params.getContentChanges().get(changes.size() - 1).getText();
-            this.openDocuments.put(uri, content);
+            this.openDocuments.put(FileUris.key(uri), new OpenDocument(uri, content));
             scheduleCompile(uri, content);
         }
     }
@@ -108,7 +113,7 @@ public class LegendTextDocumentService implements TextDocumentService
     public void didClose(DidCloseTextDocumentParams params)
     {
         String uri = params.getTextDocument().getUri();
-        this.openDocuments.remove(uri);
+        this.openDocuments.remove(FileUris.key(uri));
         cancelPending(uri);
         this.server.getDiagnosticService().clear(uri);
         LegendPureSession session = this.server.getSession();
@@ -157,7 +162,7 @@ public class LegendTextDocumentService implements TextDocumentService
                 int line = params.getPosition().getLine() + 1;
                 int column = params.getPosition().getCharacter();
 
-                String content = this.openDocuments.get(uri);
+                String content = getOpenDocumentContent(uri);
 
                 String sourceId = this.server.getUriMapper().toSourceId(uri);
                 String resolvedId = session.resolveSourceId(sourceId);
@@ -470,12 +475,12 @@ public class LegendTextDocumentService implements TextDocumentService
                 DEBOUNCE_MS,
                 TimeUnit.MILLISECONDS
         );
-        this.pendingCompiles.put(uri, future);
+        this.pendingCompiles.put(FileUris.key(uri), future);
     }
 
     private void cancelPending(String uri)
     {
-        ScheduledFuture<?> prev = this.pendingCompiles.remove(uri);
+        ScheduledFuture<?> prev = this.pendingCompiles.remove(FileUris.key(uri));
         if (prev != null)
         {
             prev.cancel(false);
@@ -552,25 +557,23 @@ public class LegendTextDocumentService implements TextDocumentService
 
     void compileOpenDocuments()
     {
-        for (Map.Entry<String, String> entry : this.openDocuments.entrySet())
+        this.openDocuments.forEachValue(document ->
         {
-            String uri = entry.getKey();
-            if (uri.startsWith("pure://"))
+            String uri = document.uri;
+            if (!uri.startsWith("pure://"))
             {
-                continue;
+                LspLog.info("Compiling pre-opened document: " + uri);
+                compileAndPublish(uri, document.content);
             }
-            String content = entry.getValue();
-            LspLog.info("Compiling pre-opened document: " + uri);
-            compileAndPublish(uri, content);
-        }
+        });
     }
 
     Map<String, String> getOpenDocumentSourceSnapshot()
     {
-        Map<String, String> snapshot = new java.util.TreeMap<>();
-        for (Map.Entry<String, String> entry : this.openDocuments.entrySet())
+        Map<String, String> snapshot = new TreeMap<>();
+        this.openDocuments.forEachValue(document ->
         {
-            String uri = entry.getKey();
+            String uri = document.uri;
             if (!uri.startsWith("pure://"))
             {
                 // openDocuments is only ever populated via didOpen/didChange, both already gated by
@@ -580,21 +583,22 @@ public class LegendTextDocumentService implements TextDocumentService
                 String sourceId = this.server.getUriMapper().toSourceId(uri);
                 if (sourceId != null)
                 {
-                    snapshot.put(sourceId, entry.getValue());
+                    snapshot.put(sourceId, document.content);
                 }
             }
-        }
+        });
         return snapshot;
     }
 
     boolean hasOpenDocument(String uri)
     {
-        return this.openDocuments.containsKey(uri);
+        return this.openDocuments.containsKey(FileUris.key(uri));
     }
 
     String getOpenDocumentContent(String uri)
     {
-        return this.openDocuments.get(uri);
+        OpenDocument document = this.openDocuments.get(FileUris.key(uri));
+        return (document == null) ? null : document.content;
     }
 
     /**
@@ -604,7 +608,7 @@ public class LegendTextDocumentService implements TextDocumentService
      */
     void removeOpenDocument(String uri)
     {
-        this.openDocuments.remove(uri);
+        this.openDocuments.remove(FileUris.key(uri));
         cancelPending(uri);
         this.server.getDiagnosticService().clear(uri);
     }
@@ -612,5 +616,20 @@ public class LegendTextDocumentService implements TextDocumentService
     void shutdown()
     {
         this.debounceExecutor.shutdownNow();
+    }
+
+    /**
+     * An open document's content, with the URI as the client spelled it.
+     */
+    private static final class OpenDocument
+    {
+        private final String uri;
+        private final String content;
+
+        private OpenDocument(String uri, String content)
+        {
+            this.uri = uri;
+            this.content = content;
+        }
     }
 }

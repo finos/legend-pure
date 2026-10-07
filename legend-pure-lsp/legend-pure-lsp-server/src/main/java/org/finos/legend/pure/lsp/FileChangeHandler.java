@@ -14,18 +14,17 @@
 
 package org.finos.legend.pure.lsp;
 
-import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 import org.eclipse.lsp4j.FileChangeType;
 import org.eclipse.lsp4j.FileEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FileChangeHandler
 {
@@ -77,9 +76,14 @@ public class FileChangeHandler
 
     private static String readFile(String uri)
     {
+        Path path = FileUris.toPath(uri);
+        if (path == null)
+        {
+            LOGGER.warn("Cannot read {}: not a local file URI", uri);
+            return null;
+        }
         try
         {
-            Path path = Paths.get(URI.create(uri));
             return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
         }
         catch (IOException e)

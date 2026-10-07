@@ -14,10 +14,8 @@
 
 package org.finos.legend.pure.lsp;
 
-import java.net.URI;
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import org.eclipse.collections.api.map.ConcurrentMutableMap;
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
@@ -27,6 +25,10 @@ import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 /**
  * Maps between editor URIs and Pure source IDs.
  */
@@ -35,20 +37,22 @@ public class UriMapper
     private static final Logger LOGGER = LoggerFactory.getLogger(UriMapper.class);
     private static final String RESOURCES_MARKER = "/src/main/resources/";
 
-    private final Map<String, String> uriToSourceId = new ConcurrentHashMap<>();
-    private final Map<String, String> sourceIdToUri = new ConcurrentHashMap<>();
+    // Keyed by FileUris.key rather than the URI as spelled, so every spelling of one file shares an entry
+    private final ConcurrentMutableMap<String, String> uriToSourceId = ConcurrentHashMap.newMap();
+    private final ConcurrentMutableMap<String, String> sourceIdToUri = ConcurrentHashMap.newMap();
     private volatile RepositoryScanner repositoryScanner;
     private volatile PureRuntime pureRuntime;
 
     public void register(String uri, String sourceId)
     {
-        this.uriToSourceId.put(uri, sourceId);
+        this.uriToSourceId.put(FileUris.key(uri), sourceId);
         this.sourceIdToUri.put(sourceId, uri);
     }
 
     public String toSourceId(String uri)
     {
-        String cached = this.uriToSourceId.get(uri);
+        String key = FileUris.key(uri);
+        String cached = this.uriToSourceId.get(key);
         if (cached != null)
         {
             return cached;
@@ -58,10 +62,10 @@ public class UriMapper
         if (sourceId == null)
         {
             // Not part of any registered Pure module (see deriveSourceId) - nothing to cache either
-            // direction; ConcurrentHashMap also rejects null values outright.
+            // direction.
             return null;
         }
-        this.uriToSourceId.put(uri, sourceId);
+        this.uriToSourceId.put(key, sourceId);
         this.sourceIdToUri.put(sourceId, uri);
         return sourceId;
     }
@@ -113,7 +117,7 @@ public class UriMapper
             if (fileUri != null)
             {
                 this.sourceIdToUri.put(sourceId, fileUri);
-                this.uriToSourceId.put(fileUri, sourceId);
+                this.uriToSourceId.put(FileUris.key(fileUri), sourceId);
                 return fileUri;
             }
         }
@@ -125,7 +129,7 @@ public class UriMapper
             if (resolved != null)
             {
                 this.sourceIdToUri.put(sourceId, resolved);
-                this.uriToSourceId.put(resolved, sourceId);
+                this.uriToSourceId.put(FileUris.key(resolved), sourceId);
                 return resolved;
             }
         }
@@ -179,7 +183,7 @@ public class UriMapper
                         path = path.substring(repoName.length() + 1);
                     }
                     Path fullPath = root.resolve(path);
-                    if (java.nio.file.Files.exists(fullPath))
+                    if (Files.exists(fullPath))
                     {
                         return fullPath.toUri().toString();
                     }
@@ -206,12 +210,28 @@ public class UriMapper
             return uri.substring("pure://".length());
         }
 
-        String path;
-        try
+        // Two views of the same location: path is '/'-separated, for the string checks below, and
+        // localPath is what the filesystem checks use. They are not interchangeable on Windows, where the
+        // path of file:///D:/repo/x.pure is /D:/repo/x.pure (see FileUris).
+        Path localPath = FileUris.toPathFromUriOrPath(uri);
+        String path = null;
+        if ((localPath != null) && localPath.isAbsolute() && !uri.regionMatches(true, 0, "file:", 0, 5))
         {
-            path = URI.create(uri).getPath();
+            // A local path given as is rather than as a URI
+            path = localPath.toString().replace(localPath.getFileSystem().getSeparator(), "/");
         }
-        catch (Exception e)
+        else
+        {
+            try
+            {
+                path = URI.create(uri).getPath();
+            }
+            catch (Exception ignored)
+            {
+                // Not a URI either: taken as is below
+            }
+        }
+        if (path == null)
         {
             path = uri;
         }
@@ -233,12 +253,11 @@ public class UriMapper
         }
 
         RepositoryScanner scanner = this.repositoryScanner;
-        if (scanner != null)
+        if ((scanner != null) && (localPath != null))
         {
             try
             {
-                java.nio.file.Path filePath = java.nio.file.Paths.get(path);
-                String derived = scanner.deriveSourceIdFromPath(filePath);
+                String derived = scanner.deriveSourceIdFromPath(localPath);
                 if (derived != null)
                 {
                     LspLog.debug("Derived source ID from repo scanner: " + derived);
@@ -279,7 +298,7 @@ public class UriMapper
         // Exception: welcome.pure is the standing go()-scratch convention for this dev loop (see
         // pure-lsp-go/pure-lsp-start skills) - a real repo-root file with no definition.json by design,
         // always meant to be edited and executed as scratch, never a genuine non-Pure fixture.
-        if (scanner != null && !"welcome.pure".equals(filename) && isRealLocalFile(path))
+        if (scanner != null && !"welcome.pure".equals(filename) && isRealLocalFile(localPath))
         {
             LspLog.debug("Local .pure file is not part of any registered Pure module, ignoring: " + path);
             return null;
@@ -289,17 +308,17 @@ public class UriMapper
         return filename;
     }
 
-    private static boolean isRealLocalFile(String path)
+    private static boolean isRealLocalFile(Path path)
     {
-        if (!path.startsWith("/"))
+        if ((path == null) || !path.isAbsolute())
         {
             return false;
         }
         try
         {
-            return java.nio.file.Files.isRegularFile(java.nio.file.Paths.get(path));
+            return Files.isRegularFile(path);
         }
-        catch (Exception e)
+        catch (Exception ignore)
         {
             return false;
         }

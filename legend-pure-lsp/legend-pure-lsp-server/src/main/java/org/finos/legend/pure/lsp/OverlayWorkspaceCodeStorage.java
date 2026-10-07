@@ -14,6 +14,19 @@
 
 package org.finos.legend.pure.lsp;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.collection.MutableCollection;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.ConcurrentMutableMap;
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNodeStatus;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs.FSCodeStorage;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,21 +36,11 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.collection.MutableCollection;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.MutableList;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNodeStatus;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs.FSCodeStorage;
 
 /**
  * In-memory overlay over FSCodeStorage: reads from disk, writes stay in memory.
@@ -55,9 +58,9 @@ public class OverlayWorkspaceCodeStorage extends FSCodeStorage implements Mutabl
     // happens to sit under an otherwise-excluded fixture folder.
     private static final String ENTRY_POINT_FILE_NAME = "welcome.pure";
 
-    private final Map<String, String> contentByPath = new ConcurrentHashMap<>();
-    private final Set<String> deletedPaths = ConcurrentHashMap.newKeySet();
-    private final Set<String> createdFolders = ConcurrentHashMap.newKeySet();
+    private final ConcurrentMutableMap<String, String> contentByPath = ConcurrentHashMap.newMap();
+    private final Set<String> deletedPaths = Collections.newSetFromMap(ConcurrentHashMap.newMap());
+    private final Set<String> createdFolders = Collections.newSetFromMap(ConcurrentHashMap.newMap());
 
     public OverlayWorkspaceCodeStorage(CodeRepository repository, Path root)
     {

@@ -14,6 +14,45 @@
 
 package org.finos.legend.pure.lsp;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.ConcurrentMutableMap;
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
+import org.finos.legend.pure.lsp.mutation.SourceMutationService;
+import org.finos.legend.pure.lsp.protocol.ExecuteTestsParams;
+import org.finos.legend.pure.lsp.protocol.ExecuteTestsResult;
+import org.finos.legend.pure.lsp.protocol.LegendLanguageClient;
+import org.finos.legend.pure.lsp.protocol.LockContentionEvent;
+import org.finos.legend.pure.lsp.protocol.PCTAdapterInfo;
+import org.finos.legend.pure.lsp.protocol.TestEvent;
+import org.finos.legend.pure.lsp.protocol.TestEventKind;
+import org.finos.legend.pure.lsp.protocol.TestInvocation;
+import org.finos.legend.pure.lsp.protocol.TestResult;
+import org.finos.legend.pure.lsp.protocol.TestStatus;
+import org.finos.legend.pure.m3.execution.Console;
+import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.execution.test.TestTools;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
+import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.pct.shared.PCTTools;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
+import org.finos.legend.pure.m3.serialization.runtime.Message;
+import org.finos.legend.pure.m3.serialization.runtime.MutableRuntimeOptions;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
+import org.finos.legend.pure.m3.serialization.runtime.RuntimeOptions;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.finos.legend.pure.runtime.java.mixed.LegendCompileMixedProcessorSupport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -29,42 +68,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.MutableList;
-import org.finos.legend.pure.lsp.mutation.SourceMutationService;
-import org.finos.legend.pure.lsp.protocol.ExecuteTestsParams;
-import org.finos.legend.pure.lsp.protocol.ExecuteTestsResult;
-import org.finos.legend.pure.lsp.protocol.LegendLanguageClient;
-import org.finos.legend.pure.lsp.protocol.LockContentionEvent;
-import org.finos.legend.pure.lsp.protocol.PCTAdapterInfo;
-import org.finos.legend.pure.lsp.protocol.TestEvent;
-import org.finos.legend.pure.lsp.protocol.TestEventKind;
-import org.finos.legend.pure.lsp.protocol.TestInvocation;
-import org.finos.legend.pure.lsp.protocol.TestResult;
-import org.finos.legend.pure.lsp.protocol.TestStatus;
-import org.finos.legend.pure.m3.execution.Console;
-import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m3.execution.test.TestTools;
-import org.finos.legend.pure.m3.pct.shared.PCTTools;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
-import org.finos.legend.pure.m3.navigation._package._Package;
-import org.finos.legend.pure.m3.serialization.runtime.Message;
-import org.finos.legend.pure.m3.serialization.runtime.MutableRuntimeOptions;
-import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
-import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
-import org.finos.legend.pure.m3.serialization.runtime.RuntimeOptions;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.finos.legend.pure.runtime.java.mixed.LegendCompileMixedProcessorSupport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class LegendPureSession
 {
@@ -89,8 +92,7 @@ public class LegendPureSession
 
     // In-flight legend/executeTests runs, keyed by runId, so legend/cancelTests and a client
     // disconnect can reach them.
-    private final java.util.concurrent.ConcurrentMap<String, RunContext> activeRuns =
-            new java.util.concurrent.ConcurrentHashMap<>();
+    private final ConcurrentMutableMap<String, RunContext> activeRuns = ConcurrentHashMap.newMap();
 
     // Readers-writers lock protecting the compiled graph. Graph MUTATION (compile/reinitialize) is a
     // WRITER (exclusive); function EXECUTION is a READER (concurrent with other executions). This is
@@ -1426,7 +1428,7 @@ public class LegendPureSession
                 runtime.getModelRepository().newTransaction(false);
         try (org.finos.legend.pure.m4.transaction.framework.ThreadLocalTransactionContext ignore = txn.openInCurrentThread())
         {
-            console.setPrintStream(new PrintStream(baos, true));
+            console.setPrintStream(Utf8PrintStreams.create(baos));
             console.setConsole(true);
             try
             {
@@ -1490,11 +1492,9 @@ public class LegendPureSession
         // test be interrupted immediately via cancelExecution(), since the interpreter never polls
         // Thread.interrupted() and shutdownNow() would just drain the queue, not the current test.
         private final AtomicBoolean cancelled = new AtomicBoolean(false);
-        private final Set<FunctionExecutionInterpreted> inFlight =
-                java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
+        private final Set<FunctionExecutionInterpreted> inFlight = Collections.newSetFromMap(ConcurrentHashMap.newMap());
 
-        private final Set<TestDiscovery.Invocation> finished =
-                java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
+        private final Set<TestDiscovery.Invocation> finished = Collections.newSetFromMap(ConcurrentHashMap.newMap());
 
         RunContext(PureRuntime runtime, ProcessorSupport processorSupport, String runId, CoreInstance adapter,
                    String adapterPath, boolean parallel, java.util.concurrent.ExecutorService pool)
@@ -1797,7 +1797,7 @@ public class LegendPureSession
                     runtime.getModelRepository().newTransaction(false);
             try (org.finos.legend.pure.m4.transaction.framework.ThreadLocalTransactionContext ignore = txn.openInCurrentThread())
             {
-                PrintStream capturePrintStream = new PrintStream(baos, true);
+                PrintStream capturePrintStream = Utf8PrintStreams.create(baos);
                 console.setPrintStream(capturePrintStream);
                 console.setConsole(true);
 

@@ -14,17 +14,13 @@
 
 package org.finos.legend.pure.lsp.diagnostics;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.map.ConcurrentMutableMap;
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
+import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
@@ -34,6 +30,7 @@ import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
+import org.finos.legend.pure.lsp.FileUris;
 import org.finos.legend.pure.lsp.LegendPureSession;
 import org.finos.legend.pure.lsp.SourceInfoUtil;
 import org.finos.legend.pure.lsp.UriMapper;
@@ -51,6 +48,13 @@ import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 public class DiagnosticService
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiagnosticService.class);
@@ -58,7 +62,8 @@ public class DiagnosticService
 
     private final LanguageClient client;
     private final UriMapper uriMapper;
-    private final Map<String, List<Either<org.eclipse.lsp4j.Command, CodeAction>>> codeActionsByUri = new ConcurrentHashMap<>();
+    // Keyed by FileUris.key: stored under the URI an error resolves to, looked up by the client's URI
+    private final ConcurrentMutableMap<String, List<Either<Command, CodeAction>>> codeActionsByUri = ConcurrentHashMap.newMap();
 
     public DiagnosticService(LanguageClient client, UriMapper uriMapper)
     {
@@ -107,7 +112,7 @@ public class DiagnosticService
             errorUri = fallbackUri;
         }
         List<Diagnostic> diagnostics = fromException(e);
-        this.codeActionsByUri.put(errorUri, quickFixes(e, diagnostics, session, errorUri));
+        this.codeActionsByUri.put(FileUris.key(errorUri), quickFixes(e, diagnostics, session, errorUri));
         publish(errorUri, diagnostics);
     }
 
@@ -121,21 +126,21 @@ public class DiagnosticService
 
     public void clear(String uri)
     {
-        this.codeActionsByUri.remove(uri);
+        this.codeActionsByUri.remove(FileUris.key(uri));
         if (this.client != null)
         {
             this.client.publishDiagnostics(new PublishDiagnosticsParams(uri, Collections.emptyList()));
         }
     }
 
-    public List<Either<org.eclipse.lsp4j.Command, CodeAction>> codeActions(String uri)
+    public List<Either<Command, CodeAction>> codeActions(String uri)
     {
-        return this.codeActionsByUri.getOrDefault(uri, Collections.emptyList());
+        return this.codeActionsByUri.getOrDefault(FileUris.key(uri), Collections.emptyList());
     }
 
-    public List<Either<org.eclipse.lsp4j.Command, CodeAction>> codeActions(String uri, List<Diagnostic> diagnostics)
+    public List<Either<Command, CodeAction>> codeActions(String uri, List<Diagnostic> diagnostics)
     {
-        List<Either<org.eclipse.lsp4j.Command, CodeAction>> cached = codeActions(uri);
+        List<Either<Command, CodeAction>> cached = codeActions(uri);
         if (!cached.isEmpty() || diagnostics == null || diagnostics.isEmpty())
         {
             return cached;
@@ -149,8 +154,8 @@ public class DiagnosticService
         return toCodeActionsForUri(imports, uri, 1, diagnostics);
     }
 
-    private List<Either<org.eclipse.lsp4j.Command, CodeAction>> quickFixes(Exception e, List<Diagnostic> diagnostics,
-                                                                           LegendPureSession session, String targetUri)
+    private List<Either<Command, CodeAction>> quickFixes(Exception e, List<Diagnostic> diagnostics,
+                                                         LegendPureSession session, String targetUri)
     {
         if (session == null || !session.isInitialized())
         {
@@ -178,10 +183,10 @@ public class DiagnosticService
         return Collections.emptyList();
     }
 
-    private List<Either<org.eclipse.lsp4j.Command, CodeAction>> unresolvedIdentifierFixes(PureUnresolvedIdentifierException exception,
-                                                                                          List<Diagnostic> diagnostics,
-                                                                                          LegendPureSession session,
-                                                                                          String targetUri)
+    private List<Either<Command, CodeAction>> unresolvedIdentifierFixes(PureUnresolvedIdentifierException exception,
+                                                                        List<Diagnostic> diagnostics,
+                                                                        LegendPureSession session,
+                                                                        String targetUri)
     {
         PureRuntime runtime = session.getPureRuntime();
         RichIterable<CoreInstance> candidates = exception.getImportCandidates(runtime.getCodeStorage().getAllRepositories());
@@ -215,10 +220,10 @@ public class DiagnosticService
         return toCodeActions(imports, target, insertionLine, diagnostics, session, targetUri);
     }
 
-    private List<Either<org.eclipse.lsp4j.Command, CodeAction>> unmatchedFunctionFixes(PureUnmatchedFunctionException exception,
-                                                                                       List<Diagnostic> diagnostics,
-                                                                                       LegendPureSession session,
-                                                                                       String targetUri)
+    private List<Either<Command, CodeAction>> unmatchedFunctionFixes(PureUnmatchedFunctionException exception,
+                                                                     List<Diagnostic> diagnostics,
+                                                                     LegendPureSession session,
+                                                                     String targetUri)
     {
         PureRuntime runtime = session.getPureRuntime();
         List<ImportCandidate> imports = new ArrayList<>();
@@ -296,12 +301,12 @@ public class DiagnosticService
         }
     }
 
-    private List<Either<org.eclipse.lsp4j.Command, CodeAction>> toCodeActions(List<ImportCandidate> imports,
-                                                                               SourceInformation target,
-                                                                               int insertionLine,
-                                                                               List<Diagnostic> diagnostics,
-                                                                               LegendPureSession session,
-                                                                               String targetUri)
+    private List<Either<Command, CodeAction>> toCodeActions(List<ImportCandidate> imports,
+                                                            SourceInformation target,
+                                                            int insertionLine,
+                                                            List<Diagnostic> diagnostics,
+                                                            LegendPureSession session,
+                                                            String targetUri)
     {
         if (target == null || target.getSourceId() == null || imports.isEmpty())
         {
@@ -333,9 +338,9 @@ public class DiagnosticService
         return toCodeActionsForUri(new ArrayList<>(uniqueImports.values()), uri, insertionLine, diagnostics);
     }
 
-    private List<Either<org.eclipse.lsp4j.Command, CodeAction>> toCodeActionsForUri(List<ImportCandidate> imports, String uri,
-                                                                                     int insertionLine,
-                                                                                     List<Diagnostic> diagnostics)
+    private List<Either<Command, CodeAction>> toCodeActionsForUri(List<ImportCandidate> imports, String uri,
+                                                                  int insertionLine,
+                                                                  List<Diagnostic> diagnostics)
     {
         if (uri == null || uri.startsWith("pure://") || imports.isEmpty())
         {
@@ -349,7 +354,7 @@ public class DiagnosticService
             uniqueImports.putIfAbsent(candidate.importStatement, candidate);
         }
 
-        List<Either<org.eclipse.lsp4j.Command, CodeAction>> actions = new ArrayList<>();
+        List<Either<Command, CodeAction>> actions = new ArrayList<>();
         Position position = new Position(Math.max(insertionLine - 1, 0), 0);
         Range range = new Range(position, position);
         for (ImportCandidate candidate : uniqueImports.values())

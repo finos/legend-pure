@@ -14,6 +14,21 @@
 
 package org.finos.legend.pure.lsp;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.ConcurrentMutableMap;
+import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.empty.EmptyCodeStorage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.FileVisitResult;
@@ -24,39 +39,20 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.set.MutableSet;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.empty.EmptyCodeStorage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class RepositoryScanner
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(RepositoryScanner.class);
     private static final String RESOURCES_MARKER = "src/main/resources";
 
-    private final Map<String, Path> repoToResourcesRoot = new ConcurrentHashMap<>();
-    private final Map<String, Path> repoToDefinitionFile = new ConcurrentHashMap<>();
+    private final ConcurrentMutableMap<String, Path> repoToResourcesRoot = ConcurrentHashMap.newMap();
+    private final ConcurrentMutableMap<String, Path> repoToDefinitionFile = ConcurrentHashMap.newMap();
 
     public void scan(Iterable<Path> workspaceRoots)
     {
-        for (Path root : workspaceRoots)
-        {
-            scanRoot(root);
-        }
+        workspaceRoots.forEach(this::scanRoot);
         LOGGER.info("Repository scan complete: {} repositories mapped", this.repoToResourcesRoot.size());
-        for (Map.Entry<String, Path> entry : this.repoToResourcesRoot.entrySet())
-        {
-            LOGGER.info("  {} -> {}", entry.getKey(), entry.getValue());
-        }
+        this.repoToResourcesRoot.forEachKeyValue((key, value) -> LOGGER.info("  {} -> {}", key, value));
     }
 
     public void scanRoot(Path root)
@@ -110,7 +106,8 @@ public class RepositoryScanner
     private void processDefinitionFile(Path file)
     {
         Path parent = file.getParent();
-        if (parent == null || !parent.toString().contains(RESOURCES_MARKER))
+        // The marker is written with '/', which is not the separator in the path's string form on Windows
+        if (parent == null || !parent.toString().replace(parent.getFileSystem().getSeparator(), "/").contains(RESOURCES_MARKER))
         {
             return;
         }

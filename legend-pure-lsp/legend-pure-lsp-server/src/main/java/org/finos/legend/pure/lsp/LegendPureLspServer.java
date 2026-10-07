@@ -14,27 +14,6 @@
 
 package org.finos.legend.pure.lsp;
 
-import java.io.PrintStream;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URI;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -58,24 +37,25 @@ import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
-import org.finos.legend.pure.lsp.diagnostics.DiagnosticService;
 import org.finos.legend.pure.lsp.debug.DebugService;
 import org.finos.legend.pure.lsp.debug.LegendDebugSocketServer;
+import org.finos.legend.pure.lsp.diagnostics.DiagnosticService;
 import org.finos.legend.pure.lsp.mutation.SourceMutationService;
+import org.finos.legend.pure.lsp.protocol.CancelTestsParams;
+import org.finos.legend.pure.lsp.protocol.CancelTestsResult;
 import org.finos.legend.pure.lsp.protocol.CheckBatchParams;
 import org.finos.legend.pure.lsp.protocol.CheckBatchResult;
 import org.finos.legend.pure.lsp.protocol.DapEndpoint;
+import org.finos.legend.pure.lsp.protocol.DeleteFileParams;
+import org.finos.legend.pure.lsp.protocol.DeleteFileResult;
 import org.finos.legend.pure.lsp.protocol.ExecuteFunctionParams;
 import org.finos.legend.pure.lsp.protocol.ExecuteGoParams;
-import org.finos.legend.pure.lsp.protocol.CancelTestsParams;
-import org.finos.legend.pure.lsp.protocol.CancelTestsResult;
 import org.finos.legend.pure.lsp.protocol.ExecuteGoResult;
 import org.finos.legend.pure.lsp.protocol.ExecuteTestsParams;
 import org.finos.legend.pure.lsp.protocol.ExecuteTestsResult;
 import org.finos.legend.pure.lsp.protocol.FileEntry;
+import org.finos.legend.pure.lsp.protocol.GetSetupTeardownParams;
 import org.finos.legend.pure.lsp.protocol.LegendDebug;
-import org.finos.legend.pure.lsp.protocol.DeleteFileParams;
-import org.finos.legend.pure.lsp.protocol.DeleteFileResult;
 import org.finos.legend.pure.lsp.protocol.LegendLanguageClient;
 import org.finos.legend.pure.lsp.protocol.LogErrorEntry;
 import org.finos.legend.pure.lsp.protocol.LspStatus;
@@ -84,16 +64,41 @@ import org.finos.legend.pure.lsp.protocol.ResolveSourceUriParams;
 import org.finos.legend.pure.lsp.protocol.ResolveSourceUriResult;
 import org.finos.legend.pure.lsp.protocol.SetOptionParams;
 import org.finos.legend.pure.lsp.protocol.SetOptionResult;
+import org.finos.legend.pure.lsp.protocol.SetupTeardownInfo;
 import org.finos.legend.pure.lsp.protocol.SyncWorkspaceParams;
 import org.finos.legend.pure.lsp.protocol.SyncWorkspaceResult;
-import org.finos.legend.pure.lsp.protocol.GetSetupTeardownParams;
-import org.finos.legend.pure.lsp.protocol.SetupTeardownInfo;
 import org.finos.legend.pure.lsp.protocol.TestFunctionInfo;
 import org.finos.legend.pure.lsp.protocol.TestFunctionsParams;
 import org.finos.legend.pure.lsp.runtime.PureRuntimeManager;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.BufferedOutputStream;
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.CodeSource;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 public class LegendPureLspServer implements LanguageServer, LanguageClientAware
 {
@@ -897,7 +902,7 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
             }
 
             String raw = params.getUri().trim();
-            String uri = raw.startsWith("file://") ? raw : ("file://" + raw);
+            String uri = toDeleteFileUri(raw);
 
             // Drop it from the open-document set first so a subsequent compile does not re-add it.
             this.textDocumentService.removeOpenDocument(uri);
@@ -1193,6 +1198,21 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
         return roots;
     }
 
+    /**
+     * legend/deleteFile accepts a file URI, a local path, or a sourceId. A local path is converted to its
+     * URI (prefixing it with "file://" yields nonsense for a Windows path); a sourceId is spelled as the
+     * path of a file URI, which UriMapper recognizes.
+     */
+    private static String toDeleteFileUri(String raw)
+    {
+        if (raw.regionMatches(true, 0, "file:", 0, 5))
+        {
+            return raw;
+        }
+        Path path = FileUris.toPathFromUriOrPath(raw);
+        return ((path != null) && path.isAbsolute()) ? path.toUri().toString() : ("file://" + raw);
+    }
+
     private static Path uriToPath(String uri)
     {
         if (uri == null || uri.isEmpty())
@@ -1298,13 +1318,13 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
     public static void main(String[] args) throws Exception
     {
         PrintStream originalOut = new PrintStream(
-                new java.io.BufferedOutputStream(new java.io.FileOutputStream(java.io.FileDescriptor.out)), true);
-        PrintStream stderrOut = new PrintStream(
-                new java.io.BufferedOutputStream(new java.io.FileOutputStream(java.io.FileDescriptor.err)), true);
+                new BufferedOutputStream(new FileOutputStream(FileDescriptor.out)), true);
+        PrintStream stderrOut = Utf8PrintStreams.create(
+                new BufferedOutputStream(new FileOutputStream(FileDescriptor.err)));
         System.setOut(stderrOut);
         System.setErr(stderrOut);
 
-        java.security.CodeSource codeSource = LegendPureLspServer.class.getProtectionDomain().getCodeSource();
+        CodeSource codeSource = LegendPureLspServer.class.getProtectionDomain().getCodeSource();
         String jarLocation = codeSource != null ? codeSource.getLocation().toString() : "unknown";
         System.err.println("[LSP] Running from: " + jarLocation);
 

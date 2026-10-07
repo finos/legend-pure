@@ -22,6 +22,7 @@ import com.google.gson.JsonObject;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.SymbolInformation;
+import org.finos.legend.pure.lsp.FileUris;
 import org.finos.legend.pure.lsp.LegendPureSession;
 import org.finos.legend.pure.lsp.PackageChildInfo;
 import org.finos.legend.pure.lsp.PackageTreeProvider;
@@ -658,7 +659,8 @@ public final class PureTools
     private static String formatLspLocation(Location location)
     {
         String uri = location.getUri();
-        String where = uri.startsWith("file://") ? uri.substring("file://".length()) : uri;
+        Path path = FileUris.toPath(uri);
+        String where = (path == null) ? uri : path.toString();
         return where + ":" + (location.getRange().getStart().getLine() + 1)
                 + ":" + (location.getRange().getStart().getCharacter() + 1);
     }
