@@ -1600,4 +1600,3 @@ Mapping my::FirmMapping
 [Complete Example](legend-grammar-reference.md#7-putting-it-together--a-complete-example) ·
 [Compiler Pipeline](../architecture/compiler-pipeline.md) ·
 [Contributor Workflow — Adding a new DSL](../guides/contributor-workflow.md)*
-
