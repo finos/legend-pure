@@ -30,7 +30,6 @@ import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.m4.tools.time.TimeZones;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.DefendedFunction;
@@ -47,6 +46,7 @@ import org.finos.legend.pure.runtime.java.extension.store.relational.shared.Pure
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.SQLExceptionHandler;
 import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionEndListenerState;
 import org.finos.legend.pure.runtime.java.shared.listeners.IdentifiableExecutionEndListener;
+import org.finos.legend.pure.runtime.java.shared.time.TimeZoneResolutionOption;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -142,7 +142,7 @@ public class RelationalGen
             int rowCount = 0;
             MutableList<Root_meta_relational_metamodel_execute_Row> rows = Lists.mutable.of();
             ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSetMetaData);
-            Calendar calendar = TimeZones.newCalendar(tz);
+            Calendar calendar = TimeZoneResolutionOption.getTimeZoneResolution(((CompiledExecutionSupport) es).getRuntimeOptions()).newCalendar(tz);
             while (rs.next())
             {
                 rowCount++;

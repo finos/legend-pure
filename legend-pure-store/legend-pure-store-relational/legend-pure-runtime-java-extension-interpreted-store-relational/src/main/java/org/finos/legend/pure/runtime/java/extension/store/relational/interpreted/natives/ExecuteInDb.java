@@ -32,6 +32,7 @@ import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
+import org.finos.legend.pure.m3.serialization.runtime.RuntimeOptions;
 import org.finos.legend.pure.m3.tools.BinaryUtils;
 import org.finos.legend.pure.m3.tools.MetricsRecorder;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -39,17 +40,19 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
-import org.finos.legend.pure.m4.tools.time.TimeZones;
+import org.finos.legend.pure.m4.tools.time.TimeZoneResolution;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.ConnectionWithDataSourceInfo;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.IConnectionManagerHandler;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.LoadToDbTableHelper;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.PureConnectionUtils;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.SQLExceptionHandler;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
+import org.finos.legend.pure.runtime.java.shared.time.TimeZoneResolutionOption;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -112,10 +115,12 @@ public class ExecuteInDb extends NativeFunction
     private final ModelRepository repository;
     private final Message message;
     private final int maxRows;
+    private final FunctionExecutionInterpreted functionExecution;
 
-    public ExecuteInDb(ModelRepository repository, Message message, int maxRows)
+    public ExecuteInDb(ModelRepository repository, FunctionExecutionInterpreted functionExecution, Message message, int maxRows)
     {
         this.repository = repository;
+        this.functionExecution = functionExecution;
         this.message = message;
         this.maxRows = Math.max(maxRows, 0);
     }
@@ -195,7 +200,7 @@ public class ExecuteInDb extends NativeFunction
 
                     ResultSet rs = statement.getResultSet();
 
-                    createPureResultSetFromDatabaseResultSet(pureResult, rs, functionExpression, rowClassifier, tz, repository, start, this.maxRows, processorSupport);
+                    createPureResultSetFromDatabaseResultSet(pureResult, rs, functionExpression, rowClassifier, tz, TimeZoneResolutionOption.getTimeZoneResolution(this.functionExecution.getRuntime().getOptions()), repository, start, this.maxRows, processorSupport);
                 }
                 else
                 {
@@ -258,6 +263,12 @@ public class ExecuteInDb extends NativeFunction
     public static void createPureResultSetFromDatabaseResultSet(CoreInstance pureResult, ResultSet rs, CoreInstance functionExpression, CoreInstance rowClassifier, String tz, ModelRepository repository,
                                                                 long start, int maxRows, ProcessorSupport processorSupport) throws SQLException
     {
+        createPureResultSetFromDatabaseResultSet(pureResult, rs, functionExpression, rowClassifier, tz, TimeZoneResolutionOption.getTimeZoneResolution(RuntimeOptions.defaultOptions()), repository, start, maxRows, processorSupport);
+    }
+
+    public static void createPureResultSetFromDatabaseResultSet(CoreInstance pureResult, ResultSet rs, CoreInstance functionExpression, CoreInstance rowClassifier, String tz, TimeZoneResolution timeZoneResolution,
+                                                                ModelRepository repository, long start, int maxRows, ProcessorSupport processorSupport) throws SQLException
+    {
         ResultSetMetaData metaData = rs.getMetaData();
         MutableList<String> columnNames = Lists.mutable.empty();
         MutableList<CoreInstance> columnPureTypes = Lists.mutable.empty();
@@ -277,8 +288,8 @@ public class ExecuteInDb extends NativeFunction
             Instance.addValueToProperty(pureResult, "executionTimeInNanoSecond", repository.newIntegerCoreInstance(System.nanoTime() - start), processorSupport);
             MutableList<CoreInstance> rows = Lists.mutable.ofInitialCapacity(maxRows);
             int rowNum = 0;
-            Calendar calendar = TimeZones.newCalendar(tz);
-            ZoneId zone = calendar.getTimeZone().toZoneId();
+            ZoneId zone = timeZoneResolution.parse(tz);
+            Calendar calendar = null;
             // A date column carries a day and no zone, so ask the driver for the day itself; a
             // driver that will not give one is asked once rather than once a row. The date
             // handler in ResultSetValueHandlers says why at greater length.
@@ -351,6 +362,10 @@ public class ExecuteInDb extends NativeFunction
                             }
                             if (!readsLocalDateTime)
                             {
+                                if (calendar == null)
+                                {
+                                    calendar = timeZoneResolution.newCalendar(tz);
+                                }
                                 java.sql.Timestamp timestamp = rs.getTimestamp(i, calendar);
                                 if (timestamp != null)
                                 {
@@ -384,6 +399,10 @@ public class ExecuteInDb extends NativeFunction
                             }
                             if (!readsOffsetDateTime)
                             {
+                                if (calendar == null)
+                                {
+                                    calendar = timeZoneResolution.newCalendar(tz);
+                                }
                                 java.sql.Timestamp timestamp = rs.getTimestamp(i, calendar);
                                 if (timestamp != null)
                                 {

@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
 import org.finos.legend.pure.m4.tools.SafeAppendable;
+import org.finos.legend.pure.m4.tools.time.TimeZoneResolution;
 import org.finos.legend.pure.m4.tools.time.TimeZones;
 
 import java.time.ZoneId;
@@ -53,6 +54,11 @@ import java.util.function.ToIntFunction;
  * <p>{@link #pattern()} goes the other way, writing the format string a pattern stands for. Every
  * pattern {@link #parse} produces writes a string {@code parse} takes back, and reading that back
  * gives an equal pattern.
+ *
+ * <p>A time zone name is resolved when the pattern is built, {@link TimeZoneResolution#STRICT
+ * strictly} unless {@link TimeZoneResolution#LEGACY} is asked for. Two patterns are equal only if
+ * they name the same zone and resolved it to the same zone, since a name the legacy resolution
+ * does not know reads as GMT there and as an error or another zone strictly.
  *
  * <p>A pattern is immutable and holds nothing across renderings, so one may be built once and used
  * from any number of threads.
@@ -184,13 +190,13 @@ public final class DateFormatPattern
             return false;
         }
         DateFormatPattern that = (DateFormatPattern) other;
-        return Arrays.equals(this.elements, that.elements) && Objects.equals(this.timeZoneId, that.timeZoneId);
+        return Arrays.equals(this.elements, that.elements) && Objects.equals(this.timeZoneId, that.timeZoneId) && Objects.equals(this.timeZone, that.timeZone);
     }
 
     @Override
     public int hashCode()
     {
-        return (31 * Arrays.hashCode(this.elements)) + Objects.hash(this.timeZoneId);
+        return (31 * Arrays.hashCode(this.elements)) + Objects.hash(this.timeZoneId, this.timeZone);
     }
 
     @Override
@@ -252,7 +258,42 @@ public final class DateFormatPattern
      */
     public static DateFormatPattern parse(String formatString, int start, int end)
     {
-        return new Parser(formatString, start, end).parse();
+        return parse(formatString, start, end, TimeZoneResolution.STRICT);
+    }
+
+    /**
+     * Parse a format string into a pattern, resolving the time zone it names in the given way.
+     *
+     * @param formatString       format string
+     * @param timeZoneResolution how to resolve the time zone the format string names
+     * @return pattern
+     * @throws IllegalArgumentException if the format string is malformed, names a time zone that
+     *                                  cannot be resolved, or sets a time zone anywhere but at the
+     *                                  start
+     * @see TimeZoneResolution
+     */
+    public static DateFormatPattern parse(String formatString, TimeZoneResolution timeZoneResolution)
+    {
+        return parse(formatString, 0, formatString.length(), timeZoneResolution);
+    }
+
+    /**
+     * Parse a portion of a string into a pattern, resolving the time zone it names in the given
+     * way.
+     *
+     * @param formatString       string holding the format string
+     * @param start              start index of the format string (inclusive)
+     * @param end                end index of the format string (exclusive)
+     * @param timeZoneResolution how to resolve the time zone the format string names
+     * @return pattern
+     * @throws IllegalArgumentException if the format string is malformed, names a time zone that
+     *                                  cannot be resolved, or sets a time zone anywhere but at the
+     *                                  start
+     * @see TimeZoneResolution
+     */
+    public static DateFormatPattern parse(String formatString, int start, int end, TimeZoneResolution timeZoneResolution)
+    {
+        return new Parser(formatString, start, end, timeZoneResolution).parse();
     }
 
     /**
@@ -1093,6 +1134,7 @@ public final class DateFormatPattern
         private SubsecondBuilder openSubsecond;
         private String timeZoneId;
         private ZoneId timeZone;
+        private TimeZoneResolution timeZoneResolution = TimeZoneResolution.STRICT;
 
         private Builder()
         {
@@ -1106,7 +1148,7 @@ public final class DateFormatPattern
          * such as {@code America/New_York}, one of the three letter abbreviations such as
          * {@code EST}, or an offset such as {@code GMT+5} - and the name as given here is what
          * {@link #timeZoneName} writes. Naming a zone twice keeps the second, and the name is
-         * resolved when the pattern is built.
+         * resolved when the pattern is built, in the way {@link #timeZoneResolution} says.
          *
          * @param timeZoneId time zone name
          * @return this builder
@@ -1145,6 +1187,20 @@ public final class DateFormatPattern
                 this.timeZone = timeZone;
                 this.timeZoneId = timeZone.getId();
             }
+            return this;
+        }
+
+        /**
+         * Resolve a time zone named by {@link #timeZone(String)} in the given way when the pattern
+         * is built, rather than {@link TimeZoneResolution#STRICT strictly}. A zone given as a
+         * {@link ZoneId} is already resolved, and this has no bearing on it.
+         *
+         * @param timeZoneResolution how to resolve a time zone name
+         * @return this builder
+         */
+        public Builder timeZoneResolution(TimeZoneResolution timeZoneResolution)
+        {
+            this.timeZoneResolution = Objects.requireNonNull(timeZoneResolution, "time zone resolution may not be null");
             return this;
         }
 
@@ -1451,11 +1507,9 @@ public final class DateFormatPattern
                 throw new IllegalStateException("An optional section is still open: call endOptional() before anything else");
             }
             flushLiteral();
-            if ((this.timeZoneId != null) && (this.timeZone == null))
-            {
-                this.timeZone = TimeZones.parse(this.timeZoneId);
-            }
-            return new DateFormatPattern(this.elements.toArray(new Element[0]), this.timeZone, this.timeZoneId);
+            // Resolved here rather than kept, so that a name is always resolved as the builder now says
+            ZoneId zone = ((this.timeZoneId != null) && (this.timeZone == null)) ? this.timeZoneResolution.parse(this.timeZoneId) : this.timeZone;
+            return new DateFormatPattern(this.elements.toArray(new Element[0]), zone, this.timeZoneId);
         }
 
         private Builder component(Component component, int minDigits)
@@ -1816,12 +1870,13 @@ public final class DateFormatPattern
         private int index;
         private int sectionDepth;
 
-        Parser(String formatString, int start, int end)
+        Parser(String formatString, int start, int end, TimeZoneResolution timeZoneResolution)
         {
             this.formatString = formatString;
             this.start = start;
             this.end = end;
             this.index = start;
+            this.builder.timeZoneResolution(timeZoneResolution);
         }
 
         DateFormatPattern parse()

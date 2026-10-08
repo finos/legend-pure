@@ -16,6 +16,7 @@ package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 import org.finos.legend.pure.m4.tools.TextTools;
+import org.finos.legend.pure.m4.tools.time.TimeZoneResolution;
 
 import java.io.IOException;
 import java.time.ZoneId;
@@ -145,7 +146,9 @@ public class DateFormat
      * accepts against {@link ZoneId#SHORT_IDS} - a region such as {@code America/New_York}, one of
      * the three letter abbreviations such as {@code EST}, or an offset such as {@code GMT+5} or
      * {@code +05:30} - and a name it does not accept is an error rather than a silent fall back to
-     * UTC.
+     * UTC. That is {@link TimeZoneResolution#STRICT strict} resolution, which is what this method
+     * and every format string in Pure use; the overloads taking a {@link TimeZoneResolution} may ask
+     * for the {@link TimeZoneResolution#LEGACY legacy} one instead.
      *
      * <p>A Pure date is always understood as UTC, so a zone shifts the date to the instant it
      * stands for as that zone reads it, and every component comes from the shifted reading. A date
@@ -193,7 +196,50 @@ public class DateFormat
      */
     public static <T extends Appendable> T format(T appendable, String formatString, int start, int end, PureDate date)
     {
-        return DateFormatPattern.parse(formatString, start, end).render(appendable, date);
+        return format(appendable, formatString, start, end, date, TimeZoneResolution.STRICT);
+    }
+
+    /**
+     * Write a Pure date to an appendable in the form a format string describes, resolving the time
+     * zone the format string names in the given way. Everything else is as
+     * {@link #format(Appendable, String, PureDate)} describes.
+     *
+     * @param appendable         appendable to write to
+     * @param formatString       format string
+     * @param date               date to write
+     * @param timeZoneResolution how to resolve the time zone the format string names
+     * @param <T>                appendable type
+     * @return the appendable
+     * @throws IllegalArgumentException if the format string is malformed, names a time zone that
+     *                                  cannot be resolved, sets a time zone anywhere but at the
+     *                                  start, or asks for a component the date does not have
+     * @see TimeZoneResolution
+     */
+    public static <T extends Appendable> T format(T appendable, String formatString, PureDate date, TimeZoneResolution timeZoneResolution)
+    {
+        return format(appendable, formatString, 0, formatString.length(), date, timeZoneResolution);
+    }
+
+    /**
+     * Write a Pure date to an appendable in the form a portion of a string describes, resolving
+     * the time zone the format string names in the given way.
+     *
+     * @param appendable         appendable to write to
+     * @param formatString       string holding the format string
+     * @param start              start index of the format string (inclusive)
+     * @param end                end index of the format string (exclusive)
+     * @param date               date to write
+     * @param timeZoneResolution how to resolve the time zone the format string names
+     * @param <T>                appendable type
+     * @return the appendable
+     * @throws IllegalArgumentException if the format string is malformed, names a time zone that
+     *                                  cannot be resolved, sets a time zone anywhere but at the
+     *                                  start, or asks for a component the date does not have
+     * @see #format(Appendable, String, PureDate, TimeZoneResolution)
+     */
+    public static <T extends Appendable> T format(T appendable, String formatString, int start, int end, PureDate date, TimeZoneResolution timeZoneResolution)
+    {
+        return DateFormatPattern.parse(formatString, start, end, timeZoneResolution).render(appendable, date);
     }
 
     /**

@@ -75,7 +75,7 @@ public class CreateTempTable extends NativeFunction
         CoreInstance sql = this.functionExecution.executeLambdaFromNative(toSql, Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(tableName, false, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(columns, false, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(dbType, false, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
         String sqlStr = Instance.getValueForMetaPropertyToOneResolved(sql, M3Properties.values, processorSupport).getName();
 
-        final ExecuteInDb executeInDb = new ExecuteInDb(this.repository, this.message, 0);
+        final ExecuteInDb executeInDb = new ExecuteInDb(this.repository, this.functionExecution, this.message, 0);
         executeInDb.executeInDb(connection, sqlStr, 0, 0, functionExpressionCallStack.peek(), functionExpressionCallStack, processorSupport);
 
         executionSupport.registerIdentifiableExecutionEndListener(new TempTableCleanup(tableName.getName(), relyOnFinallyForCleanup, executeInDb, connection, functionExpressionCallStack, processorSupport));

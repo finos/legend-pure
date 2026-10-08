@@ -28,10 +28,12 @@ import org.finos.legend.pure.runtime.java.extension.store.relational.shared.Conn
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.IConnectionManagerHandler;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.SQLExceptionHandler;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
+import org.finos.legend.pure.runtime.java.shared.time.TimeZoneResolutionOption;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -44,6 +46,7 @@ public abstract class AbstractFetchDbMetadata extends NativeFunction
     protected ModelRepository repository;
     protected Message message;
     protected int maxRows;
+    protected FunctionExecutionInterpreted functionExecution;
     private static final IConnectionManagerHandler connectionManagerHandler = IConnectionManagerHandler.CONNECTION_MANAGER_HANDLER;
 
     @Override
@@ -85,7 +88,7 @@ public abstract class AbstractFetchDbMetadata extends NativeFunction
                 DatabaseMetaData databaseMetaData = connection.getMetaData();
                 ResultSet rs = databaseMetadataFunction.valueOf(databaseMetaData);
 
-                ExecuteInDb.createPureResultSetFromDatabaseResultSet(pureResult, rs, functionExpressionCallStack.peek(), rowClassifier, tz, this.repository, start, this.maxRows, processorSupport);
+                ExecuteInDb.createPureResultSetFromDatabaseResultSet(pureResult, rs, functionExpressionCallStack.peek(), rowClassifier, tz, TimeZoneResolutionOption.getTimeZoneResolution(this.functionExecution.getRuntime().getOptions()), this.repository, start, this.maxRows, processorSupport);
 
                 CoreInstance dbType = Instance.getValueForMetaPropertyToOneResolved(connectionInformation, "type", processorSupport);
                 String dbHost = connectionWithDataSourceInfo.getDataSource().getHost();

@@ -38,6 +38,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.CsvReader;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
@@ -49,14 +50,16 @@ public class LoadCsvToDbTable extends NativeFunction
 {
     private final RepositoryCodeStorage codeStorage;
     private final ModelRepository repository;
+    private final FunctionExecutionInterpreted functionExecution;
     private final Message message;
 
     private static final int _500_MB_SIZE_LIMIT = 500;
 
-    public LoadCsvToDbTable(RepositoryCodeStorage codeStorage, ModelRepository repository, Message message)
+    public LoadCsvToDbTable(RepositoryCodeStorage codeStorage, ModelRepository repository, FunctionExecutionInterpreted functionExecution, Message message)
     {
         this.codeStorage = codeStorage;
         this.repository = repository;
+        this.functionExecution = functionExecution;
         this.message = message;
     }
 
@@ -73,7 +76,7 @@ public class LoadCsvToDbTable extends NativeFunction
 
         Iterable<ListIterable<?>> values = getCsvIterable(this.codeStorage, functionExpressionCallStack.peek().getSourceInformation(), filePath, table.getValueForMetaPropertyToOne(M3Properties.name).getName(), numberOfRows, columns, columnTypes, _500_MB_SIZE_LIMIT, functionExpressionCallStack);
 
-        new ExecuteInDb(this.repository, this.message, 0).bulkInsertInDb(connectionInformation, table, values, functionExpressionCallStack, processorSupport);
+        new ExecuteInDb(this.repository, this.functionExecution, this.message, 0).bulkInsertInDb(connectionInformation, table, values, functionExpressionCallStack, processorSupport);
         return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.<CoreInstance>with(), true, processorSupport);
     }
 

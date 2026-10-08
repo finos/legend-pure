@@ -31,6 +31,7 @@ import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
@@ -41,12 +42,14 @@ import java.util.Stack;
 public class LoadValuesToDbTable extends NativeFunction
 {
     private final ModelRepository repository;
+    private final FunctionExecutionInterpreted functionExecution;
     private final Message message;
 
 
-    public LoadValuesToDbTable(ModelRepository repository, Message message)
+    public LoadValuesToDbTable(ModelRepository repository, FunctionExecutionInterpreted functionExecution, Message message)
     {
         this.repository = repository;
+        this.functionExecution = functionExecution;
         this.message = message;
     }
 
@@ -63,7 +66,7 @@ public class LoadValuesToDbTable extends NativeFunction
         FastList<FastList<String>> rows = this.getRows(tableData, processorSupport);
         Iterable<ListIterable<?>> tableIterable = this.getTableIterable(rows, table.getValueForMetaPropertyToOne(M3Properties.name).getName(), columns, columnTypes);
 
-        new ExecuteInDb(this.repository, this.message, 0).bulkInsertInDb(connectionInformation, table, tableIterable, functionExpressionCallStack, processorSupport);
+        new ExecuteInDb(this.repository, this.functionExecution, this.message, 0).bulkInsertInDb(connectionInformation, table, tableIterable, functionExpressionCallStack, processorSupport);
         return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.<CoreInstance>with(), true, processorSupport);
 
     }
