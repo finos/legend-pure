@@ -7,7 +7,13 @@
 **/*.iml
 **/pom.xml.versionsBackup
 **/.develocity/**
+.vscode/**
 .mvn/**
+
+.claude/scheduled_tasks.lock
+.claude/*.local.*
+.claude/worktrees/
+
 
 # Build
 **/target

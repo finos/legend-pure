@@ -234,4 +234,32 @@ so that ANTLR4-generated and platform-generated Java files are present in
 
 ---
 
+## 9. Rust Workspace Quick Start
+
+The Rust workspace (`legend-pure-rust/`) holds a Pure evaluator built per
+`legend-pure-rust/docs/rust-evaluator-mvp.md`.
+
+### Prerequisites
+
+| Tool | Required version |
+|------|-----------------|
+| **Rust** | Latest stable (edition 2024) — install via [rustup.rs](https://rustup.rs/) |
+
+### Build and test
+
+```bash
+cd legend-pure-rust
+cargo build --workspace
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt --check
+```
+
+See `legend-pure-rust/CLAUDE.md` for the development guide and the plan for what
+comes next. The earlier Rust workspace (parser, compiler, tooling) is on tag
+`archive/pre-evaluator-extract-2026-10`.
+
+---
+
 *Back: [Architecture Overview](../architecture/overview.md) · Next: [Build & CI Guide](build-and-ci.md)*
+

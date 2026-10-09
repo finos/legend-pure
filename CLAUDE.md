@@ -108,3 +108,14 @@ Authoritative developer docs live in `/docs` and are maintained alongside code. 
 - `docs/testing/testing-strategy.md` — PCT, coverage, how to run things.
 - `docs/standards/coding-standards.md` — full Checkstyle rule list.
 - `docs/decisions/` — ADRs (JUnit 4, Eclipse Collections, no mocks).
+
+## Rust evaluator (`legend-pure-rust/`)
+
+A Pure evaluator in Rust lives beside the Java stack as a Cargo workspace. **The plan for
+everything Rust is `legend-pure-rust/docs/rust-evaluator-mvp.md`**; `legend-pure-rust/CLAUDE.md`
+is the working guide (build, test and lint commands, the six rules). Read the plan's §0 before
+touching that directory. The earlier Rust workspace (parser, compiler, LSP, DSL crates, CLI,
+binary snapshot format) is frozen at tag `archive/pre-evaluator-extract-2026-10`; nothing from
+it is current, pieces are fished back one at a time when the plan asks for them. The Rust
+metamodel crate embeds exactly one platform file, `platform/pure/grammar/m3.pure`, as its
+bootstrap.

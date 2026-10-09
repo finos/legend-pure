@@ -48,5 +48,9 @@
         <module>legend-pure-runtime-java-engine-interpreted</module>
         <module>legend-pure-runtime-java-engine-mixed</module>
         <module>legend-pure-runtime-java-engine-shared</module>
+        <!-- legend-pure-runtime-rust-evaluator-bindings-ap and
+             legend-pure-runtime-rust-evaluator are removed from the reactor
+             while legend-pure-rust/ is rebuilt (legend-pure-rust/docs/rust-evaluator-mvp.md,
+             Step 0); Step 2 adds them back. -->
     </modules>
 </project>

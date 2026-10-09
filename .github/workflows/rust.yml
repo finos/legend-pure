@@ -1,0 +1,83 @@
+name: Rust CI
+
+on:
+  push:
+    paths:
+      - 'legend-pure-rust/**'
+      - '.github/workflows/rust.yml'
+  pull_request:
+    paths:
+      - 'legend-pure-rust/**'
+      - '.github/workflows/rust.yml'
+
+jobs:
+  build_and_test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: legend-pure-rust
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+
+      - name: Install lld (faster linker)
+        run: sudo apt-get update && sudo apt-get install -y lld
+
+      - name: Enable lld for Rust compilation
+        # Routed through RUSTFLAGS so it is CI-only.
+        run: echo "RUSTFLAGS=-C link-arg=-fuse-ld=lld" >> $GITHUB_ENV
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            legend-pure-rust/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('legend-pure-rust/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install sccache
+        uses: mozilla-actions/sccache-action@v0.0.4
+
+      - name: Enable sccache as RUSTC_WRAPPER
+        # Caches rustc output across CI runs (keyed on input content), so
+        # branches with the same dep tree see compilation effectively free
+        # on the second run. Cold first run is unchanged.
+        run: |
+          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+
+      - name: Check Formatting (cargo fmt)
+        run: cargo fmt --check
+
+      - name: Lint (cargo clippy)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Build
+        run: cargo build --workspace
+
+      - name: Test
+        # Two seed tests call `plus` / `times`, which Step 1 of
+        # docs/rust-evaluator-mvp.md fishes; skipped by name until then.
+        run: cargo test --workspace -- --skip eval_native_function_call --skip eval_nested_function_calls
+
+      - name: Doctests
+        run: cargo test --workspace --doc
+
+      - name: Check Copyright Headers
+        run: ./scripts/check-copyright.sh
+
+      - name: Documentation (no warnings)
+        run: RUSTDOCFLAGS=-Dwarnings cargo doc --workspace --no-deps
