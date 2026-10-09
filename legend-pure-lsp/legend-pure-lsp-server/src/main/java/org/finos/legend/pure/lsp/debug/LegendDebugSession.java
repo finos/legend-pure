@@ -14,8 +14,24 @@
 
 package org.finos.legend.pure.lsp.debug;
 
+import org.eclipse.collections.impl.list.mutable.FastList;
+import org.finos.legend.pure.lsp.ExecutionFailureFormatter;
+import org.finos.legend.pure.lsp.LegendPureSession;
+import org.finos.legend.pure.lsp.LspLog;
+import org.finos.legend.pure.lsp.RepositoryScanner;
+import org.finos.legend.pure.lsp.UriMapper;
+import org.finos.legend.pure.lsp.Utf8PrintStreams;
+import org.finos.legend.pure.lsp.protocol.LegendDebug;
+import org.finos.legend.pure.m3.execution.Console;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.serialization.runtime.Message;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
+import org.finos.legend.pure.m3.serialization.runtime.Source;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -29,21 +45,6 @@ import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.lsp.ExecutionFailureFormatter;
-import org.finos.legend.pure.lsp.LegendPureSession;
-import org.finos.legend.pure.lsp.LspLog;
-import org.finos.legend.pure.lsp.RepositoryScanner;
-import org.finos.legend.pure.lsp.UriMapper;
-import org.finos.legend.pure.lsp.protocol.LegendDebug;
-import org.finos.legend.pure.m3.execution.Console;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.runtime.Message;
-import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
-import org.finos.legend.pure.m3.serialization.runtime.Source;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class LegendDebugSession
 {
@@ -106,7 +107,7 @@ class LegendDebugSession
         this.heldMainSessionReadLock = heldMainSessionReadLock;
 
         Console console = this.functionExecution.getConsole();
-        console.setPrintStream(new PrintStream(this.output, true));
+        console.setPrintStream(Utf8PrintStreams.create(this.output));
         console.setConsole(true);
     }
 

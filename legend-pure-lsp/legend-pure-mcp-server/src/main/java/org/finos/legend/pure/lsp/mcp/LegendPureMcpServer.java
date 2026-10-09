@@ -14,6 +14,15 @@
 
 package org.finos.legend.pure.lsp.mcp;
 
+import org.finos.legend.pure.lsp.LegendPureSession;
+import org.finos.legend.pure.lsp.RepositoryScanner;
+import org.finos.legend.pure.lsp.UriMapper;
+import org.finos.legend.pure.lsp.Utf8PrintStreams;
+import org.finos.legend.pure.lsp.WorkspaceSymbolProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.BufferedOutputStream;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -26,12 +35,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
-import org.finos.legend.pure.lsp.LegendPureSession;
-import org.finos.legend.pure.lsp.RepositoryScanner;
-import org.finos.legend.pure.lsp.UriMapper;
-import org.finos.legend.pure.lsp.WorkspaceSymbolProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Standalone MCP stdio server for a Pure workspace. Launched by an MCP client
@@ -47,9 +50,9 @@ public class LegendPureMcpServer
     public static void main(String[] args) throws IOException
     {
         PrintStream protocolOut = new PrintStream(
-                new java.io.BufferedOutputStream(new FileOutputStream(FileDescriptor.out)), true);
-        PrintStream stderrOut = new PrintStream(
-                new java.io.BufferedOutputStream(new FileOutputStream(FileDescriptor.err)), true);
+                new BufferedOutputStream(new FileOutputStream(FileDescriptor.out)), true);
+        PrintStream stderrOut = Utf8PrintStreams.create(
+                new BufferedOutputStream(new FileOutputStream(FileDescriptor.err)));
         // Anything printing to System.out (Pure console defaults, stray libraries) must not
         // corrupt the protocol stream - same discipline as LegendPureLspServer.main.
         System.setOut(stderrOut);

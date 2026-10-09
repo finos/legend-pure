@@ -14,6 +14,12 @@
 
 package org.finos.legend.pure.lsp;
 
+import org.eclipse.collections.api.map.ConcurrentMutableMap;
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
+import org.finos.legend.pure.lsp.protocol.DriftChangeType;
+import org.finos.legend.pure.lsp.protocol.WorkspaceDriftEntry;
+import org.finos.legend.pure.lsp.protocol.WorkspaceDriftEvent;
+
 import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
@@ -32,16 +38,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import org.finos.legend.pure.lsp.protocol.DriftChangeType;
-import org.finos.legend.pure.lsp.protocol.WorkspaceDriftEntry;
-import org.finos.legend.pure.lsp.protocol.WorkspaceDriftEvent;
 
 /**
  * Watches the workspace's resource roots for out-of-band {@code .pure} file changes - a rebase, a
@@ -67,8 +69,8 @@ public class WorkspaceDriftWatcher
     private final Predicate<String> isDocumentOpen;
     private final Consumer<WorkspaceDriftEvent> publisher;
 
-    private final Map<String, DriftChangeType> dirty = new ConcurrentHashMap<>();
-    private final Map<WatchKey, Path> watchKeyToDir = new ConcurrentHashMap<>();
+    private final ConcurrentMutableMap<String, DriftChangeType> dirty = ConcurrentHashMap.newMap();
+    private final ConcurrentMutableMap<WatchKey, Path> watchKeyToDir = ConcurrentHashMap.newMap();
     private final ScheduledExecutorService debounceExecutor = Executors.newSingleThreadScheduledExecutor(r ->
     {
         Thread t = new Thread(r, "legend-pure-lsp-drift-watcher-debounce");

@@ -168,6 +168,20 @@ All modules are configured with:
 This aggregates every module's test XML into a single directory, which is then
 uploaded as a build artifact for the `test-result.yml` workflow to process.
 
+### Developer Platforms (Windows and macOS)
+
+[`.github/workflows/developer-platforms.yml`](../../.github/workflows/developer-platforms.yml)
+checks that a developer can build and test on Windows and macOS. What ships is
+built and tested on Linux, so these jobs are not part of the release pipeline
+and publish nothing. The workflow runs on pull requests, on branch pushes in
+forks (not in `finos/legend-pure`, where a push is a merge or release commit
+that a PR has already covered), and on demand.
+
+Each platform is a single JDK 25 job: `mvn install -DskipTests`, then
+`mvn surefire:test`, then the VS Code extension's unit tests. The Windows job
+keeps the runner's default `core.autocrlf=true`, so it builds from CRLF
+sources, as a Windows developer with Git's default settings does.
+
 ### Release Process
 
 Releases are triggered by the [`release.yml`](../../.github/workflows/release.yml)

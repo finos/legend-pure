@@ -963,8 +963,13 @@ function resolveClasspathFileEntries(): string[] | undefined {
     return undefined;
 }
 
+/** `~/`, or `~\` where that is the path separator (Windows). */
+function startsWithHomePrefix(value: string): boolean {
+    return value.startsWith('~/') || value.startsWith('~' + path.sep);
+}
+
 function resolveClasspathFileEntry(entry: string, classpathFileDir: string): string {
-    const expanded = entry === '~' || entry.startsWith('~/')
+    const expanded = entry === '~' || startsWithHomePrefix(entry)
         ? expandConfiguredPath(entry)
         : entry;
     return path.isAbsolute(expanded)
@@ -996,7 +1001,7 @@ function expandConfiguredPath(configuredPath: string): string {
     let expanded = configuredPath.trim();
     if (expanded === '~') {
         expanded = os.homedir();
-    } else if (expanded.startsWith('~/')) {
+    } else if (startsWithHomePrefix(expanded)) {
         expanded = path.join(os.homedir(), expanded.slice(2));
     }
 
@@ -1202,7 +1207,7 @@ function getJavaExecutable(): string {
     const config = workspace.getConfiguration('legendPure');
     const javaHome = config.get<string>('java.home');
     if (javaHome) {
-        const javaBin = path.join(javaHome, 'bin', 'java');
+        const javaBin = path.join(javaHome, 'bin', process.platform === 'win32' ? 'java.exe' : 'java');
         if (fs.existsSync(javaBin)) {
             return javaBin;
         }

@@ -33,7 +33,7 @@ java -cp "legend-pure-lsp-server/target/legend-pure-lsp-server-<version>.jar:leg
   org.finos.legend.pure.lsp.LegendPureLspServer
 ```
 
-`target/dependency/*` is produced during `package`; it keeps runtime dependencies separate from the server jar so host repositories can add language/store extensions dynamically.
+`target/dependency/*` is produced during `package`; it keeps runtime dependencies separate from the server jar so host repositories can add language/store extensions dynamically. The examples use `:` to separate classpath entries; on Windows, use `;`.
 
 ### Shaded Jar
 
@@ -148,9 +148,10 @@ mvn -pl "$IDE_LIGHT" \
   -DskipTests -Dskip.yarn=true \
   dependency:build-classpath \
   -Dmdep.includeScope=runtime \
-  -Dmdep.pathSeparator=: \
   -Dmdep.outputFile="$ENGINE_CP"
 ```
+
+Leave `mdep.pathSeparator` at its default: the extension splits the file on the platform path separator (`:`, or `;` on Windows), which is what `build-classpath` writes by default.
 
 If the selected reactor artifacts are missing or stale, rebuild them first. This is expensive and should be skipped when the local Maven repository already has the current snapshots:
 

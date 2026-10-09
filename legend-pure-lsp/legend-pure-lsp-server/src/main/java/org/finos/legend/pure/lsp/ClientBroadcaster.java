@@ -14,10 +14,8 @@
 
 package org.finos.legend.pure.lsp;
 
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
+import org.eclipse.collections.api.map.ConcurrentMutableMap;
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.eclipse.lsp4j.MessageActionItem;
 import org.eclipse.lsp4j.MessageParams;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
@@ -31,6 +29,9 @@ import org.finos.legend.pure.lsp.protocol.TestEvent;
 import org.finos.legend.pure.lsp.protocol.WorkspaceDriftEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * Fans out every server-initiated push (diagnostics, status changes, log output, show-message) to
@@ -54,7 +55,7 @@ public class ClientBroadcaster implements LegendLanguageClient
     // fresh LegendLanguageClientAdapter each time it's called, and two such wrappers around the same
     // raw client are reference-distinct (no equals()/hashCode() override), so keying by the wrapper
     // would make deregister() silently fail to find/remove the entry.
-    private final Map<LanguageClient, LegendLanguageClient> clients = new ConcurrentHashMap<>();
+    private final ConcurrentMutableMap<LanguageClient, LegendLanguageClient> clients = ConcurrentHashMap.newMap();
 
     /**
      * @return the wrapped client, so the caller can immediately push a catch-up snapshot (e.g. current
@@ -152,11 +153,11 @@ public class ClientBroadcaster implements LegendLanguageClient
 
     private void broadcast(Consumer<LegendLanguageClient> action)
     {
-        for (Map.Entry<LanguageClient, LegendLanguageClient> entry : this.clients.entrySet())
+        this.clients.forEachKeyValue((rawClient, client) ->
         {
             try
             {
-                action.accept(entry.getValue());
+                action.accept(client);
             }
             catch (Exception e)
             {
@@ -164,10 +165,10 @@ public class ClientBroadcaster implements LegendLanguageClient
                 // specifically so this failure path can never re-enter
                 // LspLog.publish() -> this.logOutput() -> broadcast() over a registry that still
                 // contains the same dead client.
-                this.clients.remove(entry.getKey());
+                this.clients.remove(rawClient);
                 LOGGER.warn("Broadcast to a connected LSP client failed; deregistering it", e);
             }
-        }
+        });
     }
 
     private static final class LegendLanguageClientAdapter implements LegendLanguageClient
