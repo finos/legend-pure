@@ -55,7 +55,8 @@ Loads all Pure source files (`.pure`) and repository definition files
 M3 type-checker, and writes the resulting binary element files to the module's
 output directory.  The output is the same as what the runtime loads at startup —
 the plugin simply performs that work once at build time rather than repeatedly at
-runtime.
+runtime.  The files it writes are the PELT format described in
+[PELT Serialization](../architecture/pelt-serialization.md).
 
 ### Why it is needed
 
