@@ -686,7 +686,142 @@ compilation step exists between the file and evaluation.
 
 ---
 
-## 13. Source map
+## 13. Compatibility
+
+Three things can differ between the process that wrote a PELT module and the process
+that reads it: the serializer code (byte encoding), the M3 metamodel the writer's
+graph conformed to, and the other modules on the reader's classpath. Only the first
+is versioned in the files. The other two are not recorded anywhere, and the module
+manifest carries just the module name, the *names* of its dependencies and the
+element index — no content hash, no platform version, no writer identity.
+
+### 13.1 Encoding: governed by the envelope version ints
+
+- **Newer reader, older file — works.** `ExtensibleSerializer` keeps every extension
+  version found on the classpath and dispatches per file on the version recorded in the
+  envelope (`ConcreteElementDeserializer.deserialize`, `ModuleMetadataSerializer`).
+  All earlier versions are still shipped: uncompressed v1 element bodies, v1/v2 module
+  metadata, string index 0–3.
+- **Older reader, newer file — fails loudly, before any payload is read.**
+  `getExtension(version)` throws `IllegalArgumentException("Unknown extension: N")`
+  right after the signature and version ints are consumed.
+- **Forward compatibility is opt-in on the writer side.** The default writer version is
+  the highest on the classpath (`AbstractBuilder.build` uses `keySet().max()`), unless
+  the producer calls `setDefaultVersion`. A newer legend-pure therefore emits the
+  newest format by default, and an older consumer can read it only if the producer
+  pinned the version.
+- Adding a layer version is additive: a new `ServiceLoader` extension, never a change
+  to an existing one. An existing version must stay byte-for-byte stable or every
+  reader that dispatches to it misreads old files.
+
+### 13.2 Metamodel shape: not versioned
+
+The reader's metamodel is the set of generated `*Lazy*` core-instance classes compiled
+from *its own* `m3.pure` (`M3LazyCoreInstanceGenerator`). The file carries classifier
+paths and property names as strings. `M3GeneratedLazyElementBuilder` maps the
+classifier path to a generated class name and loads it; each generated class indexes
+the node's `PropertyValues` by name (`AbstractLazyCoreInstance.indexPropertyValues`)
+and reads only the properties it knows about
+(`propertyValuesByName.get("name")`, `newToOnePropertyValue(...)`).
+
+| Writer M3 vs reader M3 | Behaviour |
+|---|---|
+| Classifier path unknown to the reader | Loud: `ClassNotFoundException`, wrapped as "Error building concrete element … of type …" |
+| File has a property the reader's class lacks | Silent: indexed, never read, dropped |
+| Reader's class has a property the file lacks | Silent at load: `OneValue.fromValue(null)`; surfaces as a null or wrong result at first access |
+| Property renamed | Silent: looks like one removed plus one missing |
+| Property changed from to-one to to-many | Loud: `IllegalStateException("Cannot create to-one property value … N values present")` |
+| Property changed from to-many to to-one | Silent: the single value is read as a one-element list |
+| Value kind changed (e.g. a primitive became a reference) | Loud at resolution of that value, not at load |
+
+Additions on the *file* side are tolerated; additions on the *reader* side defer the
+failure to first use. Nothing checks at load time that the file's property set matches
+the reader's class.
+
+### 13.3 Cross-module references: silent on index-based ids
+
+External references (§6) are resolved lazily against whatever graph the reader has
+loaded, by `ReferenceIdResolverV1` walking the id's path from the owning element.
+Edges addressed by element path or by a stable string key (`name`, `id`, `value`)
+survive changes to the target element. Edges addressed by *index* into an unkeyed
+to-many property (`to-many[index]`) do not: if the target element gained or lost a
+value earlier in that list, the id resolves to a different node, and no error is
+raised. An id whose path no longer exists fails loudly with
+`UnresolvableReferenceIdException`, but only when that reference is first touched.
+
+The same applies to the `.pbr` back-reference indexes, which cross module boundaries
+(§7.4, §12).
+
+This is the mixed-version classpath case: a user module compiled against platform
+`A`, loaded next to platform `B`'s PELT. Dependencies are loaded by *name*
+(`PureCompilerLoader`, `MetadataPelt`, `MetadataIndex`), with no version or hash
+check, so the mismatch is undetected unless it happens to hit a loud path above.
+
+### 13.4 Practical rules
+
+- Rebuild every module in a dependency chain with the same legend-pure version, and
+  rebuild every dependent whenever a dependency's content changes (§13.5). There is
+  no mechanism that makes a stale dependent safe.
+- A reader that cannot accept a version must fail at the envelope, never partway
+  through a body. New readers (including non-Java ones) should enumerate the envelope
+  versions they accept and reject the rest, mirroring `getExtension`.
+- Treat the `m3.pure` a module was compiled against as part of that module's
+  identity: pin it (for example by source commit) next to any PELT fixtures kept
+  outside the build that produced them.
+- When changing M3, prefer adding keyed properties over inserting values into
+  unkeyed to-many lists, so existing reference ids stay valid (§12).
+
+### 13.5 Content: a dependency changes and the dependent is not rebuilt
+
+Module `B` depends on module `A`. `A` is edited and recompiled; `B`'s PELT is left as
+it was. Nothing prevents this: loading does not re-validate, the compile-state bits in
+`B`'s nodes still say processed and validated, and `A` is matched by name only.
+
+`B`'s PELT holds two kinds of things about `A`, and they fail differently:
+
+1. **Reference ids into `A`** (§6), resolved lazily on first touch of the value by
+   walking a path from an `A` element: `A::Person.properties['name']`,
+   `A::Color.values['RED']`, `A::Person.generalizations[1]`. A to-many edge is keyed
+   by `name`, `id` or `value` when every value has a unique one
+   (`ReferenceIdGenerator.tryIndex`); otherwise the whole list is addressed by index.
+   A missing key throws `UnresolvableReferenceIdException`; an index that now points
+   elsewhere does not.
+2. **Facts the compiler baked into `B`'s own nodes**: which overload each call
+   resolved to (`SimpleFunctionExpression.func`), the inferred `genericType` and
+   `multiplicity` on every expression, milestoning rewrites, and the compile-state
+   bits. These are never re-derived from the live `A`. They are only wrong, never
+   detected.
+
+| Change to `A` | Effect on `B` without a rebuild |
+|---|---|
+| Add a property to a class | Nothing breaks. `B`'s `^Person(...)` instances simply lack it. Properties are keyed by name, so no ids shift. |
+| Add a constraint (on a class or a new property) | Loads fine. Fails at runtime when `B` constructs an instance that violates it, since constraints are read from the live class. |
+| Remove or rename a property | `B`'s id `Person.properties['old']` is unresolvable. Throws when that node is first touched, which may be deep inside a function body, so only when that function runs. |
+| Change a property's type or multiplicity | Silent. `B`'s expressions keep the old inferred type and the old resolved overload. Runtime error or wrong result, depending on what the body does. |
+| Move a property to a new supertype | Same as remove: the id path still names `Person`, and the property is no longer in `Person.properties`. |
+| Add a supertype | Nothing breaks. Subtype checks, dispatch and property lookup walk the live generalization chain. `B` cannot use the inherited members until recompiled. |
+| Remove a supertype | Loads fine. `B` code that relied on inherited members or on the subtype relation fails at runtime, with no load-time signal. |
+| Insert or reorder supertypes | `Generalization` nodes have no name, so they are index-keyed and any id pointing at one shifts. Those ids live in `A`'s own `.pbr` and in `referenceUsages`, so the symptom is wrong or missing back references rather than a crash. |
+| Add a function overload | Silent. `B` keeps the resolution made at its compile time, even if a recompile would now pick the new, more specific one. |
+| Change a function signature | The mangled path changes, so `B`'s reference is unresolvable. Loud, on first touch. |
+| Add or reorder enum values | Fine, values are keyed by name. Removing one is loud on first touch. |
+| Add a second qualified property with the same name | The key is no longer unique, so the whole `qualifiedProperties` list falls back to index ids. Every `B` reference to any qualified property of that class now resolves by position. Silent. |
+| Add a stereotype that rewrites the class (e.g. milestoning) | Properties move into `originalMilestonedProperties` and synthesized ones take their place. `B`'s property ids miss, or hit the wrong thing. |
+
+What falls out of this:
+
+- Additive changes are safe for loading: new properties, supertypes, functions, enum
+  values. Removals and renames are loud but late. Type, multiplicity and overload
+  changes are silent.
+- "Loud" always means at first touch of the stale node, never at load. A test suite
+  that never exercises the function never sees it.
+- There is no ABI. The only safe practice is to rebuild every dependent whenever a
+  dependency changes, which is what `PureCompilerBinaryGenerator` (§10.2) does when
+  `B` is compiled against `A`'s PELT in the same build.
+
+---
+
+## 14. Source map
 
 | Package / class | Responsibility |
 |---|---|
