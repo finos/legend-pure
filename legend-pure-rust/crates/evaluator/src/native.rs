@@ -357,6 +357,11 @@ impl NativeRegistry {
             .ok_or_else(|| PureRuntimeError::FunctionNotFound(name.into()))
     }
 
+    /// Every registered mangled name, in no particular order.
+    pub fn keys(&self) -> impl Iterator<Item = &SmolStr> {
+        self.functions.keys()
+    }
+
     /// The number of registered functions.
     #[must_use]
     pub fn len(&self) -> usize {
@@ -376,7 +381,12 @@ impl NativeRegistry {
     /// starts empty.
     #[must_use]
     pub fn standard() -> Self {
-        Self::new()
+        let mut registry = Self::new();
+        arithmetic::register(&mut registry);
+        boolean::register(&mut registry);
+        comparison::register(&mut registry);
+        lang::register(&mut registry);
+        registry
     }
 }
 
@@ -476,6 +486,21 @@ pub fn force_thunk(
     }
     ctx.evaluate(spec)
 }
+
+/// Arithmetic natives: `plus`, `minus`, `times` (the rest stay on the archive).
+pub mod arithmetic;
+
+/// Boolean natives: `and`, `or`, `not`.
+pub mod boolean;
+
+/// Comparison natives: `eq`, `equal` (the ordering natives stay on the archive).
+pub mod comparison;
+
+/// Heap-aware structural equality behind `equal`.
+pub mod equality;
+
+/// Language-level natives: `letFunction`, `if`, `new`, `copy`.
+pub mod lang;
 
 /// Heap shapes for reflection over functions and multiplicities
 /// (helpers only; no natives registered).

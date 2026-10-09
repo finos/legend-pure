@@ -34,8 +34,6 @@ RUSTDOCFLAGS=-Dwarnings cargo doc --workspace --no-deps
 ```
 
 CI (`.github/workflows/rust.yml` at the repository root) runs exactly these.
-Until Step 1 fishes `plus` and `times`, two seed tests in
-`crates/evaluator/tests/building_blocks.rs` are red and CI skips them by name.
 
 ## The six rules (plan §0)
 

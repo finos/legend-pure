@@ -69,9 +69,7 @@ jobs:
         run: cargo build --workspace
 
       - name: Test
-        # Two seed tests call `plus` / `times`, which Step 1 of
-        # docs/rust-evaluator-mvp.md fishes; skipped by name until then.
-        run: cargo test --workspace -- --skip eval_native_function_call --skip eval_nested_function_calls
+        run: cargo test --workspace
 
       - name: Doctests
         run: cargo test --workspace --doc

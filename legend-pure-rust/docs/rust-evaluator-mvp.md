@@ -1,7 +1,8 @@
 # A Pure Evaluator in Rust — MVP Proposal
 
-> **Status: in execution, October 2026 (revised 2026-10-09). Step 0 executed
-> 2026-10-09; archive tag `archive/pre-evaluator-extract-2026-10`.** This document is
+> **Status: in execution, October 2026 (revised 2026-10-09). Steps 0 and 1
+> executed 2026-10-09; archive tag `archive/pre-evaluator-extract-2026-10`;
+> next is Step 2.** This document is
 > self-contained. It assumes the reader knows Legend Pure and legend-engine as
 > they exist in Java today and nothing else. It describes what a minimum viable
 > Rust evaluator is, which existing technologies it plugs into, and a sequence
@@ -322,7 +323,7 @@ repository-level `CLAUDE.md` and tooling pointers stay valid.
 nothing (the `m3.pure` include path matches none of its patterns);
 `cargo test --workspace` compiles and passes except the two seed tests that
 call `plus` and `times`, which `rust.yml` skips by name until Step 1 fishes
-them; both `CLAUDE.md` files
+them (done in Step 1 milestone 1, where the skips are removed); both `CLAUDE.md` files
 (repository root and `legend-pure-rust/`) name `docs/rust-evaluator-mvp.md` as
 the single source of truth and describe nothing from the archive as current;
 `rust.yml` runs green on the new workspace; `mvn -T 4 install -DskipTests`
