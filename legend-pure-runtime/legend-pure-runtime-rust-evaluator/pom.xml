@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright 2026 Goldman Sachs
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>org.finos.legend.pure</groupId>
+        <artifactId>legend-pure-runtime</artifactId>
+        <version>5.85.1-SNAPSHOT</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>legend-pure-runtime-rust-evaluator</artifactId>
+    <packaging>jar</packaging>
+    <name>Legend Pure - Runtime - Rust Evaluator</name>
+
+    <properties>
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <!--
+            Directory holding the libpure_rust_jni cdylib produced by
+            cargo build (whole workspace) in legend-pure-rust/. Tests receive it
+            as the system property legend.pure.rust.libdir; when the library
+            is absent the profiles below skip this module's tests so the
+            reactor stays green on hosts and CI without a Rust toolchain.
+        -->
+        <legend.rust.libdir>${project.basedir}/../../legend-pure-rust/target/debug</legend.rust.libdir>
+    </properties>
+
+    <profiles>
+        <!--
+            Activation ANDs the OS family with the absence of the platform
+            library name (${basedir} interpolates in activation,
+            ${project.basedir} does not). The property is the standard
+            `skipTests`, so a command-line -DskipTests=false still wins.
+        -->
+        <profile>
+            <id>rust-cdylib-missing-mac</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                </os>
+                <file>
+                    <missing>${basedir}/../../legend-pure-rust/target/debug/libpure_rust_jni.dylib</missing>
+                </file>
+            </activation>
+            <properties>
+                <skipTests>true</skipTests>
+            </properties>
+        </profile>
+        <profile>
+            <id>rust-cdylib-missing-linux</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>Linux</name>
+                </os>
+                <file>
+                    <missing>${basedir}/../../legend-pure-rust/target/debug/libpure_rust_jni.so</missing>
+                </file>
+            </activation>
+            <properties>
+                <skipTests>true</skipTests>
+            </properties>
+        </profile>
+        <profile>
+            <id>rust-cdylib-missing-windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+                <file>
+                    <missing>${basedir}/../../legend-pure-rust/target/debug/pure_rust_jni.dll</missing>
+                </file>
+            </activation>
+            <properties>
+                <skipTests>true</skipTests>
+            </properties>
+        </profile>
+    </profiles>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-m4</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-m3-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-runtime-java-engine-interpreted</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.collections</groupId>
+            <artifactId>eclipse-collections-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!--
+                The Rust_JNI adapter reports (ADAPTER_<scope>_interpreted_Rust_JNI.json)
+                come from the committed manifests, not from a test run, so this
+                step needs no Rust library.
+            -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>GeneratePCTReport</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>org.finos.legend.pure.runtime.java.interpreted.testHelper.PCTReportGenerator</mainClass>
+                            <arguments>
+                                <argument>${project.build.directory}/classes/pct-reports/</argument>
+                                <argument>org.finos.legend.pure.rust.pct.Test_RustJni_EssentialFunctions_PCT</argument>
+                                <argument>org.finos.legend.pure.rust.pct.Test_RustJni_GrammarFunctions_PCT</argument>
+                            </arguments>
+                            <includeProjectDependencies>true</includeProjectDependencies>
+                            <classpathScope>test</classpathScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <legend.pure.rust.libdir>${legend.rust.libdir}</legend.pure.rust.libdir>
+                        <legend.pct.rust.manifestDir>${project.basedir}/src/test/resources</legend.pct.rust.manifestDir>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

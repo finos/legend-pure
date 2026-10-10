@@ -9,12 +9,13 @@ the plan wins and this file gets fixed.
 
 ## What is here
 
-Two crates, nothing else:
+Three crates, nothing else:
 
 | Crate | Package | Holds |
 |---|---|---|
 | `crates/metamodel` | `legend-pure-metamodel` | Element tables (`PureModel`, `Element`, `nodes/`), the expression tree (`types::ValueSpec`, `types::ExprKind`), the M3 bootstrap (`bootstrap`, embeds `m3.pure` at compile time), function-name mangling (`fqn`). |
-| `crates/evaluator` | `legend-pure-evaluator` | Values, heap, variable context, dispatch (`eval`), the native registry (`native`, fished one at a time), hooks, builder. |
+| `crates/evaluator` | `legend-pure-evaluator` | Values, heap, variable context, dispatch (`eval`), the native registry (`native`, fished one at a time), hooks, builder, the `builders` test helpers. |
+| `crates/jni` | `legend-pure-jni` (cdylib `libpure_rust_jni`) | The JNI boundary behind the Java class `org.finos.legend.pure.rust.PureRustEvaluator` (Step 2): context, value marshalling, handle table, typed exceptions. Unsafe by nature; the only crate without `forbid(unsafe_code)`. |
 
 The previous Rust workspace (parser, compiler, LSP, DSL crates, CLI, binary
 snapshot format) is frozen at tag `archive/pre-evaluator-extract-2026-10` and
@@ -35,6 +36,29 @@ RUSTDOCFLAGS=-Dwarnings cargo doc --workspace --no-deps
 
 CI (`.github/workflows/rust.yml` at the repository root) runs exactly these.
 
+## PCT through the Java harness (Step 2)
+
+The platform PCT corpus runs through the Rust evaluator as the `Rust_JNI`
+adapter of the interpreted Java engine: the test's lambda crosses the boundary
+as a `CoreInstance`, nothing else changes in the harness. The number each
+suite prints is the progress metric.
+
+```bash
+cargo build --workspace                                   # the cdylib the Java module loads
+cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
+  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator clean verify
+#   -> Rust_JNI essential: 0 / 327, Rust_JNI grammar: 0 / 136 (plus 9 boundary tests)
+# after a change that moves tests: regenerate the manifests, review the diff, verify again
+JAVA_HOME=$(/usr/libexec/java_home -v 17) \
+  mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator \
+  -Dtest=RebaseRustJniManifests -DfailIfNoTests=false
+```
+
+The manifests under that module's `src/test/resources/platform/` are generated,
+never edited by hand. A lambda reaching `JniContext::start` is `Unsupported`
+until the lowering lands (plan, Step 2 "Next"). Root Maven installs on this
+machine need `clean` (the PAR plugin trips on a stale descriptor otherwise).
+
 ## The six rules (plan §0)
 
 1. Only the evaluator and the language metamodel it needs live here.
@@ -48,8 +72,9 @@ CI (`.github/workflows/rust.yml` at the repository root) runs exactly these.
    function. Plan Appendix A says where everything is.
 
 Allowed dependencies: `smol_str`, `thiserror`, `rust_decimal`, `im-rc`, `jiff`,
-`tracing`. `cargo tree --workspace -e normal --depth 1` must show nothing else,
-and `grep -rnE 'purem|pelt|legend_pure_parser|legend_pure_runtime|serde|linkme|postcard' crates/`
+`tracing`, and for the JNI crate only `jni`, `slotmap`. `cargo tree --workspace
+-e normal --depth 1` must show nothing else, and
+`grep -rnE 'purem|pelt|legend_pure_parser|legend_pure_runtime|serde|linkme|postcard|toml' crates/`
 must return nothing.
 
 ## Conventions

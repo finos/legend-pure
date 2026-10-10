@@ -190,12 +190,15 @@ fn push_object_key_pairs(
     let Ok(b_classifier) = ctx.heap().classifier(&b) else {
         return false;
     };
-    if a_classifier != b_classifier {
-        return false;
-    }
+    // Identify the class by resolved element, never by classifier string:
+    // two spellings of one class are the same class, two unknown
+    // classifiers are not comparable.
     let Some(class_id) = crate::m3_paths::resolve(ctx.model(), &a_classifier) else {
         return false; // unknown classifier — can't structurally compare
     };
+    if crate::m3_paths::resolve(ctx.model(), &b_classifier) != Some(class_id) {
+        return false;
+    }
     let keys = equality_key_properties(ctx.model(), class_id);
     if keys.is_empty() {
         return false; // no <<equality.Key>> → identity semantics (already checked above)

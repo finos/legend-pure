@@ -34,7 +34,7 @@ Read this first; everything below assumes it.
    function expressions, lambdas, classes, functions — and hand them to the
    evaluator. No source text, no loader. The PELT import comes *after* the
    evaluator is proven this way **and after the Java boundary and the PCT
-   PCT runner exist**, so every PELT increment is measured from its first commit.
+   adapter exist**, so every PELT increment is measured from its first commit.
 6. **Much of this already exists.** Appendix A says, file by file, what to
    take from the archive and what to strip. Extraction is a copy with listed
    edits, not a rewrite.
@@ -42,7 +42,7 @@ Read this first; everything below assumes it.
 | What | Where |
 |---|---|
 | This document | `legend-pure-rust/docs/rust-evaluator-mvp.md` on branch `legend-pure-rust` of the `legend-pure` fork (`rafaelbey/legend-pure`). It is the single source of truth for the Rust direction. |
-| The Rust workspace **after Step 0** | `legend-pure-rust/` (Cargo workspace, edition 2024) holding `crates/metamodel` and `crates/evaluator`. Build and test: `cargo build --workspace`, `cargo test --workspace`. `legend-pure-rust/CLAUDE.md` is rewritten in Step 0 to match. |
+| The Rust workspace **after Step 0** | `legend-pure-rust/` (Cargo workspace, edition 2024) holding `crates/metamodel` and `crates/evaluator`, plus `crates/jni` since Step 2. Build and test: `cargo build --workspace`, `cargo test --workspace`. `legend-pure-rust/CLAUDE.md` is rewritten in Step 0 to match. |
 | The Rust workspace **before Step 0** (the archive) | Tag `archive/pre-evaluator-extract-2026-10` and branch `legend-pure-rust-archive`, both at the last commit before extraction. Every path in Appendix A is an archive path. |
 | The Java stack (upstream FINOS code) | Sibling directories at the repository root: `legend-pure-core/`, `legend-pure-runtime/`, `legend-pure-maven/`, … Requires JDK 11 or 17 and Maven. |
 | The bootstrap source | `legend-pure-core/legend-pure-m3-core/src/main/resources/platform/pure/grammar/m3.pure`, embedded at compile time by the metamodel crate. This is the one `.pure` file the evaluator may depend on. |
@@ -50,13 +50,13 @@ Read this first; everything below assumes it.
 | PELT byte-level reference | `docs/architecture/pelt-serialization.md` at the repository root — on branch `docs/pelt-format`, submitted upstream as finos/legend-pure PR #1360. **Not on `legend-pure-rust` yet**: before Step 3, `git cherry-pick -n c989b50953b`, keep `docs/architecture/pelt-serialization.md`, and redo by hand its three link edits (`docs/README.md`, `docs/architecture/compiler-pipeline.md`, `docs/reference/maven-plugins-reference.md`; the first two already differ between the branches). Do **not** merge the branch — it tracks upstream `master` and differs from `legend-pure-rust` by ~1,500 files. |
 | Background analysis (why PELT, what it contains, how it maps) | `legend-pure-rust/docs/pelt-analysis.md` (moved from `docs/deferred/` in Step 0). Sections 6.3–6.8 are the source of Steps 2–7 here. |
 | legend-engine | Checkout at `~/Projects/legend-engine` (currently on branch `rust-parser`; `upstream/master` is the FINOS main line — see Appendix C for which branch is the target; it matters from Step 5, when the engine suite class is added). Its `*-pure` modules emit PELT into their jars (e.g. 414 `.pelt` in `functions-standard`); its PCT suite classes are the `Test_*_PCT.java` classes (41 on `upstream/master`); the engine compiler is `legend-engine-language-pure-compiler` (`toPureGraph`); the Pure function libraries are `legend-engine-core/legend-engine-core-pure/legend-engine-pure-code-functions-{standard,relation,json,planExecution,…}`. |
-| PCT in the platform | Profile `meta::pure::test::pct::PCT` in `legend-pure-core/legend-pure-m3-core/src/main/resources/platform/pure/essential/tests/pct_core.pure`; ~470 `<<PCT.test>>` functions in the platform sources; Java report providers `Essential_Functions_PCTReportProvider`, `Grammar_Functions_PCTReportProvider`, `Core_{Compiled,Interpreted}_PCTReportProvider`; shared helpers in `m3/pct/shared/PCTTools.java`. |
+| PCT in the platform | Profile `meta::pure::test::pct::PCT` in `legend-pure-core/legend-pure-m3-core/src/main/resources/platform/pure/essential/tests/pct_core.pure`, which since Step 2 also declares the native `evalRust` and the `Rust_JNI` adapter `testAdapterForRustExecution`; 463 `<<PCT.test>>` functions in the platform sources (327 essential, 136 grammar); Java report providers `Essential_Functions_PCTReportProvider`, `Grammar_Functions_PCTReportProvider`, `Core_{Compiled,Interpreted}_PCTReportProvider`, and `Core_RustJni_PCTReportProvider` in the fork's `legend-pure-runtime-rust-evaluator`; shared helpers in `m3/pct/shared/PCTTools.java`. |
 | What to extract, and what to leave | Appendix A (extraction map). Read it before Step 0 and before fishing anything later. |
 | Step 0 mechanics | Appendix B: archive commands, workspace skeleton, gates. |
 | Decisions still owned by the author | Appendix C. Do not guess these; ask. |
 
-**Definition of done for the MVP.** The `rust-interpreted` PCT platform
-(its runner built in Step 2, red) reports pass rates for the platform and at least
+**Definition of done for the MVP.** The `Rust_JNI` PCT adapter (built in
+Step 2, red) reports pass rates for the platform and at least
 one `legend-engine-pure-code-functions-*` module from PELT-loaded code with a
 published ranked list of missing natives (Step 5's gate), and a static Pure
 function runs against an engine-compiled model with Java-equal results
@@ -133,8 +133,8 @@ flowchart LR
 | **Java Pure compiler** | `legend-pure` M3 compiler. | Stays the compiler for all repository code. Not replaced. |
 | **legend-engine compiler** | `toPureGraph`: protocol JSON → Java `CoreInstance` graph (handcrafted `Root_..._Impl` objects). | Stays the compiler for user models, mappings, queries. Its output is consumed live through JNI. |
 | **Java engines** | compiled (generated bytecode) and interpreted (tree-walker over `CoreInstance`s). | Remain the reference implementations; PCT compares against them. |
-| **PCT** | `<<PCT.function>>` / `<<PCT.test>>` functions, run per engine through *adapters*. | A new `rust-interpreted` *platform* (paired with the existing `Native` adapter function) gives parity and native-coverage numbers. |
-| **JNI** | The Java ↔ native boundary. | Entry point (`evaluate(function, args)`), value marshalling, and the bridge that lets Rust read Java objects. |
+| **PCT** | `<<PCT.function>>` / `<<PCT.test>>` functions, run per engine through *adapters*. | A second platform adapter, `Rust_JNI` (`testAdapterForRustExecution`, body `$f->evalRust()`), runs every test lambda in the Rust evaluator under the interpreted engine's own discovery, assertion and reporting, and gives parity and native-coverage numbers. Later the Rust surveyor runs the corpus under cargo and reports as `Rust_Native`. |
+| **JNI** | The Java ↔ native boundary. | `CoreInstance` is the only currency both ways: `PureRustEvaluator.start(function, args)`, the node bridge that lets Rust read Java objects lazily, handles for Rust objects seen from Java, typed failures. |
 
 ---
 
@@ -195,8 +195,8 @@ flowchart TD
         NAT[Native registry\nfished one at a time]
     end
     subgraph Added in Step 2
-        JNI[JNI layer\nevaluate() · values · handles · typed failures]
-        PCTA[PCT runner\nplatform rust-interpreted · red first]
+        JNI[JNI boundary\nstart() · CoreInstance both ways · handles · typed failures]
+        PCTA[PCT adapter Rust_JNI\nevalRust on the interpreted engine · red first]
     end
     subgraph Added in Steps 3–5
         DIR[Element directory + lowering\nPELT nodes → tables + trees]
@@ -225,7 +225,7 @@ Design rules that hold for every step:
 - **Natives on demand.** The registry starts empty. A native is fished when a
   test or a PCT failure names it; the registry's contents are always
   explainable by a test.
-- **Red before green.** The PCT runner exists (Step 2) before any
+- **Red before green.** The PCT adapter exists (Step 2) before any
   loader exists, with failures typed by kind. Its pass rate is the progress
   metric; a step that does not move it needs a reason.
 - **Lazy by element.** The directory (manifests) is read eagerly; an element's
@@ -404,88 +404,149 @@ still returns nothing.
 and `times`, then add rows from the table one at a time. Rough size: builders ≈ 500 lines;
 each fished native is a copy plus one test.
 
-### Step 2 — Values across JNI, and a PCT run that starts red
+### Step 2 — Values across JNI, and a PCT run that starts red — done 2026-10-09
 
-**Goal.** Connect the evaluator to Java and run the platform PCT suite
+**Goal.** Connect the evaluator to Java and run the platform PCT corpus
 through it *before it can run anything real*. Every test is red on day one;
 from here on, each later step is measured by how many turn green.
 
-**How PCT runs in Java today (what this step copies).** A suite class such as
-`Test_Interpreted_EssentialFunctions_PCT` (module
-`legend-pure-runtime-java-engine-interpreted`) extends `PCTReportConfiguration`
-with a *report scope* (package plus source-path prefix), an *adapter* (the
-Pure function `meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_`,
-key `Native`) and a *platform* string (`interpreted`, `compiled`). The older
-builder `PureTestBuilderInterpreted.buildPCTTestSuite(scope, expectedFailures, adapter)`
-enumerates `<<PCT.test>>` functions in Java (`TestCollection.buildPCTTestCollection`),
-builds a JUnit 3 suite (`PureTestBuilder.buildSuite`) and runs each test
-through a private `getTestExecutor` that passes the adapter function as
-argument 0, treats a `PureAssertFailException` cause as a failure, and marks a
-test expected-failed when the manifest's `expectedError` substring matches the
-message. The newer `buildPCTSurveyorSuite` runs discovery *inside* the engine
-under test (the Pure surveyor), so it is unusable until the surveyor's own
-functions execute in Rust. **Copy the older path, not the surveyor.** In PCT
-vocabulary the new thing is a *platform* (`rust-interpreted`) paired with the
-existing `Native` adapter, not a new adapter function.
+**What was built** (commits `11c63c83b65`, `51f546f3e96`, `37d1c0e52d1`,
+`d20e9a8539a`, `d8f1b69ab4f`).
 
-**Build.**
-- JNI entry point: `evaluate(functionPath, adapterPath)` for PCT and the
-  general `evaluate(functionPath, args...)` on the existing `PureRustEvaluator`;
-  a context object holding the model (bootstrap only, at this step) and the
-  evaluator.
-- Marshalling: primitives, strings, dates, decimals, collections; handles for
-  Rust-side instances (Java holds an opaque id, Rust keeps the object alive
-  until released). Typed Java proxies are optional and come later.
-- **Typed failures across the boundary.** A Rust failure reaches Java as
-  `PureRustEvaluationException` carrying a *kind* (`FunctionNotFound`,
-  `Unsupported`, `AssertionFailed`, `RuntimeError`) plus the mangled name or
-  source span. `AssertionFailed` is rethrown with a `PureAssertFailException`
-  cause so the harness's existing fail / error split applies. The kind is also
-  the message prefix (`FunctionNotFound: …`), because the manifest matches
-  `expectedError` by substring and has no kind field.
-- **`PureTestBuilderRust`** in the fork's Java module: a copy of
-  `buildPCTTestSuite` plus `getTestExecutor` whose executor calls
-  `evaluate(testPath, adapterPath)` instead of the interpreted engine. Test
-  discovery needs the Java graph, so the module gains test-scope dependencies
-  on `legend-pure-m3-core` and `legend-pure-runtime-java-engine-interpreted`
-  (its `.par`-loaded `ProcessorSupport`) and on JUnit 4 (the harness is
-  JUnit 3 style `suite()`); today it has only JUnit 5.
-- **Every PCT test takes the adapter function as parameter 0** and calls
-  `$f->eval(|…)`. At this step the Rust side raises `FunctionNotFound(testPath)`
-  before touching arguments. The first green (Step 5) needs the adapter
-  function itself PELT-loaded plus lambda application and `eval`.
-- **Expected-failures manifest**: the Java engines' JSON shape (`PCTManifest`:
-  `adapter` plus `exclusions[{test, expectedError}]`, loaded by
-  `PCTManifestLoader`). At this step it lists all ~467 platform tests with
-  `FunctionNotFound:` messages. `validateExclusions` rejects unknown paths, so
-  the manifest is regenerated from the run, never hand-edited.
-- **Report**: the executor counts pass and fail-by-kind per report scope and
-  prints a one-line pass rate plus the ranked `FunctionNotFound` list, written
-  to `target/pct-rust/<scope>.json`. (`ReportGeneration` derives success from
-  the manifest without running anything, so it cannot be the source.)
-- One suite class per platform report scope (essential, grammar, …),
-  mirroring the interpreted engine's `Test_Interpreted_*_PCT` classes.
+- **`crates/jni`** (cdylib `libpure_rust_jni`; dependencies `jni`,
+  `slotmap`): the third crate. The only value currency across the boundary is
+  the Java `CoreInstance`, in both directions. Crossing in, a node is described
+  once (kind, classifier path, primitive payload, property names) and becomes
+  a Rust value: primitives, dates and decimals decode; a packageable element
+  whose path the Rust model knows *is* that element (`Value::Element`); enum
+  values of known enumerations become enum values; every other node is a
+  lazily read Java-backed heap object (`JavaNode: TypedObject`, properties
+  fetched on first touch through `RustNodeBridge.propertyValues`). Crossing
+  out, primitives go through the `ModelRepository` factories, elements and
+  enum values by path, Java-backed nodes as their original object, other Rust
+  objects as `RustCoreInstance` proxies over a handle table. Failures reach
+  Java as `PureRustEvaluationException` with a kind (`FUNCTION_NOT_FOUND`,
+  `UNSUPPORTED`, `EXECUTION_ERROR`, `ASSERTION_FAILED`, `CONSTRAINT_VIOLATION`)
+  that also prefixes the message, because manifests match `expectedError` by
+  substring; `ASSERTION_FAILED` carries a `PureAssertFailException` cause so
+  the harness's fail / error split applies.
+- **Java module `legend-pure-runtime/legend-pure-runtime-rust-evaluator`**
+  (back in the reactor; `…-bindings-ap` stays out): `PureRustEvaluator
+  implements FunctionExecution` (`init(runtime, message)`, `start(function,
+  args)`), `RustNodeBridge`, `RustCoreInstance`, and `TestRustEvaluatorBoundary`
+  (nine tests: primitives, collections, element identity, Rust objects,
+  `FunctionNotFound` with the user path, assertion cause, lambda
+  `Unsupported`, ten thousand round trips leave no live handle, a closed
+  evaluator refuses calls).
+- **The PCT seam is the adapter, not a platform.** Every PCT test takes its
+  adapter function as argument 0 and calls `$f->eval(|…)`; the adapter decides
+  which engine runs the lambda. The platform (`pct_core.pure`) gained a native
+  `meta::pure::functions::lang::evalRust<V|m>(f:Function<{->V[m]}>[1]):V[m]`
+  and a second adapter `<<PCT.adapter>> {PCT.adapterName='Rust_JNI'}
+  meta::pure::test::pct::testAdapterForRustExecution` whose body is
+  `$f->evalRust()`; `PlatformCodeRepositoryProvider.rustJniAdapter` names it
+  for reports. The interpreted engine implements `evalRust` through `EvalRust`
+  (registered by `RustJniInterpretedExtension` via `META-INF/services`; the
+  evaluator is created on the first call, because an extension whose
+  constructor throws is dropped silently). The compiled engine registers a
+  stub that throws at run time, because it generates Java for the whole
+  platform at build time and refuses a call to an unknown native. Discovery,
+  assertion and reporting stay the Java engines' own.
+- **Suites, manifests, reports** in the Java module:
+  `Test_RustJni_{Essential,Grammar}Functions_PCT` are the interpreted suites
+  with the `Rust_JNI` adapter and the manifests
+  `src/test/resources/platform/pure/essential/pct_essential_interpreted_rust_jni.json`
+  and `…/grammar/functions/pct_grammar_interpreted_rust_jni.json` (inside a
+  repository tree, because the surveyor reads them through code storage and
+  the report through the classpath). The manifests are generated, never
+  hand-written: `RebaseRustJniManifests` runs the surveyor under the committed
+  manifest and derives the new one from its report (FAIL/ERROR → first line of
+  the message; PASS as expected failure → carried forward; an excluded test
+  that now passes → dropped; a second run reproduces the files byte for
+  byte). `PCTReportGenerator` writes
+  `ADAPTER_{essential,grammar}_interpreted_Rust_JNI.json` at
+  `process-test-classes` from the manifests alone, published by
+  `Core_RustJni_PCTReportProvider`, so the report step needs no Rust library.
+  Without the cdylib the module's tests are skipped and the build stays green.
 
-**Integrates with.** The PCT harness as it exists in legend-pure; the fork's
-Maven reactor (the two modules removed in Step 0 come back). legend-engine
-registration is Step 5: it needs a Maven dependency on the fork-only Java
-module plus the cdylib on `java.library.path`, which is Appendix C territory.
+**State at the end of the step.** `Rust_JNI essential: 0 / 327`,
+`Rust_JNI grammar: 0 / 136`. 451 tests record
+`Unsupported: evaluating a Java LambdaFunction through the bridge`: the lambda
+reaches Rust as a Java node classified `LambdaFunction`, and nothing lowers
+it yet. The 12 tests that assert on an error message record
+`Execution error message mismatch.`, because their assertion compares that
+same `Unsupported` message with the expected error text. The line each suite
+prints (`Rust_JNI <scope>: <passes> / <total>`) is the progress metric of the
+whole effort from here on.
 
-**Proves.** The boundary works and the measurement exists. Gate: every
-platform report scope runs end to end through `PureTestBuilderRust` with every
-test reported `FunctionNotFound`; no crash; the handle table is empty after a
-loop of ten thousand `evaluate` calls (assert on the evaluator's live-handle
-count); the regenerated manifest makes `mvn test` green; the report prints
-`0 / 467`. From this commit on, the number on that line is the progress
-metric of the whole effort.
+**Next (decided by the author, 2026-10-09): lower Java lambdas through the
+bridge.** A test turns green when the lambda's body becomes an expression
+tree the evaluator can run: the body lowering of Step 5 (M3 expression nodes
+into the expression tree) over the declarative lowering of Step 4 (the
+classes, functions and enumerations a body references), both applied to
+Java nodes reached through the bridge — §4's "one node interface" says PELT
+nodes and live Java objects lower through the same code. Doing it over Java
+nodes first moves the `Rust_JNI` count before any PELT is read; Step 3 (the
+PELT reader) follows. Natives are then fished per the `FunctionNotFound` ranking, as Step 5
+says. See Appendix C item 6.
 
-**Start here.** Fish `crates/jni` (archive: 1.8 k lines in five files) as the
-third crate; add `jni` and `slotmap` to the allowed dependencies; cut its
-dependencies on the archived `ast`, `lexer`, `parser`, `protocol`,
-`core-platform-pure`, `java-codegen`, `toml` and `tracing-subscriber`. Re-add
-the two Maven `<module>` lines removed in Step 0. The Java module already has
-`PureRustEvaluator.evaluate(String, Object...)`, the handle table and
-`close()`. Rough size: ~1 k lines Rust touched, ~600 lines Java.
+**Later: `Rust_Native`.** Once the surveyor's own functions execute in Rust,
+the same corpus runs under cargo through the Rust surveyor, with its own
+manifests, and reports as adapter `Rust_Native`; `Rust_JNI` stays the measure
+of the bridge.
+
+**Recipe.**
+
+```bash
+cd legend-pure-rust && cargo build --workspace            # builds the cdylib
+cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
+  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator clean verify
+# after a change that moves tests: regenerate, review the diff, verify again
+JAVA_HOME=$(/usr/libexec/java_home -v 17) \
+  mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator \
+  -Dtest=RebaseRustJniManifests -DfailIfNoTests=false
+```
+
+**Deferred: the cost of the bridge (profile first, decided 2026-10-10).**
+Property fetches on a `JavaNode` are already lazy; what is eager is the
+per-value `NodeDescription`, read through about fifteen JNI field calls plus
+a string copy per text field, and the `getKeys()` array built for every
+node. Numbers cross as decimal text both ways, `RustNodeBridge.nodes` pins
+every described node until `close`, and every lazy read re-attaches the
+thread. None of it matters while tests stop at the lambda; once lowering
+walks whole bodies through `propertyValues`, profile the PCT run and pick
+from these, roughly in order of payoff per line:
+
+- *Columnar description*: `describe` / `propertyValues` return one `long[]`
+  (kind, id, classifier id, date components) plus a `String[]` of the
+  payloads that exist — two array reads per call instead of fifteen field
+  reads per value.
+- *Intern repeated strings*: classifier paths, property keys and element
+  paths get a small integer on the Java side, sent once; Rust mirrors the
+  table.
+- *Drop the eager keys array*: fetch `property_names` on demand.
+- *Reuse the live `JNIEnv`*: the evaluator runs inside the `nativeStart`
+  frame; a thread-local env removes the attach per read.
+- *Subtree prefetch for code, laziness for data*: lowering touches every
+  node of a body, so `describeSubtree(id)` returning the whole body in one
+  columnar payload (or a `byte[]` in the PELT element encoding, once Step 3
+  can decode it) beats per-value crossing; instances of user classes
+  (Steps 6–7) keep per-property laziness because a request touches few of
+  their properties.
+- *Cache element resolution*: `resolve_function_by_path` walks the model on
+  every packageable-element crossing.
+
+Not worth doing: deferring the classifier itself (dispatch asks for it at
+once).
+
+**Deviations from the plan as first written** (recorded, as rule 6 asks).
+The archived JNI crate's tagged-union marshalling was not fished:
+`CoreInstance` crosses instead, so every Pure type is covered without a second
+value model. No `PureTestBuilderRust`, no `rust-interpreted` platform, no
+`target/pct-rust` report: the harness's adapter seam made all three redundant,
+and the surveyor path is used after all, since discovery runs in the Java
+engine, not in Rust. Lambdas across the bridge report `Unsupported`, not
+`FunctionNotFound(testPath)`.
 
 ### Step 3 — Read PELT
 
@@ -718,8 +779,8 @@ Java. Rough size: ~1 k lines.
 | `m3.pure` (M3 bootstrap) | 0 onward | in | embedded at compile time; chunk 0 of every model |
 | Maven-built jars with PELT | 3–4 | in | PELT store over directory / jars / classloader |
 | Java Pure compiler | all | upstream | unchanged; its PELT output is the contract |
-| PCT corpus and adapters | 2 onward | test | `rust-interpreted` platform: runner in the fork from Step 2 (red), suite class in legend-engine from Step 5; failures typed by kind |
-| JNI | 2, 3, 6 | both | `evaluate()`, value marshalling, handles, proxies, Java-object node source |
+| PCT corpus and adapters | 2 onward | test | `Rust_JNI` adapter: `evalRust` on the interpreted engine, suites and generated manifests in the fork's `legend-pure-runtime-rust-evaluator` from Step 2 (red), engine suite class from Step 5; failures typed by kind; `Rust_Native` through the Rust surveyor later |
+| JNI | 2, 3, 6 | both | `start()`, `CoreInstance` both ways, node bridge, handles, typed failures |
 | legend-engine compiler (`toPureGraph`) | 6, 7 | in | live `CoreInstance` objects consumed through the node bridge; identity unification by path |
 | `MetadataPelt` (class in `legend-pure-runtime-java-engine-compiled`, used by legend-engine's `PureModel`) | 6 | in | its lazy objects are also `CoreInstance`s; unified with the evaluator's own PELT-loaded elements by path |
 | Java natives (`core_functions_*`) | 1 onward | re-implement | Rust native registry, fished per test (Step 1) then per the runner's `FunctionNotFound` ranking (Step 5 onward) |
@@ -752,7 +813,7 @@ Java. Rough size: ~1 k lines.
 | Reference ids reach inside elements | Steps 4, 6 | forward references from bodies target elements plus `name`/`id` keys; sub-element ids only matter for back references, which are optional |
 | JNI latency per node | Step 6 | one transition per object, cached; whole-model work uses bulk calls or a PELT snapshot of the model |
 | Engine-built elements lack source spans | Step 6 | the node bridge tolerates missing spans; PELT snapshots would not, which is why live objects go through the bridge |
-| A red-first runner is noise | Step 2 | failures cross JNI with a kind; the report groups by kind, so "not loaded yet" never masquerades as a divergence, and the expected-failures manifest keeps CI green while the number climbs |
+| A red-first run is noise | Step 2 | failures cross JNI with a kind that prefixes the message (`Unsupported: …`); the generated manifests record that first line per test, so "not lowered yet" never masquerades as a divergence, and they keep CI green while the number climbs |
 | Native coverage | Step 1 onward | measured per test, then per module by the PCT runner; target 100 %, reached incrementally |
 
 ---
@@ -938,13 +999,13 @@ flag it in the hand-back.
    target from Step 5 (engine suite class) onward — the fork's `rust-parser`
    branch or FINOS `upstream/master`? PELT contents and the set of
    `Test_*_PCT.java` classes differ between them. *Default: `upstream/master`.*
-2. **Where Java-side helpers land.** The Step 2 test builder and `evaluate`
-   entry point, the Step 3 classloader callback, the Step 4 oracle JUnit and
+2. **Where Java-side helpers land.** The Step 2 `evalRust` native, suites
+   and rebase tool, the Step 3 classloader callback, the Step 4 oracle JUnit and
    the Step 6 node helper are Java code. Decision per item: fork branch only,
    or upstream PR to finos/legend-pure (the `legend-pure-runtime-rust-evaluator`
    module already lives in this fork). *Default: fork branch only.*
 3. **The engine PCT suite class.** Upstream PR to finos/legend-engine, or
-   kept in the fork? This decides whether `rust-interpreted` results appear in
+   kept in the fork? This decides whether `Rust_JNI` results appear in
    FINOS CI or only locally. *Default: fork only.*
 4. **Fixture refresh cadence.** Who re-runs `regen-pelt-fixtures.sh` when the
    Java platform changes, and is a stale oracle a build failure or a warning?
@@ -953,4 +1014,10 @@ flag it in the hand-back.
    `legend-pure-rust/` on the live branch (archive keeps the old one). The
    alternative is a sibling directory with the old workspace left in place;
    that keeps two Rust directions visible, which rule 1 argues against.
-   Default is replace unless the author says otherwise.
+   Default is replace unless the author says otherwise. *Decided 2026-10-09:
+   replace.*
+6. **Route to the first green.** The Step 4 / Step 5 lowerings over Java
+   nodes reached through the bridge (no PELT needed; moves the `Rust_JNI`
+   count directly), or over PELT first (Step 3, then 4 and 5, as the step
+   order reads). *Decided
+   2026-10-09: the bridge first; Step 3 follows.*

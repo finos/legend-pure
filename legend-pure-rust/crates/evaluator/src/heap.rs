@@ -100,6 +100,40 @@ pub trait TypedObject: 'static {
     /// Returns an error if the property name is not recognized or the value type is wrong.
     fn set_property(&mut self, name: &str, value: Value) -> Result<(), PureRuntimeError>;
 
+    /// Every value of a property, flattened. The default unpacks what
+    /// [`get_property`](Self::get_property) returns: a `Collection`
+    /// yields its items, `Unit` or `None` yields nothing, anything else is
+    /// a single value. Objects whose properties are naturally to-many
+    /// (a node read from another graph) override this directly.
+    fn get_property_values(&self, name: &str) -> PVector<Value> {
+        self.get_property(name)
+            .map_or_else(PVector::new, |v| v.to_collection())
+    }
+
+    /// Names of the properties this object currently holds. The default
+    /// is empty, which keeps `copy` from cloning anything it cannot see.
+    fn property_names(&self) -> Vec<SmolStr> {
+        Vec::new()
+    }
+
+    /// Replace every value of a property (`mutateSet` semantics). The
+    /// default sets the values one by one through
+    /// [`set_property`](Self::set_property), which is append semantics for
+    /// most implementations; override when replacement must be exact.
+    ///
+    /// # Errors
+    /// Returns an error if the property name is not recognized or the value type is wrong.
+    fn set_property_values(
+        &mut self,
+        name: &str,
+        values: &[Value],
+    ) -> Result<(), PureRuntimeError> {
+        for v in values {
+            self.set_property(name, v.clone())?;
+        }
+        Ok(())
+    }
+
     /// Downcast to `Any` for type-safe access from compiled code.
     fn as_any(&self) -> &dyn std::any::Any;
 
@@ -176,10 +210,7 @@ impl HeapEntry {
     pub fn get_property_values(&self, name: &str) -> PVector<Value> {
         match self {
             HeapEntry::Dynamic(obj) => obj.properties.get(name).cloned().unwrap_or_default(),
-            HeapEntry::Typed(obj) => match obj.get_property(name) {
-                Some(v) => PVector::unit(v),
-                None => PVector::new(),
-            },
+            HeapEntry::Typed(obj) => obj.get_property_values(name),
         }
     }
 
@@ -188,7 +219,7 @@ impl HeapEntry {
     pub fn property_names(&self) -> Vec<SmolStr> {
         match self {
             HeapEntry::Dynamic(obj) => obj.properties.keys().cloned().collect(),
-            HeapEntry::Typed(_) => Vec::new(),
+            HeapEntry::Typed(obj) => obj.property_names(),
         }
     }
 
@@ -240,12 +271,7 @@ impl HeapEntry {
                 obj.properties.insert(SmolStr::new(property), pv);
                 Ok(())
             }
-            HeapEntry::Typed(obj) => {
-                for v in values {
-                    obj.set_property(property, v.clone())?;
-                }
-                Ok(())
-            }
+            HeapEntry::Typed(obj) => obj.set_property_values(property, values),
         }
     }
 
@@ -510,5 +536,79 @@ mod tests {
         };
         assert!(weak.upgrade().is_none());
         assert_eq!(heap.metamodel_len(), 0);
+    }
+
+    /// A typed object whose properties are naturally to-many, as a node
+    /// read from another graph would be.
+    struct Bag {
+        values: std::collections::HashMap<SmolStr, PVector<Value>>,
+    }
+
+    impl TypedObject for Bag {
+        fn classifier_path(&self) -> &str {
+            "my::Bag"
+        }
+        fn get_property(&self, name: &str) -> Option<Value> {
+            self.values.get(name).and_then(|v| v.head().cloned())
+        }
+        fn set_property(&mut self, name: &str, value: Value) -> Result<(), PureRuntimeError> {
+            self.values
+                .entry(SmolStr::new(name))
+                .or_default()
+                .push_back(value);
+            Ok(())
+        }
+        fn get_property_values(&self, name: &str) -> PVector<Value> {
+            self.values.get(name).cloned().unwrap_or_default()
+        }
+        fn property_names(&self) -> Vec<SmolStr> {
+            self.values.keys().cloned().collect()
+        }
+        fn set_property_values(
+            &mut self,
+            name: &str,
+            values: &[Value],
+        ) -> Result<(), PureRuntimeError> {
+            self.values
+                .insert(SmolStr::new(name), values.iter().cloned().collect());
+            Ok(())
+        }
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+        fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+            self
+        }
+    }
+
+    #[test]
+    fn typed_object_to_many_reads_flat_and_mutate_set_replaces() {
+        let mut heap = RuntimeHeap::new();
+        let handle = heap.alloc_typed(Box::new(Bag {
+            values: std::collections::HashMap::new(),
+        }));
+        heap.mutate_set(
+            &handle,
+            "items",
+            &[Value::Integer(1), Value::Integer(2), Value::Integer(3)],
+        )
+        .unwrap();
+        let items = heap.get_property_values(&handle, "items").unwrap();
+        assert_eq!(items.len(), 3, "a to-many property reads back flat");
+        assert_eq!(items.get(2), Some(&Value::Integer(3)));
+
+        heap.mutate_set(&handle, "items", &[Value::Integer(9)])
+            .unwrap();
+        let items = heap.get_property_values(&handle, "items").unwrap();
+        assert_eq!(items.len(), 1, "mutate_set replaces on a typed object");
+        assert_eq!(
+            heap.property_names(&handle).unwrap(),
+            vec![SmolStr::new("items")]
+        );
+        assert!(
+            heap.get_property_values(&handle, "missing")
+                .unwrap()
+                .is_empty()
+        );
     }
 }

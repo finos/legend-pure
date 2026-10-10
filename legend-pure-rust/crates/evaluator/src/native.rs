@@ -386,6 +386,7 @@ impl NativeRegistry {
         boolean::register(&mut registry);
         comparison::register(&mut registry);
         lang::register(&mut registry);
+        testing::register(&mut registry);
         registry
     }
 }
@@ -501,6 +502,9 @@ pub mod equality;
 
 /// Language-level natives: `letFunction`, `if`, `new`, `copy`.
 pub mod lang;
+
+/// Test-support natives: `assert`.
+pub mod testing;
 
 /// Heap shapes for reflection over functions and multiplicities
 /// (helpers only; no natives registered).

@@ -418,6 +418,23 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
         self.call_user_function(element_id, args, name, None)
     }
 
+    /// Call a native by its exact mangled registry key with already
+    /// evaluated arguments (`plus_Number_MANY__Number_1_`). No model
+    /// lookup and no prefix fallback: a miss is `FunctionNotFound(key)`.
+    /// This is the entry point for callers outside the expression tree,
+    /// such as the JNI boundary.
+    ///
+    /// # Errors
+    /// Returns `PureException` if the key is not registered or the native fails.
+    pub fn call_native(&mut self, key: &str, args: &[Value]) -> Result<Value, PureException> {
+        let Some(native) = self.natives.get(key) else {
+            return Err(PureException::from(PureRuntimeError::FunctionNotFound(
+                key.into(),
+            )));
+        };
+        self.execute_native_with_values(native, args)
+    }
+
     /// Call a Pure function by its resolved [`ElementId`] with no arguments.
     ///
     /// This is the primary entry point for integration tests that resolve

@@ -388,6 +388,7 @@ pub fn register_m3_packages(model: &mut crate::model::PureModel, registrations: 
     for reg in registrations {
         let package_id = model.get_or_create_package(&reg.package_segments);
         model.register_element(package_id, reg.element_id);
+        set_parent_package(model, reg.element_id, package_id);
     }
 
     // Register existing bootstrap elements as aliases in their M3 packages
@@ -395,6 +396,28 @@ pub fn register_m3_packages(model: &mut crate::model::PureModel, registrations: 
         let pkg_path: Vec<SmolStr> = pkg_segments.iter().map(|&s| SmolStr::new(s)).collect();
         let package_id = model.get_or_create_package(&pkg_path);
         model.register_element(package_id, element_id);
+        set_parent_package(model, element_id, package_id);
+    }
+}
+
+/// Point a bootstrap node at the package it was just registered in, so
+/// the path built back from the node (`meta::pure::metamodel::type::Class`)
+/// is the path it resolves from. Primitives are never registered here and
+/// keep the root as parent: their path is the bare name, as in Java.
+fn set_parent_package(
+    model: &mut crate::model::PureModel,
+    element_id: ElementId,
+    package_id: PackageId,
+) {
+    if let ElementId::InstanceId {
+        chunk_id,
+        local_idx,
+    } = element_id
+    {
+        model.chunks[usize::from(chunk_id)]
+            .nodes
+            .get_mut(local_idx)
+            .parent_package = package_id;
     }
 }
 
@@ -564,5 +587,24 @@ mod tests {
                 "node {idx} should reflect caller's root_package"
             );
         }
+    }
+
+    #[test]
+    fn registered_m3_classes_point_at_their_package() {
+        let model = crate::model::PureModel::bootstrapped();
+        let class_id = model
+            .resolve_fqn_str("meta::pure::metamodel::type::Class")
+            .expect("Class resolves");
+        let pkg = model.get_package(model.get_node(class_id).parent_package);
+        assert_eq!(pkg.name, "type");
+        let any_pkg = model.get_package(model.get_node(ANY_ID).parent_package);
+        assert_eq!(any_pkg.name, "type");
+        // Primitives stay top-level: their parent is the root package.
+        assert!(
+            model
+                .get_package(model.get_node(STRING_ID).parent_package)
+                .parent
+                .is_none()
+        );
     }
 }

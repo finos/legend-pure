@@ -1,0 +1,531 @@
+// Copyright 2026 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+//! JNI boundary: the Rust side of the native methods of the Java class
+//! `org.finos.legend.pure.rust.PureRustEvaluator`.
+//!
+//! The only value currency across the boundary is the Java `CoreInstance`.
+//! Java hands graph nodes in; Rust decodes primitives, unifies elements the
+//! bootstrap model knows, and wraps every other node as a Java-backed heap
+//! object (`java_node`). Rust hands `CoreInstance`s back (`materialize`).
+//! Every export runs inside `catch_unwind`, so a Rust panic reaches Java
+//! as `PureRustException` rather than aborting the JVM.
+
+#![deny(missing_docs)]
+// PureException carries a call stack (Vec) so its size is inherently large;
+// the evaluator crate allows the same lint for the same reason.
+#![allow(clippy::result_large_err)]
+
+pub mod bridge;
+mod context;
+mod exception;
+pub mod java_node;
+pub mod materialize;
+
+use jni::JNIEnv;
+use jni::objects::{JClass, JObject, JObjectArray, JString, JValue};
+use jni::signature::ReturnType;
+use jni::sys::jlong;
+use legend_pure_evaluator::error::{PureException, PureRuntimeError};
+use legend_pure_evaluator::native::NativeRegistry;
+use legend_pure_evaluator::value::Value;
+use legend_pure_metamodel::model::PureModel;
+
+use crate::bridge::{BridgeMethods, CORE_INSTANCE_CLASS};
+use crate::context::JniContext;
+use crate::exception::{ExceptionPayload, pure_exception_to_payload};
+
+const PURE_RUST_EXC: &str = "org/finos/legend/pure/rust/PureRustException";
+
+const PURE_RUST_EVAL_EXC: &str = "org/finos/legend/pure/rust/PureRustEvaluationException";
+
+/// Build the Java `PureRustEvaluationException` from a structured
+/// `PureException` and throw it via JNI.
+///
+/// Best-effort: if any JNI call fails (e.g. the rich constructor isn't
+/// found because the Java side is older than this binary), falls back
+/// to `env.throw_new(PURE_RUST_EVAL_EXC, message)` which targets the
+/// pre-existing message-only constructor. The fallback path is also
+/// what end users see if they swap in an older
+/// `legend-pure-runtime-rust-evaluator` JAR.
+pub(crate) fn throw_pure_exception(env: &mut JNIEnv, exc: &PureException) {
+    let payload = pure_exception_to_payload(exc);
+    if try_throw_rich(env, &payload).is_err() {
+        // Ensure any pending exception from the failed rich-throw
+        // attempt is cleared before the fallback throw, otherwise
+        // throw_new returns Err and the Java side never sees an
+        // exception.
+        let _ = env.exception_clear();
+        let _ = env.throw_new(PURE_RUST_EVAL_EXC, &payload.message);
+    }
+}
+
+#[allow(clippy::too_many_lines)] // Linear JNI plumbing — splitting hurts readability
+fn try_throw_rich(env: &mut JNIEnv, payload: &ExceptionPayload) -> jni::errors::Result<()> {
+    use jni::objects::{JObject, JValue};
+    let message = env.new_string(&payload.message)?;
+    let kind = env.new_string(payload.kind)?;
+    let source_info: JObject<'_> = match &payload.source_info {
+        Some(s) => env.new_string(s)?.into(),
+        None => JObject::null(),
+    };
+    let stack_class = env.find_class("java/lang/String")?;
+    let empty_string = env.new_string("")?;
+    let call_stack_arr =
+        env.new_object_array(payload.call_stack.len() as i32, &stack_class, &empty_string)?;
+    for (i, frame) in payload.call_stack.iter().enumerate() {
+        let frame_str = env.new_string(frame)?;
+        env.set_object_array_element(&call_stack_arr, i as i32, &frame_str)?;
+    }
+    let constraint_id: JObject<'_> = match &payload.constraint_id {
+        Some(s) => env.new_string(s)?.into(),
+        None => JObject::null(),
+    };
+    let constraint_kind: JObject<'_> = match payload.constraint_kind {
+        Some(s) => env.new_string(s)?.into(),
+        None => JObject::null(),
+    };
+    let owner_fqn: JObject<'_> = match &payload.owner_fqn {
+        Some(s) => env.new_string(s)?.into(),
+        None => JObject::null(),
+    };
+
+    let exc_obj = env.new_object(
+        PURE_RUST_EVAL_EXC,
+        ExceptionPayload::RICH_CTOR_SIG,
+        &[
+            JValue::Object(&message.into()),
+            JValue::Object(&kind.into()),
+            JValue::Object(&source_info),
+            JValue::Object(&call_stack_arr.into()),
+            JValue::Object(&constraint_id),
+            JValue::Object(&constraint_kind),
+            JValue::Object(&owner_fqn),
+        ],
+    )?;
+    env.throw(jni::objects::JThrowable::from(exc_obj))?;
+    Ok(())
+}
+
+fn ffi_error(message: String) -> PureException {
+    PureException::execution(
+        PureRuntimeError::EvaluationError(message),
+        legend_pure_metamodel::source_info::SourceInfo::new("<ffi>", 0, 0, 0, 0),
+        Vec::new(),
+    )
+}
+
+/// Describe a Java `CoreInstance` through the bridge and turn it into a value.
+fn cross_in(env: &mut JNIEnv, ctx: &JniContext, obj: &JObject) -> Result<Value, PureException> {
+    let shared = &ctx.shared;
+    let described = unsafe {
+        env.call_method_unchecked(
+            shared.bridge.as_obj(),
+            shared.methods.describe,
+            ReturnType::Object,
+            &[JValue::Object(obj).as_jni()],
+        )
+    };
+    let desc_obj = match described.and_then(|v| v.l()) {
+        Ok(o) => o,
+        Err(e) => {
+            let _ = env.exception_clear();
+            return Err(ffi_error(format!("describe: {e}")));
+        }
+    };
+    let d = java_node::read_description(env, &desc_obj)
+        .map_err(|e| ffi_error(format!("describe: {e}")))?;
+    java_node::description_to_value(shared, d)
+}
+
+/// One argument slot: a `CoreInstance[]` becomes `Unit`, a scalar or a collection.
+fn cross_in_slot<'l>(
+    env: &mut JNIEnv<'l>,
+    ctx: &JniContext,
+    slot: JObject<'l>,
+) -> Result<Value, PureException> {
+    if slot.is_null() {
+        return Ok(Value::Unit);
+    }
+    let arr = JObjectArray::from(slot);
+    let len = env
+        .get_array_length(&arr)
+        .map_err(|e| ffi_error(format!("argument array: {e}")))?;
+    let mut values = Vec::with_capacity(usize::try_from(len).unwrap_or(0));
+    for i in 0..len {
+        let item = env
+            .get_object_array_element(&arr, i)
+            .map_err(|e| ffi_error(format!("argument array: {e}")))?;
+        values.push(cross_in(env, ctx, &item)?);
+    }
+    Ok(Value::from_vec(values))
+}
+
+/// Materialise a value as a `CoreInstance[]`.
+fn cross_out<'l>(
+    env: &mut JNIEnv<'l>,
+    ctx: &JniContext,
+    value: &Value,
+) -> Result<JObjectArray<'l>, PureException> {
+    let mut objects = Vec::new();
+    materialize::value_to_java(env, &ctx.shared, value, &mut objects)?;
+    let arr = env
+        .new_object_array(
+            i32::try_from(objects.len()).unwrap_or(i32::MAX),
+            CORE_INSTANCE_CLASS,
+            JObject::null(),
+        )
+        .map_err(|e| ffi_error(format!("result array: {e}")))?;
+    for (i, obj) in objects.iter().enumerate() {
+        env.set_object_array_element(&arr, i32::try_from(i).unwrap_or(i32::MAX), obj)
+            .map_err(|e| ffi_error(format!("result array: {e}")))?;
+    }
+    Ok(arr)
+}
+
+fn throw_panic(env: &mut JNIEnv, what: &str) {
+    let _ = env.throw_new(PURE_RUST_EXC, format!("Rust paniced during {what}"));
+}
+
+fn context_mut<'a>(context_ptr: jlong) -> &'a mut JniContext {
+    unsafe { &mut *(context_ptr as *mut JniContext) }
+}
+
+/// Creates a context over the bootstrap model and the fished native
+/// registry, bound to the Java `RustNodeBridge` passed in.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeInitContext<
+    'local,
+>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    bridge: JObject<'local>,
+) -> jlong {
+    let wiring =
+        (|| -> jni::errors::Result<(jni::JavaVM, jni::objects::GlobalRef, BridgeMethods)> {
+            let vm = env.get_java_vm()?;
+            let global = env.new_global_ref(&bridge)?;
+            let methods = BridgeMethods::resolve(&mut env)?;
+            Ok((vm, global, methods))
+        })();
+    let (vm, global, methods) = match wiring {
+        Ok(w) => w,
+        Err(e) => {
+            let _ = env.exception_clear();
+            let _ = env.throw_new(PURE_RUST_EXC, format!("bridge wiring: {e}"));
+            return 0;
+        }
+    };
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let model = PureModel::bootstrapped();
+        let registry = NativeRegistry::standard();
+        Box::into_raw(Box::new(JniContext::new(
+            model, registry, vm, global, methods,
+        ))) as jlong
+    }));
+    match result {
+        Ok(ptr) => ptr,
+        Err(_) => {
+            throw_panic(&mut env, "initialization");
+            0
+        }
+    }
+}
+
+/// `start(function, arguments)`: run a graph node with graph-node arguments.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeStart<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    context_ptr: jlong,
+    function: JObject<'local>,
+    args: JObjectArray<'local>,
+) -> JObjectArray<'local> {
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let ctx = context_mut(context_ptr);
+        let function = cross_in(&mut env, ctx, &function)?;
+        let mut values = Vec::new();
+        if !args.is_null() {
+            let len = env
+                .get_array_length(&args)
+                .map_err(|e| ffi_error(format!("arguments: {e}")))?;
+            for i in 0..len {
+                let slot = env
+                    .get_object_array_element(&args, i)
+                    .map_err(|e| ffi_error(format!("arguments: {e}")))?;
+                values.push(cross_in_slot(&mut env, ctx, slot)?);
+            }
+        }
+        let value = ctx.start(&function, &values)?;
+        cross_out(&mut env, ctx, &value)
+    }));
+    match result {
+        Ok(Ok(arr)) => arr,
+        Ok(Err(err)) => {
+            throw_pure_exception(&mut env, &err);
+            JObjectArray::from(JObject::null())
+        }
+        Err(_) => {
+            throw_panic(&mut env, "start");
+            JObjectArray::from(JObject::null())
+        }
+    }
+}
+
+/// Every value of a property of a Rust object held for Java.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeGetProperty<
+    'local,
+>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    context_ptr: jlong,
+    handle: jlong,
+    property_name: JString<'local>,
+) -> JObjectArray<'local> {
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let ctx = context_mut(context_ptr);
+        let name: String = env
+            .get_string(&property_name)
+            .map_err(|e| ffi_error(format!("property name: {e}")))?
+            .into();
+        let values = ctx.get_property_values(handle, &name)?;
+        let collected: Vec<Value> = values.iter().cloned().collect();
+        cross_out(&mut env, ctx, &Value::from_vec(collected))
+    }));
+    match result {
+        Ok(Ok(arr)) => arr,
+        Ok(Err(err)) => {
+            throw_pure_exception(&mut env, &err);
+            JObjectArray::from(JObject::null())
+        }
+        Err(_) => {
+            throw_panic(&mut env, "property evaluation");
+            JObjectArray::from(JObject::null())
+        }
+    }
+}
+
+fn string_array<'l>(
+    env: &mut JNIEnv<'l>,
+    items: &[smol_str::SmolStr],
+) -> jni::errors::Result<JObjectArray<'l>> {
+    let arr = env.new_object_array(
+        i32::try_from(items.len()).unwrap_or(i32::MAX),
+        "java/lang/String",
+        JObject::null(),
+    )?;
+    for (i, item) in items.iter().enumerate() {
+        let s = env.new_string(item.as_str())?;
+        env.set_object_array_element(&arr, i32::try_from(i).unwrap_or(i32::MAX), &s)?;
+    }
+    Ok(arr)
+}
+
+/// Property names of a Rust object held for Java.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativePropertyNames<
+    'local,
+>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    context_ptr: jlong,
+    handle: jlong,
+) -> JObjectArray<'local> {
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let ctx = context_mut(context_ptr);
+        let names = ctx.property_names(handle)?;
+        string_array(&mut env, &names).map_err(|e| ffi_error(format!("names: {e}")))
+    }));
+    match result {
+        Ok(Ok(arr)) => arr,
+        Ok(Err(err)) => {
+            throw_pure_exception(&mut env, &err);
+            JObjectArray::from(JObject::null())
+        }
+        Err(_) => {
+            throw_panic(&mut env, "propertyNames");
+            JObjectArray::from(JObject::null())
+        }
+    }
+}
+
+/// Classifier user path of a Rust object held for Java.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeGetClassifier<
+    'local,
+>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    context_ptr: jlong,
+    handle: jlong,
+) -> JString<'local> {
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let ctx = context_mut(context_ptr);
+        ctx.get_classifier(handle)
+    }));
+    match result {
+        Ok(Ok(classifier)) => env
+            .new_string(classifier)
+            .unwrap_or_else(|_| JString::from(JObject::null())),
+        Ok(Err(err)) => {
+            throw_pure_exception(&mut env, &err);
+            JString::from(JObject::null())
+        }
+        Err(_) => {
+            throw_panic(&mut env, "getClassifier");
+            JString::from(JObject::null())
+        }
+    }
+}
+
+/// Allocate a Rust heap object from a classifier path and parallel
+/// name / value arrays (each value slot is a `CoreInstance[]`).
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeNew<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    context_ptr: jlong,
+    classifier: JString<'local>,
+    property_names: JObjectArray<'local>,
+    property_values: JObjectArray<'local>,
+) -> jlong {
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let ctx = context_mut(context_ptr);
+        let classifier: String = env
+            .get_string(&classifier)
+            .map_err(|e| ffi_error(format!("classifier: {e}")))?
+            .into();
+        let names_len = env.get_array_length(&property_names).unwrap_or(0);
+        let values_len = env.get_array_length(&property_values).unwrap_or(0);
+        if names_len != values_len {
+            return Err(ffi_error(format!(
+                "new: property name/value array length mismatch ({names_len} vs {values_len})"
+            )));
+        }
+        let mut props = Vec::with_capacity(usize::try_from(names_len).unwrap_or(0));
+        for i in 0..names_len {
+            let name_obj = env
+                .get_object_array_element(&property_names, i)
+                .map_err(|e| ffi_error(format!("new: {e}")))?;
+            let name: String = env
+                .get_string(&JString::from(name_obj))
+                .map_err(|e| ffi_error(format!("new: {e}")))?
+                .into();
+            let slot = env
+                .get_object_array_element(&property_values, i)
+                .map_err(|e| ffi_error(format!("new: {e}")))?;
+            let value = cross_in_slot(&mut env, ctx, slot)?;
+            props.push((
+                name,
+                value.to_collection().iter().cloned().collect::<Vec<_>>(),
+            ));
+        }
+        ctx.new_object(&classifier, &props)
+    }));
+    match result {
+        Ok(Ok(handle)) => handle,
+        Ok(Err(err)) => {
+            throw_pure_exception(&mut env, &err);
+            0
+        }
+        Err(_) => {
+            throw_panic(&mut env, "new");
+            0
+        }
+    }
+}
+
+/// Test hook: which Rust shape a Java node becomes.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeCrossingKind<
+    'local,
+>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    context_ptr: jlong,
+    node: JObject<'local>,
+) -> JString<'local> {
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let ctx = context_mut(context_ptr);
+        let value = cross_in(&mut env, ctx, &node)?;
+        Ok::<&'static str, PureException>(java_node::crossing_kind(&value))
+    }));
+    match result {
+        Ok(Ok(kind)) => env
+            .new_string(kind)
+            .unwrap_or_else(|_| JString::from(JObject::null())),
+        Ok(Err(err)) => {
+            throw_pure_exception(&mut env, &err);
+            JString::from(JObject::null())
+        }
+        Err(_) => {
+            throw_panic(&mut env, "crossingKind");
+            JString::from(JObject::null())
+        }
+    }
+}
+
+/// Live handles in both directions; Java asserts this returns to zero.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeLiveHandleCount<
+    'local,
+>(
+    mut _env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    context_ptr: jlong,
+) -> jlong {
+    if context_ptr == 0 {
+        return 0;
+    }
+    std::panic::catch_unwind(|| {
+        let ctx = unsafe { &*(context_ptr as *const JniContext) };
+        i64::try_from(ctx.live_handle_count()).unwrap_or(i64::MAX)
+    })
+    .unwrap_or(-1)
+}
+
+/// Frees the context: evaluator, registry, model, and the bridge reference.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeFreeContext<
+    'local,
+>(
+    mut _env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    context_ptr: jlong,
+) {
+    if context_ptr != 0 {
+        let _ = std::panic::catch_unwind(|| unsafe {
+            drop(Box::from_raw(context_ptr as *mut JniContext));
+        });
+    }
+}
+
+/// Frees the Rust side of one handle Java held.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeFreeInstance<
+    'local,
+>(
+    mut _env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    context_ptr: jlong,
+    handle: jlong,
+) {
+    if context_ptr != 0 {
+        let _ = std::panic::catch_unwind(|| {
+            let ctx = unsafe { &*(context_ptr as *const JniContext) };
+            ctx.release(handle);
+        });
+    }
+}

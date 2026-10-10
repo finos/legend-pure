@@ -28,6 +28,12 @@ public class PlatformCodeRepositoryProvider implements CodeRepositoryProvider
             "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_"
     );
 
+    public static final Adapter rustJniAdapter = new Adapter(
+            "Rust_JNI",
+            "",
+            "meta::pure::test::pct::testAdapterForRustExecution_Function_1__X_o_"
+    );
+
     public static final ReportScope essentialFunctions = new ReportScope(
             "essential",
             "meta::pure::functions",
