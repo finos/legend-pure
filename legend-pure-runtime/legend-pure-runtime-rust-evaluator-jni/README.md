@@ -1,4 +1,4 @@
-# legend-pure-runtime-rust-evaluator
+# legend-pure-runtime-rust-evaluator-jni
 
 The Java side of the JNI boundary to the Rust Pure evaluator in
 `legend-pure-rust/` (Step 2 of `legend-pure-rust/docs/rust-evaluator-mvp.md`).
@@ -53,7 +53,7 @@ them from the classpath. They are generated, never hand-written:
 
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 17) \
-  mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator \
+  mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni \
   -Dtest=RebaseRustJniManifests -DfailIfNoTests=false
 ```
 
@@ -83,7 +83,7 @@ path rethrows that cause itself. The compiled engine's `evalRust` compiles to a 
 ```bash
 cd legend-pure-rust && cargo build --workspace          # produces target/debug/libpure_rust_jni.{dylib,so,dll}
 cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
-  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator clean verify
+  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni clean verify
 ```
 
 `verify` runs the 22 boundary tests and the four `Rust_JNI` suites (327 + 136 per engine), checkstyle

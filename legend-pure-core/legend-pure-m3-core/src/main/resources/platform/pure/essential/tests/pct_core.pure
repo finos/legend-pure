@@ -36,7 +36,7 @@ function
   $f->eval();
 }
 
-// Evaluates a zero-argument lambda on the Rust evaluator (legend-pure-runtime-rust-evaluator):
+// Evaluates a zero-argument lambda on the Rust evaluator (legend-pure-runtime-rust-evaluator-jni):
 // the interpreted engine through an InterpretedExtension, the compiled engine through its
 // EvalRustExecutor hook, both provided by that module.
 native function meta::pure::functions::lang::evalRust<V|m>(f:Function<{->V[m]}>[1]):V[m];

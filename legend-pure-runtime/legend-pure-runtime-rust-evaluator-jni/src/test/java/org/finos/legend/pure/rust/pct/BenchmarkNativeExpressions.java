@@ -54,7 +54,7 @@ import java.util.Locale;
  * same expected result once, outside the timed region. Not part of the
  * default surefire run:
  * <pre>
- * mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator -Dtest=BenchmarkNativeExpressions -DfailIfNoTests=false
+ * mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni -Dtest=BenchmarkNativeExpressions -DfailIfNoTests=false
  * </pre>
  * Results: {@code target/benchmarks/expressions-java.csv} (expression, engine,
  * median, p90 and minimum in nanoseconds per call; each timed sample covers a

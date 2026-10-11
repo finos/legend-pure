@@ -123,7 +123,7 @@ it is current.
 
 State (October 2026): Steps 0–2 of the plan, the Java-lambda lowering, natives rounds 1 and 2,
 Step 2b (the evaluator's own cost) and the bridge's cost are done; next is Step 3 (PELT). The
-Java module `legend-pure-runtime/legend-pure-runtime-rust-evaluator` compiles with release 17
+Java module `legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni` compiles with release 17
 and joins the reactor only on JDK 17+ (profile `rust-evaluator-jdk17` in
 `legend-pure-runtime/pom.xml`); its tests skip when the cdylib is absent. The platform declares
 the native `evalRust` and the PCT adapters `Rust_JNI` (both Java engines run the corpus through
@@ -133,5 +133,5 @@ the Rust evaluator over JNI; the counts are in `legend-pure-rust/CLAUDE.md`) and
 ```bash
 cd legend-pure-rust && cargo build --workspace && cargo test --workspace
 cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
-  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator clean verify
+  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni clean verify
 ```

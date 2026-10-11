@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * manifests are never edited by hand. Not part of the default surefire run
  * (the class name matches no include pattern); invoke with
  * <pre>
- * mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator -Dtest=RebaseRustJniManifests -DfailIfNoTests=false
+ * mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni -Dtest=RebaseRustJniManifests -DfailIfNoTests=false
  * </pre>
  * after {@code cargo build --workspace}, then review the diff and run the
  * module's {@code verify}.

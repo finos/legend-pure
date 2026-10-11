@@ -81,7 +81,7 @@ public class EvalRust extends AbstractNative
         EvalRustExecutor executor = Holder.EXECUTOR;
         if (executor == null)
         {
-            throw new UnsupportedOperationException(SIGNATURE + " needs the Rust evaluator (legend-pure-runtime-rust-evaluator) on the class path");
+            throw new UnsupportedOperationException(SIGNATURE + " needs the Rust evaluator (legend-pure-runtime-rust-evaluator-jni) on the class path");
         }
         return executor.evaluate(executionSupport, function);
     }

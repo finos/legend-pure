@@ -13,6 +13,6 @@ cargo test --workspace
 
 Three crates: `crates/metamodel`, `crates/evaluator` and `crates/jni` (the cdylib
 `libpure_rust_jni` behind the Java module
-`legend-pure-runtime/legend-pure-runtime-rust-evaluator`). The earlier Rust
+`legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni`). The earlier Rust
 workspace (parser, compiler, tooling) is on tag
 `archive/pre-evaluator-extract-2026-10`.

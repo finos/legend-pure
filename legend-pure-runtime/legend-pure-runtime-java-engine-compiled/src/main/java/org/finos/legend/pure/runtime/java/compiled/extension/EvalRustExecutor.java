@@ -21,7 +21,7 @@ import org.finos.legend.pure.m3.execution.ExecutionSupport;
  * Runs a function value in the Rust evaluator on behalf of the compiled
  * engine's {@code evalRust} native. Discovered through
  * {@code META-INF/services}; the implementation lives in
- * {@code legend-pure-runtime-rust-evaluator}, which the engine does not
+ * {@code legend-pure-runtime-rust-evaluator-jni}, which the engine does not
  * depend on.
  */
 public interface EvalRustExecutor

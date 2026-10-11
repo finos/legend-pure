@@ -23,9 +23,9 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>legend-pure-runtime-rust-evaluator</artifactId>
+    <artifactId>legend-pure-runtime-rust-evaluator-jni</artifactId>
     <packaging>jar</packaging>
-    <name>Legend Pure - Runtime - Rust Evaluator</name>
+    <name>Legend Pure - Runtime - Rust Evaluator - JNI</name>
 
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
