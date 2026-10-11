@@ -534,6 +534,29 @@ types declared outside the bootstrap, 2 integer overflows. Natives are
 fished one per commit from that ranking, as Step 5 says; the bridge cost
 list above is profiled once the run spends its time in lowered bodies.
 
+**Natives round 1 (2026-10-11).** Every key in that ranking had an
+implementation on the archive, so the backlog was fished in one round by
+four parallel agents, one native module each (`collection` 37 keys,
+`string` 22, `math`/`arithmetic`/`comparison` 37, `datetime` 23, `eval` 8,
+`meta` 7), each copying the smallest compiling unit and its tests, on
+disjoint files, merged by the coordinator; the per-commit PCT numbers rule
+gave way to one measurement per merged round. Two things changed around
+the natives: `PureRuntimeError::NotImplemented(key)` with the
+`native::NotYet` native (a key registered before its body is fished, JNI
+kind `NOT_IMPLEMENTED`, manifest prefix `NotImplemented:`), used for
+`genericType` and `deactivate`, which need the compiler's least upper
+bound and the `ValueSpecification` heap shapes; and the Pure cause attached
+to a Rust failure now carries Pure's bare info for the Pure-level kinds
+(what `assertError` compares) and the kind prefix only for the Rust-side
+diagnostics. State: `Rust_JNI essential: 303 / 327`, `Rust_JNI grammar:
+126 / 136`. The 34 lines left: `Map` values across the boundary (6, the
+interpreted engine's `MapCoreInstance`), a Java null key on `zip` results
+compared by `EqualityUtilities` (6), `copy` with key expressions (3),
+`adjust` beyond jiff's date range (5), `NotImplemented` (3), `getAll` (1),
+structural equality over Java-backed instances (2), user-defined primitive
+types (2), 64-bit overflow (3), Decimal/Float rendering (2), mixed-precision
+date compare (1).
+
 **Later: `Rust_Native`.** Once the surveyor's own functions execute in Rust,
 the same corpus runs under cargo through the Rust surveyor, with its own
 manifests, and reports as adapter `Rust_Native`; `Rust_JNI` stays the measure
@@ -733,11 +756,12 @@ provider. A test passes when evaluating it raises no assertion. Per-engine
 exclusions (known gaps) are declared in a manifest so the pass rate is honest
 about what is skipped.
 
-**Already there (2026-10-10).** The body lowering exists in
+**Already there (2026-10-10, natives 2026-10-11).** The body lowering exists in
 `crates/evaluator/src/lower/body.rs` and runs over Java nodes through the
-bridge (Step 2 "Next"); the `Rust_JNI` manifests are the `FunctionNotFound`
-ranking this step fishes from. What this step adds is the PELT-fed run and
-the engine suite class.
+bridge (Step 2 "Next"); the natives backlog it exposed was fished from the
+archive in one round (Step 2, "Natives round 1": 160 keys, 303 / 327 and
+126 / 136), so the histogram this step fishes from is now the residue listed
+there. What this step adds is the PELT-fed run and the engine suite class.
 
 **Start here.** The body lowering is the new code; natives are fished.
 First target: `testAdapterForInMemoryExecution` loaded from PELT, lambda

@@ -32,6 +32,7 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureException;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -87,6 +88,28 @@ public final class PureRustEvaluator implements FunctionExecution, Closeable
         this.contextPointer = nativeInitContext(this.bridge);
     }
 
+    /**
+     * The Pure exception the interpreted engine rethrows for a Rust failure.
+     *
+     * @param e      the failure as the boundary reports it
+     * @param source the Rust anchor, or null
+     * @return an assertion failure for {@code ASSERTION_FAILED}; otherwise an execution error whose info is the
+     * bare Pure text for the Pure-level kinds and the kind-prefixed message for the Rust-side diagnostics
+     */
+    private static PureException pureCause(PureRustEvaluationException e, SourceInformation source)
+    {
+        switch (e.getKind())
+        {
+            case ASSERTION_FAILED:
+                return new PureAssertFailException(source, e.getInfo());
+            case EXECUTION_ERROR:
+            case CONSTRAINT_VIOLATION:
+                return new PureExecutionException(source, e.getInfo());
+            default:
+                return new PureExecutionException(source, e.getMessage());
+        }
+    }
+
     @Override
     public synchronized CoreInstance start(CoreInstance function, ListIterable<? extends CoreInstance> arguments)
     {
@@ -104,18 +127,14 @@ public final class PureRustEvaluator implements FunctionExecution, Closeable
         catch (PureRustEvaluationException e)
         {
             // The cause is the Pure exception the interpreted engine
-            // rethrows as is once it carries a source: the Rust anchor
-            // survives, and the kind-prefixed message stays what the
-            // PCT manifests record.
+            // rethrows as is once it carries a source, so the Rust anchor
+            // survives. Its info is what Pure code observes (assertError
+            // compares it verbatim, the PCT manifests record it): a
+            // Pure-level failure carries the bare text the Java engine
+            // would produce, a Rust-side diagnostic keeps its kind prefix
+            // so the manifests still rank the backlog by kind.
             SourceInformation source = sourceInformationOf(e.getSourceInfo());
-            if (e.getKind() == PureRustEvaluationException.Kind.ASSERTION_FAILED)
-            {
-                e.initCause(new PureAssertFailException(source, e.getMessage()));
-            }
-            else
-            {
-                e.initCause(new PureExecutionException(source, e.getMessage()));
-            }
+            e.initCause(pureCause(e, source));
             throw e;
         }
         return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.with(results), true, this.processorSupport);

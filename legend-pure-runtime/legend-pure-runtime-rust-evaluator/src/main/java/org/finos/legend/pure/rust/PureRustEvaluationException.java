@@ -42,6 +42,10 @@ public class PureRustEvaluationException extends PureRustException
          * A language feature or value kind whose runtime is not available yet.
          */
         UNSUPPORTED,
+        /**
+         * A native registered under its mangled key whose implementation has not been fished yet.
+         */
+        NOT_IMPLEMENTED,
     }
 
     public enum ConstraintKind

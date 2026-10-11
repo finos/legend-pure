@@ -87,6 +87,9 @@ pub fn pure_exception_to_payload(exc: &PureException) -> ExceptionPayload {
         PureExceptionKind::ExecutionError(PureRuntimeError::Unsupported(what)) => {
             ("Unsupported", what.clone(), "UNSUPPORTED")
         }
+        PureExceptionKind::ExecutionError(PureRuntimeError::NotImplemented(key)) => {
+            ("NotImplemented", key.to_string(), "NOT_IMPLEMENTED")
+        }
         PureExceptionKind::ExecutionError(err) => {
             ("ExecutionError", err.to_string(), "EXECUTION_ERROR")
         }
@@ -199,6 +202,24 @@ mod tests {
         assert!(p.constraint_id.is_none());
         assert!(p.constraint_kind.is_none());
         assert!(p.owner_fqn.is_none());
+    }
+
+    #[test]
+    fn not_implemented_payload_names_the_key_with_its_own_kind() {
+        let exc = PureException::execution(
+            PureRuntimeError::NotImplemented(SmolStr::new(
+                "deactivate_Any_MANY__ValueSpecification_1_",
+            )),
+            dummy_source("a.pure", 2, 3),
+            vec![],
+        );
+        let p = pure_exception_to_payload(&exc);
+        assert_eq!(p.kind, "NOT_IMPLEMENTED");
+        assert_eq!(
+            p.message,
+            "NotImplemented: deactivate_Any_MANY__ValueSpecification_1_"
+        );
+        assert_eq!(p.info, "deactivate_Any_MANY__ValueSpecification_1_");
     }
 
     #[test]

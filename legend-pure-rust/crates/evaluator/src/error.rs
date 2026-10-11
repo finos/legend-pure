@@ -81,6 +81,14 @@ pub enum PureRuntimeError {
     #[error("Unsupported: {0}")]
     Unsupported(String),
 
+    /// A native that is registered under its mangled key so dispatch
+    /// finds it, but whose implementation has not been fished yet. Distinct
+    /// from [`FunctionNotFound`](Self::FunctionNotFound) (nothing registered)
+    /// and from [`Unsupported`](Self::Unsupported) (a lowering or value-shape
+    /// gap) so the PCT manifests rank the three backlogs separately.
+    #[error("native `{0}` is wired but not implemented yet")]
+    NotImplemented(SmolStr),
+
     /// Multiplicity violation: got wrong number of values.
     #[error("Multiplicity violation: expected {expected}, got {actual} values")]
     MultiplicityViolation {

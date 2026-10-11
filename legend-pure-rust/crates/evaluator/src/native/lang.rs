@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Language-level natives fished so far: `letFunction`, `if`, `new`, `copy`.
+//! Language-level natives fished so far: `letFunction`, `if`, `eval`,
+//! `new`, `copy`.
 //!
 //! `new` is split across two natives by call shape: `New` handles the
 //! compiler-emitted `^Class<T>(prop=val, …)` payload (and the two-argument
@@ -20,8 +21,8 @@
 //! `new(class, id, [^KeyExpression(...)])`. Both share the construction
 //! helpers below (defaults, required-property validation, association
 //! inverses, class constraints), which is why they arrive together.
-//! `print`, `eval`, `evaluate`, `getAll*`, `dynamicNew`, `removeOverride`
-//! and `rawEvalProperty` stay on the archive until a test asks.
+//! `print`, `evaluate`, `getAll*`, `dynamicNew`, `removeOverride` and
+//! `rawEvalProperty` stay on the archive until a test asks.
 
 use legend_pure_metamodel::ids::ElementId;
 use legend_pure_metamodel::model::{Element, PureModel};
@@ -80,6 +81,33 @@ impl NativeFunction for If {
         // as zero-parameter `Lambda` wrappers. `force_thunk` unwraps that so
         // the caller gets the branch's value, not the closure itself.
         crate::native::force_thunk(branch, ctx)
+    }
+}
+
+/// Pure `eval(func:Function<{...->V[m]}>[1], ...params):V[m]`
+///
+/// All 8 platform `eval` overloads (0–7 extra parameters) share this single
+/// implementation: extract `args[0]` as the callable and pass `args[1..]` as
+/// the arguments via `ctx.call_function`.
+#[derive(Debug)]
+pub struct Eval;
+
+impl NativeFunction for Eval {
+    fn execute(
+        &self,
+        args: &[ValueSpec],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        if args.is_empty() {
+            return Err(PureRuntimeError::EvaluationError(
+                "eval: expected at least 1 argument (the function)".into(),
+            )
+            .into());
+        }
+        let values = force_all(args, ctx)?;
+        let func = &values[0];
+        let params = &values[1..];
+        Ok(Evaluated::new(ctx.call_function(func, params)?))
     }
 }
 
@@ -1750,6 +1778,19 @@ fn class_fqn(model: &PureModel, id: ElementId) -> String {
 pub fn register(registry: &mut NativeRegistry) {
     registry.register("letFunction_String_1__T_m__T_m_", LetFunction);
     registry.register("if_Boolean_1__Function_1__Function_1__T_m_", If);
+    // `eval`: one implementation for the eight platform arities (0–7
+    // parameters), mangled from `essential/lang/eval/eval.pure`.
+    registry.register("eval_Function_1__V_m_", Eval);
+    registry.register("eval_Function_1__T_n__V_m_", Eval);
+    registry.register("eval_Function_1__T_n__U_p__V_m_", Eval);
+    registry.register("eval_Function_1__T_n__U_p__W_q__V_m_", Eval);
+    registry.register("eval_Function_1__T_n__U_p__W_q__X_r__V_m_", Eval);
+    registry.register("eval_Function_1__T_n__U_p__W_q__X_r__Y_s__V_m_", Eval);
+    registry.register("eval_Function_1__T_n__U_p__W_q__X_r__Y_s__Z_t__V_m_", Eval);
+    registry.register(
+        "eval_Function_1__S_n__T_o__U_p__W_q__X_r__Y_s__Z_t__V_m_",
+        Eval,
+    );
     // `new`: the archived compiler's positional shape (a synthetic key)
     // and the platform's two-argument form. The lowering emits the
     // platform's KeyExpression shape below.

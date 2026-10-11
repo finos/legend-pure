@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Arithmetic natives fished so far: `plus`, `minus` and `times`.
+//! Arithmetic natives fished so far: `plus`, `minus`, `times`, `divide`,
+//! `abs`, `mod` and `rem`.
 //!
-//! Both are **eager** — the native forces every argument up front via
+//! All are **eager** — the native forces every argument up front via
 //! `ctx.evaluate`. Helpers return `PureRuntimeError`; `?` on each call
 //! promotes that into the `PureException` the trait requires.
-//! `divide`, `abs`, `mod` and `rem` stay on the archive until a test asks.
 
 use legend_pure_metamodel::types::ValueSpec;
 use rust_decimal::Decimal;
-use rust_decimal::prelude::FromPrimitive;
+use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 
 use crate::error::{PureException, PureRuntimeError};
 use crate::native::{
@@ -252,6 +252,193 @@ fn times_fold(values: Vec<Value>) -> Result<Value, PureRuntimeError> {
     iter.try_fold(first, |acc, next| times_pair(&acc, &next))
 }
 
+/// Pure `divide(Number[1], Number[1]): Float[1]` and
+/// `divide(Decimal[1], Decimal[1], scale:Integer[1]): Decimal[1]` —
+/// numeric division with two overloads sharing this struct.
+///
+/// 2-arg: Integer/Integer and Decimal/Decimal both return `Float`,
+/// matching Java's `divide(left, right): Float`.
+///
+/// 3-arg: Decimal/Decimal returns `Decimal` rounded to `scale`
+/// fractional digits via banker's rounding (`rust_decimal`'s
+/// `round_dp` default; matches Java `BigDecimal` `setScale(scale,
+/// HALF_EVEN)`). `testDecimalDivide` exercises this with
+/// `-3.1415d->divide(0.1d, 2) == -31.42d`.
+#[derive(Debug)]
+pub struct Divide;
+
+impl NativeFunction for Divide {
+    #[allow(clippy::cast_precision_loss)]
+    fn execute(
+        &self,
+        args: &[ValueSpec],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = force_all(args, ctx)?;
+        match values.len() {
+            2 => {
+                let promoted = promote_pair(&values[0], &values[1]).ok_or_else(|| {
+                    PureRuntimeError::EvaluationError(format!(
+                        "divide: unsupported types {} and {}",
+                        values[0].type_name(),
+                        values[1].type_name()
+                    ))
+                })?;
+                let v = match promoted {
+                    (Value::Integer(a), Value::Integer(b)) => {
+                        if b == 0 {
+                            return Err(PureRuntimeError::DivisionByZero.into());
+                        }
+                        Value::Float(a as f64 / b as f64)
+                    }
+                    (Value::Float(a), Value::Float(b)) => {
+                        if b == 0.0 {
+                            return Err(PureRuntimeError::DivisionByZero.into());
+                        }
+                        Value::Float(a / b)
+                    }
+                    (Value::Decimal(a), Value::Decimal(b)) => {
+                        if b.is_zero() {
+                            return Err(PureRuntimeError::DivisionByZero.into());
+                        }
+                        // Pure spec says Decimal/Decimal → Float; preserve that.
+                        Value::Float(
+                            a.to_f64().unwrap_or(f64::NAN) / b.to_f64().unwrap_or(f64::NAN),
+                        )
+                    }
+                    _ => unreachable!("promote_pair returns matched types"),
+                };
+                Ok(Evaluated::new(v))
+            }
+            3 => {
+                let a = values[0].as_decimal()?;
+                let b = values[1].as_decimal()?;
+                let scale = values[2].as_integer()?;
+                if !(0..=28).contains(&scale) {
+                    return Err(PureRuntimeError::EvaluationError(format!(
+                        "divide: scale must be in 0..=28, got {scale}"
+                    ))
+                    .into());
+                }
+                if b.is_zero() {
+                    return Err(PureRuntimeError::DivisionByZero.into());
+                }
+                let q = a.checked_div(b).ok_or_else(|| {
+                    PureRuntimeError::EvaluationError("divide: Decimal division overflow".into())
+                })?;
+                #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+                let rounded = q.round_dp(scale as u32);
+                Ok(Evaluated::new(Value::Decimal(rounded)))
+            }
+            n => Err(PureRuntimeError::EvaluationError(format!(
+                "divide: expected 2 or 3 argument(s), got {n}"
+            ))
+            .into()),
+        }
+    }
+}
+
+/// Pure `abs(Number[1]): Number[1]` — absolute value.
+#[derive(Debug)]
+pub struct Abs;
+
+impl NativeFunction for Abs {
+    fn execute(
+        &self,
+        args: &[ValueSpec],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = force_all(args, ctx)?;
+        expect_args("abs", &values, 1)?;
+        let v = match &values[0] {
+            Value::Integer(i) => Value::Integer(i.wrapping_abs()),
+            Value::Float(f) => Value::Float(f.abs()),
+            Value::Decimal(d) => Value::Decimal(d.abs()),
+            other => return Err(PureRuntimeError::type_mismatch("Number", other).into()),
+        };
+        Ok(Evaluated::new(v))
+    }
+}
+
+/// Pure `mod(Integer[1], Integer[1]): Integer[1]` — modulus (always non-negative).
+#[derive(Debug)]
+pub struct Mod;
+
+impl NativeFunction for Mod {
+    fn execute(
+        &self,
+        args: &[ValueSpec],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = force_all(args, ctx)?;
+        expect_args("mod", &values, 2)?;
+        let a = values[0].as_integer()?;
+        let b = values[1].as_integer()?;
+        if b == 0 {
+            return Err(PureRuntimeError::DivisionByZero.into());
+        }
+        Ok(Evaluated::new(Value::Integer(a.rem_euclid(b))))
+    }
+}
+
+/// Pure `rem(Number[1], Number[1]): Number[1]` — remainder (preserves sign of dividend).
+///
+/// Promotes via `promote_pair` so mixed-type calls like `rem(7.5, 2)`
+/// or `rem(7d, 2)` work without the caller having to coerce. Empty
+/// remainder for `Decimal` uses `Decimal::checked_rem` which returns
+/// `None` only on division-by-zero (already trapped above).
+#[derive(Debug)]
+pub struct Rem;
+
+impl NativeFunction for Rem {
+    fn execute(
+        &self,
+        args: &[ValueSpec],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = force_all(args, ctx)?;
+        expect_args("rem", &values, 2)?;
+        let promoted = promote_pair(&values[0], &values[1]).ok_or_else(|| {
+            PureRuntimeError::EvaluationError(format!(
+                "rem: unsupported types {} and {}",
+                values[0].type_name(),
+                values[1].type_name()
+            ))
+        })?;
+        // Java Pure's `Rem.execute` throws "Cannot divide <dividend> by zero"
+        // (Rem.java:?), parametric on the dividend's display value. Build the
+        // dividend representation once before promotion-loss can change its
+        // shape, then reuse for any zero-divisor branch.
+        let dividend_str = crate::native::math::java_number_string(&values[0]);
+        let div_zero_err = || -> PureException {
+            PureRuntimeError::EvaluationError(format!("Cannot divide {dividend_str} by zero"))
+                .into()
+        };
+        let v = match promoted {
+            (Value::Integer(a), Value::Integer(b)) => {
+                if b == 0 {
+                    return Err(div_zero_err());
+                }
+                Value::Integer(a % b)
+            }
+            (Value::Float(a), Value::Float(b)) => {
+                if b == 0.0 {
+                    return Err(div_zero_err());
+                }
+                Value::Float(a % b)
+            }
+            (Value::Decimal(a), Value::Decimal(b)) => {
+                if b.is_zero() {
+                    return Err(div_zero_err());
+                }
+                Value::Decimal(a % b)
+            }
+            _ => unreachable!("promote_pair returns matched types"),
+        };
+        Ok(Evaluated::new(v))
+    }
+}
+
 /// Register the fished arithmetic natives under every signature the
 /// platform declares for them (one implementation each).
 pub fn register(registry: &mut NativeRegistry) {
@@ -269,6 +456,18 @@ pub fn register(registry: &mut NativeRegistry) {
     registry.register("times_Float_MANY__Float_1_", Times);
     registry.register("times_Decimal_MANY__Decimal_1_", Times);
     registry.register("times_Number_MANY__Number_1_", Times);
+
+    registry.register("divide_Number_1__Number_1__Float_1_", Divide);
+    registry.register("divide_Decimal_1__Decimal_1__Integer_1__Decimal_1_", Divide);
+
+    registry.register("abs_Integer_1__Integer_1_", Abs);
+    registry.register("abs_Float_1__Float_1_", Abs);
+    registry.register("abs_Decimal_1__Decimal_1_", Abs);
+    registry.register("abs_Number_1__Number_1_", Abs);
+
+    registry.register("mod_Integer_1__Integer_1__Integer_1_", Mod);
+
+    registry.register("rem_Number_1__Number_1__Number_1_", Rem);
 }
 
 #[cfg(test)]
@@ -278,7 +477,7 @@ mod tests {
     use rust_decimal::Decimal;
 
     use super::*;
-    use crate::native::{MockCtx, lit_collection, lit_float, lit_int};
+    use crate::native::{MockCtx, lit_bool, lit_collection, lit_float, lit_int, lit_str};
 
     /// Decimal-literal shim — `MockCtx` supports only bare `DecimalLiteral`
     /// specs, so tests that need a Decimal value go through this helper
@@ -451,5 +650,131 @@ mod tests {
         assert_eq!(r, dec("4"));
         let r = plus_pair(&dec("2.5"), &Value::Float(1.5)).unwrap();
         assert_eq!(r, dec("4"));
+    }
+
+    #[test]
+    fn divide_integers_returns_float() {
+        let r = Divide
+            .execute(&[lit_int(7), lit_int(2)], &mut MockCtx)
+            .unwrap();
+        assert_eq!(r.into_value(), Value::Float(3.5));
+    }
+
+    #[test]
+    fn divide_by_zero_errors() {
+        let r = Divide.execute(&[lit_int(1), lit_int(0)], &mut MockCtx);
+        assert!(r.is_err());
+    }
+
+    #[test]
+    fn abs_negative() {
+        assert_eq!(
+            Abs.execute(&[lit_int(-5)], &mut MockCtx)
+                .unwrap()
+                .into_value(),
+            Value::Integer(5)
+        );
+    }
+
+    #[test]
+    fn wrong_arg_count_errors() {
+        // `plus` takes exactly one `Number[*]` argument. A lone Integer
+        // literal is normalised to a singleton collection and returns
+        // unchanged. An empty collection returns the identity `Integer(0)`.
+        // Zero arguments at the native-call level is an arity violation.
+        assert_eq!(
+            Plus.execute(&[lit_int(1)], &mut MockCtx)
+                .unwrap()
+                .into_value(),
+            Value::Integer(1)
+        );
+        assert_eq!(
+            Plus.execute(&[crate::native::lit_collection(Vec::new())], &mut MockCtx)
+                .unwrap()
+                .into_value(),
+            Value::Integer(0)
+        );
+        assert!(Plus.execute(&[], &mut MockCtx).is_err());
+        assert!(Abs.execute(&[], &mut MockCtx).is_err());
+    }
+
+    #[test]
+    fn type_mismatch_errors() {
+        // String instead of Number
+        assert!(
+            Plus.execute(&[lit_str("1"), lit_int(1)], &mut MockCtx)
+                .is_err()
+        );
+        assert!(Abs.execute(&[lit_bool(true)], &mut MockCtx).is_err());
+        // One float, one string
+        assert!(
+            Plus.execute(&[lit_float(1.0), lit_str("2")], &mut MockCtx)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn mod_positive() {
+        assert_eq!(
+            Mod.execute(&[lit_int(7), lit_int(3)], &mut MockCtx)
+                .unwrap()
+                .into_value(),
+            Value::Integer(1)
+        );
+    }
+
+    #[test]
+    fn mod_negative_dividend() {
+        // rem_euclid: -7 mod 3 = 2 (always non-negative)
+        assert_eq!(
+            Mod.execute(&[lit_int(-7), lit_int(3)], &mut MockCtx)
+                .unwrap()
+                .into_value(),
+            Value::Integer(2)
+        );
+    }
+
+    #[test]
+    fn division_by_zero_errors() {
+        assert!(
+            Divide
+                .execute(&[lit_int(5), lit_int(0)], &mut MockCtx)
+                .is_err()
+        );
+        assert!(
+            Divide
+                .execute(&[lit_float(5.0), lit_float(0.0)], &mut MockCtx)
+                .is_err()
+        );
+        assert!(
+            Mod.execute(&[lit_int(5), lit_int(0)], &mut MockCtx)
+                .is_err()
+        );
+        assert!(
+            Rem.execute(&[lit_int(5), lit_int(0)], &mut MockCtx)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn rem_negative_dividend() {
+        // Rust remainder: -7 % 3 = -1 (preserves sign)
+        assert_eq!(
+            Rem.execute(&[lit_int(-7), lit_int(3)], &mut MockCtx)
+                .unwrap()
+                .into_value(),
+            Value::Integer(-1)
+        );
+    }
+
+    #[test]
+    fn rem_handles_mixed_types() {
+        // Previously errored with "rem: both arguments must be the same
+        // numeric type". Now promotes via promote_pair.
+        let r = Rem
+            .execute(&[lit_float(7.5), lit_int(2)], &mut MockCtx)
+            .unwrap()
+            .into_value();
+        assert_eq!(r, Value::Float(1.5));
     }
 }

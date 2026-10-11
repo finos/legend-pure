@@ -2,24 +2,8 @@
   "adapter": "meta::pure::test::pct::testAdapterForRustExecution_Function_1__X_o_",
   "exclusions": [
     {
-      "test": "meta::pure::functions::boolean::tests::conjunctions::not::testNotInCollection_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: at_T_MANY__Integer_1__T_1_"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::equality::eq::testEqEnum_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: extractEnumValue_Enumeration_1__String_1__T_1_"
-    },
-    {
       "test": "meta::pure::functions::boolean::tests::equality::eq::testEqPrimitiveExtension_Function_1__Boolean_1_",
       "expectedError": "Unsupported: lowering meta::pure::metamodel::type::PrimitiveType `meta::pure::functions::boolean::tests::equalitymodel::ExtendedInteger` outside the bootstrap"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::equality::eq::testEqString_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: joinStrings_String_MANY__String_1__String_1__String_1__String_1_"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::equality::equal::testEqualEnum_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: extractEnumValue_Enumeration_1__String_1__T_1_"
     },
     {
       "test": "meta::pure::functions::boolean::tests::equality::equal::testEqualNonPrimitive_Function_1__Boolean_1_",
@@ -30,248 +14,20 @@
       "expectedError": "Unsupported: lowering meta::pure::metamodel::type::PrimitiveType `meta::pure::functions::boolean::tests::equalitymodel::ExtendedInteger` outside the bootstrap"
     },
     {
-      "test": "meta::pure::functions::boolean::tests::equality::equal::testEqualString_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: joinStrings_String_MANY__String_1__String_1__String_1__String_1_"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::inequalities::greaterThan::testGreaterThan_Date_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThan_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::inequalities::greaterThan::testGreaterThan_Number_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThan_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::inequalities::greaterThan::testGreaterThan_String_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThan_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::inequalities::greaterThanEqual::testGreaterThanEqual_Date_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThanEqual_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::inequalities::greaterThanEqual::testGreaterThanEqual_Number_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThanEqual_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::inequalities::greaterThanEqual::testGreaterThanEqual_String_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThanEqual_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::inequalities::lessThan::testLessThan_Date_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThan_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::inequalities::lessThan::testLessThan_Number_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThan_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::inequalities::lessThan::testLessThan_String_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThan_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::inequalities::lessThanEqual::testLessThanEqual_Date_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThanEqual_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::inequalities::lessThanEqual::testLessThanEqual_Number_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThanEqual_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::inequalities::lessThanEqual::testLessThanEqual_String_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThanEqual_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::filter::testFilterInstance_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: filter_T_MANY__Function_1__T_MANY_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::filter::testFilterLiteralFromVar_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: filter_T_MANY__Function_1__T_MANY_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::filter::testFilterLiteral_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: filter_T_MANY__Function_1__T_MANY_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::filter::testLambdaAsFunctionParameter_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: filter_T_MANY__Function_1__T_MANY_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::first::testFirstComplex_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: first_T_MANY__T_$0_1$_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::first::testFirstOnEmptySet_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: first_T_MANY__T_$0_1$_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::first::testFirstOnOneElement_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: first_T_MANY__T_$0_1$_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::first::testFirstSimple_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: first_T_MANY__T_$0_1$_"
-    },
-    {
       "test": "meta::pure::functions::collection::tests::getAll::testBasic_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: isEmpty_Any_MANY__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::isEmpty::testIsEmptyFalseMultiple_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: isEmpty_Any_MANY__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::isEmpty::testIsEmptyFalseSingle_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: size_Any_MANY__Integer_1_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::isEmpty::testIsEmpty_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: size_Any_MANY__Integer_1_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::isEmpty::testIsNotEmptyFalse_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: size_Any_MANY__Integer_1_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::isEmpty::testIsNotEmptyMultiple_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: isEmpty_Any_MANY__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::isEmpty::testIsNotEmptySingle_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: size_Any_MANY__Integer_1_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::map::testMapInstance_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: map_T_m__Function_1__V_m_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::map::testMapRelationshipFromManyToMany_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: map_T_MANY__Function_1__V_MANY_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::map::testMapRelationshipFromManyToOne_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: map_T_MANY__Function_1__V_MANY_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::map::testMapRelationshipFromOneToOne_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: toOne_T_MANY__T_1_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::range::testRangeStepError_Function_1__Boolean_1_",
-      "expectedError": "Execution error message mismatch."
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::range::testRangeWithStartStopEqual_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: range_Integer_1__Integer_1__Integer_1__Integer_MANY_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::range::testRangeWithStep_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: range_Integer_1__Integer_1__Integer_1__Integer_MANY_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::range::testRangeWithVariables_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: range_Integer_1__Integer_1__Integer_1__Integer_MANY_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::range::testRange_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: range_Integer_1__Integer_1__Integer_1__Integer_MANY_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::range::testReverseRangeWithPositiveStep_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: range_Integer_1__Integer_1__Integer_1__Integer_MANY_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::range::testReverseRangeWithStep_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: range_Integer_1__Integer_1__Integer_1__Integer_MANY_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::range::testReverseRange_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: range_Integer_1__Integer_1__Integer_1__Integer_MANY_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::size::testSizeEmpty_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: size_Any_MANY__Integer_1_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::size::testSizeOnGraphObject_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: size_Any_MANY__Integer_1_"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::size::testSize_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: size_Any_MANY__Integer_1_"
-    },
-    {
-      "test": "meta::pure::functions::lang::tests::compare::testBooleanCompare_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: compare_T_1__T_1__Integer_1_"
-    },
-    {
-      "test": "meta::pure::functions::lang::tests::compare::testCompareDecimalAndLongTypes_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: compare_T_1__T_1__Integer_1_"
-    },
-    {
-      "test": "meta::pure::functions::lang::tests::compare::testCompareMixedTypes_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: compare_T_1__T_1__Integer_1_"
+      "expectedError": "FunctionNotFound: getAll_Class_1__T_MANY_"
     },
     {
       "test": "meta::pure::functions::lang::tests::compare::testDateCompare_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThan_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::lang::tests::compare::testFloatCompare_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThan_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::lang::tests::compare::testIntegerCompare_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThan_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::lang::tests::compare::testNumberCompare_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThan_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::lang::tests::compare::testStringCompare_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: lessThan_Number_1__Number_1__Boolean_1_"
-    },
-    {
-      "test": "meta::pure::functions::lang::tests::letFn::testLetChainedWithAnotherFunction_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: removeDuplicates_T_MANY__Function_$0_1$__Function_$0_1$__T_MANY_"
-    },
-    {
-      "test": "meta::pure::functions::lang::tests::letFn::testLetWithParam_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: toOne_T_MANY__T_1_"
-    },
-    {
-      "test": "meta::pure::functions::math::tests::divide::testComplexDivide_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: divide_Number_1__Number_1__Float_1_"
-    },
-    {
-      "test": "meta::pure::functions::math::tests::divide::testDecimalDivide_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: divide_Number_1__Number_1__Float_1_"
-    },
-    {
-      "test": "meta::pure::functions::math::tests::divide::testDivideWithNonTerminatingExpansion_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: divide_Number_1__Number_1__Float_1_"
-    },
-    {
-      "test": "meta::pure::functions::math::tests::divide::testFloatDivide_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: divide_Number_1__Number_1__Float_1_"
-    },
-    {
-      "test": "meta::pure::functions::math::tests::divide::testNegativeDivide_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: divide_Number_1__Number_1__Float_1_"
-    },
-    {
-      "test": "meta::pure::functions::math::tests::divide::testSimpleDivide_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: divide_Number_1__Number_1__Float_1_"
+      "expectedError": "Execution error"
     },
     {
       "test": "meta::pure::functions::math::tests::minus::testLargeMinus_Function_1__Boolean_1_",
-      "expectedError": "ExecutionError: Execution error (resource:<ffi> line:0 column:0)"
+      "expectedError": "Execution error (resource:<ffi> line:0 column:0)"
     },
     {
       "test": "meta::pure::functions::math::tests::minus::testSingleMinusType_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: toOne_T_MANY__T_1_"
+      "expectedError": "NotImplemented: genericType_Any_MANY__GenericType_1_"
     },
     {
       "test": "meta::pure::functions::math::tests::plus::testLargePlus_Function_1__Boolean_1_",
@@ -279,35 +35,11 @@
     },
     {
       "test": "meta::pure::functions::math::tests::plus::testSinglePlusType_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: toOne_T_MANY__T_1_"
+      "expectedError": "NotImplemented: genericType_Any_MANY__GenericType_1_"
     },
     {
       "test": "meta::pure::functions::math::tests::times::testLargeTimes_Function_1__Boolean_1_",
       "expectedError": "expected: 18446744073709551614"
-    },
-    {
-      "test": "meta::pure::functions::string::tests::plus::testMultiPlusWithFunctionExpressions_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: toString_Any_1__String_1_"
-    },
-    {
-      "test": "meta::pure::functions::string::tests::plus::testMultiPlusWithPropertyExpressions_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: joinStrings_String_MANY__String_1__String_1__String_1__String_1_"
-    },
-    {
-      "test": "meta::pure::functions::string::tests::plus::testMultiPlus_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: joinStrings_String_MANY__String_1__String_1__String_1__String_1_"
-    },
-    {
-      "test": "meta::pure::functions::string::tests::plus::testPlusInCollect_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: map_T_m__Function_1__V_m_"
-    },
-    {
-      "test": "meta::pure::functions::string::tests::plus::testPlusInIterate_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: fold_T_MANY__Function_1__V_m__V_m_"
-    },
-    {
-      "test": "meta::pure::functions::string::tests::plus::testPlus_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: joinStrings_String_MANY__String_1__String_1__String_1__String_1_"
     }
   ]
 }

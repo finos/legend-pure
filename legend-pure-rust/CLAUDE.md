@@ -47,7 +47,7 @@ suite prints is the progress metric.
 cargo build --workspace                                   # the cdylib the Java module loads
 cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator clean verify
-#   -> Rust_JNI essential: 2 / 327, Rust_JNI grammar: 59 / 136 (plus 15 boundary tests)
+#   -> Rust_JNI essential: 303 / 327, Rust_JNI grammar: 126 / 136 (plus 15 boundary tests)
 # after a change that moves tests: regenerate the manifests, review the diff, verify again
 JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator \
@@ -55,13 +55,17 @@ JAVA_HOME=$(/usr/libexec/java_home -v 17) \
 ```
 
 The manifests under that module's `src/test/resources/platform/` are generated,
-never edited by hand; after the lowering they are the natives backlog, ranked
-by `FunctionNotFound: <mangled key>` lines. A lambda reaching
+never edited by hand; they rank what is left by kind: `FunctionNotFound: <key>`
+(nothing registered), `NotImplemented: <key>` (registered under its key through
+`native::NotYet`, body not fished), `Unsupported: …` (a lowering or value-shape
+gap), then bare Pure error texts (a semantic difference). A lambda reaching
 `JniContext::start` is lowered by `crates/evaluator/src/lower/` (Phase A, model
-read-only) and run after the model grew (Phase B); a node shape the lowering
-does not know reports `Unsupported: lowering <classifier> …`. Natives are
-fished one per commit from the ranking. Root Maven installs on this machine
-need `clean` (the PAR plugin trips on a stale descriptor otherwise).
+read-only) and run after the model grew (Phase B). Natives are fished from the
+archive one `impl NativeFunction` at a time (the natives round of 2026-10-11
+did it with four parallel agents, one module each; `tests/registry.rs` pins the
+exact key set and is regenerated from every module's `register`). Root Maven
+installs on this machine need `clean` (the PAR plugin trips on a stale
+descriptor otherwise).
 
 ## The six rules (plan §0)
 
