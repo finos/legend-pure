@@ -27,24 +27,16 @@ import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.enumeration.Enumeration;
-import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.m4.coreinstance.primitive.BooleanCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.primitive.ByteCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.primitive.DateCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.primitive.DecimalCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.primitive.FloatCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.primitive.IntegerCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.primitive.StrictTimeCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
 import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.StrictTimeFunctions;
-import org.finos.legend.pure.runtime.java.interpreted.LambdaWithContext;
 
+import java.math.BigDecimal;
 import java.util.IdentityHashMap;
 
 /**
@@ -55,17 +47,17 @@ import java.util.IdentityHashMap;
  */
 final class RustNodeBridge
 {
-    private final ModelRepository repository;
+    private final RustEngineHost host;
     private final ProcessorSupport processorSupport;
     private final PureRustEvaluator owner;
     private final IdentityHashMap<CoreInstance, Long> ids = new IdentityHashMap<>();
     private final MutableList<CoreInstance> nodes = Lists.mutable.empty();
     private final MutableMap<Long, RustCoreInstance> proxies = Maps.mutable.empty();
 
-    RustNodeBridge(ModelRepository repository, ProcessorSupport processorSupport, PureRustEvaluator owner)
+    RustNodeBridge(RustEngineHost host, PureRustEvaluator owner)
     {
-        this.repository = repository;
-        this.processorSupport = processorSupport;
+        this.host = host;
+        this.processorSupport = host.processorSupport();
         this.owner = owner;
     }
 
@@ -112,7 +104,7 @@ final class RustNodeBridge
             d.id = ((RustCoreInstance) ci).handle();
             return d;
         }
-        CoreInstance classifier = ci.getClassifier();
+        CoreInstance classifier = this.processorSupport.getClassifier(ci);
         d.classifier = (classifier == null) ? null : userPath(classifier);
         d.name = ci.getName();
         SourceInformation source = ci.getSourceInformation();
@@ -124,42 +116,9 @@ final class RustNodeBridge
             d.endLine = source.getEndLine();
             d.endColumn = source.getEndColumn();
         }
-        if (ci instanceof BooleanCoreInstance)
+        if (ci instanceof PrimitiveCoreInstance)
         {
-            d.kind = NodeDescription.BOOLEAN;
-            d.payload = Boolean.toString(PrimitiveUtilities.getBooleanValue(ci));
-        }
-        else if (ci instanceof IntegerCoreInstance)
-        {
-            d.kind = NodeDescription.INTEGER;
-            d.payload = PrimitiveUtilities.getIntegerValue(ci).toString();
-        }
-        else if (ci instanceof FloatCoreInstance)
-        {
-            d.kind = NodeDescription.FLOAT;
-            d.payload = PrimitiveUtilities.getFloatValue(ci).toPlainString();
-        }
-        else if (ci instanceof DecimalCoreInstance)
-        {
-            d.kind = NodeDescription.DECIMAL;
-            d.payload = PrimitiveUtilities.getDecimalValue(ci).toPlainString();
-        }
-        else if (ci instanceof StringCoreInstance)
-        {
-            d.kind = NodeDescription.STRING;
-            d.payload = PrimitiveUtilities.getStringValue(ci);
-        }
-        else if (ci instanceof DateCoreInstance)
-        {
-            describeDate(d, PrimitiveUtilities.getDateValue(ci));
-        }
-        else if (ci instanceof StrictTimeCoreInstance)
-        {
-            describeStrictTime(d, PrimitiveUtilities.getStrictTimeValue(ci));
-        }
-        else if (ci instanceof ByteCoreInstance)
-        {
-            d.kind = NodeDescription.BYTE;
+            describePrimitive(d, ((PrimitiveCoreInstance<?>) ci).getValue());
         }
         else if ((classifier != null) && Instance.instanceOf(classifier, M3Paths.Enumeration, this.processorSupport))
         {
@@ -171,15 +130,65 @@ final class RustNodeBridge
             d.kind = NodeDescription.PACKAGEABLE_ELEMENT;
             d.id = idOf(ci);
             d.userPath = userPath(ci);
-            d.keys = ci.getKeys().toArray(new String[0]);
+            d.keys = this.host.propertyKeys(ci).toArray(new String[0]);
         }
         else
         {
             d.kind = NodeDescription.NODE;
             d.id = idOf(ci);
-            d.keys = ci.getKeys().toArray(new String[0]);
+            d.keys = this.host.propertyKeys(ci).toArray(new String[0]);
         }
         return d;
+    }
+
+    /**
+     * A primitive by its classifier (the M3 primitive types are root-level
+     * names) and its Java value, the two things both engines agree on.
+     */
+    private static void describePrimitive(NodeDescription d, Object value)
+    {
+        String type = d.classifier;
+        if (M3Paths.Boolean.equals(type))
+        {
+            d.kind = NodeDescription.BOOLEAN;
+            d.payload = value.toString();
+        }
+        else if (M3Paths.Integer.equals(type))
+        {
+            d.kind = NodeDescription.INTEGER;
+            d.payload = value.toString();
+        }
+        else if (M3Paths.Float.equals(type))
+        {
+            d.kind = NodeDescription.FLOAT;
+            d.payload = (value instanceof BigDecimal) ? ((BigDecimal) value).toPlainString() : value.toString();
+        }
+        else if (M3Paths.Decimal.equals(type))
+        {
+            d.kind = NodeDescription.DECIMAL;
+            d.payload = (value instanceof BigDecimal) ? ((BigDecimal) value).toPlainString() : value.toString();
+        }
+        else if (M3Paths.String.equals(type))
+        {
+            d.kind = NodeDescription.STRING;
+            d.payload = value.toString();
+        }
+        else if (value instanceof PureDate)
+        {
+            describeDate(d, (PureDate) value);
+        }
+        else if (value instanceof PureStrictTime)
+        {
+            describeStrictTime(d, (PureStrictTime) value);
+        }
+        else if (M3Paths.Byte.equals(type))
+        {
+            d.kind = NodeDescription.BYTE;
+        }
+        else
+        {
+            throw PureRustEvaluationException.unsupported("a primitive of type " + type + " across the boundary");
+        }
     }
 
     private static void describeDate(NodeDescription d, PureDate date)
@@ -262,19 +271,11 @@ final class RustNodeBridge
      */
     NodeDescription[] capturedValue(long id, String name)
     {
-        CoreInstance node = this.nodes.get((int) id);
-        if (!(node instanceof LambdaWithContext))
+        ListIterable<? extends CoreInstance> values = this.host.capturedValues(this.nodes.get((int) id), name);
+        if (values == null)
         {
             return null;
         }
-        CoreInstance value = ((LambdaWithContext) node).getVariableContext().getValue(name);
-        if (value == null)
-        {
-            return new NodeDescription[0];
-        }
-        ListIterable<? extends CoreInstance> values = Instance.instanceOf(value, M3Paths.InstanceValue, this.processorSupport)
-                ? Instance.getValueForMetaPropertyToManyResolved(value, M3Properties.values, this.processorSupport)
-                : Lists.immutable.with(value);
         NodeDescription[] out = new NodeDescription[values.size()];
         for (int i = 0; i < out.length; i++)
         {
@@ -285,27 +286,27 @@ final class RustNodeBridge
 
     CoreInstance newBoolean(boolean value)
     {
-        return this.repository.newBooleanCoreInstance(value);
+        return this.host.newBoolean(value);
     }
 
     CoreInstance newInteger(long value)
     {
-        return this.repository.newIntegerCoreInstance(value);
+        return this.host.newInteger(value);
     }
 
     CoreInstance newFloat(String text)
     {
-        return this.repository.newFloatCoreInstance(text);
+        return this.host.newFloat(text);
     }
 
     CoreInstance newDecimal(String text)
     {
-        return this.repository.newDecimalCoreInstance(text);
+        return this.host.newDecimal(text);
     }
 
     CoreInstance newString(String value)
     {
-        return this.repository.newStringCoreInstance(value);
+        return this.host.newString(value);
     }
 
     CoreInstance newDate(int year, int month, int day, int hour, int minute, int second, String subsecond, int precision)
@@ -335,12 +336,12 @@ final class RustNodeBridge
                 date = DateFunctions.newPureDate(year, month, day, hour, minute, second, subsecond);
                 break;
         }
-        return this.repository.newDateCoreInstance(date);
+        return this.host.newDate(date);
     }
 
     CoreInstance newLatestDate()
     {
-        return this.repository.newLatestDateCoreInstance();
+        return this.host.newLatestDate();
     }
 
     CoreInstance newStrictTime(int hour, int minute, int second, String subsecond, int precision)
@@ -354,7 +355,7 @@ final class RustNodeBridge
         {
             text.append('.').append(subsecond);
         }
-        return this.repository.newStrictTimeCoreInstance(StrictTimeFunctions.parsePureStrictTime(text.toString()));
+        return this.host.newStrictTime(StrictTimeFunctions.parsePureStrictTime(text.toString()));
     }
 
     CoreInstance element(String userPath)

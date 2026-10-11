@@ -409,6 +409,7 @@ impl JavaNode {
         method: jni::objects::JMethodID,
         name: &str,
     ) -> Result<Option<PVector<Value>>, String> {
+        self.shared.jni_reads.set(self.shared.jni_reads.get() + 1);
         let mut guard = self
             .shared
             .vm

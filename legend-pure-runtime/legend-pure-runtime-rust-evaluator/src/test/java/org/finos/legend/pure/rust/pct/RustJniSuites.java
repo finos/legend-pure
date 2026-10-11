@@ -18,6 +18,7 @@ import junit.framework.TestSuite;
 import org.finos.legend.pure.m3.pct.shared.PCTManifestLoader;
 import org.finos.legend.pure.m3.pct.shared.model.PCTManifest;
 import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
+import org.finos.legend.pure.runtime.java.compiled.testHelper.PureTestBuilderCompiled;
 import org.finos.legend.pure.runtime.java.interpreted.testHelper.PureTestBuilderInterpreted;
 
 /**
@@ -33,11 +34,20 @@ final class RustJniSuites
 
     static TestSuite build(ReportScope reportScope, String manifestPath)
     {
-        TestSuite suite = PureTestBuilderInterpreted.buildPCTSurveyorSuite(reportScope, manifestPath);
+        return tally(reportScope, manifestPath, "", PureTestBuilderInterpreted.buildPCTSurveyorSuite(reportScope, manifestPath));
+    }
+
+    static TestSuite buildCompiled(ReportScope reportScope, String manifestPath)
+    {
+        return tally(reportScope, manifestPath, " (compiled)", PureTestBuilderCompiled.buildPCTSurveyorSuite(reportScope, manifestPath));
+    }
+
+    private static TestSuite tally(ReportScope reportScope, String manifestPath, String platformTag, TestSuite suite)
+    {
         PCTManifest manifest = PCTManifestLoader.loadFromClasspath(manifestPath);
         int total = suite.countTestCases();
         int excluded = (manifest.exclusions == null) ? 0 : manifest.exclusions.size();
-        System.out.println("Rust_JNI " + reportScope.module + ": " + (total - excluded) + " / " + total);
+        System.out.println("Rust_JNI " + reportScope.module + platformTag + ": " + (total - excluded) + " / " + total);
         return suite;
     }
 }

@@ -3,7 +3,8 @@
 > **Status: in execution, October 2026 (revised 2026-10-11). Steps 0–2 done
 > 2026-10-09; the Java-lambda lowering (Step 2 "Next") done 2026-10-10;
 > natives round 1 done 2026-10-11 (`Rust_JNI` 303 / 327 and 126 / 136).
-> Next: natives round 2 on the residue listed under Step 2, then Step 3
+> Next: Step 2b, the evaluator's own cost (decided 2026-10-11), then
+> natives round 2 on the residue listed under Step 2, then Step 3
 > (Appendix C item 6). Archive tag `archive/pre-evaluator-extract-2026-10`.**
 > This document is
 > self-contained. It assumes the reader knows Legend Pure and legend-engine as
@@ -57,6 +58,43 @@ Read this first; everything below assumes it.
 | What to extract, and what to leave | Appendix A (extraction map). Read it before Step 0 and before fishing anything later. |
 | Step 0 mechanics | Appendix B: archive commands, workspace skeleton, gates. |
 | Decisions still owned by the author | Appendix C. Do not guess these; ask. |
+
+**Where we are, and what comes next (2026-10-11).** Steps 0–2 are done,
+the Java-lambda lowering and natives round 1 with them, and both Java
+engines run the PCT corpus through `Rust_JNI` (interpreted 303 / 327 and
+126 / 136, compiled 300 / 327 and 125 / 136). Two measurement tools exist:
+`BenchmarkPctExpressions` (every PCT test under four modes, with the Rust
+side's own split per call) and the apples-to-apples pair
+(`examples/expressions.rs`, `examples/hot_path.rs`, `BenchmarkNativeExpressions`).
+They say the evaluator alone is 10–20x ahead of the interpreted engine and
+2–13x behind the compiled one, and that the bridge costs about 600 µs per
+call on top. The order from here, each phase with its gate:
+
+1. **Step 2b — the evaluator's own cost** (next; decided 2026-10-11). The
+   eight ranked items of that step, one commit each, measured with the two
+   examples. Gate: the twelve expressions within 3x of the compiled
+   engine's generated method; all four `Rust_JNI` numbers unchanged.
+2. **Natives round 2** (Step 2, "State after the lowering" and "Natives
+   round 1"): the residue by kind — `Map` across the boundary, `zip`
+   results compared by the Java engine, `copy` with key expressions,
+   `genericType` and `deactivate` out of `NotYet`, the compiled engine's
+   five Rust-built objects handed to generated code, the review's round-2
+   items (fallible node reads, qualified properties dispatched through
+   the resolved property, JNI local references and exception discipline).
+   Gate: the manifests shrink, nothing regresses.
+3. **The bridge's cost** (Step 2, "Deferred: the cost of the bridge"):
+   cache the lowered closure per Java lambda object, then the crossing
+   itself (profile `start` first; the menu is listed there). Gate:
+   `BenchmarkPctExpressions` median through `Rust_JNI` within 2x of the
+   interpreted engine's own adapter.
+4. **Step 3 and Step 4** — read PELT, the `Directory` trait, the static
+   graph: the per-call re-lowering disappears for everything static.
+5. **Steps 5–7** as written.
+
+Before any push: the review's decision list (files from the archived
+direction, the uncommitted `pom.xml` release change, the archive tag and
+branch on `origin`, the merge from `master` and the manifest rebase after
+it) is the author's.
 
 **Definition of done for the MVP.** The `Rust_JNI` PCT adapter (built in
 Step 2, red) reports pass rates for the platform and at least
@@ -480,10 +518,12 @@ from here on, each later step is measured by how many turn green.
   for reports. The interpreted engine implements `evalRust` through `EvalRust`
   (registered by `RustJniInterpretedExtension` via `META-INF/services`; the
   evaluator is created on the first call, because an extension whose
-  constructor throws is dropped silently). The compiled engine registers a
-  stub that throws at run time, because it generates Java for the whole
-  platform at build time and refuses a call to an unknown native. Discovery,
-  assertion and reporting stay the Java engines' own.
+  constructor throws is dropped silently). The compiled engine generates Java
+  for the whole platform at build time, so its `evalRust` compiles to a call
+  into an `EvalRustExecutor` hook found through `META-INF/services` at run
+  time (`compiled.CompiledEvalRust` in the module, since 2026-10-11; before
+  that a stub that threw). Discovery, assertion and reporting stay the Java
+  engines' own.
 - **Suites, manifests, reports** in the Java module:
   `Test_RustJni_{Essential,Grammar}Functions_PCT` are the interpreted suites
   with the `Rust_JNI` adapter and the manifests
@@ -613,9 +653,27 @@ per-value `NodeDescription`, read through about fifteen JNI field calls plus
 a string copy per text field, and the `getKeys()` array built for every
 node. Numbers cross as decimal text both ways, `RustNodeBridge.nodes` pins
 every described node until `close`, and every lazy read re-attaches the
-thread. Lowering now walks whole bodies (2026-10-10); profiling the PCT run
-is the next thing after natives round 2, and the list below is the menu,
-roughly in order of payoff per line:
+thread. Lowering now walks whole bodies (2026-10-10); the measuring tool is
+the module's `BenchmarkPctExpressions` (2026-10-11: every PCT test timed
+under each engine with its own adapter and with `Rust_JNI`, first run apart
+from the warm median, and the Rust side's own split of every call:
+lowering, run, JNI reads during the run). First measurement, release
+cdylib, median per PCT test: the whole test 77 µs on the interpreted
+engine and 614 µs through `Rust_JNI`, of which the evaluator's run of the
+lowered closure is under 1 µs (p90 2 µs, max 15 µs), the lowering 229 µs,
+and the rest, about 300 µs, the crossing itself (describe, materialise,
+cache clearing, the JNI entry). So the evaluator is not the cost; the
+per-call re-lowering and the crossing are. The apples-to-apples pair
+(`crates/evaluator/examples/expressions.rs` and the module's
+`BenchmarkNativeExpressions`, the same twelve expressions built on each
+side, no JNI, 2026-10-11) puts the evaluator itself between the two Java
+engines: 10 to 20 times faster than the interpreted engine's entry, 2 to
+13 times slower than the compiled engine's generated method, the gap
+widest where lambdas are applied per element (`filter` over a hundred
+integers: 37 µs against 2.8 µs, about 350 ns per lambda application).
+The lambda application path is therefore the evaluator's own hot spot.
+The list below is the bridge's menu, roughly in order of payoff per
+line:
 
 - *Columnar description*: `describe` / `propertyValues` return one `long[]`
   (kind, id, classifier id, date components) plus a `String[]` of the
@@ -647,6 +705,120 @@ value model. No `PureTestBuilderRust`, no `rust-interpreted` platform, no
 and the surveyor path is used after all, since discovery runs in the Java
 engine, not in Rust. Lambdas across the bridge reported `Unsupported` (not
 `FunctionNotFound(testPath)`) until the lowering of 2026-10-10.
+
+### Step 2b — The evaluator's own cost (next, decided 2026-10-11)
+
+**Why now.** The apples-to-apples pair (Step 2, "Deferred: the cost of
+the bridge") put the evaluator between the two Java engines: 10 to 20
+times faster than the interpreted engine, 2 to 13 times slower than the
+compiled engine's generated method. The bridge is an accepted trade-off;
+the evaluator is the product, and it must be as fast as a tree-walker can
+be before any further step builds on it. This phase is the evaluator
+alone: no JNI, no bridge, no natives backlog.
+
+**Where the time goes.** Measured on the hot path in isolation
+(`crates/evaluator/examples/hot_path.rs`, release build, median of 3,000
+runs after 300 warm-up, 2026-10-11):
+
+| Operation | Today | Same, with a structural clone and no custom drop |
+|---|---|---|
+| literal `1` through `eval` | 42 ns | 41 ns |
+| `1 + 2` (one native, a two-element collection argument) | 667 ns | 209 ns |
+| `range(0, 100, 1)->size()` | 2.6 µs | 0.8 µs |
+| `range(…)->filter(x \| true)->size()`, per lambda application | 166 ns | 104 ns |
+| `… ->filter(x \| $x->mod(2) == 0)`, the body on top | 186 ns | 100 ns |
+| `… ->map(x \| $x * 2)`, the body on top | 335 ns | 165 ns |
+| `Value::Integer` clone | 27 ns | 2 ns |
+| `Value::Collection` of 100 clone | 2,361 ns | 16 ns |
+| `push_scope` + one `set` + `pop_scope` | 44 ns | 45 ns |
+
+The compiled Java engine runs the whole filter at about 28 ns per element.
+Reading the code behind the numbers:
+
+- `Value::clone` is an iterative deep clone that allocates two work
+  vectors for every clone, an `Integer` included, and the custom `Drop`
+  walks every element of a collection on every drop, which defeats the
+  structural sharing `im_rc::Vector` provides. Every variable read,
+  argument binding, numeric promotion and `filter` result pays both.
+  Pure collections are flat and a unit instance nests one level, so a
+  plain clone never recurses meaningfully; the iterative versions guard
+  against a shape Pure cannot produce.
+- An arithmetic native receives its operands as one `Number[*]`
+  collection: `a + b` evaluates a `Collection` literal into an
+  `im_rc::Vector` behind a `Box`, the native copies it into a `Vec`,
+  `promote_pair` clones both operands again, and the fold allocates
+  once more. Four allocations and six clones for one addition.
+- A lambda application pushes a scope (a `Vec` for its undo entries),
+  binds every capture and parameter into a `HashMap<SmolStr, Value>`
+  keyed by name with SipHash, and reads each variable back through the
+  same map. Names are resolved at run time on every application although
+  the lowering and the builders know every binding statically.
+- A resolved native call still hashes its mangled name to find the
+  registry entry, on every call.
+- `force_all` allocates a `Vec` per native call; `equal` and `eq`
+  allocate a work stack and clone both operands even for two integers.
+- `Result<Value, PureException>` is 144 bytes against 32 for `Value`,
+  moved through every return of the recursive `eval`.
+
+**Build, in this order; each item is one commit carrying the before and
+after of `examples/expressions.rs` and `examples/hot_path.rs`.**
+
+1. *Clone and drop.* A structural `Clone` (leaf variants by value,
+   `Collection` by sharing the vector, `UnitInstance` one level deep) and
+   no custom `Drop`. Keep one test that a collection of ten thousand
+   elements clones in constant time and drops without growing the stack.
+   Measured above: `1 + 2` 667 → 209 ns, the filter 37.8 → 21.3 µs.
+2. *Operands without a collection.* The evaluator exposes the elements
+   of a `Collection` literal to a native without materialising the
+   vector (an iterator over the evaluated elements, or the natives read
+   the literal's elements directly), and the arithmetic natives fold
+   over it; `promote_pair` works on borrowed numbers and clones nothing.
+   Expected: `1 + 2` under 100 ns, `$x * 2` per application under 60 ns.
+3. *Variables as slots.* The lowering and the builders resolve every
+   `$x` to a frame slot; a frame is a `Vec<Value>` and `VariableContext`
+   a stack of frames with a flat undo log, no map and no hashing. `let`
+   appends to the current frame; captures are copied into the frame on
+   application; the natives that read the context by name
+   (`letFunction`, `getAll`, the `KeyExpression` evaluation) go through
+   the resolved slot. Expected: a lambda application under 40 ns.
+   If the lowering change is too large for one commit, the interim step
+   is a flat undo log and a cheap hasher written in the crate (no new
+   dependency), worth roughly a third of the gain.
+4. *Dispatch by element.* A resolved call caches its `&dyn
+   NativeFunction` per `ElementId` (a vector indexed by chunk and local
+   index) so no string is hashed; a call without an element (the
+   builders) keeps the map.
+5. *Arguments without a heap vector.* Fixed-arity helpers (`force1`,
+   `force2`, `force3`) returning tuples replace `force_all` in every
+   native of known arity.
+6. *Equality fast path.* `equal`, `eq` and `values_equal` compare two
+   primitives without a work stack, a set or a clone; only objects and
+   collections take the general path.
+7. *Boxed error.* `Result<Value, Box<PureException>>` (or a boxed
+   payload inside `PureException`) through the evaluator, removing the
+   crate-wide `result_large_err` allowance. Mechanical; measure before
+   keeping.
+8. *Collection representation.* Only if the profile still shows
+   `im_rc::Vector` after 1–7: a small inline vector for collections of
+   up to eight elements, or `im_rc::Vector::unit` for one. Measure
+   first; the representation is shared with the heap and the bridge.
+
+**Rules.** No new dependency. No semantic change: all Rust tests and all
+four `Rust_JNI` numbers unchanged after every item. No name-based
+special case anywhere. Items 1 and 2 before anything else: they are the
+cheapest and the largest.
+
+**Gate.** The twelve expressions of `expressions.pure` within three
+times the compiled engine's generated method (from 2 to 13 times today);
+`1 + 2` under 100 ns; a lambda application under 50 ns; the PCT corpus
+through `Rust_JNI` unchanged in count. Record the two tables in this
+section when the phase closes.
+
+**Not in this phase.** Matching generated Java needs compilation of the
+expression tree into closures or direct-threaded code, which is a
+different evaluator, not a faster walk; it is listed under "Later,
+outside the MVP". The bridge's own cost (the per-call re-lowering and the
+crossing, Step 2 "Deferred") is a separate phase after this one.
 
 ### Step 3 — Read PELT
 
@@ -880,7 +1052,10 @@ legend-engine, with no Rust compiler.
   (handcrafted `Root_..._Impl`, PELT-lazy, or interpreted), returns its
   classifier, keys and values in one call, primitives inline and other objects
   as handles. On the Rust side the same node interface as PELT, so the same
-  lowering applies. *(Done 2026-10-10 as `RustNodeBridge` / `JavaNode`.)*
+  lowering applies. *(Done 2026-10-10 as `RustNodeBridge` / `JavaNode`;
+  proven on compiled objects 2026-10-11: the compiled engine runs the same
+  corpus through `RustEngineHost` at 300 / 327 and 125 / 136, the difference
+  being Rust-built objects handed back to generated code.)*
 - The JNI `Directory` (Step 4): `node(path)` through `_Package.getByUserPath`,
   `instances(classifier)` and `overloads(name)` as one bulk call each into the
   engine's own indexes, `resolve(reference_id)` through the Java
@@ -945,6 +1120,9 @@ Java. Rough size: ~1 k lines.
   compiler produces graphs. Requires producing complete M3 node shapes and the
   same reference ids Java would generate; the gate is "Rust-written platform
   PELT decodes identically to Java-written platform PELT".
+- **Compiling the expression tree.** Closure compilation or direct-threaded
+  code over the lowered tree, the route to the compiled Java engine's speed
+  once Step 2b has taken the tree-walker as far as it goes.
 - **A Rust parser and compiler.** Independent of everything above; when it
   exists, it produces the same node shape and plugs into the same lowering.
   The archive branch holds a complete one; whether it is revived or rewritten

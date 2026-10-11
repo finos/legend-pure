@@ -29,10 +29,10 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
-import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureException;
+import org.finos.legend.pure.rust.interpreted.InterpretedHost;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -69,7 +69,6 @@ public final class PureRustEvaluator implements FunctionExecution, Closeable
     private final Console console = new RustConsole();
     private PureRuntime runtime;
     private ProcessorSupport processorSupport;
-    private ModelRepository repository;
     private RustNodeBridge bridge;
     private long contextPointer;
     private boolean closed;
@@ -77,14 +76,33 @@ public final class PureRustEvaluator implements FunctionExecution, Closeable
     @Override
     public synchronized void init(PureRuntime pureRuntime, Message message)
     {
+        this.runtime = pureRuntime;
+        attach(new InterpretedHost(pureRuntime.getModelRepository(), pureRuntime.getProcessorSupport()));
+    }
+
+    /**
+     * An evaluator over any engine's graph, for engines that are not a
+     * {@link PureRuntime}: the compiled engine reaches it through
+     * {@code evalRust}'s executor.
+     *
+     * @param host the engine's side of the bridge
+     * @return an initialised evaluator; {@link #start} is for the interpreted engine, {@link #evaluate} for any
+     */
+    public static PureRustEvaluator over(RustEngineHost host)
+    {
+        PureRustEvaluator evaluator = new PureRustEvaluator();
+        evaluator.attach(host);
+        return evaluator;
+    }
+
+    private synchronized void attach(RustEngineHost host)
+    {
         if (this.contextPointer != 0)
         {
             throw new IllegalStateException("Evaluator is already initialised");
         }
-        this.runtime = pureRuntime;
-        this.processorSupport = pureRuntime.getProcessorSupport();
-        this.repository = pureRuntime.getModelRepository();
-        this.bridge = new RustNodeBridge(this.repository, this.processorSupport, this);
+        this.processorSupport = host.processorSupport();
+        this.bridge = new RustNodeBridge(host, this);
         this.contextPointer = nativeInitContext(this.bridge);
     }
 
@@ -113,16 +131,30 @@ public final class PureRustEvaluator implements FunctionExecution, Closeable
     @Override
     public synchronized CoreInstance start(CoreInstance function, ListIterable<? extends CoreInstance> arguments)
     {
-        checkOpen();
         CoreInstance[][] slots = new CoreInstance[arguments.size()][];
         for (int i = 0; i < slots.length; i++)
         {
             slots[i] = unwrap(arguments.get(i));
         }
-        CoreInstance[] results;
+        CoreInstance[] results = evaluate(function, slots);
+        return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.with(results), true, this.processorSupport);
+    }
+
+    /**
+     * Run a function node with its arguments and return the raw results, each
+     * as the host engine represents it.
+     *
+     * @param function  the function node: a lambda, a function element or a native
+     * @param arguments one slot of values per parameter
+     * @return the result values
+     * @throws PureRustEvaluationException a typed failure, carrying the Pure exception as its cause
+     */
+    public synchronized CoreInstance[] evaluate(CoreInstance function, CoreInstance[][] arguments)
+    {
+        checkOpen();
         try
         {
-            results = nativeStart(this.contextPointer, function, slots);
+            return nativeStart(this.contextPointer, function, arguments);
         }
         catch (PureRustEvaluationException e)
         {
@@ -130,7 +162,6 @@ public final class PureRustEvaluator implements FunctionExecution, Closeable
             e.initCause(pureCause(e, source));
             throw e;
         }
-        return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.with(results), true, this.processorSupport);
     }
 
     @Override
@@ -196,6 +227,20 @@ public final class PureRustEvaluator implements FunctionExecution, Closeable
         checkOpen();
         long handle = nativeNew(this.contextPointer, classifierPath, propertyNames, propertyValues);
         return this.bridge.rustObject(handle, classifierPath);
+    }
+
+    /**
+     * Where the last lowered call on this thread spent its time, for
+     * measurement: the lowering (both phases, including every JNI read it
+     * made) and the run of the lowered closure, in nanoseconds, then the
+     * number of JNI reads made during the run (zero means the run was the
+     * Rust evaluator alone).
+     *
+     * @return {@code [loweringNanos, runNanos, jniReadsDuringRun]}
+     */
+    public static long[] lastTimings()
+    {
+        return nativeLastTimings();
     }
 
     /**
@@ -328,6 +373,8 @@ public final class PureRustEvaluator implements FunctionExecution, Closeable
     private static native String nativeCrossingKind(long contextPtr, CoreInstance node);
 
     private static native long nativeLiveHandleCount(long contextPtr);
+
+    private static native long[] nativeLastTimings();
 
     private static native void nativeFreeInstance(long contextPtr, long handle);
 

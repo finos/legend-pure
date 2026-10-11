@@ -43,6 +43,24 @@ fn ffi_error(message: String) -> PureException {
     )
 }
 
+/// Where the last `start` on this thread spent its time: the lowering
+/// (Phase A and B, including every JNI read it made) and the run.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Timings {
+    /// Lowering, nanoseconds.
+    pub lower_ns: u64,
+    /// Running the lowered closure, nanoseconds.
+    pub run_ns: u64,
+    /// JNI property or capture reads made while the closure ran: zero
+    /// means the run was the evaluator alone.
+    pub run_jni_reads: u64,
+}
+
+thread_local! {
+    /// The timings of the last lowered `start` on this thread.
+    pub static LAST_TIMINGS: std::cell::Cell<Timings> = const { std::cell::Cell::new(Timings { lower_ns: 0, run_ns: 0, run_jni_reads: 0 }) };
+}
+
 /// Model, registry and evaluator behind raw pointers (freed in `Drop`),
 /// plus the state shared with every Java-backed node.
 pub struct JniContext {
@@ -81,6 +99,7 @@ impl JniContext {
             java_nodes: std::cell::RefCell::new(std::collections::HashMap::new()),
             handles: std::cell::RefCell::new(JniHandleTable::new()),
             last_error: std::cell::RefCell::new(None),
+            jni_reads: std::cell::Cell::new(0),
         });
         Self {
             model: model_ptr,
@@ -145,6 +164,7 @@ impl JniContext {
     }
 
     fn lower_and_run_inner(&mut self, function: &Value) -> Result<Value, PureException> {
+        let started = std::time::Instant::now();
         let closure = {
             let model: &PureModel = unsafe { &*self.model };
             let chunk = self
@@ -173,11 +193,21 @@ impl JniContext {
             }
             closure
         };
+        let lowered = std::time::Instant::now();
+        let reads_before = self.shared.jni_reads.get();
         let evaluator = self.evaluator();
         evaluator.context_mut().push_scope();
         let callable = Value::Function(Box::new(FunctionValue::Lambda(closure)));
         let result = evaluator.apply_callable(&callable, &[]);
         evaluator.context_mut().pop_scope();
+        let ran = std::time::Instant::now();
+        LAST_TIMINGS.with(|t| {
+            t.set(Timings {
+                lower_ns: (lowered - started).as_nanos() as u64,
+                run_ns: (ran - lowered).as_nanos() as u64,
+                run_jni_reads: self.shared.jni_reads.get() - reads_before,
+            });
+        });
         result
     }
 

@@ -38,7 +38,9 @@ public class Core_RustJni_PCTReportProvider implements PCTReportProvider
     {
         return PCTReportProviderTool.load(Core_RustJni_PCTReportProvider.class.getClassLoader(), AdapterReport.class,
                 "pct-reports/ADAPTER_essential_interpreted_Rust_JNI.json",
-                "pct-reports/ADAPTER_grammar_interpreted_Rust_JNI.json"
+                "pct-reports/ADAPTER_grammar_interpreted_Rust_JNI.json",
+                "pct-reports/ADAPTER_essential_compiled_Rust_JNI.json",
+                "pct-reports/ADAPTER_grammar_compiled_Rust_JNI.json"
         );
     }
 }

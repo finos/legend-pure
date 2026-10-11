@@ -107,12 +107,28 @@
             <artifactId>legend-pure-runtime-java-engine-interpreted</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.collections</groupId>
             <artifactId>eclipse-collections-api</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-m3-core</artifactId>
+            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -145,6 +161,23 @@
                                 <argument>${project.build.directory}/classes/pct-reports/</argument>
                                 <argument>org.finos.legend.pure.rust.pct.Test_RustJni_EssentialFunctions_PCT</argument>
                                 <argument>org.finos.legend.pure.rust.pct.Test_RustJni_GrammarFunctions_PCT</argument>
+                            </arguments>
+                            <includeProjectDependencies>true</includeProjectDependencies>
+                            <classpathScope>test</classpathScope>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>GeneratePCTReportCompiled</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>org.finos.legend.pure.runtime.java.compiled.testHelper.PCTReportGenerator</mainClass>
+                            <arguments>
+                                <argument>${project.build.directory}/classes/pct-reports/</argument>
+                                <argument>org.finos.legend.pure.rust.pct.Test_RustJniCompiled_EssentialFunctions_PCT</argument>
+                                <argument>org.finos.legend.pure.rust.pct.Test_RustJniCompiled_GrammarFunctions_PCT</argument>
                             </arguments>
                             <includeProjectDependencies>true</includeProjectDependencies>
                             <classpathScope>test</classpathScope>

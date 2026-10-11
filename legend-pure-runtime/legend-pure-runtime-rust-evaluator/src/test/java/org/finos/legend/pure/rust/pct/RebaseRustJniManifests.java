@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.PlatformCodeRepositoryProvider;
@@ -33,6 +34,8 @@ import org.finos.legend.pure.m3.pct.shared.model.PCTManifest;
 import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
+import org.finos.legend.pure.runtime.java.compiled.testHelper.PureTestBuilderCompiled;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.testHelper.PureTestBuilderInterpreted;
 import org.junit.Assert;
@@ -80,14 +83,20 @@ public class RebaseRustJniManifests
         rebase(PlatformCodeRepositoryProvider.grammarFunctions, "platform/pure/grammar/functions/pct_grammar_interpreted_rust_jni.json");
     }
 
+    @Test
+    public void rebaseEssentialCompiled() throws Throwable
+    {
+        rebaseCompiled(PlatformCodeRepositoryProvider.essentialFunctions, "platform/pure/essential/pct_essential_compiled_rust_jni.json");
+    }
+
+    @Test
+    public void rebaseGrammarCompiled() throws Throwable
+    {
+        rebaseCompiled(PlatformCodeRepositoryProvider.grammarFunctions, "platform/pure/grammar/functions/pct_grammar_compiled_rust_jni.json");
+    }
+
     static void rebase(ReportScope scope, String manifestPath) throws IOException
     {
-        String manifestDir = System.getProperty(MANIFEST_DIR_PROPERTY);
-        Assert.assertNotNull("system property " + MANIFEST_DIR_PROPERTY + " (set by the module's surefire configuration)", manifestDir);
-
-        PCTManifest committed = PCTManifestLoader.loadFromClasspath(manifestPath);
-        MutableMap<String, String> committedExclusions = committed.toExclusionMap();
-
         FunctionExecutionInterpreted fe = PureTestBuilderInterpreted.getFunctionExecutionInterpreted();
         ProcessorSupport ps = fe.getProcessorSupport();
         ModelRepository repository = fe.getPureRuntime().getModelRepository();
@@ -102,6 +111,27 @@ public class RebaseRustJniManifests
         {
             report = Instance.getValueForMetaPropertyToOneResolved(report, "values", ps);
         }
+        derive(scope, manifestPath, "", report, ps);
+    }
+
+    static void rebaseCompiled(ReportScope scope, String manifestPath) throws Throwable
+    {
+        CompiledExecutionSupport es = PureTestBuilderCompiled.getClassLoaderExecutionSupport();
+        ProcessorSupport ps = es.getProcessorSupport();
+        CoreInstance surveyor = ps.package_getByUserPath(SURVEYOR);
+        Assert.assertNotNull(SURVEYOR, surveyor);
+        CoreInstance report = (CoreInstance) PureTestBuilderCompiled.executeFn(surveyor, null, Maps.mutable.empty(), es,
+                Lists.mutable.with(scope._package, scope.filePath, manifestPath));
+        derive(scope, manifestPath, " (compiled)", report, ps);
+    }
+
+    private static void derive(ReportScope scope, String manifestPath, String platformTag, CoreInstance report, ProcessorSupport ps) throws IOException
+    {
+        String manifestDir = System.getProperty(MANIFEST_DIR_PROPERTY);
+        Assert.assertNotNull("system property " + MANIFEST_DIR_PROPERTY + " (set by the module's surefire configuration)", manifestDir);
+
+        PCTManifest committed = PCTManifestLoader.loadFromClasspath(manifestPath);
+        MutableMap<String, String> committedExclusions = committed.toExclusionMap();
 
         TreeMap<String, String> exclusions = new TreeMap<>();
         int passes = 0;
@@ -157,7 +187,7 @@ public class RebaseRustJniManifests
 
         Path target = Paths.get(manifestDir, manifestPath);
         write(target, committed.adapter, exclusions);
-        System.out.println("Rust_JNI " + scope.module + ": " + passes + " / " + (results.size() - skipped)
+        System.out.println("Rust_JNI " + scope.module + platformTag + ": " + passes + " / " + (results.size() - skipped)
                 + (skipped == 0 ? "" : " (" + skipped + " skipped)") + " -> " + target);
     }
 

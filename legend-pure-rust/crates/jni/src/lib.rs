@@ -499,6 +499,30 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeC
     }
 }
 
+/// Where the last lowered `start` on this thread spent its time:
+/// `[lowering ns, run ns, JNI reads during the run]`.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeLastTimings<
+    'local,
+>(
+    env: JNIEnv<'local>,
+    _class: JClass<'local>,
+) -> jni::sys::jlongArray {
+    let t = context::LAST_TIMINGS.with(std::cell::Cell::get);
+    let values = [
+        i64::try_from(t.lower_ns).unwrap_or(i64::MAX),
+        i64::try_from(t.run_ns).unwrap_or(i64::MAX),
+        i64::try_from(t.run_jni_reads).unwrap_or(i64::MAX),
+    ];
+    match env.new_long_array(3) {
+        Ok(array) => {
+            let _ = env.set_long_array_region(&array, 0, &values);
+            array.into_raw()
+        }
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
 /// Live handles in both directions; Java asserts this returns to zero.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeLiveHandleCount<

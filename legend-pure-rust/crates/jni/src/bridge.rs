@@ -213,6 +213,9 @@ pub struct BridgeShared {
     /// The last failure raised while reading a node under a borrow;
     /// surfaced by the next native entry point.
     pub last_error: RefCell<Option<String>>,
+    /// Property and capture reads made through JNI so far; the timings
+    /// of a `start` report how many fell inside its run phase.
+    pub jni_reads: std::cell::Cell<u64>,
 }
 
 impl BridgeShared {
