@@ -24,7 +24,8 @@ use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 
 use crate::error::{PureException, PureRuntimeError};
 use crate::native::{
-    EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args, force_all,
+    EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args, force_all, force1,
+    force2,
 };
 use crate::value::Value;
 
@@ -80,9 +81,8 @@ impl NativeFunction for Floor {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("floor", &values, 1)?;
-        let x = number_to_f64("floor", &values[0])?;
+        let a0 = force1("floor", args, ctx)?;
+        let x = number_to_f64("floor", &a0)?;
         #[allow(clippy::cast_possible_truncation)]
         Ok(Evaluated::new(Value::Integer(x.floor() as i64)))
     }
@@ -98,9 +98,8 @@ impl NativeFunction for Ceiling {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("ceiling", &values, 1)?;
-        let x = number_to_f64("ceiling", &values[0])?;
+        let a0 = force1("ceiling", args, ctx)?;
+        let x = number_to_f64("ceiling", &a0)?;
         #[allow(clippy::cast_possible_truncation)]
         Ok(Evaluated::new(Value::Integer(x.ceil() as i64)))
     }
@@ -189,9 +188,8 @@ impl NativeFunction for Sign {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("sign", &values, 1)?;
-        let x = number_to_f64("sign", &values[0])?;
+        let a0 = force1("sign", args, ctx)?;
+        let x = number_to_f64("sign", &a0)?;
         let s = if x > 0.0 {
             1
         } else if x < 0.0 {
@@ -216,14 +214,13 @@ impl NativeFunction for Sqrt {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("sqrt", &values, 1)?;
-        let x = number_to_f64("sqrt", &values[0])?;
+        let a0 = force1("sqrt", args, ctx)?;
+        let x = number_to_f64("sqrt", &a0)?;
         let r = x.sqrt();
         if r.is_nan() {
             return Err(PureRuntimeError::EvaluationError(format!(
                 "Unable to compute sqrt of {}",
-                java_number_string(&values[0])
+                java_number_string(&a0)
             ))
             .into());
         }
@@ -241,9 +238,8 @@ impl NativeFunction for Cbrt {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("cbrt", &values, 1)?;
-        let x = number_to_f64("cbrt", &values[0])?;
+        let a0 = force1("cbrt", args, ctx)?;
+        let x = number_to_f64("cbrt", &a0)?;
         Ok(Evaluated::new(Value::Float(x.cbrt())))
     }
 }
@@ -258,9 +254,8 @@ impl NativeFunction for Exp {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("exp", &values, 1)?;
-        let x = number_to_f64("exp", &values[0])?;
+        let a0 = force1("exp", args, ctx)?;
+        let x = number_to_f64("exp", &a0)?;
         Ok(Evaluated::new(Value::Float(x.exp())))
     }
 }
@@ -277,9 +272,8 @@ impl NativeFunction for Log {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("log", &values, 1)?;
-        let x = number_to_f64("log", &values[0])?;
+        let a0 = force1("log", args, ctx)?;
+        let x = number_to_f64("log", &a0)?;
         Ok(Evaluated::new(Value::Float(x.ln())))
     }
 }
@@ -311,10 +305,9 @@ impl NativeFunction for Pow {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("pow", &values, 2)?;
-        let base = number_to_f64("pow", &values[0])?;
-        let exp = number_to_f64("pow", &values[1])?;
+        let (a0, a1) = force2("pow", args, ctx)?;
+        let base = number_to_f64("pow", &a0)?;
+        let exp = number_to_f64("pow", &a1)?;
         Ok(Evaluated::new(Value::Float(base.powf(exp))))
     }
 }
@@ -329,9 +322,8 @@ impl NativeFunction for Sin {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("sin", &values, 1)?;
-        let x = number_to_f64("sin", &values[0])?;
+        let a0 = force1("sin", args, ctx)?;
+        let x = number_to_f64("sin", &a0)?;
         Ok(Evaluated::new(Value::Float(x.sin())))
     }
 }
@@ -346,9 +338,8 @@ impl NativeFunction for Cos {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("cos", &values, 1)?;
-        let x = number_to_f64("cos", &values[0])?;
+        let a0 = force1("cos", args, ctx)?;
+        let x = number_to_f64("cos", &a0)?;
         Ok(Evaluated::new(Value::Float(x.cos())))
     }
 }
@@ -363,9 +354,8 @@ impl NativeFunction for Tan {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("tan", &values, 1)?;
-        let x = number_to_f64("tan", &values[0])?;
+        let a0 = force1("tan", args, ctx)?;
+        let x = number_to_f64("tan", &a0)?;
         Ok(Evaluated::new(Value::Float(x.tan())))
     }
 }
@@ -380,9 +370,8 @@ impl NativeFunction for Cot {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("cot", &values, 1)?;
-        let x = number_to_f64("cot", &values[0])?;
+        let a0 = force1("cot", args, ctx)?;
+        let x = number_to_f64("cot", &a0)?;
         Ok(Evaluated::new(Value::Float(1.0 / x.tan())))
     }
 }
@@ -398,14 +387,13 @@ impl NativeFunction for Asin {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("asin", &values, 1)?;
-        let x = number_to_f64("asin", &values[0])?;
+        let a0 = force1("asin", args, ctx)?;
+        let x = number_to_f64("asin", &a0)?;
         let r = x.asin();
         if r.is_nan() {
             return Err(PureRuntimeError::EvaluationError(format!(
                 "Unable to compute asin of {}",
-                java_number_string(&values[0])
+                java_number_string(&a0)
             ))
             .into());
         }
@@ -424,14 +412,13 @@ impl NativeFunction for Acos {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("acos", &values, 1)?;
-        let x = number_to_f64("acos", &values[0])?;
+        let a0 = force1("acos", args, ctx)?;
+        let x = number_to_f64("acos", &a0)?;
         let r = x.acos();
         if r.is_nan() {
             return Err(PureRuntimeError::EvaluationError(format!(
                 "Unable to compute acos of {}",
-                java_number_string(&values[0])
+                java_number_string(&a0)
             ))
             .into());
         }
@@ -449,9 +436,8 @@ impl NativeFunction for Atan {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("atan", &values, 1)?;
-        let x = number_to_f64("atan", &values[0])?;
+        let a0 = force1("atan", args, ctx)?;
+        let x = number_to_f64("atan", &a0)?;
         Ok(Evaluated::new(Value::Float(x.atan())))
     }
 }
@@ -485,9 +471,8 @@ impl NativeFunction for ToFloat {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("toFloat", &values, 1)?;
-        let x = number_to_f64("toFloat", &values[0])?;
+        let a0 = force1("toFloat", args, ctx)?;
+        let x = number_to_f64("toFloat", &a0)?;
         Ok(Evaluated::new(Value::Float(x)))
     }
 }
@@ -507,9 +492,8 @@ impl NativeFunction for ToDecimal {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("toDecimal", &values, 1)?;
-        let v = match &values[0] {
+        let a0 = force1("toDecimal", args, ctx)?;
+        let v = match &a0 {
             Value::Decimal(d) => Ok(Value::Decimal(*d)),
             Value::Integer(i) => Ok(Value::Decimal(Decimal::from(*i))),
             Value::Float(f) => Decimal::from_f64(*f)
@@ -540,9 +524,8 @@ impl NativeFunction for ParseInteger {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("parseInteger", &values, 1)?;
-        let s = values[0].as_string()?;
+        let a0 = force1("parseInteger", args, ctx)?;
+        let s = a0.as_string()?;
         let n = s.parse::<i64>().map_err(|e| {
             PureRuntimeError::EvaluationError(format!("parseInteger: cannot parse {s:?}: {e}"))
         })?;
@@ -562,9 +545,8 @@ impl NativeFunction for ParseFloat {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("parseFloat", &values, 1)?;
-        let s = values[0].as_string()?;
+        let a0 = force1("parseFloat", args, ctx)?;
+        let s = a0.as_string()?;
         let f = s.parse::<f64>().map_err(|e| {
             PureRuntimeError::EvaluationError(format!("parseFloat: cannot parse {s:?}: {e}"))
         })?;
@@ -586,9 +568,8 @@ impl NativeFunction for ParseBoolean {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("parseBoolean", &values, 1)?;
-        let s = values[0].as_string()?;
+        let a0 = force1("parseBoolean", args, ctx)?;
+        let s = a0.as_string()?;
         let lower = s.as_str().to_ascii_lowercase();
         let b = match lower.as_str() {
             "true" => Ok(true),

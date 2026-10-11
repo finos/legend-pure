@@ -35,7 +35,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use im_rc::Vector as PVector;
+use crate::value::PVector;
 use legend_pure_metamodel::ids::{ElementId, PackageId};
 use legend_pure_metamodel::model::PureModel;
 use legend_pure_metamodel::source_info::SourceInfo;

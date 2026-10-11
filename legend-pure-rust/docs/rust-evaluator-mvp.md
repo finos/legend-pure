@@ -820,6 +820,85 @@ different evaluator, not a faster walk; it is listed under "Later,
 outside the MVP". The bridge's own cost (the per-call re-lowering and the
 crossing, Step 2 "Deferred") is a separate phase after this one.
 
+**Progress (2026-10-11, items 1, 2, 3a, 4, 5, 6, 7 and the natives' own
+cost landed, each with the four `Rust_JNI` numbers unchanged).** Two
+corrections first. The clock on this machine ticks every 41.7 ns, so
+every sub-microsecond reading in the table above and in the first commit
+messages was quantised to that step; both harnesses now time batches of
+32 calls, and the figures below are per call at that resolution. And the
+compiled engine's generated method is faster than first read: 36 to 220
+ns on the twelve, not 167 to 292. Where the twelve stand, release build,
+median ns per call, Rust evaluator against the generated method:
+
+| Expression | Before | Now | Compiled Java |
+|---|---|---|---|
+| `1 + 2` | 792 | 121 | 167 |
+| `(3 * 4) + (10 - 2)` | 1,916 | 244 | 220 |
+| `let x = 5; $x * $x` | 1,042 | 213 | 96 |
+| `if(1 < 2, ...)` | 417 | 207 | 69 |
+| `map` then `fold` over five | 9,542 | 2,230 | 587 |
+| `range` of a hundred, `filter`, `size` | 36,875 | 14,736 | 2,346 |
+| `sort` then `at` | 959 | 380 | 50 |
+| `format` | 667 | 238 | 50 |
+| `adjust` a date | 84 | 96 | 113 |
+| `match` | 1,208 | 763 | 36 |
+| `removeDuplicates` then `size` | 750 | 483 | 96 |
+| `joinStrings` | 375 | 260 | 66 |
+
+Arithmetic and dates are at or below the generated method; `let`, `if`,
+`joinStrings` and the collection pipelines sit at 2 to 6x; `sort`,
+`format` and `match` at 5 to 21x, where the cost is the native's own
+work over a persistent vector plus the dispatch layers around it.
+
+**Closed (2026-10-11).** Items 8 and 3b landed after the above. Item 8
+was decided by measurement: against the persistent vector, a
+reference-counted vector builds a two-element collection in 18 ns
+instead of 68 and a hundred-element one in 176 instead of 865, iterates
+a hundred in 27 instead of 146, indexes in 38 instead of 206, clones at
+the same cost, and loses only on appending to a large shared collection
+(489 against 194 at a hundred), which Pure copies anyway; `PVector` is
+now the crate's own `Rc<Vec<T>>` with copy on write, `im-rc` stays for
+the map type. Item 3b did not need slots: with batched timing a
+variable read was 9 ns but binding one parameter 25 ns, so the context
+became a stack of bindings scanned from the top (a scope is a position,
+popping truncates), which costs 5 ns per binding and 7 ns per read over
+the handful of bindings a lambda body sees; the registry hashes names
+the same way. The last item was the closures themselves: creating one
+copied the lambda's parameters and body into fresh Arcs and walked the
+body for its free variables on every evaluation of the node (every
+`if`, every `match` branch); the node now shares its body with its
+closures and carries its free variables, found once when it is built.
+
+Where the twelve stand at the close, release build, median ns per call,
+batched timing (about 10 % run-to-run noise), against the compiled
+engine's generated method:
+
+| Expression | Start of phase | Close | Compiled Java | Ratio |
+|---|---|---|---|---|
+| `1 + 2` | 792 | 66 | 167 | 0.4x |
+| `(3 * 4) + (10 - 2)` | 1,916 | 166 | 220 | 0.8x |
+| `let x = 5; $x * $x` | 1,042 | 136 | 96 | 1.4x |
+| `if(1 < 2, ...)` | 417 | 122 | 69 | 1.8x |
+| `map` then `fold` over five | 9,542 | 1,235 | 587 | 2.1x |
+| `range` of a hundred, `filter`, `size` | 36,875 | 12,149 | 2,346 | 5.2x |
+| `sort` then `at` | 959 | 311 | 50 | 6.2x |
+| `format` | 667 | 204 | 50 | 4.1x |
+| `adjust` a date | 84 | 96 | 113 | 0.8x |
+| `match` | 1,208 | 334 | 36 | 9.3x |
+| `removeDuplicates` then `size` | 750 | 479 | 96 | 5.0x |
+| `joinStrings` | 375 | 250 | 66 | 3.8x |
+
+Six of the twelve meet the 3x gate; the collection and string natives
+sit at 4 to 6x and `match` at 9x. The per-element cost of a pipeline is
+now the evaluator's layers around a native call (about 30 ns for a
+dispatch, 45 for `equal`), a lambda application (16 ns with one
+parameter) and the result collection, no longer any single allocation:
+what is left is the shape of a tree-walker, and the natives' own
+algorithms (`match` walks every branch's type against the value,
+`removeDuplicates` compares pairwise) where Java's generated code has
+the same algorithm with the JIT behind it. The four `Rust_JNI` numbers
+were unchanged after every item.
+
 ### Step 3 — Read PELT
 
 **Goal.** Decode every PELT file type into in-memory structures, with no

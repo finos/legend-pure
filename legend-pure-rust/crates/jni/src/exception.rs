@@ -244,12 +244,12 @@ mod tests {
 
     #[test]
     fn call_stack_renders_innermost_first() {
-        let exc = PureException {
-            kind: PureExceptionKind::ExecutionError(PureRuntimeError::EvaluationError(
+        let exc = PureException::new(
+            PureExceptionKind::ExecutionError(PureRuntimeError::EvaluationError(
                 "oops".to_string(),
             )),
-            source: Some(dummy_source("a.pure", 1, 1)),
-            call_stack: vec![
+            Some(dummy_source("a.pure", 1, 1)),
+            vec![
                 StackFrame {
                     function_name: SmolStr::new("outer"),
                     source: dummy_source("a.pure", 1, 1),
@@ -259,7 +259,7 @@ mod tests {
                     source: dummy_source("a.pure", 5, 2),
                 },
             ],
-        };
+        );
         let p = pure_exception_to_payload(&exc);
         assert_eq!(p.call_stack.len(), 2);
         assert!(p.call_stack[0].starts_with("inner <- "));

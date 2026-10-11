@@ -275,6 +275,9 @@ fn value_matches_type(
 ///
 /// Walks `Class::super_types` and `PrimitiveType::super_type` upward.
 fn type_extends(model: &PureModel, descendant: ElementId, ancestor: ElementId) -> bool {
+    if descendant == ancestor {
+        return true;
+    }
     let mut stack: Vec<ElementId> = vec![descendant];
     let mut visited: std::collections::HashSet<ElementId> = std::collections::HashSet::new();
     while let Some(id) = stack.pop() {

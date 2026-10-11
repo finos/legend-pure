@@ -21,28 +21,42 @@
 //! - Lambda captures
 
 use std::collections::HashMap;
+use std::hash::{BuildHasherDefault, Hasher};
 
 use smol_str::SmolStr;
 
 use crate::error::PureRuntimeError;
 use crate::value::Value;
 
-/// An entry in the undo log — records what to restore on `pop_scope`.
-#[derive(Debug)]
-enum UndoEntry {
-    /// The variable didn't exist before this scope introduced it —
-    /// on pop, remove it from the map entirely.
-    Remove(SmolStr),
-    /// The variable existed with a previous value that was shadowed —
-    /// on pop, restore the old value.
-    Restore(SmolStr, Value),
+/// A multiplicative hash for short identifier keys: a few nanoseconds
+/// where SipHash spends tens, on names that come from source text and
+/// never from an adversary.
+#[derive(Default, Clone, Copy)]
+pub struct NameHasher(u64);
+
+impl Hasher for NameHasher {
+    fn write(&mut self, bytes: &[u8]) {
+        for chunk in bytes.chunks(8) {
+            let mut word = [0u8; 8];
+            word[..chunk.len()].copy_from_slice(chunk);
+            self.0 = (self.0.rotate_left(5) ^ u64::from_le_bytes(word))
+                .wrapping_mul(0x517c_c1b7_2722_0a95);
+        }
+    }
+
+    fn finish(&self) -> u64 {
+        self.0
+    }
 }
 
-/// A stack of variable scopes backed by a flat `HashMap` + undo log.
-///
-/// Variables are resolved with a single `HashMap` lookup regardless
-/// of scope depth. Push/pop manages an undo log to restore previous
-/// bindings.
+/// A map keyed by a name, hashed with [`NameHasher`].
+pub type NameMap<V> = HashMap<SmolStr, V, BuildHasherDefault<NameHasher>>;
+
+/// A stack of variable scopes: bindings in the order they were made,
+/// read by scanning from the top, so the latest binding of a name wins.
+/// A scope is a position in the stack; popping it truncates. Binding
+/// costs a push and reading a short scan: lambda bodies see a handful of
+/// bindings, and a scan over a handful beats hashing and undoing.
 ///
 /// # Example
 ///
@@ -60,15 +74,13 @@ enum UndoEntry {
 /// ctx.pop_scope();
 /// assert_eq!(ctx.get("x"), Some(&Value::Integer(10)));
 /// ```
+#[derive(Debug)]
 pub struct VariableContext {
-    /// The single flat map — always contains the "current" value of every
-    /// variable visible at the current scope depth.
-    vars: HashMap<SmolStr, Value>,
+    /// Every binding made since the outermost scope, latest last.
+    bindings: Vec<(SmolStr, Value)>,
 
-    /// Undo log frames. Each frame records what to undo when `pop_scope`
-    /// is called. The outer `Vec` is the scope stack; the inner `Vec`
-    /// holds the undo entries for that scope.
-    undo_stack: Vec<Vec<UndoEntry>>,
+    /// Where each open scope starts in `bindings`.
+    frames: Vec<usize>,
 }
 
 impl VariableContext {
@@ -76,35 +88,27 @@ impl VariableContext {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            vars: HashMap::new(),
-            undo_stack: Vec::new(),
+            bindings: Vec::new(),
+            frames: Vec::new(),
         }
     }
 
-    /// Push a new scope. No allocation unless variables are actually set.
+    /// Push a new scope. Bindings made until the matching `pop_scope`
+    /// are dropped by it.
     pub fn push_scope(&mut self) {
-        self.undo_stack.push(Vec::new());
+        self.frames.push(self.bindings.len());
     }
 
-    /// Pop the innermost scope, restoring all shadowed/removed variables.
+    /// Pop the innermost scope, dropping its bindings so what they
+    /// shadowed is visible again.
     ///
     /// # Panics
     /// Panics if there are no scopes to pop (programming error).
     pub fn pop_scope(&mut self) {
-        let Some(entries) = self.undo_stack.pop() else {
+        let Some(start) = self.frames.pop() else {
             unreachable!("VariableContext::pop_scope called with no scopes");
         };
-
-        for entry in entries.into_iter().rev() {
-            match entry {
-                UndoEntry::Remove(name) => {
-                    self.vars.remove(&name);
-                }
-                UndoEntry::Restore(name, old_value) => {
-                    self.vars.insert(name, old_value);
-                }
-            }
-        }
+        self.bindings.truncate(start);
     }
 
     /// Set a variable in the current scope.
@@ -112,25 +116,21 @@ impl VariableContext {
     /// # Panics
     /// Panics if there are no scopes (call `push_scope` first).
     pub fn set(&mut self, name: impl Into<SmolStr>, value: Value) {
-        let name = name.into();
-
-        let Some(undo_frame) = self.undo_stack.last_mut() else {
-            unreachable!("VariableContext::set called with no scopes");
-        };
-
-        if let Some(old_value) = self.vars.get(&name).cloned() {
-            undo_frame.push(UndoEntry::Restore(name.clone(), old_value));
-        } else {
-            undo_frame.push(UndoEntry::Remove(name.clone()));
-        }
-
-        self.vars.insert(name, value);
+        assert!(
+            !self.frames.is_empty(),
+            "VariableContext::set called with no scopes"
+        );
+        self.bindings.push((name.into(), value));
     }
 
     /// Look up a variable by name.
     #[must_use]
     pub fn get(&self, name: &str) -> Option<&Value> {
-        self.vars.get(name)
+        self.bindings
+            .iter()
+            .rev()
+            .find(|(bound, _)| bound.as_str() == name)
+            .map(|(_, value)| value)
     }
 
     /// Look up a variable, returning an error if not found.
@@ -145,21 +145,31 @@ impl VariableContext {
     /// The current scope depth (number of active scopes).
     #[must_use]
     pub fn depth(&self) -> usize {
-        self.undo_stack.len()
+        self.frames.len()
     }
 
     /// Iterate every currently visible binding's value.
     pub fn iter_values(&self) -> impl Iterator<Item = &Value> + '_ {
-        self.vars.values()
+        self.iter_bindings().map(|(_, value)| value)
     }
 
     /// Iterate every currently visible binding as a `(name, value)` pair.
     ///
-    /// Order is unspecified (the underlying storage is a
-    /// `HashMap`); callers that need a stable ordering should sort by
-    /// name on the consumer side.
+    /// Shadowed bindings are left out; order is unspecified.
     pub fn iter_bindings(&self) -> impl Iterator<Item = (&SmolStr, &Value)> + '_ {
-        self.vars.iter()
+        let mut seen: Vec<&SmolStr> = Vec::new();
+        self.bindings
+            .iter()
+            .rev()
+            .filter(move |(name, _)| {
+                if seen.contains(&name) {
+                    false
+                } else {
+                    seen.push(name);
+                    true
+                }
+            })
+            .map(|(name, value)| (name, value))
     }
 }
 

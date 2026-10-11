@@ -20,7 +20,7 @@
 //! Date/time values use `jiff`-backed [`PureDate`] and
 //! [`StrictTime`] for native calendar arithmetic.
 //!
-//! Collections use persistent data structures (`im_rc::Vector`, `im_rc::HashMap`)
+//! Collections use a reference-counted vector ([`PVector`]) and maps `im_rc::HashMap`
 //! for structural sharing.
 //!
 //! Object references use `ObjectId` handles into the [`RuntimeHeap`](super::heap::RuntimeHeap),
@@ -31,7 +31,6 @@ use std::collections::HashMap;
 use std::fmt;
 use std::rc::Rc;
 
-use im_rc::Vector as PVector;
 use legend_pure_metamodel::ids::ElementId;
 use rust_decimal::Decimal;
 use smol_str::SmolStr;
@@ -54,8 +53,213 @@ pub struct MapState {
     pub get_if_absent_counter: i64,
 }
 
+/// The sequence behind a collection value: a reference-counted vector,
+/// shared on clone and copied on the first write to a shared one. Pure
+/// collections are immutable and small, so building, iterating and
+/// indexing a plain vector beats a persistent structure several times
+/// over, and the one operation that loses, appending to a large shared
+/// collection, is a copy in Pure's own semantics.
+#[derive(Debug, PartialEq, Eq)]
+pub struct PVector<T>(Rc<Vec<T>>);
+
+impl<T> Clone for PVector<T> {
+    fn clone(&self) -> Self {
+        Self(Rc::clone(&self.0))
+    }
+}
+
+impl<T> Default for PVector<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T> PVector<T> {
+    /// An empty sequence.
+    #[must_use]
+    pub fn new() -> Self {
+        Self(Rc::new(Vec::new()))
+    }
+
+    /// A sequence of one element.
+    #[must_use]
+    pub fn unit(item: T) -> Self {
+        Self(Rc::new(vec![item]))
+    }
+
+    /// Number of elements.
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Whether there are no elements.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    /// The elements in order.
+    pub fn iter(&self) -> std::slice::Iter<'_, T> {
+        self.0.iter()
+    }
+
+    /// The element at `index`, if any.
+    #[must_use]
+    pub fn get(&self, index: usize) -> Option<&T> {
+        self.0.get(index)
+    }
+
+    /// The first element, if any.
+    #[must_use]
+    pub fn front(&self) -> Option<&T> {
+        self.0.first()
+    }
+
+    /// The first element, if any.
+    #[must_use]
+    pub fn head(&self) -> Option<&T> {
+        self.0.first()
+    }
+
+    /// The last element, if any.
+    #[must_use]
+    pub fn back(&self) -> Option<&T> {
+        self.0.last()
+    }
+
+    /// The last element, if any.
+    #[must_use]
+    pub fn last(&self) -> Option<&T> {
+        self.0.last()
+    }
+
+    /// Whether two sequences share their storage.
+    #[must_use]
+    pub fn ptr_eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl<T: Clone> PVector<T> {
+    fn make_mut(&mut self) -> &mut Vec<T> {
+        Rc::make_mut(&mut self.0)
+    }
+
+    /// Append one element.
+    pub fn push_back(&mut self, item: T) {
+        self.make_mut().push(item);
+    }
+
+    /// Prepend one element.
+    pub fn push_front(&mut self, item: T) {
+        self.make_mut().insert(0, item);
+    }
+
+    /// Remove and return the first element.
+    pub fn pop_front(&mut self) -> Option<T> {
+        if self.0.is_empty() {
+            return None;
+        }
+        Some(self.make_mut().remove(0))
+    }
+
+    /// Remove and return the last element.
+    pub fn pop_back(&mut self) -> Option<T> {
+        if self.0.is_empty() {
+            return None;
+        }
+        self.make_mut().pop()
+    }
+
+    /// Insert `item` at `index`, shifting what follows.
+    ///
+    /// # Panics
+    /// `index` is past the end.
+    pub fn insert(&mut self, index: usize, item: T) {
+        self.make_mut().insert(index, item);
+    }
+
+    /// Append every element of `other`.
+    pub fn append(&mut self, other: Self) {
+        if self.0.is_empty() {
+            *self = other;
+            return;
+        }
+        match Rc::try_unwrap(other.0) {
+            Ok(items) => self.make_mut().extend(items),
+            Err(shared) => self.make_mut().extend(shared.iter().cloned()),
+        }
+    }
+
+    /// The first `count` elements, or all of them.
+    #[must_use]
+    pub fn take(&self, count: usize) -> Self {
+        self.0.iter().take(count).cloned().collect()
+    }
+
+    /// Everything after the first `count` elements.
+    #[must_use]
+    pub fn skip(&self, count: usize) -> Self {
+        self.0.iter().skip(count).cloned().collect()
+    }
+}
+
+impl<T: Clone> Extend<T> for PVector<T> {
+    fn extend<I: IntoIterator<Item = T>>(&mut self, items: I) {
+        self.make_mut().extend(items);
+    }
+}
+
+impl<T> std::ops::Index<usize> for PVector<T> {
+    type Output = T;
+
+    fn index(&self, index: usize) -> &T {
+        &self.0[index]
+    }
+}
+
+impl<T> FromIterator<T> for PVector<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(items: I) -> Self {
+        Self(Rc::new(items.into_iter().collect()))
+    }
+}
+
+impl<T> From<Vec<T>> for PVector<T> {
+    fn from(items: Vec<T>) -> Self {
+        Self(Rc::new(items))
+    }
+}
+
+impl<'a, T> IntoIterator for &'a PVector<T> {
+    type Item = &'a T;
+    type IntoIter = std::slice::Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
+
+impl<T: Clone> IntoIterator for PVector<T> {
+    type Item = T;
+    type IntoIter = std::vec::IntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        match Rc::try_unwrap(self.0) {
+            Ok(items) => items.into_iter(),
+            Err(shared) => shared.iter().cloned().collect::<Vec<T>>().into_iter(),
+        }
+    }
+}
+
 /// A runtime value produced by evaluating a Pure expression.
-#[derive(Debug)]
+///
+/// Cloning is structural: a collection shares its persistent vector, so
+/// the cost is constant whatever its size. Pure collections are flat (a
+/// collection literal flattens its elements), a unit instance wraps one
+/// scalar, so no value nests deeply enough for the derived clone or drop
+/// to recurse meaningfully.
+#[derive(Debug, Clone)]
 pub enum Value {
     /// Pure `Boolean` — stored inline.
     Boolean(bool),
@@ -618,7 +822,7 @@ impl Value {
         match values.len() {
             0 => Value::Unit,
             1 => values.pop().unwrap_or(Value::Unit),
-            _ => Value::Collection(Box::new(PVector::from_iter(values))),
+            _ => Value::Collection(Box::new(PVector::from(values))),
         }
     }
 
@@ -660,126 +864,6 @@ impl Value {
             },
             Self::Object(handle) => crate::heap::RuntimeHeap::element_for_object(handle),
             _ => None,
-        }
-    }
-}
-
-impl Clone for Value {
-    /// Iterative clone for `Value`, scaling with heap allocations
-    /// instead of Rust thread-stack frames.
-    fn clone(&self) -> Self {
-        deep_clone_iter(self)
-    }
-}
-
-/// Bottom-up iterative clone of an arbitrarily nested `Value`.
-#[allow(clippy::expect_used)]
-fn deep_clone_iter(root: &Value) -> Value {
-    enum Op<'a> {
-        Visit(&'a Value),
-        AssembleCollection(usize),
-        AssembleUnitInstance(ElementId),
-    }
-
-    let mut ops: Vec<Op<'_>> = vec![Op::Visit(root)];
-    let mut built: Vec<Value> = Vec::new();
-
-    while let Some(op) = ops.pop() {
-        match op {
-            Op::Visit(v) => match v {
-                Value::Collection(boxed) => {
-                    let pvec: &PVector<Value> = boxed;
-                    ops.push(Op::AssembleCollection(pvec.len()));
-                    for child in pvec.iter().rev() {
-                        ops.push(Op::Visit(child));
-                    }
-                }
-                Value::UnitInstance { unit_id, inner } => {
-                    ops.push(Op::AssembleUnitInstance(*unit_id));
-                    ops.push(Op::Visit(inner));
-                }
-                other => built.push(clone_leaf(other)),
-            },
-            Op::AssembleCollection(len) => {
-                let start = built.len() - len;
-                let items: PVector<Value> = built.drain(start..).collect();
-                built.push(Value::Collection(Box::new(items)));
-            }
-            Op::AssembleUnitInstance(unit_id) => {
-                let inner = built
-                    .pop()
-                    .expect("deep_clone_iter: AssembleUnitInstance reached with empty built stack");
-                built.push(Value::UnitInstance {
-                    unit_id,
-                    inner: Box::new(inner),
-                });
-            }
-        }
-    }
-
-    built
-        .pop()
-        .expect("deep_clone_iter: built stack empty after traversal")
-}
-
-/// Clone every non-recursive `Value` variant. Recursive variants
-/// (`Collection`, `UnitInstance`) are not handled here — they go
-/// through `deep_clone_iter`'s work-stack instead and never reach
-/// this function.
-fn clone_leaf(v: &Value) -> Value {
-    match v {
-        Value::Boolean(b) => Value::Boolean(*b),
-        Value::Integer(i) => Value::Integer(*i),
-        Value::Float(f) => Value::Float(*f),
-        Value::Decimal(d) => Value::Decimal(*d),
-        Value::String(s) => Value::String(s.clone()),
-        Value::Date(d) => Value::Date(*d),
-        Value::Latest => Value::Latest,
-        Value::StrictTime(t) => Value::StrictTime(*t),
-        Value::Object(h) => Value::Object(h.clone()),
-        Value::Map(m) => Value::Map(m.clone()),
-        Value::Function(fv) => Value::Function(fv.clone()),
-        Value::Element(e) => Value::Element(*e),
-        Value::EnumValue { enum_id, member } => Value::EnumValue {
-            enum_id: *enum_id,
-            member: member.clone(),
-        },
-        Value::Unit => Value::Unit,
-        Value::Collection(_) | Value::UnitInstance { .. } => {
-            unreachable!("deep_clone_iter must not delegate recursive variants to clone_leaf")
-        }
-    }
-}
-
-impl Drop for Value {
-    /// Iterative drop for `Value`, scaling with heap allocations instead
-    /// of Rust thread-stack frames.
-    fn drop(&mut self) {
-        let mut stack: Vec<Value> = Vec::new();
-        match self {
-            Value::Collection(boxed) => {
-                let pvec = std::mem::take(&mut **boxed);
-                stack.extend(pvec);
-            }
-            Value::UnitInstance { inner, .. } => {
-                let inner_val = std::mem::replace(&mut **inner, Value::Unit);
-                stack.push(inner_val);
-            }
-            _ => {}
-        }
-
-        while let Some(mut v) = stack.pop() {
-            match &mut v {
-                Value::Collection(boxed) => {
-                    let pvec = std::mem::take(&mut **boxed);
-                    stack.extend(pvec);
-                }
-                Value::UnitInstance { inner, .. } => {
-                    let inner_val = std::mem::replace(&mut **inner, Value::Unit);
-                    stack.push(inner_val);
-                }
-                _ => {}
-            }
         }
     }
 }
@@ -896,14 +980,17 @@ mod tests {
     }
 
     #[test]
-    fn value_collection_persistent() {
+    fn a_shared_collection_is_copied_on_write_and_the_original_kept() {
         let v1 = PVector::<Value>::new();
-        let v2 = v1.clone() + PVector::unit(Value::Integer(1));
-        let v3 = v2.clone() + PVector::unit(Value::Integer(2));
+        let mut v2 = v1.clone();
+        v2.push_back(Value::Integer(1));
+        let mut v3 = v2.clone();
+        v3.push_back(Value::Integer(2));
 
         assert_eq!(v1.len(), 0);
         assert_eq!(v2.len(), 1);
         assert_eq!(v3.len(), 2);
+        assert!(!v2.ptr_eq(&v3));
     }
 
     #[test]
@@ -962,7 +1049,7 @@ mod tests {
 
     #[test]
     fn to_one_empty_collection_errors() {
-        let v = Value::Collection(Box::new(PVector::new()));
+        let v = Value::Collection(Box::default());
         assert!(v.to_one().is_err());
     }
 
@@ -993,7 +1080,7 @@ mod tests {
 
     #[test]
     fn to_zero_one_empty_collection_is_none() {
-        let v = Value::Collection(Box::new(PVector::new()));
+        let v = Value::Collection(Box::default());
         assert!(v.to_zero_one().unwrap().is_none());
     }
 
@@ -1048,7 +1135,7 @@ mod tests {
 
     #[test]
     fn is_empty_empty_collection() {
-        assert!(Value::Collection(Box::new(PVector::new())).is_empty());
+        assert!(Value::Collection(Box::default()).is_empty());
     }
 
     #[test]
@@ -1063,31 +1150,49 @@ mod tests {
         assert!(!Value::Collection(Box::new(pv)).is_empty());
     }
 
-    /// Build `Collection(Collection(... Integer(0) ...))` `depth` levels
-    /// deep. Returns the outermost value.
-    fn deep_nested_collection(depth: usize) -> Value {
-        let mut v = Value::Integer(0);
-        for _ in 0..depth {
-            let mut inner = PVector::new();
-            inner.push_back(v);
-            v = Value::Collection(Box::new(inner));
-        }
-        v
+    /// A collection shares its vector when cloned: constant time whatever
+    /// the size.
+    #[test]
+    fn cloning_a_collection_shares_its_vector() {
+        let items: PVector<Value> = (0..10_000).map(Value::Integer).collect();
+        let original = Value::Collection(Box::new(items));
+        let copy = original.clone();
+        let (Value::Collection(a), Value::Collection(b)) = (&original, &copy) else {
+            unreachable!("both are collections");
+        };
+        assert!(a.ptr_eq(b), "a clone must share the vector, not copy it");
     }
 
-    /// Locks the iterative `Value::Drop` contract: constructing a 10 000-
-    /// level-deep `Collection(Collection(...))` chain and letting it go
-    /// out of scope must not overflow the thread stack.
+    /// The deepest shapes Pure can produce (a unit instance of a scalar,
+    /// a collection of unit instances, a map holding collections) clone
+    /// and drop on a small stack.
     #[test]
-    fn deep_nested_collection_drops_without_overflow() {
-        let v = deep_nested_collection(10_000);
-        drop(v);
-    }
-
-    #[test]
-    fn deep_nested_collection_clones_without_overflow() {
-        let v = deep_nested_collection(10_000);
-        let _ = v.clone();
-        drop(v);
+    fn the_shapes_pure_produces_clone_and_drop_on_a_small_stack() {
+        std::thread::Builder::new()
+            .stack_size(64 * 1024)
+            .spawn(|| {
+                let unit = ElementId::InstanceId {
+                    chunk_id: 1,
+                    local_idx: 0,
+                };
+                let instances: PVector<Value> = (0..10_000)
+                    .map(|i| Value::UnitInstance {
+                        unit_id: unit,
+                        inner: Box::new(Value::Integer(i)),
+                    })
+                    .collect();
+                let collection = Value::Collection(Box::new(instances));
+                let map = Value::Map(Rc::new(RefCell::new(MapState::default())));
+                let copies: Vec<Value> = (0..100)
+                    .map(|_| collection.clone())
+                    .chain(std::iter::once(map.clone()))
+                    .collect();
+                drop(copies);
+                drop(collection);
+                drop(map);
+            })
+            .expect("spawn")
+            .join()
+            .expect("no stack overflow");
     }
 }

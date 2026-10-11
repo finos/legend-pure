@@ -477,7 +477,12 @@ pub mod expr {
     /// `Lambda` (`{params | body}`).
     #[must_use]
     pub fn lambda(parameters: Vec<Parameter>, body: Vec<ValueSpec>) -> ValueSpec {
-        spec(ExprKind::Lambda { parameters, body })
+        let free = crate::eval::free_variable_names(&body, &parameters);
+        spec(ExprKind::Lambda {
+            parameters: parameters.into(),
+            body: body.into(),
+            free,
+        })
     }
 
     /// `EnumValue` (`my::Colour.RED`).

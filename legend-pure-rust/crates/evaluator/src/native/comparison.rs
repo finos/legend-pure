@@ -28,7 +28,7 @@ use rust_decimal::prelude::FromPrimitive;
 
 use crate::error::{PureException, PureRuntimeError};
 use crate::native::{
-    EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args, force_all,
+    EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args, force_all, force2,
 };
 use crate::value::Value;
 
@@ -69,9 +69,8 @@ impl NativeFunction for Eq {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("eq", &values, 2)?;
-        Ok(Evaluated::new(Value::Boolean(values[0] == values[1])))
+        let (a0, a1) = force2("eq", args, ctx)?;
+        Ok(Evaluated::new(Value::Boolean(a0 == a1)))
     }
 }
 
@@ -108,10 +107,9 @@ impl NativeFunction for LessThan {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("lessThan", &values, 2)?;
+        let (a0, a1) = force2("lessThan", args, ctx)?;
         Ok(Evaluated::new(Value::Boolean(
-            numeric_cmp(&values[0], &values[1])?.is_lt(),
+            numeric_cmp(&a0, &a1)?.is_lt(),
         )))
     }
 }
@@ -126,10 +124,9 @@ impl NativeFunction for LessThanEqual {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("lessThanEqual", &values, 2)?;
+        let (a0, a1) = force2("lessThanEqual", args, ctx)?;
         Ok(Evaluated::new(Value::Boolean(
-            !numeric_cmp(&values[0], &values[1])?.is_gt(),
+            !numeric_cmp(&a0, &a1)?.is_gt(),
         )))
     }
 }

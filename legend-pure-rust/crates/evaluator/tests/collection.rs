@@ -93,7 +93,7 @@ fn run_err(spec: &ValueSpec) -> String {
     let err = Evaluator::new(&model, &registry)
         .eval(spec)
         .expect_err("expected an error");
-    match err.kind {
+    match err.into_data().kind {
         PureExceptionKind::ExecutionError(PureRuntimeError::EvaluationError(m)) => m,
         other => panic!("expected an EvaluationError, got {other:?}"),
     }

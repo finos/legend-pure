@@ -17,7 +17,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use im_rc::Vector as PVector;
+use crate::value::PVector;
 use legend_pure_metamodel::source_info::SourceInfo;
 use smol_str::SmolStr;
 

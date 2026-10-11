@@ -22,7 +22,6 @@
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
-#![allow(clippy::result_large_err)]
 
 pub mod builder;
 pub mod builders;

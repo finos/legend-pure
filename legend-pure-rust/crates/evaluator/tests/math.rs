@@ -61,7 +61,7 @@ fn run_err(call: &ValueSpec) -> PureException {
 /// The text of an `EvaluationError` — what Pure's `assertError` compares
 /// against once the failure crosses the boundary.
 fn evaluation_error(call: &ValueSpec) -> String {
-    match run_err(call).kind {
+    match run_err(call).into_data().kind {
         PureExceptionKind::ExecutionError(PureRuntimeError::EvaluationError(m)) => m,
         other => panic!("expected an EvaluationError, got {other:?}"),
     }

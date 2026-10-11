@@ -43,7 +43,6 @@
 //!   lambda spec to a `Value::Function`, then invoke it per element via
 //!   [`EvalContextTrait::call_function`].
 
-use std::collections::HashMap;
 use std::fmt;
 
 use legend_pure_metamodel::model::PureModel;
@@ -125,7 +124,7 @@ impl Evaluated {
 
     /// Flatten into a collection view. Scalar values become 1-element vectors.
     #[must_use]
-    pub fn to_collection(&self) -> im_rc::Vector<Value> {
+    pub fn to_collection(&self) -> crate::value::PVector<Value> {
         self.value.to_collection()
     }
 }
@@ -152,6 +151,30 @@ pub trait EvalContextTrait {
     /// # Errors
     /// Propagates any `PureException` raised while evaluating the expression.
     fn evaluate(&mut self, spec: &ValueSpec) -> Result<Evaluated, PureException>;
+
+    /// Hand every element of `spec`'s value to `each`, in order, without
+    /// building the collection: the elements of a `Collection` literal are
+    /// evaluated one at a time, any other result is unpacked (`Unit` is
+    /// nothing, a scalar is one element).
+    ///
+    /// # Errors
+    /// Propagates any `PureException` raised while evaluating or by `each`.
+    fn for_each_value(
+        &mut self,
+        spec: &ValueSpec,
+        each: &mut dyn FnMut(Value) -> Result<(), PureException>,
+    ) -> Result<(), PureException> {
+        match self.evaluate(spec)?.into_value() {
+            Value::Collection(items) => {
+                for item in items.iter() {
+                    each(item.clone())?;
+                }
+                Ok(())
+            }
+            Value::Unit => Ok(()),
+            single => each(single),
+        }
+    }
 
     /// Access the variable context immutably.
     fn context(&self) -> &VariableContext;
@@ -259,7 +282,7 @@ pub trait NativeFunction: fmt::Debug {
 /// `ConcreteFunctionDefinitionNameProcessor` format:
 /// `funcName_ParamType_Mult__ReturnType_Mult_`
 pub struct NativeRegistry {
-    functions: HashMap<SmolStr, Box<dyn NativeFunction>>,
+    functions: crate::context::NameMap<Box<dyn NativeFunction>>,
 }
 
 impl NativeRegistry {
@@ -267,7 +290,7 @@ impl NativeRegistry {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            functions: HashMap::new(),
+            functions: crate::context::NameMap::default(),
         }
     }
 
@@ -357,6 +380,61 @@ pub fn expect_args<T>(func_name: &str, args: &[T], expected: usize) -> Result<()
         .into());
     }
     Ok(())
+}
+
+fn arity(func_name: &str, args: &[ValueSpec], expected: usize) -> Result<(), PureException> {
+    if args.len() != expected {
+        return Err(PureRuntimeError::EvaluationError(format!(
+            "{func_name}: expected {expected} argument(s), got {}",
+            args.len()
+        ))
+        .into());
+    }
+    Ok(())
+}
+
+/// Force the one argument of a one-argument native, without a vector.
+///
+/// # Errors
+/// The arity is wrong, or the argument fails to evaluate.
+pub fn force1(
+    func_name: &str,
+    args: &[ValueSpec],
+    ctx: &mut dyn EvalContextTrait,
+) -> Result<Value, PureException> {
+    arity(func_name, args, 1)?;
+    Ok(ctx.evaluate(&args[0])?.into_value())
+}
+
+/// Force the two arguments of a two-argument native, without a vector.
+///
+/// # Errors
+/// The arity is wrong, or an argument fails to evaluate.
+pub fn force2(
+    func_name: &str,
+    args: &[ValueSpec],
+    ctx: &mut dyn EvalContextTrait,
+) -> Result<(Value, Value), PureException> {
+    arity(func_name, args, 2)?;
+    let first = ctx.evaluate(&args[0])?.into_value();
+    let second = ctx.evaluate(&args[1])?.into_value();
+    Ok((first, second))
+}
+
+/// Force the three arguments of a three-argument native, without a vector.
+///
+/// # Errors
+/// The arity is wrong, or an argument fails to evaluate.
+pub fn force3(
+    func_name: &str,
+    args: &[ValueSpec],
+    ctx: &mut dyn EvalContextTrait,
+) -> Result<(Value, Value, Value), PureException> {
+    arity(func_name, args, 3)?;
+    let first = ctx.evaluate(&args[0])?.into_value();
+    let second = ctx.evaluate(&args[1])?.into_value();
+    let third = ctx.evaluate(&args[2])?.into_value();
+    Ok((first, second, third))
 }
 
 /// Validate that at least `min` arguments were provided.
@@ -535,7 +613,7 @@ impl EvalContextTrait for MockCtx {
             ExprKind::StringLiteral(s) => Value::String(s.clone()),
             ExprKind::BooleanLiteral(b) => Value::Boolean(*b),
             ExprKind::Collection { elements } => {
-                let mut pv = im_rc::Vector::new();
+                let mut pv = crate::value::PVector::new();
                 for e in elements {
                     pv.push_back(self.evaluate(e)?.into_value());
                 }

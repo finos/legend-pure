@@ -180,8 +180,18 @@ pub enum ConstraintKind {
 ///
 /// Created by the evaluator; low-level operations return [`PureRuntimeError`]
 /// which the evaluator enriches with location via [`PureException::execution`].
+///
+/// The payload lives behind one pointer so that `Result<Value,
+/// PureException>` is the size of a `Value` and every return of the
+/// recursive evaluator moves a word, not the whole exception. The fields
+/// are reached through `Deref`; [`into_data`](Self::into_data) takes
+/// them by value.
 #[derive(Debug)]
-pub struct PureException {
+pub struct PureException(Box<ExceptionData>);
+
+/// What a [`PureException`] carries.
+#[derive(Debug)]
+pub struct ExceptionData {
     /// What went wrong.
     pub kind: PureExceptionKind,
 
@@ -195,7 +205,41 @@ pub struct PureException {
     pub call_stack: Vec<StackFrame>,
 }
 
+impl std::ops::Deref for PureException {
+    type Target = ExceptionData;
+
+    fn deref(&self) -> &ExceptionData {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for PureException {
+    fn deref_mut(&mut self) -> &mut ExceptionData {
+        &mut self.0
+    }
+}
+
 impl PureException {
+    /// An exception from its parts.
+    #[must_use]
+    pub fn new(
+        kind: PureExceptionKind,
+        source: Option<SourceInfo>,
+        call_stack: Vec<StackFrame>,
+    ) -> Self {
+        Self(Box::new(ExceptionData {
+            kind,
+            source,
+            call_stack,
+        }))
+    }
+
+    /// The parts, by value.
+    #[must_use]
+    pub fn into_data(self) -> ExceptionData {
+        *self.0
+    }
+
     /// Create an execution error with source location and call stack.
     ///
     /// This is the primary constructor, used by the evaluator to wrap
@@ -206,21 +250,21 @@ impl PureException {
         source: SourceInfo,
         call_stack: Vec<StackFrame>,
     ) -> Self {
-        Self {
-            kind: PureExceptionKind::ExecutionError(error),
-            source: Some(source),
+        Self::new(
+            PureExceptionKind::ExecutionError(error),
+            Some(source),
             call_stack,
-        }
+        )
     }
 
     /// Create an assertion failure (from `fail()` or `assert()`).
     #[must_use]
     pub fn assertion(message: String, source: SourceInfo, call_stack: Vec<StackFrame>) -> Self {
-        Self {
-            kind: PureExceptionKind::AssertionFailed(message),
-            source: Some(source),
+        Self::new(
+            PureExceptionKind::AssertionFailed(message),
+            Some(source),
             call_stack,
-        }
+        )
     }
 
     /// Create a constraint violation.
@@ -233,16 +277,16 @@ impl PureException {
         source: SourceInfo,
         call_stack: Vec<StackFrame>,
     ) -> Self {
-        Self {
-            kind: PureExceptionKind::ConstraintViolation {
+        Self::new(
+            PureExceptionKind::ConstraintViolation {
                 constraint_id,
                 constraint_kind,
                 owner,
                 message,
             },
-            source: Some(source),
+            Some(source),
             call_stack,
-        }
+        )
     }
 
     /// Whether this exception is an assertion failure (from `fail()`/`assert()`).
@@ -345,11 +389,7 @@ impl From<PureRuntimeError> for PureException {
             PureRuntimeError::AssertionFailed(msg) => PureExceptionKind::AssertionFailed(msg),
             other => PureExceptionKind::ExecutionError(other),
         };
-        Self {
-            kind,
-            source: None,
-            call_stack: Vec::new(),
-        }
+        Self::new(kind, None, Vec::new())
     }
 }
 

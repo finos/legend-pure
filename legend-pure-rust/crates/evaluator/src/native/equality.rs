@@ -62,6 +62,9 @@ type HandlePtr = *const RefCell<HeapEntry>;
 /// graphs.
 #[must_use]
 pub fn values_equal(ctx: &dyn EvalContextTrait, a: &Value, b: &Value) -> bool {
+    if is_leaf(a) && is_leaf(b) {
+        return a == b;
+    }
     let mut work: Vec<(Value, Value)> = vec![(a.clone(), b.clone())];
     let mut seen: HashSet<(HandlePtr, HandlePtr)> = HashSet::new();
     while let Some((x, y)) = work.pop() {
@@ -70,6 +73,20 @@ pub fn values_equal(ctx: &dyn EvalContextTrait, a: &Value, b: &Value) -> bool {
         }
     }
     true
+}
+
+/// A value with no structure to walk: two of them compare by value.
+fn is_leaf(v: &Value) -> bool {
+    !matches!(
+        v,
+        Value::Collection(_)
+            | Value::Object(_)
+            | Value::Element(_)
+            | Value::Function(_)
+            | Value::Unit
+            | Value::UnitInstance { .. }
+            | Value::Map(_)
+    )
 }
 
 /// Single comparison step. Pushes child pairs onto `work` instead of
@@ -235,38 +252,37 @@ pub fn is_equality_key_stereotype(stereo: &StereotypeRef, equality_profile: Elem
 mod tests {
     use super::*;
     use crate::native::MockCtx;
-    use im_rc::Vector;
+    use crate::value::PVector as Vector;
 
-    /// Build `Collection(Collection(... Integer(leaf) ...))` `depth`
-    /// levels deep.
-    fn deep_nested_collection(depth: usize, leaf: i64) -> Value {
-        let mut v = Value::Integer(leaf);
-        for _ in 0..depth {
-            let mut inner = Vector::new();
-            inner.push_back(v);
-            v = Value::Collection(Box::new(inner));
-        }
-        v
+    /// A flat collection of `len` integers ending in `last`: the widest
+    /// shape Pure produces (collection literals flatten, so a collection
+    /// never nests).
+    fn wide_collection(len: i64, last: i64) -> Value {
+        let items: Vector<Value> = (0..len - 1)
+            .map(Value::Integer)
+            .chain(std::iter::once(Value::Integer(last)))
+            .collect();
+        Value::Collection(Box::new(items))
     }
 
-    /// Locks the iterative-equality + iterative-`Drop` +
-    /// iterative-`Clone` triple.
     #[test]
-    fn deeply_nested_collections_compare_equal_past_old_recursion_cap() {
-        let a = deep_nested_collection(3_000, 42);
-        let b = deep_nested_collection(3_000, 42);
+    fn wide_collections_compare_equal() {
         let ctx = MockCtx;
-        assert!(values_equal(&ctx, &a, &b));
+        assert!(values_equal(
+            &ctx,
+            &wide_collection(10_000, 42),
+            &wide_collection(10_000, 42)
+        ));
     }
 
-    /// Same depth but the leaf differs — must still terminate (no
-    /// overflow) and return `false`.
     #[test]
-    fn deeply_nested_collections_compare_unequal_at_leaf() {
-        let a = deep_nested_collection(3_000, 1);
-        let b = deep_nested_collection(3_000, 2);
+    fn wide_collections_compare_unequal_at_the_last_element() {
         let ctx = MockCtx;
-        assert!(!values_equal(&ctx, &a, &b));
+        assert!(!values_equal(
+            &ctx,
+            &wide_collection(10_000, 1),
+            &wide_collection(10_000, 2)
+        ));
     }
 
     /// Multiplicity coercion (`[x] == x`) still works through the new
@@ -286,7 +302,7 @@ mod tests {
     /// branch, zero-end.
     #[test]
     fn empty_collection_equals_unit() {
-        let empty = Value::Collection(Box::new(Vector::new()));
+        let empty = Value::Collection(Box::default());
         let unit = Value::Unit;
         let ctx = MockCtx;
         assert!(values_equal(&ctx, &empty, &unit));

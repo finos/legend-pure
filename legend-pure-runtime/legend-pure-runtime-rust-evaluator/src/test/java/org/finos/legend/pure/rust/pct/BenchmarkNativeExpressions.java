@@ -57,7 +57,9 @@ import java.util.Locale;
  * mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator -Dtest=BenchmarkNativeExpressions -DfailIfNoTests=false
  * </pre>
  * Results: {@code target/benchmarks/expressions-java.csv} (expression, engine,
- * median, p90 and minimum in nanoseconds). The timed unit on both sides is one
+ * median, p90 and minimum in nanoseconds per call; each timed sample covers a
+ * batch of calls, because the clock ticks every 41.7 ns on Apple Silicon and a
+ * single call would be quantised to that). The timed unit on both sides is one
  * call of the zero-argument function, result delivered as a value. The compiled
  * engine is measured twice: through its {@code start} entry, which builds
  * processor supports and converts the result on every call, and by invoking
@@ -81,8 +83,10 @@ public class BenchmarkNativeExpressions extends AbstractPureTestWithCoreCompiled
             {"e12_join_strings", "<a, b, c>"},
     };
 
+    private static final int BATCH = 32;
+
     private final int warmup = Integer.getInteger("legend.bench.warmup", 200);
-    private final int runs = Integer.getInteger("legend.bench.runs", 2000);
+    private final int runs = Integer.getInteger("legend.bench.runs", 1000);
 
     @Test
     public void benchmark() throws IOException
@@ -132,8 +136,11 @@ public class BenchmarkNativeExpressions extends AbstractPureTestWithCoreCompiled
             for (int r = 0; r < this.runs; r++)
             {
                 long start = System.nanoTime();
-                execution.start(function, noArguments);
-                times[r] = System.nanoTime() - start;
+                for (int b = 0; b < BATCH; b++)
+                {
+                    execution.start(function, noArguments);
+                }
+                times[r] = (System.nanoTime() - start) / BATCH;
             }
             Arrays.sort(times);
             long median = times[times.length / 2];
@@ -178,8 +185,11 @@ public class BenchmarkNativeExpressions extends AbstractPureTestWithCoreCompiled
                 for (int r = 0; r < this.runs; r++)
                 {
                     long start = System.nanoTime();
-                    method.invoke(null, es);
-                    times[r] = System.nanoTime() - start;
+                    for (int b = 0; b < BATCH; b++)
+                    {
+                        method.invoke(null, es);
+                    }
+                    times[r] = (System.nanoTime() - start) / BATCH;
                 }
                 Arrays.sort(times);
                 long median = times[times.length / 2];

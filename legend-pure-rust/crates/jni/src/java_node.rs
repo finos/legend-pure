@@ -26,13 +26,13 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::str::FromStr;
 
-use im_rc::Vector as PVector;
 use jni::JNIEnv;
 use jni::objects::{JObject, JObjectArray, JString, JValue};
 use jni::signature::ReturnType;
 use legend_pure_evaluator::date::{PureDate, StrictTime, TimePrecision};
 use legend_pure_evaluator::error::{PureException, PureRuntimeError};
 use legend_pure_evaluator::heap::{HeapEntry, ObjectHandle, RuntimeHeap, TypedObject};
+use legend_pure_evaluator::value::PVector;
 use legend_pure_evaluator::value::Value;
 use legend_pure_metamodel::source_info::SourceInfo;
 use smol_str::SmolStr;

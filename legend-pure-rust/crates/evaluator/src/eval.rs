@@ -48,7 +48,7 @@
 
 use std::collections::HashMap;
 
-use im_rc::Vector as PVector;
+use crate::value::PVector;
 use legend_pure_metamodel::ids::ElementId;
 use legend_pure_metamodel::model::{Element, PureModel};
 use legend_pure_metamodel::source_info::SourceInfo;
@@ -74,6 +74,10 @@ use crate::value::{FunctionValue, LambdaClosure, Value};
 ///
 /// # Lazy call stack
 ///
+/// Per chunk, per local index: not looked up yet, or the registry entry
+/// (or its absence) for that element.
+type NativeByElement<'model> = Vec<Vec<Option<Option<&'model dyn NativeFunction>>>>;
+
 /// The evaluator has **no call stack field**. The Pure-level call stack is
 /// built lazily via `map_err` only when an error propagates through the
 /// recursive `eval()` calls.
@@ -94,6 +98,11 @@ pub struct Evaluator<'model, H: EvalHooks = NoOpHooks> {
 
     /// Immutable registry of native functions.
     natives: &'model NativeRegistry,
+
+    /// The registry entry of each function element, found once: indexed
+    /// by chunk and local index, `None` until looked up, then the entry
+    /// or its absence.
+    native_by_element: std::cell::RefCell<NativeByElement<'model>>,
 
     /// Memoised per-class member wrappers (`.properties`,
     /// `.qualifiedProperties`, `.propertiesFromAssociations`). Keyed by
@@ -124,6 +133,7 @@ impl<'model> Evaluator<'model, NoOpHooks> {
             heap,
             context: VariableContext::new(),
             natives,
+            native_by_element: std::cell::RefCell::new(Vec::new()),
             member_wrapper_cache: HashMap::new(),
             hooks: NoOpHooks,
             rendering_depth: 0,
@@ -152,6 +162,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
             heap,
             context: VariableContext::new(),
             natives,
+            native_by_element: std::cell::RefCell::new(Vec::new()),
             member_wrapper_cache: HashMap::new(),
             hooks,
             rendering_depth: 0,
@@ -207,7 +218,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     /// # Errors
     /// Returns `PureException` on evaluation failure (type mismatch,
     /// variable not found, function not found, etc.).
-    #[allow(clippy::result_large_err)]
     pub fn eval(&mut self, expr: &ValueSpec) -> Result<Value, PureException> {
         if self.rendering_depth == 0 {
             let want_snapshot = self.hooks.before_eval(&expr.source_info, &self.context);
@@ -275,9 +285,11 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
                 value,
             } => Ok(Self::eval_enum_value(*enum_element, value)),
 
-            ExprKind::Lambda { parameters, body } => {
-                Ok(self.eval_lambda_creation(parameters, body))
-            }
+            ExprKind::Lambda {
+                parameters,
+                body,
+                free,
+            } => Ok(self.eval_lambda_creation(parameters, body, free)),
 
             ExprKind::Collection { elements } => self.eval_collection(elements),
 
@@ -339,7 +351,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     ///
     /// # Errors
     /// Returns `PureException` if any underlying expression evaluation fails.
-    #[allow(clippy::result_large_err)]
     pub fn eval_body(&mut self, body: &[ValueSpec]) -> Result<Value, PureException> {
         let mut result = Value::Unit;
         for expr in body {
@@ -355,7 +366,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     ///
     /// # Errors
     /// Returns `PureException` if the function is not found or evaluation fails.
-    #[allow(clippy::result_large_err)]
     pub fn call(&mut self, name: &str, args: &[Value]) -> Result<Value, PureException> {
         let segments: Vec<SmolStr> = name.split("::").map(SmolStr::new).collect();
         let element_id = self
@@ -388,7 +398,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     ///
     /// # Errors
     /// Returns `PureException` if the element is not a function or evaluation fails.
-    #[allow(clippy::result_large_err)]
     pub fn call_user_function_by_id(
         &mut self,
         element_id: ElementId,
@@ -401,7 +410,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     ///
     /// # Errors
     /// Returns `PureException` if the element is not a function or evaluation fails.
-    #[allow(clippy::result_large_err)]
     pub fn call_user_function_by_id_with_args(
         &mut self,
         element_id: ElementId,
@@ -511,7 +519,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     }
 
     /// Dispatch a function call — the most complex evaluation case.
-    #[allow(clippy::result_large_err)]
     fn eval_function_call(
         &mut self,
         function: Option<ElementId>,
@@ -524,16 +531,18 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
             Some(id) => self.model.get_node(id).name.as_str(),
             None => function_name,
         };
+        let native = match function {
+            Some(id) => self.native_for(id),
+            None => self.natives.get(lookup_key),
+        };
+        if let Some(native) = native {
+            return self.dispatch_native(native, lookup_key, arguments, source_info);
+        }
         let is_native = match function {
             Some(id) => matches!(self.model.get_element(id), Element::Function(f) if f.is_native),
             None => true,
         };
-
-        if is_native {
-            if let Some(native) = self.natives.get(lookup_key) {
-                return self.dispatch_native(native, lookup_key, arguments, source_info);
-            }
-        } else if let Some(element_id) = function {
+        if !is_native && let Some(element_id) = function {
             let mut args = Vec::with_capacity(arguments.len());
             for arg in arguments {
                 args.push(self.eval(arg)?);
@@ -551,12 +560,45 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
         ))
     }
 
+    /// The registry entry of a native function element, by element: the
+    /// mangled name is hashed once per element for the evaluator's life,
+    /// never per call. A Pure-bodied function, a package or a native the
+    /// registry lacks has none.
+    fn native_for(&self, id: ElementId) -> Option<&'model dyn NativeFunction> {
+        let ElementId::InstanceId {
+            chunk_id,
+            local_idx,
+        } = id
+        else {
+            return None;
+        };
+        let (chunk, index) = (usize::from(chunk_id), local_idx as usize);
+        let mut cache = self.native_by_element.borrow_mut();
+        if cache.len() <= chunk {
+            cache.resize_with(chunk + 1, Vec::new);
+        }
+        let slots = &mut cache[chunk];
+        if slots.len() <= index {
+            slots.resize(index + 1, None);
+        }
+        if let Some(known) = slots[index] {
+            return known;
+        }
+        let found = match self.model.get_element(id) {
+            Element::Function(f) if f.is_native => {
+                self.natives.get(self.model.get_node(id).name.as_str())
+            }
+            _ => None,
+        };
+        slots[index] = Some(found);
+        found
+    }
+
     /// Dispatch a native function using the expression-activator model.
     ///
     /// Hands the native the raw `ValueSpec` arguments unchanged — each native
     /// drives its own evaluation order through `ctx.evaluate`. Any exception
     /// the native raises is decorated with a stack frame before bubbling up.
-    #[allow(clippy::result_large_err)]
     fn dispatch_native(
         &mut self,
         native: &dyn NativeFunction,
@@ -586,7 +628,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     /// - Every `type_arguments[i]` is `TypeExpr::Named { .. }`.
     /// - The slot is empty.
     /// - The object's classifier matches the return type's outer class.
-    #[allow(clippy::result_large_err)]
     fn back_fill_call_type_arguments(
         &mut self,
         value: &Value,
@@ -649,7 +690,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     }
 
     /// Evaluate a user-defined function from the compiled model.
-    #[allow(clippy::result_large_err)]
     fn call_user_function(
         &mut self,
         element_id: ElementId,
@@ -695,7 +735,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
         })
     }
 
-    #[allow(clippy::result_large_err)]
     fn eval_property_access(
         &mut self,
         target: &ValueSpec,
@@ -799,13 +838,11 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     /// `dynamicNew(class, kvs, getterToOne, getterToMany,
     /// hiddenPayload)` constructs an instance, absent property reads
     /// invoke the appropriate lambda with `(receiver, propertyRef)`.
-    #[allow(clippy::result_large_err)]
     /// `obj.name` ≡ `obj.name()` fallback. When the receiver's class
     /// declares a *zero-arg* qualified property of `name` (walking up
     /// the supertype chain), invoke its body with `$this` bound to the
     /// receiver and return the result. Returns `Ok(None)` when no
     /// matching QP exists so the caller can continue to other fallbacks.
-    #[allow(clippy::result_large_err)]
     fn try_zero_arg_qp(
         &mut self,
         instance_id: ObjectHandle,
@@ -934,7 +971,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     /// Allocate a one-off `Property` heap wrapper carrying `_owner`
     /// (the owning Class element id) and `name` (the property's
     /// simple name).
-    #[allow(clippy::result_large_err)]
     fn alloc_property_wrapper(
         &mut self,
         owner_class_id: ElementId,
@@ -951,7 +987,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     }
 
     /// Read `property` off a pre-evaluated [`Value`].
-    #[allow(clippy::result_large_err)]
     fn property_access_on_value(
         &mut self,
         value: &Value,
@@ -1000,7 +1035,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     }
 
     /// Synthesize Function-metamodel properties for a [`Value::Function`].
-    #[allow(clippy::result_large_err)]
     fn eval_function_property(
         &self,
         fv: &FunctionValue,
@@ -1091,7 +1125,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
             let inner_ft_obj = {
                 let mut ctx = EvalContext { evaluator: self };
                 crate::native::meta::build_function_type_wrapper(&mut ctx, &fv).map_err(
-                    |e| match e.kind {
+                    |e| match e.into_data().kind {
                         PureExceptionKind::ExecutionError(err) => err,
                         other => PureRuntimeError::EvaluationError(format!("{other:?}")),
                     },
@@ -1310,7 +1344,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
 
     /// Surface the `properties` / `qualifiedProperties` / `propertiesFromAssociations`
     /// list of a Class as a Collection of heap-backed wrapper objects.
-    #[allow(clippy::result_large_err)]
     fn eval_class_member_collection(
         &mut self,
         id: ElementId,
@@ -1373,7 +1406,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
         Ok(result)
     }
 
-    #[allow(clippy::result_large_err)]
     fn eval_qualified_property(
         &mut self,
         target: &ValueSpec,
@@ -1449,24 +1481,23 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
 
     fn eval_lambda_creation(
         &self,
-        parameters: &[legend_pure_metamodel::types::Parameter],
-        body: &[ValueSpec],
+        parameters: &std::sync::Arc<[legend_pure_metamodel::types::Parameter]>,
+        body: &std::sync::Arc<[ValueSpec]>,
+        free: &std::sync::Arc<[SmolStr]>,
     ) -> Value {
-        let free = collect_free_variables(body, parameters);
         let mut captures = HashMap::with_capacity(free.len());
-        for name in free {
-            if let Some(val) = self.context.get(&name) {
-                captures.insert(name, val.clone());
+        for name in free.iter() {
+            if let Some(val) = self.context.get(name) {
+                captures.insert(name.clone(), val.clone());
             }
         }
         Value::Function(Box::new(FunctionValue::Lambda(LambdaClosure {
-            parameters: std::sync::Arc::from(parameters),
-            body: std::sync::Arc::from(body),
+            parameters: std::sync::Arc::clone(parameters),
+            body: std::sync::Arc::clone(body),
             captures,
         })))
     }
 
-    #[allow(clippy::result_large_err)]
     fn eval_collection(&mut self, elements: &[ValueSpec]) -> Result<Value, PureException> {
         if elements.is_empty() {
             return Ok(Value::Unit);
@@ -1499,7 +1530,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     /// # Errors
     /// Returns `PureException` if lambda execution explicitly fails or an underlying
     /// expression evaluation fails.
-    #[allow(clippy::result_large_err)]
     pub fn eval_lambda_value(
         &mut self,
         lambda: &LambdaClosure,
@@ -1532,7 +1562,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     /// # Errors
     /// Returns `PureException` if `callable` is not a `Value::Function`, or if the
     /// underlying evaluation fails.
-    #[allow(clippy::result_large_err)]
     pub fn apply_callable(
         &mut self,
         callable: &Value,
@@ -1553,7 +1582,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     /// Invoke a heap-object-shaped callable — `Property` wrappers emitted by
     /// `.properties` and `QualifiedProperty` wrappers emitted by
     /// `.qualifiedProperties`. Returns a type error for any other classifier.
-    #[allow(clippy::result_large_err)]
     fn apply_object_callable(
         &mut self,
         id: crate::heap::ObjectHandle,
@@ -1591,7 +1619,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     }
 
     /// Invoke a `QualifiedProperty` wrapper.
-    #[allow(clippy::result_large_err, clippy::needless_pass_by_value)]
+    #[allow(clippy::needless_pass_by_value)]
     fn apply_qualified_property(
         &mut self,
         id: crate::heap::ObjectHandle,
@@ -1657,7 +1685,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
 
     /// Read the `name` slot of a Property / `QualifiedProperty` wrapper as a
     /// plain string, erroring if it is missing or multi-valued.
-    #[allow(clippy::result_large_err, clippy::needless_pass_by_value)]
+    #[allow(clippy::needless_pass_by_value)]
     fn read_wrapper_name(&self, id: crate::heap::ObjectHandle) -> Result<SmolStr, PureException> {
         let values = self
             .heap
@@ -1674,7 +1702,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     /// Perform a plain property access on `instance` by `name`, returning the
     /// same multiplicity-normalised collection that the field-access path
     /// would produce.
-    #[allow(clippy::result_large_err)]
     fn apply_property_to_instance(
         &mut self,
         name: &str,
@@ -1720,7 +1747,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     }
 
     /// Dispatch a `FunctionValue` — anonymous lambda or compiled element.
-    #[allow(clippy::result_large_err)]
     fn eval_function_value(
         &mut self,
         fv: &FunctionValue,
@@ -1746,7 +1772,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     /// receiver's classifier, so chain-of-types works dynamically
     /// without requiring static type-arg substitution. A missing
     /// property surfaces the existing property-access error path.
-    #[allow(clippy::result_large_err)]
     fn eval_path_value(
         &mut self,
         closure: &crate::value::PathClosure,
@@ -1796,14 +1821,13 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     }
 
     /// Dispatch a compiled function element — native registry first, then user function.
-    #[allow(clippy::result_large_err)]
     fn dispatch_compiled_function(
         &mut self,
         id: ElementId,
         mangled: &SmolStr,
         args: &[Value],
     ) -> Result<Value, PureException> {
-        if let Some(native) = self.natives.get(mangled.as_str()) {
+        if let Some(native) = self.native_for(id) {
             return self.execute_native_with_values(native, args);
         }
         let is_native = matches!(self.model.get_element(id), Element::Function(f) if f.is_native);
@@ -1816,7 +1840,6 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     }
 
     /// Invoke a native with already-forced `&[Value]` arguments.
-    #[allow(clippy::result_large_err)]
     fn execute_native_with_values(
         &mut self,
         native: &dyn NativeFunction,
@@ -1865,6 +1888,29 @@ impl<'model, H: EvalHooks> EvalContext<'_, 'model, H> {
 impl<H: EvalHooks> crate::native::EvalContextTrait for EvalContext<'_, '_, H> {
     fn evaluate(&mut self, spec: &ValueSpec) -> Result<Evaluated, PureException> {
         self.evaluator.eval(spec).map(Evaluated::new)
+    }
+
+    fn for_each_value(
+        &mut self,
+        spec: &ValueSpec,
+        each: &mut dyn FnMut(Value) -> Result<(), PureException>,
+    ) -> Result<(), PureException> {
+        let elements: &[ValueSpec] = match &*spec.kind {
+            ExprKind::Collection { elements } => elements,
+            _ => std::slice::from_ref(spec),
+        };
+        for element in elements {
+            match self.evaluator.eval(element)? {
+                Value::Collection(items) => {
+                    for item in items.iter() {
+                        each(item.clone())?;
+                    }
+                }
+                Value::Unit => {}
+                single => each(single)?,
+            }
+        }
+        Ok(())
     }
 
     fn context(&self) -> &VariableContext {
@@ -2066,6 +2112,20 @@ fn multiplicity_constant_bounds(
 /// `parameters`. A "free" variable is any `Variable { name }` reference in
 /// the body that isn't introduced by one of the lambda's own parameters or
 /// by a `let` / nested-lambda binding along the walk.
+/// The free variables of a lambda body, in a stable order, as the node
+/// stores them: computed once when the node is built.
+#[must_use]
+pub fn free_variable_names(
+    body: &[ValueSpec],
+    parameters: &[legend_pure_metamodel::types::Parameter],
+) -> std::sync::Arc<[SmolStr]> {
+    let mut names: Vec<SmolStr> = collect_free_variables(body, parameters)
+        .into_iter()
+        .collect();
+    names.sort_unstable();
+    names.into()
+}
+
 pub(crate) fn collect_free_variables(
     body: &[ValueSpec],
     parameters: &[legend_pure_metamodel::types::Parameter],
@@ -2112,12 +2172,13 @@ fn walk_free_variables(
         ExprKind::Lambda {
             parameters: inner_params,
             body: inner_body,
+            ..
         } => {
             let mut inner_binders = binders.clone();
-            for p in inner_params {
+            for p in inner_params.iter() {
                 inner_binders.insert(p.name.clone());
             }
-            for inner in inner_body {
+            for inner in inner_body.iter() {
                 walk_free_variables(inner, &mut inner_binders, free);
             }
         }

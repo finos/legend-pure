@@ -21,7 +21,7 @@ use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 
 use crate::error::{PureException, PureRuntimeError};
 use crate::native::{
-    EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args, force_all,
+    EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, force_all, force1, force2,
 };
 use crate::value::Value;
 
@@ -73,10 +73,63 @@ impl NativeFunction for Plus {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("plus", &values, 1)?;
-        let items: Vec<Value> = values[0].to_collection().iter().cloned().collect();
-        Ok(Evaluated::new(plus_fold(items)?))
+        let operands = Operands::of("plus", args, ctx, plus_pair)?;
+        Ok(Evaluated::new(
+            operands.finish(|| Ok(Value::Integer(0)), Ok)?,
+        ))
+    }
+}
+
+/// The left fold of a `Number[*]` operand as its elements are evaluated,
+/// without building the collection: the first element is kept apart so
+/// the one-element case (unary `minus`) and the empty case keep their own
+/// meaning.
+struct Operands {
+    first: Option<Value>,
+    folded: Option<Value>,
+}
+
+impl Operands {
+    fn of(
+        name: &str,
+        args: &[ValueSpec],
+        ctx: &mut dyn EvalContextTrait,
+        pair: fn(&Value, &Value) -> Result<Value, PureRuntimeError>,
+    ) -> Result<Self, PureException> {
+        if args.len() != 1 {
+            return Err(PureRuntimeError::EvaluationError(format!(
+                "{name}: expected 1 argument(s), got {}",
+                args.len()
+            ))
+            .into());
+        }
+        let mut operands = Self {
+            first: None,
+            folded: None,
+        };
+        ctx.for_each_value(&args[0], &mut |value| {
+            match (&operands.first, operands.folded.take()) {
+                (None, _) => operands.first = Some(value),
+                (Some(first), None) => operands.folded = Some(pair(first, &value)?),
+                (Some(_), Some(acc)) => operands.folded = Some(pair(&acc, &value)?),
+            }
+            Ok(())
+        })?;
+        Ok(operands)
+    }
+
+    /// The result: `empty` when there was no operand, `only` applied to a
+    /// lone operand, the fold otherwise.
+    fn finish(
+        self,
+        empty: impl FnOnce() -> Result<Value, PureRuntimeError>,
+        only: impl FnOnce(Value) -> Result<Value, PureRuntimeError>,
+    ) -> Result<Value, PureRuntimeError> {
+        match (self.first, self.folded) {
+            (None, _) => empty(),
+            (Some(first), None) => only(first),
+            (Some(_), Some(folded)) => Ok(folded),
+        }
     }
 }
 
@@ -101,18 +154,6 @@ fn plus_pair(a: &Value, b: &Value) -> Result<Value, PureRuntimeError> {
     }
 }
 
-/// Fold a collection of numerics (or strings) through pairwise `plus`.
-///
-/// Empty input → `Integer(0)`. Non-empty reduces left-to-right so types
-/// follow Pure's promotion rules (Integer → Float → Decimal). Strings concat.
-fn plus_fold(values: Vec<Value>) -> Result<Value, PureRuntimeError> {
-    let mut iter = values.into_iter();
-    let Some(first) = iter.next() else {
-        return Ok(Value::Integer(0));
-    };
-    iter.try_fold(first, |acc, next| plus_pair(&acc, &next))
-}
-
 /// Pure `minus(Number[1], Number[1]): Number[1]` — subtraction.
 #[derive(Debug)]
 pub struct Minus;
@@ -123,10 +164,11 @@ impl NativeFunction for Minus {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("minus", &values, 1)?;
-        let items: Vec<Value> = values[0].to_collection().iter().cloned().collect();
-        Ok(Evaluated::new(minus_fold(items)?))
+        let operands = Operands::of("minus", args, ctx, minus_pair)?;
+        Ok(Evaluated::new(operands.finish(
+            || Ok(Value::Integer(0)),
+            |only| minus_unary(&only),
+        )?))
     }
 }
 
@@ -168,25 +210,6 @@ fn minus_pair(a: &Value, b: &Value) -> Result<Value, PureRuntimeError> {
     }
 }
 
-/// Fold a collection of numerics through pairwise subtraction, mirroring
-/// Java Pure's `Minus.execute` switch on size:
-/// - empty → `Integer(0)`
-/// - size 1 → unary negate (`0 - x = -x`)
-/// - size ≥ 2 → left-fold subtract: `[x, y, z, …]` → `x - y - z - …`
-fn minus_fold(values: Vec<Value>) -> Result<Value, PureRuntimeError> {
-    let mut iter = values.into_iter();
-    let Some(first) = iter.next() else {
-        return Ok(Value::Integer(0));
-    };
-    match iter.next() {
-        None => minus_unary(&first),
-        Some(second) => {
-            let initial = minus_pair(&first, &second)?;
-            iter.try_fold(initial, |acc, next| minus_pair(&acc, &next))
-        }
-    }
-}
-
 /// Pure `times(Number[1], Number[1]): Number[1]` — multiplication.
 #[derive(Debug)]
 pub struct Times;
@@ -197,10 +220,10 @@ impl NativeFunction for Times {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("times", &values, 1)?;
-        let items: Vec<Value> = values[0].to_collection().iter().cloned().collect();
-        Ok(Evaluated::new(times_fold(items)?))
+        let operands = Operands::of("times", args, ctx, times_pair)?;
+        Ok(Evaluated::new(
+            operands.finish(|| Ok(Value::Integer(1)), Ok)?,
+        ))
     }
 }
 
@@ -219,19 +242,6 @@ fn times_pair(a: &Value, b: &Value) -> Result<Value, PureRuntimeError> {
             b.type_name()
         ))),
     }
-}
-
-/// Fold a collection of numerics through pairwise multiplication, mirroring
-/// Java Pure's `Times.execute` switch on size:
-/// - empty → `Integer(1)` (multiplicative identity)
-/// - size 1 → unchanged
-/// - size ≥ 2 → left-fold multiply
-fn times_fold(values: Vec<Value>) -> Result<Value, PureRuntimeError> {
-    let mut iter = values.into_iter();
-    let Some(first) = iter.next() else {
-        return Ok(Value::Integer(1));
-    };
-    iter.try_fold(first, |acc, next| times_pair(&acc, &next))
 }
 
 /// Pure `divide(Number[1], Number[1]): Float[1]` and
@@ -326,9 +336,8 @@ impl NativeFunction for Abs {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("abs", &values, 1)?;
-        let v = match &values[0] {
+        let a0 = force1("abs", args, ctx)?;
+        let v = match &a0 {
             Value::Integer(i) => i
                 .checked_abs()
                 .map(Value::Integer)
@@ -351,10 +360,9 @@ impl NativeFunction for Mod {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("mod", &values, 2)?;
-        let a = values[0].as_integer()?;
-        let b = values[1].as_integer()?;
+        let (a0, a1) = force2("mod", args, ctx)?;
+        let a = a0.as_integer()?;
+        let b = a1.as_integer()?;
         if b == 0 {
             return Err(PureRuntimeError::DivisionByZero.into());
         }
@@ -373,16 +381,15 @@ impl NativeFunction for Rem {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("rem", &values, 2)?;
-        let promoted = promote_pair(&values[0], &values[1]).ok_or_else(|| {
+        let (a0, a1) = force2("rem", args, ctx)?;
+        let promoted = promote_pair(&a0, &a1).ok_or_else(|| {
             PureRuntimeError::EvaluationError(format!(
                 "rem: unsupported types {} and {}",
-                values[0].type_name(),
-                values[1].type_name()
+                a0.type_name(),
+                a1.type_name()
             ))
         })?;
-        let dividend_str = crate::native::math::java_number_string(&values[0]);
+        let dividend_str = crate::native::math::java_number_string(&a0);
         let div_zero_err = || -> PureException {
             PureRuntimeError::EvaluationError(format!("Cannot divide {dividend_str} by zero"))
                 .into()
@@ -472,7 +479,7 @@ mod tests {
 
     fn is_outside_i64(r: Result<Evaluated, PureException>) -> bool {
         matches!(
-            r.map_err(|e| e.kind),
+            r.map_err(|e| e.into_data().kind),
             Err(crate::error::PureExceptionKind::ExecutionError(
                 PureRuntimeError::Unsupported(what)
             )) if what.contains("64-bit")

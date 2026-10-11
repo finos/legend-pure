@@ -377,10 +377,13 @@ pub enum ExprKind {
 
     /// Lambda expression: `{x: String[1] | $x + 'hello'}`.
     Lambda {
-        /// Lambda parameters.
-        parameters: Vec<Parameter>,
-        /// Body expressions.
-        body: Vec<ValueSpec>,
+        /// Lambda parameters, shared with every closure made from this node.
+        parameters: std::sync::Arc<[Parameter]>,
+        /// Body expressions, shared with every closure made from this node.
+        body: std::sync::Arc<[ValueSpec]>,
+        /// The variables the body reads that neither it nor the parameters
+        /// bind, found once when the node is built: what a closure captures.
+        free: std::sync::Arc<[smol_str::SmolStr]>,
     },
 
     /// One `key = expression` (or `key += expression` when `add`) of a

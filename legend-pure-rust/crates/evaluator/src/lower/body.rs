@@ -166,7 +166,12 @@ impl Lowering<'_> {
                 let node = Node::new(h.clone());
                 if self.is(&node, self.ids.lambda_function) {
                     let (parameters, body) = self.lower_lambda_parts(&node)?;
-                    ExprKind::Lambda { parameters, body }
+                    let free = crate::eval::free_variable_names(&body, &parameters);
+                    ExprKind::Lambda {
+                        parameters: parameters.into(),
+                        body: body.into(),
+                        free,
+                    }
                 } else if self.is(&node, self.ids.key_expression) {
                     return self.lower_key_expression(&node);
                 } else if self.is(&node, self.ids.instance_value)

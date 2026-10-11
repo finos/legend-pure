@@ -21,10 +21,11 @@
 use legend_pure_metamodel::ids::ElementId;
 use legend_pure_metamodel::types::ValueSpec;
 use smol_str::SmolStr;
+use std::fmt::Write as _;
 
 use crate::error::{PureException, PureRuntimeError};
 use crate::native::{
-    EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args, force_all,
+    EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, force_all, force1, force2, force3,
 };
 use crate::value::Value;
 
@@ -48,9 +49,8 @@ impl NativeFunction for ToString {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("toString", &values, 1)?;
-        let s = pure_to_string(&values[0], ctx)?;
+        let a0 = force1("toString", args, ctx)?;
+        let s = pure_to_string(&a0, ctx)?;
         Ok(Evaluated::new(Value::String(SmolStr::new(s))))
     }
 }
@@ -232,67 +232,54 @@ impl NativeFunction for Format {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("format", &values, 2)?;
-        let template = values[0].as_string()?.to_string();
+        let (a0, a1) = force2("format", args, ctx)?;
+        let template: &str = a0.as_string()?;
+        let subs = a1.to_collection();
 
-        let subs: Vec<Value> = match &values[1] {
-            Value::Collection(v) => v.iter().cloned().collect(),
-            single => vec![single.clone()],
-        };
-
-        let chars: Vec<char> = template.chars().collect();
+        // Every directive character is ASCII, so the scan runs over bytes
+        // and copies the text between directives as whole slices.
+        let bytes = template.as_bytes();
         let mut result = String::with_capacity(template.len());
         let mut i = 0usize;
         let mut sub_idx = 0usize;
 
-        while i < chars.len() {
-            let c = chars[i];
-            if c != '%' {
-                result.push(c);
-                i += 1;
+        while i < bytes.len() {
+            if bytes[i] != b'%' {
+                let run = i;
+                while i < bytes.len() && bytes[i] != b'%' {
+                    i += 1;
+                }
+                result.push_str(&template[run..i]);
                 continue;
             }
             let mut j = i + 1;
             let mut zero_pad = false;
-            if j < chars.len()
-                && chars[j] == '0'
-                && j + 1 < chars.len()
-                && chars[j + 1].is_ascii_digit()
+            if j < bytes.len()
+                && bytes[j] == b'0'
+                && j + 1 < bytes.len()
+                && bytes[j + 1].is_ascii_digit()
             {
                 zero_pad = true;
                 j += 1;
             }
             let width_start = j;
-            while j < chars.len() && chars[j].is_ascii_digit() {
+            while j < bytes.len() && bytes[j].is_ascii_digit() {
                 j += 1;
             }
             let width: Option<usize> = if j > width_start {
-                Some(
-                    chars[width_start..j]
-                        .iter()
-                        .collect::<String>()
-                        .parse()
-                        .unwrap_or(0),
-                )
+                Some(template[width_start..j].parse().unwrap_or(0))
             } else {
                 None
             };
-            let precision: Option<usize> = if j < chars.len() && chars[j] == '.' {
+            let precision: Option<usize> = if j < bytes.len() && bytes[j] == b'.' {
                 let p_start = j + 1;
                 let mut p_end = p_start;
-                while p_end < chars.len() && chars[p_end].is_ascii_digit() {
+                while p_end < bytes.len() && bytes[p_end].is_ascii_digit() {
                     p_end += 1;
                 }
                 if p_end > p_start {
                     j = p_end;
-                    Some(
-                        chars[p_start..p_end]
-                            .iter()
-                            .collect::<String>()
-                            .parse()
-                            .unwrap_or(0),
-                    )
+                    Some(template[p_start..p_end].parse().unwrap_or(0))
                 } else {
                     j = p_start;
                     None
@@ -300,17 +287,17 @@ impl NativeFunction for Format {
             } else {
                 None
             };
-            if j >= chars.len() {
+            if j >= bytes.len() {
                 result.push('%');
                 i += 1;
                 continue;
             }
-            let spec = chars[j];
+            let spec = bytes[j];
             let date_pattern: Option<String> =
-                if spec == 't' && j + 1 < chars.len() && chars[j + 1] == '{' {
+                if spec == b't' && j + 1 < bytes.len() && bytes[j + 1] == b'{' {
                     let pat_start = j + 2;
-                    if let Some(end) = chars[pat_start..].iter().position(|&c| c == '}') {
-                        let pat: String = chars[pat_start..pat_start + end].iter().collect();
+                    if let Some(end) = template[pat_start..].find('}') {
+                        let pat = template[pat_start..pat_start + end].to_string();
                         j = pat_start + end + 1;
                         Some(pat)
                     } else {
@@ -320,7 +307,7 @@ impl NativeFunction for Format {
                     j += 1;
                     None
                 };
-            if !matches!(spec, 's' | 'r' | 'd' | 'f' | 't') {
+            if !matches!(spec, b's' | b'r' | b'd' | b'f' | b't') {
                 result.push('%');
                 i += 1;
                 continue;
@@ -333,9 +320,15 @@ impl NativeFunction for Format {
             })?;
             sub_idx += 1;
             match spec {
-                'r' => result.push_str(&repr_value(&v)),
-                's' => result.push_str(&pure_to_string(&v, ctx)?),
-                'd' => {
+                b'r' => result.push_str(&repr_value(&v)),
+                b's' => match &v {
+                    Value::String(s) => result.push_str(s),
+                    Value::Integer(n) => {
+                        let _ = write!(result, "{n}");
+                    }
+                    other => result.push_str(&pure_to_string(other, ctx)?),
+                },
+                b'd' => {
                     let Value::Integer(n) = v else {
                         let got = pure_to_string(&v, ctx)?;
                         return Err(PureRuntimeError::EvaluationError(format!(
@@ -358,7 +351,7 @@ impl NativeFunction for Format {
                     };
                     result.push_str(&body);
                 }
-                'f' => {
+                b'f' => {
                     let Value::Float(f) = v else {
                         let got = pure_to_string(&v, ctx)?;
                         return Err(PureRuntimeError::EvaluationError(format!(
@@ -373,7 +366,7 @@ impl NativeFunction for Format {
                     };
                     result.push_str(&body);
                 }
-                't' => {
+                b't' => {
                     let Value::Date(d) = &v else {
                         let got = pure_to_string(&v, ctx)?;
                         return Err(PureRuntimeError::EvaluationError(format!(
@@ -563,16 +556,19 @@ impl NativeFunction for JoinStrings {
         };
 
         let coll = values[0].to_collection();
-        let mut parts: Vec<String> = Vec::with_capacity(coll.len());
-        for v in &coll {
-            parts.push(v.as_string()?.as_str().to_owned());
+        let mut result = String::new();
+        if let Some(p) = &prefix {
+            result.push_str(p);
         }
-        let joined = parts.join(separator.as_str());
-
-        let result = match (prefix, suffix) {
-            (Some(p), Some(s)) => format!("{p}{joined}{s}"),
-            _ => joined,
-        };
+        for (i, v) in coll.iter().enumerate() {
+            if i > 0 {
+                result.push_str(&separator);
+            }
+            result.push_str(v.as_string()?);
+        }
+        if let Some(s) = &suffix {
+            result.push_str(s);
+        }
         Ok(Evaluated::new(Value::String(SmolStr::new(result))))
     }
 }
@@ -649,10 +645,9 @@ impl NativeFunction for StartsWith {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("startsWith", &values, 2)?;
-        let s = values[0].as_string()?;
-        let prefix = values[1].as_string()?;
+        let (a0, a1) = force2("startsWith", args, ctx)?;
+        let s = a0.as_string()?;
+        let prefix = a1.as_string()?;
         Ok(Evaluated::new(Value::Boolean(
             s.starts_with(prefix.as_str()),
         )))
@@ -730,10 +725,9 @@ impl NativeFunction for Contains {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("contains", &values, 2)?;
-        let s = values[0].as_string()?;
-        let sub = values[1].as_string()?;
+        let (a0, a1) = force2("contains", args, ctx)?;
+        let s = a0.as_string()?;
+        let sub = a1.as_string()?;
         Ok(Evaluated::new(Value::Boolean(s.contains(sub.as_str()))))
     }
 }
@@ -748,10 +742,9 @@ impl NativeFunction for EndsWith {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("endsWith", &values, 2)?;
-        let s = values[0].as_string()?;
-        let suffix = values[1].as_string()?;
+        let (a0, a1) = force2("endsWith", args, ctx)?;
+        let s = a0.as_string()?;
+        let suffix = a1.as_string()?;
         Ok(Evaluated::new(Value::Boolean(s.ends_with(suffix.as_str()))))
     }
 }
@@ -766,9 +759,8 @@ impl NativeFunction for Length {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("length", &values, 1)?;
-        let s = values[0].as_string()?;
+        let a0 = force1("length", args, ctx)?;
+        let s = a0.as_string()?;
         Ok(Evaluated::new(Value::Integer(
             i64::try_from(utf16_len(s)).unwrap_or(i64::MAX),
         )))
@@ -790,10 +782,9 @@ impl NativeFunction for Split {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("split", &values, 2)?;
-        let s = values[0].as_string()?;
-        let token = values[1].as_string()?;
+        let (a0, a1) = force2("split", args, ctx)?;
+        let s = a0.as_string()?;
+        let token = a1.as_string()?;
         let parts: Vec<Value> = s
             .split(token.as_str())
             .map(|p| Value::String(SmolStr::new(p)))
@@ -851,11 +842,10 @@ impl NativeFunction for Replace {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("replace", &values, 3)?;
-        let source = values[0].as_string()?;
-        let target = values[1].as_string()?;
-        let replacement = values[2].as_string()?;
+        let (a0, a1, a2) = force3("replace", args, ctx)?;
+        let source = a0.as_string()?;
+        let target = a1.as_string()?;
+        let replacement = a2.as_string()?;
         let out = source
             .as_str()
             .replace(target.as_str(), replacement.as_str());
@@ -875,9 +865,8 @@ impl NativeFunction for ReverseString {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("reverseString", &values, 1)?;
-        let s = values[0].as_string()?;
+        let a0 = force1("reverseString", args, ctx)?;
+        let s = a0.as_string()?;
         let reversed: String = s.chars().rev().collect();
         Ok(Evaluated::new(Value::String(SmolStr::new(reversed))))
     }
@@ -893,9 +882,8 @@ impl NativeFunction for ToLower {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("toLower", &values, 1)?;
-        let s = values[0].as_string()?;
+        let a0 = force1("toLower", args, ctx)?;
+        let s = a0.as_string()?;
         Ok(Evaluated::new(Value::String(SmolStr::new(
             s.to_lowercase(),
         ))))
@@ -912,9 +900,8 @@ impl NativeFunction for ToUpper {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("toUpper", &values, 1)?;
-        let s = values[0].as_string()?;
+        let a0 = force1("toUpper", args, ctx)?;
+        let s = a0.as_string()?;
         Ok(Evaluated::new(Value::String(SmolStr::new(
             s.to_uppercase(),
         ))))
@@ -931,9 +918,8 @@ impl NativeFunction for Ltrim {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("ltrim", &values, 1)?;
-        let s = values[0].as_string()?;
+        let a0 = force1("ltrim", args, ctx)?;
+        let s = a0.as_string()?;
         Ok(Evaluated::new(Value::String(SmolStr::new(s.trim_start()))))
     }
 }
@@ -948,9 +934,8 @@ impl NativeFunction for Rtrim {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("rtrim", &values, 1)?;
-        let s = values[0].as_string()?;
+        let a0 = force1("rtrim", args, ctx)?;
+        let s = a0.as_string()?;
         Ok(Evaluated::new(Value::String(SmolStr::new(s.trim_end()))))
     }
 }
@@ -965,9 +950,8 @@ impl NativeFunction for Trim {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("trim", &values, 1)?;
-        let s = values[0].as_string()?;
+        let a0 = force1("trim", args, ctx)?;
+        let s = a0.as_string()?;
         Ok(Evaluated::new(Value::String(SmolStr::new(s.trim()))))
     }
 }
@@ -1278,7 +1262,7 @@ mod tests {
                 .into_value()
                 .to_collection()
         };
-        let strings = |parts: &[&str]| -> im_rc::Vector<Value> {
+        let strings = |parts: &[&str]| -> crate::value::PVector<Value> {
             parts.iter().map(|p| Value::String((*p).into())).collect()
         };
         assert_eq!(split("Hello World", " "), strings(&["Hello", "World"]));
@@ -1566,35 +1550,24 @@ mod tests {
         );
     }
 
-    /// Build `Collection(Collection(... Integer(0) ...))` `depth`
-    /// levels deep.
-    fn deep_nested_collection(depth: usize) -> Value {
-        let mut v = Value::Integer(0);
-        for _ in 0..depth {
-            let mut inner = im_rc::Vector::new();
-            inner.push_back(v);
-            v = Value::Collection(Box::new(inner));
-        }
-        v
-    }
-
-    /// Locks the iterative `pure_to_string` contract: rendering a
-    /// 10 000-level-deep `Collection(...)` chain must not overflow
-    /// the Rust thread stack.
+    /// Rendering the widest shape Pure produces, a flat collection of ten
+    /// thousand integers (collection literals flatten, so a collection
+    /// never nests).
     #[test]
-    fn pure_to_string_deep_collection_no_overflow() {
-        let v = deep_nested_collection(10_000);
+    fn pure_to_string_renders_a_wide_collection() {
+        let items: crate::value::PVector<Value> = (0..10_000).map(Value::Integer).collect();
+        let v = Value::Collection(Box::new(items));
         let s = super::pure_to_string(&v, &mut MockCtx).expect("render must succeed");
-        assert_eq!(s.matches('[').count(), 10_000);
-        assert_eq!(s.matches(']').count(), 10_000);
-        assert!(s.contains('0'));
+        assert!(s.starts_with("[0, 1, 2,"));
+        assert!(s.ends_with("9999]"));
+        assert_eq!(s.matches(", ").count(), 9_999);
     }
 
     /// Sanity: shape produced for a small list matches `toString`
     /// form (`[1, 2, 3]`, no quotes around integers).
     #[test]
     fn pure_to_string_shallow_collection_shape() {
-        let mut pv = im_rc::Vector::new();
+        let mut pv = crate::value::PVector::new();
         pv.push_back(Value::Integer(1));
         pv.push_back(Value::Integer(2));
         pv.push_back(Value::Integer(3));

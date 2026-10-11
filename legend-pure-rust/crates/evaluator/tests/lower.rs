@@ -19,7 +19,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use im_rc::Vector as PVector;
 use legend_pure_evaluator::builders::ModelBuilder;
 use legend_pure_evaluator::error::PureRuntimeError;
 use legend_pure_evaluator::eval::Evaluator;
@@ -27,6 +26,7 @@ use legend_pure_evaluator::heap::{HeapEntry, TypedObject};
 use legend_pure_evaluator::lower::node_builders::{TestNode, m3};
 use legend_pure_evaluator::lower::{LowerError, Lowering};
 use legend_pure_evaluator::native::NativeRegistry;
+use legend_pure_evaluator::value::PVector;
 use legend_pure_evaluator::value::{FunctionValue, LambdaClosure, Value};
 use legend_pure_metamodel::bootstrap::{BOOLEAN_ID, INTEGER_ID, STRING_ID};
 use legend_pure_metamodel::ids::ElementId;
@@ -223,7 +223,7 @@ fn nested_lambdas_lower_bare_so_if_takes_a_branch() {
         panic!("expected a call");
     };
     assert!(
-        matches!(&*call.arguments[1].kind, ExprKind::Lambda { parameters, body } if parameters.is_empty() && body.len() == 1)
+        matches!(&*call.arguments[1].kind, ExprKind::Lambda { parameters, body, .. } if parameters.is_empty() && body.len() == 1)
     );
     lowering.into_extension().apply(&mut model).expect("apply");
     assert_eq!(run(&model, closure), Value::String("yes".into()));

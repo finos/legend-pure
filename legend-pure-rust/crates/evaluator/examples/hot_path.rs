@@ -43,7 +43,10 @@ const EQUAL: &str = "equal_Any_MANY__Any_MANY__Boolean_1_";
 const SIZE: &str = "size_Any_MANY__Integer_1_";
 
 const WARMUP: usize = 300;
-const RUNS: usize = 3000;
+const RUNS: usize = 1000;
+/// Calls per timed sample: the clock ticks every 41.7 ns on Apple
+/// Silicon, so one call would be quantised to that.
+const BATCH: usize = 32;
 
 fn int_param(name: &str) -> Parameter {
     param(name, named(INTEGER_ID), Multiplicity::PureOne)
@@ -78,9 +81,11 @@ fn time_spec(name: &str, evaluator: &mut Evaluator<'_>, spec: ValueSpec) {
     let mut times: Vec<u128> = Vec::with_capacity(RUNS);
     for _ in 0..RUNS {
         let start = Instant::now();
-        let value = run(evaluator);
-        times.push(start.elapsed().as_nanos());
-        std::hint::black_box(value);
+        for _ in 0..BATCH {
+            let value = run(evaluator);
+            std::hint::black_box(value);
+        }
+        times.push(start.elapsed().as_nanos() / BATCH as u128);
     }
     times.sort_unstable();
     println!("{name:<48} {:>9} ns", times[times.len() / 2]);

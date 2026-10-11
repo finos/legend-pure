@@ -184,8 +184,9 @@ fn eval_lambda_creation() {
     let registry = NativeRegistry::standard();
     let mut eval = Evaluator::new(&model, &registry);
     let expr = make_expr(ExprKind::Lambda {
-        parameters: vec![],
-        body: vec![make_expr(ExprKind::IntegerLiteral(42))],
+        parameters: Vec::new().into(),
+        body: vec![make_expr(ExprKind::IntegerLiteral(42))].into(),
+        free: Vec::new().into(),
     });
     let evaluated = eval.eval(&expr).unwrap();
     match &evaluated {

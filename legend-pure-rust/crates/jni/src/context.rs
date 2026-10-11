@@ -16,12 +16,12 @@
 
 use std::rc::Rc;
 
-use im_rc::Vector as PVector;
 use legend_pure_evaluator::error::{PureException, PureRuntimeError};
 use legend_pure_evaluator::eval::Evaluator;
 use legend_pure_evaluator::heap::{HeapEntry, ObjectHandle};
 use legend_pure_evaluator::lower::Lowering;
 use legend_pure_evaluator::native::NativeRegistry;
+use legend_pure_evaluator::value::PVector;
 use legend_pure_evaluator::value::{FunctionValue, Value};
 use legend_pure_metamodel::model::PureModel;
 use smol_str::SmolStr;

@@ -22,9 +22,16 @@
 //! ```
 //!
 //! Prints a table and writes `target/benchmarks/expressions-rust.csv`
-//! (expression, engine, median, p90 and minimum in nanoseconds).
+//! (expression, engine, median, p90 and minimum in nanoseconds per call).
+//! Each timed sample covers a batch of calls, because the clock on an
+//! Apple Silicon machine ticks every 41.7 ns and a single call would be
+//! quantised to that.
 
 use std::time::Instant;
+
+/// Calls per timed sample: the clock ticks every 41.7 ns on Apple
+/// Silicon, so one call would be quantised to that.
+const BATCH: usize = 32;
 
 use legend_pure_evaluator::builders::{ModelBuilder, expr, named, param};
 use legend_pure_evaluator::eval::Evaluator;
@@ -309,9 +316,11 @@ fn main() {
         let mut times: Vec<u128> = Vec::with_capacity(runs);
         for _ in 0..runs {
             let start = Instant::now();
-            let value = run(&mut evaluator);
-            times.push(start.elapsed().as_nanos());
-            std::hint::black_box(value);
+            for _ in 0..BATCH {
+                let value = run(&mut evaluator);
+                std::hint::black_box(value);
+            }
+            times.push(start.elapsed().as_nanos() / BATCH as u128);
         }
         times.sort_unstable();
         let median = times[times.len() / 2];
