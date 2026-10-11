@@ -32,7 +32,6 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y lld
 
       - name: Enable lld for Rust compilation
-        # Routed through RUSTFLAGS so it is CI-only.
         run: echo "RUSTFLAGS=-C link-arg=-fuse-ld=lld" >> $GITHUB_ENV
 
       - name: Cache Cargo dependencies
@@ -52,12 +51,11 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Enable sccache as RUSTC_WRAPPER
-        # Caches rustc output across CI runs (keyed on input content), so
-        # branches with the same dep tree see compilation effectively free
-        # on the second run. Cold first run is unchanged.
+        # A cache service outage degrades to an uncached build, not a failure.
         run: |
           echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
           echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+          echo "SCCACHE_IGNORE_SERVER_IO_ERROR=1" >> $GITHUB_ENV
 
       - name: Check Formatting (cargo fmt)
         run: cargo fmt --check
