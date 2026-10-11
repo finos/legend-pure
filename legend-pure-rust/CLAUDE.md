@@ -9,12 +9,13 @@ the plan wins and this file gets fixed.
 
 ## What is here
 
-Three crates, nothing else:
+Four crates, nothing else:
 
 | Crate | Package | Holds |
 |---|---|---|
 | `crates/metamodel` | `legend-pure-metamodel` | Element tables (`PureModel`, `Element`, `nodes/`), the expression tree (`types::ValueSpec`, `types::ExprKind`), the M3 bootstrap (`bootstrap`, embeds `m3.pure` at compile time), function-name mangling (`fqn`). |
 | `crates/evaluator` | `legend-pure-evaluator` | Values, heap, variable context, dispatch (`eval`), the native registry (`native`, fished one at a time), hooks, builder, the `builders` test helpers; `bridge/`, the host-agnostic core of every boundary (the `Host` trait a transport implements, `HostShared`, `BridgeContext`, `Session`, `Description`, `outbound::Leaf`), and `metadata`/`pct` for the `Rust_Native` run. |
+| `crates/ffi` | `legend-pure-ffi` (cdylib `libpure_rust_ffi`) | The C ABI, the one host surface (Step 2c): `include/pure_rust.h` is the hand-written contract (17 `pure_*` functions, flat description, slot, leaf, failure and timings structs, a callback table, `PURE_ABI_VERSION`); `tests/header.rs` holds the header and the exports to each other, `tests/abi.rs` drives the whole surface as a host would. Nothing of any host in it. Unsafe only where the ABI forces it. |
 | `crates/jni` | `legend-pure-jni` (cdylib `libpure_rust_jni`) | The JNI transport only, behind the Java class `org.finos.legend.pure.rust.PureRustEvaluator`: method and field ids, reads through `JNIEnv` (`JniHost: Host`), one JNI call per outbound `Leaf`, the entry points and the throw. Unsafe by nature; the only crate without `forbid(unsafe_code)`. |
 
 The previous Rust workspace (parser, compiler, LSP, DSL crates, CLI, binary
@@ -106,7 +107,7 @@ must return nothing.
 ## Conventions
 
 - Copyright header on every `.rs`, `.toml` and `.sh` file (the script checks).
-- `#![deny(missing_docs)]` on all three crates, `#![forbid(unsafe_code)]` on
+- `#![deny(missing_docs)]` on all four crates, `#![forbid(unsafe_code)]` on
   `metamodel` and `evaluator`; doc comments must not link into
   archived modules.
 - Commit messages record every cut or deviation from the plan's extraction map.

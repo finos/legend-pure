@@ -1211,6 +1211,41 @@ generation native in the compiled engine (additive, absent-safe as
 manifests equal the `Rust_JNI` ones in content, and the benchmark reports
 both transports side by side with the Rust side's split per call.
 
+**Phase 2, the Rust half, as shipped (2026-10-11).** `crates/ffi`
+(`legend-pure-ffi`, cdylib `libpure_rust_ffi`; 3,604 lines with its
+tests and header; dependencies metamodel, evaluator, `smol_str`; nothing
+of any host in it; `bridge/` needed no change). The header
+`include/pure_rust.h` (492 lines, C99, `PURE_ABI_VERSION 1`, compiles
+under `-pedantic` as C99, C11 and C++17) states eight rules in its
+preamble and the layout rule (8-byte fields first, no padding, 8-byte
+alignment of host-allocated structs). Its seventeen functions:
+`pure_abi_version`; `pure_context_new` over a `pure_host_table` (an
+opaque host pointer and four callbacks, `property_values`,
+`captured_values`, `keys`, `forget`) and `pure_context_free`; `pure_start`
+(a function as a `pure_description`, arguments as `pure_slot`s, the
+result as a Rust-owned `pure_result` of flat `pure_leaf`s) and
+`pure_result_free`; the Rust-object reads a host makes on a handle,
+`pure_object_property_values`, `pure_object_property_names`,
+`pure_object_classifier`, `pure_object_new`, `pure_object_release`,
+`pure_live_handle_count`; `pure_crossing` (the boundary tests' hook);
+`pure_last_timings`; `pure_last_failure` (per thread, NULL after a
+success, every `ExceptionPayload` field); and the three a callback
+answers with, `pure_reply_descriptions`, `pure_reply_names`,
+`pure_reply_fail`, Rust copying at push time so host memory need only
+live through the push. `pure_description` is the twenty fields of
+`Description` (160 bytes, kinds numerically equal to
+`bridge::description::kind`); `pure_leaf` (96 bytes) mirrors
+`outbound::Leaf` by kind, a map as a nested leaf array. A callback
+returns OK, ABSENT or FAILED; a recorded failure wins over the status. A
+panic through the guard poisons the context; running calls are refused
+on it and housekeeping still works. `tests/header.rs` holds the header's
+declarations, constants and version to the crate's exports and back;
+`tests/abi.rs` is a client in Rust over the description table of
+`tests/bridge.rs`: a lambda run, the closure cache on the second call,
+natives over slots, a Rust object through new, read, names, classifier,
+crossing and release, re-entry refused from inside a callback, the
+failure kinds, the poisoned context.
+
 **Phase 3 — deletion.** When legend-engine's floor reaches 25: delete
 `crates/jni`, the JNI module, `evalRust` and the `Rust_JNI` adapter with
 its manifests and reports; the shared module and the FFM module remain,
