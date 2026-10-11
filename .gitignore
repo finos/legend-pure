@@ -26,7 +26,6 @@
 **/.DS_Store
 **/pure-duckDB-test-Db*
 **/pure-duckdb-test-db*
-**/pure-duckDB-test-Db
 .claude/agents/
 .claude/agent-memory/
 .mcp.json

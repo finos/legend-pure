@@ -48,8 +48,8 @@ suite prints is the progress metric.
 cargo build --workspace                                   # the cdylib the Java module loads
 cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator clean verify
-#   -> Rust_JNI essential: 320 / 327, Rust_JNI grammar: 132 / 136 (interpreted engine)
-#      Rust_JNI essential (compiled): 321 / 327, grammar (compiled): 132 / 136 (plus 22 boundary tests)
+#   -> Rust_JNI essential: 339 / 346, Rust_JNI grammar: 133 / 137 (interpreted engine)
+#      Rust_JNI essential (compiled): 340 / 346, grammar (compiled): 133 / 137 (plus 22 boundary tests)
 # after a change that moves tests: regenerate the manifests, review the diff, verify again
 JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator \

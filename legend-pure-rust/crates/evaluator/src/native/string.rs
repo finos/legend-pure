@@ -631,6 +631,41 @@ impl NativeFunction for IndexOf {
     }
 }
 
+/// Pure `lastIndexOf(String[1], String[1], Integer[1]): Integer[1]`: the
+/// last occurrence beginning at or before `fromIndex` (a UTF-16 index, as
+/// Java's `String.lastIndexOf(String, int)`), -1 when there is none.
+#[derive(Debug)]
+pub struct LastIndexOf;
+
+impl NativeFunction for LastIndexOf {
+    fn execute(
+        &self,
+        args: &[ValueSpec],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1, a2) = force3("lastIndexOf", args, ctx)?;
+        let s = a0.as_string()?;
+        let sub = a1.as_string()?;
+        let from = a2.as_integer()?;
+        if from < 0 {
+            return Ok(Evaluated::new(Value::Integer(-1)));
+        }
+        let length = s.encode_utf16().count();
+        let from = usize::try_from(from).unwrap_or(usize::MAX).min(length);
+        if sub.is_empty() {
+            return Ok(Evaluated::new(Value::Integer(
+                i64::try_from(from).unwrap_or(i64::MAX),
+            )));
+        }
+        let idx = s
+            .rmatch_indices(sub.as_str())
+            .map(|(i, _)| utf16_at_byte(s, i))
+            .find(|&unit| unit <= from)
+            .map_or(-1, |unit| i64::try_from(unit).unwrap_or(i64::MAX));
+        Ok(Evaluated::new(Value::Integer(idx)))
+    }
+}
+
 /// Pure `startsWith(String[1], String[1]): Boolean[1]`
 #[derive(Debug)]
 pub struct StartsWith;
@@ -978,6 +1013,10 @@ pub fn register(registry: &mut NativeRegistry) {
     );
     registry.register("indexOf_String_1__String_1__Integer_1_", IndexOf);
     registry.register("indexOf_String_1__String_1__Integer_1__Integer_1_", IndexOf);
+    registry.register(
+        "lastIndexOf_String_1__String_1__Integer_1__Integer_1_",
+        LastIndexOf,
+    );
     registry.register("startsWith_String_1__String_1__Boolean_1_", StartsWith);
     registry.register("parseDecimal_String_1__Decimal_1_", ParseDecimal);
     registry.register(
@@ -1039,6 +1078,25 @@ mod tests {
             .execute(&[lit_str("%r"), coll], &mut MockCtx)
             .unwrap();
         assert_eq!(r.into_value(), Value::String("'foo'".into()));
+    }
+
+    #[test]
+    fn last_index_of_searches_backwards_from_a_utf16_index() {
+        let at = |s: &str, sub: &str, from: i64| {
+            LastIndexOf
+                .execute(&[lit_str(s), lit_str(sub), lit_int(from)], &mut MockCtx)
+                .unwrap()
+                .into_value()
+        };
+        assert_eq!(at("hello hello", "hello", 11), Value::Integer(6));
+        assert_eq!(at("hello hello", "hello", 5), Value::Integer(0));
+        assert_eq!(at("hello hello", "hello", 100), Value::Integer(6));
+        assert_eq!(at("hello", "x", 4), Value::Integer(-1));
+        assert_eq!(at("hello", "h", -1), Value::Integer(-1));
+        assert_eq!(at("abc", "", 10), Value::Integer(3));
+        assert_eq!(at("", "", 0), Value::Integer(0));
+        assert_eq!(at("é😀l😀l", "l", 10), Value::Integer(6));
+        assert_eq!(at("é😀l😀l", "l", 5), Value::Integer(3));
     }
 
     #[test]

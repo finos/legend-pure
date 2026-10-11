@@ -5,7 +5,9 @@
 > natives round 1, Step 2b (the evaluator's own cost), natives round 2 and
 > the bridge's cost done 2026-10-11 (`Rust_JNI` 320 / 327 and 132 / 136,
 > compiled 321 / 327 and 132 / 136; the bridge within 1.15x of the
-> interpreted engine's own adapter). Next: Step 3, read PELT, with the
+> interpreted engine's own adapter; rebased on finos master the same day,
+> where the corpus is 346 and 137 tests: 339 / 346 and 133 / 137,
+> compiled 340 / 346 and 133 / 137). Next: Step 3, read PELT, with the
 > `Directory` trait of Step 4 (Appendix C item 6). Archive tag
 > `archive/pre-evaluator-extract-2026-10`.**
 > This document is
@@ -64,10 +66,10 @@ Read this first; everything below assumes it.
 **Where we are, and what comes next (2026-10-11).** Steps 0–2 are done,
 the Java-lambda lowering, natives rounds 1 and 2, Step 2b and the bridge's
 cost with them, and both Java engines run the PCT corpus through
-`Rust_JNI` (interpreted 320 / 327 and 132 / 136, compiled 321 / 327 and
-132 / 136; what stays red is listed under Step 2, "Natives round 2 and the
-bridge's cost", each line a representation choice rather than a missing
-native). Two measurement tools exist: `BenchmarkPctExpressions` (every PCT
+`Rust_JNI` (on finos master of 2026-10-11, a corpus of 346 and 137 tests:
+interpreted 339 / 346 and 133 / 137, compiled 340 / 346 and 133 / 137;
+what stays red is listed under Step 2, "Natives round 2 and the bridge's
+cost", each line a representation choice rather than a missing native). Two measurement tools exist: `BenchmarkPctExpressions` (every PCT
 test under four modes, with the Rust side's own split per call) and the
 apples-to-apples pair (`examples/expressions.rs`, `examples/hot_path.rs`,
 `BenchmarkNativeExpressions`). They say six of the twelve expressions are

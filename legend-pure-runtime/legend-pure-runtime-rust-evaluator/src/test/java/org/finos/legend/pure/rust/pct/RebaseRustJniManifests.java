@@ -70,7 +70,9 @@ public class RebaseRustJniManifests
     static final String MANIFEST_DIR_PROPERTY = "legend.pct.rust.manifestDir";
     private static final String SURVEYOR = "meta::pure::test::surveyor::runPCTTestsFromPath_String_1__String_1__String_1__TestReport_1_";
     private static final String EXPECTED_FAILURE = "Expected failure: ";
-    private static final String NOW_PASSES = "Test was expected to fail";
+    private static final String NOW_PASSES = " was expected to fail but now PASSES";
+    private static final String MISMATCH = "PCT expected-failure mismatch for ";
+    private static final String ACTUAL = "  actual   : ";
 
     @Test
     public void rebaseEssential() throws IOException
@@ -164,13 +166,13 @@ public class RebaseRustJniManifests
                 case "FAIL":
                 case "ERROR":
                 {
-                    if (message.startsWith(NOW_PASSES))
+                    if (message.contains(NOW_PASSES))
                     {
                         passes++;
                     }
                     else
                     {
-                        exclusions.put(fqn, firstLine(message));
+                        exclusions.put(fqn, actualError(message));
                     }
                     break;
                 }
@@ -190,6 +192,26 @@ public class RebaseRustJniManifests
         write(target, committed.adapter, exclusions);
         System.out.println("Rust_JNI " + scope.module + platformTag + ": " + passes + " / " + (results.size() - skipped)
                 + (skipped == 0 ? "" : " (" + skipped + " skipped)") + " -> " + target);
+    }
+
+    /**
+     * The first line of the error the surveyor reports: the {@code actual}
+     * line of its expected-failure mismatch message, else the message's
+     * first non-blank line.
+     */
+    private static String actualError(String message)
+    {
+        if (message.startsWith(MISMATCH))
+        {
+            for (String line : message.split("\n"))
+            {
+                if (line.startsWith(ACTUAL))
+                {
+                    return line.substring(ACTUAL.length());
+                }
+            }
+        }
+        return firstLine(message);
     }
 
     /**

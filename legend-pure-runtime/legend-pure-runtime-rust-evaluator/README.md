@@ -62,8 +62,8 @@ ERROR becomes an exclusion holding the first line of its message; a PASS reporte
 failure keeps its committed entry; an excluded test that now passes is dropped. A second run
 reproduces the files byte for byte. Review the diff, then `verify`.
 
-State: `Rust_JNI essential: 320 / 327`, `Rust_JNI grammar: 132 / 136` on the interpreted engine;
-`321 / 327` and `132 / 136` on the compiled engine (one more than interpreted: `testBigFloatAbs`
+State: `Rust_JNI essential: 339 / 346`, `Rust_JNI grammar: 133 / 137` on the interpreted engine;
+`340 / 346` and `133 / 137` on the compiled engine (one more than interpreted: `testBigFloatAbs`
 passes there, the compiled engine's `Float` being a `double` as Rust's is). The lambda is
 lowered through the bridge (`crates/evaluator/src/lower/`): its body, the functions it calls, the
 classes and enumerations it references, and the variables it captured (`RustNodeBridge.capturedValue`,

@@ -7,15 +7,15 @@
     },
     {
       "test": "meta::pure::functions::math::tests::minus::testLargeMinus_Function_1__Boolean_1_",
-      "expectedError": "Execution error at (resource:/platform/pure/grammar/functions/math/operation/minus.pure line:92 column:65), \"Unsupported: Integer arithmetic outside the 64-bit range\""
+      "expectedError": "Execution error at (resource:/platform/pure/grammar/functions/math/operation/minus.pure line:137 column:65), \"Unsupported: Integer arithmetic outside the 64-bit range\""
     },
     {
       "test": "meta::pure::functions::math::tests::plus::testLargePlus_Function_1__Boolean_1_",
-      "expectedError": "Execution error at (resource:/platform/pure/grammar/functions/math/operation/plus.pure line:97 column:79), \"Unsupported: Integer arithmetic outside the 64-bit range\""
+      "expectedError": "Execution error at (resource:/platform/pure/grammar/functions/math/operation/plus.pure line:141 column:79), \"Unsupported: Integer arithmetic outside the 64-bit range\""
     },
     {
       "test": "meta::pure::functions::math::tests::times::testLargeTimes_Function_1__Boolean_1_",
-      "expectedError": "Execution error at (resource:/platform/pure/grammar/functions/math/operation/times.pure line:64 column:48), \"Unsupported: Integer arithmetic outside the 64-bit range\""
+      "expectedError": "Execution error at (resource:/platform/pure/grammar/functions/math/operation/times.pure line:108 column:48), \"Unsupported: Integer arithmetic outside the 64-bit range\""
     }
   ]
 }
