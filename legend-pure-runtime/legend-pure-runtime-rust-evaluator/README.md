@@ -30,7 +30,9 @@ Every PCT test takes its adapter function as argument 0 and calls `$f->eval(|…
 The platform declares a second adapter, `meta::pure::test::pct::testAdapterForRustExecution`
 (`<<PCT.adapter>> {PCT.adapterName='Rust_JNI'}`), whose body is `$f->evalRust()`, and the
 native `meta::pure::functions::lang::evalRust`. This module implements that native for both
-Java engines and runs the platform corpus through each.
+Java engines and runs the platform corpus through each. (A third adapter, `Rust_Native`,
+is the corpus on the evaluator alone with no Java engine in the loop; it lives in
+`legend-pure-rust/crates/evaluator/src/pct.rs` and never touches this module.)
 
 | Class | Role |
 |---|---|

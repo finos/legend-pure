@@ -56,6 +56,12 @@ JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   -Dtest=RebaseRustJniManifests -DfailIfNoTests=false
 ```
 
+The corpus also runs with no host engine at all, the `Rust_Native` adapter:
+`cargo run -p legend-pure-evaluator --example pct_native` calls the surveyor by
+path on the evaluator alone (`src/pct.rs`, manifests under `crates/evaluator/pct/`)
+and, until Step 3 loads the platform, reports `MetadataNotFound` for the
+surveyor's own definition; `tests/pct_native.rs` pins that.
+
 The manifests under that module's `src/test/resources/platform/` are generated,
 never edited by hand; they rank what is left by kind: `FunctionNotFound: <key>`
 (nothing registered), `NotImplemented: <key>` (registered under its key through

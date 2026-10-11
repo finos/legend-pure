@@ -87,6 +87,22 @@ pub enum PureRuntimeError {
     #[error("native `{0}` is wired but not implemented yet")]
     NotImplemented(SmolStr),
 
+    /// A function named from outside the expression tree (an entry point
+    /// such as the surveyor) has no loaded definition in the model: its
+    /// metadata was never loaded. Distinct from
+    /// [`FunctionNotFound`](Self::FunctionNotFound), a call to an unknown
+    /// name while running.
+    #[error(
+        "no loaded definition of function `{function}`: the model holds {loaded} and no metadata \
+         for it"
+    )]
+    MetadataNotFound {
+        /// The user path named.
+        function: SmolStr,
+        /// What the model holds, as the lookup saw it.
+        loaded: String,
+    },
+
     /// Multiplicity violation: got wrong number of values.
     #[error("Multiplicity violation: expected {expected}, got {actual} values")]
     MultiplicityViolation {

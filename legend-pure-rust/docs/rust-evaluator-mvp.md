@@ -78,7 +78,9 @@ lowering cached per lambda definition. The order from here, each phase
 with its gate:
 
 1. **Step 3 and Step 4** (next) — read PELT, the `Directory` trait, the
-   static graph: the per-call lowering disappears for everything static.
+   static graph: the per-call lowering disappears for everything static,
+   and the `Rust_Native` run (Step 2, the paragraph of that name) resolves
+   the surveyor instead of stopping at `MetadataNotFound`.
    Before it, two decisions the author owns: the Java 17 floor for the
    `legend-pure-runtime-rust-evaluator` module and whether the bridge
    moves from JNI to the Foreign Function & Memory API (assessed
@@ -712,10 +714,21 @@ of the Java runtime leaves both the model and the closure cache stale
 until the evaluator is replaced (`EvalRust` replaces it when the
 engine's runtime object changes).
 
-**Later: `Rust_Native`.** Once the surveyor's own functions execute in Rust,
-the same corpus runs under cargo through the Rust surveyor, with its own
-manifests, and reports as adapter `Rust_Native`; `Rust_JNI` stays the measure
-of the bridge.
+**`Rust_Native` (red by construction, 2026-10-11).** The same corpus on the
+evaluator alone, no host engine in the loop: `crates/evaluator/src/pct.rs`
+calls the surveyor (`meta::pure::test::surveyor::runPCTTestsFromPath`) by
+its path with the scope's package, file path and manifest, through
+`metadata::function_by_path`; the platform declares the adapter
+`testAdapterForRustNativeExecution` (`PCT.adapterName='Rust_Native'`,
+body `$f->eval()`), and the manifests under `crates/evaluator/pct/` name
+it. `cargo run -p legend-pure-evaluator --example pct_native` prints one
+line per scope; `tests/pct_native.rs` pins what the line says today: the
+model holds the bootstrap only and no loaded definition of the surveyor
+(`PureRuntimeError::MetadataNotFound`, the one kind for a path named from
+outside the expression tree that no loaded metadata defines; a missing
+native at run time stays `FunctionNotFound`). It stops at the surveyor's
+own definition until Step 3 loads the platform; then the counts replace
+the error in that test, and `Rust_JNI` stays the measure of the bridge.
 
 **Recipe.**
 
@@ -1036,7 +1049,11 @@ on; this crate itself knows no Pure semantics and no `metamodel` type.
 **Proves.** The format is fully understood. Gate: golden tests decoding every
 file in the platform's `target/classes` without error and round-tripping the
 string table; `inspect` output reviewed against the Java `print` of the same
-element.
+element. The second gate, once the decoded platform is a chunk of the
+model: `examples/pct_native` resolves the surveyor instead of reporting
+`MetadataNotFound`, and `tests/pct_native.rs` moves from pinning that
+error to pinning the first `Rust_Native` counts, with every missing
+native ranked in its manifests as `Rust_JNI`'s were.
 
 **Start here.** New leaf crate `crates/pelt` — the fourth crate, and the only
 one this step adds (dependencies: `flate2`, a zip reader only; it does not

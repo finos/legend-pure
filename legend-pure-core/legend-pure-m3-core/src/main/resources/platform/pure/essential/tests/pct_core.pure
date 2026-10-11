@@ -51,6 +51,19 @@ function
   $f->evalRust();
 }
 
+// The corpus on the Rust evaluator alone, the surveyor included (legend-pure-rust,
+// `cargo run -p legend-pure-evaluator --example pct_native`): no host engine in the loop,
+// so the adapter is the evaluator's own eval.
+function
+    <<PCT.adapter>>
+    {
+        PCT.adapterName='Rust_Native'
+    }
+    meta::pure::test::pct::testAdapterForRustNativeExecution<X|o>(f:Function<{->X[o]}>[1]):X[o]
+{
+  $f->eval();
+}
+
 // ----------------------------------------------------------------------------------
 // PCT Manifest — portable, JSON-driven test configuration
 // ----------------------------------------------------------------------------------
