@@ -64,7 +64,8 @@ fn arith(key: &str, a: ValueSpec, b: ValueSpec) -> ValueSpec {
     expr::call(key, vec![expr::collection(vec![a, b])])
 }
 
-/// Median nanoseconds of applying `spec` as a zero-argument lambda.
+/// Median, p90 and minimum nanoseconds of applying `spec` as a
+/// zero-argument lambda, each sample a batch of calls.
 fn time_spec(name: &str, evaluator: &mut Evaluator<'_>, spec: ValueSpec) {
     let callable = evaluator
         .eval(&expr::lambda(Vec::new(), vec![spec]))
@@ -88,7 +89,12 @@ fn time_spec(name: &str, evaluator: &mut Evaluator<'_>, spec: ValueSpec) {
         times.push(start.elapsed().as_nanos() / BATCH as u128);
     }
     times.sort_unstable();
-    println!("{name:<48} {:>9} ns", times[times.len() / 2]);
+    println!(
+        "{name:<48} {:>9} ns  (p90 {}, min {})",
+        times[times.len() / 2],
+        times[times.len() * 9 / 10],
+        times[0]
+    );
 }
 
 /// Average nanoseconds of one iteration of `body` over `iterations`.

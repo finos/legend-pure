@@ -55,15 +55,17 @@ import java.util.function.Supplier;
  * with an adapter, the engine's own or a Rust transport's. Each transport
  * module invokes it from a test class of its own with the modes it adds.
  * System properties: {@code legend.bench.warmup} (default 5),
- * {@code legend.bench.runs} (default 20), {@code legend.bench.filter} (a
- * substring of the test's path). Results: {@code target/benchmarks/pct-expressions.csv}
- * (one row per test and mode: status, first run, median and minimum in
- * microseconds, and for a Rust mode the Rust side's split) and
- * {@code pct-expressions.md} (the summary per mode).
+ * {@code legend.bench.runs} (default 20), {@code legend.bench.batch} (calls
+ * per timed sample, default 1), {@code legend.bench.filter} (a substring of
+ * the test's path). Results: {@code target/benchmarks/pct-expressions.csv}
+ * (one row per test and mode: status, first run, median, p90 and minimum in
+ * nanoseconds, and for a Rust mode the medians of the Rust side's split in
+ * nanoseconds and reads) and {@code pct-expressions.md} (the summary per
+ * mode, over the tests every mode completed).
  *
  * <p>A test's time is the whole test function: the adapter call, the
  * expression under it and its assertions. The first run is reported apart
- * from the rest.
+ * from the rest; a timed sample is a batch of calls divided by its size.
  */
 public final class PctExpressionsBenchmark
 {
@@ -130,6 +132,7 @@ public final class PctExpressionsBenchmark
     private final List<Mode> modes;
     private final int warmup = Integer.getInteger("legend.bench.warmup", 5);
     private final int runs = Integer.getInteger("legend.bench.runs", 20);
+    private final int batch = Math.max(1, Integer.getInteger("legend.bench.batch", 1));
     private final String filter = System.getProperty("legend.bench.filter", "");
 
     /**
@@ -262,10 +265,11 @@ public final class PctExpressionsBenchmark
     }
 
     /**
-     * Time a run: the first run apart, then warm-up, then the timed runs.
-     * For a Rust mode the Rust side's own split of each timed run is read
-     * back: the lowering, the run of the lowered closure (the evaluator
-     * alone when no bridge read happened during it), and those reads.
+     * Time a run: the first run apart, then warm-up, then the timed samples,
+     * each a batch of runs. For a Rust mode the Rust side's own split of the
+     * last run of each batch is read back, outside the timed region: the
+     * lowering, the run of the lowered closure (the evaluator alone when no
+     * bridge read happened during it), and the reads made during each.
      */
     private Sample time(Run run, Mode mode)
     {
@@ -274,37 +278,42 @@ public final class PctExpressionsBenchmark
         {
             long start = System.nanoTime();
             run.run();
-            sample.firstUs = (System.nanoTime() - start) / 1000L;
+            sample.firstNs = System.nanoTime() - start;
             for (int i = 0; i < this.warmup; i++)
             {
                 run.run();
             }
             long[] times = new long[this.runs];
-            long[] lower = new long[this.runs];
-            long[] evaluator = new long[this.runs];
-            long[] reads = new long[this.runs];
+            long[][] split = new long[4][this.runs];
             for (int i = 0; i < this.runs; i++)
             {
                 start = System.nanoTime();
-                run.run();
-                times[i] = (System.nanoTime() - start) / 1000L;
+                for (int b = 0; b < this.batch; b++)
+                {
+                    run.run();
+                }
+                times[i] = (System.nanoTime() - start) / this.batch;
                 if (mode.isRust())
                 {
-                    long[] split = mode.rustTimings.get();
-                    lower[i] = split[0] / 1000L;
-                    evaluator[i] = split[1] / 1000L;
-                    reads[i] = split[2];
+                    long[] last = mode.rustTimings.get();
+                    for (int k = 0; k < 4; k++)
+                    {
+                        split[k][i] = last[k];
+                    }
                 }
             }
             Arrays.sort(times);
-            Arrays.sort(lower);
-            Arrays.sort(evaluator);
-            Arrays.sort(reads);
-            sample.medianUs = times[times.length / 2];
-            sample.minUs = times[0];
-            sample.lowerUs = lower[lower.length / 2];
-            sample.evaluatorUs = evaluator[evaluator.length / 2];
-            sample.runReads = reads[reads.length / 2];
+            for (long[] part : split)
+            {
+                Arrays.sort(part);
+            }
+            sample.medianNs = times[times.length / 2];
+            sample.p90Ns = times[(int) (times.length * 0.9)];
+            sample.minNs = times[0];
+            sample.lowerNs = split[0][this.runs / 2];
+            sample.runNs = split[1][this.runs / 2];
+            sample.runReads = split[2][this.runs / 2];
+            sample.lowerReads = split[3][this.runs / 2];
             sample.status = "ok";
         }
         catch (Throwable t)
@@ -316,7 +325,7 @@ public final class PctExpressionsBenchmark
 
     private void writeCsv(Path target, Map<String, Sample[]> samples) throws IOException
     {
-        StringBuilder csv = new StringBuilder("test,mode,status,first_us,median_us,min_us,rust_lower_us,rust_evaluator_us,rust_reads_in_run\n");
+        StringBuilder csv = new StringBuilder("test,mode,status,first_ns,median_ns,p90_ns,min_ns,rust_lower_ns,rust_run_ns,rust_reads_in_run,rust_reads_in_lowering\n");
         for (Map.Entry<String, Sample[]> entry : samples.entrySet())
         {
             for (int i = 0; i < this.modes.size(); i++)
@@ -327,8 +336,8 @@ public final class PctExpressionsBenchmark
                     continue;
                 }
                 csv.append(entry.getKey()).append(',').append(this.modes.get(i).label).append(',').append(s.status).append(',')
-                        .append(s.firstUs).append(',').append(s.medianUs).append(',').append(s.minUs).append(',')
-                        .append(s.lowerUs).append(',').append(s.evaluatorUs).append(',').append(s.runReads).append('\n');
+                        .append(s.firstNs).append(',').append(s.medianNs).append(',').append(s.p90Ns).append(',').append(s.minNs).append(',')
+                        .append(s.lowerNs).append(',').append(s.runNs).append(',').append(s.runReads).append(',').append(s.lowerReads).append('\n');
             }
         }
         Files.write(target, csv.toString().getBytes(StandardCharsets.UTF_8));
@@ -353,26 +362,37 @@ public final class PctExpressionsBenchmark
     }
 
     /**
-     * Per mode: how many tests ran, the sum and the median of their medians,
-     * and the geometric mean of the ratio to the first mode over the tests
-     * every mode completed; then the ten tests where the Rust modes lose the
-     * most time against their host modes.
+     * Per mode, over the tests every mode completed: the sum and the median of
+     * their medians, the medians of their p90s, minimums and first runs, the
+     * geometric mean of the ratio to the first mode, and for a Rust mode the
+     * medians of its split; then the ten tests where the Rust modes lose the
+     * most time against their host modes. Times in microseconds, the split in
+     * nanoseconds.
      */
     private String summary(Map<String, Sample[]> samples)
     {
         String baseline = this.modes.get(0).label;
         StringBuilder md = new StringBuilder();
         md.append("# PCT expressions: time per test by mode\n\n");
-        md.append("Warm-up ").append(this.warmup).append(", timed runs ").append(this.runs).append(", times in microseconds; ")
-                .append("ratios over the ").append(countAllOk(samples)).append(" tests every mode completed.\n\n");
-        md.append("| Mode | Tests ok | Sum of medians (ms) | Median of medians | Median first run | Geomean ratio to ").append(baseline)
-                .append(" | Rust lowering (median) | Rust evaluator alone (median) | Evaluator-alone geomean ratio |\n|---|---|---|---|---|---|---|---|---|\n");
+        md.append(String.format(Locale.ROOT, "%s %s (%s), %s; ", System.getProperty("java.vm.vendor"), System.getProperty("java.vm.name"),
+                System.getProperty("java.runtime.version"), System.getProperty("os.arch")));
+        md.append("warm-up ").append(this.warmup).append(", timed samples ").append(this.runs).append(", batch ").append(this.batch)
+                .append("; test times in microseconds, the Rust split in nanoseconds; every column but the first over the ")
+                .append(countAllOk(samples)).append(" tests every mode completed.\n\n");
+        md.append("| Mode | Tests ok | Sum of medians (ms) | Median of medians | Median of p90s | Median of minimums | Median first run | Geomean ratio to ")
+                .append(baseline).append(" | Rust lowering (ns) | Rust run (ns) | Rust run, no host read (ns) | Host reads in run | Evaluator-alone geomean ratio |\n")
+                .append("|---|---|---|---|---|---|---|---|---|---|---|---|---|\n");
         for (int i = 0; i < this.modes.size(); i++)
         {
+            int ok = 0;
             List<Long> medians = new ArrayList<>();
+            List<Long> p90s = new ArrayList<>();
+            List<Long> mins = new ArrayList<>();
             List<Long> firsts = new ArrayList<>();
             List<Long> lowers = new ArrayList<>();
-            List<Long> evaluators = new ArrayList<>();
+            List<Long> runTimes = new ArrayList<>();
+            List<Long> alone = new ArrayList<>();
+            List<Long> reads = new ArrayList<>();
             double logSum = 0;
             double evaluatorLogSum = 0;
             int ratioCount = 0;
@@ -383,37 +403,43 @@ public final class PctExpressionsBenchmark
                 Sample s = row[i];
                 if ((s != null) && "ok".equals(s.status))
                 {
-                    medians.add(s.medianUs);
-                    firsts.add(s.firstUs);
-                    if (rust)
-                    {
-                        lowers.add(s.lowerUs);
-                        if (s.runReads == 0)
-                        {
-                            evaluators.add(s.evaluatorUs);
-                        }
-                    }
+                    ok++;
                 }
-                if (allOk(row) && (row[0].medianUs > 0))
+                if (!allOk(row))
                 {
-                    logSum += Math.log(Math.max(1, row[i].medianUs) / (double) Math.max(1, row[0].medianUs));
-                    ratioCount++;
-                    if (rust && (row[i].runReads == 0))
+                    continue;
+                }
+                medians.add(s.medianNs);
+                p90s.add(s.p90Ns);
+                mins.add(s.minNs);
+                firsts.add(s.firstNs);
+                logSum += Math.log(Math.max(1, s.medianNs) / (double) Math.max(1, row[0].medianNs));
+                ratioCount++;
+                if (rust)
+                {
+                    lowers.add(s.lowerNs);
+                    runTimes.add(s.runNs);
+                    reads.add(s.runReads);
+                    if (s.runReads == 0)
                     {
-                        evaluatorLogSum += Math.log(Math.max(1, row[i].evaluatorUs) / (double) Math.max(1, row[0].medianUs));
+                        alone.add(s.runNs);
+                        evaluatorLogSum += Math.log(Math.max(1, s.runNs) / (double) Math.max(1, row[0].medianNs));
                         evaluatorRatioCount++;
                     }
                 }
             }
-            md.append("| ").append(this.modes.get(i).label).append(" | ").append(medians.size()).append(" | ")
-                    .append(String.format(Locale.ROOT, "%.1f", sum(medians) / 1000.0)).append(" | ")
-                    .append(median(medians)).append(" | ").append(median(firsts)).append(" | ")
+            md.append("| ").append(this.modes.get(i).label).append(" | ").append(ok).append(" | ")
+                    .append(String.format(Locale.ROOT, "%.1f", sum(medians) / 1e6)).append(" | ")
+                    .append(micros(median(medians))).append(" | ").append(micros(median(p90s))).append(" | ")
+                    .append(micros(median(mins))).append(" | ").append(micros(median(firsts))).append(" | ")
                     .append(ratioCount == 0 ? "n/a" : String.format(Locale.ROOT, "%.2fx", Math.exp(logSum / ratioCount))).append(" | ")
                     .append(rust ? String.valueOf(median(lowers)) : "").append(" | ")
-                    .append(rust ? median(evaluators) + " (" + evaluators.size() + " tests with no bridge read in the run)" : "").append(" | ")
-                    .append(rust && (evaluatorRatioCount > 0) ? String.format(Locale.ROOT, "%.2fx", Math.exp(evaluatorLogSum / evaluatorRatioCount)) : "").append(" |\n");
+                    .append(rust ? String.valueOf(median(runTimes)) : "").append(" | ")
+                    .append(rust ? median(alone) + " (" + alone.size() + " tests)" : "").append(" | ")
+                    .append(rust ? String.valueOf(median(reads)) : "").append(" | ")
+                    .append(rust && (evaluatorRatioCount > 0) ? String.format(Locale.ROOT, "%.3fx", Math.exp(evaluatorLogSum / evaluatorRatioCount)) : "").append(" |\n");
         }
-        md.append("\n## Where Rust loses the most against its host engine (median, warm)\n\n| Test |");
+        md.append("\n## Where Rust loses the most against its host engine (median, warm, microseconds)\n\n| Test |");
         StringBuilder rule = new StringBuilder("|---|");
         for (Mode mode : this.modes)
         {
@@ -433,7 +459,7 @@ public final class PctExpressionsBenchmark
                     int host = this.modes.get(i).isRust() ? hostModeOf(i) : -1;
                     if (host >= 0)
                     {
-                        total += row[i].medianUs - row[host].medianUs;
+                        total += row[i].medianNs - row[host].medianNs;
                     }
                 }
                 loss.put(entry.getKey(), total);
@@ -445,11 +471,16 @@ public final class PctExpressionsBenchmark
             md.append("| ").append(e.getKey().substring(e.getKey().lastIndexOf("::") + 2)).append(" |");
             for (Sample s : row)
             {
-                md.append(' ').append(s.medianUs).append(" |");
+                md.append(' ').append(micros(s.medianNs)).append(" |");
             }
             md.append('\n');
         });
         return md.toString();
+    }
+
+    private static String micros(long nanos)
+    {
+        return String.format(Locale.ROOT, "%.1f", nanos / 1000.0);
     }
 
     private static boolean allOk(Sample[] row)
@@ -506,11 +537,13 @@ public final class PctExpressionsBenchmark
     private static final class Sample
     {
         String status = "not run";
-        long firstUs;
-        long medianUs;
-        long minUs;
-        long lowerUs;
-        long evaluatorUs;
+        long firstNs;
+        long medianNs;
+        long p90Ns;
+        long minNs;
+        long lowerNs;
+        long runNs;
         long runReads;
+        long lowerReads;
     }
 }

@@ -22,7 +22,7 @@
 //! ```
 //!
 //! Prints a table and writes `target/benchmarks/expressions-rust.csv`
-//! (expression, engine, median, p90 and minimum in nanoseconds per call).
+//! (expression, mode, median, p90 and minimum in nanoseconds per call).
 //! Each timed sample covers a batch of calls, because the clock on an
 //! Apple Silicon machine ticks every 41.7 ns and a single call would be
 //! quantised to that.
@@ -293,7 +293,7 @@ fn main() {
     let registry = NativeRegistry::standard();
     let mut evaluator = Evaluator::new(&model, &registry);
 
-    let mut csv = String::from("expression,engine,median_ns,p90_ns,min_ns\n");
+    let mut csv = String::from("expression,mode,median_ns,p90_ns,min_ns\n");
     println!(
         "{:<24} {:>12} {:>12} {:>12}",
         "expression", "median ns", "p90 ns", "min ns"
@@ -327,7 +327,7 @@ fn main() {
         let p90 = times[times.len() * 9 / 10];
         let min = times[0];
         println!("{name:<24} {median:>12} {p90:>12} {min:>12}");
-        csv.push_str(&format!("{name},rust,{median},{p90},{min}\n"));
+        csv.push_str(&format!("{name},rust-native,{median},{p90},{min}\n"));
     }
     let dir = std::path::Path::new("target/benchmarks");
     std::fs::create_dir_all(dir).expect("target/benchmarks");

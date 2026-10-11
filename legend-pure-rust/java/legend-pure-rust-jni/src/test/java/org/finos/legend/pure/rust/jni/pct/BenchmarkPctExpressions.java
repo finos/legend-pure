@@ -28,7 +28,7 @@ import org.junit.Test;
  * per call is {@link PureRustEvaluator#lastTimings()}. Not part of the
  * default surefire run; invoke with
  * <pre>
- * mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni -Dtest=BenchmarkPctExpressions -DfailIfNoTests=false
+ * mvn test -pl legend-pure-rust/java/legend-pure-rust-jni -Dtest=BenchmarkPctExpressions -DfailIfNoTests=false
  * </pre>
  * after {@code cargo build --release --workspace} (and
  * {@code -Dlegend.rust.libdir=.../target/release}) for a Rust side that is
