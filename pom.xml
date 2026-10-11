@@ -37,6 +37,7 @@
         <module>legend-pure-store</module>
         <module>legend-pure-lsp</module>
         <module>legend-pure-docs</module>
+        <module>legend-pure-rust/java</module>
     </modules>
 
     <properties>
@@ -658,11 +659,6 @@
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-runtime-java-engine-shared</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-runtime-rust-evaluator-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

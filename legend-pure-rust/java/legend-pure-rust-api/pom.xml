@@ -17,15 +17,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.finos.legend.pure</groupId>
-        <artifactId>legend-pure-runtime</artifactId>
+        <artifactId>legend-pure-rust</artifactId>
         <version>${revision}</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>legend-pure-runtime-rust-evaluator-api</artifactId>
+    <artifactId>legend-pure-rust-api</artifactId>
     <packaging>jar</packaging>
-    <name>Legend Pure - Runtime - Rust Evaluator - API</name>
+    <name>Legend Pure - Rust - API</name>
 
     <properties>
         <maven.compiler.release>17</maven.compiler.release>

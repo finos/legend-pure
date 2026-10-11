@@ -17,21 +17,21 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.finos.legend.pure</groupId>
-        <artifactId>legend-pure-runtime</artifactId>
+        <artifactId>legend-pure-rust</artifactId>
         <version>${revision}</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>legend-pure-runtime-rust-evaluator-jni</artifactId>
+    <artifactId>legend-pure-rust-ffm</artifactId>
     <packaging>jar</packaging>
-    <name>Legend Pure - Runtime - Rust Evaluator - JNI</name>
+    <name>Legend Pure - Rust - FFM</name>
 
     <properties>
-        <maven.compiler.release>17</maven.compiler.release>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <legend.rust.libdir>${project.basedir}/../../legend-pure-rust/target/debug</legend.rust.libdir>
+        <maven.compiler.release>25</maven.compiler.release>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
+        <legend.rust.libdir>${project.basedir}/../../target/debug</legend.rust.libdir>
     </properties>
 
     <profiles>
@@ -42,7 +42,7 @@
                     <family>mac</family>
                 </os>
                 <file>
-                    <missing>${basedir}/../../legend-pure-rust/target/debug/libpure_rust_jni.dylib</missing>
+                    <missing>${basedir}/../../target/debug/libpure_rust_ffi.dylib</missing>
                 </file>
             </activation>
             <properties>
@@ -57,7 +57,7 @@
                     <name>Linux</name>
                 </os>
                 <file>
-                    <missing>${basedir}/../../legend-pure-rust/target/debug/libpure_rust_jni.so</missing>
+                    <missing>${basedir}/../../target/debug/libpure_rust_ffi.so</missing>
                 </file>
             </activation>
             <properties>
@@ -71,7 +71,7 @@
                     <family>windows</family>
                 </os>
                 <file>
-                    <missing>${basedir}/../../legend-pure-rust/target/debug/pure_rust_jni.dll</missing>
+                    <missing>${basedir}/../../target/debug/pure_rust_ffi.dll</missing>
                 </file>
             </activation>
             <properties>
@@ -83,7 +83,7 @@
     <dependencies>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-rust-evaluator-api</artifactId>
+            <artifactId>legend-pure-rust-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
@@ -121,6 +121,19 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-rust-jni</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-rust-jni</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -148,7 +161,7 @@
                     <sourceDirectory>${project.basedir}/src/main/resources</sourceDirectory>
                     <purePlatformVersion>${project.version}</purePlatformVersion>
                     <extraRepositories>
-                        <extraRepository>${project.basedir}/src/main/resources/platform_rust_jni.definition.json</extraRepository>
+                        <extraRepository>${project.basedir}/src/main/resources/platform_rust_ffm.definition.json</extraRepository>
                     </extraRepositories>
                 </configuration>
                 <executions>
@@ -177,7 +190,7 @@
                         <configuration>
                             <mainClass>org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaCodeGeneration</mainClass>
                             <arguments>
-                                <argument>platform_rust_jni</argument>
+                                <argument>platform_rust_ffm</argument>
                                 <argument>${project.build.directory}/generated-test-resources</argument>
                                 <argument>${project.build.directory}</argument>
                             </arguments>
@@ -195,8 +208,8 @@
                             <mainClass>org.finos.legend.pure.runtime.java.interpreted.testHelper.PCTReportGenerator</mainClass>
                             <arguments>
                                 <argument>${project.build.directory}/classes/pct-reports/</argument>
-                                <argument>org.finos.legend.pure.rust.jni.pct.Test_RustJni_EssentialFunctions_PCT</argument>
-                                <argument>org.finos.legend.pure.rust.jni.pct.Test_RustJni_GrammarFunctions_PCT</argument>
+                                <argument>org.finos.legend.pure.rust.ffm.pct.Test_RustFfm_EssentialFunctions_PCT</argument>
+                                <argument>org.finos.legend.pure.rust.ffm.pct.Test_RustFfm_GrammarFunctions_PCT</argument>
                             </arguments>
                             <includeProjectDependencies>true</includeProjectDependencies>
                             <classpathScope>test</classpathScope>
@@ -212,8 +225,8 @@
                             <mainClass>org.finos.legend.pure.runtime.java.compiled.testHelper.PCTReportGenerator</mainClass>
                             <arguments>
                                 <argument>${project.build.directory}/classes/pct-reports/</argument>
-                                <argument>org.finos.legend.pure.rust.jni.pct.Test_RustJniCompiled_EssentialFunctions_PCT</argument>
-                                <argument>org.finos.legend.pure.rust.jni.pct.Test_RustJniCompiled_GrammarFunctions_PCT</argument>
+                                <argument>org.finos.legend.pure.rust.ffm.pct.Test_RustFfmCompiled_EssentialFunctions_PCT</argument>
+                                <argument>org.finos.legend.pure.rust.ffm.pct.Test_RustFfmCompiled_GrammarFunctions_PCT</argument>
                             </arguments>
                             <includeProjectDependencies>true</includeProjectDependencies>
                             <classpathScope>test</classpathScope>
@@ -223,26 +236,27 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <source>17</source>
-                </configuration>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>10.21.4</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <source>25</source>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <argLine>--enable-native-access=ALL-UNNAMED</argLine>
                     <systemPropertyVariables>
                         <legend.pure.rust.libdir>${legend.rust.libdir}</legend.pure.rust.libdir>
                         <legend.pct.rust.manifestDir>${project.basedir}/src/test/resources</legend.pct.rust.manifestDir>
