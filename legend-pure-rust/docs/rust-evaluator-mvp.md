@@ -814,13 +814,56 @@ loads the evaluator (`--add-modules jdk.incubator.foreign
 IDE runners), the 17 API is rewritten for the final one of JDK 22
 (`Linker`, `Arena`, zero-length `MemorySegment` for pointers), no
 exception may cross an upcall, and confined scopes are single-thread
-while `start` runs on arbitrary threads. Decision: stay on JNI; revisit
-when the JDK floor reaches 22. The string cost, if it matters, is reachable
-within JNI (`GetStringUTFRegion` instead of `GetStringUTFChars`; not
-measured). The module itself moved to release 17 the same day (profile
-`rust-evaluator-jdk17` in `legend-pure-runtime/pom.xml`); Java 17 language
-features in its sources wait on the root's checkstyle 8.25 pin, which
-predates records, switch expressions and pattern `instanceof`.
+while `start` runs on arbitrary threads. Decision on a 17 floor: stay on
+JNI. The string cost, if it matters, is reachable within JNI
+(`GetStringUTFRegion` instead of `GetStringUTFChars`; not measured). The
+module itself moved to release 17 the same day (profile
+`rust-evaluator-jdk17` in `legend-pure-runtime/pom.xml`).
+
+The same spike on the final API (JDK 25, the same program on 27), same
+shapes, median ns per operation, JNI against FFM on the same JVM: a
+`long` downcall 2.1 against 1.9; a 40-byte string in 330 against 55 with
+a confined arena per call (36 with a reused segment); a `long` upcall
+from Rust 109 against 33; the `long` plus short string upcall pair, the
+shape of a property read through the bridge today, 536 against 93;
+binding 198 per `GetMethodID` against 213 per downcall handle and 3.3 µs
+per upcall stub, paid once per evaluator. Upcall stubs die with their
+`Arena` (one shared arena per evaluator, closed in `close()` after the
+context is freed; closing costs 6 µs, never per call); confined
+`allocateFrom` per call is 55 ns; `reinterpret` costs nothing but is a
+restricted-method site; an exception in an upcall terminates the JVM, so
+every callback keeps the sentinel path `failureOf` already gives; and
+since JDK 24 (JEP 472) the `--enable-native-access` warning fires for
+JNI's `System.load` as well, so the launcher flag is a cost both
+mechanisms now share. On a 25 floor the decision changes: FFM is the next
+crossing design (one flat layout in place of `describe`'s fifteen field
+reads, strings through segments, bindings cached once per evaluator); the
+design rules come first under either mechanism. A 25 floor means profile
+`<jdk>[25,)`, and that legend-engine on 11/17 cannot consume the module
+until its own floor moves; today the module is a test-time artifact and
+the `Rust_JNI` adapter, which a 25 floor does not change.
+
+Java 25 for the module's sources, assessed the same day, ranked: worth
+doing and not a 25 gain, a `Cleaner` for `RustCoreInstance` proxies and
+a weak or cleaned map of evaluators per execution support
+(`CompiledEvalRust.evaluators` grows for the JVM's life; the cleanup
+action must take the evaluator's monitor); worth doing with FFM, `Arena`
+lifetimes; worth checking, compact object headers
+(`-XX:+UseCompactObjectHeaders`, a product flag in 25, off by default) for
+the many small description objects; cosmetic once checkstyle allows,
+pattern `instanceof` and switch expressions; not worth it, a record for
+`NodeDescription` (JNI reads record components by name, so nothing
+changes on the Rust side, but the description is filled progressively and
+a record needs a 21-component constructor), a `Timings` record, a sealed
+`RustEngineHost` (nothing switches on the host, and it would forbid an
+engine-supplied one); not applicable, virtual threads and scoped values
+(no Java per-thread state; every evaluator method is synchronized and
+enters a native frame). Checkstyle: the root pins 8.25, which rejects
+`sealed`; 8.42 parses records, sealed types, patterns, switch expressions
+and text blocks, and a module-only raise works through the plugin's
+`<dependencies>` in the module pom (10.21.4 verified against the root
+`checkstyle.xml`, at the cost of ten `CustomImportOrder` hits on blank
+lines before `java.*` imports).
 
 **Deviations from the plan as first written** (recorded, as rule 6 asks).
 The archived JNI crate's tagged-union marshalling was not fished:
@@ -1603,6 +1646,10 @@ flag it in the commit message.
    lowering.*
 7. **The JDK floor of the Java module and the bridge mechanism.** The
    rust-evaluator module compiles with release 17 (decided 2026-10-11, the
-   author's edit) and joins the reactor only on JDK 17+; the bridge stays
-   on JNI until the floor reaches 22 (Step 2, "JNI or the Foreign Function
-   & Memory API"). *Default: as decided.*
+   author's edit) and joins the reactor only on JDK 17+; on that floor the
+   bridge stays on JNI. Measured on JDK 25 the same day (Step 2, "JNI or
+   the Foreign Function & Memory API"), FFM wins the shapes that matter
+   (a property read 536 against 93 ns), so a 25 floor for the module makes
+   FFM the next crossing design; legend-engine on 11/17 could not consume
+   the module until its floor moves, which today changes nothing. *Default:
+   17 and JNI until the author raises the floor.*
