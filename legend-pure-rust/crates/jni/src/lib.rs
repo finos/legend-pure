@@ -245,6 +245,17 @@ fn live_evaluator<'a>(context_ptr: jlong) -> Result<RefMut<'a, Evaluator>, PureE
     // SAFETY: `context_ptr` is the value `nativeInitContext` returned: Java
     // keeps it in one field, frees it once in `close()` and refuses every
     // call after (`checkOpen`).
+    let session = unsafe { session(context_ptr) }?;
+    session.live()?;
+    session.enter()
+}
+
+/// The evaluator behind `context_ptr` for housekeeping (counting and
+/// releasing handles), refused only while another call on it runs.
+fn any_evaluator<'a>(context_ptr: jlong) -> Result<RefMut<'a, Evaluator>, PureException> {
+    // SAFETY: `context_ptr` is the value `nativeInitContext` returned: Java
+    // keeps it in one field, frees it once in `close()` and refuses every
+    // call after (`checkOpen`).
     unsafe { session(context_ptr) }?.enter()
 }
 
@@ -612,7 +623,7 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeL
     if context_ptr == 0 {
         return 0;
     }
-    std::panic::catch_unwind(|| match live_evaluator(context_ptr) {
+    std::panic::catch_unwind(|| match any_evaluator(context_ptr) {
         Ok(ev) => i64::try_from(ev.context.live_handle_count()).unwrap_or(i64::MAX),
         Err(_) => -1,
     })
@@ -650,7 +661,7 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeF
 ) {
     if context_ptr != 0 {
         let _ = std::panic::catch_unwind(|| {
-            if let Ok(ev) = live_evaluator(context_ptr) {
+            if let Ok(ev) = any_evaluator(context_ptr) {
                 ev.context.release(handle);
             }
         });

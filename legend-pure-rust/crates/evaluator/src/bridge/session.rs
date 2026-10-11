@@ -47,23 +47,33 @@ impl<C> Session<C> {
     }
 
     /// Enter the context for one call: the one mutable view, released
-    /// when dropped.
+    /// when dropped. A poisoned context can still be entered, for the
+    /// housekeeping a host does before closing it; a call that runs the
+    /// evaluator checks [`live`](Self::live) first.
     ///
     /// # Errors
     /// A call made while another call on the same context is still
-    /// running (re-entry from the host), or a context poisoned by an
-    /// earlier panic.
+    /// running (re-entry from the host).
     pub fn enter(&self) -> Result<RefMut<'_, C>, PureException> {
-        if self.poisoned.get() {
-            return Err(boundary_error(
-                "the evaluator is poisoned by an earlier panic; close it and create a new one",
-            ));
-        }
         self.context.try_borrow_mut().map_err(|_| {
             unsupported(
                 "a call into the Rust evaluator while another call on it is running (re-entrant call from the host)",
             )
         })
+    }
+
+    /// Whether the context may still run: not poisoned by an earlier
+    /// panic.
+    ///
+    /// # Errors
+    /// The context is poisoned.
+    pub fn live(&self) -> Result<(), PureException> {
+        if self.poisoned.get() {
+            return Err(boundary_error(
+                "the evaluator is poisoned by an earlier panic; close it and create a new one",
+            ));
+        }
+        Ok(())
     }
 
     /// Mark the context unusable after a panic unwound through a call
@@ -104,10 +114,12 @@ mod tests {
     }
 
     #[test]
-    fn a_poisoned_session_refuses_every_call() {
+    fn a_poisoned_session_is_not_live_but_can_still_be_entered_and_closed() {
         let session = Session::new(0_i32);
+        session.live().unwrap();
         session.poison();
-        assert!(session.enter().is_err());
+        assert!(session.live().is_err());
+        assert!(session.enter().is_ok());
         session.ensure_idle().unwrap();
     }
 }
