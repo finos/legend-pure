@@ -7,8 +7,9 @@
 > compiled 321 / 327 and 132 / 136; the bridge within 1.15x of the
 > interpreted engine's own adapter; rebased on finos master the same day,
 > where the corpus is 346 and 137 tests: 339 / 346 and 133 / 137,
-> compiled 340 / 346 and 133 / 137). Next: Step 3, read PELT, with the
-> `Directory` trait of Step 4 (Appendix C item 6). Archive tag
+> compiled 340 / 346 and 133 / 137). Next: Step 2c, one C ABI for every
+> host (decided 2026-10-11), then Step 3, read PELT, with the `Directory`
+> trait of Step 4 (Appendix C item 6). Archive tag
 > `archive/pre-evaluator-extract-2026-10`.**
 > This document is
 > self-contained. It assumes the reader knows Legend Pure and legend-engine as
@@ -79,13 +80,14 @@ interpreted engine's own adapter (median 94 µs against 82 µs), the
 lowering cached per lambda definition. The order from here, each phase
 with its gate:
 
-0. **Step 2c** (proposed, the author's decision) — a second transport,
-   FFM on JDK 25 beside JNI on 17, in three phases: the seam (the
-   host-agnostic bridge core into the evaluator crate behind one trait,
-   a shared Java module), the FFM crate and module with a `Rust_FFM`
-   adapter measured beside `Rust_JNI`, then the deletion of JNI when
-   legend-engine's floor moves. Phase 1 serves Step 3 as well.
-1. **Step 3 and Step 4** (next) — read PELT, the `Directory` trait, the
+0. **Step 2c** (next; decided 2026-10-11) — one C ABI for every host, in
+   three phases: the seam (the host-agnostic bridge core into the
+   evaluator crate behind one trait; three Java modules, `-api`, `-jni`,
+   `-ffm`), the `ffi` crate with its hand-written header and the Java
+   client on JDK 25 with a `Rust_FFM` adapter measured beside `Rust_JNI`,
+   then the deletion of JNI when legend-engine's floor moves. Phase 1
+   serves Step 3 as well; Python follows Step 3.
+1. **Step 3 and Step 4** — read PELT, the `Directory` trait, the
    static graph: the per-call lowering disappears for everything static,
    and the `Rust_Native` run (Step 2, the paragraph of that name) resolves
    the surveyor instead of stopping at `MetadataNotFound`.
@@ -1073,7 +1075,7 @@ algorithms (`match` walks every branch's type against the value,
 the same algorithm with the JIT behind it. The four `Rust_JNI` numbers
 were unchanged after every item.
 
-### Step 2c — A second transport: the Foreign Function & Memory API (proposed 2026-10-11, awaiting the author's decision)
+### Step 2c — One C ABI for every host; Java through FFM first, JNI deleted later (decided 2026-10-11, next)
 
 **Goal.** One host surface in Rust, a C ABI, in place of a Java-only
 one. JNI binds the evaluator to the JVM; an `extern "C"` crate serves
@@ -1198,10 +1200,19 @@ point of a Rust evaluator. Nothing in the Rust crate changes for it; the
 C header is the contract, and `tests/pct_native.rs` becomes its oracle
 once the `Rust_Native` run is green.
 
-**Order against Step 3.** Phase 1 comes first in any order: Step 3's
-`Directory` needs the same seam, and the C header of phase 2 can be
-written against the phase 1 trait before any client exists. For the Java
-client the choice is the author's.
+**Decided 2026-10-11.** Order: phase 1, phase 2 with the Java client,
+then Step 3, the benchmark run at both points. The header is
+hand-written, `crates/ffi/include/pure_rust.h`, reviewed as the contract,
+with a test asserting the exported symbols match it; no generator. Three
+Java modules from the start: `legend-pure-runtime-rust-evaluator-api`
+(release 17: hosts, proxies, descriptions, conversions, exception kinds,
+the PCT and benchmark tooling), `legend-pure-runtime-rust-evaluator-jni`
+(release 17, the current module renamed, since nothing has depended on
+its artifact id yet) and `legend-pure-runtime-rust-evaluator-ffm`
+(release 25). Phase 2's client is Java only; Python comes after Step 3.
+Phase 1 comes first in any order: Step 3's `Directory` needs the same
+seam, and the C header of phase 2 can be written against the phase 1
+trait before any client exists.
 Before Step 3, the per-node reads are still the bridge's bulk, so the
 side-by-side benchmark shows the transport's largest visible gain; after
 Step 3, the platform's metadata is loaded on the Rust side, a PCT test
@@ -1807,6 +1818,6 @@ flag it in the commit message.
    the Foreign Function & Memory API"), FFM wins the shapes that matter
    (a property read 536 against 93 ns), so a 25 floor for the module makes
    FFM the next crossing design; legend-engine on 11/17 could not consume
-   the module until its floor moves, which today changes nothing. Step 2c
-   proposes both transports side by side until then. *Default: 17 and JNI
-   until the author raises the floor or accepts Step 2c.*
+   the module until its floor moves, which today changes nothing. *Decided
+   2026-10-11: Step 2c, both transports side by side over one C ABI, JNI
+   deleted when the engine's floor moves.*
