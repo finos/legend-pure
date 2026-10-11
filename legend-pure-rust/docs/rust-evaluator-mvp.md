@@ -1301,6 +1301,29 @@ read 0; and a `pure_leaf` float crosses as a `double`, which the client
 renders as Rust's `Display` does for `newFloat(String)` (`-0.0` prints
 `0` where Rust prints `-0`; no corpus test reaches it).
 
+**Everything Rust inside `legend-pure-rust/` (decided 2026-10-11, the
+author's review).** No Rust reference in the core Pure modules: the
+platform (`legend-pure-core`), the Java engines, the DSLs and the stores
+are identical to finos master. Each transport module ships its own Pure
+repository, as the DSL and store modules do (a definition JSON, a
+`CodeRepositoryProvider`, a PAR built by the Pure Maven plugins): the JNI
+module's declares `evalRust` and the `Rust_JNI` adapter, the FFM
+module's `evalRustFfm` and `Rust_FFM`, a shared one the `Rust_Native`
+adapter; the adapters leave the platform's `meta::pure::test::pct`
+package for the repositories' own. The interpreted natives register
+through each module's `InterpretedExtension` as before; the compiled ones
+through a `CompiledExtension` whose `getExtraNatives()` returns the
+module's native, the module generating its repository's Java at build
+time as the compiled engine does for `platform`, so the generated code
+calls the module's own class and the compiled engine's service
+interfaces go. The Java modules move under `legend-pure-rust/java/`,
+whose `pom.xml` aggregates them with the JDK 17 and JDK 25 profiles; the
+root `pom.xml` gains one module line, `legend-pure-rust/java` (not
+`legend-pure-rust`, so `mvn clean` never touches cargo's `target/`).
+Outside `legend-pure-rust/`, a two-line pointer in the root `CLAUDE.md`
+and the row in `docs/README.md` remain; the other documents return to
+finos master.
+
 **Phase 3 — deletion.** When legend-engine's floor reaches 25: delete
 `crates/jni`, the JNI module, `evalRust` and the `Rust_JNI` adapter with
 its manifests and reports; the shared module and the FFM module remain,
