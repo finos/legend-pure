@@ -398,3 +398,44 @@ fn new_populates_the_association_inverse() {
     assert!(matches!(p, Value::Object(_)));
     assert_eq!(employees, p);
 }
+
+/// The M3 `KeyExpression` node of `^Person(name='Ann')` evaluates to a
+/// heap object the platform `new(class, id, keyExpressions)` overload
+/// decodes: the Java call shape, no retargeting.
+#[test]
+fn key_expression_nodes_construct_through_the_platform_new_overload() {
+    let (model, person) = person_model();
+    let registry = NativeRegistry::standard();
+    let mut eval = Evaluator::new(&model, &registry);
+    eval.context_mut().push_scope();
+    let key = |k: &str, v: ValueSpec| {
+        expr::spec(legend_pure_metamodel::types::ExprKind::KeyExpression {
+            key: k.into(),
+            expression: v,
+            add: false,
+        })
+    };
+    let call = expr::call(
+        "new_Class_1__String_1__KeyExpression_MANY__T_1_",
+        vec![
+            expr::type_ref(named(person)),
+            expr::string(""),
+            expr::collection(vec![
+                key("name", expr::string("Ann")),
+                key("age", expr::int(41)),
+            ]),
+        ],
+    );
+    let result = eval.eval(&call).unwrap();
+    let Value::Object(obj) = &result else {
+        panic!("expected an object, got {result:?}");
+    };
+    assert_eq!(
+        eval.heap().get_property(obj, "name").unwrap(),
+        Value::String("Ann".into())
+    );
+    assert_eq!(
+        eval.heap().get_property(obj, "age").unwrap(),
+        Value::Integer(41)
+    );
+}

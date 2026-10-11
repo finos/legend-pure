@@ -43,9 +43,9 @@ fn ffi_error(message: String) -> PureException {
     )
 }
 
-fn unsupported(what: &'static str) -> PureException {
+fn unsupported(what: &str) -> PureException {
     PureException::execution(
-        PureRuntimeError::Unsupported(what),
+        PureRuntimeError::Unsupported(what.to_string()),
         legend_pure_metamodel::source_info::SourceInfo::new("<ffi>", 0, 0, 0, 0),
         Vec::new(),
     )

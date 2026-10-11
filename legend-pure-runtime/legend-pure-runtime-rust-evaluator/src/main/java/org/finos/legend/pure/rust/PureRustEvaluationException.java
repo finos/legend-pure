@@ -55,6 +55,7 @@ public class PureRustEvaluationException extends PureRustException
     }
 
     private final Kind kind;
+    private final String info;
     private final String sourceInfo;
     private final List<String> callStack;
     private final String constraintId;
@@ -72,6 +73,7 @@ public class PureRustEvaluationException extends PureRustException
     {
         super(message);
         this.kind = Kind.EXECUTION_ERROR;
+        this.info = message;
         this.sourceInfo = null;
         this.callStack = Collections.emptyList();
         this.constraintId = null;
@@ -89,6 +91,7 @@ public class PureRustEvaluationException extends PureRustException
      * matching the cdylib-older-than-JAR forward-compatibility policy.
      */
     public PureRustEvaluationException(String message,
+                                       String info,
                                        String kindStr,
                                        String sourceInfo,
                                        String[] callStack,
@@ -98,6 +101,7 @@ public class PureRustEvaluationException extends PureRustException
     {
         super(message);
         this.kind = parseKind(kindStr);
+        this.info = (info == null) ? message : info;
         this.sourceInfo = sourceInfo;
         this.callStack = callStack == null
                 ? Collections.emptyList()
@@ -115,7 +119,17 @@ public class PureRustEvaluationException extends PureRustException
      */
     public static PureRustEvaluationException unsupported(String what)
     {
-        return new PureRustEvaluationException("Unsupported: " + what, Kind.UNSUPPORTED.name(), null, null, null, null, null);
+        return new PureRustEvaluationException("Unsupported: " + what, what, Kind.UNSUPPORTED.name(), null, null, null, null, null);
+    }
+
+    /**
+     * The failure text without the kind prefix that {@link #getMessage()}
+     * carries: what Pure's {@code PureException.getInfo()} reports for the
+     * same failure.
+     */
+    public String getInfo()
+    {
+        return this.info;
     }
 
     public Kind getKind()

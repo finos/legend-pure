@@ -43,6 +43,8 @@
 
 use std::fmt;
 
+use legend_pure_metamodel::types::DateValue;
+
 use crate::error::PureRuntimeError;
 
 /// The precision level of the time component in a [`PureDate`].
@@ -278,6 +280,49 @@ impl PureDate {
     #[must_use]
     pub fn precision(&self) -> DatePrecision {
         self.precision
+    }
+
+    /// The literal form of this date: the `DateValue` a date literal in
+    /// the expression tree carries, so a date read from another graph can
+    /// be re-emitted as a literal. UTC; no offset.
+    #[must_use]
+    pub fn to_date_value(&self) -> DateValue {
+        match self.precision {
+            DatePrecision::Year => DateValue::StrictDate {
+                year: self.get_year(),
+                month: None,
+                day: None,
+            },
+            DatePrecision::Month => DateValue::StrictDate {
+                year: self.get_year(),
+                month: Some(self.inner.month()),
+                day: None,
+            },
+            DatePrecision::Day => DateValue::StrictDate {
+                year: self.get_year(),
+                month: Some(self.inner.month()),
+                day: Some(self.inner.day()),
+            },
+            DatePrecision::Time(tp) => {
+                let subsecond_digits = match tp {
+                    TimePrecision::Subsecond(d) => d,
+                    _ => 0,
+                };
+                DateValue::DateTime {
+                    year: self.get_year(),
+                    month: self.inner.month(),
+                    day: self.inner.day(),
+                    hour: self.inner.hour(),
+                    minute: self.inner.minute(),
+                    second: self.inner.second(),
+                    subsecond_nanos: self.inner.subsec_nanosecond(),
+                    subsecond_digits,
+                    has_minutes: tp >= TimePrecision::Minute,
+                    has_seconds: tp >= TimePrecision::Second,
+                    tz_offset_minutes: None,
+                }
+            }
+        }
     }
 
     /// Borrow the underlying `jiff::civil::DateTime` directly. Useful
@@ -605,6 +650,25 @@ impl StrictTime {
     #[must_use]
     pub fn second(&self) -> i8 {
         self.0.second()
+    }
+
+    /// The literal form of this time (see [`PureDate::to_date_value`]).
+    #[must_use]
+    pub fn to_date_value(&self) -> DateValue {
+        let nanos = self.nanosecond();
+        let digits = if nanos == 0 {
+            0
+        } else {
+            let text = format!("{nanos:09}");
+            u8::try_from(text.trim_end_matches('0').len()).unwrap_or(9)
+        };
+        DateValue::StrictTime {
+            hour: self.hour(),
+            minute: self.minute(),
+            second: self.second(),
+            subsecond_nanos: nanos,
+            subsecond_digits: digits,
+        }
     }
 
     /// Get the nanosecond (0-999_999_999).

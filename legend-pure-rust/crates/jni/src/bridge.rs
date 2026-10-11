@@ -112,6 +112,7 @@ impl Default for JniHandleTable {
 pub struct BridgeMethods {
     pub describe: JMethodID,
     pub property_values: JMethodID,
+    pub captured_value: JMethodID,
     pub new_boolean: JMethodID,
     pub new_integer: JMethodID,
     pub new_float: JMethodID,
@@ -147,6 +148,11 @@ impl BridgeMethods {
             property_values: env.get_method_id(
                 &cls,
                 "propertyValues",
+                format!("(JLjava/lang/String;)[{desc}"),
+            )?,
+            captured_value: env.get_method_id(
+                &cls,
+                "capturedValue",
                 format!("(JLjava/lang/String;)[{desc}"),
             )?,
             new_boolean: env.get_method_id(&cls, "newBoolean", format!("(Z){ci}"))?,
@@ -214,6 +220,29 @@ impl BridgeShared {
     #[must_use]
     pub fn model(&self) -> &PureModel {
         unsafe { &*self.model }
+    }
+
+    /// End of one execution: drop every Java-backed node's property cache
+    /// (see [`JavaNode::clear_cache`](crate::java_node::JavaNode::clear_cache))
+    /// and forget the nodes that nothing holds any more.
+    pub fn end_execution(&self) {
+        let nodes: Vec<ObjectHandle> = self
+            .java_nodes
+            .borrow()
+            .values()
+            .filter_map(std::rc::Weak::upgrade)
+            .collect();
+        for handle in &nodes {
+            if let HeapEntry::Typed(obj) = &*handle.borrow()
+                && let Some(node) = obj.as_any().downcast_ref::<crate::java_node::JavaNode>()
+            {
+                node.clear_cache();
+            }
+        }
+        drop(nodes);
+        self.java_nodes
+            .borrow_mut()
+            .retain(|_, weak| weak.strong_count() > 0);
     }
 
     /// Live Java-backed nodes plus Rust objects held for Java.

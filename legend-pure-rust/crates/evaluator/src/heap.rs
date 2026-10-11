@@ -38,6 +38,7 @@ use std::rc::Rc;
 use im_rc::Vector as PVector;
 use legend_pure_metamodel::ids::{ElementId, PackageId};
 use legend_pure_metamodel::model::PureModel;
+use legend_pure_metamodel::source_info::SourceInfo;
 use smol_str::SmolStr;
 
 use crate::error::PureRuntimeError;
@@ -114,6 +115,35 @@ pub trait TypedObject: 'static {
     /// is empty, which keeps `copy` from cloning anything it cannot see.
     fn property_names(&self) -> Vec<SmolStr> {
         Vec::new()
+    }
+
+    /// The node's own name (`getName()`) when the object is a node of
+    /// another graph: a function's mangled signature, a variable's name.
+    /// The default is none.
+    fn node_name(&self) -> Option<SmolStr> {
+        None
+    }
+
+    /// User path (`a::b::C`) when the object is a packageable element of
+    /// another graph; the lowering unifies such nodes with model elements
+    /// by this path. The default is none.
+    fn user_path(&self) -> Option<SmolStr> {
+        None
+    }
+
+    /// Source span of the node, when its graph knows one. The default is
+    /// none.
+    fn source_info(&self) -> Option<SourceInfo> {
+        None
+    }
+
+    /// Values of a variable this node captured from the scope it was
+    /// evaluated in (a lambda carrying its context). `None` when the
+    /// object is not such a closure; `Some(empty)` when it is but holds
+    /// no variable of that name. The default is `None`.
+    fn captured_values(&self, name: &str) -> Option<PVector<Value>> {
+        let _ = name;
+        None
     }
 
     /// Replace every value of a property (`mutateSet` semantics). The

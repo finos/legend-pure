@@ -309,45 +309,6 @@ impl NativeRegistry {
         self.functions.get(name).map(AsRef::as_ref)
     }
 
-    /// Look up a native function by simple name prefix.
-    ///
-    /// Searches for a registered function whose FQN key starts with
-    /// `"{simple_name}_"`. Fallback path for calls the compiler lowered
-    /// with a simple name it couldn't pin to an FQN (e.g. a polymorphic
-    /// `coll->map(fn)` inside a generic-context body).
-    ///
-    /// When several overloads share a simple name, prefer the **generic**
-    /// overload — the one whose first parameter is a type-parameter
-    /// (a single uppercase letter in the mangled key, e.g. `map_T_MANY__…`)
-    /// — over a concretely-typed specialization (`map_Relation_1__…`).
-    /// The fallback only fires when the compiler *couldn't* resolve the FQN,
-    /// which happens precisely in generic contexts where the receiver is a
-    /// type parameter; a concrete relation/extension overload would have been
-    /// pinned directly and never reach here. Within each rank we keep the
-    /// previous alphabetical tie-break for determinism. This is structural
-    /// (reads the mangled key shape), not a per-name special case.
-    #[must_use]
-    pub fn find_by_prefix(&self, simple_name: &str) -> Option<&dyn NativeFunction> {
-        let prefix = format!("{simple_name}_");
-        self.functions
-            .iter()
-            .filter(|(key, _)| key.starts_with(&prefix))
-            .min_by_key(|(key, _)| (Self::prefix_overload_rank(key, &prefix), (*key).clone()))
-            .map(|(_, func)| func.as_ref())
-    }
-
-    /// Rank a mangled native key for [`find_by_prefix`] tie-breaking:
-    /// `0` when the first parameter slot is a generic type-parameter (a
-    /// single uppercase ASCII letter immediately followed by `_`), `1`
-    /// otherwise. Lower sorts first, so the polymorphic overload wins over
-    /// a concretely-typed specialization sharing the same simple name.
-    fn prefix_overload_rank(key: &str, prefix: &str) -> u8 {
-        let rest = &key[prefix.len()..];
-        let first_seg = rest.split('_').next().unwrap_or("");
-        let is_generic = first_seg.len() == 1 && first_seg.chars().all(|c| c.is_ascii_uppercase());
-        u8::from(!is_generic)
-    }
-
     /// Look up a native function, returning a `FunctionNotFound` error if missing.
     ///
     /// # Errors
@@ -693,47 +654,6 @@ mod tests {
         reg.register("a", ConstantFn(Value::Unit));
         reg.register("b", ConstantFn(Value::Unit));
         assert_eq!(reg.len(), 2);
-    }
-
-    #[test]
-    fn find_by_prefix_prefers_generic_overload() {
-        // An unresolved simple `map` with both a concrete relation overload
-        // and the polymorphic platform overload must pick the GENERIC one
-        // (type-parameter first slot), not the alphabetically-earlier
-        // `map_Relation_*`. The fallback only fires in generic contexts where
-        // the receiver is a type parameter, so the polymorphic overload is the
-        // correct default.
-        let mut reg = NativeRegistry::new();
-        reg.register(
-            "map_Relation_1__Function_1__V_MANY_",
-            ConstantFn(Value::Integer(1)),
-        );
-        reg.register(
-            "map_T_MANY__Function_1__V_MANY_",
-            ConstantFn(Value::Integer(2)),
-        );
-        let func = reg.find_by_prefix("map").expect("a map overload");
-        let result = func.execute(&[], &mut MockCtx).unwrap();
-        assert_eq!(
-            result.into_value(),
-            Value::Integer(2),
-            "find_by_prefix must pick the generic map_T_* overload over the \
-             alphabetically-earlier concrete map_Relation_*",
-        );
-    }
-
-    #[test]
-    fn prefix_overload_rank_generic_before_concrete() {
-        assert_eq!(
-            NativeRegistry::prefix_overload_rank("map_T_MANY__Function_1__V_MANY_", "map_"),
-            0,
-            "single-uppercase first slot is the generic overload (rank 0)",
-        );
-        assert_eq!(
-            NativeRegistry::prefix_overload_rank("map_Relation_1__Function_1__V_MANY_", "map_"),
-            1,
-            "concrete first slot ranks after generic (rank 1)",
-        );
     }
 
     #[test]

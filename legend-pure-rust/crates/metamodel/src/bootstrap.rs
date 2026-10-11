@@ -391,6 +391,12 @@ pub fn register_m3_packages(model: &mut crate::model::PureModel, registrations: 
         set_parent_package(model, reg.element_id, package_id);
     }
 
+    // Primitives live at the root, under their bare name, as in Java:
+    // `Integer` resolves from the root package.
+    for &(_, element_id, _) in BOOTSTRAP_PRIMITIVES {
+        model.register_element(model.root_package, element_id);
+    }
+
     // Register existing bootstrap elements as aliases in their M3 packages
     for &(element_id, pkg_segments) in M3_ALIASES {
         let pkg_path: Vec<SmolStr> = pkg_segments.iter().map(|&s| SmolStr::new(s)).collect();
@@ -442,6 +448,24 @@ impl crate::model::PureModel {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A primitive's path is its bare name, from the root package.
+    #[test]
+    fn primitives_resolve_by_bare_name() {
+        let model = crate::model::PureModel::bootstrapped();
+        for &(name, id, _) in BOOTSTRAP_PRIMITIVES {
+            assert_eq!(model.resolve_fqn_str(name), Some(id), "{name}");
+            assert_eq!(
+                model.resolve_by_path(&[SmolStr::new(name)]),
+                Some(id),
+                "{name}"
+            );
+        }
+        assert_eq!(
+            model.resolve_fqn_str("meta::pure::metamodel::type::Any"),
+            Some(ANY_ID)
+        );
+    }
 
     #[test]
     fn bootstrap_chunk_has_correct_count() {

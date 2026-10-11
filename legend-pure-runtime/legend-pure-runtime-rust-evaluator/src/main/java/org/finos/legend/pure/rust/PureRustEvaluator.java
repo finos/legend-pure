@@ -17,6 +17,7 @@ package org.finos.legend.pure.rust;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.AbstractConsole;
 import org.finos.legend.pure.m3.execution.Console;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
@@ -102,9 +103,18 @@ public final class PureRustEvaluator implements FunctionExecution, Closeable
         }
         catch (PureRustEvaluationException e)
         {
+            // The cause is the Pure exception the interpreted engine
+            // rethrows as is once it carries a source: the Rust anchor
+            // survives, and the kind-prefixed message stays what the
+            // PCT manifests record.
+            SourceInformation source = sourceInformationOf(e.getSourceInfo());
             if (e.getKind() == PureRustEvaluationException.Kind.ASSERTION_FAILED)
             {
-                e.initCause(new PureAssertFailException(sourceInformationOf(e.getSourceInfo()), e.getMessage()));
+                e.initCause(new PureAssertFailException(source, e.getMessage()));
+            }
+            else
+            {
+                e.initCause(new PureExecutionException(source, e.getMessage()));
             }
             throw e;
         }

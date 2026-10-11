@@ -480,15 +480,59 @@ prints (`Rust_JNI <scope>: <passes> / <total>`) is the progress metric of the
 whole effort from here on.
 
 **Next (decided by the author, 2026-10-09): lower Java lambdas through the
-bridge.** A test turns green when the lambda's body becomes an expression
-tree the evaluator can run: the body lowering of Step 5 (M3 expression nodes
-into the expression tree) over the declarative lowering of Step 4 (the
-classes, functions and enumerations a body references), both applied to
-Java nodes reached through the bridge — §4's "one node interface" says PELT
-nodes and live Java objects lower through the same code. Doing it over Java
-nodes first moves the `Rust_JNI` count before any PELT is read; Step 3 (the
-PELT reader) follows. Natives are then fished per the `FunctionNotFound` ranking, as Step 5
-says. See Appendix C item 6.
+bridge — done 2026-10-10** (commits `80e4235c470`, `eae28b3fb89`,
+`287c424bca4`, `8d584acd57e`). A test turns green when the lambda's body
+becomes an expression tree the evaluator can run: the body lowering of
+Step 5 over the declarative lowering of Step 4, both applied to Java nodes
+reached through the bridge, before any PELT is read. What landed:
+
+- `crates/evaluator/src/lower/` reads nodes through the heap's `TypedObject`
+  view (`JavaNode` today, PELT nodes later: the one node interface) and
+  lowers `InstanceValue`, `VariableExpression`, `SimpleFunctionExpression`,
+  `LambdaFunction` and `KeyExpression` into specs, and `NativeFunction`,
+  `ConcreteFunctionDefinition` (bodies, transitively), `Class` (properties,
+  qualified properties, supertypes; constraints not yet) and `Enumeration`
+  into elements. Elements are collected in a `ModelExtension` with ids
+  assigned up front (mutual recursion resolves to pending ids) and appended
+  to a bridge chunk — whatever index follows the model's chunks — in one
+  step. `JniContext::start` runs Phase A (lower, model read-only) and
+  Phase B (if elements were added: drop the evaluator, apply, rebuild),
+  then applies the closure. Captured variables come through a new bridge
+  method, `RustNodeBridge.capturedValue`, from the `LambdaWithContext` the
+  interpreted engine hands over.
+- Every `func` becomes a `Function` element whose node name is Java's
+  mangled name verbatim; dispatch reads it as the registry key, so a fished
+  native hits exactly and an unfished one reports
+  `FunctionNotFound: <mangled>` at its call site. The simple-name prefix
+  fallback is gone from dispatch: it could route `plus_String` to
+  arithmetic `plus`. `^Class(k = v)` reaches the platform's KeyExpression
+  `new` through its Java key via a new `ExprKind::KeyExpression`; nothing
+  is retargeted by name. Types are advisory (dropped when unlowerable)
+  except while an element is half-built, where they fail loudly.
+- Source spans cross both ways: `NodeDescription` carries the Java
+  `SourceInformation` (anchor line/column as the span start), every lowered
+  spec and element carries it, and a failure raised in Rust is anchored at
+  its innermost call site and rethrown by the interpreted engine with that
+  anchor (`PureRustEvaluator.start` attaches a source-bearing cause for
+  every kind).
+- Two defects found on the way, fixed at the source: the bootstrap never
+  registered the primitive types under the root package (a bare `Integer`
+  path never resolved); the Java graph has cycles and `JavaNode` caches
+  hold strong handles, so `BridgeShared::end_execution` drops every node
+  cache when a start ends. Findings left for natives: `plus`/`times` wrap
+  on i64 overflow where Java promotes; `copy` with key expressions must
+  learn the `KeyExpression` decode.
+
+**State after the lowering.** `Rust_JNI essential: 2 / 327`,
+`Rust_JNI grammar: 59 / 136`. No `Unsupported` line about lambdas,
+functions, captures, classes, enumerations or properties remains; the
+manifests are the natives backlog, ranked by tests unblocked: `toString` 17,
+`adjust` 17, `round` 13, `format` 13, `take` 11, `match` 11, `fold` 11,
+`drop` 11, `lessThan` 11, `zip` 9, `dateDiff` 9, …; plus 12 message
+mismatches (the `*Error` tests need the exact Java message), 2 primitive
+types declared outside the bootstrap, 2 integer overflows. Natives are
+fished one per commit from that ranking, as Step 5 says; the bridge cost
+list above is profiled once the run spends its time in lowered bodies.
 
 **Later: `Rust_Native`.** Once the surveyor's own functions execute in Rust,
 the same corpus runs under cargo through the Rust surveyor, with its own
@@ -620,6 +664,15 @@ platform manifest, classifier, supertypes, property names and types and
 function signatures agree with what the Java `CoreInstance` API reports for the
 same element.
 
+**Already there (2026-10-10).** The declarative lowering of classes
+(properties, qualified properties, supertypes, type parameters),
+enumerations and function signatures exists in
+`crates/evaluator/src/lower/elements.rs`, over the heap's `TypedObject`
+node view, with `ModelExtension` as the growth path into a chunk. This
+step adds the PELT node source behind that view, the directory and the
+indexes; constraints, associations, profiles and the property-bag element
+are still to lower.
+
 **Start here.** Build the oracle first: a JUnit test in `legend-pure-m3-core`
 that loads `target/classes` through `PureCompilerLoader` and dumps, per
 element, `(path, classifier, supertypes, properties[(name, type, multiplicity)],
@@ -679,6 +732,12 @@ executed on a given engine; each engine registers its adapter and a report
 provider. A test passes when evaluating it raises no assertion. Per-engine
 exclusions (known gaps) are declared in a manifest so the pass rate is honest
 about what is skipped.
+
+**Already there (2026-10-10).** The body lowering exists in
+`crates/evaluator/src/lower/body.rs` and runs over Java nodes through the
+bridge (Step 2 "Next"); the `Rust_JNI` manifests are the `FunctionNotFound`
+ranking this step fishes from. What this step adds is the PELT-fed run and
+the engine suite class.
 
 **Start here.** The body lowering is the new code; natives are fished.
 First target: `testAdapterForInMemoryExecution` loaded from PELT, lambda
@@ -1020,4 +1079,9 @@ flag it in the hand-back.
    nodes reached through the bridge (no PELT needed; moves the `Rust_JNI`
    count directly), or over PELT first (Step 3, then 4 and 5, as the step
    order reads). *Decided
-   2026-10-09: the bridge first; Step 3 follows.*
+   2026-10-09: the bridge first; Step 3 follows. Done 2026-10-10 (Step 2
+   "Next"): the Step 4 declarative lowering (classes, enumerations,
+   function signatures) and the Step 5 body lowering exist in
+   `crates/evaluator/src/lower/`, written against the heap's node view;
+   Steps 3 and 4 now add the PELT node source and the directory, not the
+   lowering.*

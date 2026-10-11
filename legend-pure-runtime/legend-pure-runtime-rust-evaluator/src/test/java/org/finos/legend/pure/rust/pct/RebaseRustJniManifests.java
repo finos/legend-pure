@@ -121,6 +121,9 @@ public class RebaseRustJniManifests
                     {
                         String expectedError = committedExclusions.get(fqn);
                         Assert.assertNotNull("expected failure without a committed exclusion: " + fqn, expectedError);
+                        // An empty expected error matches every message and would
+                        // carry forward for ever: refuse it rather than keep it.
+                        Assert.assertFalse("empty expectedError committed for " + fqn + "; delete the entry and rebase", expectedError.trim().isEmpty());
                         exclusions.put(fqn, expectedError);
                     }
                     else
@@ -160,10 +163,20 @@ public class RebaseRustJniManifests
                 + (skipped == 0 ? "" : " (" + skipped + " skipped)") + " -> " + target);
     }
 
+    /**
+     * The first non-blank line of a message: an assertion message may start
+     * with a line break, and an empty expected error would match anything.
+     */
     private static String firstLine(String message)
     {
-        int newline = message.indexOf('\n');
-        return (newline < 0) ? message : message.substring(0, newline);
+        for (String line : message.split("\n"))
+        {
+            if (!line.trim().isEmpty())
+            {
+                return line;
+            }
+        }
+        return message;
     }
 
     private static void write(Path target, String adapter, Map<String, String> exclusions) throws IOException

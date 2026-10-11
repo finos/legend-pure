@@ -79,6 +79,17 @@ pub const TREE_NODE: &Classifier = "meta::pure::functions::collection::TreeNode"
 /// `args[0].type_info`'s outer element). Identity-based, never
 /// classifier-string compared.
 pub const CLASS: &Classifier = "meta::pure::metamodel::type::Class";
+/// `meta::pure::metamodel::type::Enumeration`.
+pub const ENUMERATION: &Classifier = "meta::pure::metamodel::type::Enumeration";
+/// `meta::pure::metamodel::type::PrimitiveType`.
+pub const PRIMITIVE_TYPE: &Classifier = "meta::pure::metamodel::type::PrimitiveType";
+/// `meta::pure::metamodel::Package`.
+pub const PACKAGE: &Classifier = "meta::pure::metamodel::Package";
+/// `meta::pure::metamodel::function::NativeFunction`.
+pub const NATIVE_FUNCTION: &Classifier = "meta::pure::metamodel::function::NativeFunction";
+/// `meta::pure::metamodel::function::ConcreteFunctionDefinition`.
+pub const CONCRETE_FUNCTION_DEFINITION: &Classifier =
+    "meta::pure::metamodel::function::ConcreteFunctionDefinition";
 
 /// `meta::pure::metamodel::type::Nil` — the bottom type. Reserved by the
 /// language and not user-instantiable; `^Nil()` is rejected at the

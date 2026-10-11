@@ -346,20 +346,39 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
                     crate::native::meta::build_multiplicity_wrapper(&mut self.heap, multiplicity)?;
                 Ok(Value::Object(handle))
             }
+            // The M3 `KeyExpression` node of a `^Class(k = v)` construction:
+            // a heap object whose `expression` slot holds the evaluated
+            // value(s), the shape `new` / `copy` decode (identity by the
+            // `KEY_EXPRESSION` element, see `decode_key_expressions`).
+            ExprKind::KeyExpression {
+                key,
+                expression,
+                add,
+            } => {
+                let values: Vec<Value> =
+                    self.eval(expression)?.to_collection().into_iter().collect();
+                let handle = self.heap.alloc_dynamic(crate::m3_paths::KEY_EXPRESSION);
+                self.heap
+                    .mutate_set(&handle, "key", &[Value::String(key.clone())])?;
+                self.heap.mutate_set(&handle, "expression", &values)?;
+                self.heap
+                    .mutate_set(&handle, "add", &[Value::Boolean(*add)])?;
+                Ok(Value::Object(handle))
+            }
             // Relation and path literals need the relation / path runtime,
             // which stays on the archive until a PCT row asks for it
             // (plan, Appendix A table 3).
             ExprKind::RelationLiteral { .. } => Err(PureException::from(
-                PureRuntimeError::Unsupported("relation literal `@(cols)`"),
+                PureRuntimeError::Unsupported("relation literal `@(cols)`".into()),
             )),
             ExprKind::ColSpecArrayLiteral { .. } => Err(PureException::from(
-                PureRuntimeError::Unsupported("column spec array literal `~[cols]`"),
+                PureRuntimeError::Unsupported("column spec array literal `~[cols]`".into()),
             )),
             ExprKind::ColSpecLiteral { .. } => Err(PureException::from(
-                PureRuntimeError::Unsupported("column spec literal `~name`"),
+                PureRuntimeError::Unsupported("column spec literal `~name`".into()),
             )),
             ExprKind::PathLiteral { .. } => Err(PureException::from(
-                PureRuntimeError::Unsupported("path literal `#/Type/prop#`"),
+                PureRuntimeError::Unsupported("path literal `#/Type/prop#`".into()),
             )),
 
             // Produce a first-class Element handle so meta-model natives
@@ -601,14 +620,11 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
         }
 
         // 2b. If the compiler resolved the call to a concrete (non-native) function,
-        //     dispatch to its body BEFORE the simple-name prefix fallback. A Pure
-        //     wrapper like `elementToPath(PackageableElement[1]):String[1]` delegates
-        //     to a higher-arity native — letting the prefix fallback fire here would
-        //     route the wrapper call straight into the native with the wrong arity.
+        //     dispatch to its body.
         //
-        //     Native function declarations (no body) intentionally fall through to 2c
-        //     so the prefix fallback can still paper over FQN-mangling mismatches for
-        //     `if`, `map`, and friends.
+        //     Native function declarations (no body) fall through to step 3:
+        //     every call site carries the exact mangled key, so a missing
+        //     native is reported, never approximated by a sibling overload.
         if let Some(element_id) = function
             && matches!(
                 self.model.get_element(element_id),
@@ -638,20 +654,17 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
             return Ok(value);
         }
 
-        // 2c. Unresolved call or native with an FQN mismatch: last-resort
-        //     prefix-based native lookup using the simple function name.
-        if let Some(native) = self.natives.find_by_prefix(function_name) {
-            return self.dispatch_native(native, lookup_key, arguments, source_info);
-        }
-
         // 3. Nothing matched. If we reached here with a resolved element, it
         //    must be a native declaration (no body) for which we have no Rust
         //    implementation — don't call the empty body, that would silently
         //    return `Unit` and mask the missing native. Surface it as a
-        //    FunctionNotFound so callers can classify it (PCT skip, CLI error).
-        Err(PureException::from(PureRuntimeError::FunctionNotFound(
-            lookup_key.into(),
-        )))
+        //    FunctionNotFound, located at the call site, so callers can
+        //    classify it (PCT skip, CLI error).
+        Err(PureException::execution(
+            PureRuntimeError::FunctionNotFound(lookup_key.into()),
+            source_info.clone(),
+            Vec::new(),
+        ))
     }
 
     /// Dispatch a native function using the expression-activator model.
@@ -1754,7 +1767,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
                 // return an empty collection from `eval_body([])`.
                 if is_generated_milestoning_qp(self.model, qp) {
                     return Err(PureException::from(PureRuntimeError::Unsupported(
-                        "milestoning-synthesised qualified property",
+                        "milestoning-synthesised qualified property".into(),
                     )));
                 }
                 self.context.push_scope();
@@ -2230,19 +2243,11 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     /// Dispatch order mirrors `eval_function_call` (the entry point for
     /// compiler-lowered `FunctionCall` specs):
     /// 1. Exact native at `mangled`.
-    /// 2. Resolved user function with a non-empty body — execute it.
-    /// 3. Simple-name prefix fallback (`find_by_prefix(function_name)`).
-    /// 4. Function not found.
+    /// 2. Resolved user function with a body — execute it.
+    /// 3. Function not found: a native declaration with no Rust
+    ///    implementation is reported under its exact key, never served by
+    ///    a sibling overload.
     ///
-    /// Step 3 was previously `find_by_prefix(mangled.as_str())`, which never
-    /// matched anything `get(mangled)` hadn't already found. The right
-    /// fallback is the function's *simple* name — same as
-    /// `eval_function_call` step 2c — so a `Value::Element` callable for an
-    /// overload that has no native at its exact mangled key (e.g. the
-    /// 2-arg `new(Class, String):T[1]` declared in the platform but
-    /// served by the 3-arg `new_Class_1__String_1__KeyExpression_MANY__T_1_`
-    /// native) still routes to the registered native instead of evaluating
-    /// the empty native-declaration body and silently returning `Unit`.
     /// This is the path `reactivate_function_expression` and
     /// `executeTest`-style reflective dispatch take.
     #[allow(clippy::result_large_err)]
@@ -2256,23 +2261,13 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
         if let Some(native) = self.natives.get(mangled.as_str()) {
             return self.execute_native_with_values(native, args);
         }
-        // 2. Non-native user function — evaluate its body. Native declarations
-        //    (is_native=true, body empty) fall through to step 3 so the
-        //    prefix fallback can still find the registered Rust impl.
-        let (is_native, simple_name) = match self.model.get_element(id) {
-            Element::Function(f) => (f.is_native, Some(f.function_name.clone())),
-            _ => (false, None),
-        };
+        // 2. Non-native user function — evaluate its body. A native
+        //    declaration with no Rust implementation falls through.
+        let is_native = matches!(self.model.get_element(id), Element::Function(f) if f.is_native);
         if !is_native {
             return self.call_user_function(id, args, mangled.as_str(), None);
         }
-        // 3. Simple-name prefix fallback against the native registry.
-        if let Some(simple) = simple_name.as_deref()
-            && let Some(native) = self.natives.find_by_prefix(simple)
-        {
-            return self.execute_native_with_values(native, args);
-        }
-        // 4. Surface as FunctionNotFound rather than silently calling an
+        // 3. Surface as FunctionNotFound rather than silently calling an
         //    empty body and returning Unit.
         Err(PureException::from(PureRuntimeError::FunctionNotFound(
             mangled.as_str().into(),
@@ -2656,6 +2651,9 @@ fn walk_free_variables(
             for arg in &data.arguments {
                 walk_free_variables(arg, binders, free);
             }
+        }
+        ExprKind::KeyExpression { expression, .. } => {
+            walk_free_variables(expression, binders, free);
         }
         ExprKind::Collection { elements } => {
             for e in elements {

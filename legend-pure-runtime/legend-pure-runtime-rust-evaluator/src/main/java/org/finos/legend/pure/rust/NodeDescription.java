@@ -53,4 +53,14 @@ final class NodeDescription
     int precision;
     String subsecond;
     String[] keys;
+    /**
+     * Source span, when the node has one ({@code sourceId == null} otherwise):
+     * the anchor line/column plus the end position, as {@code SourceInformation}
+     * reports them.
+     */
+    String sourceId;
+    int line;
+    int column;
+    int endLine;
+    int endColumn;
 }

@@ -76,9 +76,10 @@ pub enum PureRuntimeError {
     FunctionNotFound(SmolStr),
 
     /// A language feature whose runtime has not been fished from the
-    /// archive yet (relation literals, path literals, milestoning).
+    /// archive yet (relation literals, path literals, milestoning), or a
+    /// node shape the lowering does not know (`lowering <classifier>`).
     #[error("Unsupported: {0}")]
-    Unsupported(&'static str),
+    Unsupported(String),
 
     /// Multiplicity violation: got wrong number of values.
     #[error("Multiplicity violation: expected {expected}, got {actual} values")]
@@ -261,6 +262,12 @@ impl PureException {
     /// propagates upward.
     #[must_use]
     pub fn with_frame(mut self, frame: StackFrame) -> Self {
+        // The first frame pushed is the innermost call site; an exception
+        // raised without an anchor (a native's error) is located there,
+        // as Java locates it at `functionExpressionCallStack.peek()`.
+        if self.source.is_none() {
+            self.source = Some(frame.source.clone());
+        }
         self.call_stack.push(frame);
         self
     }
@@ -501,5 +508,29 @@ mod tests {
         // Innermost first in display
         assert!(lines[0].contains("my::package::process"));
         assert!(lines[1].contains("my::package::main"));
+    }
+}
+
+#[cfg(test)]
+mod frame_tests {
+    use super::*;
+    use legend_pure_metamodel::source_info::SourceInfo;
+
+    #[test]
+    fn the_first_frame_anchors_an_unlocated_exception() {
+        let exc = PureException::from(PureRuntimeError::EvaluationError("boom".into()));
+        assert!(exc.source.is_none());
+        let inner = SourceInfo::new("a.pure", 5, 7, 5, 9);
+        let outer = SourceInfo::new("a.pure", 1, 1, 9, 1);
+        let exc = exc
+            .with_frame(StackFrame {
+                function_name: "inner".into(),
+                source: inner.clone(),
+            })
+            .with_frame(StackFrame {
+                function_name: "outer".into(),
+                source: outer,
+            });
+        assert_eq!(exc.source, Some(inner));
     }
 }

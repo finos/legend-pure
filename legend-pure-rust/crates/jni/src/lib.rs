@@ -75,6 +75,7 @@ pub(crate) fn throw_pure_exception(env: &mut JNIEnv, exc: &PureException) {
 fn try_throw_rich(env: &mut JNIEnv, payload: &ExceptionPayload) -> jni::errors::Result<()> {
     use jni::objects::{JObject, JValue};
     let message = env.new_string(&payload.message)?;
+    let info = env.new_string(&payload.info)?;
     let kind = env.new_string(payload.kind)?;
     let source_info: JObject<'_> = match &payload.source_info {
         Some(s) => env.new_string(s)?.into(),
@@ -106,6 +107,7 @@ fn try_throw_rich(env: &mut JNIEnv, payload: &ExceptionPayload) -> jni::errors::
         ExceptionPayload::RICH_CTOR_SIG,
         &[
             JValue::Object(&message.into()),
+            JValue::Object(&info.into()),
             JValue::Object(&kind.into()),
             JValue::Object(&source_info),
             JValue::Object(&call_stack_arr.into()),

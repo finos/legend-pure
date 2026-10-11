@@ -477,6 +477,19 @@ pub enum ExprKind {
         body: Vec<ValueSpec>,
     },
 
+    /// One `key = expression` (or `key += expression` when `add`) of a
+    /// `^Class(...)` construction, the M3 `KeyExpression` node. Evaluates
+    /// to a heap `KeyExpression` object whose `expression` slot holds the
+    /// evaluated value(s); the `new` and `copy` natives decode it.
+    KeyExpression {
+        /// Property name.
+        key: SmolStr,
+        /// The value expression, evaluated when the key expression is.
+        expression: ValueSpec,
+        /// `true` for `+=`.
+        add: bool,
+    },
+
     /// Collection literal: `[1, 2, 3]`.
     Collection {
         /// Elements.

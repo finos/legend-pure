@@ -26,7 +26,7 @@ use legend_pure_metamodel::types::{
     ColSpecLiteralKind, DateValue, ExprKind, Multiplicity, RelationColumnLowered,
 };
 
-fn unsupported(err: &PureException) -> Option<&'static str> {
+fn unsupported(err: &PureException) -> Option<&str> {
     match &err.kind {
         PureExceptionKind::ExecutionError(PureRuntimeError::Unsupported(what)) => Some(what),
         _ => None,

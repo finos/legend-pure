@@ -47,7 +47,7 @@ suite prints is the progress metric.
 cargo build --workspace                                   # the cdylib the Java module loads
 cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator clean verify
-#   -> Rust_JNI essential: 0 / 327, Rust_JNI grammar: 0 / 136 (plus 9 boundary tests)
+#   -> Rust_JNI essential: 2 / 327, Rust_JNI grammar: 59 / 136 (plus 15 boundary tests)
 # after a change that moves tests: regenerate the manifests, review the diff, verify again
 JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator \
@@ -55,9 +55,13 @@ JAVA_HOME=$(/usr/libexec/java_home -v 17) \
 ```
 
 The manifests under that module's `src/test/resources/platform/` are generated,
-never edited by hand. A lambda reaching `JniContext::start` is `Unsupported`
-until the lowering lands (plan, Step 2 "Next"). Root Maven installs on this
-machine need `clean` (the PAR plugin trips on a stale descriptor otherwise).
+never edited by hand; after the lowering they are the natives backlog, ranked
+by `FunctionNotFound: <mangled key>` lines. A lambda reaching
+`JniContext::start` is lowered by `crates/evaluator/src/lower/` (Phase A, model
+read-only) and run after the model grew (Phase B); a node shape the lowering
+does not know reports `Unsupported: lowering <classifier> …`. Natives are
+fished one per commit from the ranking. Root Maven installs on this machine
+need `clean` (the PAR plugin trips on a stale descriptor otherwise).
 
 ## The six rules (plan §0)
 

@@ -194,24 +194,152 @@ public class TestRustEvaluatorBoundary
     }
 
     /**
-     * The body of every PCT test hands a lambda to its adapter; until Step 3
-     * lowers Java lambdas through the bridge, that lambda is Unsupported, and
-     * this is the message the Rust_JNI manifests record.
+     * A PCT lambda lowers through the bridge and runs: {@code |1 + 2} is 3.
+     * The native it calls became a model element named by its mangled
+     * signature, so dispatch hit the registry exactly.
      */
     @Test
-    public void aJavaLambdaIsUnsupportedUntilTheBridgeLowersIt()
+    public void aPctLambdaLowersAndRuns()
     {
-        CoreInstance lambda = findLambda(firstPctTest());
+        CoreInstance lambda = findLambda(pctTest(PlatformCodeRepositoryProvider.grammarFunctions, "testSimplePlus"));
+        CoreInstance result = evaluator.start(lambda, Lists.immutable.empty());
+        Assert.assertEquals("3", values(result).get(0).getName());
+    }
+
+    /**
+     * A node kind the lowering does not know yet is reported as such, with
+     * its classifier, and nothing else is evaluated. A primitive type
+     * declared outside the bootstrap is one.
+     */
+    @Test
+    public void anUnlowerableNodeIsUnsupportedByClassifier()
+    {
+        CoreInstance lambda = findLambda(pctTest(PlatformCodeRepositoryProvider.grammarFunctions, "testEqPrimitiveExtension"));
+        PureRustEvaluationException e = Assert.assertThrows(PureRustEvaluationException.class,
+                () -> evaluator.start(lambda, Lists.immutable.empty()));
+        Assert.assertEquals(PureRustEvaluationException.Kind.UNSUPPORTED, e.getKind());
+        Assert.assertTrue(e.getMessage(), e.getMessage().startsWith("Unsupported: lowering meta::pure::metamodel::type::PrimitiveType"));
+        Assert.assertEquals(e.getMessage().substring("Unsupported: ".length()), e.getInfo());
+    }
+
+    /**
+     * A class the lambda constructs is lowered with it; the instance comes
+     * back as a Rust object whose properties Java reads through the proxy.
+     */
+    @Test
+    public void aClassConstructionLowersTheClassAndBuildsAnInstance()
+    {
+        CoreInstance lambda = findLambda(pctTest(PlatformCodeRepositoryProvider.grammarFunctions, "testAssignNewInstance"));
+        CoreInstance result = evaluator.start(lambda, Lists.immutable.empty());
+        CoreInstance person = values(result).get(0);
+        Assert.assertEquals("LA_Person", person.getClassifier().getName());
+        Assert.assertEquals("John", person.getValueForMetaPropertyToOne("firstName").getName());
+        Assert.assertEquals("Doe", person.getValueForMetaPropertyToOne("lastName").getName());
+        ((RustCoreInstance) person).close();
+    }
+
+    /**
+     * An enum value in a lambda lowers its enumeration; what remains red
+     * is the native the lambda calls, reported under its exact key.
+     */
+    @Test
+    public void anEnumValueLowersItsEnumeration()
+    {
+        CoreInstance lambda = findLambda(pctTest(PlatformCodeRepositoryProvider.essentialFunctions, "testAdjustByYears"));
+        PureRustEvaluationException e = Assert.assertThrows(PureRustEvaluationException.class,
+                () -> evaluator.start(lambda, Lists.immutable.empty()));
+        Assert.assertEquals(e.getMessage(), PureRustEvaluationException.Kind.FUNCTION_NOT_FOUND, e.getKind());
+        Assert.assertEquals("FunctionNotFound: adjust_Date_1__Integer_1__DurationUnit_1__Date_1_", e.getMessage());
+    }
+
+    /**
+     * A failure raised inside a lowered lambda is anchored at the Java
+     * source span of the call that raised it, and that anchor is what the
+     * Pure cause reports.
+     */
+    @Test
+    public void failuresInsideALoweredLambdaCarryTheJavaSpan()
+    {
+        CoreInstance lambda = findLambda(pctTest(PlatformCodeRepositoryProvider.essentialFunctions, "testAtError"));
+        PureRustEvaluationException e = Assert.assertThrows(PureRustEvaluationException.class,
+                () -> evaluator.start(lambda, Lists.immutable.empty()));
+        Assert.assertEquals(PureRustEvaluationException.Kind.FUNCTION_NOT_FOUND, e.getKind());
+        PureException cause = PureException.findPureException(e);
+        Assert.assertNotNull(cause);
+        Assert.assertNotNull(cause.getSourceInformation());
+        Assert.assertEquals("/platform/pure/essential/collection/index/at.pure", cause.getSourceInformation().getSourceId());
+        Assert.assertEquals(lambda.getSourceInformation().getLine(), cause.getSourceInformation().getLine());
+        Assert.assertTrue(cause.getSourceInformation().getColumn() > 0);
+    }
+
+    /**
+     * A Pure-bodied function the lambda calls is lowered with it,
+     * transitively, and runs through the evaluator's own dispatch.
+     */
+    @Test
+    public void pureBodiedFunctionsLowerTransitively()
+    {
+        CoreInstance lambda = findLambda(pctTest(PlatformCodeRepositoryProvider.grammarFunctions, "testLetAsLastStatement"));
+        CoreInstance result = evaluator.start(lambda, Lists.immutable.empty());
+        Assert.assertEquals("last statement string", values(result).get(0).getName());
+    }
+
+    /**
+     * A lambda that closes over its test's variables can only run with
+     * its context (the interpreted engine's {@code LambdaWithContext});
+     * the bare graph node reports what it lacks.
+     */
+    @Test
+    public void aBareLambdaWithOpenVariablesIsUnsupported()
+    {
+        CoreInstance test = pctTest(PlatformCodeRepositoryProvider.essentialFunctions, "testSimpleSortWithFunctionVariables");
+        CoreInstance lambda = findLambdaWithOpenVariables(test);
         Assert.assertNotNull(lambda);
         PureRustEvaluationException e = Assert.assertThrows(PureRustEvaluationException.class,
                 () -> evaluator.start(lambda, Lists.immutable.empty()));
         Assert.assertEquals(PureRustEvaluationException.Kind.UNSUPPORTED, e.getKind());
-        Assert.assertEquals("Unsupported: evaluating a Java LambdaFunction through the bridge", e.getMessage());
+        Assert.assertTrue(e.getMessage(), e.getMessage().startsWith("Unsupported: lowering captured variables"));
     }
 
+    private static CoreInstance findLambdaWithOpenVariables(CoreInstance node)
+    {
+        if (LAMBDA_FUNCTION.equals(PackageableElement.getUserPathForPackageableElement(node.getClassifier()))
+                && node.getValueForMetaPropertyToMany(M3Properties.openVariables).notEmpty()
+                && node.getValueForMetaPropertyToMany(M3Properties.openVariables).noneSatisfy(v -> "f".equals(v.getName())))
+        {
+            return node;
+        }
+        for (String property : new String[]{M3Properties.expressionSequence, M3Properties.parametersValues, M3Properties.values})
+        {
+            for (CoreInstance child : node.getValueForMetaPropertyToMany(property))
+            {
+                CoreInstance found = findLambdaWithOpenVariables(child);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static CoreInstance pctTest(ReportScope scope, String simpleName)
+    {
+        MutableList<CoreInstance> tests = TestCollection.buildPCTTestCollection(scope._package, scope.filePath, ps).getAllTestFunctions();
+        CoreInstance test = tests.detect(t -> t.getName().startsWith(simpleName + "_"));
+        Assert.assertNotNull(simpleName, test);
+        return test;
+    }
+
+    /**
+     * The first lambda in a test body that closes over nothing: the one a
+     * PCT test hands to {@code $f->eval(...)}. An {@code assertError}
+     * wrapper lambda captures {@code $f} and is skipped.
+     */
     private static CoreInstance findLambda(CoreInstance node)
     {
-        if (LAMBDA_FUNCTION.equals(PackageableElement.getUserPathForPackageableElement(node.getClassifier())))
+        if (LAMBDA_FUNCTION.equals(PackageableElement.getUserPathForPackageableElement(node.getClassifier()))
+                && node.getValueForMetaPropertyToMany(M3Properties.openVariables).isEmpty())
         {
             return node;
         }

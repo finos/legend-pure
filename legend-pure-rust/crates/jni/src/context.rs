@@ -20,8 +20,9 @@ use im_rc::Vector as PVector;
 use legend_pure_evaluator::error::{PureException, PureRuntimeError};
 use legend_pure_evaluator::eval::Evaluator;
 use legend_pure_evaluator::heap::{HeapEntry, ObjectHandle};
+use legend_pure_evaluator::lower::Lowering;
 use legend_pure_evaluator::native::NativeRegistry;
-use legend_pure_evaluator::value::Value;
+use legend_pure_evaluator::value::{FunctionValue, Value};
 use legend_pure_metamodel::model::PureModel;
 use smol_str::SmolStr;
 
@@ -52,6 +53,8 @@ pub struct JniContext {
     evaluator: *mut Evaluator<'static>,
     /// Shared with every [`JavaNode`].
     pub shared: Rc<BridgeShared>,
+    /// The chunk the lowering appends to, once the model first grew.
+    bridge_chunk: Option<u16>,
 }
 
 impl JniContext {
@@ -83,6 +86,7 @@ impl JniContext {
             registry: registry_ptr,
             evaluator: evaluator_ptr,
             shared,
+            bridge_chunk: None,
         }
     }
 
@@ -110,9 +114,8 @@ impl JniContext {
                     evaluator.call_native(&name, args)
                 }
                 Some((classifier, _, _)) if classifier == LAMBDA_FUNCTION => {
-                    Err(PureException::from(PureRuntimeError::Unsupported(
-                        "evaluating a Java LambdaFunction through the bridge",
-                    )))
+                    evaluator.context_mut().pop_scope();
+                    return self.lower_and_run(function);
                 }
                 Some((_, _, user_path)) => Err(PureException::from(
                     PureRuntimeError::FunctionNotFound(user_path),
@@ -124,9 +127,60 @@ impl JniContext {
             ))),
         };
         evaluator.context_mut().pop_scope();
+        self.shared.end_execution();
         if let Some(message) = self.shared.take_error() {
             return Err(ffi_error(message));
         }
+        result
+    }
+
+    /// Phase A: lower the lambda and everything it references, reading
+    /// the model only. Phase B: if the lowering added elements, drop the
+    /// evaluator (the one `&PureModel` borrow besides the bridge's), apply
+    /// the extension, and build a fresh evaluator over the grown model.
+    /// Then run the closure in its own scope.
+    fn lower_and_run(&mut self, function: &Value) -> Result<Value, PureException> {
+        let result = self.lower_and_run_inner(function);
+        // Whether the lowering or the run failed, the nodes this execution
+        // touched hold caches (and cycles) that must go now.
+        self.shared.end_execution();
+        if let Some(message) = self.shared.take_error() {
+            return Err(ffi_error(message));
+        }
+        result
+    }
+
+    fn lower_and_run_inner(&mut self, function: &Value) -> Result<Value, PureException> {
+        let closure = {
+            let model: &PureModel = unsafe { &*self.model };
+            let chunk = self
+                .bridge_chunk
+                .unwrap_or_else(|| u16::try_from(model.chunks.len()).expect("chunk ids are u16"));
+            let mut lowering = Lowering::new(model, chunk, model.chunk_len(chunk));
+            let closure = lowering.lower_root_lambda(function);
+            // A property that could not be read lowers to nothing; surface
+            // the read failure before trusting the tree.
+            if let Some(message) = self.shared.take_error() {
+                return Err(ffi_error(message));
+            }
+            let closure = closure?;
+            let extension = lowering.into_extension();
+            if !extension.is_empty() {
+                // Every borrow of the model is gone: the lowering was
+                // consumed above and the evaluator is dropped here.
+                unsafe { drop(Box::from_raw(self.evaluator)) };
+                self.bridge_chunk = Some(extension.chunk_id());
+                extension.apply(unsafe { &mut *self.model });
+                let evaluator = Evaluator::new(unsafe { &*self.model }, unsafe { &*self.registry });
+                self.evaluator = Box::into_raw(Box::new(evaluator)).cast::<Evaluator<'static>>();
+            }
+            closure
+        };
+        let evaluator = self.evaluator();
+        evaluator.context_mut().push_scope();
+        let callable = Value::Function(Box::new(FunctionValue::Lambda(closure)));
+        let result = evaluator.apply_callable(&callable, &[]);
+        evaluator.context_mut().pop_scope();
         result
     }
 

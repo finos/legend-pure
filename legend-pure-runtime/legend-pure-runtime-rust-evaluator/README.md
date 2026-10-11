@@ -54,11 +54,14 @@ ERROR becomes an exclusion holding the first line of its message; a PASS reporte
 failure keeps its committed entry; an excluded test that now passes is dropped. A second run
 reproduces the files byte for byte. Review the diff, then `verify`.
 
-State: `Rust_JNI essential: 0 / 327`, `Rust_JNI grammar: 0 / 136`. 451 tests record
-`Unsupported: evaluating a Java LambdaFunction through the bridge`; the 12 tests that assert on
-an error message record `Execution error message mismatch.` (their assertion compares that same
-message with the expected text). The compiled engine registers `evalRust` as a stub that throws
-at run time, so the platform compiles on both engines.
+State: `Rust_JNI essential: 2 / 327`, `Rust_JNI grammar: 59 / 136`. The lambda is lowered
+through the bridge (`crates/evaluator/src/lower/`): its body, the functions it calls, the classes
+and enumerations it references, and the variables it captured (`RustNodeBridge.capturedValue`,
+read from the `LambdaWithContext` the interpreted engine hands over). What remains red is, for
+the most part, a native the lambda calls that is not in the Rust registry, recorded as
+`FunctionNotFound: <mangled key>`; the 12 tests that assert on an error message record
+`Execution error message mismatch.` until the Rust message equals Java's. The compiled engine
+registers `evalRust` as a stub that throws at run time, so the platform compiles on both engines.
 
 ## Build and test
 

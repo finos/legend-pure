@@ -480,6 +480,48 @@ impl PureModel {
         current
     }
 
+    /// Appends an empty chunk whose id is its index and returns that id.
+    ///
+    /// # Panics
+    /// When the model already holds `u16::MAX` chunks.
+    pub fn push_chunk(&mut self) -> u16 {
+        let id = u16::try_from(self.chunks.len()).expect("chunk ids are u16");
+        self.chunks.push(ModelChunk::new(id));
+        id
+    }
+
+    /// Pushes empty chunks until `id` exists (chunk ids are indexes).
+    pub fn ensure_chunk(&mut self, id: u16) {
+        while self.chunks.len() <= usize::from(id) {
+            self.push_chunk();
+        }
+    }
+
+    /// Number of elements currently allocated in a chunk, 0 when the
+    /// chunk does not exist yet.
+    #[must_use]
+    pub fn chunk_len(&self, chunk_id: u16) -> u32 {
+        self.chunks
+            .get(usize::from(chunk_id))
+            .map_or(0, |c| c.nodes.len())
+    }
+
+    /// Allocates an element in a chunk (created on demand) and returns
+    /// its full id. The caller registers it in a package separately.
+    pub fn alloc_in_chunk(
+        &mut self,
+        chunk_id: u16,
+        node: ElementNode,
+        element: Element,
+    ) -> ElementId {
+        self.ensure_chunk(chunk_id);
+        let local_idx = self.chunks[usize::from(chunk_id)].alloc_element(node, element);
+        ElementId::InstanceId {
+            chunk_id,
+            local_idx,
+        }
+    }
+
     /// Registers an element in a package's children list.
     pub fn register_element(&mut self, package: PackageId, element: ElementId) {
         self.global_packages
@@ -695,6 +737,44 @@ impl Default for PureModel {
 mod tests {
     use super::*;
     use crate::nodes::class;
+
+    /// A chunk appended after the bootstrap takes the next index as its
+    /// id, grows by `alloc_in_chunk`, and its elements resolve by path
+    /// once registered.
+    #[test]
+    fn chunks_append_and_allocate_by_id() {
+        let mut model = PureModel::bootstrapped();
+        let first = model.chunks.len();
+        assert_eq!(model.chunk_len(u16::try_from(first).unwrap()), 0);
+        let chunk = model.push_chunk();
+        assert_eq!(usize::from(chunk), first);
+        let pkg = model.get_or_create_package(&[SmolStr::new("my"), SmolStr::new("pkg")]);
+        let id = model.alloc_in_chunk(
+            chunk,
+            ElementNode {
+                name: SmolStr::new("Thing"),
+                source_info: SourceInfo::new("<test>", 0, 0, 0, 0),
+                name_source_info: SourceInfo::new("<test>", 0, 0, 0, 0),
+                parent_package: pkg,
+            },
+            Element::PackageableMultiplicity(crate::types::Multiplicity::PureOne),
+        );
+        model.register_element(pkg, id);
+        model.rebuild_derived_indexes();
+        assert_eq!(model.chunk_len(chunk), 1);
+        assert_eq!(
+            id,
+            ElementId::InstanceId {
+                chunk_id: chunk,
+                local_idx: 0
+            }
+        );
+        assert_eq!(model.resolve_fqn_str("my::pkg::Thing"), Some(id));
+        // `ensure_chunk` past the end pads with empty chunks.
+        model.ensure_chunk(chunk + 2);
+        assert_eq!(model.chunks.len(), usize::from(chunk) + 3);
+        assert_eq!(model.chunk_len(chunk + 2), 0);
+    }
 
     /// Documents the memory cost of `ElementNode`'s two parallel
     /// `SourceInfo` fields (`source_info` + `name_source_info`). The

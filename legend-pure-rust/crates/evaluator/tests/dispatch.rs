@@ -178,18 +178,6 @@ fn native_declared_but_not_fished_is_function_not_found() {
 }
 
 #[test]
-fn unresolved_call_falls_back_to_the_simple_name_prefix() {
-    let model = ModelBuilder::new().finish();
-    let registry = NativeRegistry::standard();
-    let mut eval = Evaluator::new(&model, &registry);
-    let call = expr::call(
-        "plus",
-        vec![expr::collection(vec![expr::int(2), expr::int(3)])],
-    );
-    assert_eq!(eval.eval(&call).unwrap(), Value::Integer(5));
-}
-
-#[test]
 fn lambda_value_applies_to_arguments() {
     let model = ModelBuilder::new().finish();
     let registry = NativeRegistry::standard();

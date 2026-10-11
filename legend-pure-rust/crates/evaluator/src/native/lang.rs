@@ -131,9 +131,8 @@ impl NativeFunction for New {
         // documented Pure-source `new(class, id, [keyExprs])` family
         // dispatches to `NewWithKeyExpressions` instead.
         //
-        // The 2-arg Pure-source `new(class, id)` overload also lands
-        // here via the simple-name prefix fallback (no explicit
-        // `new_Class_1__String_1__T_1_` registration). It carries no
+        // The 2-arg Pure-source `new(class, id)` overload is registered
+        // here too (`new_Class_1__String_1__T_1_`). It carries no
         // metadata slots; type_args fall back to args[0].type_info
         // exactly like NewWithKeyExpressions does.
         let class_metatype_id = crate::m3_paths::resolve(ctx.model(), crate::m3_paths::CLASS);
@@ -1751,10 +1750,9 @@ fn class_fqn(model: &PureModel, id: ElementId) -> String {
 pub fn register(registry: &mut NativeRegistry) {
     registry.register("letFunction_String_1__T_m__T_m_", LetFunction);
     registry.register("if_Boolean_1__Function_1__Function_1__T_m_", If);
-    // `new`: the compiler-emitted positional shape (registered under a
-    // synthetic key whose mangled segment sorts before the KeyExpression
-    // overload, so the simple-name prefix fallback routes compiler-emitted
-    // calls here) and the platform's two-argument form.
+    // `new`: the archived compiler's positional shape (a synthetic key)
+    // and the platform's two-argument form. The lowering emits the
+    // platform's KeyExpression shape below.
     registry.register("new_Class_1__String_1__Any_MANY__T_1_", New);
     registry.register("new_Class_1__String_1__T_1_", New);
     // `new`: the platform-declared KeyExpression shape.

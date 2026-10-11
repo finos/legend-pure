@@ -37,6 +37,9 @@ pub struct ExceptionPayload {
     /// rest. Keeps `Throwable.getMessage()` clean for JUnit assertions
     /// that match on substrings.
     pub message: String,
+    /// The failure text alone, without the kind prefix: what Pure's
+    /// `PureException.getInfo()` reports for the same failure.
+    pub info: String,
     /// Top-level kind: `"EXECUTION_ERROR"` / `"ASSERTION_FAILED"` /
     /// `"CONSTRAINT_VIOLATION"`. Java side `enum Kind` parses this.
     pub kind: &'static str,
@@ -63,8 +66,8 @@ impl ExceptionPayload {
     /// JVM-side throw signature mirror — the constructor that
     /// `throw_pure_exception` in `lib.rs` invokes.
     ///
-    /// `(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V`
-    pub const RICH_CTOR_SIG: &'static str = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
+    /// `(message, info, kind, sourceInfo, callStack, constraintId, constraintKind, ownerFqn)`
+    pub const RICH_CTOR_SIG: &'static str = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
 }
 
 /// Build an [`ExceptionPayload`] from a runtime [`PureException`].
@@ -75,18 +78,20 @@ pub fn pure_exception_to_payload(exc: &PureException) -> ExceptionPayload {
     // name (parsed with `Kind.valueOf`); the message starts with the
     // kind's display name because the PCT expected-failures manifest
     // matches `expectedError` by substring and has no kind field.
-    let (message, kind) = match &exc.kind {
+    // `(prefix, info, kind)`: the message Java sees is `prefix: info`,
+    // the kind is the `enum Kind` name, the info stands alone.
+    let (prefix, info, kind) = match &exc.kind {
         PureExceptionKind::ExecutionError(PureRuntimeError::FunctionNotFound(name)) => {
-            (format!("FunctionNotFound: {name}"), "FUNCTION_NOT_FOUND")
+            ("FunctionNotFound", name.to_string(), "FUNCTION_NOT_FOUND")
         }
         PureExceptionKind::ExecutionError(PureRuntimeError::Unsupported(what)) => {
-            (format!("Unsupported: {what}"), "UNSUPPORTED")
+            ("Unsupported", what.clone(), "UNSUPPORTED")
         }
         PureExceptionKind::ExecutionError(err) => {
-            (format!("ExecutionError: {err}"), "EXECUTION_ERROR")
+            ("ExecutionError", err.to_string(), "EXECUTION_ERROR")
         }
         PureExceptionKind::AssertionFailed(msg) => {
-            (format!("AssertionFailed: {msg}"), "ASSERTION_FAILED")
+            ("AssertionFailed", msg.clone(), "ASSERTION_FAILED")
         }
         PureExceptionKind::ConstraintViolation {
             constraint_id,
@@ -94,23 +99,16 @@ pub fn pure_exception_to_payload(exc: &PureException) -> ExceptionPayload {
             message,
             ..
         } => {
-            // Compose the canonical violation message that the runtime
-            // historically rendered via Display — the test
-            // `testNewWithTypeVariables` asserts
-            // `Constraint :[wx] violated in the Class …, Message: …`
-            // exactly. Keep that string on `getMessage()` for backwards
-            // compatibility; the structured fields (kind, constraint_id,
-            // owner_fqn) carry the same info in a programmatic form.
-            let mut composed = format!(
-                "ConstraintViolation: Constraint :[{constraint_id}] violated in the Class {owner}"
-            );
+            let mut composed =
+                format!("Constraint :[{constraint_id}] violated in the Class {owner}");
             if let Some(m) = message {
                 composed.push_str(", Message: ");
                 composed.push_str(m);
             }
-            (composed, "CONSTRAINT_VIOLATION")
+            ("ConstraintViolation", composed, "CONSTRAINT_VIOLATION")
         }
     };
+    let message = format!("{prefix}: {info}");
 
     let source_info = exc
         .source
@@ -151,6 +149,7 @@ pub fn pure_exception_to_payload(exc: &PureException) -> ExceptionPayload {
 
     ExceptionPayload {
         message,
+        info,
         kind,
         source_info,
         call_stack,
@@ -212,6 +211,7 @@ mod tests {
         let p = pure_exception_to_payload(&exc);
         assert_eq!(p.kind, "ASSERTION_FAILED");
         assert_eq!(p.message, "AssertionFailed: expected 5 got 6");
+        assert_eq!(p.info, "expected 5 got 6");
         assert_eq!(p.source_info.as_deref(), Some("assert.pure:3:1"));
     }
 

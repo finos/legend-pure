@@ -34,6 +34,7 @@ use legend_pure_evaluator::date::{PureDate, StrictTime, TimePrecision};
 use legend_pure_evaluator::error::{PureException, PureRuntimeError};
 use legend_pure_evaluator::heap::{HeapEntry, ObjectHandle, RuntimeHeap, TypedObject};
 use legend_pure_evaluator::value::Value;
+use legend_pure_metamodel::source_info::SourceInfo;
 use smol_str::SmolStr;
 
 use crate::bridge::{BridgeShared, JniHandleTable};
@@ -101,6 +102,8 @@ pub struct Description {
     pub subsecond: Option<String>,
     /// Property keys of a NODE.
     pub keys: Vec<SmolStr>,
+    /// Source span of the node, when the Java graph knows one.
+    pub source: Option<SourceInfo>,
 }
 
 fn string_field(
@@ -123,6 +126,13 @@ fn string_field(
 pub fn read_description(env: &mut JNIEnv, obj: &JObject) -> jni::errors::Result<Description> {
     let int =
         |env: &mut JNIEnv, n: &str| -> jni::errors::Result<i32> { env.get_field(obj, n, "I")?.i() };
+    let int_or_zero = |env: &mut JNIEnv, n: &str| -> u32 {
+        env.get_field(obj, n, "I")
+            .and_then(|v| v.i())
+            .ok()
+            .and_then(|v| u32::try_from(v).ok())
+            .unwrap_or(0)
+    };
     let kind = int(env, "kind")?;
     let id = env.get_field(obj, "id", "J")?.j()?;
     let classifier = string_field(env, obj, "classifier")?.map(SmolStr::new);
@@ -141,6 +151,17 @@ pub fn read_description(env: &mut JNIEnv, obj: &JObject) -> jni::errors::Result<
             keys.push(SmolStr::new(s));
         }
     }
+    let source = string_field(env, obj, "sourceId")?.map(|source_id| {
+        // Java's anchor (`line`/`column`) is the span's start on this
+        // side; the evaluator and `assertError` both read the anchor.
+        SourceInfo::new(
+            source_id,
+            int_or_zero(env, "line"),
+            int_or_zero(env, "column"),
+            int_or_zero(env, "endLine"),
+            int_or_zero(env, "endColumn"),
+        )
+    });
     Ok(Description {
         kind,
         id,
@@ -157,6 +178,7 @@ pub fn read_description(env: &mut JNIEnv, obj: &JObject) -> jni::errors::Result<
         precision: int(env, "precision")?,
         subsecond,
         keys,
+        source,
     })
 }
 
@@ -168,9 +190,9 @@ fn ffi_error(message: String) -> PureException {
     )
 }
 
-fn unsupported(what: &'static str) -> PureException {
+fn unsupported(what: &str) -> PureException {
     PureException::execution(
-        PureRuntimeError::Unsupported(what),
+        PureRuntimeError::Unsupported(what.to_string()),
         legend_pure_metamodel::source_info::SourceInfo::new("<ffi>", 0, 0, 0, 0),
         Vec::new(),
     )
@@ -276,10 +298,13 @@ pub fn description_to_value(
         }
         kind::PACKAGEABLE_ELEMENT => {
             if let Some(path) = &d.user_path {
+                // Exact match on the leaf: a Java function's path ends in
+                // its mangled name, and a simple-name prefix match could
+                // pick a sibling overload.
                 let segments: Vec<SmolStr> = path.split("::").map(SmolStr::new).collect();
                 let model = shared.model();
                 if let Some(id) = model
-                    .resolve_function_by_path(&segments)
+                    .resolve_by_fqn(&segments)
                     .or_else(|| model.resolve_by_path(&segments))
                 {
                     return Ok(Value::Element(id));
@@ -321,6 +346,7 @@ fn canonical_node(shared: &Rc<BridgeShared>, d: Description) -> ObjectHandle {
         name: d.name,
         user_path: d.user_path,
         keys: d.keys,
+        source: d.source,
         cache: RefCell::new(HashMap::new()),
         local: HashMap::new(),
         shared: Rc::clone(shared),
@@ -345,6 +371,8 @@ pub struct JavaNode {
     pub user_path: Option<SmolStr>,
     /// Property keys reported by Java.
     pub keys: Vec<SmolStr>,
+    /// Source span reported by Java.
+    pub source: Option<SourceInfo>,
     /// Property values fetched so far.
     cache: RefCell<HashMap<SmolStr, PVector<Value>>>,
     /// `__`-prefixed slots the evaluator writes (type-argument back-fill).
@@ -363,7 +391,27 @@ impl std::fmt::Debug for JavaNode {
 }
 
 impl JavaNode {
+    /// Forget the property values fetched so far. The Java graph has
+    /// cycles (a class and its qualified properties, two functions that
+    /// call each other), and the cache holds strong handles, so the
+    /// caches of the nodes touched by one execution must be dropped when
+    /// it ends or those nodes would never be freed.
+    pub fn clear_cache(&self) {
+        self.cache.borrow_mut().clear();
+    }
+
     fn fetch(&self, name: &str) -> Result<PVector<Value>, String> {
+        self.call_descriptions(self.shared.methods.property_values, name)
+            .map(|values| values.unwrap_or_default())
+    }
+
+    /// Call a bridge method `(long id, String name) -> NodeDescription[]`
+    /// and decode the result; a Java `null` is `None`.
+    fn call_descriptions(
+        &self,
+        method: jni::objects::JMethodID,
+        name: &str,
+    ) -> Result<Option<PVector<Value>>, String> {
         let mut guard = self
             .shared
             .vm
@@ -374,7 +422,7 @@ impl JavaNode {
         let result = unsafe {
             env.call_method_unchecked(
                 self.shared.bridge.as_obj(),
-                self.shared.methods.property_values,
+                method,
                 ReturnType::Array,
                 &[
                     JValue::Long(self.id).as_jni(),
@@ -383,6 +431,7 @@ impl JavaNode {
             )
         };
         let arr = match result.and_then(|v| v.l()) {
+            Ok(obj) if obj.is_null() => return Ok(None),
             Ok(obj) => JObjectArray::from(obj),
             Err(e) => {
                 let _ = env.exception_clear();
@@ -399,7 +448,7 @@ impl JavaNode {
             let v = description_to_value(&self.shared, d).map_err(|e| e.to_string())?;
             values.push_back(v);
         }
-        Ok(values)
+        Ok(Some(values))
     }
 }
 
@@ -439,6 +488,31 @@ impl TypedObject for JavaNode {
         names
     }
 
+    fn node_name(&self) -> Option<SmolStr> {
+        self.name.clone()
+    }
+
+    fn user_path(&self) -> Option<SmolStr> {
+        self.user_path.clone()
+    }
+
+    fn source_info(&self) -> Option<SourceInfo> {
+        self.source.clone()
+    }
+
+    /// The values a lambda captured, read from the Java
+    /// `LambdaWithContext` behind this node; `None` when the node is a
+    /// plain lambda (or not a lambda at all).
+    fn captured_values(&self, name: &str) -> Option<PVector<Value>> {
+        match self.call_descriptions(self.shared.methods.captured_value, name) {
+            Ok(values) => values,
+            Err(message) => {
+                self.shared.note_error(message);
+                None
+            }
+        }
+    }
+
     fn set_property(&mut self, name: &str, value: Value) -> Result<(), PureRuntimeError> {
         if name.starts_with("__") {
             self.local
@@ -447,7 +521,7 @@ impl TypedObject for JavaNode {
                 .push_back(value);
             return Ok(());
         }
-        Err(PureRuntimeError::Unsupported("mutating a Java node"))
+        Err(PureRuntimeError::Unsupported("mutating a Java node".into()))
     }
 
     fn set_property_values(
@@ -460,7 +534,7 @@ impl TypedObject for JavaNode {
                 .insert(SmolStr::new(name), values.iter().cloned().collect());
             return Ok(());
         }
-        Err(PureRuntimeError::Unsupported("mutating a Java node"))
+        Err(PureRuntimeError::Unsupported("mutating a Java node".into()))
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
