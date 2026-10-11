@@ -73,10 +73,10 @@ impl Lowering<'_> {
             return self.lower_enumeration(&node);
         }
         if self.is(&node, self.ids.primitive_type) {
-            return Err(Self::unsupported(
-                &node,
-                &format!("`{path}` outside the bootstrap"),
-            ));
+            return self.lower_primitive_type(&node);
+        }
+        if self.is(&node, self.ids.profile) {
+            return self.lower_profile(&node);
         }
         Err(Self::unsupported(&node, &format!("`{path}` as an element")))
     }
@@ -233,6 +233,101 @@ impl Lowering<'_> {
         Ok(id)
     }
 
+    /// A `PrimitiveType` node declared outside the bootstrap
+    /// (`Primitive X extends Integer`) into a `PrimitiveType` element
+    /// whose supertype is its one generalization.
+    ///
+    /// # Errors
+    /// The node has no path or name, or its supertype cannot be lowered.
+    pub fn lower_primitive_type(&mut self, node: &Node) -> Result<ElementId, LowerError> {
+        if let Some(id) = self.ext.lookup_node(node.key()) {
+            return Ok(id);
+        }
+        let path = node
+            .user_path()
+            .ok_or_else(|| Self::read_error(node, "missing user path"))?;
+        let name = node
+            .name()
+            .ok_or_else(|| Self::read_error(node, "missing name"))?;
+        let id = self.ext.reserve(node, &path, name, node.span());
+        let mut super_type = None;
+        if let Some(g) = node.nodes("generalizations").first() {
+            let general = g
+                .one("general")
+                .ok_or_else(|| Self::read_error(g, "missing general"))?;
+            if let TypeExpr::Named { element, .. } = self.lower_generic_type(&general)? {
+                super_type = Some(element);
+            }
+        }
+        self.ext.fill(
+            id,
+            Element::PrimitiveType(legend_pure_metamodel::types::PrimitiveType {
+                super_type,
+                super_type_value_arguments: Vec::new(),
+                type_variable_parameters: Vec::new(),
+                constraints: Vec::new(),
+            }),
+        );
+        Ok(id)
+    }
+
+    /// A `Profile` node into a `Profile` element: the names of the
+    /// stereotypes and tags it declares.
+    ///
+    /// # Errors
+    /// The node has no path or name.
+    pub fn lower_profile(&mut self, node: &Node) -> Result<ElementId, LowerError> {
+        if let Some(id) = self.ext.lookup_node(node.key()) {
+            return Ok(id);
+        }
+        let path = node
+            .user_path()
+            .ok_or_else(|| Self::read_error(node, "missing user path"))?;
+        let name = node
+            .name()
+            .ok_or_else(|| Self::read_error(node, "missing name"))?;
+        let id = self.ext.reserve(node, &path, name, node.span());
+        let declared =
+            |nodes: Vec<Node>| -> Vec<legend_pure_metamodel::source_info::SpannedString> {
+                nodes
+                    .iter()
+                    .filter_map(|n| n.string("value"))
+                    .map(legend_pure_metamodel::nodes::profile::bootstrap_spanned_name)
+                    .collect()
+            };
+        self.ext.fill(
+            id,
+            Element::Profile(legend_pure_metamodel::nodes::profile::Profile {
+                stereotypes: declared(node.nodes("p_stereotypes")),
+                tags: declared(node.nodes("p_tags")),
+            }),
+        );
+        Ok(id)
+    }
+
+    /// The stereotypes on an annotated node (`<<profile.value>>`), each
+    /// resolved to its profile element.
+    fn lower_stereotypes(
+        &mut self,
+        node: &Node,
+    ) -> Result<Vec<legend_pure_metamodel::annotations::StereotypeRef>, LowerError> {
+        let mut out = Vec::new();
+        for s in node.nodes("stereotypes") {
+            let profile = s
+                .one("profile")
+                .ok_or_else(|| Self::read_error(&s, "missing profile"))?;
+            let value = s
+                .string("value")
+                .ok_or_else(|| Self::read_error(&s, "missing stereotype value"))?;
+            out.push(legend_pure_metamodel::annotations::StereotypeRef {
+                profile: self.element_for(&profile)?,
+                value,
+                source_info: None,
+            });
+        }
+        Ok(out)
+    }
+
     fn lower_property(&mut self, p: &Node) -> Result<Property, LowerError> {
         let name = p
             .string("name")
@@ -258,6 +353,7 @@ impl Lowering<'_> {
             }
             None => None,
         };
+        let stereotypes = self.lower_stereotypes(p)?;
         Ok(Property {
             name,
             source_info: p.span(),
@@ -265,7 +361,7 @@ impl Lowering<'_> {
             multiplicity,
             aggregation: None,
             default_value,
-            stereotypes: Vec::new(),
+            stereotypes,
             tagged_values: Vec::new(),
         })
     }

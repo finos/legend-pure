@@ -2,22 +2,6 @@
   "adapter": "meta::pure::test::pct::testAdapterForRustExecution_Function_1__X_o_",
   "exclusions": [
     {
-      "test": "meta::pure::functions::collection::tests::contains::testContainsNonPrimitive_Function_1__Boolean_1_",
-      "expectedError": "Assert failed"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::fold::testFoldFiltering_Function_1__Boolean_1_",
-      "expectedError": "copy: expected (key, value, augmented) triples, got 2 extra arguments"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::fold::testFoldToMany_Function_1__Boolean_1_",
-      "expectedError": "copy: expected (key, value, augmented) triples, got 2 extra arguments"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::fold::testFold_Function_1__Boolean_1_",
-      "expectedError": "copy: expected (key, value, augmented) triples, got 2 extra arguments"
-    },
-    {
       "test": "meta::pure::functions::collection::tests::put::testPut_addsEntry_Function_1__Boolean_1_",
       "expectedError": "Unsupported: a Map value across the boundary"
     },
@@ -92,10 +76,6 @@
     {
       "test": "meta::pure::functions::math::tests::abs::testBigFloatAbs_Function_1__Boolean_1_",
       "expectedError": "expected: 123456789123456789.99"
-    },
-    {
-      "test": "meta::pure::functions::string::tests::parseDecimal::testParseDecimalWithPrecisionScale_Function_1__Boolean_1_",
-      "expectedError": "expected: 123.12300D"
     }
   ]
 }

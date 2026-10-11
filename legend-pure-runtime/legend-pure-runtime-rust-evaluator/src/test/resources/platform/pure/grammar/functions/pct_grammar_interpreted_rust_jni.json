@@ -2,22 +2,6 @@
   "adapter": "meta::pure::test::pct::testAdapterForRustExecution_Function_1__X_o_",
   "exclusions": [
     {
-      "test": "meta::pure::functions::boolean::tests::equality::eq::testEqPrimitiveExtension_Function_1__Boolean_1_",
-      "expectedError": "Unsupported: lowering meta::pure::metamodel::type::PrimitiveType `meta::pure::functions::boolean::tests::equalitymodel::ExtendedInteger` outside the bootstrap"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::equality::equal::testEqualNonPrimitive_Function_1__Boolean_1_",
-      "expectedError": "Assert failed"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::equality::equal::testEqualPrimitiveExtension_Function_1__Boolean_1_",
-      "expectedError": "Unsupported: lowering meta::pure::metamodel::type::PrimitiveType `meta::pure::functions::boolean::tests::equalitymodel::ExtendedInteger` outside the bootstrap"
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::getAll::testBasic_Function_1__Boolean_1_",
-      "expectedError": "FunctionNotFound: getAll_Class_1__T_MANY_"
-    },
-    {
       "test": "meta::pure::functions::lang::tests::compare::testDateCompare_Function_1__Boolean_1_",
       "expectedError": "Execution error"
     },
@@ -26,16 +10,8 @@
       "expectedError": "Execution error (resource:<ffi> line:0 column:0)"
     },
     {
-      "test": "meta::pure::functions::math::tests::minus::testSingleMinusType_Function_1__Boolean_1_",
-      "expectedError": "NotImplemented: genericType_Any_MANY__GenericType_1_"
-    },
-    {
       "test": "meta::pure::functions::math::tests::plus::testLargePlus_Function_1__Boolean_1_",
       "expectedError": "Unsupported: Integer arithmetic outside the 64-bit range"
-    },
-    {
-      "test": "meta::pure::functions::math::tests::plus::testSinglePlusType_Function_1__Boolean_1_",
-      "expectedError": "NotImplemented: genericType_Any_MANY__GenericType_1_"
     },
     {
       "test": "meta::pure::functions::math::tests::times::testLargeTimes_Function_1__Boolean_1_",

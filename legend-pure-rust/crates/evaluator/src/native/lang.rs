@@ -29,9 +29,10 @@ use legend_pure_metamodel::types::{ExprKind, TypeExpr, ValueSpec};
 use smol_str::SmolStr;
 
 use crate::error::{PureException, PureRuntimeError};
-use crate::heap::ObjectHandle;
+use crate::heap::{ObjectHandle, RuntimeHeap};
 use crate::native::{
-    EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args, force_all,
+    EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args, force_all, force1,
+    force2,
 };
 use crate::value::Value;
 
@@ -281,7 +282,6 @@ fn back_fill_type_args(args: &[ValueSpec], class_metatype_id: Option<ElementId>)
 /// an `InstanceValue`'s `.values`); the `expression` slot's value(s)
 /// flow through unchanged. The `add` slot defaults to `false` when
 /// absent or non-Boolean.
-#[allow(clippy::result_large_err)]
 fn decode_key_expressions(
     ctx: &mut dyn EvalContextTrait,
     key_expr_id: Option<ElementId>,
@@ -315,7 +315,6 @@ fn decode_key_expressions(
 /// wrapper whose `.values` contains the string (the canonical M3
 /// shape produced by `^KeyExpression(key=^InstanceValue(values='prop',
 /// …))`). Errors for any other shape.
-#[allow(clippy::result_large_err)]
 fn unwrap_instance_value_string(
     payload: &[Value],
     ctx: &mut dyn EvalContextTrait,
@@ -343,7 +342,6 @@ fn unwrap_instance_value_string(
 /// an `InstanceValue` wrapper around a literal/collection (Pure's
 /// canonical M3 shape) into its `.values` payload. A bare value is
 /// passed through unchanged.
-#[allow(clippy::result_large_err)]
 fn unwrap_instance_value_list(
     payload: &[Value],
     ctx: &mut dyn EvalContextTrait,
@@ -363,7 +361,6 @@ fn unwrap_instance_value_list(
 /// Convert the compiler-emitted flat `[k, v, augmented, k, v, augmented, …]`
 /// stream into the canonical triple form the construction helpers
 /// consume.
-#[allow(clippy::result_large_err)]
 fn triples_from_flat_kv_stream(
     kvs: &[Value],
 ) -> Result<Vec<(SmolStr, Vec<Value>, bool)>, PureException> {
@@ -398,7 +395,7 @@ thread_local! {
 }
 
 /// Shared tail of both `New` overloads.
-#[allow(clippy::result_large_err, clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments)]
 fn finish_construction(
     ctx: &mut dyn EvalContextTrait,
     class_id: ElementId,
@@ -465,7 +462,6 @@ impl ConstructionFrame {
     /// every collected `(obj, class_id)`. Call this right before the
     /// guard goes out of scope so any validation failure propagates as
     /// the native's return value (Drop can't return errors).
-    #[allow(clippy::result_large_err)]
     fn drain_if_outermost(ctx: &mut dyn EvalContextTrait) -> Result<(), PureException> {
         let depth = CONSTRUCTION_DEPTH.with(std::cell::Cell::get);
         if depth == 1 {
@@ -538,7 +534,6 @@ fn format_mult_text(m: &legend_pure_metamodel::types::Multiplicity) -> String {
 /// injected) and verify that every property with `lower_bound > 0` has
 /// at least that many values on the populated heap object. Aggregates
 /// all violations into one error message.
-#[allow(clippy::result_large_err)]
 fn validate_required_properties(
     ctx: &mut dyn EvalContextTrait,
     obj: ObjectHandle,
@@ -619,7 +614,6 @@ fn validate_required_properties(
 /// Apply each `(name, values, augmented)` triple to the heap object
 /// — `mutate_add` for `+=` (augmented), `mutate_set` for `=`
 /// (replace).
-#[allow(clippy::result_large_err)]
 fn apply_property_triples(
     ctx: &mut dyn EvalContextTrait,
     obj: ObjectHandle,
@@ -639,7 +633,6 @@ fn apply_property_triples(
 /// did not supply and write the results to the heap object. Walks the
 /// supertype chain child-first so a redeclared property on a subclass
 /// wins over the parent's default (Java-parity MRO).
-#[allow(clippy::result_large_err)]
 fn apply_property_defaults(
     ctx: &mut dyn EvalContextTrait,
     obj: &ObjectHandle,
@@ -713,6 +706,162 @@ impl NativeFunction for Copy {
             )
             .into());
         }
+        copy_with_triples(ctx, &values[0], &values[1..])
+    }
+}
+
+/// Pure `getAll<T>(type:Class<T>[1]):T[*]`: every live instance of the
+/// class, from the metamodel rows (`Class.all()`) and from the objects
+/// reachable through the variable context (`Trade.all()`), each once.
+/// A metamodel row comes back as its element so reflective reads resolve
+/// through the model.
+#[derive(Debug)]
+pub struct GetAll;
+
+impl NativeFunction for GetAll {
+    fn execute(
+        &self,
+        args: &[ValueSpec],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let class = force1("getAll", args, ctx)?;
+        let Value::Element(class_id) = class else {
+            return Err(PureRuntimeError::type_mismatch("Class", &class).into());
+        };
+        let instances = gather_all_instances(ctx, class_id)?;
+        Ok(Evaluated::new(Value::from_vec(instances)))
+    }
+}
+
+fn gather_all_instances(
+    ctx: &mut dyn EvalContextTrait,
+    class_id: ElementId,
+) -> Result<Vec<Value>, PureException> {
+    if Some(class_id) == crate::m3_paths::resolve(ctx.model(), crate::m3_paths::NIL) {
+        return Err(PureRuntimeError::EvaluationError(
+            "Cannot getAll instances of meta::pure::metamodel::type::Nil".into(),
+        )
+        .into());
+    }
+    let target_path = crate::model_utils::build_element_path(ctx.model(), class_id, "::", false);
+    let mut seen: std::collections::HashSet<*const std::cell::RefCell<crate::heap::HeapEntry>> =
+        std::collections::HashSet::new();
+    let mut projected: Vec<Value> = Vec::new();
+
+    for (handle, cls) in ctx.heap().iter_classifiers() {
+        if cls.as_str() != target_path || !seen.insert(std::rc::Rc::as_ptr(&handle)) {
+            continue;
+        }
+        projected.push(match RuntimeHeap::element_for_object(&handle) {
+            Some(eid) => Value::Element(eid),
+            None => Value::Object(handle),
+        });
+    }
+
+    let mut worklist: Vec<Value> = ctx.context().iter_values().cloned().collect();
+    while let Some(value) = worklist.pop() {
+        match &value {
+            Value::Object(handle) => {
+                if !seen.insert(std::rc::Rc::as_ptr(handle)) {
+                    continue;
+                }
+                let (cls, prop_values): (SmolStr, Vec<Value>) = {
+                    let entry = handle.borrow();
+                    let cls = entry.classifier();
+                    let prop_values: Vec<Value> = entry
+                        .property_names()
+                        .iter()
+                        .flat_map(|name| entry.get_property_values(name.as_str()).into_iter())
+                        .collect();
+                    (cls, prop_values)
+                };
+                if cls.as_str() == target_path && RuntimeHeap::element_for_object(handle).is_none()
+                {
+                    projected.push(value);
+                }
+                worklist.extend(prop_values);
+            }
+            Value::Collection(items) => {
+                for v in items.iter() {
+                    worklist.push(v.clone());
+                }
+            }
+            Value::Map(state) => {
+                for v in state.borrow().entries.values() {
+                    worklist.push(v.clone());
+                }
+            }
+            _ => {}
+        }
+    }
+    Ok(projected)
+}
+
+/// Pure `copy<T>(object:T[1], id:String[1]):T[1]`: a copy with no override.
+#[derive(Debug)]
+pub struct CopyWithId;
+
+impl NativeFunction for CopyWithId {
+    fn execute(
+        &self,
+        args: &[ValueSpec],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (source, _id) = force2("copy", args, ctx)?;
+        copy_with_triples(ctx, &source, &[])
+    }
+}
+
+/// Pure `copy<T>(object:T[1], id:String[1], keyExpressions:KeyExpression[*]):T[1]`
+///
+/// The platform-declared overload: the overrides arrive as M3
+/// `KeyExpression` heap objects, decoded the way `new` decodes them, and
+/// the copy proceeds from `(key, values, add)` triples.
+#[derive(Debug)]
+pub struct CopyWithKeyExpressions;
+
+impl NativeFunction for CopyWithKeyExpressions {
+    fn execute(
+        &self,
+        args: &[ValueSpec],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = force_all(args, ctx)?;
+        if values.len() < 2 {
+            return Err(PureRuntimeError::EvaluationError(format!(
+                "copy(object, id, [keyExpressions]): expected at least 2 arguments, got {}",
+                values.len()
+            ))
+            .into());
+        }
+        let key_expr_id = crate::m3_paths::resolve(ctx.model(), crate::m3_paths::KEY_EXPRESSION);
+        let payload: Vec<&Value> = match values.get(2) {
+            Some(Value::Collection(coll)) => coll.iter().collect(),
+            Some(Value::Unit) | None => Vec::new(),
+            Some(single) => vec![single],
+        };
+        let triples = decode_key_expressions(ctx, key_expr_id, &payload)?;
+        let mut kvs: Vec<Value> = Vec::with_capacity(triples.len() * 3);
+        for (key, expression_values, add) in triples {
+            kvs.push(Value::String(key));
+            kvs.push(Value::from_vec(expression_values));
+            kvs.push(Value::Boolean(add));
+        }
+        copy_with_triples(ctx, &values[0], &kvs)
+    }
+}
+
+/// The copy itself: `source` with the `(key, values, add)` triples of
+/// `kvs` applied (`add` appends, otherwise the key's values are replaced).
+fn copy_with_triples(
+    ctx: &mut dyn EvalContextTrait,
+    source: &Value,
+    kvs: &[Value],
+) -> Result<Evaluated, PureException> {
+    {
+        let values: Vec<Value> = std::iter::once(source.clone())
+            .chain(kvs.iter().cloned())
+            .collect();
 
         if let Value::Element(elem_id) = &values[0] {
             let element = ctx.model().get_element(*elem_id);
@@ -840,7 +989,6 @@ fn try_lambda_shortcut(kvs: &[Value]) -> Option<Value> {
 
 /// Populate association reverse-links for every Association-backed property
 /// just assigned to `obj`.
-#[allow(clippy::result_large_err)]
 fn populate_association_inverses(
     ctx: &mut dyn EvalContextTrait,
     obj: ObjectHandle,
@@ -944,7 +1092,6 @@ fn populate_association_inverses(
 /// Eager shallow hydration of every M3 reflective property of `meta_id`
 /// (and its supertypes) onto the heap object `obj` from the source
 /// `Value::Element(elem_id)`.
-#[allow(clippy::result_large_err)]
 fn hydrate_element_to_heap(
     ctx: &mut dyn EvalContextTrait,
     elem_id: ElementId,
@@ -1049,7 +1196,6 @@ fn apply_key_value_triples(
 /// Split a `[key1, val1, augmented1, key2, val2, augmented2, ...]` slice
 /// into two parallel triple slices: the plain keys (no `.`) and the
 /// dotted-path keys (`address.name`, `firm.legalName`).
-#[allow(clippy::result_large_err)]
 fn partition_path_kvs(kvs: &[Value]) -> Result<(Vec<Value>, Vec<Value>), PureException> {
     if !kvs.len().is_multiple_of(3) {
         return Err(PureRuntimeError::EvaluationError(format!(
@@ -1078,7 +1224,6 @@ fn partition_path_kvs(kvs: &[Value]) -> Result<(Vec<Value>, Vec<Value>), PureExc
 
 /// Apply dotted-path property updates (`address.name = 'Somewhere'`,
 /// `firm.legalName = 'FirmX'`) to the freshly-allocated copy.
-#[allow(clippy::result_large_err)]
 fn apply_path_property_updates(
     ctx: &mut dyn EvalContextTrait,
     source_id: ObjectHandle,
@@ -1193,7 +1338,6 @@ fn collect_inherited_association_properties(
 /// Scope: only the `obj` passed in. Callers that produce multiple
 /// affected instances (e.g. `Copy::execute` plus path-property clones)
 /// must invoke this helper once per object.
-#[allow(clippy::result_large_err)]
 fn sync_object_inverses(
     ctx: &mut dyn EvalContextTrait,
     obj: ObjectHandle,
@@ -1252,7 +1396,6 @@ fn sync_object_inverses(
 
 /// Allocate a fresh heap Object that mirrors `source_id` — same
 /// classifier and a copy of every property.
-#[allow(clippy::result_large_err)]
 fn clone_heap_object(
     ctx: &mut dyn EvalContextTrait,
     source_id: ObjectHandle,
@@ -1278,7 +1421,6 @@ fn clone_heap_object(
 
 /// Run every constraint declared on the given Class against the
 /// freshly-constructed instance.
-#[allow(clippy::result_large_err)]
 fn evaluate_class_constraints(
     ctx: &mut dyn EvalContextTrait,
     class_id: ElementId,
@@ -1289,7 +1431,6 @@ fn evaluate_class_constraints(
     evaluate_class_constraints_with_inheritance(ctx, class_id, obj, type_var_values, &mut visited)
 }
 
-#[allow(clippy::result_large_err)]
 fn evaluate_class_constraints_with_inheritance(
     ctx: &mut dyn EvalContextTrait,
     class_id: ElementId,
@@ -1320,7 +1461,6 @@ fn evaluate_class_constraints_with_inheritance(
     Ok(())
 }
 
-#[allow(clippy::result_large_err)]
 fn evaluate_class_constraints_at_level(
     ctx: &mut dyn EvalContextTrait,
     class_id: ElementId,
@@ -1440,6 +1580,10 @@ pub fn register(registry: &mut NativeRegistry) {
         "new_Class_1__String_1__KeyExpression_MANY__T_1_",
         NewWithKeyExpressions,
     );
-    registry.register("copy_T_1__String_1__T_1_", Copy);
-    registry.register("copy_T_1__String_1__KeyExpression_MANY__T_1_", Copy);
+    registry.register("getAll_Class_1__T_MANY_", GetAll);
+    registry.register("copy_T_1__String_1__T_1_", CopyWithId);
+    registry.register(
+        "copy_T_1__String_1__KeyExpression_MANY__T_1_",
+        CopyWithKeyExpressions,
+    );
 }

@@ -630,6 +630,32 @@ structural equality over Java-backed instances (2), user-defined primitive
 types (2), 64-bit overflow (3), Decimal/Float rendering (2), mixed-precision
 date compare (1).
 
+**Natives round 2 (2026-10-11, in progress).** The residue was worked on
+two disjoint file sets. The evaluator side: `copy` over key expressions
+(`decode_key_expressions` feeds the same `copy_with_triples` as the flat
+form), `genericType` out of `NotYet` (a `GenericType` object with its
+`rawType`), `getAll` fished from the archive (metamodel rows by classifier,
+then the objects reachable through the variable context), `parseDecimal`
+rounding half away from zero and keeping its scale, and three lowering gaps:
+a property's stereotypes (each resolved to its `Profile` element, lowered
+from the Java node as its stereotype and tag names, so `<<equality.Key>>`
+reaches `equality_key_properties`), a `PrimitiveType` declared outside the
+bootstrap (its one generalization as supertype), and the boundary test for
+an unlowerable node moved to a unit of a measure. The JNI side (the bridge
+branch): exception discipline and local frames, one mutable entry per call
+with every unsafe block justified, read failures keeping their kind and
+anchor, Rust objects with a name and reaching the compiled engine's
+generated code as generated classes, a Rust `Map` crossing out as the host
+engine's own map, `start` classifying by element id, and the bridge
+forgetting the nodes Rust released. State after the evaluator side alone:
+`Rust_JNI essential: 308 / 327`, `Rust_JNI grammar: 132 / 136` (compiled
+302 / 327 and 131 / 136). Recorded as out of scope for the MVP, each a
+representation choice rather than a missing native: `adjust` beyond jiff's
+date range (5), 64-bit integer overflow where Java promotes to `BigInteger`
+(3), `Float` as `f64` where Java's is a `BigDecimal` (`testBigFloatAbs`),
+and `deactivate` (needs the `ValueSpecification` heap shapes and the
+compiler's least upper bound).
+
 **Later: `Rust_Native`.** Once the surveyor's own functions execute in Rust,
 the same corpus runs under cargo through the Rust surveyor, with its own
 manifests, and reports as adapter `Rust_Native`; `Rust_JNI` stays the measure

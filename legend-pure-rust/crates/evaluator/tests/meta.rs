@@ -711,6 +711,25 @@ fn cast_to_a_relation_type_is_unsupported() {
     );
 }
 
+/// `genericType` of a value is a `GenericType` object whose `rawType` is
+/// the value's type, so `type()` can read it.
+#[test]
+fn generic_type_of_a_value_carries_its_raw_type() {
+    let model = ModelBuilder::new().finish();
+    let registry = registry();
+    let mut eval = Evaluator::new(&model, &registry);
+    let generic = eval
+        .eval(&expr::call(
+            "genericType_Any_MANY__GenericType_1_",
+            vec![expr::int(1)],
+        ))
+        .unwrap();
+    eval.context_mut().push_scope();
+    eval.context_mut().set("g", generic);
+    let raw = eval.eval(&expr::prop(expr::var("g"), "rawType")).unwrap();
+    assert_eq!(raw, Value::Element(INTEGER_ID));
+}
+
 /// Keys registered before their implementation is fished fail with
 /// `NotImplemented` naming the key.
 #[test]
@@ -718,20 +737,16 @@ fn not_yet_meta_natives_fail_with_not_implemented() {
     let model = ModelBuilder::new().finish();
     let registry = registry();
     let mut eval = Evaluator::new(&model, &registry);
-    for key in [
-        "genericType_Any_MANY__GenericType_1_",
-        "deactivate_Any_MANY__ValueSpecification_1_",
-    ] {
-        let err = eval.eval(&expr::call(key, vec![expr::int(1)])).unwrap_err();
-        assert!(
-            matches!(
-                &err.kind,
-                PureExceptionKind::ExecutionError(PureRuntimeError::NotImplemented(k))
-                    if k == key
-            ),
-            "{key}: {err:?}"
-        );
-    }
+    let key = "deactivate_Any_MANY__ValueSpecification_1_";
+    let err = eval.eval(&expr::call(key, vec![expr::int(1)])).unwrap_err();
+    assert!(
+        matches!(
+            &err.kind,
+            PureExceptionKind::ExecutionError(PureRuntimeError::NotImplemented(k))
+                if k == key
+        ),
+        "{key}: {err:?}"
+    );
 }
 
 #[test]

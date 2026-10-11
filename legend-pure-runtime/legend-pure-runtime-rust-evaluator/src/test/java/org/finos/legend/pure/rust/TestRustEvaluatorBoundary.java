@@ -206,17 +206,17 @@ public class TestRustEvaluatorBoundary
 
     /**
      * A node kind the lowering does not know yet is reported as such, with
-     * its classifier, and nothing else is evaluated. A primitive type
-     * declared outside the bootstrap is one.
+     * its classifier, and nothing else is evaluated. A unit of a measure
+     * is one.
      */
     @Test
     public void anUnlowerableNodeIsUnsupportedByClassifier()
     {
-        CoreInstance lambda = findLambda(pctTest(PlatformCodeRepositoryProvider.grammarFunctions, "testEqPrimitiveExtension"));
+        CoreInstance lambda = findLambda(node("meta::pure::functions::meta::tests::newUnit::testNewUnitIndirectUnit__Boolean_1_"));
         PureRustEvaluationException e = Assert.assertThrows(PureRustEvaluationException.class,
                 () -> evaluator.start(lambda, Lists.immutable.empty()));
-        Assert.assertEquals(PureRustEvaluationException.Kind.UNSUPPORTED, e.getKind());
-        Assert.assertTrue(e.getMessage(), e.getMessage().startsWith("Unsupported: lowering meta::pure::metamodel::type::PrimitiveType"));
+        Assert.assertEquals(e.getMessage(), PureRustEvaluationException.Kind.UNSUPPORTED, e.getKind());
+        Assert.assertTrue(e.getMessage(), e.getMessage().startsWith("Unsupported: lowering meta::pure::metamodel::type::Unit"));
         Assert.assertEquals(e.getMessage().substring("Unsupported: ".length()), e.getInfo());
     }
 
@@ -244,15 +244,15 @@ public class TestRustEvaluatorBoundary
     @Test
     public void aWiredButUnfishedNativeReportsNotImplemented()
     {
-        CoreInstance lambda = findLambda(pctTest(PlatformCodeRepositoryProvider.grammarFunctions, "testSinglePlusType"));
+        CoreInstance lambda = findLambda(pctTest(PlatformCodeRepositoryProvider.essentialFunctions, "testMatchWithMixedReturnType"));
         PureRustEvaluationException e = Assert.assertThrows(PureRustEvaluationException.class,
                 () -> evaluator.start(lambda, Lists.immutable.empty()));
         Assert.assertEquals(e.getMessage(), PureRustEvaluationException.Kind.NOT_IMPLEMENTED, e.getKind());
-        Assert.assertEquals("NotImplemented: genericType_Any_MANY__GenericType_1_", e.getMessage());
-        Assert.assertEquals("genericType_Any_MANY__GenericType_1_", e.getInfo());
+        Assert.assertEquals("NotImplemented: deactivate_Any_MANY__ValueSpecification_1_", e.getMessage());
+        Assert.assertEquals("deactivate_Any_MANY__ValueSpecification_1_", e.getInfo());
         PureException cause = PureException.findPureException(e);
         Assert.assertNotNull(cause);
-        Assert.assertEquals("NotImplemented: genericType_Any_MANY__GenericType_1_", cause.getInfo());
+        Assert.assertEquals("NotImplemented: deactivate_Any_MANY__ValueSpecification_1_", cause.getInfo());
     }
 
     /**

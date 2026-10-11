@@ -73,6 +73,8 @@ pub const TREE_NODE: &Classifier = "meta::pure::functions::collection::TreeNode"
 pub const CLASS: &Classifier = "meta::pure::metamodel::type::Class";
 /// `meta::pure::metamodel::type::Enumeration`.
 pub const ENUMERATION: &Classifier = "meta::pure::metamodel::type::Enumeration";
+/// The class of profiles (`meta::pure::profiles::equality` is one).
+pub const PROFILE: &Classifier = "meta::pure::metamodel::extension::Profile";
 /// The class of every enum value.
 pub const ENUM: &Classifier = "meta::pure::metamodel::type::Enum";
 /// `meta::pure::metamodel::type::PrimitiveType`.

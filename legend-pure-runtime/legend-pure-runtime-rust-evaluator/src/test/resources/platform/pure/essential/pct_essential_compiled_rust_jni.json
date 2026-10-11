@@ -6,24 +6,20 @@
       "expectedError": "Execution error at ??, \"ERROR unhandled type for value: Hoboken instance meta::pure::functions::collection::tests::model::CO_Address (instance of class org.finos.legend.pure.rust.RustCoreInstance)\""
     },
     {
-      "test": "meta::pure::functions::collection::tests::contains::testContainsNonPrimitive_Function_1__Boolean_1_",
-      "expectedError": "Assert failed"
-    },
-    {
       "test": "meta::pure::functions::collection::tests::drop::testDropInList_Function_1__Boolean_1_",
       "expectedError": "Execution error at (resource:/platform/pure/essential/collection/slice/drop.pure lines:69c71-72c1), \"Unexpected error executing function with params [testAdapterForRustExecution_Function_1__X_o_]\""
     },
     {
       "test": "meta::pure::functions::collection::tests::fold::testFoldFiltering_Function_1__Boolean_1_",
-      "expectedError": "Execution error at (resource:/platform/pure/essential/collection/iteration/fold.pure line:96 column:81), \"copy: expected (key, value, augmented) triples, got 2 extra arguments\""
+      "expectedError": "Execution error at (resource:/platform/pure/essential/collection/iteration/fold.pure lines:93c71-99c1), \"Unexpected error executing function with params [testAdapterForRustExecution_Function_1__X_o_]\""
     },
     {
       "test": "meta::pure::functions::collection::tests::fold::testFoldToMany_Function_1__Boolean_1_",
-      "expectedError": "Execution error at (resource:/platform/pure/essential/collection/iteration/fold.pure line:88 column:52), \"copy: expected (key, value, augmented) triples, got 2 extra arguments\""
+      "expectedError": "Execution error at (resource:/platform/pure/essential/collection/iteration/fold.pure lines:85c71-91c1), \"Unexpected error executing function with params [testAdapterForRustExecution_Function_1__X_o_]\""
     },
     {
       "test": "meta::pure::functions::collection::tests::fold::testFold_Function_1__Boolean_1_",
-      "expectedError": "Execution error at (resource:/platform/pure/essential/collection/iteration/fold.pure line:81 column:52), \"copy: expected (key, value, augmented) triples, got 2 extra arguments\""
+      "expectedError": "Execution error at (resource:/platform/pure/essential/collection/iteration/fold.pure lines:78c71-83c1), \"Unexpected error executing function with params [testAdapterForRustExecution_Function_1__X_o_]\""
     },
     {
       "test": "meta::pure::functions::collection::tests::put::testPut_addsEntry_Function_1__Boolean_1_",
@@ -104,10 +100,6 @@
     {
       "test": "meta::pure::functions::lang::tests::match::testMatchWithMixedReturnType_Function_1__Boolean_1_",
       "expectedError": "Execution error at (resource:/platform/pure/essential/lang/flow/match.pure line:184 column:172), \"NotImplemented: deactivate_Any_MANY__ValueSpecification_1_\""
-    },
-    {
-      "test": "meta::pure::functions::string::tests::parseDecimal::testParseDecimalWithPrecisionScale_Function_1__Boolean_1_",
-      "expectedError": "expected: 123.12300D"
     }
   ]
 }

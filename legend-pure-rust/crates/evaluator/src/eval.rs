@@ -419,7 +419,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
         self.call_user_function(element_id, args, &name, None)
     }
 
-    #[allow(clippy::result_large_err, clippy::unused_self)]
+    #[allow(clippy::unused_self)]
     fn eval_date_literal(&self, dv: &DateValue) -> Result<Value, PureException> {
         match dv {
             DateValue::StrictDate { year, month, day } => {

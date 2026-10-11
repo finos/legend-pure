@@ -2,22 +2,6 @@
   "adapter": "meta::pure::test::pct::testAdapterForRustExecution_Function_1__X_o_",
   "exclusions": [
     {
-      "test": "meta::pure::functions::boolean::tests::equality::eq::testEqPrimitiveExtension_Function_1__Boolean_1_",
-      "expectedError": "Execution error at ??, \"Unsupported: lowering meta::pure::metamodel::type::PrimitiveType `meta::pure::functions::boolean::tests::equalitymodel::ExtendedInteger` outside the bootstrap\""
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::equality::equal::testEqualNonPrimitive_Function_1__Boolean_1_",
-      "expectedError": "Assert failed"
-    },
-    {
-      "test": "meta::pure::functions::boolean::tests::equality::equal::testEqualPrimitiveExtension_Function_1__Boolean_1_",
-      "expectedError": "Execution error at ??, \"Unsupported: lowering meta::pure::metamodel::type::PrimitiveType `meta::pure::functions::boolean::tests::equalitymodel::ExtendedInteger` outside the bootstrap\""
-    },
-    {
-      "test": "meta::pure::functions::collection::tests::getAll::testBasic_Function_1__Boolean_1_",
-      "expectedError": "Execution error at (resource:/platform/pure/grammar/functions/lang/all/all.pure line:36 column:32), \"FunctionNotFound: getAll_Class_1__T_MANY_\""
-    },
-    {
       "test": "meta::pure::functions::lang::tests::compare::testDateCompare_Function_1__Boolean_1_",
       "expectedError": "Execution error at (resource:<ffi> line:0 column:0), \"Execution error"
     },
@@ -30,16 +14,8 @@
       "expectedError": "Execution error at (resource:/platform/pure/grammar/functions/math/operation/minus.pure line:92 column:65), \"Unsupported: Integer arithmetic outside the 64-bit range\""
     },
     {
-      "test": "meta::pure::functions::math::tests::minus::testSingleMinusType_Function_1__Boolean_1_",
-      "expectedError": "Execution error at (resource:/platform/pure/essential/meta/type/type.pure line:20 column:11), \"NotImplemented: genericType_Any_MANY__GenericType_1_\""
-    },
-    {
       "test": "meta::pure::functions::math::tests::plus::testLargePlus_Function_1__Boolean_1_",
       "expectedError": "Execution error at (resource:/platform/pure/grammar/functions/math/operation/plus.pure line:97 column:79), \"Unsupported: Integer arithmetic outside the 64-bit range\""
-    },
-    {
-      "test": "meta::pure::functions::math::tests::plus::testSinglePlusType_Function_1__Boolean_1_",
-      "expectedError": "Execution error at (resource:/platform/pure/essential/meta/type/type.pure line:20 column:11), \"NotImplemented: genericType_Any_MANY__GenericType_1_\""
     },
     {
       "test": "meta::pure::functions::math::tests::times::testLargeTimes_Function_1__Boolean_1_",

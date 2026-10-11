@@ -704,7 +704,12 @@ impl NativeFunction for ParseDecimal {
                     ))
                 })?;
                 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                let rounded = d.round_dp(scale as u32);
+                let scale = scale as u32;
+                let mut rounded = d.round_dp_with_strategy(
+                    scale,
+                    rust_decimal::RoundingStrategy::MidpointAwayFromZero,
+                );
+                rounded.rescale(scale);
                 Ok(Evaluated::new(Value::Decimal(rounded)))
             }
             n => Err(PureRuntimeError::EvaluationError(format!(

@@ -37,9 +37,13 @@ const NEW: &str = "new_Class_1__String_1__Any_MANY__T_1_";
 fn registry() -> NativeRegistry {
     let mut registry = NativeRegistry::standard();
     registry.register(NEW, legend_pure_evaluator::native::lang::New);
+    registry.register(COPY, legend_pure_evaluator::native::lang::Copy);
     registry
 }
-const COPY: &str = "copy_T_1__String_1__KeyExpression_MANY__T_1_";
+/// The flat key/value spelling of `copy` these tests use, registered by
+/// `registry()` below; the platform declares `copy` over `KeyExpression`
+/// objects.
+const COPY: &str = "copy_T_1__String_1__Any_MANY__T_1_";
 const LET: &str = "letFunction_String_1__T_m__T_m_";
 const IF: &str = "if_Boolean_1__Function_1__Function_1__T_m_";
 const PLUS: &str = "plus_Number_MANY__Number_1_";
