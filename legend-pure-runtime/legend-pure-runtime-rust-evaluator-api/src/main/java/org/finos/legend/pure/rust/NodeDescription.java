@@ -17,7 +17,7 @@ package org.finos.legend.pure.rust;
 /**
  * One node of the Java graph, described for the Rust side in a single
  * call. Plain fields a transport reads; the kind constants are mirrored in
- * {@code crates/jni/src/java_node.rs}.
+ * {@code crates/evaluator/src/bridge/description.rs}.
  */
 public final class NodeDescription
 {

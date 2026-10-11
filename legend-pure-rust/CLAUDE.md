@@ -14,8 +14,8 @@ Three crates, nothing else:
 | Crate | Package | Holds |
 |---|---|---|
 | `crates/metamodel` | `legend-pure-metamodel` | Element tables (`PureModel`, `Element`, `nodes/`), the expression tree (`types::ValueSpec`, `types::ExprKind`), the M3 bootstrap (`bootstrap`, embeds `m3.pure` at compile time), function-name mangling (`fqn`). |
-| `crates/evaluator` | `legend-pure-evaluator` | Values, heap, variable context, dispatch (`eval`), the native registry (`native`, fished one at a time), hooks, builder, the `builders` test helpers. |
-| `crates/jni` | `legend-pure-jni` (cdylib `libpure_rust_jni`) | The JNI boundary behind the Java class `org.finos.legend.pure.rust.PureRustEvaluator` (Step 2): context, value marshalling, handle table, typed exceptions. Unsafe by nature; the only crate without `forbid(unsafe_code)`. |
+| `crates/evaluator` | `legend-pure-evaluator` | Values, heap, variable context, dispatch (`eval`), the native registry (`native`, fished one at a time), hooks, builder, the `builders` test helpers; `bridge/`, the host-agnostic core of every boundary (the `Host` trait a transport implements, `HostShared`, `BridgeContext`, `Session`, `Description`, `outbound::Leaf`), and `metadata`/`pct` for the `Rust_Native` run. |
+| `crates/jni` | `legend-pure-jni` (cdylib `libpure_rust_jni`) | The JNI transport only, behind the Java class `org.finos.legend.pure.rust.PureRustEvaluator`: method and field ids, reads through `JNIEnv` (`JniHost: Host`), one JNI call per outbound `Leaf`, the entry points and the throw. Unsafe by nature; the only crate without `forbid(unsafe_code)`. |
 
 The previous Rust workspace (parser, compiler, LSP, DSL crates, CLI, binary
 snapshot format) is frozen at tag `archive/pre-evaluator-extract-2026-10` and
@@ -74,7 +74,7 @@ never edited by hand; they rank what is left by kind: `FunctionNotFound: <key>`
 (nothing registered), `NotImplemented: <key>` (registered under its key through
 `native::NotYet`, body not fished), `Unsupported: …` (a lowering or value-shape
 gap), then bare Pure error texts (a semantic difference). A lambda reaching
-`JniContext::start` is lowered by `crates/evaluator/src/lower/` (Phase A, model
+`BridgeContext::start` is lowered by `crates/evaluator/src/lower/` (Phase A, model
 read-only) and run after the model grew (Phase B). Natives are fished from the
 archive one `impl NativeFunction` at a time (the natives round of 2026-10-11
 did it one module at a time on disjoint files). `tests/registry.rs` pins the
@@ -98,7 +98,7 @@ commands with JDK 17; a JDK 11 build leaves them out.
    function. Plan Appendix A says where everything is.
 
 Allowed dependencies: `smol_str`, `thiserror`, `rust_decimal`, `im-rc`, `jiff`,
-`tracing`, and for the JNI crate only `jni`, `slotmap`. `cargo tree --workspace
+`tracing`, `slotmap`, and for the JNI crate only `jni`. `cargo tree --workspace
 -e normal --depth 1` must show nothing else, and
 `grep -rnE 'purem|pelt|legend_pure_parser|legend_pure_runtime|serde|linkme|postcard|toml' crates/`
 must return nothing.

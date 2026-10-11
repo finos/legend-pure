@@ -59,7 +59,7 @@ Read this first; everything below assumes it.
 | PELT byte-level reference | `docs/architecture/pelt-serialization.md` at the repository root — on branch `docs/pelt-format`, submitted upstream as finos/legend-pure PR #1360. **Not on `legend-pure-rust` yet**: before Step 3, `git cherry-pick -n c989b50953b`, keep `docs/architecture/pelt-serialization.md`, and redo by hand its three link edits (`docs/README.md`, `docs/architecture/compiler-pipeline.md`, `docs/reference/maven-plugins-reference.md`; the first two already differ between the branches). Do **not** merge the branch — it tracks upstream `master` and differs from `legend-pure-rust` by ~1,500 files. |
 | Background analysis (why PELT, what it contains, how it maps) | `legend-pure-rust/docs/pelt-analysis.md` (moved from `docs/deferred/` in Step 0). Sections 6.3–6.8 are the source of Steps 2–7 here. |
 | legend-engine | A sibling checkout (`upstream/master` is the FINOS main line — see Appendix C for which branch is the target; it matters from Step 5, when the engine suite class is added). Its `*-pure` modules emit PELT into their jars (e.g. 414 `.pelt` in `functions-standard`); its PCT suite classes are the `Test_*_PCT.java` classes (42 on `upstream/master`); the engine compiler is `legend-engine-language-pure-compiler` (`toPureGraph`); the Pure function libraries are `legend-engine-core/legend-engine-core-pure/legend-engine-pure-code-functions-{standard,relation,json,planExecution,…}`. |
-| PCT in the platform | Profile `meta::pure::test::pct::PCT` in `legend-pure-core/legend-pure-m3-core/src/main/resources/platform/pure/essential/tests/pct_core.pure`, which since Step 2 also declares the native `evalRust`, the `Rust_JNI` adapter `testAdapterForRustExecution` and, since 2026-10-11, the `Rust_Native` adapter `testAdapterForRustNativeExecution`; 463 `<<PCT.test>>` functions in the platform sources (327 essential, 136 grammar); Java report providers `Essential_Functions_PCTReportProvider`, `Grammar_Functions_PCTReportProvider`, `Core_{Compiled,Interpreted}_PCTReportProvider`, and `Core_RustJni_PCTReportProvider` in the fork's `legend-pure-runtime-rust-evaluator`; shared helpers in `m3/pct/shared/PCTTools.java`. |
+| PCT in the platform | Profile `meta::pure::test::pct::PCT` in `legend-pure-core/legend-pure-m3-core/src/main/resources/platform/pure/essential/tests/pct_core.pure`, which since Step 2 also declares the native `evalRust`, the `Rust_JNI` adapter `testAdapterForRustExecution` and, since 2026-10-11, the `Rust_Native` adapter `testAdapterForRustNativeExecution`; 463 `<<PCT.test>>` functions in the platform sources (327 essential, 136 grammar); Java report providers `Essential_Functions_PCTReportProvider`, `Grammar_Functions_PCTReportProvider`, `Core_{Compiled,Interpreted}_PCTReportProvider`, and `Core_RustJni_PCTReportProvider` in the fork's `legend-pure-runtime-rust-evaluator-jni`; shared helpers in `m3/pct/shared/PCTTools.java`. |
 | What to extract, and what to leave | Appendix A (extraction map). Read it before Step 0 and before fishing anything later. |
 | Step 0 mechanics | Appendix B: archive commands, workspace skeleton, gates. |
 | Decisions still owned by the author | Appendix C. Do not guess these; ask. |
@@ -92,7 +92,8 @@ with its gate:
    and the `Rust_Native` run (Step 2, the paragraph of that name) resolves
    the surveyor instead of stopping at `MetadataNotFound`.
    Two decisions taken before it (2026-10-11): the
-   `legend-pure-runtime-rust-evaluator` module compiles with release 17,
+   Java modules (`legend-pure-runtime-rust-evaluator-api` and `-jni` since
+   the Step 2c split) compile with release 17,
    and the bridge stays on JNI until the JDK floor reaches 22 (Step 2,
    "JNI or the Foreign Function & Memory API"; Appendix C item 7).
 2. **Steps 5–7** as written.
@@ -514,6 +515,7 @@ from here on, each later step is measured by how many turn green.
   substring; `ASSERTION_FAILED` carries a `PureAssertFailException` cause so
   the harness's fail / error split applies.
 - **Java module `legend-pure-runtime/legend-pure-runtime-rust-evaluator`**
+  (renamed `…-jni` and split from `…-api` by Step 2c phase 1, 2026-10-11)
   (back in the reactor; `…-bindings-ap` deleted 2026-10-11, it lives on the
   archive tag): `PureRustEvaluator
   implements FunctionExecution` (`init(runtime, message)`, `start(function,
@@ -747,10 +749,10 @@ the error in that test, and `Rust_JNI` stays the measure of the bridge.
 ```bash
 cd legend-pure-rust && cargo build --workspace            # builds the cdylib
 cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
-  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator clean verify
+  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-api,legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni clean verify
 # after a change that moves tests: regenerate, review the diff, verify again
 JAVA_HOME=$(/usr/libexec/java_home -v 17) \
-  mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator \
+  mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni \
   -Dtest=RebaseRustJniManifests -DfailIfNoTests=false
 ```
 
@@ -1127,23 +1129,48 @@ fields of `NodeDescription` read by id and tomorrow one flat layout:
 `year`, `month`, `day`, `hour`, `minute`, `second`, `precision`,
 `subsecond`, `sourceId`, `line`, `column`, `endLine`, `endColumn`.
 
-**Phase 1 — the seam (no behaviour change).** Move the host-agnostic
-core out of `crates/jni` into the evaluator crate, behind one trait a
-transport implements: the reads (`describe`, property values, keys,
-captured values, the lambda definition key), the lifecycle (end of
-execution, the nodes released, the error side-channel) and the read
-counter the timings report. It is the same family as Step 4's
-`Directory` (path, classifier, name, reference id → nodes) and lives in
-the same crate; the JNI implementation of both is the thin remainder of
-`crates/jni`. On the Java side, a shared module at release 17,
-`legend-pure-runtime-rust-evaluator-api` (`RustEngineHost`, both hosts,
-`RustCoreInstance`, `NodeDescription`, `CompiledObjects`, `CompiledValue`,
-`PureRustEvaluationException`, `RustPlatformGraph`, the PCT suites'
-tooling, the manifest rebase and the benchmarks); the JNI module keeps
-`PureRustEvaluator`'s native boundary and `RustNodeBridge`'s JNI-called
-surface. Gate: the four `Rust_JNI` numbers and both benchmarks unchanged;
-`jni::` appears only under `crates/jni`; the module verify stays
-checkstyle and dependency-analyze clean on both modules.
+**Phase 1 — the seam (no behaviour change; done 2026-10-11).** The
+host-agnostic core of the boundary moved out of `crates/jni` into
+`crates/evaluator/src/bridge/` (2,151 lines, no unsafe; `crates/jni`
+3,202 → 1,550): the `Host` trait a transport implements
+(`property_values`, `captured_values`, `keys_of`, `forget`, each returning
+`Err` and never unwinding); `HostShared` (the host, the model behind
+`Rc<RefCell>`, the node and handle identity tables, the error
+side-channel, the read counter, `end_execution`); `BridgeContext`
+(`start`, the per-call lowering through the closure cache, the model's
+growth, the property reads Java makes on Rust objects); `Session<C>` (one
+thread enters a context at a time); `Description`, the twenty fields by
+name a transport fills (`describe` is transport-initiated: the transport
+fills it and calls `description_to_value`); and `outbound::Leaf`, the
+shape of a result crossing out (`Boolean`, `Integer`, `Float`, `Decimal`,
+`String`, `LatestDate`, `Date`, `StrictTime`, `Element(path)`,
+`EnumValue`, `HostNode(id)`, `RustObject{handle, classifier}`, `Map`), one
+host object per arm built by the transport. `JavaNode` is gone: one
+`HostNode` in core over `Box<dyn Host>`. The evaluator's state (heap,
+scopes, caches) is separable from its borrows (`EvaluatorState`), so a
+context rebuilds the evaluator after the model grows; the native cache
+stores registry positions, not references. `tests/bridge.rs` drives the
+core with a `Host` that is a table of descriptions and no runtime: phase
+2's first consumer. What stays in `crates/jni` is JNI: ids, reads through
+`JNIEnv` (`JniHost`), one JNI call per `Leaf`, the entry points, the
+throw and the i64 pointer round trip (about fifteen unsafe lines each
+transport keeps). It is the same family as Step 4's `Directory` (path,
+classifier, name, reference id → nodes) and lives in the same crate. On
+the Java side, `legend-pure-runtime-rust-evaluator-api` (release 17):
+`RustEngineHost`, both hosts, `NodeBridge` (the host-side describe logic,
+the node id table, `failureOf`), `RustCoreInstance` over the four-method
+`RustHeap` any evaluator satisfies, `NodeDescription`, `CompiledObjects`,
+`CompiledValue`, the exception kinds, `RustPlatformGraph`, and the shared
+tooling parametrised by adapter (`PctSuites`, `PctManifestRebase`,
+`PctExpressionsBenchmark` with one `Mode` per engine and transport);
+`legend-pure-runtime-rust-evaluator-jni` (the module renamed):
+`PureRustEvaluator`, `RustNodeBridge extends NodeBridge` with the
+JNI-called surface, `evalRust` on both engines, the `Rust_JNI` suites,
+manifests and reports. Gate met: the four `Rust_JNI` numbers unchanged
+(339 / 346, 133 / 137, compiled 340 / 346, 133 / 137), the manifests
+byte for byte, the benchmark median 93 µs against 94 before, no `jni`
+under `crates/evaluator`, both modules checkstyle and dependency-analyze
+clean, the JDK 11 reactor without them.
 
 **Phase 2 — the C ABI and its first client.** `crates/ffi`, a cdylib
 (`libpure_rust_ffi`) with an `extern "C"` surface, no `jni` dependency
@@ -1559,7 +1586,7 @@ Java. Rough size: ~1 k lines.
 | `m3.pure` (M3 bootstrap) | 0 onward | in | embedded at compile time; chunk 0 of every model |
 | Maven-built jars with PELT | 3–4 | in | PELT store over directory / jars / classloader |
 | Java Pure compiler | all | upstream | unchanged; its PELT output is the contract |
-| PCT corpus and adapters | 2 onward | test | `Rust_JNI` adapter: `evalRust` on the interpreted engine, suites and generated manifests in the fork's `legend-pure-runtime-rust-evaluator` from Step 2 (red), engine suite class from Step 5; failures typed by kind; `Rust_Native` through the Rust surveyor later |
+| PCT corpus and adapters | 2 onward | test | `Rust_JNI` adapter: `evalRust` on the interpreted engine, suites and generated manifests in the fork's `legend-pure-runtime-rust-evaluator-jni` from Step 2 (red), engine suite class from Step 5; failures typed by kind; `Rust_Native` through the Rust surveyor later |
 | JNI | 2, 3, 6 | both | `start()`, `CoreInstance` both ways, node bridge, handles, typed failures |
 | legend-engine compiler (`toPureGraph`) | 6, 7 | in | live `CoreInstance` objects consumed through the node bridge; identity unification by path |
 | `MetadataPelt` (class in `legend-pure-runtime-java-engine-compiled`, used by legend-engine's `PureModel`) | 6 | in | its lazy objects are also `CoreInstance`s; unified with the evaluator's own PELT-loaded elements by path |
