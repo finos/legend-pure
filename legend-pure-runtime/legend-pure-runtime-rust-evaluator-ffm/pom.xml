@@ -127,6 +127,46 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>GeneratePCTReport</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>org.finos.legend.pure.runtime.java.interpreted.testHelper.PCTReportGenerator</mainClass>
+                            <arguments>
+                                <argument>${project.build.directory}/classes/pct-reports/</argument>
+                                <argument>org.finos.legend.pure.rust.ffm.pct.Test_RustFfm_EssentialFunctions_PCT</argument>
+                                <argument>org.finos.legend.pure.rust.ffm.pct.Test_RustFfm_GrammarFunctions_PCT</argument>
+                            </arguments>
+                            <includeProjectDependencies>true</includeProjectDependencies>
+                            <classpathScope>test</classpathScope>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>GeneratePCTReportCompiled</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>org.finos.legend.pure.runtime.java.compiled.testHelper.PCTReportGenerator</mainClass>
+                            <arguments>
+                                <argument>${project.build.directory}/classes/pct-reports/</argument>
+                                <argument>org.finos.legend.pure.rust.ffm.pct.Test_RustFfmCompiled_EssentialFunctions_PCT</argument>
+                                <argument>org.finos.legend.pure.rust.ffm.pct.Test_RustFfmCompiled_GrammarFunctions_PCT</argument>
+                            </arguments>
+                            <includeProjectDependencies>true</includeProjectDependencies>
+                            <classpathScope>test</classpathScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <dependencies>

@@ -1,0 +1,33 @@
+{
+  "adapter": "meta::pure::test::pct::testAdapterForRustFfmExecution_Function_1__X_o_",
+  "exclusions": [
+    {
+      "test": "meta::pure::functions::date::tests::testAdjustByDaysBigNumber_Function_1__Boolean_1_",
+      "expectedError": "Date overflow: parameter 'days' is not in the required range of -7304484..=7304484"
+    },
+    {
+      "test": "meta::pure::functions::date::tests::testAdjustByHoursBigNumber_Function_1__Boolean_1_",
+      "expectedError": "Date overflow: parameter 'hours' is not in the required range of -175307616..=175307616"
+    },
+    {
+      "test": "meta::pure::functions::date::tests::testAdjustByMinutesBigNumber_Function_1__Boolean_1_",
+      "expectedError": "Date overflow: parameter 'minutes' is not in the required range of -10518456960..=10518456960"
+    },
+    {
+      "test": "meta::pure::functions::date::tests::testAdjustByMonthsBigNumber_Function_1__Boolean_1_",
+      "expectedError": "Date overflow: parameter 'months' is not in the required range of -239976..=239976"
+    },
+    {
+      "test": "meta::pure::functions::date::tests::testAdjustByWeeksBigNumber_Function_1__Boolean_1_",
+      "expectedError": "Date overflow: parameter 'days' is not in the required range of -7304484..=7304484"
+    },
+    {
+      "test": "meta::pure::functions::lang::tests::match::testMatchWithMixedReturnType_Function_1__Boolean_1_",
+      "expectedError": "NotImplemented: deactivate_Any_MANY__ValueSpecification_1_"
+    },
+    {
+      "test": "meta::pure::functions::math::tests::abs::testBigFloatAbs_Function_1__Boolean_1_",
+      "expectedError": "expected: 123456789123456789.99"
+    }
+  ]
+}

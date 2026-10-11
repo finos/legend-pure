@@ -1,0 +1,21 @@
+{
+  "adapter": "meta::pure::test::pct::testAdapterForRustFfmExecution_Function_1__X_o_",
+  "exclusions": [
+    {
+      "test": "meta::pure::functions::lang::tests::compare::testDateCompare_Function_1__Boolean_1_",
+      "expectedError": "Execution error"
+    },
+    {
+      "test": "meta::pure::functions::math::tests::minus::testLargeMinus_Function_1__Boolean_1_",
+      "expectedError": "Unsupported: an Integer outside the 64-bit range"
+    },
+    {
+      "test": "meta::pure::functions::math::tests::plus::testLargePlus_Function_1__Boolean_1_",
+      "expectedError": "Unsupported: Integer arithmetic outside the 64-bit range"
+    },
+    {
+      "test": "meta::pure::functions::math::tests::times::testLargeTimes_Function_1__Boolean_1_",
+      "expectedError": "Unsupported: Integer arithmetic outside the 64-bit range"
+    }
+  ]
+}
