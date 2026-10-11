@@ -61,6 +61,8 @@ JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   -Dtest=RebaseRustJniManifests -DfailIfNoTests=false
 ```
 
+Benchmarks of all five modes (Rust native, JNI, FFM, both Java engines): `docs/benchmarks-2026-10-11.md`, whose last section holds every command; the twelve expressions under every Java mode and both transports in one JVM is the `-ffm` test `BenchmarkTransportExpressions` (`-Dtest=BenchmarkTransportExpressions` on the three modules, JDK 25, `-Dlegend.rust.libdir=$PWD/legend-pure-rust/target/release`).
+
 The corpus also runs with no host engine at all, the `Rust_Native` adapter:
 `cargo run -p legend-pure-evaluator --example pct_native` calls the surveyor by
 path on the evaluator alone (`src/pct.rs`, manifests under `crates/evaluator/pct/`)

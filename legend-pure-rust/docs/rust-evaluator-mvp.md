@@ -66,6 +66,7 @@ Read this first; everything below assumes it.
 | What to extract, and what to leave | Appendix A (extraction map). Read it before Step 0 and before fishing anything later. |
 | Step 0 mechanics | Appendix B: archive commands, workspace skeleton, gates. |
 | Decisions still owned by the author | Appendix C. Do not guess these; ask. |
+| Benchmarks: the five ways of running the same Pure (Rust native, JNI, FFM, the interpreted engine, the compiled engine), 2026-10-11 | `legend-pure-rust/docs/benchmarks-2026-10-11.md`: machine, method, the twelve expressions and the PCT corpus per mode, the reading, the commands. |
 
 **Where we are, and what comes next (2026-10-11).** Steps 0–2 are done,
 the Java-lambda lowering, natives rounds 1 and 2, Step 2b and the bridge's
