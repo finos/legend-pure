@@ -68,8 +68,7 @@
                 <jdk>[25,)</jdk>
             </activation>
             <modules>
-                <!-- Step 2c phase 2 adds the module here once it exists: -->
-                <!-- <module>legend-pure-runtime-rust-evaluator-ffm</module> -->
+                <module>legend-pure-runtime-rust-evaluator-ffm</module>
             </modules>
         </profile>
     </profiles>
