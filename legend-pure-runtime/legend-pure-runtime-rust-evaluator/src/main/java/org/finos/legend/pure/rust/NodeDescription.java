@@ -52,7 +52,12 @@ final class NodeDescription
      */
     int precision;
     String subsecond;
-    String[] keys;
+    /**
+     * For a lambda value the engine created for one evaluation (a lambda with
+     * the scope it was evaluated in): the bridge id of the definition it
+     * stands for, the same for every evaluation of that lambda; -1 otherwise.
+     */
+    long definition = -1;
     /**
      * Source span, when the node has one ({@code sourceId == null} otherwise):
      * the anchor line/column plus the end position, as {@code SourceInformation}

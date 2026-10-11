@@ -18,16 +18,19 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
 import org.finos.legend.pure.rust.RustEngineHost;
+import org.finos.legend.pure.runtime.java.compiled.CoreHelper;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.LambdaCompiledExtended;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ValCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureLambdaFunction;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
 
 import java.math.BigDecimal;
 
@@ -93,6 +96,17 @@ public final class CompiledHost implements RustEngineHost
         return Lists.immutable.with(ValCoreInstance.toCoreInstance(value));
     }
 
+    /**
+     * A compiled lambda value is a new object per evaluation, and its metadata
+     * lambda (the stable identity) is not exposed; no key, so nothing is
+     * cached for it.
+     */
+    @Override
+    public Object lambdaDefinition(CoreInstance lambda)
+    {
+        return null;
+    }
+
     @Override
     public CoreInstance newBoolean(boolean value)
     {
@@ -139,5 +153,22 @@ public final class CompiledHost implements RustEngineHost
     public CoreInstance newStrictTime(PureStrictTime time)
     {
         return ValCoreInstance.toCoreInstance(time);
+    }
+
+    /**
+     * A {@link PureMap} as the engine's {@code newMap} builds one (keys
+     * hashed with {@code PureEqualsHashingStrategy}), over plain Java values.
+     * A {@code PureMap} is not a {@link CoreInstance}, so it crosses in a
+     * {@link CompiledValue}, which {@link CompiledEvalRust} unwraps.
+     */
+    @Override
+    public CoreInstance newMap(CoreInstance[] keys, CoreInstance[] values)
+    {
+        PureMap map = CoreHelper.newMap();
+        for (int i = 0; i < keys.length; i++)
+        {
+            map.getMap().put(CompiledValue.unwrap(keys[i]), CompiledValue.unwrap(values[i]));
+        }
+        return new CompiledValue(map, this.processorSupport.package_getByUserPath(M3Paths.Map));
     }
 }

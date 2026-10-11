@@ -24,6 +24,7 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.rust.PureRustEvaluationException;
@@ -92,12 +93,23 @@ public class EvalRust extends NativeFunction
         poisoned.close();
     }
 
+    /**
+     * The evaluator bound to the engine's current runtime. An engine
+     * re-initialised with another runtime gets a new evaluator and the old
+     * one is closed, so at most one native context lives per engine.
+     */
     private synchronized PureRustEvaluator evaluator()
     {
+        PureRuntime runtime = this.functionExecution.getPureRuntime();
+        if ((this.evaluator != null) && (this.evaluator.getRuntime() != runtime))
+        {
+            this.evaluator.close();
+            this.evaluator = null;
+        }
         if (this.evaluator == null)
         {
             PureRustEvaluator created = new PureRustEvaluator();
-            created.init(this.functionExecution.getPureRuntime(), new Message(""));
+            created.init(runtime, new Message(""));
             this.evaluator = created;
         }
         return this.evaluator;

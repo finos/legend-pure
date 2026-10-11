@@ -3,11 +3,7 @@
   "exclusions": [
     {
       "test": "meta::pure::functions::lang::tests::compare::testDateCompare_Function_1__Boolean_1_",
-      "expectedError": "Execution error at (resource:<ffi> line:0 column:0), \"Execution error"
-    },
-    {
-      "test": "meta::pure::functions::lang::tests::letFn::testAssignNewInstance_Function_1__Boolean_1_",
-      "expectedError": "Execution error at (resource:/platform/pure/grammar/functions/lang/let.pure lines:35c66-42c1), \"Unexpected error executing function with params [testAdapterForRustExecution_Function_1__X_o_]\""
+      "expectedError": "Execution error at (resource:/platform/pure/grammar/functions/lang/compare.pure line:69 column:37), \"Invalid year: parameter 'year' is not in the required range of -9999..=9999\""
     },
     {
       "test": "meta::pure::functions::math::tests::minus::testLargeMinus_Function_1__Boolean_1_",

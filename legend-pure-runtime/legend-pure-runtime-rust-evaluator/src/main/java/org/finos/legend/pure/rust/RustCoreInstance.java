@@ -18,6 +18,9 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.MutableSet;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
@@ -40,12 +43,14 @@ import java.util.Objects;
  */
 public final class RustCoreInstance extends AbstractCoreInstance implements Closeable
 {
+    private static final String ANONYMOUS_PREFIX = "@_";
+    private static final int ANONYMOUS_DIGITS = Long.toUnsignedString(-1L, 32).length();
+
     private final PureRustEvaluator owner;
     private final long handle;
     private final String classifierPath;
     private CoreInstance classifier;
     private String name;
-    private boolean nameResolved;
 
     RustCoreInstance(PureRustEvaluator owner, long handle, String classifierPath)
     {
@@ -84,16 +89,45 @@ public final class RustCoreInstance extends AbstractCoreInstance implements Clos
         return this.classifier;
     }
 
+    /**
+     * As a Java instance's: a model element (an instance of a subtype of
+     * {@code ModelElement}) is named by its {@code name}; any other instance
+     * has an anonymous name, in the repository's anonymous form so
+     * {@code ModelRepository.isAnonymousInstanceName} recognises it, unique
+     * per Rust object. Never null: {@code id()} and every printer read it.
+     */
     @Override
     public String getName()
     {
-        if (!this.nameResolved)
+        if (this.name == null)
         {
-            ListIterable<? extends CoreInstance> values = getValueForMetaPropertyToMany("name");
-            this.name = ((values.size() == 1) && (values.get(0) instanceof StringCoreInstance)) ? values.get(0).getName() : null;
-            this.nameResolved = true;
+            this.name = isModelElement() ? modelElementName() : anonymousName(this.handle);
         }
         return this.name;
+    }
+
+    private boolean isModelElement()
+    {
+        ProcessorSupport processorSupport = this.owner.getProcessorSupport();
+        CoreInstance modelElement = processorSupport.package_getByUserPath(M3Paths.ModelElement);
+        return (modelElement != null) && processorSupport.type_subTypeOf(getClassifier(), modelElement);
+    }
+
+    private String modelElementName()
+    {
+        ListIterable<? extends CoreInstance> values = getValueForMetaPropertyToMany(M3Properties.name);
+        return ((values.size() == 1) && (values.get(0) instanceof StringCoreInstance)) ? values.get(0).getName() : anonymousName(this.handle);
+    }
+
+    private static String anonymousName(long handle)
+    {
+        String digits = Long.toUnsignedString(handle, 32);
+        StringBuilder name = new StringBuilder(ANONYMOUS_PREFIX);
+        for (int i = digits.length(); i < ANONYMOUS_DIGITS; i++)
+        {
+            name.append('0');
+        }
+        return name.append(digits).toString();
     }
 
     @Override
@@ -174,7 +208,7 @@ public final class RustCoreInstance extends AbstractCoreInstance implements Clos
     {
         try
         {
-            appendable.append(tab).append(String.valueOf(getName())).append(" instance ").append(this.classifierPath);
+            appendable.append(tab).append(ModelRepository.possiblyReplaceAnonymousId(getName())).append(" instance ").append(this.classifierPath);
             if (max > 0)
             {
                 for (String key : getKeys())

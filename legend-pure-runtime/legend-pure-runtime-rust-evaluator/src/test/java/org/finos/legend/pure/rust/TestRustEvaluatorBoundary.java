@@ -20,6 +20,7 @@ import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.PlatformCodeRepositoryProvider;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -33,6 +34,7 @@ import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.rust.pct.RustPlatformGraph;
+import org.finos.legend.pure.runtime.java.interpreted.natives.MapCoreInstance;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -111,6 +113,17 @@ public class TestRustEvaluatorBoundary
         return tests.getFirst();
     }
 
+    /**
+     * A graph node that is neither a value nor a packageable element: the
+     * first expression of a PCT test's body.
+     */
+    private static CoreInstance anExpressionNode()
+    {
+        CoreInstance expression = firstPctTest().getValueForMetaPropertyToMany(M3Properties.expressionSequence).getFirst();
+        Assert.assertNotNull(expression);
+        return expression;
+    }
+
     @Test
     public void primitivesRoundTripWithTheirClassifier()
     {
@@ -152,9 +165,9 @@ public class TestRustEvaluatorBoundary
         Assert.assertEquals("element", evaluator.crossingKind(classNode));
         Assert.assertSame(classNode, roundTrip(classNode));
 
-        CoreInstance pctTest = firstPctTest();
-        Assert.assertEquals("javaNode", evaluator.crossingKind(pctTest));
-        Assert.assertSame(pctTest, roundTrip(pctTest));
+        CoreInstance expression = anExpressionNode();
+        Assert.assertEquals("javaNode", evaluator.crossingKind(expression));
+        Assert.assertSame(expression, roundTrip(expression));
     }
 
     @Test
@@ -181,16 +194,80 @@ public class TestRustEvaluatorBoundary
         Assert.assertTrue(stale.getMessage(), stale.getMessage().contains("Stale or unknown JNI handle:"));
     }
 
+    /**
+     * A Rust object that is not a model element has a name as a Java
+     * instance does: anonymous in the repository's form, and its own.
+     * Pure's {@code id()} (and with it {@code toRepresentation}, which
+     * {@code assertEquals} calls on every collection it compares) reads it.
+     */
     @Test
-    public void aPctTestIsFunctionNotFoundWithItsUserPath()
+    public void aRustObjectThatIsNotAModelElementHasAnAnonymousName()
     {
-        CoreInstance pctTest = firstPctTest();
-        CoreInstance adapter = node(PlatformCodeRepositoryProvider.nativeAdapter.function);
+        String pair = "meta::pure::functions::collection::Pair";
+        CoreInstance first = evaluator.create(pair, new String[]{"first", "second"}, new CoreInstance[][]{{repository.newIntegerCoreInstance(1L)}, {repository.newStringCoreInstance("a")}});
+        CoreInstance second = evaluator.create(pair, new String[]{"first", "second"}, new CoreInstance[][]{{repository.newIntegerCoreInstance(1L)}, {repository.newStringCoreInstance("a")}});
+        Assert.assertNotNull(first.getName());
+        Assert.assertTrue(first.getName(), ModelRepository.isAnonymousInstanceName(first.getName()));
+        Assert.assertNotEquals(first.getName(), second.getName());
+        ((RustCoreInstance) first).close();
+        ((RustCoreInstance) second).close();
+    }
+
+    /**
+     * A map built in Rust comes back as the interpreted engine's own
+     * {@link MapCoreInstance}, its entries materialised like any value, so
+     * the engine's equality and lookups apply. A Java map handed to a Rust
+     * map native does not cross as a map: the native refuses it, typed.
+     */
+    @Test
+    public void aRustMapComesBackAsTheEnginesMapAndAJavaMapDoesNotCrossIn()
+    {
+        String pair = "meta::pure::functions::collection::Pair";
+        CoreInstance one = evaluator.create(pair, new String[]{"first", "second"}, new CoreInstance[][]{{repository.newStringCoreInstance("a")}, {repository.newIntegerCoreInstance(1L)}});
+        CoreInstance two = evaluator.create(pair, new String[]{"first", "second"}, new CoreInstance[][]{{repository.newStringCoreInstance("b")}, {repository.newIntegerCoreInstance(2L)}});
+        CoreInstance result = values(evaluator.start(node("meta::pure::functions::collection::newMap_Pair_MANY__Map_1_"), Lists.mutable.with(wrapAll(one, two)))).get(0);
+        ((RustCoreInstance) one).close();
+        ((RustCoreInstance) two).close();
+        Assert.assertTrue(result.getClass().getName(), result instanceof MapCoreInstance);
+        MapCoreInstance map = (MapCoreInstance) result;
+        Assert.assertEquals(2, map.getMap().size());
+        Assert.assertEquals("2", map.getMap().get(repository.newStringCoreInstance("b")).getName());
+        Assert.assertSame(node(M3Paths.Map), map.getClassifier());
+
         PureRustEvaluationException e = Assert.assertThrows(PureRustEvaluationException.class,
-                () -> evaluator.start(pctTest, Lists.mutable.with(wrap(adapter))));
+                () -> evaluator.start(node("meta::pure::functions::collection::keys_Map_1__U_MANY_"), Lists.mutable.with(wrap(map))));
+        Assert.assertEquals(e.getMessage(), PureRustEvaluationException.Kind.EXECUTION_ERROR, e.getKind());
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("expected Map"));
+        Assert.assertEquals(0L, evaluator.liveHandleCount());
+    }
+
+    /**
+     * A function with a body handed to {@code start} is lowered with
+     * everything it calls, and so are its arguments: a PCT test run with
+     * the In-Memory adapter (itself a function with a body) runs entirely
+     * in Rust and returns its result.
+     */
+    @Test
+    public void aConcreteFunctionDefinitionLowersAndRunsWithItsArguments()
+    {
+        CoreInstance pctTest = pctTest(PlatformCodeRepositoryProvider.grammarFunctions, "testSimplePlus");
+        CoreInstance adapter = node(PlatformCodeRepositoryProvider.nativeAdapter.function);
+        CoreInstance result = evaluator.start(pctTest, Lists.mutable.with(wrap(adapter)));
+        Assert.assertEquals("true", values(result).get(0).getName());
+    }
+
+    /**
+     * A packageable element that is not a function cannot be started: it is
+     * reported as a function not found, with its user path.
+     */
+    @Test
+    public void anElementThatIsNotAFunctionIsFunctionNotFoundWithItsUserPath()
+    {
+        String profile = "meta::pure::profiles::doc";
+        PureRustEvaluationException e = Assert.assertThrows(PureRustEvaluationException.class,
+                () -> evaluator.start(node(profile), Lists.immutable.empty()));
         Assert.assertEquals(PureRustEvaluationException.Kind.FUNCTION_NOT_FOUND, e.getKind());
-        String expectedPath = PackageableElement.getUserPathForPackageableElement(pctTest, "::");
-        Assert.assertEquals("FunctionNotFound: " + expectedPath, e.getMessage());
+        Assert.assertEquals("FunctionNotFound: " + profile, e.getMessage());
     }
 
     /**
@@ -202,6 +279,22 @@ public class TestRustEvaluatorBoundary
         CoreInstance lambda = findLambda(pctTest(PlatformCodeRepositoryProvider.grammarFunctions, "testSimplePlus"));
         CoreInstance result = evaluator.start(lambda, Lists.immutable.empty());
         Assert.assertEquals("3", values(result).get(0).getName());
+    }
+
+    /**
+     * A lambda is lowered once per definition: the second call takes its
+     * body from the closure cache and reads nothing from Java to lower it,
+     * with the same result.
+     */
+    @Test
+    public void aLambdaIsLoweredOnceAndRunsAgainFromTheClosureCache()
+    {
+        CoreInstance lambda = findLambda(pctTest(PlatformCodeRepositoryProvider.grammarFunctions, "testSimpleMinus"));
+        CoreInstance first = evaluator.start(lambda, Lists.immutable.empty());
+        Assert.assertTrue(PureRustEvaluator.lastTimings()[3] > 0L);
+        CoreInstance second = evaluator.start(lambda, Lists.immutable.empty());
+        Assert.assertEquals(0L, PureRustEvaluator.lastTimings()[3]);
+        Assert.assertEquals(values(first).get(0).getName(), values(second).get(0).getName());
     }
 
     /**
@@ -393,15 +486,55 @@ public class TestRustEvaluatorBoundary
     @Test
     public void handlesAreReleasedAcrossTenThousandRoundTrips()
     {
-        CoreInstance pctTest = firstPctTest();
+        CoreInstance expression = anExpressionNode();
+        Assert.assertSame(expression, roundTrip(expression));
+        int knownBefore = evaluator.knownNodeCount();
         for (int i = 0; i < 10_000; i++)
         {
             CoreInstance created = evaluator.create(CLASS, new String[]{"name"}, new CoreInstance[][]{{repository.newStringCoreInstance("X" + i)}});
             Assert.assertNotNull(created.getClassifier());
             ((RustCoreInstance) created).close();
-            Assert.assertSame(pctTest, roundTrip(pctTest));
+            Assert.assertSame(expression, roundTrip(expression));
         }
         Assert.assertEquals(0L, evaluator.liveHandleCount());
+        Assert.assertEquals(knownBefore, evaluator.knownNodeCount());
+    }
+
+    /**
+     * A Java exception raised while the bridge serves the Rust side is
+     * taken and cleared before any other JNI call, arrives as a typed
+     * failure carrying its text, and leaves the evaluator usable.
+     */
+    @Test
+    public void aJavaFailureInsideTheBridgeArrivesTypedAndLeavesTheEvaluatorUsable()
+    {
+        PureRustEvaluationException e = Assert.assertThrows(PureRustEvaluationException.class, () -> evaluator.crossingKind(null));
+        Assert.assertEquals(PureRustEvaluationException.Kind.EXECUTION_ERROR, e.getKind());
+        Assert.assertTrue(e.getMessage(), e.getMessage().startsWith("ExecutionError: describe: java.lang.NullPointerException"));
+        Assert.assertEquals("42", roundTrip(repository.newIntegerCoreInstance(42L)).getName());
+    }
+
+    /**
+     * The bridge keeps an id only for the Java nodes the Rust side still
+     * holds: hundreds of distinct nodes crossing one call at a time leave
+     * its tables as they were.
+     */
+    @Test
+    public void theBridgeForgetsTheNodesRustLetGoOf()
+    {
+        ReportScope scope = PlatformCodeRepositoryProvider.essentialFunctions;
+        MutableList<CoreInstance> expressions = Lists.mutable.empty();
+        for (CoreInstance test : TestCollection.buildPCTTestCollection(scope._package, scope.filePath, ps).getAllTestFunctions())
+        {
+            test.getValueForMetaPropertyToMany(M3Properties.expressionSequence).forEach(expressions::add);
+        }
+        Assert.assertTrue(expressions.size() > 300);
+        int knownBefore = evaluator.knownNodeCount();
+        for (CoreInstance expression : expressions)
+        {
+            Assert.assertSame(expression, roundTrip(expression));
+        }
+        Assert.assertEquals(knownBefore, evaluator.knownNodeCount());
     }
 
     @Test

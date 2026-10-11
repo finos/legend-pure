@@ -898,30 +898,9 @@ fn copy_with_triples(
         let obj = ctx.heap_mut().alloc_dynamic(classifier.clone());
         let (plain_kvs, path_kvs) = partition_path_kvs(&values[1..])?;
 
-        let path_overrides: std::collections::HashSet<SmolStr> = {
-            let mut set = std::collections::HashSet::new();
-            let mut i = 0;
-            while i < path_kvs.len() {
-                if let Ok(k) = path_kvs[i].as_string()
-                    && let Some((head, _)) = k.split_once('.')
-                {
-                    set.insert(SmolStr::new(head));
-                }
-                i += 3;
-            }
-            set
-        };
-
-        let mut carried_kvs: Vec<Value> = Vec::with_capacity(original_props.len() * 3);
         for (name, prop_values) in &original_props {
             ctx.heap_mut()
                 .mutate_add(&obj, name.as_str(), prop_values)?;
-            if path_overrides.contains(name) {
-                continue;
-            }
-            carried_kvs.push(Value::String(name.clone()));
-            carried_kvs.push(Value::from_vec(prop_values.clone()));
-            carried_kvs.push(Value::Boolean(false));
         }
 
         apply_key_value_triples(ctx, obj.clone(), &plain_kvs)?;
@@ -936,18 +915,6 @@ fn copy_with_triples(
                 sync_object_inverses(ctx, clone_obj, clone_class_id)?;
             }
         }
-        let _ = (carried_kvs, &path_overrides);
-
-        if !values[1..].is_empty() {
-            let si_obj = ctx
-                .heap_mut()
-                .alloc_dynamic(crate::m3_paths::SOURCE_INFORMATION);
-            ctx.heap_mut()
-                .mutate_set(&si_obj, "source", &[Value::String("<copy>".into())])?;
-            ctx.heap_mut()
-                .mutate_set(&obj, "sourceInformation", &[Value::Object(si_obj)])?;
-        }
-
         Ok(Evaluated::new(Value::Object(obj)))
     }
 }

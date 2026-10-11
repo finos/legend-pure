@@ -29,5 +29,4 @@ legend-pure-evaluator = { path = "../evaluator" }
 jni = { workspace = true }
 slotmap = { workspace = true }
 smol_str = { workspace = true }
-im-rc = { workspace = true }
 rust_decimal = { workspace = true }

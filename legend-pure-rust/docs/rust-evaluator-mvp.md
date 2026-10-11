@@ -2,10 +2,12 @@
 
 > **Status: in execution, October 2026 (revised 2026-10-11). Steps 0–2 done
 > 2026-10-09; the Java-lambda lowering (Step 2 "Next") done 2026-10-10;
-> natives round 1 done 2026-10-11 (`Rust_JNI` 303 / 327 and 126 / 136).
-> Next: Step 2b, the evaluator's own cost (decided 2026-10-11), then
-> natives round 2 on the residue listed under Step 2, then Step 3
-> (Appendix C item 6). Archive tag `archive/pre-evaluator-extract-2026-10`.**
+> natives round 1, Step 2b (the evaluator's own cost), natives round 2 and
+> the bridge's cost done 2026-10-11 (`Rust_JNI` 320 / 327 and 132 / 136,
+> compiled 321 / 327 and 132 / 136; the bridge within 1.15x of the
+> interpreted engine's own adapter). Next: Step 3, read PELT, with the
+> `Directory` trait of Step 4 (Appendix C item 6). Archive tag
+> `archive/pre-evaluator-extract-2026-10`.**
 > This document is
 > self-contained. It assumes the reader knows Legend Pure and legend-engine as
 > they exist in Java today and nothing else. It describes what a minimum viable
@@ -60,36 +62,35 @@ Read this first; everything below assumes it.
 | Decisions still owned by the author | Appendix C. Do not guess these; ask. |
 
 **Where we are, and what comes next (2026-10-11).** Steps 0–2 are done,
-the Java-lambda lowering and natives round 1 with them, and both Java
-engines run the PCT corpus through `Rust_JNI` (interpreted 303 / 327 and
-126 / 136, compiled 300 / 327 and 125 / 136). Two measurement tools exist:
-`BenchmarkPctExpressions` (every PCT test under four modes, with the Rust
-side's own split per call) and the apples-to-apples pair
-(`examples/expressions.rs`, `examples/hot_path.rs`, `BenchmarkNativeExpressions`).
-They say the evaluator alone is 10–20x ahead of the interpreted engine and
-2–13x behind the compiled one, and that the bridge costs about 600 µs per
-call on top. The order from here, each phase with its gate:
+the Java-lambda lowering, natives rounds 1 and 2, Step 2b and the bridge's
+cost with them, and both Java engines run the PCT corpus through
+`Rust_JNI` (interpreted 320 / 327 and 132 / 136, compiled 321 / 327 and
+132 / 136; what stays red is listed under Step 2, "Natives round 2 and the
+bridge's cost", each line a representation choice rather than a missing
+native). Two measurement tools exist: `BenchmarkPctExpressions` (every PCT
+test under four modes, with the Rust side's own split per call) and the
+apples-to-apples pair (`examples/expressions.rs`, `examples/hot_path.rs`,
+`BenchmarkNativeExpressions`). They say the evaluator alone is within 3x
+of the compiled engine's generated method on the twelve expressions (Step
+2b's table) and that a PCT test through `Rust_JNI` takes 1.15x the
+interpreted engine's own adapter (median 94 µs against 82 µs), the
+lowering cached per lambda definition. The order from here, each phase
+with its gate:
 
-1. **Step 2b — the evaluator's own cost** (next; decided 2026-10-11). The
-   eight ranked items of that step, one commit each, measured with the two
-   examples. Gate: the twelve expressions within 3x of the compiled
-   engine's generated method; all four `Rust_JNI` numbers unchanged.
-2. **Natives round 2** (Step 2, "State after the lowering" and "Natives
-   round 1"): the residue by kind — `Map` across the boundary, `zip`
-   results compared by the Java engine, `copy` with key expressions,
-   `genericType` and `deactivate` out of `NotYet`, the compiled engine's
-   five Rust-built objects handed to generated code, the review's round-2
-   items (fallible node reads, qualified properties dispatched through
-   the resolved property, JNI local references and exception discipline).
-   Gate: the manifests shrink, nothing regresses.
-3. **The bridge's cost** (Step 2, "Deferred: the cost of the bridge"):
-   cache the lowered closure per Java lambda object, then the crossing
-   itself (profile `start` first; the menu is listed there). Gate:
-   `BenchmarkPctExpressions` median through `Rust_JNI` within 2x of the
-   interpreted engine's own adapter.
-4. **Step 3 and Step 4** — read PELT, the `Directory` trait, the static
-   graph: the per-call re-lowering disappears for everything static.
-5. **Steps 5–7** as written.
+1. **Step 3 and Step 4** (next) — read PELT, the `Directory` trait, the
+   static graph: the per-call lowering disappears for everything static.
+   Before it, two decisions the author owns: the Java 17 floor for the
+   `legend-pure-runtime-rust-evaluator` module and whether the bridge
+   moves from JNI to the Foreign Function & Memory API (assessed
+   2026-10-11; the spike and its numbers are on the author's branch).
+2. **Steps 5–7** as written.
+
+Done phases and their closing paragraphs: Step 2b (its own section, the
+final table), natives round 2 and the bridge's cost (Step 2, after
+"Natives round 1"). The bridge's menu left unpicked: columnar
+description, string interning, a thread-local `JNIEnv`, subtree prefetch,
+element resolution cache; the gate did not need them, and Step 3 changes
+what crosses.
 
 Before any push: the review's decision list (files from the archived
 direction, the uncommitted `pom.xml` release change, the archive tag and
@@ -630,8 +631,8 @@ structural equality over Java-backed instances (2), user-defined primitive
 types (2), 64-bit overflow (3), Decimal/Float rendering (2), mixed-precision
 date compare (1).
 
-**Natives round 2 (2026-10-11, in progress).** The residue was worked on
-two disjoint file sets. The evaluator side: `copy` over key expressions
+**Natives round 2 (2026-10-11).** The residue was worked on two disjoint
+file sets. The evaluator side: `copy` over key expressions
 (`decode_key_expressions` feeds the same `copy_with_triples` as the flat
 form), `genericType` out of `NotYet` (a `GenericType` object with its
 `rawType`), `getAll` fished from the archive (metamodel rows by classifier,
@@ -647,14 +648,69 @@ with every unsafe block justified, read failures keeping their kind and
 anchor, Rust objects with a name and reaching the compiled engine's
 generated code as generated classes, a Rust `Map` crossing out as the host
 engine's own map, `start` classifying by element id, and the bridge
-forgetting the nodes Rust released. State after the evaluator side alone:
-`Rust_JNI essential: 308 / 327`, `Rust_JNI grammar: 132 / 136` (compiled
-302 / 327 and 131 / 136). Recorded as out of scope for the MVP, each a
+forgetting the nodes Rust released. Recorded as out of scope for the MVP, each a
 representation choice rather than a missing native: `adjust` beyond jiff's
 date range (5), 64-bit integer overflow where Java promotes to `BigInteger`
 (3), `Float` as `f64` where Java's is a `BigDecimal` (`testBigFloatAbs`),
 and `deactivate` (needs the `ValueSpecification` heap shapes and the
 compiler's least upper bound).
+
+**Natives round 2 and the bridge's cost (2026-10-11).** Both halves of
+round 2 merged, and the bridge measured and cut. Before: interpreted
+`Rust_JNI essential: 303 / 327`, `Rust_JNI grammar: 126 / 136`, compiled
+300 / 327 and 125 / 136. After: `Rust_JNI essential: 320 / 327`,
+`Rust_JNI grammar: 132 / 136`, compiled 321 / 327 and 132 / 136. What
+moved, by kind: `Map` out as the host engine's own map (`MapCoreInstance`,
+`PureMap` in a carrier; 6 per engine); the `zip` results, whose cause was
+not equality but `RustCoreInstance.getName()` returning null where every
+Java instance has a name (`assertEquals` builds its message eagerly through
+`id()`; 6 interpreted); a Rust object reaching the compiled engine as an
+instance of its generated `_Impl` class, copied when the call ends (the five
+compiled-only holes and the six compiled `zip` tests); `copy` over key
+expressions (3), `genericType` (2), `getAll` (1), stereotypes and user
+primitive types in the lowering (4), `parseDecimal` scale (1). Along the
+way the review's correctness items: JNI exception discipline and local
+frames, one mutable entry per call (`Session`) with every `unsafe` block
+justified and `undocumented_unsafe_blocks` denied, read failures keeping
+their kind and anchor (typed side-channel), `start` classifying by element
+id and lowering a `ConcreteFunctionDefinition` and its arguments, the
+bridge forgetting the node ids Rust released. What stays red, one line
+each: `adjust` beyond jiff's range (5 per engine) and `%10999` in
+`testDateCompare` (`PureDate` is a jiff civil date-time, years ±9999, and
+its API, i16 years and `inner_datetime()`, is consumed by the literal
+evaluation and `format`; Java's years are `int`); 64-bit overflow (3:
+`Value::Integer` is `i64`, Java promotes to `BigInteger`; `testLargeMinus`
+fails already at the crossing of its literal); `testBigFloatAbs`
+(interpreted only: `Float` is `f64`, the interpreted engine's a
+`BigDecimal`); `deactivate` (the `ValueSpecification` heap shapes). The
+three compiled `fold` tests went with the merge: `copy` kept a synthetic
+`sourceInformation` slot on the copy, an archive-era workaround no test
+needs, which the compiled conversion refused as an undeclared property.
+The bridge, `BenchmarkPctExpressions`
+with the release cdylib, interpreted host: before, median 658 µs per PCT
+test against 82 µs for `interpreted/In-Memory` (geomean 8.65x), of which
+the lowering 246 µs and the run under 1 µs, first run 839 µs; after,
+median 94 µs (1.15x, geomean 1.10x), lowering 1 µs, run under 1 µs (431
+tests read nothing during the run), first run 391 µs. Three changes did
+it, each measured: the lowered closure cached per lambda definition (the
+interpreted engine's `LambdaWithContext` is new per evaluation; the key is
+the wrapped lambda's synthetic id), with captured lambdas and lambda
+arguments through the same cache (lowering 246 → 1 µs); the description
+read through field ids resolved once instead of a class and field lookup
+by name per field (one `Integer` crossing 7.7 → 1.9 µs); property keys
+read when asked instead of with every description (an expression node
+5.4 → 2.4 µs; the compiled host built them from the class per node). The
+compiled host has no closure cache (its lambda values expose no stable
+definition), so it still lowers per call: 709 → 203 µs median (geomean
+9.32x → 2.45x of the interpreted engine's adapter). A cached call now costs
+about 5 µs of crossing (the lambda's description, its captures, the end
+of the execution, materialising the result, Java's wrapping); the rest of
+the menu below (columnar description, interning, the thread-local
+`JNIEnv`, subtree prefetch, element resolution) was not needed for the
+gate and waits for a profile that asks for it. An incremental recompile
+of the Java runtime leaves both the model and the closure cache stale
+until the evaluator is replaced (`EvalRust` replaces it when the
+engine's runtime object changes).
 
 **Later: `Rust_Native`.** Once the surveyor's own functions execute in Rust,
 the same corpus runs under cargo through the Rust surveyor, with its own

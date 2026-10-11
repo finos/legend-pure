@@ -105,10 +105,6 @@ pub const GENERIC_TYPE: &Classifier = "meta::pure::metamodel::type::generics::Ge
 /// a single supertype edge returned by `.generalizations`.
 pub const GENERALIZATION: &Classifier = "meta::pure::metamodel::relationship::Generalization";
 
-/// `meta::pure::functions::meta::SourceInformation` — return shape of the
-/// `sourceInformation(Any[1]):SourceInformation[0..1]` native.
-pub const SOURCE_INFORMATION: &Classifier = "meta::pure::functions::meta::SourceInformation";
-
 /// `meta::pure::functions::collection::List` — a `List<T>(values=…)` wrapper
 /// used pervasively by `evaluate(Function, List[*])`.
 pub const LIST: &Classifier = "meta::pure::functions::collection::List";

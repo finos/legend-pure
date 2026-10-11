@@ -37,7 +37,9 @@ import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime
 import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.StrictTimeFunctions;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.Map;
 
 /**
  * The Java half of the node bridge. Rust holds one global reference to it
@@ -51,7 +53,10 @@ final class RustNodeBridge
     private final ProcessorSupport processorSupport;
     private final PureRustEvaluator owner;
     private final IdentityHashMap<CoreInstance, Long> ids = new IdentityHashMap<>();
-    private final MutableList<CoreInstance> nodes = Lists.mutable.empty();
+    private final Map<Long, CoreInstance> nodes = new HashMap<>();
+    private final Map<Object, Long> definitions = new HashMap<>();
+    private long nextId;
+    private CoreInstance lambdaClass;
     private final MutableMap<Long, RustCoreInstance> proxies = Maps.mutable.empty();
 
     RustNodeBridge(RustEngineHost host, PureRustEvaluator owner)
@@ -65,6 +70,7 @@ final class RustNodeBridge
     {
         this.ids.clear();
         this.nodes.clear();
+        this.definitions.clear();
         this.proxies.clear();
     }
 
@@ -78,16 +84,53 @@ final class RustNodeBridge
         this.proxies.remove(handle);
     }
 
+    /**
+     * The bridge id of a node, assigned on first sight. Ids are never
+     * reused: a node Rust no longer holds is forgotten ({@link #forget}) and
+     * gets a fresh id if it is described again.
+     */
     private long idOf(CoreInstance node)
     {
         Long id = this.ids.get(node);
         if (id == null)
         {
-            id = (long) this.nodes.size();
-            this.nodes.add(node);
+            id = this.nextId++;
+            this.nodes.put(id, node);
             this.ids.put(node, id);
         }
         return id;
+    }
+
+    /**
+     * The Rust side holds no node under these ids any more.
+     */
+    void forget(long[] released)
+    {
+        for (long id : released)
+        {
+            CoreInstance node = this.nodes.remove(id);
+            if (node != null)
+            {
+                this.ids.remove(node);
+            }
+        }
+    }
+
+    /**
+     * Graph nodes the Rust side may still read, for tests.
+     */
+    int knownNodeCount()
+    {
+        return this.nodes.size();
+    }
+
+    private CoreInstance lambdaClass()
+    {
+        if (this.lambdaClass == null)
+        {
+            this.lambdaClass = this.processorSupport.package_getByUserPath(M3Paths.LambdaFunction);
+        }
+        return this.lambdaClass;
     }
 
     private static String userPath(CoreInstance element)
@@ -130,13 +173,19 @@ final class RustNodeBridge
             d.kind = NodeDescription.PACKAGEABLE_ELEMENT;
             d.id = idOf(ci);
             d.userPath = userPath(ci);
-            d.keys = this.host.propertyKeys(ci).toArray(new String[0]);
         }
         else
         {
             d.kind = NodeDescription.NODE;
             d.id = idOf(ci);
-            d.keys = this.host.propertyKeys(ci).toArray(new String[0]);
+            if (classifier == lambdaClass())
+            {
+                Object definition = this.host.lambdaDefinition(ci);
+                if (definition != null)
+                {
+                    d.definition = this.definitions.computeIfAbsent(definition, k -> this.nextId++);
+                }
+            }
         }
         return d;
     }
@@ -253,7 +302,7 @@ final class RustNodeBridge
 
     NodeDescription[] propertyValues(long id, String key)
     {
-        CoreInstance node = this.nodes.get((int) id);
+        CoreInstance node = this.nodes.get(id);
         ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(node, key, this.processorSupport);
         NodeDescription[] out = new NodeDescription[values.size()];
         for (int i = 0; i < out.length; i++)
@@ -264,6 +313,15 @@ final class RustNodeBridge
     }
 
     /**
+     * The property names of a node, read when the Rust side first asks for
+     * them (the lowering reads properties by name and never does).
+     */
+    String[] keysOf(long id)
+    {
+        return this.host.propertyKeys(this.nodes.get(id)).toArray(new String[0]);
+    }
+
+    /**
      * The values of a variable a lambda captured from the scope it was
      * evaluated in.
      * {@code null} when the node is not such a
@@ -271,7 +329,7 @@ final class RustNodeBridge
      */
     NodeDescription[] capturedValue(long id, String name)
     {
-        ListIterable<? extends CoreInstance> values = this.host.capturedValues(this.nodes.get((int) id), name);
+        ListIterable<? extends CoreInstance> values = this.host.capturedValues(this.nodes.get(id), name);
         if (values == null)
         {
             return null;
@@ -358,6 +416,11 @@ final class RustNodeBridge
         return this.host.newStrictTime(StrictTimeFunctions.parsePureStrictTime(text.toString()));
     }
 
+    CoreInstance newMap(CoreInstance[] keys, CoreInstance[] values)
+    {
+        return this.host.newMap(keys, values);
+    }
+
     CoreInstance element(String userPath)
     {
         return _Package.getByUserPath(userPath, this.processorSupport);
@@ -371,7 +434,22 @@ final class RustNodeBridge
 
     CoreInstance node(long id)
     {
-        return this.nodes.get((int) id);
+        return this.nodes.get(id);
+    }
+
+    /**
+     * A Java failure raised while serving the Rust side, as {@code {kind, text}}:
+     * a {@link PureRustEvaluationException} keeps its kind and info, anything
+     * else is an execution error described by its {@code toString()}.
+     */
+    String[] failureOf(Throwable failure)
+    {
+        if (failure instanceof PureRustEvaluationException)
+        {
+            PureRustEvaluationException e = (PureRustEvaluationException) failure;
+            return new String[]{e.getKind().name(), e.getInfo()};
+        }
+        return new String[]{PureRustEvaluationException.Kind.EXECUTION_ERROR.name(), String.valueOf(failure)};
     }
 
     CoreInstance rustObject(long handle, String classifierPath)

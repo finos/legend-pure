@@ -26,6 +26,7 @@ import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
 import org.finos.legend.pure.rust.RustEngineHost;
 import org.finos.legend.pure.runtime.java.interpreted.LambdaWithContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.MapCoreInstance;
 
 /**
  * The interpreted engine: nodes know their keys, primitives come from the
@@ -69,6 +70,18 @@ public final class InterpretedHost implements RustEngineHost
         return Instance.instanceOf(value, M3Paths.InstanceValue, this.processorSupport)
                 ? Instance.getValueForMetaPropertyToManyResolved(value, M3Properties.values, this.processorSupport)
                 : Lists.immutable.with(value);
+    }
+
+    /**
+     * The lambda node's repository synthetic id, unique to the node within
+     * the runtime's repository; a {@link LambdaWithContext} (a new wrapper per
+     * evaluation) reports the id of the lambda it wraps.
+     */
+    @Override
+    public Object lambdaDefinition(CoreInstance lambda)
+    {
+        int syntheticId = lambda.getSyntheticId();
+        return (syntheticId < 0) ? null : syntheticId;
     }
 
     @Override
@@ -117,5 +130,24 @@ public final class InterpretedHost implements RustEngineHost
     public CoreInstance newStrictTime(PureStrictTime time)
     {
         return this.repository.newStrictTimeCoreInstance(time);
+    }
+
+    /**
+     * A {@link MapCoreInstance} as the engine's {@code newMap} builds one:
+     * keys hashed with the engine's equality, classified by {@code Map}.
+     */
+    @Override
+    public CoreInstance newMap(CoreInstance[] keys, CoreInstance[] values)
+    {
+        CoreInstance mapClass = this.processorSupport.package_getByUserPath(M3Paths.Map);
+        MapCoreInstance map = new MapCoreInstance(Lists.immutable.empty(), "", null, mapClass, -1, this.repository, false, this.processorSupport);
+        CoreInstance genericType = this.processorSupport.newGenericType(null, map, false);
+        Instance.addValueToProperty(genericType, M3Properties.rawType, mapClass, this.processorSupport);
+        Instance.addValueToProperty(map, M3Properties.classifierGenericType, genericType, this.processorSupport);
+        for (int i = 0; i < keys.length; i++)
+        {
+            map.getMap().put(keys[i], values[i]);
+        }
+        return map;
     }
 }

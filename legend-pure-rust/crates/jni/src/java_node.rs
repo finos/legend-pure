@@ -27,17 +27,18 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 use jni::JNIEnv;
-use jni::objects::{JObject, JObjectArray, JString, JValue};
-use jni::signature::ReturnType;
+use jni::objects::{JFieldID, JObject, JObjectArray, JString, JValue};
+use jni::signature::{Primitive, ReturnType};
 use legend_pure_evaluator::date::{PureDate, StrictTime, TimePrecision};
 use legend_pure_evaluator::error::{PureException, PureRuntimeError};
 use legend_pure_evaluator::heap::{HeapEntry, ObjectHandle, RuntimeHeap, TypedObject};
-use legend_pure_evaluator::value::PVector;
 use legend_pure_evaluator::value::Value;
 use legend_pure_metamodel::source_info::SourceInfo;
 use smol_str::SmolStr;
 
-use crate::bridge::{BridgeShared, JniHandleTable};
+use crate::PVector;
+use crate::bridge::{BridgeShared, DescriptionFields, JniHandleTable};
+use crate::failure::{ffi_error, in_local_frame, jni_failure, unsupported};
 
 /// Kind tags of a `NodeDescription`, mirrored from the Java constants.
 pub mod kind {
@@ -100,18 +101,21 @@ pub struct Description {
     pub precision: i32,
     /// Subsecond digits, when `precision == 6`.
     pub subsecond: Option<String>,
-    /// Property keys of a NODE.
-    pub keys: Vec<SmolStr>,
     /// Source span of the node, when the Java graph knows one.
     pub source: Option<SourceInfo>,
+    /// Bridge id of the lambda definition a per-evaluation lambda value
+    /// stands for (`RustEngineHost.lambdaDefinition`); -1 when none.
+    pub definition: i64,
 }
 
 fn string_field(
     env: &mut JNIEnv,
     obj: &JObject,
-    name: &str,
+    field: JFieldID,
 ) -> jni::errors::Result<Option<String>> {
-    let v = env.get_field(obj, name, "Ljava/lang/String;")?.l()?;
+    let v = env
+        .get_field_unchecked(obj, field, ReturnType::Object)?
+        .l()?;
     if v.is_null() {
         return Ok(None);
     }
@@ -119,49 +123,47 @@ fn string_field(
     Ok(Some(s))
 }
 
-/// Decode a Java `NodeDescription`.
+/// Decode a Java `NodeDescription` through the field ids resolved once
+/// per context ([`DescriptionFields`]).
 ///
 /// # Errors
-/// Any JNI failure.
-pub fn read_description(env: &mut JNIEnv, obj: &JObject) -> jni::errors::Result<Description> {
-    let int =
-        |env: &mut JNIEnv, n: &str| -> jni::errors::Result<i32> { env.get_field(obj, n, "I")?.i() };
-    let int_or_zero = |env: &mut JNIEnv, n: &str| -> u32 {
-        env.get_field(obj, n, "I")
-            .and_then(|v| v.i())
-            .ok()
-            .and_then(|v| u32::try_from(v).ok())
-            .unwrap_or(0)
+/// Any JNI failure; the caller clears the pending Java exception.
+pub fn read_description(
+    env: &mut JNIEnv,
+    fields: &DescriptionFields,
+    obj: &JObject,
+) -> jni::errors::Result<Description> {
+    let int = |env: &mut JNIEnv, field: JFieldID| -> jni::errors::Result<i32> {
+        env.get_field_unchecked(obj, field, ReturnType::Primitive(Primitive::Int))?
+            .i()
     };
-    let kind = int(env, "kind")?;
-    let id = env.get_field(obj, "id", "J")?.j()?;
-    let classifier = string_field(env, obj, "classifier")?.map(SmolStr::new);
-    let name = string_field(env, obj, "name")?.map(SmolStr::new);
-    let user_path = string_field(env, obj, "userPath")?.map(SmolStr::new);
-    let payload = string_field(env, obj, "payload")?;
-    let subsecond = string_field(env, obj, "subsecond")?;
-    let mut keys = Vec::new();
-    let keys_obj = env.get_field(obj, "keys", "[Ljava/lang/String;")?.l()?;
-    if !keys_obj.is_null() {
-        let arr = JObjectArray::from(keys_obj);
-        let len = env.get_array_length(&arr)?;
-        for i in 0..len {
-            let k = env.get_object_array_element(&arr, i)?;
-            let s: String = env.get_string(&JString::from(k))?.into();
-            keys.push(SmolStr::new(s));
-        }
-    }
-    let source = string_field(env, obj, "sourceId")?.map(|source_id| {
+    let long = |env: &mut JNIEnv, field: JFieldID| -> jni::errors::Result<i64> {
+        env.get_field_unchecked(obj, field, ReturnType::Primitive(Primitive::Long))?
+            .j()
+    };
+    let unsigned = |env: &mut JNIEnv, field: JFieldID| -> jni::errors::Result<u32> {
+        Ok(u32::try_from(int(env, field)?).unwrap_or(0))
+    };
+    let kind = int(env, fields.kind)?;
+    let id = long(env, fields.id)?;
+    let definition = long(env, fields.definition)?;
+    let classifier = string_field(env, obj, fields.classifier)?.map(SmolStr::new);
+    let name = string_field(env, obj, fields.name)?.map(SmolStr::new);
+    let user_path = string_field(env, obj, fields.user_path)?.map(SmolStr::new);
+    let payload = string_field(env, obj, fields.payload)?;
+    let subsecond = string_field(env, obj, fields.subsecond)?;
+    let source = match string_field(env, obj, fields.source_id)? {
         // Java's anchor (`line`/`column`) is the span's start on this
         // side; the evaluator and `assertError` both read the anchor.
-        SourceInfo::new(
+        Some(source_id) => Some(SourceInfo::new(
             source_id,
-            int_or_zero(env, "line"),
-            int_or_zero(env, "column"),
-            int_or_zero(env, "endLine"),
-            int_or_zero(env, "endColumn"),
-        )
-    });
+            unsigned(env, fields.line)?,
+            unsigned(env, fields.column)?,
+            unsigned(env, fields.end_line)?,
+            unsigned(env, fields.end_column)?,
+        )),
+        None => None,
+    };
     Ok(Description {
         kind,
         id,
@@ -169,33 +171,17 @@ pub fn read_description(env: &mut JNIEnv, obj: &JObject) -> jni::errors::Result<
         name,
         user_path,
         payload,
-        year: int(env, "year")?,
-        month: int(env, "month")?,
-        day: int(env, "day")?,
-        hour: int(env, "hour")?,
-        minute: int(env, "minute")?,
-        second: int(env, "second")?,
-        precision: int(env, "precision")?,
+        year: int(env, fields.year)?,
+        month: int(env, fields.month)?,
+        day: int(env, fields.day)?,
+        hour: int(env, fields.hour)?,
+        minute: int(env, fields.minute)?,
+        second: int(env, fields.second)?,
+        precision: int(env, fields.precision)?,
         subsecond,
-        keys,
         source,
+        definition,
     })
-}
-
-fn ffi_error(message: String) -> PureException {
-    PureException::execution(
-        PureRuntimeError::EvaluationError(message),
-        legend_pure_metamodel::source_info::SourceInfo::new("<ffi>", 0, 0, 0, 0),
-        Vec::new(),
-    )
-}
-
-fn unsupported(what: &str) -> PureException {
-    PureException::execution(
-        PureRuntimeError::Unsupported(what.to_string()),
-        legend_pure_metamodel::source_info::SourceInfo::new("<ffi>", 0, 0, 0, 0),
-        Vec::new(),
-    )
 }
 
 #[allow(clippy::cast_possible_truncation)]
@@ -241,7 +227,7 @@ pub fn description_to_value(
         kind::LATEST_DATE => Ok(Value::Latest),
         kind::DATE => {
             let (year, month, day) = (
-                i16::try_from(d.year).map_err(|_| ffi_error("year out of range".into()))?,
+                i16::try_from(d.year).map_err(|_| ffi_error("year out of range"))?,
                 small(d.month),
                 small(d.day),
             );
@@ -287,7 +273,9 @@ pub fn description_to_value(
         kind::BYTE => Err(unsupported("Byte values across the boundary")),
         kind::ENUM_VALUE => {
             if let (Some(classifier), Some(name)) = (&d.classifier, &d.name)
-                && let Some(enum_id) = shared.model().resolve_fqn_str(classifier)
+                // SAFETY: descriptions are decoded inside an entry point of
+                // the context that owns `shared`, never while it grows its model.
+                && let Some(enum_id) = unsafe { shared.model() }.resolve_fqn_str(classifier)
             {
                 return Ok(Value::EnumValue {
                     enum_id,
@@ -299,7 +287,9 @@ pub fn description_to_value(
         kind::PACKAGEABLE_ELEMENT => {
             if let Some(path) = &d.user_path {
                 let segments: Vec<SmolStr> = path.split("::").map(SmolStr::new).collect();
-                let model = shared.model();
+                // SAFETY: descriptions are decoded inside an entry point of
+                // the context that owns `shared`, never while it grows its model.
+                let model = unsafe { shared.model() };
                 if let Some(id) = model
                     .resolve_by_fqn(&segments)
                     .or_else(|| model.resolve_by_path(&segments))
@@ -342,8 +332,9 @@ fn canonical_node(shared: &Rc<BridgeShared>, d: Description) -> ObjectHandle {
             .unwrap_or_else(|| SmolStr::new("meta::pure::metamodel::type::Any")),
         name: d.name,
         user_path: d.user_path,
-        keys: d.keys,
+        keys: RefCell::new(None),
         source: d.source,
+        definition: (d.definition >= 0).then_some(d.definition),
         cache: RefCell::new(HashMap::new()),
         local: HashMap::new(),
         shared: Rc::clone(shared),
@@ -366,8 +357,12 @@ pub struct JavaNode {
     pub name: Option<SmolStr>,
     /// User path, when the node is a packageable element.
     pub user_path: Option<SmolStr>,
-    /// Property keys reported by Java.
-    pub keys: Vec<SmolStr>,
+    /// Property keys reported by Java, read on first use: the lowering
+    /// reads properties by name and never asks.
+    keys: RefCell<Option<Vec<SmolStr>>>,
+    /// The lambda definition this node is one evaluation of, when the
+    /// engine wraps a lambda per evaluation (see [`Description::definition`]).
+    pub definition: Option<i64>,
     /// Source span reported by Java.
     pub source: Option<SourceInfo>,
     /// Property values fetched so far.
@@ -397,56 +392,136 @@ impl JavaNode {
         self.cache.borrow_mut().clear();
     }
 
-    fn fetch(&self, name: &str) -> Result<PVector<Value>, String> {
-        self.call_descriptions(self.shared.methods.property_values, name)
-            .map(|values| values.unwrap_or_default())
-    }
-
-    /// Call a bridge method `(long id, String name) -> NodeDescription[]`
-    /// and decode the result; a Java `null` is `None`.
-    fn call_descriptions(
-        &self,
-        method: jni::objects::JMethodID,
-        name: &str,
-    ) -> Result<Option<PVector<Value>>, String> {
+    /// The node's property keys (`RustNodeBridge.keysOf`), read once.
+    fn keys(&self) -> Result<Vec<SmolStr>, PureException> {
+        if let Some(keys) = &*self.keys.borrow() {
+            return Ok(keys.clone());
+        }
         self.shared.jni_reads.set(self.shared.jni_reads.get() + 1);
         let mut guard = self
             .shared
             .vm
             .attach_current_thread()
-            .map_err(|e| format!("attach: {e}"))?;
+            .map_err(|e| ffi_error(format!("attach: {e}")))?;
         let env: &mut JNIEnv = &mut guard;
-        let jname = env.new_string(name).map_err(|e| e.to_string())?;
-        let result = unsafe {
-            env.call_method_unchecked(
-                self.shared.bridge.as_obj(),
-                method,
-                ReturnType::Array,
-                &[
-                    JValue::Long(self.id).as_jni(),
-                    JValue::Object(&jname).as_jni(),
-                ],
-            )
-        };
-        let arr = match result.and_then(|v| v.l()) {
-            Ok(obj) if obj.is_null() => return Ok(None),
-            Ok(obj) => JObjectArray::from(obj),
-            Err(e) => {
-                let _ = env.exception_clear();
-                return Err(format!("reading `{name}` on Java node {}: {e}", self.id));
+        let shared = &self.shared;
+        let keys = in_local_frame(env, shared, 8, |env| {
+            let what = format!("reading the keys of Java node {}", self.id);
+            // SAFETY: `keys_of` was resolved on the bridge's class with the
+            // signature `(J)[Ljava/lang/String;`, the bridge global
+            // reference is an instance of that class, and the one argument
+            // is a `long`.
+            let result = unsafe {
+                env.call_method_unchecked(
+                    shared.bridge.as_obj(),
+                    shared.methods.keys_of,
+                    ReturnType::Array,
+                    &[JValue::Long(self.id).as_jni()],
+                )
+            };
+            let arr = result
+                .and_then(|v| v.l())
+                .map_err(|e| jni_failure(env, shared, &what, &e))?;
+            let arr = JObjectArray::from(arr);
+            let len = env
+                .get_array_length(&arr)
+                .map_err(|e| jni_failure(env, shared, &what, &e))?;
+            let mut keys = Vec::with_capacity(usize::try_from(len).unwrap_or(0));
+            for i in 0..len {
+                let key = in_local_frame(env, shared, 2, |env| {
+                    let k = env
+                        .get_object_array_element(&arr, i)
+                        .map_err(|e| jni_failure(env, shared, &what, &e))?;
+                    match env.get_string(&JString::from(k)) {
+                        Ok(s) => Ok(SmolStr::new(String::from(s))),
+                        Err(e) => Err(jni_failure(env, shared, &what, &e)),
+                    }
+                })?;
+                keys.push(key);
             }
-        };
-        let len = env.get_array_length(&arr).map_err(|e| e.to_string())?;
-        let mut values = PVector::new();
-        for i in 0..len {
-            let obj = env
-                .get_object_array_element(&arr, i)
-                .map_err(|e| e.to_string())?;
-            let d = read_description(env, &obj).map_err(|e| e.to_string())?;
-            let v = description_to_value(&self.shared, d).map_err(|e| e.to_string())?;
-            values.push_back(v);
+            Ok(keys)
+        })?;
+        *self.keys.borrow_mut() = Some(keys.clone());
+        Ok(keys)
+    }
+
+    /// Keep a read failure, with its kind, for the end of the call: the
+    /// heap's object view has no error channel. A failure the boundary
+    /// raised itself is anchored at this node, the place it was read from.
+    fn note_failure(&self, mut failure: PureException) {
+        let at_boundary = failure
+            .source
+            .as_ref()
+            .is_none_or(|s| s.source == crate::failure::FFI_SOURCE);
+        if at_boundary && let Some(source) = &self.source {
+            failure.source = Some(source.clone());
         }
-        Ok(Some(values))
+        self.shared.note_error(failure);
+    }
+
+    fn fetch(&self, name: &str) -> Result<PVector<Value>, PureException> {
+        self.call_descriptions(self.shared.methods.property_values, name)
+            .map(|values| values.unwrap_or_else(PVector::new))
+    }
+
+    /// Call a bridge method `(long id, String name) -> NodeDescription[]`
+    /// and decode the result; a Java `null` is `None`. Every local
+    /// reference the call creates lives in a frame of its own.
+    fn call_descriptions(
+        &self,
+        method: jni::objects::JMethodID,
+        name: &str,
+    ) -> Result<Option<PVector<Value>>, PureException> {
+        self.shared.jni_reads.set(self.shared.jni_reads.get() + 1);
+        let mut guard = self
+            .shared
+            .vm
+            .attach_current_thread()
+            .map_err(|e| ffi_error(format!("attach: {e}")))?;
+        let env: &mut JNIEnv = &mut guard;
+        let shared = &self.shared;
+        in_local_frame(env, shared, 16, |env| {
+            let what = format!("reading `{name}` on Java node {}", self.id);
+            let jname = env
+                .new_string(name)
+                .map_err(|e| jni_failure(env, shared, &what, &e))?;
+            // SAFETY: `method` is one of the bridge's `(JLjava/lang/String;)
+            // [Lorg/finos/legend/pure/rust/NodeDescription;` methods resolved
+            // on its class, the bridge global reference is an instance of that
+            // class, and the arguments are a `long` and a `String`.
+            let result = unsafe {
+                env.call_method_unchecked(
+                    shared.bridge.as_obj(),
+                    method,
+                    ReturnType::Array,
+                    &[
+                        JValue::Long(self.id).as_jni(),
+                        JValue::Object(&jname).as_jni(),
+                    ],
+                )
+            };
+            let arr = match result.and_then(|v| v.l()) {
+                Ok(obj) if obj.is_null() => return Ok(None),
+                Ok(obj) => JObjectArray::from(obj),
+                Err(e) => return Err(jni_failure(env, shared, &what, &e)),
+            };
+            let len = env
+                .get_array_length(&arr)
+                .map_err(|e| jni_failure(env, shared, &what, &e))?;
+            let mut values = PVector::new();
+            for i in 0..len {
+                let value = in_local_frame(env, shared, 8, |env| {
+                    let obj = env
+                        .get_object_array_element(&arr, i)
+                        .map_err(|e| jni_failure(env, shared, &what, &e))?;
+                    let d = read_description(env, &shared.fields, &obj)
+                        .map_err(|e| jni_failure(env, shared, &what, &e))?;
+                    description_to_value(shared, d)
+                })?;
+                values.push_back(value);
+            }
+            Ok(Some(values))
+        })
     }
 }
 
@@ -456,12 +531,12 @@ impl TypedObject for JavaNode {
     }
 
     fn get_property(&self, name: &str) -> Option<Value> {
-        self.get_property_values(name).head().cloned()
+        self.get_property_values(name).get(0).cloned()
     }
 
     fn get_property_values(&self, name: &str) -> PVector<Value> {
         if name.starts_with("__") {
-            return self.local.get(name).cloned().unwrap_or_default();
+            return self.local.get(name).cloned().unwrap_or_else(PVector::new);
         }
         if let Some(v) = self.cache.borrow().get(name) {
             return v.clone();
@@ -473,15 +548,18 @@ impl TypedObject for JavaNode {
                     .insert(SmolStr::new(name), values.clone());
                 values
             }
-            Err(message) => {
-                self.shared.note_error(message);
+            Err(failure) => {
+                self.note_failure(failure);
                 PVector::new()
             }
         }
     }
 
     fn property_names(&self) -> Vec<SmolStr> {
-        let mut names = self.keys.clone();
+        let mut names = self.keys().unwrap_or_else(|failure| {
+            self.note_failure(failure);
+            Vec::new()
+        });
         names.extend(self.local.keys().cloned());
         names
     }
@@ -504,8 +582,8 @@ impl TypedObject for JavaNode {
     fn captured_values(&self, name: &str) -> Option<PVector<Value>> {
         match self.call_descriptions(self.shared.methods.captured_value, name) {
             Ok(values) => values,
-            Err(message) => {
-                self.shared.note_error(message);
+            Err(failure) => {
+                self.note_failure(failure);
                 None
             }
         }

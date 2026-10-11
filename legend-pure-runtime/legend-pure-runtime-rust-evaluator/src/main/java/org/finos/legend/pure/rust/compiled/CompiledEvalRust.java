@@ -17,6 +17,7 @@ package org.finos.legend.pure.rust.compiled;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.rust.PureRustEvaluationException;
@@ -24,7 +25,6 @@ import org.finos.legend.pure.rust.PureRustEvaluator;
 import org.finos.legend.pure.rust.PureRustException;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.extension.EvalRustExecutor;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ValCoreInstance;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -32,7 +32,9 @@ import java.util.Map;
 /**
  * The compiled engine's {@code evalRust}: the function value (a compiled
  * lambda, which is also its graph node) crosses the boundary as a
- * {@link CoreInstance} and the results come back as compiled values.
+ * {@link CoreInstance} and the results come back as compiled values: plain
+ * Java values for primitives and maps, generated-class instances for Rust
+ * objects ({@link CompiledObjects}).
  * One evaluator per {@link CompiledExecutionSupport}, created on first use.
  * Discovered through {@code META-INF/services}.
  */
@@ -62,12 +64,26 @@ public final class CompiledEvalRust implements EvalRustExecutor
             discard(executionSupport, evaluator);
             throw e;
         }
-        MutableList<Object> values = Lists.mutable.ofInitialCapacity(results.length);
-        for (CoreInstance result : results)
+        CompiledObjects objects = new CompiledObjects((CompiledExecutionSupport) executionSupport);
+        try
         {
-            values.add((result instanceof ValCoreInstance) ? ((ValCoreInstance<?>) result).getValue() : result);
+            MutableList<Object> values = Lists.mutable.ofInitialCapacity(results.length);
+            for (CoreInstance result : results)
+            {
+                values.add(objects.toCompiled(result));
+            }
+            return values;
         }
-        return values;
+        catch (PureRustEvaluationException e)
+        {
+            // A result the compiled engine cannot hold: reported as the Rust
+            // side's own diagnostics are, kind-prefixed, as a Pure failure.
+            throw new PureExecutionException(e.getMessage(), e);
+        }
+        finally
+        {
+            objects.release();
+        }
     }
 
     private synchronized PureRustEvaluator evaluator(ExecutionSupport executionSupport)

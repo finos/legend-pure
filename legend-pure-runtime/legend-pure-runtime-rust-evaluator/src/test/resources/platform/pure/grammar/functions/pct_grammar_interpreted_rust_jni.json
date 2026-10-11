@@ -7,7 +7,7 @@
     },
     {
       "test": "meta::pure::functions::math::tests::minus::testLargeMinus_Function_1__Boolean_1_",
-      "expectedError": "Execution error (resource:<ffi> line:0 column:0)"
+      "expectedError": "Unsupported: an Integer outside the 64-bit range"
     },
     {
       "test": "meta::pure::functions::math::tests::plus::testLargePlus_Function_1__Boolean_1_",

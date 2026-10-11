@@ -47,6 +47,18 @@ public interface RustEngineHost
      */
     ListIterable<? extends CoreInstance> capturedValues(CoreInstance lambda, String name);
 
+    /**
+     * The lambda definition a lambda value stands for: a key, equal for every
+     * value of one lambda (the engine may create a new object per evaluation,
+     * wrapping the lambda with the scope it was evaluated in) and unique to
+     * that lambda, which the Rust side caches the lowered lambda under. The
+     * value itself is then read for its captured values only.
+     *
+     * @param lambda a graph node classified by {@code LambdaFunction}
+     * @return the definition key, or {@code null} when the engine cannot name one (nothing is cached)
+     */
+    Object lambdaDefinition(CoreInstance lambda);
+
     CoreInstance newBoolean(boolean value);
 
     CoreInstance newInteger(long value);
@@ -62,4 +74,15 @@ public interface RustEngineHost
     CoreInstance newLatestDate();
 
     CoreInstance newStrictTime(PureStrictTime time);
+
+    /**
+     * The engine's own map over entries the Rust side materialised, each key
+     * and value as this host represents it. The Rust map carries no type
+     * arguments, so the map's generic type is {@code Map} with none.
+     *
+     * @param keys   the keys, parallel to {@code values}
+     * @param values one value per key
+     * @return the map as a graph value of this engine
+     */
+    CoreInstance newMap(CoreInstance[] keys, CoreInstance[] values);
 }

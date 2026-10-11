@@ -16,8 +16,9 @@
 //!
 //! One `BridgeShared` exists per `JniContext`. It owns the only JNI global
 //! reference the crate keeps (the Java `RustNodeBridge`), the cached method
-//! ids, the two identity tables, and the last error raised while a node
-//! was read under a `RefCell` borrow (where there is no error channel).
+//! ids, the two identity tables, and the first failure raised while a node
+//! was read through the heap's infallible object view (where there is no
+//! error channel), kept typed.
 //!
 //! **Rule:** never hold `handles.borrow()` or `java_nodes.borrow()` across
 //! a JNI call. The Java side only reads its own graph during those calls,
@@ -27,8 +28,10 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Weak;
 
-use jni::objects::{GlobalRef, JMethodID};
+use jni::objects::{GlobalRef, JFieldID, JMethodID, JValue};
+use jni::signature::{Primitive, ReturnType};
 use jni::{JNIEnv, JavaVM};
+use legend_pure_evaluator::error::PureException;
 use legend_pure_evaluator::heap::{HeapEntry, ObjectHandle};
 use legend_pure_metamodel::model::PureModel;
 use slotmap::{SlotMap, new_key_type};
@@ -125,6 +128,10 @@ pub struct BridgeMethods {
     pub enum_value: JMethodID,
     pub node: JMethodID,
     pub rust_object: JMethodID,
+    pub new_map: JMethodID,
+    pub failure_of: JMethodID,
+    pub forget: JMethodID,
+    pub keys_of: JMethodID,
 }
 
 /// Java class names the crate talks to.
@@ -191,6 +198,77 @@ impl BridgeMethods {
                 "rustObject",
                 format!("(JLjava/lang/String;){ci}"),
             )?,
+            new_map: env.get_method_id(&cls, "newMap", format!("([{ci}[{ci}){ci}"))?,
+            forget: env.get_method_id(&cls, "forget", "([J)V")?,
+            keys_of: env.get_method_id(&cls, "keysOf", "(J)[Ljava/lang/String;")?,
+            failure_of: env.get_method_id(
+                &cls,
+                "failureOf",
+                "(Ljava/lang/Throwable;)[Ljava/lang/String;",
+            )?,
+        })
+    }
+}
+
+/// The fields of the Java `NodeDescription`, resolved once per context:
+/// reading a description is then one JNI call per field, with no class or
+/// field lookup by name.
+#[allow(missing_docs)]
+pub struct DescriptionFields {
+    pub kind: JFieldID,
+    pub id: JFieldID,
+    pub definition: JFieldID,
+    pub classifier: JFieldID,
+    pub name: JFieldID,
+    pub user_path: JFieldID,
+    pub payload: JFieldID,
+    pub year: JFieldID,
+    pub month: JFieldID,
+    pub day: JFieldID,
+    pub hour: JFieldID,
+    pub minute: JFieldID,
+    pub second: JFieldID,
+    pub precision: JFieldID,
+    pub subsecond: JFieldID,
+    pub source_id: JFieldID,
+    pub line: JFieldID,
+    pub column: JFieldID,
+    pub end_line: JFieldID,
+    pub end_column: JFieldID,
+}
+
+impl DescriptionFields {
+    /// Resolve every field id on the description class.
+    ///
+    /// # Errors
+    /// Any JNI lookup failure (the Java class is older than this binary).
+    pub fn resolve(env: &mut JNIEnv) -> jni::errors::Result<Self> {
+        let cls = env.find_class(DESCRIPTION_CLASS)?;
+        let string = "Ljava/lang/String;";
+        let mut field = |name: &str, sig: &str| -> jni::errors::Result<JFieldID> {
+            env.get_field_id(&cls, name, sig)
+        };
+        Ok(Self {
+            kind: field("kind", "I")?,
+            id: field("id", "J")?,
+            definition: field("definition", "J")?,
+            classifier: field("classifier", string)?,
+            name: field("name", string)?,
+            user_path: field("userPath", string)?,
+            payload: field("payload", string)?,
+            year: field("year", "I")?,
+            month: field("month", "I")?,
+            day: field("day", "I")?,
+            hour: field("hour", "I")?,
+            minute: field("minute", "I")?,
+            second: field("second", "I")?,
+            precision: field("precision", "I")?,
+            subsecond: field("subsecond", string)?,
+            source_id: field("sourceId", string)?,
+            line: field("line", "I")?,
+            column: field("column", "I")?,
+            end_line: field("endLine", "I")?,
+            end_column: field("endColumn", "I")?,
         })
     }
 }
@@ -203,25 +281,38 @@ pub struct BridgeShared {
     pub bridge: GlobalRef,
     /// Cached method ids.
     pub methods: BridgeMethods,
-    /// The model, valid for the context's lifetime (the context frees
-    /// the evaluator, and with it every node, before the model).
+    /// Cached field ids of the description record.
+    pub fields: DescriptionFields,
+    /// The context's model (see [`model`](Self::model)).
     pub model: *const PureModel,
     /// Java-to-Rust identity: bridge id → the one heap entry wrapping it.
     pub java_nodes: RefCell<HashMap<i64, Weak<RefCell<HeapEntry>>>>,
     /// Rust-to-Java identity: Rust objects exposed to Java.
     pub handles: RefCell<JniHandleTable>,
-    /// The last failure raised while reading a node under a borrow;
-    /// surfaced by the next native entry point.
-    pub last_error: RefCell<Option<String>>,
+    /// The first failure raised while reading a node through the heap's
+    /// infallible view, with its kind; surfaced when the call ends.
+    pub last_error: RefCell<Option<PureException>>,
     /// Property and capture reads made through JNI so far; the timings
     /// of a `start` report how many fell inside its run phase.
     pub jni_reads: std::cell::Cell<u64>,
+    /// Bridge ids of Java-backed nodes that died since Java was last told
+    /// (`RustNodeBridge.forget`), so its id tables shrink with Rust's.
+    pub released: RefCell<Vec<i64>>,
 }
 
 impl BridgeShared {
     /// The model behind the raw pointer.
+    ///
+    /// # Safety
+    /// The context that owns this `BridgeShared` must be alive and must not
+    /// be growing its model (`JniContext::grow_model`): the model box lives
+    /// from the context's creation to its drop and is borrowed mutably
+    /// only there. Every caller in this crate runs inside an entry point
+    /// of that context (crossing a value, or a node read while the
+    /// lowering or the evaluator runs), never during the growth.
     #[must_use]
-    pub fn model(&self) -> &PureModel {
+    pub unsafe fn model(&self) -> &PureModel {
+        // SAFETY: guaranteed by the caller, per this function's contract.
         unsafe { &*self.model }
     }
 
@@ -243,29 +334,71 @@ impl BridgeShared {
             }
         }
         drop(nodes);
-        self.java_nodes
-            .borrow_mut()
-            .retain(|_, weak| weak.strong_count() > 0);
+        self.forget_dead_nodes();
+    }
+
+    /// Drop the identity entries of nodes nothing holds any more and keep
+    /// their ids for Java to forget: a dead node's id is never used again
+    /// (describing the same Java object later assigns a fresh one).
+    fn forget_dead_nodes(&self) {
+        let mut released = self.released.borrow_mut();
+        self.java_nodes.borrow_mut().retain(|id, weak| {
+            let alive = weak.strong_count() > 0;
+            if !alive {
+                released.push(*id);
+            }
+            alive
+        });
     }
 
     /// Live Java-backed nodes plus Rust objects held for Java.
     #[must_use]
     pub fn live_count(&self) -> usize {
-        let mut nodes = self.java_nodes.borrow_mut();
-        nodes.retain(|_, weak| weak.strong_count() > 0);
-        nodes.len() + self.handles.borrow().live_count()
+        self.forget_dead_nodes();
+        self.java_nodes.borrow().len() + self.handles.borrow().live_count()
     }
 
-    /// Record a failure that happened where no error can be returned.
-    pub fn note_error(&self, message: String) {
+    /// Tell Java which node ids died (`RustNodeBridge.forget`), so the
+    /// bridge's id tables do not grow for the JVM's lifetime.
+    pub fn forget_released(&self, env: &mut JNIEnv) {
+        let released = std::mem::take(&mut *self.released.borrow_mut());
+        if released.is_empty() {
+            return;
+        }
+        let told = env.with_local_frame(4, |env| -> jni::errors::Result<()> {
+            let ids = env.new_long_array(i32::try_from(released.len()).unwrap_or(i32::MAX))?;
+            env.set_long_array_region(&ids, 0, &released)?;
+            // SAFETY: `forget` was resolved on the bridge's class with
+            // the signature `([J)V`; the bridge global reference is an
+            // instance of that class and the one argument is a `long[]`.
+            unsafe {
+                env.call_method_unchecked(
+                    self.bridge.as_obj(),
+                    self.methods.forget,
+                    ReturnType::Primitive(Primitive::Void),
+                    &[JValue::Object(&ids).as_jni()],
+                )
+            }?;
+            Ok(())
+        });
+        if told.is_err() {
+            // The ids stay known on the Java side: a leak, not an error
+            // of the call that just ended.
+            let _ = crate::failure::take_pending(env);
+        }
+    }
+
+    /// Record a failure that happened where no error can be returned;
+    /// the first one is kept, since what follows it is its consequence.
+    pub fn note_error(&self, failure: PureException) {
         let mut slot = self.last_error.borrow_mut();
         if slot.is_none() {
-            *slot = Some(message);
+            *slot = Some(failure);
         }
     }
 
     /// Take the recorded failure, if any.
-    pub fn take_error(&self) -> Option<String> {
+    pub fn take_error(&self) -> Option<PureException> {
         self.last_error.borrow_mut().take()
     }
 }

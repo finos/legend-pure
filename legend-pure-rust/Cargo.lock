@@ -304,7 +304,6 @@ dependencies = [
 name = "legend-pure-jni"
 version = "0.1.0"
 dependencies = [
- "im-rc",
  "jni",
  "legend-pure-evaluator",
  "legend-pure-metamodel",
