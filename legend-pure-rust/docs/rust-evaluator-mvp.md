@@ -1075,14 +1075,21 @@ were unchanged after every item.
 
 ### Step 2c — A second transport: the Foreign Function & Memory API (proposed 2026-10-11, awaiting the author's decision)
 
-**Goal.** Run the same corpus through a second boundary, FFM on JDK 25,
-beside the JNI one on JDK 17, so the gain FFM measured on the bridge's
-call shapes (Step 2, "JNI or the Foreign Function & Memory API": a
-property read 536 against 93 ns, a string 330 against 55) shows on PCT
-and on `BenchmarkPctExpressions` while legend-engine's floor is still 11
-and 17; then delete JNI when that floor moves. The plan authorises a
-fourth crate here, the first time it does (rule 2); the allowed
-dependencies do not grow, since an `extern "C"` surface needs none.
+**Goal.** One host surface in Rust, a C ABI, in place of a Java-only
+one. JNI binds the evaluator to the JVM; an `extern "C"` crate serves
+Java through FFM, Python through `cffi` or `ctypes`, and any other host
+that can call C, from the same Rust code. PELT (Step 3) reduces what
+crosses, not the need for a bridge: every host still hands arguments in
+and takes results out, and legend-engine's live graph (Step 6) still
+crosses by reference. The first client is Java on JDK 25, beside the JNI
+module on JDK 17, so the gain FFM measured on the bridge's call shapes
+(Step 2, "JNI or the Foreign Function & Memory API": a property read 536
+against 93 ns, a string 330 against 55) shows on PCT and on
+`BenchmarkPctExpressions` while legend-engine's floor is still 11 and 17;
+the second client is Python, after Step 3, over the same surface; JNI is
+deleted when the engine's floor moves. The plan authorises a fourth crate
+here, the first time it does (rule 2); the allowed dependencies do not
+grow, since a C ABI needs none.
 
 **Feasibility, from the code as it stands.** The abstraction a second
 transport needs already exists on both sides. On the Rust side a host
@@ -1136,17 +1143,29 @@ surface. Gate: the four `Rust_JNI` numbers and both benchmarks unchanged;
 `jni::` appears only under `crates/jni`; the module verify stays
 checkstyle and dependency-analyze clean on both modules.
 
-**Phase 2 — the FFM transport.** `crates/ffi`, a cdylib
-(`libpure_rust_ffi`) with an `extern "C"` surface and no `jni`
-dependency, implementing the phase 1 trait over function pointers Java
-hands it once per evaluator. Two design rules that differ from JNI and
-are the gain: a node's description crosses as one flat layout Java
-writes into a segment Rust reads in place, which is the bridge menu's
-"columnar description" arriving with the transport rather than as a
-separate item; and results cross out as data Rust writes and Java
-materialises through the host, not as objects Rust asks the host to
-construct one call at a time, which is also the shape PELT-era results
-want. The spike's rules, built in: one shared `Arena` per evaluator for
+**Phase 2 — the C ABI and its first client.** `crates/ffi`, a cdylib
+(`libpure_rust_ffi`) with an `extern "C"` surface, no `jni` dependency
+and nothing of any host in it: it implements the phase 1 trait over a
+table of function pointers the host hands it once per evaluator. The
+rules that make the surface host-neutral, written down as a C header
+beside the crate and versioned by one exported function: only C data
+crosses (integers, UTF-8 bytes with their length, opaque handles, flat
+layouts), never a Rust or host type; the host owns what it allocates and
+Rust owns what it allocates, each side frees its own through an exported
+release; failures are a code plus a message buffer, never an unwind
+across the boundary in either direction; one evaluator is one opaque
+context, entered by one thread at a time (the `Session` rule as today).
+Two design rules that differ from JNI and are the gain: a node's
+description crosses as one flat layout the host writes and Rust reads in
+place, which is the bridge menu's "columnar description" arriving with
+the transport rather than as a separate item; and results cross out as
+data Rust writes and the host materialises, not as objects Rust asks the
+host to construct one call at a time, which is also the shape PELT-era
+results want and the only shape a Python host can afford (a Python
+callback costs microseconds, so a host that is called per property read
+would lose what the transport gains; after Step 3 the platform's nodes
+are Rust's own and a Python host crosses for arguments and results). The
+Java client, FFM on JDK 25, with the spike's rules built in: one shared `Arena` per evaluator for
 the upcall stubs and the description buffer, closed in `close()` after
 the context is freed; a confined arena per call for strings; no
 exception may cross an upcall, so every callback returns through the
@@ -1170,8 +1189,19 @@ and every sentence of this plan that names `Rust_JNI` as the measure of
 the bridge passes to `Rust_FFM`. With the seam in place this is a
 deletion, not a rewrite.
 
+**The second client, Python (after Step 3; outside the MVP, listed under
+"Later").** A package over the same header through `cffi`: start a
+context, load the platform's PELT, run a Pure function by path with
+arguments as data, read results as data. It proves the surface is
+host-neutral, and it is the first consumer that has no JVM, which is the
+point of a Rust evaluator. Nothing in the Rust crate changes for it; the
+C header is the contract, and `tests/pct_native.rs` becomes its oracle
+once the `Rust_Native` run is green.
+
 **Order against Step 3.** Phase 1 comes first in any order: Step 3's
-`Directory` needs the same seam. For phase 2 the choice is the author's.
+`Directory` needs the same seam, and the C header of phase 2 can be
+written against the phase 1 trait before any client exists. For the Java
+client the choice is the author's.
 Before Step 3, the per-node reads are still the bridge's bulk, so the
 side-by-side benchmark shows the transport's largest visible gain; after
 Step 3, the platform's metadata is loaded on the Rust side, a PCT test
@@ -1493,6 +1523,10 @@ Java. Rough size: ~1 k lines.
 
 ### Later, outside the MVP
 
+- *A Python host over the C ABI* (Step 2c): the same `crates/ffi` surface
+  through `cffi`, the first consumer without a JVM; after Step 3, when the
+  platform's nodes are Rust's own and a host crosses for arguments and
+  results only.
 - **Writing PELT from Rust.** Needed only when something other than the Java
   compiler produces graphs. Requires producing complete M3 node shapes and the
   same reference ids Java would generate; the gate is "Rust-written platform
