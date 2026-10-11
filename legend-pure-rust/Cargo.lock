@@ -302,6 +302,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "legend-pure-ffi"
+version = "0.1.0"
+dependencies = [
+ "legend-pure-evaluator",
+ "legend-pure-metamodel",
+ "smol_str",
+]
+
+[[package]]
 name = "legend-pure-jni"
 version = "0.1.0"
 dependencies = [
