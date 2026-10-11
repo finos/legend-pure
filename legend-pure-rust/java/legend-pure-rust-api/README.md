@@ -1,10 +1,10 @@
-# legend-pure-runtime-rust-evaluator-api
+# legend-pure-rust-api
 
 The Java side of the Rust Pure evaluator in `legend-pure-rust/` that no transport owns
 (Step 2c of `legend-pure-rust/docs/rust-evaluator-mvp.md`): what a Java engine gives the
 bridge, what a Rust object looks like from Java, how a graph node is described for the
 Rust side, the typed failures, and the tooling the PCT suites and benchmarks of every
-transport are built from. A transport module (`legend-pure-runtime-rust-evaluator-jni`
+transport are built from. A transport module (`legend-pure-rust-jni`
 today, `-ffm` in phase 2) depends on this one and adds the evaluator that crosses.
 
 ## Surface
@@ -25,8 +25,14 @@ in both directions.
 ## PCT and benchmark tooling
 
 Every PCT test takes its adapter function as argument 0 and calls `$f->eval(|…)`; a Rust
-transport declares an adapter in `pct_core.pure` (`Rust_JNI` today) and runs the platform
-corpus through each Java engine with it. The tooling here is parametrised by that adapter and
+transport declares an adapter in its own Pure repository (`Rust_JNI` in `platform_rust_jni`,
+`Rust_FFM` in `platform_rust_ffm`) and runs the platform corpus through each Java engine with it.
+This module ships the repository the transports share, `platform_rust`
+(`src/main/resources/platform_rust.definition.json`, pattern `meta::pure::rust::standalone`,
+depending on `platform`; `pct.RustCodeRepositoryProvider`; a PAR from
+`legend-pure-maven-generation-par` and PELT from `legend-pure-maven-compiler`), which declares
+the `Rust_Native` adapter `meta::pure::rust::standalone::testAdapterForRustNativeExecution`
+(body `$f->eval()`, run from `legend-pure-rust/crates/evaluator/src/pct.rs`, never by a Java engine). The tooling here is parametrised by that adapter and
 by the transport's manifests, and each transport module invokes it from test classes of its
 own, which is what surefire runs.
 
@@ -36,17 +42,17 @@ own, which is what surefire runs.
 | `pct.PctManifestRebase` | `interpreted(adapter, scope, manifestPath)` and `compiled(…)` regenerate one manifest from a surveyor run under the committed one (a FAIL or ERROR becomes an exclusion holding the first line of its message; a PASS reported as an expected failure keeps its committed entry; an excluded test that now passes is dropped) and write it under the directory the system property `legend.pct.rust.manifestDir` names. A second run reproduces the file byte for byte. |
 | `pct.PctExpressionsBenchmark` | Times every PCT test under a list of modes, each an engine with an adapter: a host mode (the engine's own adapter) or a Rust mode (a transport's adapter plus where its split of the last call is read: lowering, run of the lowered closure, bridge reads during each). Per test and mode: first run, median and minimum, to `target/benchmarks/pct-expressions.csv`; a summary per mode and the ten tests where the Rust modes lose the most against their host modes, to `pct-expressions.md`. Properties `legend.bench.warmup`, `legend.bench.runs`, `legend.bench.filter`. |
 | `pct.RustPlatformGraph` | The platform graph loaded once per JVM from the `.par` archives on the classpath, for tests that bind an evaluator to it. |
-| `pct.BenchmarkNativeExpressions` (test) | The Java half of the apples-to-apples benchmark, with no Rust involved: the twelve expressions of `src/test/resources/bench/expressions.pure`, compiled into each engine at run time and timed there (the compiled engine both through its `start` entry and by invoking the generated method directly); the Rust half is `crates/evaluator/examples/expressions.rs`, the same expressions built with the builders and timed under `cargo run --release --example expressions`. Both check the same results. Not in the default run; `mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-api -Dtest=BenchmarkNativeExpressions -DfailIfNoTests=false`. |
+| `pct.BenchmarkNativeExpressions` (test) | The Java half of the apples-to-apples benchmark, with no Rust involved: the twelve expressions of `src/test/resources/bench/expressions.pure`, compiled into each engine at run time and timed there (the compiled engine both through its `start` entry and by invoking the generated method directly); the Rust half is `crates/evaluator/examples/expressions.rs`, the same expressions built with the builders and timed under `cargo run --release --example expressions`. Both check the same results. Not in the default run; `mvn test -pl legend-pure-rust/java/legend-pure-rust-api -Dtest=BenchmarkNativeExpressions -DfailIfNoTests=false`. |
 
 ## Build
 
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 17) \
-  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-api clean verify
+  mvn -pl legend-pure-rust/java/legend-pure-rust-api clean verify
 ```
 
 The module compiles with release 17 (the rest of the build stays at release 8) and needs
 JDK 17: it joins the reactor through the profile `rust-evaluator-jdk17` in
-`legend-pure-runtime/pom.xml`, active on JDK 17 and later, so a JDK 11 build neither builds
+`legend-pure-rust/java/pom.xml`, active on JDK 17 and later, so a JDK 11 build neither builds
 nor installs it and `-pl` cannot select it there. Nothing here loads a Rust library; its
 default test run is empty.

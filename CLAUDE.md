@@ -109,35 +109,5 @@ Authoritative developer docs live in `/docs` and are maintained alongside code. 
 - `docs/standards/coding-standards.md` — full Checkstyle rule list.
 - `docs/decisions/` — ADRs (JUnit 4, Eclipse Collections, no mocks).
 
-## Rust evaluator (`legend-pure-rust/`)
-
-A Pure evaluator in Rust lives beside the Java stack as a Cargo workspace of four crates:
-`crates/metamodel` (element tables, the expression tree, the M3 bootstrap embedding
-`platform/pure/grammar/m3.pure`), `crates/evaluator` (values, heap, variable context, dispatch,
-the native registry, the host-agnostic core of every boundary), `crates/ffi` (the C ABI, the one
-host surface, with its hand-written header) and `crates/jni` (the JNI transport). **The plan for
-everything Rust is `legend-pure-rust/docs/rust-evaluator-mvp.md`**; `legend-pure-rust/CLAUDE.md`
-is the working guide (build, test and lint commands, the six rules). Read the plan's §0 before
-touching that directory. The earlier Rust workspace (parser, compiler, LSP, DSL crates, CLI,
-binary snapshot format) is frozen at tag `archive/pre-evaluator-extract-2026-10`; nothing from
-it is current.
-
-State (October 2026): Steps 0–2 of the plan, the Java-lambda lowering, natives rounds 1 and 2,
-Step 2b (the evaluator's own cost), the bridge's cost and Step 2c phases 1 and 2 (one C ABI
-for every host) are done; next is Step 3 (PELT). Three Java modules under `legend-pure-runtime/`:
-`legend-pure-runtime-rust-evaluator-api` and `legend-pure-runtime-rust-evaluator-jni`, release 17,
-in the reactor only on JDK 17+ (profile `rust-evaluator-jdk17` in `legend-pure-runtime/pom.xml`),
-the transport-free side (hosts, node bridge, proxies, exception kinds, PCT and benchmark tooling)
-and the JNI transport (`evalRust`, the `Rust_JNI` suites and manifests); and
-`legend-pure-runtime-rust-evaluator-ffm`, release 25, in the reactor only on JDK 25+ (profile
-`rust-evaluator-jdk25`), the client of the C ABI (`evalRustFfm`, the `Rust_FFM` suites and
-manifests). Every module's tests skip when its cdylib is absent. The platform declares the PCT
-adapters `Rust_JNI` and `Rust_FFM` (both Java engines run the corpus through the Rust evaluator
-over each transport; the counts are in `legend-pure-rust/CLAUDE.md`) and `Rust_Native` (the
-corpus on the evaluator alone, driven from cargo, red until Step 3 loads the platform).
-
-```bash
-cd legend-pure-rust && cargo build --workspace && cargo test --workspace
-cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
-  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-api,legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni clean verify
-```
+Rust evaluator (`legend-pure-rust/`): see `legend-pure-rust/CLAUDE.md` and the plan
+`legend-pure-rust/docs/rust-evaluator-mvp.md`.

@@ -288,23 +288,4 @@ flowchart TD
 
 ---
 
-## legend-pure-rust (Cargo workspace)
-
-> A Pure **evaluator** in Rust, built per `legend-pure-rust/docs/rust-evaluator-mvp.md`.
-> See `legend-pure-rust/CLAUDE.md` for development setup.
-
-| Crate | Purpose |
-|-------|---------|
-| `legend-pure-metamodel` | Element tables (`PureModel`, `Element`), expression tree (`ValueSpec`, `ExprKind`), M3 bootstrap (embeds `m3.pure`) |
-| `legend-pure-evaluator` | Tree-walking evaluator: values, heap, variable context, dispatch, native registry (fished one native at a time) |
-| `legend-pure-jni` (cdylib `libpure_rust_jni`) | JNI boundary behind `org.finos.legend.pure.rust.PureRustEvaluator`; `CoreInstance` is the only value currency both ways |
-
-The earlier Rust workspace (parser, compiler, LSP, DSL crates, CLI) is frozen at tag
-`archive/pre-evaluator-extract-2026-10`.
-
-**Build:** `cargo build --workspace` · **Test:** `cargo test --workspace`
-
----
-
 *Back: [Architecture Overview](overview.md) · Next: [Technology Stack](tech-stack.md)*
-

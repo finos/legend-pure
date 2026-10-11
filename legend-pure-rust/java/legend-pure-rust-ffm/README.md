@@ -1,12 +1,12 @@
-# legend-pure-runtime-rust-evaluator-ffm
+# legend-pure-rust-ffm
 
 The FFM transport of the Java boundary to the Rust Pure evaluator in `legend-pure-rust/`
 (Step 2c phase 2 of `legend-pure-rust/docs/rust-evaluator-mvp.md`): a client of the C ABI
 of `libpure_rust_ffi`, written from its header `legend-pure-rust/crates/ffi/include/pure_rust.h`
 alone, calling it through the Foreign Function and Memory API of JDK 25. Everything
 transport-free (the hosts, the node bridge's host side, the proxies, the exception kinds, the
-PCT and benchmark tooling) is in `legend-pure-runtime-rust-evaluator-api`, which this module
-depends on; `legend-pure-runtime-rust-evaluator-jni` is the other transport, over JNI on
+PCT and benchmark tooling) is in `legend-pure-rust-api`, which this module
+depends on; `legend-pure-rust-jni` is the other transport, over JNI on
 JDK 17, with which this one is measured side by side.
 
 ## The header's rules, as this client keeps them
@@ -45,20 +45,24 @@ cached for the evaluator's lifetime.
 
 ## PCT: the `Rust_FFM` adapter
 
-The platform declares the adapter `meta::pure::test::pct::testAdapterForRustFfmExecution`
-(`<<PCT.adapter>> {PCT.adapterName='Rust_FFM'}`), whose body is `$f->evalRustFfm()`, and the
-native `meta::pure::functions::lang::evalRustFfm`. This module implements that native for both
-Java engines and runs the platform corpus through each, beside `Rust_JNI`.
+This module's Pure repository, `platform_rust_ffm` (`src/main/resources/platform_rust_ffm.definition.json`,
+pattern `meta::pure::rust::ffm`, depending on `platform`; `ffm.pct.RustFfmCodeRepositoryProvider`; a
+PAR from `legend-pure-maven-generation-par` and PELT from `legend-pure-maven-compiler`), declares the
+adapter `meta::pure::rust::ffm::testAdapterForRustFfmExecution` (`<<PCT.adapter>> {PCT.adapterName='Rust_FFM'}`,
+`RustFfmCodeRepositoryProvider.rustFfmAdapter`), whose body is `$f->evalRustFfm()`, and the native
+`meta::pure::rust::ffm::evalRustFfm`. This module implements that native for both Java engines and
+runs the platform corpus through each, beside `Rust_JNI`.
 
 | Class | Role |
 |---|---|
 | `ffm.interpreted.EvalRustFfm` | The native: unwraps the lambda node and calls `PureRustFfmEvaluator.start(lambda, [])`. One evaluator per engine, bound to its `PureRuntime`, replaced when the runtime changes, discarded after a panic. |
 | `ffm.interpreted.RustFfmInterpretedExtension` | Registers `evalRustFfm_Function_1__V_m_`; discovered through `META-INF/services/…InterpretedExtension`. Its constructor never touches the library. |
-| `ffm.compiled.CompiledEvalRustFfm` | The compiled engine's `evalRustFfm`: the generated code calls `EvalRustFfm.evaluate(es, f)`, which finds this `EvalRustFfmExecutor` through `META-INF/services`; results cross as compiled values through `CompiledObjects`. One evaluator per `CompiledExecutionSupport`. |
+| `ffm.compiled.RustFfmCompiledExtension` | Registers the generation native `ffm.compiled.EvalRustFfm` for `platform_rust_ffm`; discovered through `META-INF/services/…CompiledExtension`. The module generates its repository's Java at build time (`JavaCodeGeneration platform_rust_ffm` at `compile`), compiled with the tests. |
+| `ffm.compiled.CompiledEvalRustFfm` | The compiled engine's `evalRustFfm`: the generated code calls the static `CompiledEvalRustFfm.evaluate(es, f)`; results cross as compiled values through `CompiledObjects`. One evaluator per `CompiledExecutionSupport`. |
 | `ffm.pct.Test_RustFfm_{Essential,Grammar}Functions_PCT` | The interpreted engine's suites with the `Rust_FFM` adapter; each prints `Rust_FFM <scope>: <passes> / <total>`. |
 | `ffm.pct.Test_RustFfmCompiled_{Essential,Grammar}Functions_PCT` | The same corpus through the compiled engine; prints `Rust_FFM <scope> (compiled): <passes> / <total>`. |
 | `ffm.pct.RebaseRustFfmManifests` | Regenerates the four manifests (`PctManifestRebase`); not in the default surefire run. |
-| `ffm.pct.BenchmarkPctExpressions` | `PctExpressionsBenchmark` under six modes: each engine with its own adapter, with `Rust_JNI` and with `Rust_FFM`, so one run reports both transports with the Rust side's split per call. Needs `-jni` on the test class path (a test-scoped dependency) and both cdylibs in `legend.rust.libdir`. Not in the default run. |
+| `ffm.pct.BenchmarkPctExpressions` | `PctExpressionsBenchmark` under six modes: each engine with its own adapter, with `Rust_JNI` and with `Rust_FFM`, so one run reports both transports with the Rust side's split per call. Needs `-jni` and its test-jar (the `Rust_JNI` adapter's generated class) on the test class path (test-scoped dependencies) and both cdylibs in `legend.rust.libdir`. Not in the default run. |
 | `ffm.pct.Core_RustFfm_PCTReportProvider` | Publishes `pct-reports/ADAPTER_{essential,grammar}_{interpreted,compiled}_Rust_FFM.json`, written at `process-test-classes` by each engine's `PCTReportGenerator` from the manifests alone (no library loaded, no native-access flag needed there). |
 
 Manifests: `src/test/resources/platform/pure/essential/pct_essential_{interpreted,compiled}_rust_ffm.json`
@@ -69,7 +73,7 @@ difference is a defect of this module.
 
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 25) \
-  mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-ffm \
+  mvn test -pl legend-pure-rust/java/legend-pure-rust-ffm \
   -Dtest=RebaseRustFfmManifests -DfailIfNoTests=false
 ```
 
@@ -81,14 +85,14 @@ engine; `340 / 346` and `133 / 137` on the compiled engine, the `Rust_JNI` numbe
 ```bash
 cd legend-pure-rust && cargo build --workspace     # target/debug/libpure_rust_ffi.{dylib,so,dll}
 cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 25) \
-  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-api,legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni,legend-pure-runtime/legend-pure-runtime-rust-evaluator-ffm clean verify
+  mvn -pl legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni,legend-pure-rust/java/legend-pure-rust-ffm clean verify
 ```
 
 `verify` runs the 25 boundary tests and the four `Rust_FFM` suites, checkstyle (10.21.4 for
 this module, the root `checkstyle.xml`) and dependency analysis.
 
 The module compiles with release 25 and joins the reactor only through the profile
-`rust-evaluator-jdk25` in `legend-pure-runtime/pom.xml`, active on JDK 25 and later; a JDK 17
+`rust-evaluator-jdk25` in `legend-pure-rust/java/pom.xml`, active on JDK 25 and later; a JDK 17
 or 11 build neither builds nor installs it and `-pl` cannot select it there. Surefire passes
 the library directory as `legend.pure.rust.libdir` and `--enable-native-access=ALL-UNNAMED`;
 when the library is absent the module's tests are skipped (profile `rust-cdylib-missing-*`),
@@ -100,7 +104,7 @@ The benchmark, with an optimised Rust side:
 ```bash
 cd legend-pure-rust && cargo build --release --workspace
 cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 25) \
-  mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-ffm \
+  mvn test -pl legend-pure-rust/java/legend-pure-rust-ffm \
   -Dtest=BenchmarkPctExpressions -DfailIfNoTests=false \
   -Dlegend.rust.libdir=$PWD/legend-pure-rust/target/release
 ```

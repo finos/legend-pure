@@ -62,7 +62,7 @@ Read this first; everything below assumes it.
 | PELT byte-level reference | `docs/architecture/pelt-serialization.md` at the repository root — on branch `docs/pelt-format`, submitted upstream as finos/legend-pure PR #1360. **Not on `legend-pure-rust` yet**: before Step 3, `git cherry-pick -n c989b50953b`, keep `docs/architecture/pelt-serialization.md`, and redo by hand its three link edits (`docs/README.md`, `docs/architecture/compiler-pipeline.md`, `docs/reference/maven-plugins-reference.md`; the first two already differ between the branches). Do **not** merge the branch — it tracks upstream `master` and differs from `legend-pure-rust` by ~1,500 files. |
 | Background analysis (why PELT, what it contains, how it maps) | `legend-pure-rust/docs/pelt-analysis.md` (moved from `docs/deferred/` in Step 0). Sections 6.3–6.8 are the source of Steps 2–7 here. |
 | legend-engine | A sibling checkout (`upstream/master` is the FINOS main line — see Appendix C for which branch is the target; it matters from Step 5, when the engine suite class is added). Its `*-pure` modules emit PELT into their jars (e.g. 414 `.pelt` in `functions-standard`); its PCT suite classes are the `Test_*_PCT.java` classes (42 on `upstream/master`); the engine compiler is `legend-engine-language-pure-compiler` (`toPureGraph`); the Pure function libraries are `legend-engine-core/legend-engine-core-pure/legend-engine-pure-code-functions-{standard,relation,json,planExecution,…}`. |
-| PCT in the platform | Profile `meta::pure::test::pct::PCT` in `legend-pure-core/legend-pure-m3-core/src/main/resources/platform/pure/essential/tests/pct_core.pure`, which since Step 2 also declares the native `evalRust`, the `Rust_JNI` adapter `testAdapterForRustExecution` and, since 2026-10-11, the `Rust_Native` adapter `testAdapterForRustNativeExecution`; 463 `<<PCT.test>>` functions in the platform sources (327 essential, 136 grammar); Java report providers `Essential_Functions_PCTReportProvider`, `Grammar_Functions_PCTReportProvider`, `Core_{Compiled,Interpreted}_PCTReportProvider`, and `Core_RustJni_PCTReportProvider` in the fork's `legend-pure-runtime-rust-evaluator-jni`; shared helpers in `m3/pct/shared/PCTTools.java`. |
+| PCT in the platform | Profile `meta::pure::test::pct::PCT` in `legend-pure-core/legend-pure-m3-core/src/main/resources/platform/pure/essential/tests/pct_core.pure`; the native `evalRust` and the `Rust_JNI` adapter `testAdapterForRustExecution` are in the repository `platform_rust_jni` (`meta::pure::rust::jni`) of `legend-pure-rust/java/legend-pure-rust-jni`, `evalRustFfm` and the `Rust_FFM` adapter in `platform_rust_ffm` (`meta::pure::rust::ffm`) of `legend-pure-rust/java/legend-pure-rust-ffm`, the `Rust_Native` adapter `testAdapterForRustNativeExecution` in `platform_rust` (`meta::pure::rust::standalone`) of `legend-pure-rust/java/legend-pure-rust-api`; 463 `<<PCT.test>>` functions in the platform sources (327 essential, 136 grammar); Java report providers `Essential_Functions_PCTReportProvider`, `Grammar_Functions_PCTReportProvider`, `Core_{Compiled,Interpreted}_PCTReportProvider`, and `Core_RustJni_PCTReportProvider` in the fork's `legend-pure-rust-jni`; shared helpers in `m3/pct/shared/PCTTools.java`. |
 | What to extract, and what to leave | Appendix A (extraction map). Read it before Step 0 and before fishing anything later. |
 | Step 0 mechanics | Appendix B: archive commands, workspace skeleton, gates. |
 | Decisions still owned by the author | Appendix C. Do not guess these; ask. |
@@ -95,7 +95,7 @@ with its gate:
    and the `Rust_Native` run (Step 2, the paragraph of that name) resolves
    the surveyor instead of stopping at `MetadataNotFound`.
    Two decisions taken before it (2026-10-11): the
-   Java modules (`legend-pure-runtime-rust-evaluator-api` and `-jni` since
+   Java modules (`legend-pure-rust-api` and `-jni` since
    the Step 2c split) compile with release 17,
    and the bridge stays on JNI until the JDK floor reaches 22 (Step 2,
    "JNI or the Foreign Function & Memory API"; Appendix C item 7).
@@ -752,10 +752,10 @@ the error in that test, and `Rust_JNI` stays the measure of the bridge.
 ```bash
 cd legend-pure-rust && cargo build --workspace            # builds the cdylib
 cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
-  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-api,legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni clean verify
+  mvn -pl legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni clean verify
 # after a change that moves tests: regenerate, review the diff, verify again
 JAVA_HOME=$(/usr/libexec/java_home -v 17) \
-  mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni \
+  mvn test -pl legend-pure-rust/java/legend-pure-rust-jni \
   -Dtest=RebaseRustJniManifests -DfailIfNoTests=false
 ```
 
@@ -1159,14 +1159,14 @@ core with a `Host` that is a table of descriptions and no runtime: phase
 throw and the i64 pointer round trip (about fifteen unsafe lines each
 transport keeps). It is the same family as Step 4's `Directory` (path,
 classifier, name, reference id → nodes) and lives in the same crate. On
-the Java side, `legend-pure-runtime-rust-evaluator-api` (release 17):
+the Java side, `legend-pure-rust-api` (release 17):
 `RustEngineHost`, both hosts, `NodeBridge` (the host-side describe logic,
 the node id table, `failureOf`), `RustCoreInstance` over the four-method
 `RustHeap` any evaluator satisfies, `NodeDescription`, `CompiledObjects`,
 `CompiledValue`, the exception kinds, `RustPlatformGraph`, and the shared
 tooling parametrised by adapter (`PctSuites`, `PctManifestRebase`,
 `PctExpressionsBenchmark` with one `Mode` per engine and transport);
-`legend-pure-runtime-rust-evaluator-jni` (the module renamed):
+`legend-pure-rust-jni` (the module renamed):
 `PureRustEvaluator`, `RustNodeBridge extends NodeBridge` with the
 JNI-called surface, `evalRust` on both engines, the `Rust_JNI` suites,
 manifests and reports. Gate met: the four `Rust_JNI` numbers unchanged
@@ -1203,7 +1203,7 @@ the context is freed; a confined arena per call for strings; no
 exception may cross an upcall, so every callback returns through the
 sentinel path `failureOf` already gives; confined arenas are
 single-thread, and `start` runs on the calling thread only. A Java
-module at release 25, `legend-pure-runtime-rust-evaluator-ffm`, in the
+module at release 25, `legend-pure-rust-ffm`, in the
 reactor through a profile `<jdk>[25,)`, with a module-only checkstyle
 raise (floor 8.42, 10.x tested) and the javadoc override, depending on
 the shared module; the native `evalRustFfm` and the adapter `Rust_FFM`
@@ -1250,7 +1250,7 @@ crossing and release, re-entry refused from inside a callback, the
 failure kinds, the poisoned context.
 
 **Phase 2, the Java half, as shipped (2026-10-11).**
-`legend-pure-runtime-rust-evaluator-ffm` (release 25, in the reactor
+`legend-pure-rust-ffm` (release 25, in the reactor
 through `rust-evaluator-jdk25`, depending on `-api`; checkstyle 10.21.4
 module-only; the surefire fork runs with `--enable-native-access`). `PureAbi`
 is the header as Java: the nine `StructLayout`s with the header's sizes
@@ -1344,11 +1344,11 @@ once the `Rust_Native` run is green.
 then Step 3, the benchmark run at both points. The header is
 hand-written, `crates/ffi/include/pure_rust.h`, reviewed as the contract,
 with a test asserting the exported symbols match it; no generator. Three
-Java modules from the start: `legend-pure-runtime-rust-evaluator-api`
+Java modules from the start: `legend-pure-rust-api`
 (release 17: hosts, proxies, descriptions, conversions, exception kinds,
-the PCT and benchmark tooling), `legend-pure-runtime-rust-evaluator-jni`
+the PCT and benchmark tooling), `legend-pure-rust-jni`
 (release 17, the current module renamed, since nothing has depended on
-its artifact id yet) and `legend-pure-runtime-rust-evaluator-ffm`
+its artifact id yet) and `legend-pure-rust-ffm`
 (release 25). Phase 2's client is Java only; Python comes after Step 3.
 Phase 1 comes first in any order: Step 3's `Directory` needs the same
 seam, and the C header of phase 2 can be written against the phase 1
