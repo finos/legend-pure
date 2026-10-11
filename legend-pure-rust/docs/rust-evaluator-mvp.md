@@ -79,6 +79,12 @@ interpreted engine's own adapter (median 94 µs against 82 µs), the
 lowering cached per lambda definition. The order from here, each phase
 with its gate:
 
+0. **Step 2c** (proposed, the author's decision) — a second transport,
+   FFM on JDK 25 beside JNI on 17, in three phases: the seam (the
+   host-agnostic bridge core into the evaluator crate behind one trait,
+   a shared Java module), the FFM crate and module with a `Rust_FFM`
+   adapter measured beside `Rust_JNI`, then the deletion of JNI when
+   legend-engine's floor moves. Phase 1 serves Step 3 as well.
 1. **Step 3 and Step 4** (next) — read PELT, the `Directory` trait, the
    static graph: the per-call lowering disappears for everything static,
    and the `Rust_Native` run (Step 2, the paragraph of that name) resolves
@@ -1067,6 +1073,122 @@ algorithms (`match` walks every branch's type against the value,
 the same algorithm with the JIT behind it. The four `Rust_JNI` numbers
 were unchanged after every item.
 
+### Step 2c — A second transport: the Foreign Function & Memory API (proposed 2026-10-11, awaiting the author's decision)
+
+**Goal.** Run the same corpus through a second boundary, FFM on JDK 25,
+beside the JNI one on JDK 17, so the gain FFM measured on the bridge's
+call shapes (Step 2, "JNI or the Foreign Function & Memory API": a
+property read 536 against 93 ns, a string 330 against 55) shows on PCT
+and on `BenchmarkPctExpressions` while legend-engine's floor is still 11
+and 17; then delete JNI when that floor moves. The plan authorises a
+fourth crate here, the first time it does (rule 2); the allowed
+dependencies do not grow, since an `extern "C"` surface needs none.
+
+**Feasibility, from the code as it stands.** The abstraction a second
+transport needs already exists on both sides. On the Rust side a host
+node is a `TypedObject` (`crates/evaluator/src/heap.rs`: classifier,
+property values, keys, node name, user path, source info, captured
+values), `JavaNode` implements it, and the lowering reads through it;
+nothing under `crates/evaluator` or `crates/metamodel` mentions `jni`.
+On the Java side the two engines are already behind `RustEngineHost`.
+The JNI crate is 3,202 lines, and splits by what imports `jni`:
+host-agnostic, `context.rs` (562: the per-call lowering through the
+closure cache, the model's growth, the session of one call, timings;
+`jni` appears only in `new`'s two parameters), `session.rs` (173), the
+handle table in `bridge.rs`, `materialize::leaves` and `exception.rs`
+(268, the payload); transport, `java_node.rs` (637, reads through
+`JNIEnv`), the rest of `bridge.rs` (402: the method and field ids, the
+shared state with the `JavaVM`), `lib.rs` (633, the entry points),
+`failure.rs` (158) and `materialize::leaf_to_java`. The Java module is
+2,763 lines, of which the transport is `PureRustEvaluator`'s native
+declarations and lifecycle (392) and the JNI-called surface of
+`RustNodeBridge` (465); the hosts, `RustCoreInstance`, `NodeDescription`,
+`CompiledObjects`, `CompiledValue`, the exception kinds and the PCT
+tooling are transport-free.
+
+The seam, named. What Rust asks the host, today bound by
+`BridgeMethods::resolve` and tomorrow handed over as upcall stubs:
+`describe`, `propertyValues`, `keysOf`, `capturedValue`, `node`,
+`element`, `enumValue`, `rustObject`, the primitive factories
+`newBoolean`, `newInteger`, `newFloat`, `newDecimal`, `newString`,
+`newDate`, `newLatestDate`, `newStrictTime`, `newMap`, and the lifecycle
+`forget` and `failureOf`. What a description carries, today twenty
+fields of `NodeDescription` read by id and tomorrow one flat layout:
+`kind`, `id`, `definition`, `classifier`, `name`, `userPath`, `payload`,
+`year`, `month`, `day`, `hour`, `minute`, `second`, `precision`,
+`subsecond`, `sourceId`, `line`, `column`, `endLine`, `endColumn`.
+
+**Phase 1 — the seam (no behaviour change).** Move the host-agnostic
+core out of `crates/jni` into the evaluator crate, behind one trait a
+transport implements: the reads (`describe`, property values, keys,
+captured values, the lambda definition key), the lifecycle (end of
+execution, the nodes released, the error side-channel) and the read
+counter the timings report. It is the same family as Step 4's
+`Directory` (path, classifier, name, reference id → nodes) and lives in
+the same crate; the JNI implementation of both is the thin remainder of
+`crates/jni`. On the Java side, a shared module at release 17,
+`legend-pure-runtime-rust-evaluator-api` (`RustEngineHost`, both hosts,
+`RustCoreInstance`, `NodeDescription`, `CompiledObjects`, `CompiledValue`,
+`PureRustEvaluationException`, `RustPlatformGraph`, the PCT suites'
+tooling, the manifest rebase and the benchmarks); the JNI module keeps
+`PureRustEvaluator`'s native boundary and `RustNodeBridge`'s JNI-called
+surface. Gate: the four `Rust_JNI` numbers and both benchmarks unchanged;
+`jni::` appears only under `crates/jni`; the module verify stays
+checkstyle and dependency-analyze clean on both modules.
+
+**Phase 2 — the FFM transport.** `crates/ffi`, a cdylib
+(`libpure_rust_ffi`) with an `extern "C"` surface and no `jni`
+dependency, implementing the phase 1 trait over function pointers Java
+hands it once per evaluator. Two design rules that differ from JNI and
+are the gain: a node's description crosses as one flat layout Java
+writes into a segment Rust reads in place, which is the bridge menu's
+"columnar description" arriving with the transport rather than as a
+separate item; and results cross out as data Rust writes and Java
+materialises through the host, not as objects Rust asks the host to
+construct one call at a time, which is also the shape PELT-era results
+want. The spike's rules, built in: one shared `Arena` per evaluator for
+the upcall stubs and the description buffer, closed in `close()` after
+the context is freed; a confined arena per call for strings; no
+exception may cross an upcall, so every callback returns through the
+sentinel path `failureOf` already gives; confined arenas are
+single-thread, and `start` runs on the calling thread only. A Java
+module at release 25, `legend-pure-runtime-rust-evaluator-ffm`, in the
+reactor through a profile `<jdk>[25,)`, with a module-only checkstyle
+raise (floor 8.42, 10.x tested) and the javadoc override, depending on
+the shared module; the native `evalRustFfm` and the adapter `Rust_FFM`
+in `pct_core.pure`, a second method on `EvalRustExecutor` and a second
+generation native in the compiled engine (additive, absent-safe as
+`evalRust` is), four manifests, four suites, the report provider, and
+`BenchmarkPctExpressions` gaining the FFM modes. Gate: the `Rust_FFM`
+manifests equal the `Rust_JNI` ones in content, and the benchmark reports
+both transports side by side with the Rust side's split per call.
+
+**Phase 3 — deletion.** When legend-engine's floor reaches 25: delete
+`crates/jni`, the JNI module, `evalRust` and the `Rust_JNI` adapter with
+its manifests and reports; the shared module and the FFM module remain,
+and every sentence of this plan that names `Rust_JNI` as the measure of
+the bridge passes to `Rust_FFM`. With the seam in place this is a
+deletion, not a rewrite.
+
+**Order against Step 3.** Phase 1 comes first in any order: Step 3's
+`Directory` needs the same seam. For phase 2 the choice is the author's.
+Before Step 3, the per-node reads are still the bridge's bulk, so the
+side-by-side benchmark shows the transport's largest visible gain; after
+Step 3, the platform's metadata is loaded on the Rust side, a PCT test
+crosses for its arguments and results only, and the gap narrows to
+strings and result crossing. Recommended: phase 1, phase 2, then Step 3,
+with the benchmark run at both points so the record shows what the
+transport bought and what PELT bought.
+
+**Risks.** `reinterpret` and the stubs are restricted methods: the
+native-access flag must be on every JVM that loads the module (surefire,
+the engine's launchers, IDE runners), a cost JNI's `System.load` shares
+since JDK 24. Two modules at two floors in one reactor: two profiles, two
+checkstyle configurations, and legend-engine seeing a release-17 shared
+module plus two optional transports. No CI job runs the Java suites with
+a built cdylib today (`rust.yml` never runs Maven, `build.yml` never runs
+cargo); with two transports to compare, that gap starts to matter.
+
 ### Step 3 — Read PELT
 
 **Goal.** Decode every PELT file type into in-memory structures, with no
@@ -1651,5 +1773,6 @@ flag it in the commit message.
    the Foreign Function & Memory API"), FFM wins the shapes that matter
    (a property read 536 against 93 ns), so a 25 floor for the module makes
    FFM the next crossing design; legend-engine on 11/17 could not consume
-   the module until its floor moves, which today changes nothing. *Default:
-   17 and JNI until the author raises the floor.*
+   the module until its floor moves, which today changes nothing. Step 2c
+   proposes both transports side by side until then. *Default: 17 and JNI
+   until the author raises the floor or accepts Step 2c.*
