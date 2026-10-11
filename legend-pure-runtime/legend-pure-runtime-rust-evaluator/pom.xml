@@ -28,26 +28,13 @@
     <name>Legend Pure - Runtime - Rust Evaluator</name>
 
     <properties>
-        <maven.compiler.release>11</maven.compiler.release>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <!--
-            Directory holding the libpure_rust_jni cdylib produced by
-            cargo build (whole workspace) in legend-pure-rust/. Tests receive it
-            as the system property legend.pure.rust.libdir; when the library
-            is absent the profiles below skip this module's tests so the
-            reactor stays green on hosts and CI without a Rust toolchain.
-        -->
+        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <legend.rust.libdir>${project.basedir}/../../legend-pure-rust/target/debug</legend.rust.libdir>
     </properties>
 
     <profiles>
-        <!--
-            Activation ANDs the OS family with the absence of the platform
-            library name (${basedir} interpolates in activation,
-            ${project.basedir} does not). The property is the standard
-            `skipTests`, so a command-line -DskipTests=false still wins.
-        -->
         <profile>
             <id>rust-cdylib-missing-mac</id>
             <activation>
@@ -140,11 +127,6 @@
 
     <build>
         <plugins>
-            <!--
-                The Rust_JNI adapter reports (ADAPTER_<scope>_interpreted_Rust_JNI.json)
-                come from the committed manifests, not from a test run, so this
-                step needs no Rust library.
-            -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -184,6 +166,13 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <source>17</source>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

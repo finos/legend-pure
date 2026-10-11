@@ -67,7 +67,10 @@ archive one `impl NativeFunction` at a time (the natives round of 2026-10-11
 did it one module at a time on disjoint files). `tests/registry.rs` pins the
 exact key set by hand: every `register` call must have its key listed there,
 and the test fails otherwise. Root Maven installs need `clean` (the PAR
-plugin trips on a stale descriptor otherwise).
+plugin trips on a stale descriptor otherwise). The Java module compiles with
+release 17 and joins the reactor only on JDK 17+ (profile
+`rust-evaluator-jdk17` in `legend-pure-runtime/pom.xml`): run its Maven
+commands with JDK 17; a JDK 11 build leaves it out.
 
 ## The six rules (plan §0)
 

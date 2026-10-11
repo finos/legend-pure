@@ -48,10 +48,22 @@
         <module>legend-pure-runtime-java-engine-interpreted</module>
         <module>legend-pure-runtime-java-engine-mixed</module>
         <module>legend-pure-runtime-java-engine-shared</module>
-        <!-- legend-pure-runtime-rust-evaluator-bindings-ap stays out of the
+        <!-- legend-pure-runtime-rust-evaluator is added by the profile below.
+             legend-pure-runtime-rust-evaluator-bindings-ap stays out of the
              reactor: its annotation processor needs the archived Rust
              java-codegen crate. It returns with typed proxies
              (legend-pure-rust/docs/rust-evaluator-mvp.md, "Later"). -->
-        <module>legend-pure-runtime-rust-evaluator</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>rust-evaluator-jdk17</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+            <modules>
+                <module>legend-pure-runtime-rust-evaluator</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

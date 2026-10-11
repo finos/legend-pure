@@ -87,6 +87,11 @@ cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
 `verify` runs the 22 boundary tests and the four `Rust_JNI` suites (327 + 136 per engine), checkstyle
 and dependency analysis.
 
+The module compiles with release 17 (the rest of the build stays at release 8) and needs JDK 17: it
+joins the reactor through the profile `rust-evaluator-jdk17` in `legend-pure-runtime/pom.xml`, active
+on JDK 17 and later, so a JDK 11 build neither builds nor installs it and `-pl` cannot select it there.
+The other modules keep their JDK 11 or 17 range.
+
 Surefire passes the library directory to the tests as the system property
 `legend.pure.rust.libdir`; without it `PureRustEvaluator` falls back to
 `System.loadLibrary("pure_rust_jni")`. When the library is absent the module's

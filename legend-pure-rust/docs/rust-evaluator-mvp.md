@@ -779,6 +779,32 @@ line:
 Not worth doing: deferring the classifier itself (dispatch asks for it at
 once).
 
+**JNI or the Foreign Function & Memory API (assessed 2026-10-11).** A
+spike on JDK 17's incubator FFM (`jdk.incubator.foreign`, JEP 412; branch
+`worktree-agent-a90035275085e3b67`, `legend-pure-rust/spike-ffm/`, kept
+off the workspace) measured the bridge's call shapes against JNI, median
+ns per operation on Temurin 17 aarch64: a `long` downcall 2.1 against 1.9;
+a 40-byte string in and its length out 315 against 142 (36–45 with a
+reused native segment); a `long` upcall from Rust 117 against 159; a
+`long` plus short string upcall pair 554 against 394; binding a method
+209 against a symbol lookup of 140 plus 2.6–3.1 µs per downcall handle
+and 6 µs per upcall stub. Downcalls are equal, primitive upcalls are
+slower, strings are the one gain, and the bridge's cost is the number of
+crossings and the text encoding, which batching pays the same under
+either mechanism. The incubator module must be enabled on every JVM that
+loads the evaluator (`--add-modules jdk.incubator.foreign
+--enable-native-access=ALL-UNNAMED`: surefire, the engine's launchers,
+IDE runners), the 17 API is rewritten for the final one of JDK 22
+(`Linker`, `Arena`, zero-length `MemorySegment` for pointers), no
+exception may cross an upcall, and confined scopes are single-thread
+while `start` runs on arbitrary threads. Decision: stay on JNI; revisit
+when the JDK floor reaches 22. The string cost, if it matters, is reachable
+within JNI (`GetStringUTFRegion` instead of `GetStringUTFChars`; not
+measured). The module itself moved to release 17 the same day (profile
+`rust-evaluator-jdk17` in `legend-pure-runtime/pom.xml`); Java 17 language
+features in its sources wait on the root's checkstyle 8.25 pin, which
+predates records, switch expressions and pattern `instanceof`.
+
 **Deviations from the plan as first written** (recorded, as rule 6 asks).
 The archived JNI crate's tagged-union marshalling was not fished:
 `CoreInstance` crosses instead, so every Pure type is covered without a second
@@ -1550,3 +1576,8 @@ flag it in the commit message.
    `crates/evaluator/src/lower/`, written against the heap's node view;
    Steps 3 and 4 now add the PELT node source and the directory, not the
    lowering.*
+7. **The JDK floor of the Java module and the bridge mechanism.** The
+   rust-evaluator module compiles with release 17 (decided 2026-10-11, the
+   author's edit) and joins the reactor only on JDK 17+; the bridge stays
+   on JNI until the floor reaches 22 (Step 2, "JNI or the Foreign Function
+   & Memory API"). *Default: as decided.*
