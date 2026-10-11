@@ -28,17 +28,6 @@
 //! Each parameter contributes `Type + multSig + "_"`, producing a
 //! double-underscore `__` boundary between consecutive parameters.
 //!
-//! # Java algorithm (from `ConcreteFunctionDefinitionNameProcessor.getSignatureAndResolveImports`)
-//!
-//! ```text
-//! builder = funcName + "_"
-//! for each param:
-//!     builder += Type + multiplicityToSignatureString(mult) + "_"
-//! if no params:
-//!     builder += "_"     // so we get funcName__ before the return type
-//! builder += ReturnType + multiplicityToSignatureString(returnMult)
-//! ```
-//!
 //! ## Multiplicity encoding (from `Multiplicity.multiplicityToSignatureString`)
 //!
 //! | Pure | Signature |
@@ -84,19 +73,16 @@ pub(crate) fn build_function_fqn(simple_name: &str, func: &Function, model: &Pur
     builder.push_str(simple_name);
     builder.push('_');
 
-    // Parameters — each produces: Type + multSig + "_"
     for param in func.parameters.iter() {
         append_type_signature(&mut builder, &param.type_expr, model);
         append_multiplicity_signature(&mut builder, &param.multiplicity);
         builder.push('_');
     }
 
-    // If no parameters, add an extra underscore (matching Java: funcName__)
     if func.parameters.is_empty() {
         builder.push('_');
     }
 
-    // Return type — NO trailing "_" after multiplicity
     append_type_signature(&mut builder, &func.return_type, model);
     append_multiplicity_signature(&mut builder, &func.return_multiplicity);
 
@@ -109,49 +95,25 @@ pub(crate) fn build_function_fqn(simple_name: &str, func: &Function, model: &Pur
 /// - Generic (rawType == null): uses type parameter name (T, V, etc.)
 /// - Unit: `Measure$UnitName`
 /// - `PackageableElement`: `rawType.getName()` (String, Integer, Relation, etc.)
-/// - `FunctionType`: literal `"FunctionTypeTODO"` (an unimplemented case
-///   on the Java side — the string is what Java actually emits, not a
-///   Rust-side forward TODO). The Rust port emits `"Function"` instead
-///   for pragmatic compatibility with registered FQNs; the divergence is
-///   intentional and stable.
 fn append_type_signature(builder: &mut String, type_expr: &TypeExpr, model: &PureModel) {
     match type_expr {
         TypeExpr::Named { element, .. } => {
-            // PackageableElement case — use the element's simple name from the model.
             let node = model.get_node(*element);
             builder.push_str(&node.name);
         }
         TypeExpr::Generic(name) => {
-            // rawType == null → type parameter (T, V, etc.)
             builder.push_str(name);
         }
         TypeExpr::FunctionType { .. } => {
-            // Java emits the literal string `"FunctionTypeTODO"` here
-            // (its `appendSignatureStringForType` has an unimplemented
-            // branch). In practice function-typed parameters use
-            // `Function<>` which resolves as a Named type, so the
-            // FunctionType path is rare. We deviate from Java by
-            // emitting `"Function"` — the registered FQNs in the
-            // function index use `Function` as the type token, so this
-            // makes lookup work where Java's literal string wouldn't.
-            // Intentional divergence, not a forward TODO.
             builder.push_str("Function");
         }
         TypeExpr::Relation(_) => {
-            // Structural anonymous relation type (inline column bag).
-            // In practice, relation-typed params resolve as Named.
             builder.push_str("Relation");
         }
         TypeExpr::GenericTypeOperation { .. } => {
             builder.push_str("Any");
         }
         TypeExpr::Unresolved => {
-            // Type holes shouldn't reach FQN mangling — that's only
-            // called on `Function`/property/QP signatures, not on
-            // lambda-parameter types. If it does, mangle as `Any` so
-            // the call doesn't blow up; the upstream
-            // `CannotInferLambdaParameterTypes` diagnostic is the real
-            // signal.
             builder.push_str("Any");
         }
     }

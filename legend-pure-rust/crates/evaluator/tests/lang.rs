@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! The language natives fished in Step 1 milestone 3, driven through
+//! The language natives, driven through
 //! hand-built nodes: `letFunction`, `if`, `new`, `copy`, `eq`/`equal`,
 //! `and`/`or`/`not`, `minus`, plus property and qualified-property access
 //! on the instances `new` builds.
@@ -30,6 +30,15 @@ use legend_pure_metamodel::model::PureModel;
 use legend_pure_metamodel::types::{Multiplicity, ValueSpec};
 
 const NEW: &str = "new_Class_1__String_1__Any_MANY__T_1_";
+
+/// The platform registry plus the flat key/value spelling of `new` these
+/// tests build their instances with (the platform declares `new` over
+/// `KeyExpression` objects; the builders have none).
+fn registry() -> NativeRegistry {
+    let mut registry = NativeRegistry::standard();
+    registry.register(NEW, legend_pure_evaluator::native::lang::New);
+    registry
+}
 const COPY: &str = "copy_T_1__String_1__KeyExpression_MANY__T_1_";
 const LET: &str = "letFunction_String_1__T_m__T_m_";
 const IF: &str = "if_Boolean_1__Function_1__Function_1__T_m_";
@@ -96,7 +105,7 @@ fn evaluation_error(err: &PureException) -> Option<&str> {
 #[test]
 fn let_binds_in_the_current_scope_and_returns_the_value() {
     let model = ModelBuilder::new().finish();
-    let registry = NativeRegistry::standard();
+    let registry = registry();
     let mut eval = Evaluator::new(&model, &registry);
     eval.context_mut().push_scope();
     let body = [
@@ -117,7 +126,7 @@ fn let_binds_in_the_current_scope_and_returns_the_value() {
 #[test]
 fn if_evaluates_only_the_taken_branch() {
     let model = ModelBuilder::new().finish();
-    let registry = NativeRegistry::standard();
+    let registry = registry();
     let mut eval = Evaluator::new(&model, &registry);
     let poison = expr::lambda(
         Vec::new(),
@@ -133,7 +142,7 @@ fn if_evaluates_only_the_taken_branch() {
 #[test]
 fn new_builds_an_instance_whose_properties_read_back() {
     let (model, person) = person_model();
-    let registry = NativeRegistry::standard();
+    let registry = registry();
     let mut eval = Evaluator::new(&model, &registry);
     eval.context_mut().push_scope();
     let body = [
@@ -154,7 +163,7 @@ fn new_builds_an_instance_whose_properties_read_back() {
 #[test]
 fn optional_property_left_unset_reads_as_unit() {
     let (model, person) = person_model();
-    let registry = NativeRegistry::standard();
+    let registry = registry();
     let mut eval = Evaluator::new(&model, &registry);
     eval.context_mut().push_scope();
     eval.eval(&expr::call(
@@ -171,7 +180,7 @@ fn optional_property_left_unset_reads_as_unit() {
 #[test]
 fn new_without_a_required_property_is_a_multiplicity_violation() {
     let (model, person) = person_model();
-    let registry = NativeRegistry::standard();
+    let registry = registry();
     let mut eval = Evaluator::new(&model, &registry);
     let bare = expr::call(
         NEW,
@@ -191,7 +200,7 @@ fn new_without_a_required_property_is_a_multiplicity_violation() {
 #[test]
 fn qualified_property_binds_this_and_its_arguments() {
     let (model, person) = person_model();
-    let registry = NativeRegistry::standard();
+    let registry = registry();
     let mut eval = Evaluator::new(&model, &registry);
     eval.context_mut().push_scope();
     eval.eval(&expr::call(
@@ -206,7 +215,7 @@ fn qualified_property_binds_this_and_its_arguments() {
 #[test]
 fn copy_overrides_one_property_and_leaves_the_source_alone() {
     let (model, person) = person_model();
-    let registry = NativeRegistry::standard();
+    let registry = registry();
     let mut eval = Evaluator::new(&model, &registry);
     eval.context_mut().push_scope();
     eval.eval(&expr::call(
@@ -237,7 +246,6 @@ fn copy_overrides_one_property_and_leaves_the_source_alone() {
         eval.eval(&expr::prop(expr::var("p"), "name")).unwrap(),
         Value::String("Ann".into())
     );
-    // `eq` is identity: the copy is a different object.
     let same = expr::call(EQ, vec![expr::var("p"), expr::var("p")]);
     let other = expr::call(EQ, vec![expr::var("p"), expr::var("q")]);
     assert_eq!(eval.eval(&same).unwrap(), Value::Boolean(true));
@@ -247,7 +255,7 @@ fn copy_overrides_one_property_and_leaves_the_source_alone() {
 #[test]
 fn eq_and_equal_on_primitives_and_collections() {
     let model = ModelBuilder::new().finish();
-    let registry = NativeRegistry::standard();
+    let registry = registry();
     let mut eval = Evaluator::new(&model, &registry);
     let mut t = |e: &ValueSpec| eval.eval(e).unwrap();
     assert_eq!(
@@ -275,7 +283,7 @@ fn eq_and_equal_on_primitives_and_collections() {
 #[test]
 fn boolean_natives_short_circuit() {
     let model = ModelBuilder::new().finish();
-    let registry = NativeRegistry::standard();
+    let registry = registry();
     let mut eval = Evaluator::new(&model, &registry);
     let poison = || expr::call("nope_Any_1__Any_1_", Vec::new());
     assert_eq!(
@@ -310,7 +318,7 @@ fn boolean_natives_short_circuit() {
 #[test]
 fn minus_folds_binary_and_negates_unary() {
     let model = ModelBuilder::new().finish();
-    let registry = NativeRegistry::standard();
+    let registry = registry();
     let mut eval = Evaluator::new(&model, &registry);
     assert_eq!(
         eval.eval(&expr::call(
@@ -359,7 +367,7 @@ fn new_populates_the_association_inverse() {
         ],
     );
     let model = b.finish();
-    let registry = NativeRegistry::standard();
+    let registry = registry();
     let mut eval = Evaluator::new(&model, &registry);
     eval.context_mut().push_scope();
     let new_firm = expr::call(
@@ -405,7 +413,7 @@ fn new_populates_the_association_inverse() {
 #[test]
 fn key_expression_nodes_construct_through_the_platform_new_overload() {
     let (model, person) = person_model();
-    let registry = NativeRegistry::standard();
+    let registry = registry();
     let mut eval = Evaluator::new(&model, &registry);
     eval.context_mut().push_scope();
     let key = |k: &str, v: ValueSpec| {

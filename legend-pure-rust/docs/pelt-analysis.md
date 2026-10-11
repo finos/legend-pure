@@ -1,5 +1,11 @@
 # PELT vs `.purem` — can the Rust runtime use (or mimic) Java's PELT format?
 
+> **Archived analysis (2026-10-06), kept as the source of plan Steps 2–7
+> (§6.3–6.8).** Every crate path, `.purem` reference and companion document
+> below belongs to the workspace on tag `archive/pre-evaluator-extract-2026-10`;
+> the recommendation was superseded by `rust-evaluator-mvp.md` (no `.purem`,
+> no Rust compiler in the MVP).
+
 > **Status: analysis, 2026-10-06 (reframed the same day for incremental
 > delivery, see "Goal of this exploration").** No code change. Companion to
 > `lazy_loading_binary_format.md` (the original Tier-1/Tier-2 `.purem`

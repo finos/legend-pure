@@ -12,15 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! The native registry holds exactly the natives Step 1 fished, under
-//! every signature the platform declares for them. Fishing a native
-//! without listing it here is a review failure (plan rule 4: the
-//! registry's contents must be explainable by a test).
+//! The native registry holds exactly the natives fished so far, under
+//! every signature the platform declares for them.
 
 use legend_pure_evaluator::native::NativeRegistry;
 
 const FISHED: &[&str] = &[
-    // arithmetic
     "plus_Integer_MANY__Integer_1_",
     "plus_Float_MANY__Float_1_",
     "plus_Decimal_MANY__Decimal_1_",
@@ -41,11 +38,9 @@ const FISHED: &[&str] = &[
     "abs_Number_1__Number_1_",
     "mod_Integer_1__Integer_1__Integer_1_",
     "rem_Number_1__Number_1__Number_1_",
-    // boolean
     "and_Boolean_1__Boolean_1__Boolean_1_",
     "or_Boolean_1__Boolean_1__Boolean_1_",
     "not_Boolean_1__Boolean_1_",
-    // collection
     "fold_T_MANY__Function_1__V_m__V_m_",
     "take_T_MANY__Integer_1__T_MANY_",
     "drop_T_MANY__Integer_1__T_MANY_",
@@ -83,13 +78,11 @@ const FISHED: &[&str] = &[
     "values_Map_1__V_MANY_",
     "newMap_Pair_MANY__Map_1_",
     "newMap_Pair_MANY__Property_MANY__Map_1_",
-    // comparison
     "eq_Any_1__Any_1__Boolean_1_",
     "equal_Any_MANY__Any_MANY__Boolean_1_",
     "lessThan_Number_1__Number_1__Boolean_1_",
     "lessThanEqual_Number_1__Number_1__Boolean_1_",
     "compare_T_1__T_1__Integer_1_",
-    // datetime
     "year_Date_1__Integer_1_",
     "monthNumber_Date_1__Integer_1_",
     "dayOfMonth_Date_1__Integer_1_",
@@ -113,7 +106,6 @@ const FISHED: &[&str] = &[
     "date_Integer_1__Integer_1__Integer_1__Integer_1__DateTime_1_",
     "date_Integer_1__Integer_1__Integer_1__Integer_1__Integer_1__DateTime_1_",
     "date_Integer_1__Integer_1__Integer_1__Integer_1__Integer_1__Number_1__DateTime_1_",
-    // lang
     "letFunction_String_1__T_m__T_m_",
     "if_Boolean_1__Function_1__Function_1__T_m_",
     "eval_Function_1__V_m_",
@@ -124,13 +116,10 @@ const FISHED: &[&str] = &[
     "eval_Function_1__T_n__U_p__W_q__X_r__Y_s__V_m_",
     "eval_Function_1__T_n__U_p__W_q__X_r__Y_s__Z_t__V_m_",
     "eval_Function_1__S_n__T_o__U_p__W_q__X_r__Y_s__Z_t__V_m_",
-    "new_Class_1__String_1__Any_MANY__T_1_",
     "new_Class_1__String_1__T_1_",
     "new_Class_1__String_1__KeyExpression_MANY__T_1_",
-    "copy_T_1__KeyExpression_MANY__T_1_",
     "copy_T_1__String_1__T_1_",
     "copy_T_1__String_1__KeyExpression_MANY__T_1_",
-    // math
     "floor_Number_1__Integer_1_",
     "ceiling_Number_1__Integer_1_",
     "round_Number_1__Integer_1_",
@@ -142,7 +131,6 @@ const FISHED: &[&str] = &[
     "exp_Number_1__Float_1_",
     "log_Number_1__Float_1_",
     "log10_Number_1__Float_1_",
-    "pow_Number_1__Number_1__Float_1_",
     "pow_Number_1__Number_1__Number_1_",
     "sin_Number_1__Float_1_",
     "cos_Number_1__Float_1_",
@@ -157,14 +145,12 @@ const FISHED: &[&str] = &[
     "parseInteger_String_1__Integer_1_",
     "parseFloat_String_1__Float_1_",
     "parseBoolean_String_1__Boolean_1_",
-    // meta
     "match_Any_MANY__Function_$1_MANY$__T_m_",
     "match_Any_MANY__Function_$1_MANY$__P_o__T_m_",
     "extractEnumValue_Enumeration_1__String_1__T_1_",
     "cast_Any_m__T_1__T_m_",
     "genericType_Any_MANY__GenericType_1_",
     "deactivate_Any_MANY__ValueSpecification_1_",
-    // string
     "toString_Any_1__String_1_",
     "format_String_1__Any_MANY__String_1_",
     "joinStrings_String_MANY__String_1__String_1__String_1__String_1_",
@@ -186,7 +172,6 @@ const FISHED: &[&str] = &[
     "ltrim_String_1__String_1_",
     "rtrim_String_1__String_1_",
     "trim_String_1__String_1_",
-    // testing
     "assert_Boolean_1__Function_1__Boolean_1_",
 ];
 

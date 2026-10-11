@@ -37,10 +37,8 @@ use crate::value::Value;
 ///
 /// Any two numeric values — including mixed `Number` subtypes
 /// (`Integer`/`Float`/`Decimal`) — promote toward the wider type and compare,
-/// matching Java Pure's `lessThan`/`compare` (e.g. `0.5d <= 2.5`). The numeric
-/// promotion is delegated to [`compare_values`] so these natives stay
-/// consistent with `compare` and the sort/iteration comparators by
-/// construction. `String`/`String` compares lexicographically. Genuinely
+/// matching Java Pure's `lessThan`/`compare` (e.g. `0.5d <= 2.5`).
+/// `String`/`String` compares lexicographically. Genuinely
 /// non-comparable pairs (e.g. an `Object` vs a number) still error.
 fn numeric_cmp(a: &Value, b: &Value) -> Result<std::cmp::Ordering, PureRuntimeError> {
     let is_numeric =
@@ -147,9 +145,6 @@ impl NativeFunction for LessThanEqual {
 /// fall through to a stable per-variant ordinal so the contract stays
 /// total — `compare(5, '5')` returns a non-zero value with consistent
 /// direction (`compare(a, b) < 0` ⇒ `compare(b, a) > 0`).
-///
-/// Reused by the `compare` native and by the sort/iteration natives
-/// that need comparator semantics without a user-supplied lambda.
 #[must_use]
 #[allow(clippy::cast_precision_loss)]
 pub fn compare_values(a: &Value, b: &Value) -> i64 {
@@ -174,26 +169,16 @@ pub fn compare_values(a: &Value, b: &Value) -> i64 {
         (Value::Boolean(a), Value::Boolean(b)) => a.cmp(b),
         (Value::String(a), Value::String(b)) => a.cmp(b),
         (Value::Date(a), Value::Date(b)) => a.cmp(b),
-        // `%latest` is greater than every concrete Date.
         (Value::Latest, Value::Latest) => Ordering::Equal,
         (Value::Latest, Value::Date(_)) => Ordering::Greater,
         (Value::Date(_), Value::Latest) => Ordering::Less,
         (Value::StrictTime(a), Value::StrictTime(b)) => a.cmp(b),
-        // Heap objects: compare by allocation address. Stable but
-        // semantically arbitrary — the only contract is "two distinct
-        // objects compare consistently in some order", which `sort`
-        // leans on for determinism over object collections.
         (Value::Object(a), Value::Object(b)) => {
             let av = std::rc::Rc::as_ptr(a) as usize;
             let bv = std::rc::Rc::as_ptr(b) as usize;
             av.cmp(&bv)
         }
-        // Element refs: compare by their rendered ElementId string. Same
-        // "stable but arbitrary" intent as Object.
         (Value::Element(a), Value::Element(b)) => format!("{a}").cmp(&format!("{b}")),
-        // Enum values from the same enumeration: compare by member name.
-        // From different enumerations: fall through to the type ordinal
-        // (both EnumValue → Equal), i.e. unordered.
         (
             Value::EnumValue {
                 enum_id: e1,
@@ -206,7 +191,6 @@ pub fn compare_values(a: &Value, b: &Value) -> i64 {
                 ..
             },
         ) if e1 == e2 => m1.cmp(m2),
-        // Cross-type: stable ordinal so comparison stays total + symmetric.
         _ => type_ordinal(a).cmp(&type_ordinal(b)),
     };
     match ord {
@@ -226,9 +210,6 @@ fn type_ordinal(v: &Value) -> u8 {
         Value::Float(_) => 2,
         Value::Decimal(_) => 3,
         Value::String(_) => 4,
-        // `%latest` shares the Date ordinal: the Date/Latest arms of
-        // `compare_values` already order them, so this only decides
-        // cross-type placement.
         Value::Date(_) | Value::Latest => 5,
         Value::StrictTime(_) => 6,
         Value::EnumValue { .. } => 7,
@@ -246,13 +227,7 @@ fn type_ordinal(v: &Value) -> u8 {
 ///
 /// Returns -1 / 0 / 1; the parametric `T` is honored only as a hint —
 /// the runtime treats the args as `Any` and dispatches via
-/// [`compare_values`]. This is the implementation of
-/// `meta::pure::functions::lang::compare` declared in
-/// `legend-pure-core/.../grammar/functions/lang/compare.pure:23`.
-///
-/// Backs both inequality dispatch (when no specialised
-/// `lessThan(Number, Number)` overload matches) and `sort`'s default
-/// comparator.
+/// [`compare_values`].
 #[derive(Debug)]
 pub struct Compare;
 
@@ -318,10 +293,6 @@ mod tests {
 
     #[test]
     fn less_than_equal_decimal_vs_float_promotes() {
-        // Repro of the `_range(0.5d, 2.5)` window-frame boundary check:
-        // a Decimal literal compared against a Float must promote and
-        // compare (Java parity), not error with "Cannot compare Decimal
-        // and Float". `0.5d <= 2.5` is true.
         assert_eq!(
             LessThanEqual
                 .execute(
@@ -332,7 +303,6 @@ mod tests {
                 .into_value(),
             Value::Boolean(true)
         );
-        // And the reverse direction / a false case: `2.5 <= 0.5d` is false.
         assert_eq!(
             LessThanEqual
                 .execute(
@@ -364,10 +334,6 @@ mod tests {
 
     #[test]
     fn invalid_type_comparisons() {
-        // numeric_cmp errors when the two values aren't comparable —
-        // e.g. mixing Integer with String. Force_all evaluates the
-        // literals via MockCtx; the type check happens inside the
-        // native, so no evaluator is required.
         assert!(
             LessThan
                 .execute(&[lit_int(1), lit_str("foo")], &mut MockCtx)
@@ -391,7 +357,6 @@ mod tests {
 
     #[test]
     fn compare_mixed_numeric_int_and_float() {
-        // testNumberCompare from the platform: Integer ↔ Float promotes
         assert_eq!(compare_values(&Value::Integer(1), &Value::Float(2.2)), -1);
         assert_eq!(compare_values(&Value::Integer(2), &Value::Float(1.5)), 1);
         assert_eq!(compare_values(&Value::Float(2.7), &Value::Integer(171)), -1);
@@ -414,8 +379,6 @@ mod tests {
 
     #[test]
     fn compare_decimal_and_integer_exactly_at_the_i64_limit() {
-        // testCompareDecimalAndLongTypes — Decimal vs Integer with the same
-        // value must compare equal even near the i64 limit.
         let d = Decimal::from(9_999_999_999_999_992_i64);
         assert_eq!(
             compare_values(&Value::Decimal(d), &Value::Integer(9_999_999_999_999_992)),
@@ -469,8 +432,6 @@ mod tests {
 
     #[test]
     fn compare_mixed_types_nonzero_and_symmetric() {
-        // testCompareMixedTypes invariant: compare(a, b) and compare(b, a)
-        // must be non-zero with opposite signs for any cross-type pair.
         let pairs = [
             (Value::Integer(5), Value::String("5".into())),
             (Value::Boolean(true), Value::String("true".into())),

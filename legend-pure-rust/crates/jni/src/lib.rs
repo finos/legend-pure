@@ -23,8 +23,6 @@
 //! as `PureRustException` rather than aborting the JVM.
 
 #![deny(missing_docs)]
-// PureException carries a call stack (Vec) so its size is inherently large;
-// the evaluator crate allows the same lint for the same reason.
 #![allow(clippy::result_large_err)]
 
 pub mod bridge;
@@ -56,9 +54,7 @@ const PURE_RUST_EVAL_EXC: &str = "org/finos/legend/pure/rust/PureRustEvaluationE
 /// Best-effort: if any JNI call fails (e.g. the rich constructor isn't
 /// found because the Java side is older than this binary), falls back
 /// to `env.throw_new(PURE_RUST_EVAL_EXC, message)` which targets the
-/// pre-existing message-only constructor. The fallback path is also
-/// what end users see if they swap in an older
-/// `legend-pure-runtime-rust-evaluator` JAR.
+/// pre-existing message-only constructor.
 pub(crate) fn throw_pure_exception(env: &mut JNIEnv, exc: &PureException) {
     let payload = pure_exception_to_payload(exc);
     if try_throw_rich(env, &payload).is_err() {
@@ -71,7 +67,7 @@ pub(crate) fn throw_pure_exception(env: &mut JNIEnv, exc: &PureException) {
     }
 }
 
-#[allow(clippy::too_many_lines)] // Linear JNI plumbing — splitting hurts readability
+#[allow(clippy::too_many_lines)]
 fn try_throw_rich(env: &mut JNIEnv, payload: &ExceptionPayload) -> jni::errors::Result<()> {
     use jni::objects::{JObject, JValue};
     let message = env.new_string(&payload.message)?;
@@ -204,6 +200,24 @@ fn context_mut<'a>(context_ptr: jlong) -> &'a mut JniContext {
     unsafe { &mut *(context_ptr as *mut JniContext) }
 }
 
+/// The context behind `context_ptr`, refused once a panic has unwound
+/// through it.
+fn live_context<'a>(context_ptr: jlong) -> Result<&'a mut JniContext, PureException> {
+    let ctx = context_mut(context_ptr);
+    if ctx.poisoned {
+        return Err(ffi_error(
+            "the evaluator is poisoned by an earlier panic; close it and create a new one".into(),
+        ));
+    }
+    Ok(ctx)
+}
+
+fn poison(context_ptr: jlong) {
+    if context_ptr != 0 {
+        context_mut(context_ptr).poisoned = true;
+    }
+}
+
 /// Creates a context over the bootstrap model and the fished native
 /// registry, bound to the Java `RustNodeBridge` passed in.
 #[unsafe(no_mangle)]
@@ -255,7 +269,7 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeS
     args: JObjectArray<'local>,
 ) -> JObjectArray<'local> {
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        let ctx = context_mut(context_ptr);
+        let ctx = live_context(context_ptr)?;
         let function = cross_in(&mut env, ctx, &function)?;
         let mut values = Vec::new();
         if !args.is_null() {
@@ -279,6 +293,7 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeS
             JObjectArray::from(JObject::null())
         }
         Err(_) => {
+            poison(context_ptr);
             throw_panic(&mut env, "start");
             JObjectArray::from(JObject::null())
         }
@@ -297,7 +312,7 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeG
     property_name: JString<'local>,
 ) -> JObjectArray<'local> {
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        let ctx = context_mut(context_ptr);
+        let ctx = live_context(context_ptr)?;
         let name: String = env
             .get_string(&property_name)
             .map_err(|e| ffi_error(format!("property name: {e}")))?
@@ -313,6 +328,7 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeG
             JObjectArray::from(JObject::null())
         }
         Err(_) => {
+            poison(context_ptr);
             throw_panic(&mut env, "property evaluation");
             JObjectArray::from(JObject::null())
         }
@@ -346,7 +362,7 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeP
     handle: jlong,
 ) -> JObjectArray<'local> {
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        let ctx = context_mut(context_ptr);
+        let ctx = live_context(context_ptr)?;
         let names = ctx.property_names(handle)?;
         string_array(&mut env, &names).map_err(|e| ffi_error(format!("names: {e}")))
     }));
@@ -357,6 +373,7 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeP
             JObjectArray::from(JObject::null())
         }
         Err(_) => {
+            poison(context_ptr);
             throw_panic(&mut env, "propertyNames");
             JObjectArray::from(JObject::null())
         }
@@ -374,7 +391,7 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeG
     handle: jlong,
 ) -> JString<'local> {
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        let ctx = context_mut(context_ptr);
+        let ctx = live_context(context_ptr)?;
         ctx.get_classifier(handle)
     }));
     match result {
@@ -386,6 +403,7 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeG
             JString::from(JObject::null())
         }
         Err(_) => {
+            poison(context_ptr);
             throw_panic(&mut env, "getClassifier");
             JString::from(JObject::null())
         }
@@ -404,7 +422,7 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeN
     property_values: JObjectArray<'local>,
 ) -> jlong {
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        let ctx = context_mut(context_ptr);
+        let ctx = live_context(context_ptr)?;
         let classifier: String = env
             .get_string(&classifier)
             .map_err(|e| ffi_error(format!("classifier: {e}")))?
@@ -443,6 +461,7 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeN
             0
         }
         Err(_) => {
+            poison(context_ptr);
             throw_panic(&mut env, "new");
             0
         }
@@ -460,7 +479,7 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeC
     node: JObject<'local>,
 ) -> JString<'local> {
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        let ctx = context_mut(context_ptr);
+        let ctx = live_context(context_ptr)?;
         let value = cross_in(&mut env, ctx, &node)?;
         Ok::<&'static str, PureException>(java_node::crossing_kind(&value))
     }));
@@ -473,6 +492,7 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeC
             JString::from(JObject::null())
         }
         Err(_) => {
+            poison(context_ptr);
             throw_panic(&mut env, "crossingKind");
             JString::from(JObject::null())
         }

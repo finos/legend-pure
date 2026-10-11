@@ -18,12 +18,6 @@
 //! - A **global package tree** (single arena, cross-chunk namespace)
 //! - **Chunked element storage** (one [`ModelChunk`] per source file + Chunk 0 for bootstrap)
 //! - **Derived indexes** computed post-freeze for reverse lookups
-//!
-//! # Lifecycle
-//!
-//! 1. **Mutable phase**: `PureModelBuilder` populates arenas via compiler passes.
-//! 2. **Frozen phase**: After `rebuild_derived_indexes()`, the model is read-only.
-//!    All query methods operate on the frozen model. Parallel validation is safe.
 
 use std::collections::HashMap;
 
@@ -80,8 +74,6 @@ pub struct ElementNode {
 /// **Not all Elements are Types.** `Profile`, `Association`, and `Function`
 /// are packageable elements but cannot appear in type positions. Structural
 /// types (`FunctionType`, `RelationType`) live in `TypeExpr`, not here.
-///
-/// See `DESIGN.md` §5 for the Element vs Type distinction.
 #[derive(Debug, Clone)]
 pub enum Element {
     /// A class with properties, constraints, and type parameters.
@@ -125,21 +117,12 @@ pub enum Element {
     /// metaclass this instance is an instance of (e.g.
     /// `"meta::pure::diagram::Diagram"`); `data` is whatever Postcard-
     /// serialised payload the DSL crate produced.
-    ///
-    /// Adding a DSL instance to the graph is the alternative to side-car
-    /// `extension_arenas` — it inverts the BACKLOG framing: instead of
-    /// per-extension `RefCell<HashMap>` state that gets dropped on
-    /// slice/merge, DSL data rides through the chunk machinery alongside
-    /// every other element.
     DSLInstance(DSLInstance),
 }
 
 /// A DSL-defined instance carried opaquely in `Element::DSLInstance`.
 ///
-/// The Pure crate doesn't deserialise `data` — that's the contributing
-/// DSL extension's job. To enumerate diagrams, callers walk
-/// `model.elements()` filtering on `dsl_name == "Diagram"` and call into
-/// `legend_pure_dsl_diagram` to decode each payload.
+/// The Pure crate doesn't deserialise `data`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DSLInstance {
     /// Stable DSL identifier — `"Diagram"`, `"Mapping"`,
@@ -147,9 +130,7 @@ pub struct DSLInstance {
     pub dsl_name: SmolStr,
 
     /// FQN of the M3 metaclass this instance is an instance of, e.g.
-    /// `"meta::pure::diagram::Diagram"`. Used for type-system
-    /// classification (`getAll(Diagram)` returns these) without forcing
-    /// every consumer to decode `data`.
+    /// `"meta::pure::diagram::Diagram"`.
     pub classifier_fqn: SmolStr,
 
     /// DSL-specific Postcard-encoded payload. Pure-core treats this as
@@ -246,8 +227,6 @@ pub struct PureModel {
     pub chunks: Vec<ModelChunk>,
 
     /// Backing `Element::Package` values parallel to `global_packages`.
-    /// No data duplication — just `Element::Package(PackageId)` tags
-    /// so `get_element` can return `&Element` uniformly.
     package_elements: Vec<Element>,
 
     /// Derived indexes, computed post-freeze.
@@ -352,9 +331,6 @@ impl PureModel {
     }
 
     /// Rebuilds all derived indexes by scanning every element in every chunk.
-    ///
-    /// Call this after Pass 2 completes and after deserialization.
-    /// This is an O(N) scan where N = total number of elements.
     pub fn rebuild_derived_indexes(&mut self) {
         self.derived = DerivedIndexes::default();
 
@@ -367,7 +343,6 @@ impl PureModel {
 
                 match element {
                     Element::Class(class) => {
-                        // Register specialization edges (reverse of super_types)
                         for super_type in &class.super_types {
                             if let crate::types::TypeExpr::Named {
                                 element: parent_id, ..
@@ -382,7 +357,6 @@ impl PureModel {
                         }
                     }
                     Element::Association(assoc) => {
-                        // Register association-injected properties on target classes
                         for (prop_idx, prop) in assoc.properties.iter().enumerate() {
                             if let crate::types::TypeExpr::Named {
                                 element: target_id, ..
@@ -404,12 +378,7 @@ impl PureModel {
                     | Element::PrimitiveType(_)
                     | Element::PackageableMultiplicity(_)
                     | Element::Package(_)
-                    | Element::DSLInstance(_) => {
-                        // DSL instances carry opaque payloads; no
-                        // M3-level edges to register here. DSL crates
-                        // build their own indexes by walking
-                        // `Element::DSLInstance` themselves.
-                    }
+                    | Element::DSLInstance(_) => {}
                 }
             }
         }
@@ -451,7 +420,6 @@ impl PureModel {
     pub fn get_or_create_package(&mut self, path: &[SmolStr]) -> PackageId {
         let mut current = self.root_package;
         for segment in path {
-            // Check if child already exists
             let existing = self
                 .global_packages
                 .get(current.0)
@@ -532,11 +500,6 @@ impl PureModel {
 
     /// Resolves a `::`-qualified FQN string directly to an [`ElementId`].
     ///
-    /// Equivalent to `resolve_by_path` but walks the segments inline,
-    /// without allocating a `Vec<SmolStr>` or per-segment `SmolStr`s.
-    /// Use this on hot paths that already have the FQN as a `&str`
-    /// (classifier dispatch, m3 path constants).
-    ///
     /// Returns `None` for the empty string or when any segment doesn't
     /// resolve.
     #[must_use]
@@ -544,16 +507,10 @@ impl PureModel {
         if fqn.is_empty() {
             return None;
         }
-        // Iterate `::`-separated segments without materialising them
-        // into a `Vec`. Hold the previous segment in a local until we
-        // see the next, so the loop body always operates on an
-        // intermediate (package) segment and the final segment falls
-        // out at the end as the leaf name.
         let mut iter = fqn.split("::");
         let mut prev = iter.next()?;
         let mut current = self.root_package;
         for next in iter {
-            // `prev` is an intermediate package segment.
             let pkg = self.get_package(current);
             current = *pkg
                 .children_packages
@@ -561,7 +518,6 @@ impl PureModel {
                 .find(|&&child_id| self.global_packages.get(child_id.0).name.as_str() == prev)?;
             prev = next;
         }
-        // `prev` is the leaf (element) name.
         let pkg = self.get_package(current);
         pkg.children_elements
             .iter()
@@ -578,7 +534,6 @@ impl PureModel {
             return None;
         }
 
-        // Walk to the parent package
         let (pkg_path, name) = path.split_at(path.len() - 1);
         let mut current = self.root_package;
 
@@ -590,7 +545,6 @@ impl PureModel {
                 .find(|&&child_id| self.global_packages.get(child_id.0).name == *segment)?;
         }
 
-        // Find element by name in the target package
         let pkg = self.get_package(current);
         let target_name = &name[0];
         pkg.children_elements
@@ -602,8 +556,7 @@ impl PureModel {
     /// Finds all function elements in a package matching a simple name.
     ///
     /// Returns the overload candidates — functions whose `function_name`
-    /// matches the given name. Used by unqualified resolution for function
-    /// dispatch.
+    /// matches the given name.
     #[must_use]
     pub fn resolve_functions_by_name_in_package(
         &self,
@@ -625,18 +578,7 @@ impl PureModel {
     }
 
     /// Walks every package in the model and returns every function
-    /// whose `function_name` matches `name`. Used at infer-time as a
-    /// fallback when lower-time dispatch couldn't pick a unique
-    /// candidate (e.g. lambda body referenced a function while the
-    /// receiver/arg was still typed `TypeExpr::Unresolved`) and a
-    /// later binding pass needs to re-narrow with the freshly bound
-    /// generics — see the archived compiler's lambda inference.
-    ///
-    /// O(model size). Cheap enough for the redispatch path (one walk
-    /// per Unresolved-cause FunctionCall encountered during a single
-    /// lambda body's pass-2 binding); if the call volume grows we can
-    /// add a per-simple-name index, but the current count is in the
-    /// low dozens per platform compile.
+    /// whose `function_name` matches `name`.
     #[must_use]
     pub fn resolve_functions_by_simple_name_globally(&self, name: &SmolStr) -> Vec<ElementId> {
         let mut out: Vec<ElementId> = Vec::new();
@@ -654,8 +596,7 @@ impl PureModel {
 
     /// Resolves a function by its simple name within a package path.
     ///
-    /// After Pass 2.1 (name mangling), function element names are mangled FQNs
-    /// (e.g., `"greet_String_1__String_1_"`). This method matches by prefix:
+    /// This method matches by prefix:
     /// the last segment of `path` is treated as a simple function name, and the
     /// first function whose mangled name starts with `"name_"` is returned.
     ///
@@ -666,7 +607,6 @@ impl PureModel {
             return None;
         }
 
-        // Walk to the parent package
         let (pkg_path, name) = path.split_at(path.len() - 1);
         let mut current = self.root_package;
 
@@ -678,7 +618,6 @@ impl PureModel {
                 .find(|&&child_id| self.global_packages.get(child_id.0).name == *segment)?;
         }
 
-        // Find function element whose mangled name starts with "simpleName_"
         let simple = &name[0];
         let prefix = format!("{simple}_");
         let pkg = self.get_package(current);
@@ -696,9 +635,6 @@ impl PureModel {
     /// The last segment of `path` is the exact mangled function name
     /// (e.g., `"f__Integer_1_"`), and preceding segments are the
     /// package path (e.g., `["test", "f__Integer_1_"]`).
-    ///
-    /// This is the correct lookup method for FQN-based dispatch where
-    /// the mangled name is known.
     ///
     /// Returns `None` if no matching element is found.
     #[must_use]
@@ -770,30 +706,17 @@ mod tests {
             }
         );
         assert_eq!(model.resolve_fqn_str("my::pkg::Thing"), Some(id));
-        // `ensure_chunk` past the end pads with empty chunks.
         model.ensure_chunk(chunk + 2);
         assert_eq!(model.chunks.len(), usize::from(chunk) + 3);
         assert_eq!(model.chunk_len(chunk + 2), 0);
     }
 
-    /// Documents the memory cost of `ElementNode`'s two parallel
-    /// `SourceInfo` fields (`source_info` + `name_source_info`). The
-    /// `Cleaner SourceInformation name-span representation` BACKLOG
-    /// item (Compiler > Open Work) gates its refactor decision on
-    /// this measurement.
-    ///
-    /// Numbers are also captured in BACKLOG.md's entry; this test
-    /// keeps them tied to the source by running on every CI build —
-    /// the assertions fail if `SourceInfo` or `ElementNode` grow,
-    /// so the BACKLOG entry can be re-read for a stale-numbers
-    /// audit. Update both together.
     #[test]
     fn element_node_size_for_source_info_audit() {
         let si_size = std::mem::size_of::<SourceInfo>();
         let en_size = std::mem::size_of::<ElementNode>();
         let smolstr_size = std::mem::size_of::<smol_str::SmolStr>();
 
-        // Print so `cargo test -- --nocapture` reports them cleanly.
         eprintln!("== ElementNode memory audit ==");
         eprintln!("  sizeof(SmolStr)       = {smolstr_size}");
         eprintln!("  sizeof(SourceInfo)    = {si_size}");
@@ -808,16 +731,8 @@ mod tests {
             eprintln!("  N={n:>9}: {cur:>11} → {after:>11} bytes (saved {saved:>10})");
         }
 
-        // Regression assertions — if SourceInfo or ElementNode grow
-        // beyond the recorded baseline, surface a noisy test failure
-        // so BACKLOG numbers can be refreshed deliberately rather
-        // than drifting silently. SmolStr is 24 bytes on every
-        // current target; SourceInfo lays out as
-        // `{ SmolStr (24), u32 × 4 (16) } = 40` with no padding.
         assert_eq!(smolstr_size, 24, "SmolStr footprint changed");
         assert_eq!(si_size, 40, "SourceInfo footprint changed");
-        // ElementNode: SmolStr (24) + SourceInfo × 2 (80) +
-        // PackageId (4 — single u32) + padding to next align = 112.
         assert_eq!(en_size, 112, "ElementNode footprint changed");
     }
 
@@ -861,7 +776,6 @@ mod tests {
         });
         let elem_idx = chunk.elements.alloc(Element::Class(empty_class()));
 
-        // Parallel: same index in both arenas
         assert_eq!(node_idx, elem_idx);
         assert_eq!(chunk.nodes.get(node_idx).name, "Person");
         assert!(matches!(chunk.elements.get(elem_idx), Element::Class(_)));
@@ -906,7 +820,6 @@ mod tests {
         let (bootstrap, _) = crate::bootstrap::create_bootstrap_chunk(model.root_package);
         model.chunks.push(bootstrap);
 
-        // Verify we can look up primitives by well-known IDs
         assert_eq!(model.get_node(crate::bootstrap::STRING_ID).name, "String");
         assert_eq!(model.get_node(crate::bootstrap::ANY_ID).name, "Any");
         assert!(matches!(

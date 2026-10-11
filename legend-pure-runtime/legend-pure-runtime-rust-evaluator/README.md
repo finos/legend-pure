@@ -58,7 +58,7 @@ State: `Rust_JNI essential: 303 / 327`, `Rust_JNI grammar: 126 / 136`. The lambd
 through the bridge (`crates/evaluator/src/lower/`): its body, the functions it calls, the classes
 and enumerations it references, and the variables it captured (`RustNodeBridge.capturedValue`,
 read from the `LambdaWithContext` the interpreted engine hands over); the natives it calls are
-fished from the archive (160 keys). What remains red is ranked by its first line:
+fished from the archive (158 keys, pinned by `crates/evaluator/tests/registry.rs`). What remains red is ranked by its first line:
 `FunctionNotFound: <mangled key>` (nothing registered), `NotImplemented: <key>` (registered,
 body not fished), `Unsupported: …` (a lowering or value-shape gap, e.g. a `Map` crossing the
 boundary), then bare Pure texts for semantic differences. A Rust failure reaches the engine as a
@@ -85,4 +85,5 @@ tests are skipped (profile `rust-cdylib-missing-*`), so `mvn install` stays gree
 hosts and CI without a Rust toolchain. Override with `-DskipTests=false` to force a run.
 
 The bindings annotation processor module (`…-bindings-ap`) is out of the reactor:
-its generator is the archived Rust `java-codegen` crate. It returns with typed proxies.
+its generator is the archived Rust `java-codegen` crate. It is not part of the MVP (plan §7);
+if typed Java proxies are ever wanted, it is the place for them.

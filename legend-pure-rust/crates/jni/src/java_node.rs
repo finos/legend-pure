@@ -298,9 +298,6 @@ pub fn description_to_value(
         }
         kind::PACKAGEABLE_ELEMENT => {
             if let Some(path) = &d.user_path {
-                // Exact match on the leaf: a Java function's path ends in
-                // its mangled name, and a simple-name prefix match could
-                // pick a sibling overload.
                 let segments: Vec<SmolStr> = path.split("::").map(SmolStr::new).collect();
                 let model = shared.model();
                 if let Some(id) = model

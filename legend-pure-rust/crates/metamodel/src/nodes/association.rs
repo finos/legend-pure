@@ -33,9 +33,6 @@ pub struct Association {
     /// Tagged values.
     pub tagged_values: Vec<TaggedValueRef>,
     /// Properties moved aside by milestoning post-processing because their
-    /// target class carries a temporal stereotype. Java parity:
-    /// `Association._originalMilestonedProperties()`. See
-    /// [`crate::nodes::class::Class::original_milestoned_properties`] for the
-    /// full mechanism.
+    /// target class carries a temporal stereotype.
     pub original_milestoned_properties: Vec<Property>,
 }

@@ -18,15 +18,10 @@
 //! (`legend_pure_metamodel::types::ValueSpec`) against a `PureModel`,
 //! producing [`Value`](value::Value)s. Its model starts as the bootstrap
 //! alone; further elements arrive from the test builders or, later, from a
-//! loader. Natives are fished one at a time into [`native`].
-//!
-//! The plan this crate serves is `docs/rust-evaluator-mvp.md` at the
-//! workspace root; Appendix A there records where each module came from.
+//! loader.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
-// PureException carries a call stack (Vec) so its size is inherently large.
-// Boxing it at every call site would require rewriting the entire native API.
 #![allow(clippy::result_large_err)]
 
 pub mod builder;

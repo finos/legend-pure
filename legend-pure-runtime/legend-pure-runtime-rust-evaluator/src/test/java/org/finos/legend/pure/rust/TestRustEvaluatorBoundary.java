@@ -195,8 +195,6 @@ public class TestRustEvaluatorBoundary
 
     /**
      * A PCT lambda lowers through the bridge and runs: {@code |1 + 2} is 3.
-     * The native it calls became a model element named by its mangled
-     * signature, so dispatch hit the registry exactly.
      */
     @Test
     public void aPctLambdaLowersAndRuns()

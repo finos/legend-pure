@@ -76,13 +76,13 @@ impl Lowering<'_> {
             return Err(Self::unsupported(node, "as an expression"));
         };
         self.specs.insert(node.key(), spec.clone());
+        self.pinned.push(node.handle().clone());
         Ok(spec)
     }
 
     fn lower_instance_value(&mut self, node: &Node) -> Result<ValueSpec, LowerError> {
         let values = node.prop("values");
         let span = node.span();
-        // The type first: an enum value's enumeration is reached through it.
         let type_info = self.resolved_type(node)?;
         let kind = match values.len() {
             0 => return self.lower_type_literal(node, type_info),
@@ -130,8 +130,6 @@ impl Lowering<'_> {
                 type_info,
             ));
         }
-        // `Class<X>` with no values is the type literal `X` (what `new`
-        // receives); its own type stays `Class<X>` for the back-fill.
         let type_arguments = generic_type.nodes("typeArguments");
         let type_expr = if let (Some(Value::Element(id)), 1) = (&raw, type_arguments.len())
             && Some(*id) == self.ids.class

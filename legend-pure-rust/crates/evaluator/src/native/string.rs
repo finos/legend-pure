@@ -17,9 +17,6 @@
 //! `format`, `joinStrings`, the predicates (`contains`, `startsWith`,
 //! `endsWith`), the slicers (`substring`, `indexOf`, `length`, `split`,
 //! `replace`, `reverseString`), case and trimming, and `parseDecimal`.
-//!
-//! Each native is fished from the archive one `impl NativeFunction` at a
-//! time, registered under Java's mangled key, when a PCT row asks for it.
 
 use legend_pure_metamodel::ids::ElementId;
 use legend_pure_metamodel::types::ValueSpec;
@@ -35,16 +32,13 @@ use crate::value::Value;
 /// human-readable Pure string form. Distinct from `Value::Display`
 /// (which is a debug-leaning shape with quoted strings, `%`-prefixed
 /// dates, and `<Object@id>` placeholders): toString matches Java
-/// Pure's `toString` shape, which is what platform tests pin in
-/// `essential/string/toString/toString.pure`.
+/// Pure's `toString` shape.
 ///
 /// Heap-object dispatch is delegated to whatever `toString()` qualified
 /// property the receiver's class (or any of its generalizations) defines
 /// — `Pair`, `List`, and any user class with a `toString()` qualifier
 /// flow through the same path. When no such QP exists, the runtime
-/// falls back to `Anonymous_<obj_id>`, matching Java
-/// `ToString.execute`'s `value.getName()` branch. See
-/// `legend-pure-runtime-java-engine-interpreted/.../ToString.java:50-70`.
+/// falls back to `Anonymous_<obj_id>`.
 #[derive(Debug)]
 pub struct ToString;
 
@@ -62,11 +56,8 @@ impl NativeFunction for ToString {
 }
 
 /// Locate the `toString()` qualified property on the receiver's class
-/// (walking generalizations) via the same `find_qp_with_generalization`
-/// the evaluator uses for dispatch. Returns the
-/// [`FoundQp`](crate::eval::FoundQp) so callers can hand it back to
-/// [`EvalContextTrait::invoke_qualified_property_found`] without a
-/// second lookup.
+/// (walking generalizations). Returns the
+/// [`FoundQp`](crate::eval::FoundQp).
 fn lookup_to_string_qp(
     ctx: &dyn EvalContextTrait,
     obj_id: &crate::heap::ObjectHandle,
@@ -97,8 +88,7 @@ fn qp_returns_string_one(found: &crate::eval::FoundQp) -> bool {
 /// class (with generalization walk) — *but only if the declared return
 /// is `String[1]`*; malformed QPs are skipped via
 /// `qp_returns_string_one`, and the value formats as
-/// `Anonymous_<id>` (exactly how Java's `ToString.execute` falls back
-/// when `findBestToStringFunction` returns null).
+/// `Anonymous_<id>`.
 ///
 /// # Errors
 /// Propagates any [`PureException`] raised while evaluating a class's
@@ -107,24 +97,6 @@ pub(crate) fn pure_to_string(
     value: &Value,
     ctx: &mut dyn EvalContextTrait,
 ) -> Result<String, PureException> {
-    // Iterative explicit-frame DFS so deep `Collection(Collection(...))`
-    // and `UnitInstance` chains can't overflow the Rust thread stack.
-    // The naive recursion was unbounded in syntactic nesting; the
-    // iterative form scales with heap allocations only. Mirrors the
-    // shape of `render_representation` and the iterative `Value::Clone`
-    // / `Value::Drop` in `crates/evaluator/src/value.rs`.
-    //
-    // `Value::Object` dispatches through
-    // `ctx.invoke_qualified_property("toString", …)`. A user-defined
-    // `toString` is required by Pure's contract to return `String[1]`,
-    // so we **gate the invocation on the declared signature**: query
-    // `qualified_property_signature` first and skip the invoke entirely
-    // when the declared return isn't `String[1]`. Avoids running a
-    // malformed `toString` body that happens to be expensive or
-    // side-effectful before discovering the shape mismatch.
-    //
-    // The fallback for "no String[1] QP" matches Java Pure's
-    // `ToString.execute` path: render as `Anonymous_<id>`.
     enum Op<'a> {
         Visit(&'a Value),
         AssembleCollection(usize),
@@ -148,20 +120,12 @@ pub(crate) fn pure_to_string(
                     ops.push(Op::Visit(inner));
                 }
                 Value::Object(obj_id) => {
-                    // Find the `toString()` QP *once* via the same model
-                    // walk the evaluator uses for dispatch, gate on the
-                    // declared `String[1]` return, then invoke the
-                    // already-found QP directly so the trait doesn't
-                    // redo the classifier → class → QP lookup.
                     let invoked = lookup_to_string_qp(ctx, obj_id)
                         .filter(qp_returns_string_one)
                         .map(|found| ctx.invoke_qualified_property_found(v, &found, &[]))
                         .transpose()?;
                     match invoked.as_ref() {
                         Some(Value::String(s)) => built.push(s.to_string()),
-                        // No QP, declared return wasn't `String[1]`, or
-                        // the body diverged from its declared shape —
-                        // all collapse to the Java-Pure fallback form.
                         _ => built.push(format!("Anonymous_{:p}", std::rc::Rc::as_ptr(obj_id))),
                     }
                 }
@@ -193,36 +157,20 @@ pub(crate) fn pure_to_string(
 }
 
 /// `toString` rendering for the non-recursive (`Collection` / `UnitInstance` /
-/// `Object` excluded) `Value` variants. The full driver is `pure_to_string`;
-/// this helper handles only leaves so the driver's match can stay tight.
+/// `Object` excluded) `Value` variants.
 fn pure_to_string_leaf(value: &Value, ctx: &dyn EvalContextTrait) -> String {
     use crate::value::FunctionValue;
     match value {
         Value::String(s) => s.to_string(),
         Value::Boolean(b) => b.to_string(),
         Value::Integer(i) => i.to_string(),
-        // Float: route through the Java-style formatter so
-        // integer-valued doubles render with the trailing `.0`
-        // platform tests pin (testFloatToStringWithExcessTrailingZeros,
-        // testFloatToStringWithPositiveExponent). Rust's native
-        // `{f64}` Display strips the `.0`; everything else
-        // (including the avoidance of E-notation for normal-range
-        // values, and 0.000000013421-style expanded form for very
-        // small values) already matches Java's expected output.
         Value::Float(_) => crate::native::math::java_number_string(value),
         Value::Decimal(d) => d.to_string(),
-        // Date/DateTime: no `%` prefix (PureDate's Display already
-        // formats with TZ for time-precision dates).
         Value::Date(d) => d.to_string(),
         Value::Latest => "%latest".to_string(),
         Value::StrictTime(t) => t.to_string(),
         Value::Unit => String::new(),
-        // Element ref (Class, Function, Enumeration, …): simple-leaf
-        // name. testClassToString and testEnumerationToString assert
-        // `STR_Person->toString() == 'STR_Person'`.
         Value::Element(id) => crate::model_utils::element_simple_name(ctx.model(), *id).to_string(),
-        // Enum value: just the member (Java parity — `CITY` not
-        // `STR_GeographicEntityType.CITY`).
         Value::EnumValue { member, .. } => member.to_string(),
         Value::Function(fv) => match fv.as_ref() {
             FunctionValue::Lambda(_) => "<Lambda>".to_string(),
@@ -236,8 +184,6 @@ fn pure_to_string_leaf(value: &Value, ctx: &dyn EvalContextTrait) -> String {
             ),
         },
         Value::Map(m) => format!("<Map size={}>", m.borrow().entries.len()),
-        // Recursive variants are driven by the iterative loop;
-        // reaching them here means the dispatch went wrong.
         Value::Collection(_) | Value::UnitInstance { .. } | Value::Object(_) => unreachable!(
             "pure_to_string_leaf called on recursive Value variant; the iterative driver should have queued these"
         ),
@@ -250,7 +196,6 @@ fn pure_to_string_leaf(value: &Value, ctx: &dyn EvalContextTrait) -> String {
 fn repr_value(v: &Value) -> String {
     match v {
         Value::String(s) => {
-            // Match Java Pure's escape: \ → \\, ' → \', otherwise as-is.
             let escaped = s.replace('\\', "\\\\").replace('\'', "\\'");
             format!("'{escaped}'")
         }
@@ -296,49 +241,58 @@ impl NativeFunction for Format {
             single => vec![single.clone()],
         };
 
-        let bytes = template.as_bytes();
+        let chars: Vec<char> = template.chars().collect();
         let mut result = String::with_capacity(template.len());
         let mut i = 0usize;
         let mut sub_idx = 0usize;
 
-        while i < bytes.len() {
-            let c = bytes[i];
-            if c != b'%' {
-                result.push(c as char);
+        while i < chars.len() {
+            let c = chars[i];
+            if c != '%' {
+                result.push(c);
                 i += 1;
                 continue;
             }
-            // Parse `%[0][width][.precision]<spec>` or `%t{template}`.
             let mut j = i + 1;
             let mut zero_pad = false;
-            if j < bytes.len()
-                && bytes[j] == b'0'
-                && j + 1 < bytes.len()
-                && bytes[j + 1].is_ascii_digit()
+            if j < chars.len()
+                && chars[j] == '0'
+                && j + 1 < chars.len()
+                && chars[j + 1].is_ascii_digit()
             {
                 zero_pad = true;
                 j += 1;
             }
-            // Width digits.
             let width_start = j;
-            while j < bytes.len() && bytes[j].is_ascii_digit() {
+            while j < chars.len() && chars[j].is_ascii_digit() {
                 j += 1;
             }
             let width: Option<usize> = if j > width_start {
-                Some(template[width_start..j].parse().unwrap_or(0))
+                Some(
+                    chars[width_start..j]
+                        .iter()
+                        .collect::<String>()
+                        .parse()
+                        .unwrap_or(0),
+                )
             } else {
                 None
             };
-            // Optional `.precision`.
-            let precision: Option<usize> = if j < bytes.len() && bytes[j] == b'.' {
+            let precision: Option<usize> = if j < chars.len() && chars[j] == '.' {
                 let p_start = j + 1;
                 let mut p_end = p_start;
-                while p_end < bytes.len() && bytes[p_end].is_ascii_digit() {
+                while p_end < chars.len() && chars[p_end].is_ascii_digit() {
                     p_end += 1;
                 }
                 if p_end > p_start {
                     j = p_end;
-                    Some(template[p_start..p_end].parse().unwrap_or(0))
+                    Some(
+                        chars[p_start..p_end]
+                            .iter()
+                            .collect::<String>()
+                            .parse()
+                            .unwrap_or(0),
+                    )
                 } else {
                     j = p_start;
                     None
@@ -346,19 +300,18 @@ impl NativeFunction for Format {
             } else {
                 None
             };
-            if j >= bytes.len() {
+            if j >= chars.len() {
                 result.push('%');
                 i += 1;
                 continue;
             }
-            let spec = bytes[j];
-            // `%t{pattern}` — date format with explicit pattern.
+            let spec = chars[j];
             let date_pattern: Option<String> =
-                if spec == b't' && j + 1 < bytes.len() && bytes[j + 1] == b'{' {
+                if spec == 't' && j + 1 < chars.len() && chars[j + 1] == '{' {
                     let pat_start = j + 2;
-                    if let Some(end) = template[pat_start..].find('}') {
-                        let pat = template[pat_start..pat_start + end].to_string();
-                        j = pat_start + end + 1; // past `}`
+                    if let Some(end) = chars[pat_start..].iter().position(|&c| c == '}') {
+                        let pat: String = chars[pat_start..pat_start + end].iter().collect();
+                        j = pat_start + end + 1;
                         Some(pat)
                     } else {
                         None
@@ -367,15 +320,12 @@ impl NativeFunction for Format {
                     j += 1;
                     None
                 };
-            if !matches!(spec, b's' | b'r' | b'd' | b'f' | b't') {
+            if !matches!(spec, 's' | 'r' | 'd' | 'f' | 't') {
                 result.push('%');
                 i += 1;
                 continue;
             }
             let v = subs.get(sub_idx).cloned().ok_or_else(|| {
-                // Java-parity error text — pinned by platform test
-                // `testFormatTooFewInputs` in
-                // legend-pure-core/.../grammar/functions/string/format.pure.
                 PureRuntimeError::EvaluationError(format!(
                     "Too few arguments passed to format function. Format expression \"{template}\", number of arguments [{}]",
                     subs.len()
@@ -383,13 +333,9 @@ impl NativeFunction for Format {
             })?;
             sub_idx += 1;
             match spec {
-                b'r' => result.push_str(&repr_value(&v)),
-                b's' => result.push_str(&pure_to_string(&v, ctx)?),
-                b'd' => {
-                    // Java parity (`Format.java:105-108`): `%d` requires an
-                    // Integer. Pre-T-20260511-05 we silently coerced via
-                    // `.unwrap_or(0)`; Java throws and Pure semantics
-                    // demand the same.
+                'r' => result.push_str(&repr_value(&v)),
+                's' => result.push_str(&pure_to_string(&v, ctx)?),
+                'd' => {
                     let Value::Integer(n) = v else {
                         let got = pure_to_string(&v, ctx)?;
                         return Err(PureRuntimeError::EvaluationError(format!(
@@ -399,7 +345,6 @@ impl NativeFunction for Format {
                     };
                     let body = if let Some(w) = width {
                         if zero_pad {
-                            // Zero-pad to width respecting sign.
                             if n < 0 {
                                 format!("-{:0>1$}", -n, w)
                             } else {
@@ -413,12 +358,7 @@ impl NativeFunction for Format {
                     };
                     result.push_str(&body);
                 }
-                b'f' => {
-                    // Java parity (`Format.java:155-159`, `:175-179`): `%f`
-                    // requires a Float — strictly, not "anything coercible".
-                    // Pre-T-20260511-05 we accepted Integer / Decimal and
-                    // silently widened to f64 (with a non-Number falling
-                    // through to NaN); Java throws.
+                'f' => {
                     let Value::Float(f) = v else {
                         let got = pure_to_string(&v, ctx)?;
                         return Err(PureRuntimeError::EvaluationError(format!(
@@ -427,18 +367,13 @@ impl NativeFunction for Format {
                         .into());
                     };
                     let body = if let Some(p) = precision {
-                        // Java's `%.Nf` rounds half-to-even (banker's),
-                        // matching Decimal::round_dp's default.
                         format!("{f:.p$}")
                     } else {
                         f.to_string()
                     };
                     result.push_str(&body);
                 }
-                b't' => {
-                    // Java parity (`Format.java:114-118`): `%t` requires a
-                    // Date. Pre-T-20260511-05 we silently fell through to
-                    // `pure_to_string` for any non-Date value.
+                't' => {
                     let Value::Date(d) = &v else {
                         let got = pure_to_string(&v, ctx)?;
                         return Err(PureRuntimeError::EvaluationError(format!(
@@ -449,10 +384,6 @@ impl NativeFunction for Format {
                     if let Some(pat) = &date_pattern {
                         result.push_str(&format_date_pattern(d, pat));
                     } else {
-                        // No `{pattern}` — Java falls back to the Date's
-                        // default toString (`builder.append(date)` at
-                        // `Format.java:123`). The Pure user-facing string
-                        // form matches.
                         result.push_str(&pure_to_string(&v, ctx)?);
                     }
                 }
@@ -461,9 +392,6 @@ impl NativeFunction for Format {
             i = j;
         }
 
-        // Reject extra args — Java Pure raises this when the user passes more
-        // values than the template consumed. Pinned by platform test
-        // `testFormatTooManyInputs`.
         if sub_idx < subs.len() {
             return Err(PureRuntimeError::EvaluationError(format!(
                 "Unused format args. [{}] arguments provided to expression \"{template}\"",
@@ -487,13 +415,11 @@ impl NativeFunction for Format {
 /// - `"literal"` segments (Java-style quoted text)
 /// - `[Region/City]` prefix for timezone-shifted output
 ///
-/// Unsupported patterns pass through verbatim. Anything beyond the test
-/// surface is best-effort; revisit when more tests need it.
+/// Unsupported patterns pass through verbatim.
 #[allow(clippy::many_single_char_names, clippy::too_many_lines)]
 fn format_date_pattern(d: &crate::date::PureDate, pat: &str) -> String {
     use crate::date::PureDate;
     use std::fmt::Write as _;
-    // [TZ] prefix — shift the date by the named offset for output.
     let (tz_offset_minutes, body) = if let Some(rest) = pat.strip_prefix('[') {
         if let Some(end) = rest.find(']') {
             let zone = &rest[..end];
@@ -518,44 +444,42 @@ fn format_date_pattern(d: &crate::date::PureDate, pat: &str) -> String {
     };
     let inner = shifted.inner_datetime();
     let mut out = String::with_capacity(body.len());
-    let bytes = body.as_bytes();
+    let chars: Vec<char> = body.chars().collect();
     let mut i = 0;
-    while i < bytes.len() {
-        let c = bytes[i];
-        // Quoted literal segment: "..."
-        if c == b'"' {
+    while i < chars.len() {
+        let c = chars[i];
+        if c == '"' {
             i += 1;
-            while i < bytes.len() && bytes[i] != b'"' {
-                out.push(bytes[i] as char);
+            while i < chars.len() && chars[i] != '"' {
+                out.push(chars[i]);
                 i += 1;
             }
-            if i < bytes.len() {
-                i += 1; // skip closing quote
+            if i < chars.len() {
+                i += 1;
             }
             continue;
         }
-        // Run of identical pattern letters.
         let mut j = i + 1;
-        while j < bytes.len() && bytes[j] == c {
+        while j < chars.len() && chars[j] == c {
             j += 1;
         }
         let count = j - i;
-        let token: String = std::iter::repeat_n(c as char, count).collect();
+        let token: String = std::iter::repeat_n(c, count).collect();
         let _ = token;
         match (c, count) {
-            (b'y', 4) => {
+            ('y', 4) => {
                 let _ = write!(out, "{:04}", inner.year());
             }
-            (b'M', 2) => {
+            ('M', 2) => {
                 let _ = write!(out, "{:02}", inner.month());
             }
-            (b'd', 2) => {
+            ('d', 2) => {
                 let _ = write!(out, "{:02}", inner.day());
             }
-            (b'H', 2) => {
+            ('H', 2) => {
                 let _ = write!(out, "{:02}", inner.hour());
             }
-            (b'h', n) => {
+            ('h', n) => {
                 let h12 = match inner.hour() {
                     0 => 12,
                     h if h > 12 => h - 12,
@@ -567,25 +491,25 @@ fn format_date_pattern(d: &crate::date::PureDate, pat: &str) -> String {
                     let _ = write!(out, "{h12}");
                 }
             }
-            (b'm', 2) => {
+            ('m', 2) => {
                 let _ = write!(out, "{:02}", inner.minute());
             }
-            (b's', 2) => {
+            ('s', 2) => {
                 let _ = write!(out, "{:02}", inner.second());
             }
-            (b'S', n) => {
+            ('S', n) => {
                 let nanos = inner.subsec_nanosecond();
                 let s = format!("{nanos:09}");
                 out.push_str(&s[..n.min(9)]);
             }
-            (b'a', 1) => out.push_str(if inner.hour() < 12 { "AM" } else { "PM" }),
-            (b'Z', 1) => {
+            ('a', 1) => out.push_str(if inner.hour() < 12 { "AM" } else { "PM" }),
+            ('Z', 1) => {
                 let m: i32 = tz_offset_minutes.unwrap_or(0);
                 let sign = if m >= 0 { '+' } else { '-' };
                 let abs = m.abs();
                 let _ = write!(out, "{sign}{:02}{:02}", abs / 60, abs % 60);
             }
-            (b'X', 1) => {
+            ('X', 1) => {
                 let m: i32 = tz_offset_minutes.unwrap_or(0);
                 if m == 0 {
                     out.push('Z');
@@ -595,11 +519,9 @@ fn format_date_pattern(d: &crate::date::PureDate, pat: &str) -> String {
                     let _ = write!(out, "{sign}{:02}", abs / 60);
                 }
             }
-            // Pass-through for unrecognised tokens (whitespace,
-            // separators, unknown letters).
             _ => {
                 for _ in 0..count {
-                    out.push(c as char);
+                    out.push(c);
                 }
             }
         }
@@ -615,9 +537,6 @@ fn format_date_pattern(d: &crate::date::PureDate, pat: &str) -> String {
 ///   `separator`.
 /// - `joinStrings(String[*], String[1], String[1], String[1]): String[1]` —
 ///   `prefix + elements.join(separator) + suffix`.
-///
-/// The `execute` implementation dispatches on `values.len()` so a single
-/// struct can back both mangled registrations.
 #[derive(Debug)]
 pub struct JoinStrings;
 
@@ -628,17 +547,6 @@ impl NativeFunction for JoinStrings {
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
         let values = force_all(args, ctx)?;
-        // Pure signature: `joinStrings(strings, prefix, separator, suffix)`
-        // for the 4-arg overload; `joinStrings(strings, separator)` for the
-        // 2-arg one. The previous code swapped prefix and separator —
-        // `'rrr2'->joinStrings('[', ', ', ']')` produced `, 'rrr2'['eee2']`
-        // (separator-then-element-then-prefix-then-element-then-suffix)
-        // because the index map landed `values[1]→separator,
-        // values[2]→prefix`. The Pure platform itself uses
-        // `joinStrings('\nexpected: [', ', ', ']')` so the broken order
-        // emitted by `assertSameElements` / size-many `assertEquals`
-        // diff messages was bucketing all collection comparisons under
-        // a misformatted "Assert failure" string.
         let (separator, prefix, suffix) = match values.len() {
             2 => (values[1].as_string()?.clone(), None, None),
             4 => (
@@ -669,6 +577,29 @@ impl NativeFunction for JoinStrings {
     }
 }
 
+/// Java indexes strings by UTF-16 unit; these map between that and
+/// byte offsets.
+fn utf16_len(s: &str) -> usize {
+    s.encode_utf16().count()
+}
+
+/// Byte offset of the `index`-th UTF-16 unit, clamped to the string's
+/// end. An index inside a surrogate pair lands on the next character.
+fn byte_at_utf16(s: &str, index: usize) -> usize {
+    let mut units = 0usize;
+    for (byte, c) in s.char_indices() {
+        if units >= index {
+            return byte;
+        }
+        units += c.len_utf16();
+    }
+    s.len()
+}
+
+fn utf16_at_byte(s: &str, byte: usize) -> usize {
+    utf16_len(&s[..byte])
+}
+
 /// Pure `indexOf(String[1], String[1]): Integer[1]`
 /// Pure `indexOf(String[1], String[1], Integer[1]): Integer[1]` — search
 /// from a non-zero start index.
@@ -692,9 +623,7 @@ impl NativeFunction for IndexOf {
             2 => 0usize,
             3 => {
                 let raw = values[2].as_integer()?.max(0);
-                #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-                let from = (raw as usize).min(s.len());
-                from
+                byte_at_utf16(s, usize::try_from(raw).unwrap_or(usize::MAX))
             }
             n => {
                 return Err(PureRuntimeError::EvaluationError(format!(
@@ -703,10 +632,9 @@ impl NativeFunction for IndexOf {
                 .into());
             }
         };
-        #[allow(clippy::cast_possible_wrap)]
-        let idx = s[from..]
-            .find(sub.as_str())
-            .map_or(-1, |i| (i + from) as i64);
+        let idx = s[from..].find(sub.as_str()).map_or(-1, |i| {
+            i64::try_from(utf16_at_byte(s, i + from)).unwrap_or(i64::MAX)
+        });
         Ok(Evaluated::new(Value::Integer(idx)))
     }
 }
@@ -736,15 +664,11 @@ impl NativeFunction for StartsWith {
 ///
 /// Parse a string into a `Decimal`. Strips an optional trailing `d`
 /// suffix (Pure's decimal literal marker) and tolerates leading `+`
-/// plus zero-padding (`+0000003.14`) — matches the platform PCT test
-/// expectations in `parseDecimal.pure`.
+/// plus zero-padding (`+0000003.14`).
 ///
 /// The 3-arg overload rounds to `scale` digits after the decimal
-/// point using banker's rounding (Decimal's default), which matches
-/// Java's `BigDecimal` `setScale(scale, HALF_EVEN)` behavior.
-/// `precision` is accepted for signature parity but not enforced —
-/// the platform tests assert only on the rounded value, not on
-/// total-digit truncation.
+/// point using banker's rounding.
+/// `precision` is accepted for signature parity but not enforced.
 #[derive(Debug)]
 pub struct ParseDecimal;
 
@@ -770,10 +694,6 @@ impl NativeFunction for ParseDecimal {
                 Ok(Evaluated::new(Value::Decimal(d)))
             }
             3 => {
-                // Signature is parseDecimal(string, precision, scale).
-                // values[1] is precision (declared but not enforced —
-                // platform tests assert only the rounded value, not
-                // total-digit truncation), values[2] is scale.
                 let s = values[0].as_string()?;
                 let scale = i64_arg(&values[2], "parseDecimal scale")?;
                 if !(0..=28).contains(&scale) {
@@ -849,8 +769,9 @@ impl NativeFunction for Length {
         let values = force_all(args, ctx)?;
         expect_args("length", &values, 1)?;
         let s = values[0].as_string()?;
-        #[allow(clippy::cast_possible_wrap)]
-        Ok(Evaluated::new(Value::Integer(s.len() as i64)))
+        Ok(Evaluated::new(Value::Integer(
+            i64::try_from(utf16_len(s)).unwrap_or(i64::MAX),
+        )))
     }
 }
 
@@ -897,11 +818,8 @@ impl NativeFunction for Substring {
         let s = values[0].as_string()?;
         let (start_i, end_i) = match values.len() {
             2 => {
-                // 2-arg form: start through end of string. Java Pure
-                // mirrors String.substring(int) with no terminator.
                 let start = values[1].as_integer()?.max(0);
-                #[allow(clippy::cast_possible_wrap)]
-                let end = s.len() as i64;
+                let end = i64::try_from(utf16_len(s)).unwrap_or(i64::MAX);
                 (start, end)
             }
             3 => (
@@ -915,10 +833,8 @@ impl NativeFunction for Substring {
                 .into());
             }
         };
-        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-        let start = (start_i as usize).min(s.len());
-        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-        let end = (end_i as usize).min(s.len());
+        let start = byte_at_utf16(s, usize::try_from(start_i).unwrap_or(usize::MAX));
+        let end = byte_at_utf16(s, usize::try_from(end_i).unwrap_or(usize::MAX));
         let start = start.min(end);
         Ok(Evaluated::new(Value::String(SmolStr::new(&s[start..end]))))
     }
@@ -1141,6 +1057,37 @@ mod tests {
     }
 
     #[test]
+    fn strings_are_indexed_by_utf16_unit_like_java() {
+        let n = Length.execute(&[lit_str("é😀")], &mut MockCtx).unwrap();
+        assert_eq!(n.into_value(), Value::Integer(3));
+        let i = IndexOf
+            .execute(&[lit_str("héllo"), lit_str("l")], &mut MockCtx)
+            .unwrap();
+        assert_eq!(i.into_value(), Value::Integer(2));
+        let i = IndexOf
+            .execute(&[lit_str("héllo"), lit_str("l"), lit_int(3)], &mut MockCtx)
+            .unwrap();
+        assert_eq!(i.into_value(), Value::Integer(3));
+        let sub = Substring
+            .execute(&[lit_str("héllo"), lit_int(0), lit_int(2)], &mut MockCtx)
+            .unwrap();
+        assert_eq!(sub.into_value(), Value::String("hé".into()));
+        let sub = Substring
+            .execute(&[lit_str("héllo"), lit_int(2)], &mut MockCtx)
+            .unwrap();
+        assert_eq!(sub.into_value(), Value::String("llo".into()));
+    }
+
+    #[test]
+    fn format_keeps_non_ascii_template_text() {
+        let coll = lit_collection(vec![lit_str("x")]);
+        let r = Format
+            .execute(&[lit_str("café %s ∞"), coll], &mut MockCtx)
+            .unwrap();
+        assert_eq!(r.into_value(), Value::String("café x ∞".into()));
+    }
+
+    #[test]
     fn format_two_args() {
         let coll = lit_collection(vec![lit_int(1), lit_int(2)]);
         let r = Format
@@ -1148,11 +1095,6 @@ mod tests {
             .unwrap();
         assert_eq!(r.into_value(), Value::String("1 + 2".into()));
     }
-
-    // T-20260511-05: Java parity for type mismatches at runtime.
-    // Pre-fix, %d on a String silently coerced to 0, %f to NaN, %t
-    // fell through to toString. Java throws `"Expected <T>, got: <v>"`
-    // (Format.java:107/117/158).
 
     #[test]
     fn format_d_on_string_errors() {
@@ -1193,9 +1135,6 @@ mod tests {
 
     #[test]
     fn format_f_on_integer_errors() {
-        // Java's Format.java:156 requires `Instance.instanceOf(arg,
-        // M3Paths.Float, ...)` — strictly Float. Integer doesn't satisfy
-        // it, and Pre-fix Rust silently widened i64 → f64. Tightened.
         let coll = lit_collection(vec![lit_int(42)]);
         let err = Format
             .execute(&[lit_str("%f"), coll], &mut MockCtx)
@@ -1220,8 +1159,6 @@ mod tests {
 
     #[test]
     fn format_d_on_integer_compiles() {
-        // Positive control: the Java-parity tightening must not
-        // regress the well-formed case.
         let coll = lit_collection(vec![lit_int(42)]);
         let r = Format
             .execute(&[lit_str("got %d"), coll], &mut MockCtx)
@@ -1235,7 +1172,6 @@ mod tests {
         let r = Format
             .execute(&[lit_str("%f"), coll], &mut MockCtx)
             .unwrap();
-        // f64::to_string formatting — exact form pinned for regression.
         assert_eq!(r.into_value(), Value::String("3.25".into()));
     }
 
@@ -1415,8 +1351,6 @@ mod tests {
         );
     }
 
-    // -- ltrim / rtrim --
-
     #[test]
     fn ltrim_strips_leading_whitespace() {
         assert_eq!(
@@ -1486,8 +1420,6 @@ mod tests {
         assert!(Rtrim.execute(&[lit_bool(true)], &mut MockCtx).is_err());
     }
 
-    // -- reverseString --
-
     #[test]
     fn reverse_string_ascii() {
         assert_eq!(
@@ -1512,8 +1444,6 @@ mod tests {
 
     #[test]
     fn reverse_string_unicode_preserves_codepoints() {
-        // "héllo" contains a 2-byte UTF-8 char; reversing per byte would
-        // produce invalid UTF-8. Reversing per char gives "olléh".
         assert_eq!(
             ReverseString
                 .execute(&[lit_str("héllo")], &mut MockCtx)
@@ -1532,8 +1462,6 @@ mod tests {
     fn reverse_string_type_mismatch() {
         assert!(ReverseString.execute(&[lit_int(1)], &mut MockCtx).is_err());
     }
-
-    // -- replace --
 
     #[test]
     fn replace_replaces_all_occurrences() {
@@ -1575,8 +1503,6 @@ mod tests {
         );
     }
 
-    // -- joinStrings --
-
     #[test]
     fn join_strings_2arg_basic() {
         let coll = lit_collection(vec![lit_str("a"), lit_str("b"), lit_str("c")]);
@@ -1597,8 +1523,6 @@ mod tests {
 
     #[test]
     fn join_strings_2arg_scalar_treated_as_singleton() {
-        // A bare String[1] value passed where String[*] is expected should
-        // be treated as a one-element collection via Value::to_collection.
         let r = JoinStrings
             .execute(&[lit_str("lone"), lit_str(",")], &mut MockCtx)
             .unwrap();
@@ -1607,9 +1531,6 @@ mod tests {
 
     #[test]
     fn join_strings_4arg_with_prefix_and_suffix() {
-        // 4-arg signature is `joinStrings(strings, prefix, separator, suffix)`
-        // — see commit b72e67822ca for the impl's arg-order fix that this
-        // test had drifted out of sync with.
         let coll = lit_collection(vec![lit_str("a"), lit_str("b")]);
         let r = JoinStrings
             .execute(
@@ -1646,8 +1567,7 @@ mod tests {
     }
 
     /// Build `Collection(Collection(... Integer(0) ...))` `depth`
-    /// levels deep. Primitive leaves keep the renderer off any code
-    /// paths that would need a real model.
+    /// levels deep.
     fn deep_nested_collection(depth: usize) -> Value {
         let mut v = Value::Integer(0);
         for _ in 0..depth {
@@ -1660,9 +1580,7 @@ mod tests {
 
     /// Locks the iterative `pure_to_string` contract: rendering a
     /// 10 000-level-deep `Collection(...)` chain must not overflow
-    /// the Rust thread stack. The previous recursive implementation
-    /// overflowed in the same `Collection`-nesting band as
-    /// `render_representation` did.
+    /// the Rust thread stack.
     #[test]
     fn pure_to_string_deep_collection_no_overflow() {
         let v = deep_nested_collection(10_000);

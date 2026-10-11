@@ -19,13 +19,6 @@ import java.util.List;
 
 /**
  * Exception thrown when an error occurs during Pure evaluation in the Rust engine.
- *
- * <p>The Rust side surfaces structured information through the rich
- * constructor: a top-level {@link Kind}, optional source location and
- * call stack, and (for constraint violations) the constraint
- * identifier, axis, and owning element. The legacy message-only
- * constructor stays for backwards compatibility and is used as the
- * fallback path when the cdylib is older than this JAR.
  */
 public class PureRustEvaluationException extends PureRustException
 {
@@ -66,13 +59,6 @@ public class PureRustEvaluationException extends PureRustException
     private final ConstraintKind constraintKind;
     private final String ownerFqn;
 
-    /**
-     * Legacy constructor preserved for backwards compatibility.
-     *
-     * <p>Older cdylibs and direct callers without structured info land
-     * here; defaults the structured fields to {@code null} / empty
-     * with {@link Kind#EXECUTION_ERROR} as the safest assumption.
-     */
     public PureRustEvaluationException(String message)
     {
         super(message);
@@ -91,8 +77,7 @@ public class PureRustEvaluationException extends PureRustException
      * <p>All string params except {@code message} and {@code kind} may
      * be {@code null}; {@code callStack} may be {@code null} or empty.
      * Unknown {@code kind} / {@code constraintKindStr} strings fall
-     * back to {@link Kind#EXECUTION_ERROR} / {@code null} respectively,
-     * matching the cdylib-older-than-JAR forward-compatibility policy.
+     * back to {@link Kind#EXECUTION_ERROR} / {@code null} respectively.
      */
     public PureRustEvaluationException(String message,
                                        String info,

@@ -244,7 +244,6 @@ pub fn value_to_java<'l>(
             )?
         }
         Value::Object(handle) => {
-            // A Java-backed node goes back as the original Java object.
             let java_id = match &*handle.borrow() {
                 HeapEntry::Typed(obj) => obj.as_any().downcast_ref::<JavaNode>().map(|n| n.id),
                 HeapEntry::Dynamic(_) => None,

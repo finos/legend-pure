@@ -121,8 +121,6 @@ public class RebaseRustJniManifests
                     {
                         String expectedError = committedExclusions.get(fqn);
                         Assert.assertNotNull("expected failure without a committed exclusion: " + fqn, expectedError);
-                        // An empty expected error matches every message and would
-                        // carry forward for ever: refuse it rather than keep it.
                         Assert.assertFalse("empty expectedError committed for " + fqn + "; delete the entry and rebase", expectedError.trim().isEmpty());
                         exclusions.put(fqn, expectedError);
                     }
@@ -164,8 +162,7 @@ public class RebaseRustJniManifests
     }
 
     /**
-     * The first non-blank line of a message: an assertion message may start
-     * with a line break, and an empty expected error would match anything.
+     * The first non-blank line of a message.
      */
     private static String firstLine(String message)
     {

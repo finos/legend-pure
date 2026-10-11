@@ -17,11 +17,6 @@
 //! (`sin`, `cos`, `tan`, `cot`, `asin`, `acos`, `atan`, `atan2`), numeric
 //! conversion (`toFloat`, `toDecimal`) and string parsing (`parseInteger`,
 //! `parseFloat`, `parseBoolean`).
-//!
-//! Each native is fished from the archive one `impl NativeFunction` at a
-//! time, registered under Java's mangled key, when a PCT row asks for it.
-//! [`java_number_string`](crate::native::math::java_number_string) lives here because the string natives
-//! (`toString`, `format`) and the math error messages share it.
 
 use legend_pure_metamodel::types::ValueSpec;
 use rust_decimal::Decimal;
@@ -34,10 +29,6 @@ use crate::native::{
 use crate::value::Value;
 
 /// Coerce a numeric `Value` (Integer, Float, or Decimal) to `f64`.
-///
-/// `Value::as_float` handles Integer→Float already but rejects `Decimal`.
-/// The math natives accept `Number`, so this wrapper adds the Decimal case
-/// without mutating `Value::as_float`'s narrower contract.
 fn number_to_f64(func_name: &str, v: &Value) -> Result<f64, PureRuntimeError> {
     match v {
         Value::Decimal(d) => d.to_f64().ok_or_else(|| {
@@ -49,9 +40,7 @@ fn number_to_f64(func_name: &str, v: &Value) -> Result<f64, PureRuntimeError> {
     }
 }
 
-/// Render a numeric value using Java's `toString` rules — used in the
-/// error-message text the platform PCT tests pin (`assertError` against
-/// e.g. "Unable to compute sqrt of -1.0") and by `toString`/`format`.
+/// Render a numeric value using Java's `toString` rules.
 ///
 /// The key divergence from Rust's default `{f64}`/`{i64}` Display is
 /// that Java's `Double.toString` always emits at least one decimal place
@@ -94,8 +83,6 @@ impl NativeFunction for Floor {
         let values = force_all(args, ctx)?;
         expect_args("floor", &values, 1)?;
         let x = number_to_f64("floor", &values[0])?;
-        // cast_possible_truncation acceptable here — Pure's floor returns Integer and
-        // values outside i64 range are genuinely out of spec.
         #[allow(clippy::cast_possible_truncation)]
         Ok(Evaluated::new(Value::Integer(x.floor() as i64)))
     }
@@ -124,9 +111,7 @@ impl NativeFunction for Ceiling {
 /// Pure `round(Float[1], scale:Integer[1]):Float[1]`
 ///
 /// **Banker's rounding** (half-to-even), matching Java Pure / IEEE 754
-/// default semantics. The platform PCT tests
-/// (`testPositiveFloatRoundHalfEvenDown` etc.) assert `round(16.5) == 16`
-/// and `round(17.5) == 18` — half-away-from-zero would give 17 and 18.
+/// default semantics.
 ///
 /// - 1-arg: rounds any `Number` to the nearest `Integer`. For exact
 ///   halves, picks the even neighbor (`f64::round_ties_even`).
@@ -164,11 +149,6 @@ impl NativeFunction for Round {
                         Ok(Evaluated::new(Value::Float(rounded)))
                     }
                     Value::Integer(i) => {
-                        // Spec says the 2-arg overload only exists for Decimal/Float,
-                        // but the integer case is well-defined and harmless: scale > 0
-                        // returns the same integer; scale < 0 would be a Java-side
-                        // surprise we don't support. Keep parity with Decimal: an
-                        // Integer at any positive scale is itself, returned as Decimal.
                         if scale == 0 {
                             Ok(Evaluated::new(Value::Integer(*i)))
                         } else {
@@ -226,10 +206,7 @@ impl NativeFunction for Sign {
 /// Pure `sqrt(Number[1]):Float[1]` — square root.
 ///
 /// Negative inputs throw the platform-pinned error
-/// `"Unable to compute sqrt of <input>"` (mirrors
-/// `legend-pure-runtime-java-engine-interpreted/.../Sqrt.java:53`,
-/// which throws on `Double.isNaN(result)` rather than letting the
-/// IEEE-754 NaN propagate).
+/// `"Unable to compute sqrt of <input>"`.
 #[derive(Debug)]
 pub struct Sqrt;
 
@@ -411,8 +388,7 @@ impl NativeFunction for Cot {
 }
 
 /// Pure `asin(Number[1]):Float[1]` — inverse sine (radians). Inputs
-/// outside `[-1, 1]` throw `"Unable to compute asin of <input>"`,
-/// mirroring `ArcSine.java:53` (Java throws on `Double.isNaN(result)`).
+/// outside `[-1, 1]` throw `"Unable to compute asin of <input>"`.
 #[derive(Debug)]
 pub struct Asin;
 
@@ -438,8 +414,7 @@ impl NativeFunction for Asin {
 }
 
 /// Pure `acos(Number[1]):Float[1]` — inverse cosine (radians). Inputs
-/// outside `[-1, 1]` throw `"Unable to compute acos of <input>"`,
-/// mirroring `ArcCosine.java:53`.
+/// outside `[-1, 1]` throw `"Unable to compute acos of <input>"`.
 #[derive(Debug)]
 pub struct Acos;
 
@@ -520,13 +495,8 @@ impl NativeFunction for ToFloat {
 /// Pure `toDecimal(Number[1]):Decimal[1]` — numeric → Decimal coercion.
 ///
 /// `Decimal` inputs pass through unchanged. `Integer` is exact via
-/// [`Decimal::from`]. `Float` routes through [`Decimal::from_f64`]
-/// (note: NOT `_retain`) — `_retain` preserves f64's full binary
-/// expansion (`3.8_f64 → 3.7999999999999998…`), but Java Pure's
-/// `BigDecimal.valueOf(double)` rounds to the round-trip canonical
-/// form (`3.8`). `from_f64` matches that contract — same shape as
-/// `Decimal::from_str(&f.to_string())` but without the string
-/// round-trip. NaN / infinity return `None` and surface as an
+/// [`Decimal::from`]. `Float` routes through [`Decimal::from_f64`].
+/// NaN / infinity return `None` and surface as an
 /// `EvaluationError`.
 #[derive(Debug)]
 pub struct ToDecimal;
@@ -605,9 +575,7 @@ impl NativeFunction for ParseFloat {
 /// Pure `parseBoolean(String[1]):Boolean[1]` — case-insensitive
 /// `"true"` / `"false"`.
 ///
-/// The platform tests `testParseTrue` / `testParseFalse` accept all
-/// case combinations (`'True'`, `'tRue'`, `'TRUE'`, …) — Java Pure's
-/// `Boolean.parseBoolean` semantics. Returns an `EvaluationError` for
+/// Returns an `EvaluationError` for
 /// any other input.
 #[derive(Debug)]
 pub struct ParseBoolean;
@@ -636,7 +604,6 @@ impl NativeFunction for ParseBoolean {
 
 /// Register the fished mathematical natives under their mangled Pure FQNs.
 pub fn register(registry: &mut NativeRegistry) {
-    // rounding
     registry.register("floor_Number_1__Integer_1_", Floor);
     registry.register("ceiling_Number_1__Integer_1_", Ceiling);
     registry.register("round_Number_1__Integer_1_", Round);
@@ -644,19 +611,13 @@ pub fn register(registry: &mut NativeRegistry) {
     registry.register("round_Float_1__Integer_1__Float_1_", Round);
     registry.register("sign_Number_1__Integer_1_", Sign);
 
-    // analytic
     registry.register("sqrt_Number_1__Float_1_", Sqrt);
     registry.register("cbrt_Number_1__Float_1_", Cbrt);
     registry.register("exp_Number_1__Float_1_", Exp);
     registry.register("log_Number_1__Float_1_", Log);
     registry.register("log10_Number_1__Float_1_", Log10);
-    registry.register("pow_Number_1__Number_1__Float_1_", Pow);
-    // Platform declares `pow(Number,Number):Number` — `Number` is the
-    // common supertype of the actual `Float` return. Alias under both
-    // so exact-FQN dispatch hits the impl either way.
     registry.register("pow_Number_1__Number_1__Number_1_", Pow);
 
-    // trigonometric
     registry.register("sin_Number_1__Float_1_", Sin);
     registry.register("cos_Number_1__Float_1_", Cos);
     registry.register("tan_Number_1__Float_1_", Tan);
@@ -666,11 +627,9 @@ pub fn register(registry: &mut NativeRegistry) {
     registry.register("atan_Number_1__Float_1_", Atan);
     registry.register("atan2_Number_1__Number_1__Float_1_", Atan2);
 
-    // numeric conversion
     registry.register("toFloat_Number_1__Float_1_", ToFloat);
     registry.register("toDecimal_Number_1__Decimal_1_", ToDecimal);
 
-    // string parsing
     registry.register("parseInteger_String_1__Integer_1_", ParseInteger);
     registry.register("parseFloat_String_1__Float_1_", ParseFloat);
     registry.register("parseBoolean_String_1__Boolean_1_", ParseBoolean);
@@ -683,13 +642,11 @@ mod tests {
 
     use crate::native::{MockCtx, lit_bool, lit_decimal, lit_float, lit_int, lit_str};
 
-    // Small helper — abs-difference comparison for floats. Avoids pulling in
-    // `approx` or hand-rolling tolerances throughout the test body.
     fn approx_eq(a: f64, b: f64) -> bool {
         (a - b).abs() < 1e-10
     }
 
-    /// Decimal-literal shim — mirrors the `ld` helper in arithmetic.rs.
+    /// Decimal-literal shim.
     fn ld(d: Decimal) -> legend_pure_metamodel::types::ValueSpec {
         lit_decimal(d)
     }
@@ -758,10 +715,6 @@ mod tests {
 
     #[test]
     fn round_half_to_even() {
-        // Phase 3: switched from half-away-from-zero to banker's rounding
-        // (half-to-even) to match Java Pure / IEEE 754 default. The
-        // platform PCT tests (testPositiveFloatRoundHalfEvenDown etc.)
-        // rely on round(16.5) == 16 and round(17.5) == 18.
         assert_eq!(
             Round
                 .execute(&[lit_float(2.5)], &mut MockCtx)
@@ -871,9 +824,6 @@ mod tests {
 
     #[test]
     fn sqrt_negative_throws_unable_to_compute() {
-        // Java parity: instead of returning NaN per IEEE-754, sqrt
-        // throws "Unable to compute sqrt of -1.0" so platform PCT
-        // tests like `testSquareRootError` can assertError on it.
         let err = Sqrt.execute(&[lit_float(-1.0)], &mut MockCtx).unwrap_err();
         let msg = err.to_string();
         assert!(
@@ -1150,7 +1100,6 @@ mod tests {
 
     #[test]
     fn cot_zero_is_infinite() {
-        // 1 / tan(0) = 1 / 0 = +inf (IEEE-754).
         let r = Cot.execute(&[lit_float(0.0)], &mut MockCtx).unwrap();
         match r.into_value() {
             Value::Float(f) => assert!(f.is_infinite()),
@@ -1188,8 +1137,6 @@ mod tests {
 
     #[test]
     fn asin_out_of_range_throws_unable_to_compute() {
-        // Java parity: out-of-domain inputs (|x| > 1) throw
-        // "Unable to compute asin of <input>" — see ArcSine.java.
         let err = Asin.execute(&[lit_float(2.0)], &mut MockCtx).unwrap_err();
         let msg = err.to_string();
         assert!(
@@ -1266,7 +1213,6 @@ mod tests {
 
     #[test]
     fn atan2_quadrants() {
-        // atan2(1, 1) = pi/4
         let r = Atan2
             .execute(&[lit_float(1.0), lit_float(1.0)], &mut MockCtx)
             .unwrap();
@@ -1278,7 +1224,6 @@ mod tests {
 
     #[test]
     fn atan2_zero_zero_is_zero() {
-        // atan2(0, 0) is defined as 0 by IEEE-754.
         let r = Atan2
             .execute(&[lit_float(0.0), lit_float(0.0)], &mut MockCtx)
             .unwrap();
@@ -1315,7 +1260,7 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::approx_constant)] // 3.14 is the test decimal value, not π
+    #[allow(clippy::approx_constant)]
     fn to_float_from_decimal() {
         let d = Decimal::from_str("3.14").unwrap();
         let r = ToFloat.execute(&[ld(d)], &mut MockCtx).unwrap();
@@ -1402,7 +1347,7 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::approx_constant)] // 3.14 is the test decimal value, not π
+    #[allow(clippy::approx_constant)]
     fn parse_float_decimal_form() {
         let r = ParseFloat
             .execute(&[lit_str("3.14")], &mut MockCtx)
@@ -1453,9 +1398,6 @@ mod tests {
 
     #[test]
     fn parse_boolean_case_insensitive() {
-        // Phase 7: Java Pure parity — `True` / `TRUE` / `False` are
-        // all accepted by `parseBoolean`. The PCT testParseTrue and
-        // testParseFalse pin every case combination.
         for variant in ["True", "TRUE", "tRue", "trUe", "truE"] {
             let r = ParseBoolean
                 .execute(&[lit_str(variant)], &mut MockCtx)

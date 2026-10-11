@@ -31,7 +31,7 @@
     },
     {
       "test": "meta::pure::functions::math::tests::plus::testLargePlus_Function_1__Boolean_1_",
-      "expectedError": "expected: 9223372036854775826"
+      "expectedError": "Unsupported: Integer arithmetic outside the 64-bit range"
     },
     {
       "test": "meta::pure::functions::math::tests::plus::testSinglePlusType_Function_1__Boolean_1_",
@@ -39,7 +39,7 @@
     },
     {
       "test": "meta::pure::functions::math::tests::times::testLargeTimes_Function_1__Boolean_1_",
-      "expectedError": "expected: 18446744073709551614"
+      "expectedError": "Unsupported: Integer arithmetic outside the 64-bit range"
     }
   ]
 }

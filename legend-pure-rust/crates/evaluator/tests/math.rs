@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! The math, arithmetic and comparison natives fished from the archive,
+//! The math, arithmetic and comparison natives,
 //! driven through a real `Evaluator` over the bootstrap model: each call
 //! is a hand-built node dispatched by its mangled key, the same shape the
 //! PCT lambdas reach the evaluator in.
@@ -73,7 +73,6 @@ fn dec(s: &str) -> Decimal {
 
 #[test]
 fn round_rounds_half_to_even_through_the_evaluator() {
-    // testPositiveFloatRoundHalfEvenDown / …HalfEvenUp / testNegativeFloatRoundHalfEvenDown
     assert_eq!(
         run(&expr::call(ROUND, vec![expr::float(2.5)])),
         Value::Integer(2)
@@ -90,7 +89,6 @@ fn round_rounds_half_to_even_through_the_evaluator() {
         run(&expr::call(ROUND, vec![expr::int(17)])),
         Value::Integer(17)
     );
-    // testDecimalRound: `round(3.14159d)` and `3.14159d->round(2)`.
     assert_eq!(
         run(&expr::call(ROUND, vec![expr::decimal(dec("-3.14159"))])),
         Value::Integer(-3)
@@ -102,7 +100,6 @@ fn round_rounds_half_to_even_through_the_evaluator() {
         )),
         Value::Decimal(dec("3.142"))
     );
-    // testFloatRoundWithScale: `round(-17.36, 1)`.
     assert_eq!(
         run(&expr::call(
             ROUND_FLOAT,
@@ -114,18 +111,15 @@ fn round_rounds_half_to_even_through_the_evaluator() {
 
 #[test]
 fn less_than_orders_numbers_and_strings_through_the_evaluator() {
-    // testLessThan_Number: `3 < 4`, `4 < 3`, `3 < 3`.
     let lt = |a: ValueSpec, b: ValueSpec| run(&expr::call(LESS_THAN, vec![a, b]));
     assert_eq!(lt(expr::int(1), expr::int(2)), Value::Boolean(true));
     assert_eq!(lt(expr::int(4), expr::int(3)), Value::Boolean(false));
     assert_eq!(lt(expr::int(3), expr::int(3)), Value::Boolean(false));
-    // Mixed Number subtypes promote: `1 < 2.2`, `0.5d < 2.5`.
     assert_eq!(lt(expr::int(1), expr::float(2.2)), Value::Boolean(true));
     assert_eq!(
         lt(expr::decimal(dec("0.5")), expr::float(2.5)),
         Value::Boolean(true)
     );
-    // The platform's `lessThan(String, String)` reaches the same native.
     assert_eq!(
         lt(expr::string("a"), expr::string("b")),
         Value::Boolean(true)
@@ -133,19 +127,16 @@ fn less_than_orders_numbers_and_strings_through_the_evaluator() {
 }
 
 #[test]
-#[allow(clippy::approx_constant)] // 3.14 is testRemWithDecimals' dividend, not π
+#[allow(clippy::approx_constant)]
 fn rem_keeps_the_dividend_sign_and_reports_java_s_zero_divisor_text() {
     let rem = |a: ValueSpec, b: ValueSpec| run(&expr::call(REM, vec![a, b]));
-    // testRem / testRemWithNegativeIntegers / testRemWithMixedIntegersAndFloats
     assert_eq!(rem(expr::int(7), expr::int(3)), Value::Integer(1));
     assert_eq!(rem(expr::int(-12), expr::int(5)), Value::Integer(-2));
     assert_eq!(rem(expr::float(7.5), expr::int(5)), Value::Float(2.5));
-    // testRemWithDecimals: `rem(3.14, 1.5d)` promotes the Float to Decimal.
     assert_eq!(
         rem(expr::float(3.14), expr::decimal(dec("1.5"))),
         Value::Decimal(dec("0.14"))
     );
-    // testRemError pins Java's text verbatim.
     assert_eq!(
         evaluation_error(&expr::call(REM, vec![expr::int(5), expr::int(0)])),
         "Cannot divide 5 by zero"
@@ -155,13 +146,11 @@ fn rem_keeps_the_dividend_sign_and_reports_java_s_zero_divisor_text() {
 #[test]
 fn divide_returns_float_and_the_scaled_overload_returns_decimal() {
     let div = |a: ValueSpec, b: ValueSpec| run(&expr::call(DIVIDE, vec![a, b]));
-    // testSimpleDivide / testDivideWithNonTerminatingExpansion
     assert_eq!(div(expr::int(3), expr::int(2)), Value::Float(1.5));
     assert_eq!(
         div(expr::int(1), expr::int(96)),
         Value::Float(0.010416666666666666)
     );
-    // testDecimalDivide: Decimal operands still divide to Float …
     assert_eq!(
         div(expr::decimal(dec("1.1")), expr::decimal(dec("2.1"))),
         Value::Float(0.5238095238095238)
@@ -170,7 +159,6 @@ fn divide_returns_float_and_the_scaled_overload_returns_decimal() {
         div(expr::decimal(dec("1.0")), expr::float(2.0)),
         Value::Float(0.5)
     );
-    // … and the scale overload rounds half-to-even: `-3.1415d->divide(0.1d, 2)`.
     assert_eq!(
         run(&expr::call(
             DIVIDE_SCALED,
@@ -186,7 +174,6 @@ fn divide_returns_float_and_the_scaled_overload_returns_decimal() {
 
 #[test]
 fn to_decimal_keeps_the_float_s_shortest_form() {
-    // testDoubleToDecimal: `toDecimal(3.8) == 3.8D`, not 3.7999999999999998…
     assert_eq!(
         run(&expr::call(TO_DECIMAL, vec![expr::float(3.8)])),
         Value::Decimal(dec("3.8"))
@@ -200,13 +187,11 @@ fn to_decimal_keeps_the_float_s_shortest_form() {
 #[test]
 fn compare_is_total_across_types_through_the_evaluator() {
     let cmp = |a: ValueSpec, b: ValueSpec| run(&expr::call(COMPARE, vec![a, b]));
-    // testIntegerCompare / testStringCompare
     assert_eq!(cmp(expr::int(171), expr::int(2)), Value::Integer(1));
     assert_eq!(
         cmp(expr::string("aa"), expr::string("aaa")),
         Value::Integer(-1)
     );
-    // testCompareDecimalAndLongTypes
     assert_eq!(
         cmp(
             expr::decimal(dec("9999999999999992")),
@@ -214,8 +199,6 @@ fn compare_is_total_across_types_through_the_evaluator() {
         ),
         Value::Integer(0)
     );
-    // testCompareMixedTypes: `compare(1, '1')` is non-zero, and the reverse
-    // call has the opposite sign.
     let one_vs_text = cmp(expr::int(1), expr::string("1"));
     let text_vs_one = cmp(expr::string("1"), expr::int(1));
     assert_ne!(one_vs_text, Value::Integer(0));
@@ -227,13 +210,10 @@ fn compare_is_total_across_types_through_the_evaluator() {
 
 #[test]
 fn sqrt_of_a_negative_reports_java_s_text() {
-    // testSquareRoot
     assert_eq!(
         run(&expr::call(SQRT, vec![expr::int(9)])),
         Value::Float(3.0)
     );
-    // testSquareRootError pins Java's text verbatim, the input rendered
-    // as Java's Double.toString.
     assert_eq!(
         evaluation_error(&expr::call(SQRT, vec![expr::float(-1.0)])),
         "Unable to compute sqrt of -1.0"
@@ -242,7 +222,6 @@ fn sqrt_of_a_negative_reports_java_s_text() {
 
 #[test]
 fn acos_and_asin_out_of_domain_report_java_s_text() {
-    // testArcCosineError / testArcSineError: `2.0->acos()`, `2.0->asin()`.
     assert_eq!(
         evaluation_error(&expr::call(ACOS, vec![expr::float(2.0)])),
         "Unable to compute acos of 2.0"
@@ -254,9 +233,8 @@ fn acos_and_asin_out_of_domain_report_java_s_text() {
 }
 
 #[test]
-#[allow(clippy::approx_constant)] // 3.14159 is testParseFloat's literal, not π
+#[allow(clippy::approx_constant)]
 fn parse_natives_accept_java_s_signed_zero_padded_forms() {
-    // testParseInteger: `parseInteger('+00000017')`, `parseInteger('-17')`.
     assert_eq!(
         run(&expr::call(PARSE_INTEGER, vec![expr::string("+00000017")])),
         Value::Integer(17)
@@ -265,7 +243,6 @@ fn parse_natives_accept_java_s_signed_zero_padded_forms() {
         run(&expr::call(PARSE_INTEGER, vec![expr::string("-17")])),
         Value::Integer(-17)
     );
-    // testParseFloat: `parseFloat('+0000003.1415900000')`.
     assert_eq!(
         run(&expr::call(
             PARSE_FLOAT,

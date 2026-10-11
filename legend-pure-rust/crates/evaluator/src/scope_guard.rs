@@ -15,8 +15,7 @@
 //! RAII scope guard for the variable context.
 //!
 //! Ensures [`VariableContext::pop_scope`] is called even if evaluation
-//! returns early via `?` or panics. This is the Rust equivalent of Java's
-//! try/finally pattern used in `FunctionExpressionExecutor`.
+//! returns early via `?` or panics.
 //!
 //! # Usage
 //!
@@ -24,7 +23,7 @@
 //! let guard = ScopeGuard::new(&mut self.context);
 //! guard.set("x", Value::Integer(42));
 //! let result = self.eval(body)?;
-//! drop(guard); // scope popped — or auto-popped on early return
+//! drop(guard);
 //! ```
 
 use crate::context::VariableContext;
@@ -92,10 +91,8 @@ mod tests {
             guard.set("inner", Value::Integer(2));
             assert_eq!(guard.context().get("inner"), Some(&Value::Integer(2)));
             assert_eq!(guard.context().get("outer"), Some(&Value::Integer(1)));
-            // guard dropped here
         }
 
-        // inner is gone, outer survives
         assert_eq!(ctx.get("inner"), None);
         assert_eq!(ctx.get("outer"), Some(&Value::Integer(1)));
     }
@@ -106,15 +103,13 @@ mod tests {
         ctx.push_scope();
         ctx.set("x", Value::Integer(1));
 
-        // Simulate the pattern: create guard, do work that may fail, drop guard
         let result: Result<Value, &str> = {
             let mut guard = ScopeGuard::new(&mut ctx);
-            guard.set("x", Value::Integer(99)); // shadow
-            Err("simulated error") // early return — guard dropped
+            guard.set("x", Value::Integer(99));
+            Err("simulated error")
         };
 
         assert!(result.is_err());
-        // x restored to original value
         assert_eq!(ctx.get("x"), Some(&Value::Integer(1)));
     }
 

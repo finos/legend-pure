@@ -21,10 +21,6 @@
 //!   to an [`ElementId`] for wrapper-kind dispatch (see
 //!   `Evaluator::apply_object_callable`).
 //!
-//! Single source of truth keeps the allocation site and the dispatch site
-//! in sync — if the canonical FQN of one of these M3 classes changes, it
-//! changes here, not in every caller.
-//!
 //! All constants reference classes bootstrapped from `m3.pure`; resolving
 //! any of them on a fully loaded [`PureModel`] must succeed.
 
@@ -73,18 +69,16 @@ pub const TAG: &Classifier = "meta::pure::metamodel::extension::Tag";
 pub const TREE_NODE: &Classifier = "meta::pure::functions::collection::TreeNode";
 
 /// `meta::pure::metamodel::type::Class` — the M3 metatype every
-/// user-defined Class is an instance of. Used by the type-info back-fill
-/// in `New::execute` to identify a `Class<T>`-typed first argument
-/// (resolve to its [`ElementId`] and compare against the inferred
-/// `args[0].type_info`'s outer element). Identity-based, never
-/// classifier-string compared.
+/// user-defined Class is an instance of.
 pub const CLASS: &Classifier = "meta::pure::metamodel::type::Class";
 /// `meta::pure::metamodel::type::Enumeration`.
 pub const ENUMERATION: &Classifier = "meta::pure::metamodel::type::Enumeration";
+/// The class of every enum value.
+pub const ENUM: &Classifier = "meta::pure::metamodel::type::Enum";
 /// `meta::pure::metamodel::type::PrimitiveType`.
 pub const PRIMITIVE_TYPE: &Classifier = "meta::pure::metamodel::type::PrimitiveType";
 /// `meta::pure::metamodel::Package`.
-pub const PACKAGE: &Classifier = "meta::pure::metamodel::Package";
+pub const PACKAGE: &Classifier = "Package";
 /// `meta::pure::metamodel::function::NativeFunction`.
 pub const NATIVE_FUNCTION: &Classifier = "meta::pure::metamodel::function::NativeFunction";
 /// `meta::pure::metamodel::function::ConcreteFunctionDefinition`.
@@ -93,21 +87,12 @@ pub const CONCRETE_FUNCTION_DEFINITION: &Classifier =
 
 /// `meta::pure::metamodel::type::Nil` — the bottom type. Reserved by the
 /// language and not user-instantiable; `^Nil()` is rejected at the
-/// `New` / `NewWithKeyExpressions` / `DynamicNew` natives' entry. Pinned
-/// by platform test `testNewNil`. Identity-resolved via `m3_paths::resolve`
-/// because `class_fqn` returns just `"Nil"` (top-level type, no package
-/// prefix), so a string compare in the natives wouldn't match.
+/// `New` / `NewWithKeyExpressions` / `DynamicNew` natives' entry.
 pub const NIL: &Classifier = "meta::pure::metamodel::type::Nil";
 
 /// `meta::pure::metamodel::function::KeyExpression` — the M3 wrapper a
 /// Pure-source `new(class, id, [keyExpressions])` call uses to package a
-/// (key, value, add) property assignment. The `NewWithKeyExpressions`
-/// native (registered separately from compiler-internal `New`) decodes
-/// these by walking the heap object's `key`, `expression`, and `add`
-/// slots — never probing the classifier string. The `KeyExpression`
-/// objects themselves are constructed via the compiler-internal fast
-/// path so this decoder is the canonical home of all `KeyExpression`
-/// recognition.
+/// (key, value, add) property assignment.
 pub const KEY_EXPRESSION: &Classifier = "meta::pure::metamodel::function::KeyExpression";
 
 /// `meta::pure::metamodel::type::generics::GenericType` — heap wrapper for
@@ -181,10 +166,7 @@ pub const MULTIPLICITY: &Classifier = "meta::pure::metamodel::multiplicity::Mult
 
 /// `meta::pure::metamodel::multiplicity::MultiplicityValue` — heap wrapper
 /// for the `lowerBound` / `upperBound` slot value on a Multiplicity
-/// (`MultiplicityValue.value : Integer[1]`). Required so reflective
-/// reads like `$m.lowerBound.value` resolve to a heap object whose
-/// `value` slot is the bound integer (per
-/// `legend-pure-core/.../platform/pure/grammar/m3.pure:1400`).
+/// (`MultiplicityValue.value : Integer[1]`).
 pub const MULTIPLICITY_VALUE: &Classifier =
     "meta::pure::metamodel::multiplicity::MultiplicityValue";
 
@@ -219,8 +201,7 @@ pub const PCT_MANIFEST: &Classifier = "meta::pure::test::pct::PCTManifest";
 /// `meta::pure::metamodel::relation::RelationType` — heap classifier for
 /// an anonymous relation type (column bag). Allocated by the
 /// `RelationLiteral` lowering and by the `addColumns` native; navigated
-/// by the native via `obj._columns()`. Identified via M3 `ElementId`,
-/// never via classifier-string suffix.
+/// by the native via `obj._columns()`.
 pub const RELATION_TYPE: &Classifier = "meta::pure::metamodel::relation::RelationType";
 
 /// `meta::pure::metamodel::relation::Column` — heap classifier for a
@@ -315,9 +296,7 @@ pub const RELATIONAL_COLUMN: &Classifier = "meta::relational::metamodel::Column"
 /// `meta::relational::runtime::DatabaseType` — enumeration discriminating
 /// the backend engine (DuckDB, H2, Postgres, Snowflake, …). Used by the
 /// relational-store extension to route `executeInDb`-class natives to the
-/// appropriate driver. Resolved once per native call from
-/// `databaseConnection.type` and compared by enum member name (not
-/// classifier string).
+/// appropriate driver.
 pub const DATABASE_TYPE: &Classifier = "meta::relational::runtime::DatabaseType";
 
 /// `meta::pure::profiles::equality` — Profile whose `Key` stereotype
@@ -327,12 +306,7 @@ pub const DATABASE_TYPE: &Classifier = "meta::relational::runtime::DatabaseType"
 pub const EQUALITY_PROFILE: &Classifier = "meta::pure::profiles::equality";
 
 /// Resolve a `::`-qualified FQN to its [`ElementId`], returning `None` if
-/// any segment doesn't resolve. Used alongside the constants above to
-/// compare heap-object classifiers by structural identity instead of
-/// textual suffix matching.
-///
-/// Delegates to [`PureModel::resolve_fqn_str`] which walks segments
-/// inline — no per-call `Vec<SmolStr>` allocation.
+/// any segment doesn't resolve.
 #[must_use]
 pub fn resolve(model: &PureModel, fqn: &Classifier) -> Option<ElementId> {
     model.resolve_fqn_str(fqn)

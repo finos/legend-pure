@@ -12,12 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Arithmetic natives fished so far: `plus`, `minus`, `times`, `divide`,
+//! Arithmetic natives: `plus`, `minus`, `times`, `divide`,
 //! `abs`, `mod` and `rem`.
-//!
-//! All are **eager** — the native forces every argument up front via
-//! `ctx.evaluate`. Helpers return `PureRuntimeError`; `?` on each call
-//! promotes that into the `PureException` the trait requires.
 
 use legend_pure_metamodel::types::ValueSpec;
 use rust_decimal::Decimal;
@@ -32,31 +28,24 @@ use crate::value::Value;
 /// Promote two numeric values to the wider common type.
 ///
 /// Lattice: `Integer < Float < Decimal`. Mixed pairs both convert to
-/// the higher level. Float ↔ Decimal goes via [`Decimal::from_f64`] —
-/// non-finite floats (NaN / ±Inf) fail to convert and the helper
-/// returns `None`, which the caller surfaces as a clear type-mismatch
-/// error rather than silent wrong arithmetic.
+/// the higher level.
 ///
 /// Returns `None` if either operand isn't a numeric variant
 /// (`Integer` / `Float` / `Decimal`).
 #[allow(clippy::cast_precision_loss)]
 fn promote_pair(a: &Value, b: &Value) -> Option<(Value, Value)> {
     match (a, b) {
-        // Same type — no promotion needed.
         (Value::Integer(_), Value::Integer(_))
         | (Value::Float(_), Value::Float(_))
         | (Value::Decimal(_), Value::Decimal(_)) => Some((a.clone(), b.clone())),
-        // Integer ↔ Float
         (Value::Integer(i), Value::Float(_)) => Some((Value::Float(*i as f64), b.clone())),
         (Value::Float(_), Value::Integer(i)) => Some((a.clone(), Value::Float(*i as f64))),
-        // Integer ↔ Decimal — exact (no precision loss).
         (Value::Integer(i), Value::Decimal(_)) => {
             Some((Value::Decimal(Decimal::from(*i)), b.clone()))
         }
         (Value::Decimal(_), Value::Integer(i)) => {
             Some((a.clone(), Value::Decimal(Decimal::from(*i))))
         }
-        // Float ↔ Decimal — Decimal wins (wider precision).
         (Value::Float(f), Value::Decimal(_)) => {
             Decimal::from_f64(*f).map(|d| (Value::Decimal(d), b.clone()))
         }
@@ -85,26 +74,23 @@ impl NativeFunction for Plus {
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
         let values = force_all(args, ctx)?;
-        // Pure's sole numeric `plus` signature is `(Number[*]):Number[1]`
-        // (plus `(Decimal[*]):Decimal[1]`). The compiler lowers `a + b`
-        // to `plus([a, b])` so the native always receives a single
-        // argument. String concatenation is a distinct native
-        // (`StringPlus`, mangled `plus_String_MANY__String_1_`) —
-        // compile-time dispatch must route String operands there; this
-        // native strictly handles numerics and errors on String input.
         expect_args("plus", &values, 1)?;
         let items: Vec<Value> = values[0].to_collection().iter().cloned().collect();
         Ok(Evaluated::new(plus_fold(items)?))
     }
 }
 
-/// Pairwise `plus` — promotes operands via [`promote_pair`] then
-/// dispatches on the (now uniform) numeric type. String concatenation
-/// has its own dedicated native (`StringPlus`, registered as
-/// `plus_String_MANY__String_1_`), so this fold never sees strings.
+/// Integer results live in `i64`; Java promotes to `BigInteger` instead.
+fn outside_i64() -> PureRuntimeError {
+    PureRuntimeError::Unsupported("Integer arithmetic outside the 64-bit range".into())
+}
+
+/// Pairwise `plus`.
 fn plus_pair(a: &Value, b: &Value) -> Result<Value, PureRuntimeError> {
     match promote_pair(a, b) {
-        Some((Value::Integer(a), Value::Integer(b))) => Ok(Value::Integer(a.wrapping_add(b))),
+        Some((Value::Integer(a), Value::Integer(b))) => {
+            a.checked_add(b).map(Value::Integer).ok_or_else(outside_i64)
+        }
         Some((Value::Float(a), Value::Float(b))) => Ok(Value::Float(a + b)),
         Some((Value::Decimal(a), Value::Decimal(b))) => Ok(Value::Decimal(a + b)),
         _ => Err(PureRuntimeError::EvaluationError(format!(
@@ -138,11 +124,6 @@ impl NativeFunction for Minus {
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
         let values = force_all(args, ctx)?;
-        // Pure's sole `minus` signature is `(Number[*]):Number[1]`. The
-        // compiler lowers `a - b` / `-x` to `minus([a, b])` / `minus([x])`
-        // so the native always receives a single argument. Normalise via
-        // `to_collection()` — this also handles the legacy direct-scalar
-        // call shape some tests still emit from `->eval(x)`.
         expect_args("minus", &values, 1)?;
         let items: Vec<Value> = values[0].to_collection().iter().cloned().collect();
         Ok(Evaluated::new(minus_fold(items)?))
@@ -153,7 +134,7 @@ impl NativeFunction for Minus {
 /// negate the payload and keep the unit tag intact.
 fn minus_unary(v: &Value) -> Result<Value, PureRuntimeError> {
     match v {
-        Value::Integer(a) => Ok(Value::Integer(-a)),
+        Value::Integer(a) => a.checked_neg().map(Value::Integer).ok_or_else(outside_i64),
         Value::Float(a) => Ok(Value::Float(-a)),
         Value::Decimal(a) => Ok(Value::Decimal(-*a)),
         Value::UnitInstance { unit_id, inner } => {
@@ -174,7 +155,9 @@ fn minus_unary(v: &Value) -> Result<Value, PureRuntimeError> {
 /// as [`plus_pair`].
 fn minus_pair(a: &Value, b: &Value) -> Result<Value, PureRuntimeError> {
     match promote_pair(a, b) {
-        Some((Value::Integer(a), Value::Integer(b))) => Ok(Value::Integer(a.wrapping_sub(b))),
+        Some((Value::Integer(a), Value::Integer(b))) => {
+            a.checked_sub(b).map(Value::Integer).ok_or_else(outside_i64)
+        }
         Some((Value::Float(a), Value::Float(b))) => Ok(Value::Float(a - b)),
         Some((Value::Decimal(a), Value::Decimal(b))) => Ok(Value::Decimal(a - b)),
         _ => Err(PureRuntimeError::EvaluationError(format!(
@@ -215,9 +198,6 @@ impl NativeFunction for Times {
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
         let values = force_all(args, ctx)?;
-        // Pure's sole `times` signature is `(Number[*]):Number[1]`. The
-        // compiler lowers `a * b` to `times([a, b])`; this native always
-        // receives a single argument.
         expect_args("times", &values, 1)?;
         let items: Vec<Value> = values[0].to_collection().iter().cloned().collect();
         Ok(Evaluated::new(times_fold(items)?))
@@ -228,7 +208,9 @@ impl NativeFunction for Times {
 /// lattice as [`plus_pair`].
 fn times_pair(a: &Value, b: &Value) -> Result<Value, PureRuntimeError> {
     match promote_pair(a, b) {
-        Some((Value::Integer(a), Value::Integer(b))) => Ok(Value::Integer(a.wrapping_mul(b))),
+        Some((Value::Integer(a), Value::Integer(b))) => {
+            a.checked_mul(b).map(Value::Integer).ok_or_else(outside_i64)
+        }
         Some((Value::Float(a), Value::Float(b))) => Ok(Value::Float(a * b)),
         Some((Value::Decimal(a), Value::Decimal(b))) => Ok(Value::Decimal(a * b)),
         _ => Err(PureRuntimeError::EvaluationError(format!(
@@ -260,10 +242,7 @@ fn times_fold(values: Vec<Value>) -> Result<Value, PureRuntimeError> {
 /// matching Java's `divide(left, right): Float`.
 ///
 /// 3-arg: Decimal/Decimal returns `Decimal` rounded to `scale`
-/// fractional digits via banker's rounding (`rust_decimal`'s
-/// `round_dp` default; matches Java `BigDecimal` `setScale(scale,
-/// HALF_EVEN)`). `testDecimalDivide` exercises this with
-/// `-3.1415d->divide(0.1d, 2) == -31.42d`.
+/// fractional digits via banker's rounding.
 #[derive(Debug)]
 pub struct Divide;
 
@@ -301,7 +280,6 @@ impl NativeFunction for Divide {
                         if b.is_zero() {
                             return Err(PureRuntimeError::DivisionByZero.into());
                         }
-                        // Pure spec says Decimal/Decimal → Float; preserve that.
                         Value::Float(
                             a.to_f64().unwrap_or(f64::NAN) / b.to_f64().unwrap_or(f64::NAN),
                         )
@@ -351,7 +329,10 @@ impl NativeFunction for Abs {
         let values = force_all(args, ctx)?;
         expect_args("abs", &values, 1)?;
         let v = match &values[0] {
-            Value::Integer(i) => Value::Integer(i.wrapping_abs()),
+            Value::Integer(i) => i
+                .checked_abs()
+                .map(Value::Integer)
+                .ok_or_else(outside_i64)?,
             Value::Float(f) => Value::Float(f.abs()),
             Value::Decimal(d) => Value::Decimal(d.abs()),
             other => return Err(PureRuntimeError::type_mismatch("Number", other).into()),
@@ -377,16 +358,12 @@ impl NativeFunction for Mod {
         if b == 0 {
             return Err(PureRuntimeError::DivisionByZero.into());
         }
-        Ok(Evaluated::new(Value::Integer(a.rem_euclid(b))))
+        let r = a.checked_rem_euclid(b).ok_or_else(outside_i64)?;
+        Ok(Evaluated::new(Value::Integer(r)))
     }
 }
 
 /// Pure `rem(Number[1], Number[1]): Number[1]` — remainder (preserves sign of dividend).
-///
-/// Promotes via `promote_pair` so mixed-type calls like `rem(7.5, 2)`
-/// or `rem(7d, 2)` work without the caller having to coerce. Empty
-/// remainder for `Decimal` uses `Decimal::checked_rem` which returns
-/// `None` only on division-by-zero (already trapped above).
 #[derive(Debug)]
 pub struct Rem;
 
@@ -405,10 +382,6 @@ impl NativeFunction for Rem {
                 values[1].type_name()
             ))
         })?;
-        // Java Pure's `Rem.execute` throws "Cannot divide <dividend> by zero"
-        // (Rem.java:?), parametric on the dividend's display value. Build the
-        // dividend representation once before promotion-loss can change its
-        // shape, then reuse for any zero-divisor branch.
         let dividend_str = crate::native::math::java_number_string(&values[0]);
         let div_zero_err = || -> PureException {
             PureRuntimeError::EvaluationError(format!("Cannot divide {dividend_str} by zero"))
@@ -419,7 +392,9 @@ impl NativeFunction for Rem {
                 if b == 0 {
                     return Err(div_zero_err());
                 }
-                Value::Integer(a % b)
+                a.checked_rem(b)
+                    .map(Value::Integer)
+                    .ok_or_else(outside_i64)?
             }
             (Value::Float(a), Value::Float(b)) => {
                 if b == 0.0 {
@@ -479,9 +454,7 @@ mod tests {
     use super::*;
     use crate::native::{MockCtx, lit_bool, lit_collection, lit_float, lit_int, lit_str};
 
-    /// Decimal-literal shim — `MockCtx` supports only bare `DecimalLiteral`
-    /// specs, so tests that need a Decimal value go through this helper
-    /// rather than fabricating an ad-hoc `ValueSpec`.
+    /// Decimal-literal shim.
     fn ld(d: Decimal) -> legend_pure_metamodel::types::ValueSpec {
         crate::native::lit_decimal(d)
     }
@@ -495,6 +468,49 @@ mod tests {
             )
             .unwrap();
         assert_eq!(r.into_value(), Value::Integer(5));
+    }
+
+    fn is_outside_i64(r: Result<Evaluated, PureException>) -> bool {
+        matches!(
+            r.map_err(|e| e.kind),
+            Err(crate::error::PureExceptionKind::ExecutionError(
+                PureRuntimeError::Unsupported(what)
+            )) if what.contains("64-bit")
+        )
+    }
+
+    #[test]
+    fn integer_overflow_is_a_typed_error_not_a_wrap() {
+        let plus = Plus.execute(
+            &[crate::native::lit_collection(vec![
+                lit_int(i64::MAX),
+                lit_int(1),
+            ])],
+            &mut MockCtx,
+        );
+        assert!(is_outside_i64(plus));
+        let negate = Minus.execute(
+            &[crate::native::lit_collection(vec![lit_int(i64::MIN)])],
+            &mut MockCtx,
+        );
+        assert!(is_outside_i64(negate));
+        let times = Times.execute(
+            &[crate::native::lit_collection(vec![
+                lit_int(i64::MAX),
+                lit_int(2),
+            ])],
+            &mut MockCtx,
+        );
+        assert!(is_outside_i64(times));
+        assert!(is_outside_i64(
+            Abs.execute(&[lit_int(i64::MIN)], &mut MockCtx)
+        ));
+        assert!(is_outside_i64(
+            Rem.execute(&[lit_int(i64::MIN), lit_int(-1)], &mut MockCtx)
+        ));
+        assert!(is_outside_i64(
+            Mod.execute(&[lit_int(i64::MIN), lit_int(-1)], &mut MockCtx)
+        ));
     }
 
     #[test]
@@ -565,8 +581,6 @@ mod tests {
 
     #[test]
     fn plus_folds_integer_collection() {
-        // `plus([1, 2, 3])` sums the collection — this is the surveyor path
-        // (`$results->map(r | $r.elapsed)->plus()`).
         let spec = lit_collection(vec![lit_int(1), lit_int(2), lit_int(3)]);
         assert_eq!(
             Plus.execute(&[spec], &mut MockCtx).unwrap().into_value(),
@@ -581,7 +595,6 @@ mod tests {
 
     #[test]
     fn promote_pair_same_type_passthrough() {
-        // Same type — returned unchanged.
         let (a, b) = promote_pair(&Value::Integer(1), &Value::Integer(2)).unwrap();
         assert_eq!(a, Value::Integer(1));
         assert_eq!(b, Value::Integer(2));
@@ -595,7 +608,6 @@ mod tests {
 
     #[test]
     fn promote_pair_int_float() {
-        // Integer ↔ Float — both end up Float.
         let (a, b) = promote_pair(&Value::Integer(3), &Value::Float(2.5)).unwrap();
         assert_eq!(a, Value::Float(3.0));
         assert_eq!(b, Value::Float(2.5));
@@ -606,7 +618,6 @@ mod tests {
 
     #[test]
     fn promote_pair_int_decimal() {
-        // Integer ↔ Decimal — Decimal wins, exact via Decimal::from(i64).
         let (a, b) = promote_pair(&Value::Integer(5), &dec("2.5")).unwrap();
         assert_eq!(a, dec("5"));
         assert_eq!(b, dec("2.5"));
@@ -617,7 +628,6 @@ mod tests {
 
     #[test]
     fn promote_pair_float_decimal() {
-        // Float ↔ Decimal — Decimal wins, via Decimal::from_f64.
         let (a, b) = promote_pair(&Value::Float(1.5), &dec("2.5")).unwrap();
         assert_eq!(a, dec("1.5"));
         assert_eq!(b, dec("2.5"));
@@ -634,18 +644,12 @@ mod tests {
 
     #[test]
     fn promote_pair_nan_float_with_decimal_returns_none() {
-        // Decimal::from_f64 rejects NaN/Inf — promote_pair surfaces that
-        // as None so the caller errors with a clear message instead of
-        // silent wrong arithmetic.
         assert!(promote_pair(&Value::Float(f64::NAN), &dec("1")).is_none());
         assert!(promote_pair(&dec("1"), &Value::Float(f64::INFINITY)).is_none());
     }
 
     #[test]
     fn plus_pair_handles_decimal_float_mix() {
-        // Phase 4 deliverable: Decimal+Float in pairwise plus no
-        // longer errors. Tests the pair helper directly because Plus's
-        // public surface takes a fold-collected Number[*] arg.
         let r = plus_pair(&Value::Float(1.5), &dec("2.5")).unwrap();
         assert_eq!(r, dec("4"));
         let r = plus_pair(&dec("2.5"), &Value::Float(1.5)).unwrap();
@@ -678,10 +682,6 @@ mod tests {
 
     #[test]
     fn wrong_arg_count_errors() {
-        // `plus` takes exactly one `Number[*]` argument. A lone Integer
-        // literal is normalised to a singleton collection and returns
-        // unchanged. An empty collection returns the identity `Integer(0)`.
-        // Zero arguments at the native-call level is an arity violation.
         assert_eq!(
             Plus.execute(&[lit_int(1)], &mut MockCtx)
                 .unwrap()
@@ -700,13 +700,11 @@ mod tests {
 
     #[test]
     fn type_mismatch_errors() {
-        // String instead of Number
         assert!(
             Plus.execute(&[lit_str("1"), lit_int(1)], &mut MockCtx)
                 .is_err()
         );
         assert!(Abs.execute(&[lit_bool(true)], &mut MockCtx).is_err());
-        // One float, one string
         assert!(
             Plus.execute(&[lit_float(1.0), lit_str("2")], &mut MockCtx)
                 .is_err()
@@ -725,7 +723,6 @@ mod tests {
 
     #[test]
     fn mod_negative_dividend() {
-        // rem_euclid: -7 mod 3 = 2 (always non-negative)
         assert_eq!(
             Mod.execute(&[lit_int(-7), lit_int(3)], &mut MockCtx)
                 .unwrap()
@@ -758,7 +755,6 @@ mod tests {
 
     #[test]
     fn rem_negative_dividend() {
-        // Rust remainder: -7 % 3 = -1 (preserves sign)
         assert_eq!(
             Rem.execute(&[lit_int(-7), lit_int(3)], &mut MockCtx)
                 .unwrap()
@@ -769,8 +765,6 @@ mod tests {
 
     #[test]
     fn rem_handles_mixed_types() {
-        // Previously errored with "rem: both arguments must be the same
-        // numeric type". Now promotes via promote_pair.
         let r = Rem
             .execute(&[lit_float(7.5), lit_int(2)], &mut MockCtx)
             .unwrap()

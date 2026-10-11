@@ -23,13 +23,6 @@ use smol_str::SmolStr;
 /// A profile declares stereotypes and tags that can be applied to
 /// elements, properties, and enum values via `<<profile.stereo>>`
 /// and `{profile.tag = 'value'}`.
-///
-/// Each declared name carries its own [`SpannedString::source_info`]
-/// so IDE goto-def can navigate from a use-site (`<<P.stereo>>`) to
-/// the declaration line. m3-bootstrap and loaded profiles
-/// use a synthetic source — see [`BOOTSTRAP_SOURCE`] / the
-/// [`bootstrap_spanned_name`] constructor. The reference index
-/// recognises that sentinel and skips emitting entries for it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Profile {
     /// Stereotype declarations, each carrying its name + source span.
@@ -44,8 +37,6 @@ pub struct Profile {
 pub const BOOTSTRAP_SOURCE: &str = "<bootstrap>";
 
 /// Build a [`SpannedString`] with the bootstrap sentinel source.
-/// Callers constructing Profiles outside the parser path use this
-/// to fill the `stereotypes` / `tags` lists with name-only entries.
 #[must_use]
 pub fn bootstrap_spanned_name(name: SmolStr) -> SpannedString {
     SpannedString {

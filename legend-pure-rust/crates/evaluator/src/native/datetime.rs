@@ -18,8 +18,6 @@
 //! `minute`, `second`) and the precision predicates (`hasDay`, `hasHour`,
 //! `hasSubsecond`, …).
 //!
-//! Each native is fished from the archive one `impl NativeFunction` at a
-//! time, registered under Java's mangled key, when a PCT row asks for it.
 //! All arithmetic and precision rules flow through `PureDate`.
 //! `DurationUnit` values arrive as `Value::EnumValue` and are read by
 //! their member name.
@@ -65,12 +63,6 @@ pub enum DurationUnit {
 /// Parse a `DurationUnit` from a Pure enum value (either typed
 /// `Value::EnumValue` reading off `.member`, or a fallback string of
 /// the form `"DurationUnit.DAYS"` / `"DAYS"`).
-///
-/// Java Pure passes the typed enum at runtime; PCT tests like
-/// testAdjustByYears do `DurationUnit.YEARS`, which lowers to a
-/// `Value::EnumValue { enum_id, member: "YEARS" }`. The `as_string`
-/// path was only hit by historical synthetic test code; it stays as a
-/// fallback so the matcher keeps tolerating both shapes.
 fn duration_unit(v: &Value) -> Result<DurationUnit, PureRuntimeError> {
     let suffix_owned;
     let suffix: &str = match v {
@@ -142,10 +134,8 @@ impl NativeFunction for MonthNumber {
 
 /// Pure `dayOfMonth(Date[1]): Integer[1]`.
 ///
-/// Throws `"Cannot get day of month for <date>"` (mirroring
-/// `legend-pure-runtime-java-engine-interpreted/.../DayOfMonth.java`)
+/// Throws `"Cannot get day of month for <date>"`
 /// when the date has no day component (year-only, year-month).
-/// `testDayOfMonthError` pins the exact text.
 #[derive(Debug)]
 pub struct DayOfMonth;
 
@@ -169,7 +159,7 @@ impl NativeFunction for DayOfMonth {
 }
 
 /// Pure `hour(DateTime[1]): Integer[1]`. Throws "Cannot get hour for
-/// `<date>`" when no time component present (`testHourError`).
+/// `<date>`" when no time component present.
 #[derive(Debug)]
 pub struct Hour;
 
@@ -192,7 +182,7 @@ impl NativeFunction for Hour {
 }
 
 /// Pure `minute(DateTime[1]): Integer[1]`. Throws "Cannot get minute
-/// for `<date>`" when no minute component (`testMinuteError`).
+/// for `<date>`" when no minute component.
 #[derive(Debug)]
 pub struct Minute;
 
@@ -215,7 +205,7 @@ impl NativeFunction for Minute {
 }
 
 /// Pure `second(DateTime[1]): Integer[1]`. Throws "Cannot get second
-/// for `<date>`" when no second component (`testSecondError`).
+/// for `<date>`" when no second component.
 #[derive(Debug)]
 pub struct Second;
 
@@ -239,12 +229,9 @@ impl NativeFunction for Second {
 
 /// Pure `datePart(Date[1]): Date[1]` — drop the time component.
 ///
-/// Per the platform comment on `datePart` (`essential/date/extract/
-/// datePart.pure:17`): "For dates that are month or year precision, the
-/// date is returned unchanged." Day-or-finer precision drops to
+/// Day-or-finer precision drops to
 /// strict-date (year+month+day, no time); year- or month-only inputs
-/// pass through. The platform tests `testDatePartYearOnly` and
-/// `testDatePartYearMonthOnly` lock this behavior.
+/// pass through.
 #[derive(Debug)]
 pub struct DatePart;
 
@@ -257,7 +244,6 @@ impl NativeFunction for DatePart {
         let values = force_all(args, ctx)?;
         expect_args("datePart", &values, 1)?;
         let d = values[0].as_date()?;
-        // Year- or month-only: pass through unchanged.
         let Some(month) = d.get_month() else {
             return Ok(Evaluated::new(Value::Date(d)));
         };
@@ -274,13 +260,7 @@ impl NativeFunction for DatePart {
 ///
 /// Returns a positive integer when `b > a`, negative when `b < a`, and
 /// 0 when they're equal. Forward intervals count Sundays in `(a, b]`;
-/// backward intervals count Sundays in `[b, a)` and negate. Matches
-/// Java Pure's `dateDiff(WEEKS)` contract — see `testDateDiffWeeks`.
-///
-/// Direction asymmetry note: the half-open intervals differ at the
-/// endpoints — forward includes the latest date, backward includes the
-/// earliest. This matches the test fixtures where Sat → Sun = 1 (Sun
-/// included) while Sun → Sat = 0 (Sun excluded going backward).
+/// backward intervals count Sundays in `[b, a)` and negate.
 fn sunday_boundaries_between(a: jiff::civil::Date, b: jiff::civil::Date, days: i64) -> i64 {
     use jiff::civil::Weekday;
     /// Days until the *next* Sunday strictly after this weekday.
@@ -308,7 +288,6 @@ fn sunday_boundaries_between(a: jiff::civil::Date, b: jiff::civil::Date, days: i
         return 0;
     }
     if days > 0 {
-        // Forward (a, b]: count Sundays strictly after a, on/before b.
         let span = days;
         let to_first = to_next_sun(a.weekday());
         if to_first > span {
@@ -317,7 +296,6 @@ fn sunday_boundaries_between(a: jiff::civil::Date, b: jiff::civil::Date, days: i
             (span - to_first) / 7 + 1
         }
     } else {
-        // Backward [b, a): count Sundays on/after b, strictly before a.
         let span = -days;
         let to_first = to_this_or_next_sun(b.weekday());
         if to_first >= span {
@@ -348,8 +326,6 @@ impl NativeFunction for DateDiff {
         let d2 = values[1].as_date()?;
         let unit = duration_unit(&values[2])?;
 
-        // Time-based units require datetime precision on both sides; date-
-        // based units (Year/Month/Week/Day) only need day precision.
         let needs_time = matches!(
             unit,
             DurationUnit::Hours
@@ -386,14 +362,6 @@ impl NativeFunction for DateDiff {
             };
             Ok(Evaluated::new(Value::Integer(v)))
         } else {
-            // Calendar-component math for date-based units. Java Pure's
-            // `dateDiff(a, b, YEARS)` returns `b.year - a.year` regardless
-            // of the day/time within each year — so `dateDiff(2015-12-31,
-            // 2016-01-01, YEARS) == 1`. jiff's `Span.years` measures
-            // *elapsed* years (the same call would yield 0). Same shape
-            // for Months: `(b.year - a.year) * 12 + (b.month - a.month)`.
-            // Days/Weeks use the calendar-day delta (Days = epoch diff;
-            // Weeks = Sunday boundaries crossed, see below).
             let a = d1.to_civil_date()?;
             let b = d2.to_civil_date()?;
             let v = match unit {
@@ -409,14 +377,6 @@ impl NativeFunction for DateDiff {
                     i64::from(span.get_days())
                 }
                 DurationUnit::Weeks => {
-                    // Java Pure semantics: count of Sunday boundaries
-                    // crossed, NOT raw `days / 7`. Forward (a < b):
-                    // # Sundays in (a, b]; Backward (a > b): negative #
-                    // Sundays in [b, a). Concretely Sat → Sun = 1 even
-                    // though it's only 1 day, because one Sunday boundary
-                    // is crossed; Sun → Sat = 0 because no Sunday is
-                    // included. Tested by testDateDiffWeeks in
-                    // essential/date/operation/dateDiff.pure.
                     let span = a
                         .until(b)
                         .map_err(|e| PureRuntimeError::EvaluationError(format!("dateDiff: {e}")))?;
@@ -470,14 +430,12 @@ impl NativeFunction for Adjust {
 
 fn has_precision_at_least(d: &PureDate, at: DatePrecision) -> bool {
     match (d.precision(), at) {
-        // Non-time-vs-non-time comparison falls back to enum Ord.
         (DatePrecision::Year, DatePrecision::Year) => true,
         (p, DatePrecision::Year) => p >= DatePrecision::Year || matches!(p, DatePrecision::Time(_)),
         (p, DatePrecision::Month) => {
             p >= DatePrecision::Month || matches!(p, DatePrecision::Time(_))
         }
         (p, DatePrecision::Day) => p >= DatePrecision::Day || matches!(p, DatePrecision::Time(_)),
-        // Time comparison: Time(a) >= Time(b) iff a >= b on the nested enum.
         (DatePrecision::Time(a), DatePrecision::Time(b)) => a >= b,
         (_, DatePrecision::Time(_)) => false,
     }
@@ -657,9 +615,8 @@ impl NativeFunction for ParseDate {
     }
 }
 
-/// Parse a Pure-flavoured ISO date string into a [`PureDate`]. Mirrors
-/// the compiler's date-literal parser so the runtime accepts every shape
-/// that compile-time `%…` literals already recognise. Returns `None`
+/// Parse a Pure-flavoured ISO date string into a [`PureDate`].
+/// Returns `None`
 /// when no recognised shape matches.
 fn parse_date_lenient(input: &str) -> Option<PureDate> {
     let s = input.strip_prefix('%').unwrap_or(input);
@@ -684,8 +641,6 @@ fn parse_date_lenient(input: &str) -> Option<PureDate> {
         };
     };
 
-    // Strip a trailing `Z` (Zulu time) and treat it as `+0000`. After
-    // that we look for a `±HHMM` offset suffix on what remains.
     let (time_part, zulu) = match time_part.strip_suffix('Z') {
         Some(rest) => (rest, true),
         None => (time_part, false),
@@ -714,8 +669,6 @@ fn parse_date_lenient(input: &str) -> Option<PureDate> {
 
     let m = month?;
     let d = day?;
-    // Build the civil datetime, then shift by `tz_offset_minutes` so
-    // the stored instant is UTC — mirrors the date-literal path.
     let civil = jiff::civil::DateTime::new(year, m, d, hour, minute, second, subsec_nanos).ok()?;
     let shifted = if let Some(offset) = tz_offset_minutes {
         civil
@@ -747,8 +700,6 @@ fn parse_date_lenient(input: &str) -> Option<PureDate> {
 }
 
 /// Find the trailing `±HHMM` offset on a time string and split it off.
-/// A small re-implementation of the compiler's timezone split, which
-/// the runtime cannot reach.
 fn split_tz_native(s: &str) -> (&str, Option<i16>) {
     for (idx, _) in s.char_indices().rev() {
         let byte = s.as_bytes()[idx];
@@ -788,11 +739,7 @@ fn i64_to_i16_arg(name: &str, n: i64) -> Result<i16, PureRuntimeError> {
 }
 
 /// Saturating i64-to-i8 cast for date components, used by
-/// [`DateConstruct`]. Out-of-range inputs always trip jiff's
-/// validation downstream — the saturation only changes what jiff
-/// receives, not what surfaces in the error message
-/// ([`translate_date_error`] reads the original `i64` from the
-/// untouched `values[]` slice).
+/// [`DateConstruct`].
 fn i64_to_i8_arg_lenient(_name: &str, n: i64) -> i8 {
     #[allow(clippy::cast_possible_truncation)]
     let clamped = n.clamp(i64::from(i8::MIN), i64::from(i8::MAX)) as i8;
@@ -814,9 +761,6 @@ fn i64_to_i8_arg_lenient(_name: &str, n: i64) -> i8 {
 ///   `Decimal::scale()` method gives the original literal's exact
 ///   trailing-digit count, so `59.999D` → `Some(3)` and `11.0D` →
 ///   `Some(1)`.
-///
-/// Mirrors Java Pure's `date(.., Number)` overload at
-/// `legend-pure-core/.../platform/pure/essential/date/creation/date.pure:21`.
 fn decompose_second(v: &Value) -> Result<(i64, i32, Option<u8>), PureException> {
     use rust_decimal::Decimal;
     use rust_decimal::prelude::ToPrimitive;
@@ -827,9 +771,6 @@ fn decompose_second(v: &Value) -> Result<(i64, i32, Option<u8>), PureException> 
             let frac = f - trunc;
             #[allow(clippy::cast_possible_truncation)]
             let nanos = (frac * 1_000_000_000.0).round() as i32;
-            // Float literals always opt in to subsecond rendering;
-            // pick digit count from trailing zero analysis (3/6/9),
-            // falling back to 1 when nanos is exactly zero.
             let digits = if nanos == 0 {
                 1
             } else if nanos % 1_000_000 == 0 {
@@ -846,17 +787,11 @@ fn decompose_second(v: &Value) -> Result<(i64, i32, Option<u8>), PureException> 
         Value::Decimal(d) => {
             let int_part = d.trunc();
             let frac_part = (*d) - int_part;
-            // scale() is the literal's trailing-digit count — exact
-            // (Decimal preserves it through arithmetic).
             #[allow(clippy::cast_possible_truncation)]
             let scale = d.scale().min(9) as u8;
             let nanos_dec = frac_part * Decimal::from(1_000_000_000_i64);
             let nanos = nanos_dec.round().to_i32().unwrap_or(0);
             let s = int_part.to_i64().unwrap_or(0);
-            // Even Decimal literals with scale=0 (e.g. `11D`) signal
-            // "Number" — but the platform 6-arg overload's expected
-            // shape includes subsecond precision when the input is
-            // not Integer. Match Float's "always subsecond" rule.
             let digits = if scale == 0 { 1 } else { scale };
             Ok((s, nanos, Some(digits)))
         }
@@ -892,7 +827,6 @@ fn translate_date_error(err: PureRuntimeError, values: &[Value]) -> PureRuntimeE
             }
         }
         "day" => {
-            // Java echoes the rejected `<year>-<month>-<day>` triple.
             if let (Some(y), Some(m), Some(d)) = (value_at(0), value_at(1), value_at(2)) {
                 return PureRuntimeError::EvaluationError(format!(
                     "Invalid day: {y:04}-{m:02}-{d}"
@@ -940,19 +874,7 @@ impl NativeFunction for DateConstruct {
             .into());
         }
 
-        // Pure-format error messages ("Invalid month: 13", "Invalid
-        // day: 2016-12-32", "Invalid hour: 24", …) are produced by
-        // translating jiff's failure post-hoc rather than
-        // pre-validating every component. Jiff already covers the
-        // full validation surface (range + calendar/leap-year-aware
-        // day check) — duplicating that logic here would mean two
-        // sources of truth for "what makes a date valid" and twice
-        // the work on the exceptional path. See `translate_date_error`.
         let year_raw = values[0].as_integer()?;
-        // i64-to-i16 narrowing happens up front since jiff::civil
-        // takes i16; the narrow can't fail in a way that surfaces a
-        // Pure-shaped message ("Invalid year: …" isn't pinned by any
-        // platform PCT test, so we leave it to PureRuntimeError).
         let year = i64_to_i16_arg("date", year_raw)?;
         if values.len() == 1 {
             return PureDate::year(year)
@@ -997,10 +919,6 @@ impl NativeFunction for DateConstruct {
                 .map_err(|e| translate_date_error(e, &values).into());
         }
 
-        // Platform signature: `date(.., second:Number[1])`. The second
-        // arg is a `Number`, not `Integer` — Float `59.999` and Decimal
-        // `59.999D` both decompose into 59 seconds + 999_000_000 nanos.
-        // `testDateFromSubSecond` exercises this path.
         let (second_int, subsec_nanos, sub_digits) = decompose_second(&values[5])?;
         let second = i64_to_i8_arg_lenient("date", second_int);
         let precision = if let Some(d) = sub_digits {
@@ -1053,9 +971,6 @@ pub fn register(registry: &mut NativeRegistry) {
 
     registry.register("parseDate_String_1__Date_1_", ParseDate);
 
-    // `date(...)` overloads — the platform declares return types that
-    // narrow with arity (3 Int → StrictDate, 4+ → DateTime, the sixth
-    // argument a Number); one implementation serves every arity.
     registry.register("date_Integer_1__Date_1_", DateConstruct);
     registry.register("date_Integer_1__Integer_1__Date_1_", DateConstruct);
     registry.register(
@@ -1081,8 +996,6 @@ mod tests {
     use super::*;
     use crate::native::{MockCtx, lit_int, lit_str};
 
-    // ---- helpers ----
-
     fn date(y: i16, m: i8, d: i8) -> Value {
         Value::Date(PureDate::strict_date(y, m, d).unwrap())
     }
@@ -1098,8 +1011,6 @@ mod tests {
             other => panic!("expected an execution error, got {other:?}"),
         }
     }
-
-    // ---- duration_unit ----
 
     #[test]
     fn duration_unit_fqn_form() {
@@ -1126,13 +1037,6 @@ mod tests {
     fn duration_unit_type_mismatch_errors() {
         assert!(duration_unit(&Value::Integer(5)).is_err());
     }
-
-    // ---- defensive checks (arity + type) ----
-    //
-    // Pure-level behaviour (happy paths, semantic errors) is driven through
-    // a real `Evaluator` in `tests/datetime.rs`. The tests below only
-    // exercise the natives' own defensive checks — `expect_args` for
-    // arity, `as_date()` type assertion — which need no evaluator.
 
     #[test]
     fn year_wrong_arg_count() {
@@ -1172,8 +1076,6 @@ mod tests {
                 .is_err()
         );
     }
-
-    // ---- parseDate ----
 
     #[test]
     fn parse_date_strict() {
@@ -1261,8 +1163,6 @@ mod tests {
             .unwrap()
         );
     }
-
-    // ---- date(...) construct ----
 
     #[test]
     fn date_construct_year() {
@@ -1431,8 +1331,6 @@ mod tests {
                 .is_err()
         );
     }
-
-    // ---- registration ----
 
     #[test]
     fn register_populates_registry() {

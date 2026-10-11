@@ -14,12 +14,6 @@
 
 //! Conversion from runtime [`PureException`] into the JNI-side payload
 //! the Java `PureRustEvaluationException` constructor consumes.
-//!
-//! Split into a pure-data `ExceptionPayload` and the JVM-only throw
-//! helper so the structure-flattening step is testable from a
-//! pure-Rust unit test (no JVM required). The throw helper lives in
-//! `lib.rs` because it needs `JNIEnv`; the pure payload-builder lives
-//! here.
 
 use legend_pure_evaluator::error::{
     ConstraintKind, PureException, PureExceptionKind, PureRuntimeError,
@@ -32,10 +26,7 @@ use legend_pure_evaluator::error::{
 /// `Option<String>` maps to a Java `null` in the constructor invocation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExceptionPayload {
-    /// Inner failure reason. Avoids the multi-line Display rendering
-    /// of `PureException` — `sourceInfo` and `callStack` carry the
-    /// rest. Keeps `Throwable.getMessage()` clean for JUnit assertions
-    /// that match on substrings.
+    /// Inner failure reason.
     pub message: String,
     /// The failure text alone, without the kind prefix: what Pure's
     /// `PureException.getInfo()` reports for the same failure.
@@ -53,9 +44,7 @@ pub struct ExceptionPayload {
     pub call_stack: Vec<String>,
     /// Constraint name (for `CONSTRAINT_VIOLATION`). `None` otherwise.
     pub constraint_id: Option<String>,
-    /// Constraint axis: `"CLASS"` / `"PRE"` / `"POST"`. Separate from
-    /// the top-level kind so the orthogonal Pure-language concept
-    /// stays addressable.
+    /// Constraint axis: `"CLASS"` / `"PRE"` / `"POST"`.
     pub constraint_kind: Option<&'static str>,
     /// `::`-joined FQN of the constraint-owning Class / Function.
     /// `None` for non-constraint kinds.
@@ -71,15 +60,12 @@ impl ExceptionPayload {
 }
 
 /// Build an [`ExceptionPayload`] from a runtime [`PureException`].
-/// Pure function — no JNI calls — so cargo unit tests can pin it.
 #[must_use]
 pub fn pure_exception_to_payload(exc: &PureException) -> ExceptionPayload {
     // The kind string is the Java `PureRustEvaluationException.Kind` enum
     // name (parsed with `Kind.valueOf`); the message starts with the
     // kind's display name because the PCT expected-failures manifest
     // matches `expectedError` by substring and has no kind field.
-    // `(prefix, info, kind)`: the message Java sees is `prefix: info`,
-    // the kind is the `enum Kind` name, the info stands alone.
     let (prefix, info, kind) = match &exc.kind {
         PureExceptionKind::ExecutionError(PureRuntimeError::FunctionNotFound(name)) => {
             ("FunctionNotFound", name.to_string(), "FUNCTION_NOT_FOUND")
@@ -251,8 +237,6 @@ mod tests {
         assert_eq!(p.constraint_id.as_deref(), Some("ageNonNeg"));
         assert_eq!(p.constraint_kind, Some("CLASS"));
         assert_eq!(p.owner_fqn.as_deref(), Some("LA_ParentWithAgeConstraint"));
-        // Backwards-compat message shape — the original Display
-        // contract that tests like `testNewWithTypeVariables` assert.
         assert!(p.message.contains("Constraint :[ageNonNeg] violated"));
         assert!(p.message.contains("LA_ParentWithAgeConstraint"));
         assert!(p.message.contains("age must be non-negative"));
@@ -277,7 +261,6 @@ mod tests {
             ],
         };
         let p = pure_exception_to_payload(&exc);
-        // Innermost frame first (matches Display's `.rev()` ordering).
         assert_eq!(p.call_stack.len(), 2);
         assert!(p.call_stack[0].starts_with("inner <- "));
         assert!(p.call_stack[1].starts_with("outer <- "));

@@ -25,13 +25,6 @@ use std::ops::Index;
 
 /// A flat, append-only container that assigns sequential indices to items.
 ///
-/// # Design
-///
-/// - Items are stored in a contiguous `Vec<T>` for cache-friendly iteration.
-/// - Allocation returns a `u32` index (not a reference), avoiding borrow issues.
-/// - Items are never removed — the arena grows during the build phase and
-///   becomes effectively read-only after freezing.
-///
 /// # Examples
 ///
 /// ```
@@ -74,7 +67,7 @@ impl<T> Arena<T> {
             "Arena overflow: exceeded u32::MAX items"
         );
         self.items.push(item);
-        #[allow(clippy::cast_possible_truncation)] // Guarded by assert above
+        #[allow(clippy::cast_possible_truncation)]
         let result = idx as u32;
         result
     }
@@ -101,7 +94,6 @@ impl<T> Arena<T> {
     /// Returns the number of items in the arena.
     #[must_use]
     pub fn len(&self) -> u32 {
-        // Safe: alloc() asserts len <= u32::MAX.
         #[allow(clippy::cast_possible_truncation)]
         let len = self.items.len() as u32;
         len
@@ -116,7 +108,6 @@ impl<T> Arena<T> {
     /// Iterates over `(index, &item)` pairs.
     pub fn iter(&self) -> impl Iterator<Item = (u32, &T)> {
         self.items.iter().enumerate().map(|(i, item)| {
-            // Safe: alloc() asserts len <= u32::MAX.
             #[allow(clippy::cast_possible_truncation)]
             let idx = i as u32;
             (idx, item)

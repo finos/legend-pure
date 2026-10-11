@@ -86,8 +86,6 @@ fn user_function_is_found_by_path_and_simple_name() {
 
 #[test]
 fn function_added_with_a_plain_name_never_dispatches() {
-    // Bypass `ModelBuilder::function` on purpose: the node keeps the
-    // simple name, which is exactly the hidden contract this guards.
     let mut b = ModelBuilder::new();
     let id = b.add(
         "my::double",
@@ -102,14 +100,11 @@ fn function_added_with_a_plain_name_never_dispatches() {
     let model = b.finish();
     assert_eq!(model.get_node(id).name, "double");
 
-    // A resolved call still runs the body: the id is enough for a user
-    // function. The contract bites natives and name-based lookups.
     let registry = NativeRegistry::standard();
     let mut eval = Evaluator::new(&model, &registry);
     let resolved = expr::call_resolved(id, "double", vec![expr::int(1)]);
     assert_eq!(eval.eval(&resolved).unwrap(), Value::Integer(1));
 
-    // A name-based call reports the mangled key it looked for.
     let by_name = expr::call("double_Integer_1__Integer_1_", vec![expr::int(1)]);
     let err = eval.eval(&by_name).unwrap_err();
     assert_eq!(

@@ -22,7 +22,8 @@ use legend_pure_metamodel::model::{Element, ElementNode, PureModel};
 use legend_pure_metamodel::source_info::SourceInfo;
 use smol_str::SmolStr;
 
-use super::NodeKey;
+use super::{LowerError, Node, NodeKey};
+use crate::heap::ObjectHandle;
 
 struct Pending {
     package: Vec<SmolStr>,
@@ -41,6 +42,9 @@ pub struct ModelExtension {
     pending: Vec<Pending>,
     by_path: HashMap<SmolStr, ElementId>,
     by_node: HashMap<NodeKey, ElementId>,
+    /// Keeps every node in `by_node` alive, so its address stays its own
+    /// for as long as the key is used.
+    pinned: Vec<ObjectHandle>,
 }
 
 impl ModelExtension {
@@ -54,6 +58,7 @@ impl ModelExtension {
             pending: Vec::new(),
             by_path: HashMap::new(),
             by_node: HashMap::new(),
+            pinned: Vec::new(),
         }
     }
 
@@ -82,7 +87,7 @@ impl ModelExtension {
     /// More than `u32::MAX` elements in one chunk.
     pub fn reserve(
         &mut self,
-        key: NodeKey,
+        node: &Node,
         path: &str,
         name: SmolStr,
         source: SourceInfo,
@@ -101,7 +106,8 @@ impl ModelExtension {
             element: None,
         });
         self.by_path.insert(SmolStr::new(path), id);
-        self.by_node.insert(key, id);
+        self.by_node.insert(node.key(), id);
+        self.pinned.push(node.handle().clone());
         id
     }
 
@@ -152,25 +158,33 @@ impl ModelExtension {
     }
 
     /// Append every element to the model, in reservation order, and
-    /// rebuild the derived indexes. Requires that the model's chunk is
-    /// still at `base_idx` and that every reserved element was filled.
+    /// rebuild the derived indexes. The model is untouched when this
+    /// fails.
     ///
-    /// # Panics
+    /// # Errors
     /// An element was reserved but never filled (a lowering that failed
     /// must drop its extension instead), or the chunk grew meanwhile.
-    pub fn apply(self, model: &mut PureModel) {
+    pub fn apply(self, model: &mut PureModel) -> Result<(), LowerError> {
         if self.pending.is_empty() {
-            return;
+            return Ok(());
         }
-        assert_eq!(
-            model.chunk_len(self.chunk_id),
-            self.base_idx,
-            "the chunk grew while this extension was being built"
-        );
-        for (i, pending) in self.pending.into_iter().enumerate() {
-            let element = pending
-                .element
-                .unwrap_or_else(|| panic!("element {} reserved but never filled", pending.name));
+        if model.chunk_len(self.chunk_id) != self.base_idx {
+            return Err(LowerError::Read(format!(
+                "chunk {} grew while this extension was being built",
+                self.chunk_id
+            )));
+        }
+        let mut filled = Vec::with_capacity(self.pending.len());
+        for mut pending in self.pending {
+            let Some(element) = pending.element.take() else {
+                return Err(LowerError::Read(format!(
+                    "element {} reserved but never filled",
+                    pending.name
+                )));
+            };
+            filled.push((pending, element));
+        }
+        for (i, (pending, element)) in filled.into_iter().enumerate() {
             let package = model.get_or_create_package(&pending.package);
             let id = model.alloc_in_chunk(
                 self.chunk_id,
@@ -192,5 +206,6 @@ impl ModelExtension {
             model.register_element(package, id);
         }
         model.rebuild_derived_indexes();
+        Ok(())
     }
 }

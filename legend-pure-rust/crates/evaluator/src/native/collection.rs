@@ -18,9 +18,6 @@
 //! iterators (`map`, `filter`, `fold`, `exists`, `forAll`, `find`,
 //! `removeDuplicates`, `sort`), `zip`, and the `Map` natives (`newMap`,
 //! `put`, `putAll`, `get`, `keys`, `values`).
-//!
-//! Each native is fished from the archive one `impl NativeFunction` at a
-//! time, registered under Java's mangled key, when a PCT row asks for it.
 
 use im_rc::Vector as PVector;
 use legend_pure_metamodel::types::ValueSpec;
@@ -155,7 +152,7 @@ impl NativeFunction for First {
         let result = match &values[0] {
             Value::Collection(v) => v.front().cloned().unwrap_or(Value::Unit),
             Value::Unit => Value::Unit,
-            other => other.clone(), // scalar is its own first
+            other => other.clone(),
         };
         Ok(Evaluated::new(result))
     }
@@ -169,14 +166,6 @@ impl NativeFunction for First {
 /// supplied each element is mapped through it before comparison;
 /// when `eql` is supplied that function decides equality
 /// (otherwise [`Value::eq`] is used).
-///
-/// The 1-arg `removeDuplicates(col)` and 2-arg
-/// `removeDuplicates(col, eql)` shapes are platform `.pure`
-/// wrappers that delegate to this 3-arg native with `[]` (empty)
-/// for the omitted parameters — see
-/// `legend-pure-core/.../removeDuplicates.pure:25-33`. The 1-arg
-/// `removeDuplicatesBy(col, key)` similarly delegates here with
-/// `[]` for `eql` (`removeDuplicatesBy.pure:18-21`).
 #[derive(Debug)]
 pub struct RemoveDuplicates;
 
@@ -187,9 +176,6 @@ impl NativeFunction for RemoveDuplicates {
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
         let values = force_all(args, ctx)?;
-        // Accept 1-arg (col only) and 3-arg (col, key, eql) variants.
-        // Platform wrappers normalise to 3-arg before dispatch, but
-        // direct callers may use the bare native.
         if values.is_empty() || values.len() == 2 || values.len() > 3 {
             return Err(PureRuntimeError::EvaluationError(format!(
                 "removeDuplicates: expected 1 or 3 argument(s), got {}",
@@ -201,8 +187,6 @@ impl NativeFunction for RemoveDuplicates {
         let key_fn: Option<Value> = values.get(1).filter(|v| !is_empty_optional(v)).cloned();
         let eql_fn: Option<Value> = values.get(2).filter(|v| !is_empty_optional(v)).cloned();
 
-        // Pre-compute the comparison key for each input element.
-        // When no `key` is provided the element itself is its key.
         let mut keys: Vec<Value> = Vec::with_capacity(source.len());
         for item in &source {
             let k = match &key_fn {
@@ -212,9 +196,6 @@ impl NativeFunction for RemoveDuplicates {
             keys.push(k);
         }
 
-        // Two-pass dedup: walk elements in order, keeping each whose
-        // key isn't equal (under `eql_fn` if provided, else
-        // `Value::eq`) to any already-kept element's key.
         let mut kept: Vec<usize> = Vec::with_capacity(source.len());
         for i in 0..source.len() {
             let mut is_dup = false;
@@ -254,16 +235,7 @@ fn is_empty_optional(v: &Value) -> bool {
 }
 
 /// Default comparator used by [`Sort`] when no user-supplied comparator
-/// is provided. Routes through [`crate::native::comparison::compare_values`]
-/// — Phase 1's total comparator that handles same-type primitives,
-/// cross-numeric promotion (Integer/Float/Decimal lattice), and
-/// cross-type pairs via stable per-variant ordinals.
-///
-/// Cross-type sorts (e.g. `['aaa', 2]`) used to error here; now they
-/// produce a deterministic ordering — Integer before String, both
-/// before Object/Collection — because the underlying comparator is
-/// total. `assertSameElements(['aaa', 2], [2, 'aaa'])` and similar
-/// mixed-type comparisons depend on this.
+/// is provided. Routes through [`crate::native::comparison::compare_values`].
 fn cmp_values(a: &Value, b: &Value) -> std::cmp::Ordering {
     crate::native::comparison::compare_values(a, b).cmp(&0)
 }
@@ -292,8 +264,6 @@ impl NativeFunction for Sort {
         let key_fn = lambda_or_none(&values[1]);
         let comp_fn = lambda_or_none(&values[2]);
 
-        // Pre-compute key(x) once per element when a key is supplied,
-        // so we don't re-invoke the lambda during every comparison.
         let items: Vec<Value> = source.iter().cloned().collect();
         let keys: Vec<Value> = if let Some(k) = key_fn {
             let mut out = Vec::with_capacity(items.len());
@@ -305,8 +275,6 @@ impl NativeFunction for Sort {
             items.clone()
         };
 
-        // Indices into items/keys — sort those so we can carry a value
-        // alongside its pre-computed key.
         let mut indices: Vec<usize> = (0..items.len()).collect();
         let mut cmp_err: Option<PureRuntimeError> = None;
 
@@ -401,24 +369,25 @@ impl NativeFunction for Range {
             }
         };
         if increment == 0 {
-            // Java's `Range.execute` throws "range step must not be 0";
-            // platform `testRangeStepError` pins the exact text.
             return Err(
                 PureRuntimeError::EvaluationError("range step must not be 0".into()).into(),
             );
         }
         let mut result = PVector::new();
         let mut i = start;
-        if increment > 0 {
-            while i < end_exclusive {
-                result.push_back(Value::Integer(i));
-                i += increment;
+        let keep_going = |i: i64| {
+            if increment > 0 {
+                i < end_exclusive
+            } else {
+                i > end_exclusive
             }
-        } else {
-            while i > end_exclusive {
-                result.push_back(Value::Integer(i));
-                i += increment;
-            }
+        };
+        while keep_going(i) {
+            result.push_back(Value::Integer(i));
+            let Some(next) = i.checked_add(increment) else {
+                break;
+            };
+            i = next;
         }
         Ok(Evaluated::new(Value::Collection(Box::new(result))))
     }
@@ -440,10 +409,6 @@ impl NativeFunction for Map {
         let source = ctx.evaluate(&args[0])?.into_value().to_collection();
         let lambda_val = ctx.evaluate(&args[1])?.into_value();
 
-        // Pure collections are flat — a lambda returning `V[*]` or `V[0..1]`
-        // contributes zero, one, or many scalar elements to the result. We
-        // flatten Collection/Unit outputs here so downstream `.property`
-        // access sees scalars, not nested collections.
         let mut results: Vec<Value> = Vec::with_capacity(source.len());
         for item in &source {
             let called = ctx.call_function(&lambda_val, std::slice::from_ref(item))?;
@@ -483,11 +448,6 @@ impl NativeFunction for Slice {
         let start = values[1].as_integer()?;
         let end = values[2].as_integer()?;
 
-        // Java Pure's `Slice.execute` throws when the low bound exceeds
-        // the high bound — `testSliceError` pins the exact text:
-        // "The low bound (X) can't be higher than the high bound (Y) in
-        // a slice operation". Empty result when start == end stays as
-        // a soft return (Java behaves the same).
         if start > end {
             return Err(PureRuntimeError::EvaluationError(format!(
                 "The low bound ({start}) can't be higher than the high bound ({end}) in a slice operation"
@@ -506,8 +466,6 @@ impl NativeFunction for Slice {
             return Ok(Evaluated::new(Value::Unit));
         }
 
-        // PVector::slice takes Range; we iterate to keep it simple & avoid
-        // accidentally moving the clone out.
         let out: Vec<Value> = source
             .iter()
             .skip(start)
@@ -571,10 +529,6 @@ impl NativeFunction for At {
         #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
         let idx = idx as usize;
         coll.get(idx).cloned().map(Evaluated::new).ok_or_else(|| {
-            // Java-parity message: assertError tests in the platform
-            // (testSimpleAssertError* in essential/tests/assertError.pure)
-            // pin this exact phrasing via String equality on the error
-            // text. Anything else fails the assertion silently.
             PureRuntimeError::EvaluationError(format!(
                 "The system is trying to get an element at offset {idx} where the collection is of size {}",
                 coll.len()
@@ -668,7 +622,6 @@ impl NativeFunction for Tail {
                     Value::from_vec(as_vec)
                 }
             }
-            // Single scalar / Unit: nothing-after-the-first → empty.
             _ => Value::Unit,
         };
         Ok(Evaluated::new(result))
@@ -690,9 +643,6 @@ impl NativeFunction for ToOne {
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
         let values = force_all(args, ctx)?;
-        // 1-arg form: cast to [1]; 2-arg form: same with custom error message.
-        // The platform declaration in toOne.pure has both shapes; the message
-        // arg is informational only — we don't currently surface it.
         if values.is_empty() || values.len() > 2 {
             return Err(PureRuntimeError::EvaluationError(format!(
                 "toOne: expected 1 or 2 argument(s), got {}",
@@ -807,8 +757,6 @@ impl NativeFunction for Init {
                     Value::from_vec(as_vec)
                 }
             }
-            // Scalar / Unit: no "last" to drop; mirror Java Pure's
-            // behaviour of returning the empty segment.
             _ => Value::Unit,
         };
         Ok(Evaluated::new(result))
@@ -869,11 +817,6 @@ fn value_to_key(v: &Value, ctx: &dyn EvalContextTrait) -> Result<ValueKey, PureE
 }
 
 /// Resolve a heap object into a `ValueKey`.
-///
-/// Walks the object's classifier to its owning Class, then looks for
-/// `<<equality.Key>>`-annotated properties. If any exist, extract their
-/// current values and build `ObjectByEqualityKeys`; otherwise fall back
-/// to identity equality via `ValueKey::Object(ObjectHandle)`.
 #[allow(clippy::result_large_err)]
 fn object_equality_key(
     id: ObjectHandle,
@@ -884,8 +827,6 @@ fn object_equality_key(
         return Ok(ValueKey::Object(id));
     };
 
-    // Canonical `<<equality.Key>>` property list (profile identity +
-    // stereotype label both checked in the shared helper).
     let equality_props = crate::native::equality::equality_key_properties(ctx.model(), class_id);
 
     if equality_props.is_empty() {
@@ -897,8 +838,6 @@ fn object_equality_key(
         let values = ctx.heap().get_property_values(&id, prop_name.as_str())?;
         let field_key = match values.iter().next() {
             Some(v) => value_to_key(v, ctx)?,
-            // Absent annotated field — represent as a sentinel string so
-            // two instances both missing the field still collide.
             None => ValueKey::String(SmolStr::new_static("")),
         };
         fields.push((prop_name, field_key));
@@ -917,15 +856,7 @@ fn key_to_value(k: &ValueKey) -> Value {
         ValueKey::Date(d) => Value::Date(*d),
         ValueKey::StrictTime(t) => Value::StrictTime(*t),
         ValueKey::Object(id) => Value::Object(id.clone()),
-        ValueKey::ObjectByEqualityKeys { .. } => {
-            // No reified heap instance corresponds uniquely to a
-            // value-keyed entry; callers that need the original object
-            // (e.g. `keys()` for introspection) see a placeholder. This
-            // matches the Java runtime's "keyed by fields, not instance"
-            // semantic — the original instance isn't recoverable from a
-            // stored key.
-            Value::Unit
-        }
+        ValueKey::ObjectByEqualityKeys { .. } => Value::Unit,
         ValueKey::EnumValue { enum_id, member } => Value::EnumValue {
             enum_id: *enum_id,
             member: member.clone(),
@@ -938,8 +869,7 @@ fn key_to_value(k: &ValueKey) -> Value {
 /// Fold a collection of `Pair` heap objects (each with `first` / `second`
 /// properties) into an `im_rc::HashMap`-backed `Value::Map`. The second
 /// overload (`newMap(pairs, p:Property[*])`) takes a property-list used
-/// as an equality key by the Java runtime — we accept and ignore it for
-/// now because Rust's `ValueKey` already drives equality from the value.
+/// as an equality key by the Java runtime; it is ignored.
 #[derive(Debug)]
 pub struct NewMap;
 
@@ -950,8 +880,6 @@ impl NativeFunction for NewMap {
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
         let values = force_all(args, ctx)?;
-        // `args[0]` is the pair collection; `args[1]` (optional) is the
-        // custom-key property list, not yet honoured.
         if values.is_empty() {
             return Err(PureRuntimeError::EvaluationError(
                 "newMap: expected at least 1 argument (the pairs)".into(),
@@ -990,10 +918,7 @@ impl NativeFunction for NewMap {
 }
 
 /// Wrap a freshly-built [`MapState`] in the `Rc<RefCell<…>>` cell that
-/// `Value::Map` carries. Keeps the construction site for new map
-/// identities centralised — every `put` / `putAll` / `replaceAll` / etc.
-/// allocates a fresh cell so Pure semantics ("`put` returns a new map")
-/// stays intact, while `getIfAbsentPutWithKey` mutates an existing cell.
+/// `Value::Map` carries.
 fn new_map_cell(
     entries: im_rc::HashMap<ValueKey, Value>,
     get_if_absent_counter: i64,
@@ -1033,21 +958,10 @@ impl NativeFunction for Get {
 /// Pure `put<U,V>(m:Map<U,V>[1], key:U[1], value:V[1]):Map<U,V>[1]`
 ///
 /// Returns a **new** map (fresh `Rc<RefCell<MapState>>`) carrying every
-/// entry of `m` plus `key -> value`. Mirrors Java Pure's `Put.java`:
+/// entry of `m` plus `key -> value`.
 ///
-/// ```java
-/// MapCoreInstance newMap = new MapCoreInstance(map, true, processorSupport);
-/// newMap.getMap().put(key, value);
-/// return newMap;
-/// ```
-///
-/// `m` is untouched — HAMT structural sharing keeps the entry copy
-/// O(log N), and the returned cell has `get_if_absent_counter` reset
-/// to zero (Java's `MapCoreInstance` copy ctor does the same when
-/// `copyData=true` would normally clone the stats — but `Put` never
-/// reads the stats so reset is the simplest correct choice; tests that
-/// observe stats use `getIfAbsentPutWithKey`, which mutates in place
-/// and never goes through `Put`).
+/// `m` is untouched, and the returned cell has `get_if_absent_counter` reset
+/// to zero.
 #[derive(Debug)]
 pub struct Put;
 
@@ -1073,8 +987,7 @@ impl NativeFunction for Put {
 ///
 /// Returns the map's keys as a collection. Ordering follows the
 /// underlying HAMT's iteration order — deterministic per run, but not
-/// insertion-ordered. Platform tests assert set-equality (`assertEquals`
-/// with a single key or sorted sets), not a specific order.
+/// insertion-ordered.
 #[derive(Debug)]
 pub struct Keys;
 
@@ -1142,7 +1055,6 @@ impl NativeFunction for PutAll {
         let Value::Map(base) = &values[0] else {
             return Err(PureRuntimeError::type_mismatch("Map", &values[0]).into());
         };
-        // Clone the base entries; HAMT structural sharing keeps this O(1).
         let mut updated: im_rc::HashMap<ValueKey, Value> = base.borrow().entries.clone();
         match &values[1] {
             Value::Map(other) => {
@@ -1170,9 +1082,7 @@ impl NativeFunction for PutAll {
     }
 }
 
-/// Read the `first` / `second` properties of a `Pair` heap object. Emits
-/// a consistent error message tagged with the caller's native name so
-/// failure traces point at the right native.
+/// Read the `first` / `second` properties of a `Pair` heap object.
 #[allow(clippy::result_large_err)]
 fn pair_first_second(
     ctx: &mut dyn EvalContextTrait,
@@ -1326,9 +1236,6 @@ pub fn register(registry: &mut NativeRegistry) {
     registry.register("keys_Map_1__U_MANY_", Keys);
     registry.register("values_Map_1__V_MANY_", Values);
     registry.register("newMap_Pair_MANY__Map_1_", NewMap);
-    // 2-arg overload: `newMap(Pair<U,V>[*], Property<U,Any|1>[*])`.
-    // The Property arg is accepted for signature parity but not yet
-    // honoured (per the `NewMap::execute` doc comment) — same impl.
     registry.register("newMap_Pair_MANY__Property_MANY__Map_1_", NewMap);
 }
 
@@ -1337,8 +1244,7 @@ mod tests {
     use super::*;
     use crate::native::{MockCtx, lit_collection, lit_int, lit_str};
 
-    /// Build a `ValueSpec` for an integer collection — mirrors the old `int_collection`
-    /// helper but produces a `ValueSpec` suitable for `MockCtx`.
+    /// Build a `ValueSpec` for an integer collection.
     fn int_spec(items: &[i64]) -> ValueSpec {
         lit_collection(items.iter().map(|&i| lit_int(i)).collect())
     }
@@ -1417,7 +1323,6 @@ mod tests {
 
     #[test]
     fn remove_duplicates_ignores_trailing_hasher_args() {
-        // The 3-arg variant passes hash + equality lambdas that we currently ignore.
         let input = int_spec(&[1, 1, 2]);
         let result = RemoveDuplicates
             .execute(
@@ -1478,13 +1383,6 @@ mod tests {
 
     #[test]
     fn sort_mixed_types_succeeds_with_total_order() {
-        // Phase 5b: Sort routes through compare_values which is total
-        // (cross-type pairs fall back to a stable per-variant ordinal),
-        // so mixed Integer + String sorts no longer error. The platform
-        // assertSameElements PCT tests rely on this — see the
-        // testSuccessAssertSameElements case. The trade-off: previous
-        // "explicit error on cross-type sort" behavior is gone, but it
-        // was a Java-divergence — Java Pure's sort tolerates mixed types.
         let input = lit_collection(vec![lit_int(1), lit_str("oops")]);
         let r = Sort
             .execute(
@@ -1496,8 +1394,6 @@ mod tests {
         let Value::Collection(c) = &r else {
             panic!("expected Collection, got {r:?}");
         };
-        // Integer's type ordinal (1) is less than String's (4), so the
-        // Integer comes first.
         assert_eq!(c.len(), 2);
         assert_eq!(c[0], Value::Integer(1));
         assert_eq!(c[1], Value::String("oops".into()));
@@ -1557,6 +1453,20 @@ mod tests {
                 .unwrap()
                 .into_value(),
             Value::Boolean(false)
+        );
+    }
+
+    #[test]
+    fn range_stops_at_the_edge_of_i64_instead_of_overflowing() {
+        assert_eq!(
+            Range
+                .execute(
+                    &[lit_int(i64::MAX - 1), lit_int(i64::MAX), lit_int(2)],
+                    &mut MockCtx
+                )
+                .unwrap()
+                .into_value(),
+            int_collection(&[i64::MAX - 1])
         );
     }
 
@@ -1650,9 +1560,6 @@ mod tests {
         );
     }
 
-    // Happy-path `find` exercises the lambda-capable context; covered by
-    // `find_returns_the_first_match_or_nothing` in `tests/collection.rs`.
-
     #[test]
     fn find_wrong_arg_count() {
         assert!(Find.execute(&[int_spec(&[1])], &mut MockCtx).is_err());
@@ -1701,7 +1608,6 @@ mod tests {
     fn wrong_arg_count_errors() {
         assert!(Size.execute(&[], &mut MockCtx).is_err());
         assert!(At.execute(&[int_spec(&[1])], &mut MockCtx).is_err());
-        // Range now accepts 1, 2, or 3 args (Phase 3) — only 0 or >3 errors.
         assert!(Range.execute(&[], &mut MockCtx).is_err());
         assert!(
             Range

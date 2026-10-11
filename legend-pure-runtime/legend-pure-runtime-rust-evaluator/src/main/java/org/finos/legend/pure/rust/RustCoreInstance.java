@@ -36,8 +36,7 @@ import java.util.Objects;
 /**
  * A Rust heap object seen from Java as a read-only {@link CoreInstance}.
  * One proxy exists per Rust handle; equality is identity. The classifier
- * is the Java graph node for the Rust classifier path, so Java-side type
- * checks and generic-type inference work unchanged.
+ * is the Java graph node for the Rust classifier path.
  */
 public final class RustCoreInstance extends AbstractCoreInstance implements Closeable
 {

@@ -112,7 +112,7 @@ pub trait TypedObject: 'static {
     }
 
     /// Names of the properties this object currently holds. The default
-    /// is empty, which keeps `copy` from cloning anything it cannot see.
+    /// is empty.
     fn property_names(&self) -> Vec<SmolStr> {
         Vec::new()
     }
@@ -363,7 +363,6 @@ impl RuntimeHeap {
     }
 
     /// Reverse lookup — find the `ElementId` whose metamodel row is `handle`.
-    /// O(1) via `RuntimeObject::bootstrap_element`.
     #[must_use]
     pub fn element_for_object(handle: &ObjectHandle) -> Option<ElementId> {
         handle.borrow().bootstrap_element()
@@ -416,7 +415,7 @@ impl RuntimeHeap {
                 continue;
             }
             let handle = Rc::new(RefCell::new(HeapEntry::Dynamic(
-                RuntimeObject::new_bootstrap("meta::pure::metamodel::type::Package", eid),
+                RuntimeObject::new_bootstrap("Package", eid),
             )));
             self.element_to_object.insert(eid, handle);
         }
@@ -462,7 +461,7 @@ impl RuntimeHeap {
     /// Get all values for a multi-valued property.
     ///
     /// # Errors
-    /// Currently never returns `Err` — signature preserved for source compatibility.
+    /// Currently never returns `Err`.
     pub fn get_property_values(
         &self,
         handle: &ObjectHandle,

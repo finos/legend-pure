@@ -23,8 +23,6 @@
 //! - [`PureException`] — the user-facing layer. Created by the evaluator,
 //!   wrapping a [`PureExceptionKind`] with source location and a Pure-level
 //!   call stack. This is what gets reported to the user.
-//!
-//! See `docs/runtime/error_location_design.md` for the full design rationale.
 
 use std::fmt;
 
@@ -85,7 +83,7 @@ pub enum PureRuntimeError {
     /// finds it, but whose implementation has not been fished yet. Distinct
     /// from [`FunctionNotFound`](Self::FunctionNotFound) (nothing registered)
     /// and from [`Unsupported`](Self::Unsupported) (a lowering or value-shape
-    /// gap) so the PCT manifests rank the three backlogs separately.
+    /// gap).
     #[error("native `{0}` is wired but not implemented yet")]
     NotImplemented(SmolStr),
 
@@ -148,8 +146,6 @@ pub enum PureExceptionKind {
     ExecutionError(PureRuntimeError),
 
     /// An assertion failure from `fail()` or `assert()`.
-    ///
-    /// Test frameworks use this to distinguish expected failures from bugs.
     AssertionFailed(String),
 
     /// A constraint violation — class invariant or function pre/post condition.
@@ -250,8 +246,6 @@ impl PureException {
     }
 
     /// Whether this exception is an assertion failure (from `fail()`/`assert()`).
-    ///
-    /// Test frameworks use this to distinguish expected failures from bugs.
     #[must_use]
     pub fn is_assertion(&self) -> bool {
         matches!(self.kind, PureExceptionKind::AssertionFailed(_))
@@ -264,30 +258,18 @@ impl PureException {
     }
 
     /// Append a stack frame and return self (builder pattern).
-    ///
-    /// Used by the evaluator's lazy call stack: each `map_err` in the
-    /// recursive `eval()` chain pushes a frame as `Err(PureException)`
-    /// propagates upward.
     #[must_use]
     pub fn with_frame(mut self, frame: StackFrame) -> Self {
-        // The first frame pushed is the innermost call site; an exception
-        // raised without an anchor (a native's error) is located there,
-        // as Java locates it at `functionExpressionCallStack.peek()`.
         if self.source.is_none() {
             self.source = Some(frame.source.clone());
         }
-        self.call_stack.push(frame);
+        self.call_stack.insert(0, frame);
         self
     }
 }
 
-// ---------------------------------------------------------------------------
-// Display — matches Java's printPureStackTrace output format
-// ---------------------------------------------------------------------------
-
 impl fmt::Display for PureException {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // Header: error kind + location
         let kind_name = match &self.kind {
             PureExceptionKind::ExecutionError(_) => "Execution error",
             PureExceptionKind::AssertionFailed(_) => "Assert failure",
@@ -302,7 +284,6 @@ impl fmt::Display for PureException {
             )?;
         }
 
-        // Message
         match &self.kind {
             PureExceptionKind::ExecutionError(e) => write!(f, "\n\"{e}\"")?,
             PureExceptionKind::AssertionFailed(msg) => write!(f, "\n\"{msg}\"")?,
@@ -331,7 +312,6 @@ impl fmt::Display for PureException {
             }
         }
 
-        // Call stack (if non-empty)
         if !self.call_stack.is_empty() {
             write!(f, "\nFull Stack:")?;
             for frame in self.call_stack.iter().rev() {
@@ -359,9 +339,7 @@ impl From<PureRuntimeError> for PureException {
     ///
     /// `PureRuntimeError::AssertionFailed` is promoted to
     /// `PureExceptionKind::AssertionFailed` rather than being wrapped as an
-    /// `ExecutionError` — the semantic kind should reflect intent (assertion
-    /// vs. runtime error), so test frameworks classifying outcomes by
-    /// `kind` correctly bucket these as FAIL instead of ERROR.
+    /// `PureExceptionKind::AssertionFailed`.
     fn from(error: PureRuntimeError) -> Self {
         let kind = match error {
             PureRuntimeError::AssertionFailed(msg) => PureExceptionKind::AssertionFailed(msg),
@@ -471,7 +449,6 @@ mod tests {
 
         let output = exc.to_string();
         assert!(output.contains("(PRE) :[nonEmpty] violated. (Function:process)"));
-        // No call stack
         assert!(!output.contains("Full Stack:"));
     }
 
@@ -502,18 +479,14 @@ mod tests {
     #[test]
     fn stack_frame_order_innermost_last() {
         let stack = test_call_stack();
-        // First pushed = outermost = index 0
         assert_eq!(stack[0].function_name, "my::package::main");
-        // Last pushed = innermost = last index
         assert_eq!(stack[1].function_name, "my::package::process");
 
-        // Display prints in reverse (innermost first, like Java)
         let exc =
             PureException::execution(PureRuntimeError::DivisionByZero, test_source(15, 8), stack);
         let output = exc.to_string();
         let stack_section = output.split("Full Stack:").nth(1).unwrap();
         let lines: Vec<&str> = stack_section.trim().lines().collect();
-        // Innermost first in display
         assert!(lines[0].contains("my::package::process"));
         assert!(lines[1].contains("my::package::main"));
     }
@@ -540,5 +513,24 @@ mod frame_tests {
                 source: outer,
             });
         assert_eq!(exc.source, Some(inner));
+    }
+
+    #[test]
+    fn frames_added_while_unwinding_keep_the_outermost_first() {
+        let exc = PureException::from(PureRuntimeError::EvaluationError("boom".into()))
+            .with_frame(StackFrame {
+                function_name: "inner".into(),
+                source: SourceInfo::new("a.pure", 5, 7, 5, 9),
+            })
+            .with_frame(StackFrame {
+                function_name: "outer".into(),
+                source: SourceInfo::new("a.pure", 1, 1, 9, 1),
+            });
+        let names: Vec<&str> = exc
+            .call_stack
+            .iter()
+            .map(|f| f.function_name.as_str())
+            .collect();
+        assert_eq!(names, ["outer", "inner"]);
     }
 }

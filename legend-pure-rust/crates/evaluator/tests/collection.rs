@@ -133,14 +133,11 @@ fn fold_threads_the_accumulator_through_the_lambda() {
     let model = model();
     let registry = NativeRegistry::standard();
     let mut eval = Evaluator::new(&model, &registry);
-    // [1, 2, 3, 4]->fold({x, y | $x + $y}, 7)
     let sum = expr::call(
         FOLD,
         vec![ints(&[1, 2, 3, 4]), plus_lambda("x", "y"), expr::int(7)],
     );
     assert_eq!(eval.eval(&sum).unwrap(), Value::Integer(17));
-    // [1, 2, 3]->fold({x, acc | $x - $acc}, 10): the lambda's parameters
-    // are (element, accumulator): 1-10 = -9, 2-(-9) = 11, 3-11 = -8.
     let ordered = expr::call(
         FOLD,
         vec![
@@ -214,7 +211,6 @@ fn zip_pairs_up_to_the_shorter_side_and_the_pairs_read_back() {
             "meta::pure::functions::collection::Pair"
         );
     }
-    // $zipped->at(1).first / .second, through property access on the heap object.
     eval.context_mut().push_scope();
     eval.context_mut().set("p", pairs[1].clone());
     assert_eq!(
@@ -225,7 +221,6 @@ fn zip_pairs_up_to_the_shorter_side_and_the_pairs_read_back() {
         eval.eval(&expr::prop(expr::var("p"), "second")).unwrap(),
         Value::String("b".into())
     );
-    // Either side empty: no pairs.
     assert!(run(&expr::call(ZIP, vec![ints(&[]), strings(&["a"])])).is_empty());
     assert!(run(&expr::call(ZIP, vec![ints(&[1]), strings(&[])])).is_empty());
 }
@@ -260,14 +255,11 @@ fn remove_duplicates_honours_the_key_and_the_equality_lambdas() {
         as_ints(&run(&expr::call(REMOVE_DUPLICATES, vec![col, key, eql])))
     };
     let none = || expr::collection(Vec::new());
-    // Default equality, first occurrence wins.
     assert_eq!(dedup(ints(&[1, 2, 1, 3, 2]), none(), none()), [1, 2, 3]);
-    // Key lambda: -1 and 1 share the key 1.
     assert_eq!(
         dedup(ints(&[1, -1, 2, -2, 3]), square_lambda(), none()),
         [1, 2, 3]
     );
-    // Equality lambda over the elements: {a, b | eq($a, $b)}.
     let eql = expr::lambda(
         vec![
             param("a", named(INTEGER_ID), Multiplicity::PureOne),
@@ -289,12 +281,10 @@ fn sort_orders_by_natural_order_key_or_comparator() {
         sort(ints(&[342, 5, 2, 171, 1]), none(), none()),
         [1, 2, 5, 171, 342]
     );
-    // Key lambda: order by the square, the elements stay themselves.
     assert_eq!(
         sort(ints(&[3, -1, -2]), square_lambda(), none()),
         [-1, -2, 3]
     );
-    // Comparator lambda: {x, y | $y - $x} sorts descending.
     let descending = expr::lambda(
         vec![
             param("x", named(INTEGER_ID), Multiplicity::PureOne),
@@ -318,7 +308,6 @@ fn size_counts_elements_of_any_multiplicity() {
     assert_eq!(size(strings(&["a", "b", "c"])), Value::Integer(3));
     assert_eq!(size(expr::int(9)), Value::Integer(1));
     assert_eq!(size(ints(&[])), Value::Integer(0));
-    // size of a zip result: heap objects count like any element.
     assert_eq!(
         size(expr::call(ZIP, vec![ints(&[1, 2]), strings(&["a", "b"])])),
         Value::Integer(2)
@@ -342,7 +331,6 @@ fn range_follows_the_sign_of_the_step_and_rejects_zero() {
 
 #[test]
 fn map_applies_the_lambda_and_flattens_the_results() {
-    // [1, 2, 3]->map(x | $x * $x)
     assert_eq!(
         as_ints(&run(&expr::call(
             MAP_M,
@@ -350,7 +338,6 @@ fn map_applies_the_lambda_and_flattens_the_results() {
         ))),
         [1, 4, 9]
     );
-    // [1, 2]->map(x | [$x, $x]): a V[*] lambda contributes every element.
     let twice = expr::lambda(
         vec![param("x", named(INTEGER_ID), Multiplicity::PureOne)],
         vec![expr::collection(vec![expr::var("x"), expr::var("x")])],
@@ -359,7 +346,6 @@ fn map_applies_the_lambda_and_flattens_the_results() {
         as_ints(&run(&expr::call(MAP_MANY, vec![ints(&[1, 2]), twice]))),
         [1, 1, 2, 2]
     );
-    // [1, 2]->map(x | []): an empty result contributes nothing.
     let nothing = expr::lambda(
         vec![param("x", named(INTEGER_ID), Multiplicity::PureOne)],
         vec![expr::collection(Vec::new())],
@@ -368,7 +354,6 @@ fn map_applies_the_lambda_and_flattens_the_results() {
         run(&expr::call(MAP_MANY, vec![ints(&[1, 2]), nothing])),
         Value::Unit
     );
-    // The [0..1] overload over an empty input.
     assert_eq!(
         run(&expr::call(MAP_ZERO_ONE, vec![ints(&[]), square_lambda()])),
         Value::Unit
@@ -424,9 +409,7 @@ fn at_indexes_from_zero_and_reports_java_text_past_the_end() {
         run(&at(strings(&["a", "b", "c"]), 1)),
         Value::String("b".into())
     );
-    // A single item is a collection of one.
     assert_eq!(run(&at(expr::string("a"), 0)), Value::String("a".into()));
-    // at over a map result, as testAtOtherScenario does.
     assert_eq!(
         run(&at(
             expr::call(MAP_M, vec![ints(&[2, 3]), square_lambda()]),
@@ -460,7 +443,6 @@ fn index_of_finds_the_first_equal_element() {
         index_of(strings(&["a", "b"]), expr::string("z")),
         Value::Integer(-1)
     );
-    // Over heap objects: the second Pair a zip made is found by identity.
     let model = model();
     let registry = NativeRegistry::standard();
     let mut eval = Evaluator::new(&model, &registry);
@@ -503,7 +485,6 @@ fn to_one_unwraps_a_singleton_and_rejects_other_sizes() {
         )),
         Value::String("x".into())
     );
-    // toOne over a find result, as testLetWithParam-style bodies do.
     assert_eq!(
         run(&expr::call(
             TO_ONE,
@@ -535,7 +516,6 @@ fn filter_keeps_the_elements_the_predicate_accepts() {
         as_ints(&run(&expr::call(FILTER, vec![ints(items), pred])))
     };
     assert_eq!(filter(&[1, 2, 3, 2], is_lambda(2)), [2, 2]);
-    // {x | !($x == 2)}
     let not_two = expr::lambda(
         vec![param("x", named(INTEGER_ID), Multiplicity::PureOne)],
         vec![expr::call(
@@ -559,7 +539,6 @@ fn concatenate_appends_the_second_collection() {
         as_ints(&concatenate(ints(&[]), ints(&[]))),
         Vec::<i64>::new()
     );
-    // Mixed element types survive side by side.
     let mixed = concatenate(ints(&[1]), strings(&["a"])).to_collection();
     assert_eq!(mixed[0], Value::Integer(1));
     assert_eq!(mixed[1], Value::String("a".into()));
@@ -648,12 +627,10 @@ fn put_returns_a_new_map_and_leaves_the_input_alone() {
     );
     let overridden = eval.eval(&put("key1", 1)).unwrap();
     assert_eq!(string_int_entries(&overridden), [("key1".to_string(), 1)]);
-    // `m` itself still holds its single original entry.
     assert_eq!(
         string_int_entries(eval.context().get("m").unwrap()),
         [("key1".to_string(), 0)]
     );
-    // A collection is not a valid key.
     let err = eval
         .eval(&expr::call(
             PUT,
@@ -674,7 +651,6 @@ fn put_all_merges_pairs_or_a_map_over_the_input() {
     eval.context_mut().push_scope();
     eval.context_mut()
         .set("m", string_int_map(&[("key1", 0), ("key2", 0)]));
-    // Pairs made by zip: ['key2', 'key3']->zip([2, 3]).
     let pairs = expr::call(ZIP, vec![strings(&["key2", "key3"]), ints(&[2, 3])]);
     let merged = eval
         .eval(&expr::call(PUT_ALL_PAIRS, vec![expr::var("m"), pairs]))
@@ -687,7 +663,6 @@ fn put_all_merges_pairs_or_a_map_over_the_input() {
             ("key3".to_string(), 3)
         ]
     );
-    // No pairs: the same entries in a new map.
     let unchanged = eval
         .eval(&expr::call(PUT_ALL_PAIRS, vec![expr::var("m"), ints(&[])]))
         .unwrap();
@@ -695,7 +670,6 @@ fn put_all_merges_pairs_or_a_map_over_the_input() {
         string_int_entries(&unchanged),
         [("key1".to_string(), 0), ("key2".to_string(), 0)]
     );
-    // The Map overload.
     eval.context_mut().set("o", string_int_map(&[("key1", 9)]));
     let from_map = eval
         .eval(&expr::call(
@@ -715,7 +689,6 @@ fn is_empty_is_true_only_for_no_elements() {
     assert_eq!(is_empty(ints(&[])), Value::Boolean(true));
     assert_eq!(is_empty(expr::int(0)), Value::Boolean(false));
     assert_eq!(is_empty(strings(&["a", "b"])), Value::Boolean(false));
-    // Over a filter that keeps nothing.
     assert_eq!(
         is_empty(expr::call(FILTER, vec![ints(&[1, 3]), is_lambda(2)])),
         Value::Boolean(true)
@@ -742,7 +715,6 @@ fn add_appends_or_inserts_at_an_offset() {
         ))),
         ["a", "c", "b"]
     );
-    // testFoldCollectionAccumulator: [1, 2, 3, 4]->fold({x, y | $y->add($x)}, [-1, 0]).
     let append = expr::lambda(
         vec![
             param("x", named(INTEGER_ID), Multiplicity::PureOne),
@@ -774,7 +746,6 @@ fn get_reads_what_put_stored() {
     let mut eval = Evaluator::new(&model, &registry);
     eval.context_mut().push_scope();
     eval.context_mut().set("m", string_int_map(&[("key1", 0)]));
-    // $m->put('key2', 2)->get('key2')
     let put = expr::call(
         PUT,
         vec![expr::var("m"), expr::string("key2"), expr::int(2)],
@@ -789,7 +760,6 @@ fn get_reads_what_put_stored() {
             .unwrap(),
         Value::Integer(0)
     );
-    // A missing key reads as nothing; the input map never saw key2.
     assert_eq!(
         eval.eval(&expr::call(GET, vec![expr::var("m"), expr::string("key2")]))
             .unwrap(),
@@ -805,7 +775,6 @@ fn keys_lists_every_key() {
     eval.context_mut().push_scope();
     eval.context_mut()
         .set("m", string_int_map(&[("b", 2), ("a", 1)]));
-    // $m->put('c', 3)->keys(), compared as a set (HAMT order).
     let put = expr::call(PUT, vec![expr::var("m"), expr::string("c"), expr::int(3)]);
     let keys = eval.eval(&expr::call(KEYS, vec![put])).unwrap();
     let mut names: Vec<String> = keys
@@ -830,7 +799,6 @@ fn values_lists_every_value() {
     eval.context_mut().push_scope();
     eval.context_mut()
         .set("m", string_int_map(&[("b", 2), ("a", 1)]));
-    // $m->put('c', 3)->values(), compared as a set (HAMT order).
     let put = expr::call(PUT, vec![expr::var("m"), expr::string("c"), expr::int(3)]);
     let mut values = as_ints(&eval.eval(&expr::call(VALUES, vec![put])).unwrap());
     values.sort_unstable();
@@ -845,14 +813,12 @@ fn values_lists_every_value() {
 
 #[test]
 fn new_map_folds_pairs_and_feeds_the_other_map_natives() {
-    // newMap(['key1', 'key2']->zip([0, 1]))
     let pairs = || expr::call(ZIP, vec![strings(&["key1", "key2"]), ints(&[0, 1])]);
     let built = run(&expr::call(NEW_MAP, vec![pairs()]));
     assert_eq!(
         string_int_entries(&built),
         [("key1".to_string(), 0), ("key2".to_string(), 1)]
     );
-    // testPut_addsEntry's shape: newMap(pairs)->put('key3', 2)->get('key3').
     let put = expr::call(
         PUT,
         vec![
@@ -865,7 +831,6 @@ fn new_map_folds_pairs_and_feeds_the_other_map_natives() {
         run(&expr::call(GET, vec![put, expr::string("key3")])),
         Value::Integer(2)
     );
-    // No pairs: an empty map; a later pair overrides an earlier key.
     assert_eq!(
         string_int_entries(&run(&expr::call(NEW_MAP, vec![ints(&[])]))),
         Vec::<(String, i64)>::new()
@@ -875,7 +840,6 @@ fn new_map_folds_pairs_and_feeds_the_other_map_natives() {
         string_int_entries(&run(&expr::call(NEW_MAP, vec![repeated]))),
         [("k".to_string(), 2)]
     );
-    // The Property-list overload takes the same path.
     assert_eq!(
         string_int_entries(&run(&expr::call(
             NEW_MAP_WITH_KEYS,

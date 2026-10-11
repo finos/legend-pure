@@ -29,6 +29,15 @@ use legend_pure_metamodel::model::PureModel;
 use legend_pure_metamodel::types::{DateValue, Multiplicity, ValueSpec};
 
 const NEW: &str = "new_Class_1__String_1__Any_MANY__T_1_";
+
+/// The platform registry plus the flat key/value spelling of `new` these
+/// tests build their instances with (the platform declares `new` over
+/// `KeyExpression` objects; the builders have none).
+fn registry() -> NativeRegistry {
+    let mut registry = NativeRegistry::standard();
+    registry.register(NEW, legend_pure_evaluator::native::lang::New);
+    registry
+}
 const TO_STRING: &str = "toString_Any_1__String_1_";
 const FORMAT: &str = "format_String_1__Any_MANY__String_1_";
 const JOIN: &str = "joinStrings_String_MANY__String_1__String_1__String_1__String_1_";
@@ -107,7 +116,7 @@ fn to_string(arg: ValueSpec) -> ValueSpec {
 /// Evaluate `spec` over `model` with the standard registry and unwrap
 /// the string it must produce.
 fn string(model: &PureModel, spec: &ValueSpec) -> String {
-    let registry = NativeRegistry::standard();
+    let registry = registry();
     let mut eval = Evaluator::new(model, &registry);
     match &eval.eval(spec).unwrap() {
         Value::String(s) => s.to_string(),
@@ -122,7 +131,7 @@ fn render(model: &PureModel, arg: ValueSpec) -> String {
 
 /// The message of the `EvaluationError` evaluating `spec` must raise.
 fn evaluation_error(model: &PureModel, spec: &ValueSpec) -> String {
-    let registry = NativeRegistry::standard();
+    let registry = registry();
     let mut eval = Evaluator::new(model, &registry);
     let err = eval.eval(spec).expect_err("evaluation must fail");
     match &err.kind {
@@ -248,7 +257,7 @@ fn starts_with_on_the_anonymous_rendering() {
             expr::string("Anonymous_"),
         ],
     );
-    let registry = NativeRegistry::standard();
+    let registry = registry();
     let mut eval = Evaluator::new(&f.model, &registry);
     assert_eq!(eval.eval(&spec).unwrap(), Value::Boolean(true));
 }

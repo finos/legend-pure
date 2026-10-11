@@ -19,16 +19,6 @@
 //!
 //! - [`NoOpHooks`] — production. Every method is `#[inline(always)]` and
 //!   compiles to nothing. Used by CLI, JNI, and batch execution.
-//! - `DebugHooks` (future, in `lsp` crate) — IDE debugging with breakpoints,
-//!   stepping, and variable inspection. Maintains a live call stack and
-//!   coordinates with the DAP server.
-//!
-//! # Design rationale
-//!
-//! Rather than using dynamic dispatch (`dyn EvalHooks`) or feature flags,
-//! we use a generic parameter so the compiler can eliminate all hook calls
-//! in production builds via monomorphization. This gives us **zero overhead**
-//! on the hot path while keeping the evaluator debugger-aware from day one.
 
 use legend_pure_metamodel::source_info::SourceInfo;
 
@@ -64,11 +54,6 @@ pub trait EvalHooks {
     /// - `true` — the evaluator calls
     ///   [`pause_with_snapshot`](EvalHooks::pause_with_snapshot) and the
     ///   hook parks the eval thread there as needed.
-    ///
-    /// The two-phase pattern keeps `Value` (which is `!Send`) on the
-    /// eval thread: the renderer runs in the evaluator, the resulting
-    /// owned-string tree is what crosses the thread boundary into
-    /// `Arc<Mutex<SessionState>>`.
     fn before_eval(
         &mut self,
         source: &SourceInfo,
@@ -76,12 +61,6 @@ pub trait EvalHooks {
     ) -> bool;
 
     /// Called by the evaluator after `before_eval` returned `true`.
-    ///
-    /// The archived workspace passed a rendered snapshot of the locals
-    /// here; the parameter is gone until a debugger is fished back. The
-    /// default implementation is a no-op so hooks that never request
-    /// pauses (those returning `false` from `before_eval`) don't need
-    /// to override.
     fn pause_with_snapshot(&mut self, _source: &SourceInfo) {}
 
     /// Called after evaluating an expression, with the result.
@@ -103,10 +82,7 @@ pub trait EvalHooks {
     /// Emit a chunk of console output — Pure-level `print` / `println`
     /// routes through here instead of writing to stdout directly.
     ///
-    /// The default implementation writes to stdout so existing callers
-    /// see no behavioural change. Debug harnesses, tests, and embedders
-    /// override this to capture output (e.g. into a buffer for
-    /// assertion, or a LSP/DAP output channel). `msg` is the already-
+    /// `msg` is the already-
     /// rendered text; the hook does not append a trailing newline — the
     /// caller (`println` vs. `print`) decides.
     fn console_output(&mut self, msg: &str) {
@@ -118,28 +94,17 @@ pub trait EvalHooks {
 
 /// No-op hooks for production execution.
 ///
-/// Every method is `#[inline(always)]` — after monomorphization with
-/// `Evaluator<NoOpHooks>`, the compiler eliminates all hook call sites.
-/// This means **zero overhead**: no function calls, no branch predictions,
-/// no icache pollution.
-///
 /// # Example
 ///
 /// ```
 /// use legend_pure_evaluator::hooks::NoOpHooks;
 ///
-/// // Production evaluator — zero hook overhead
 /// let hooks = NoOpHooks;
 /// ```
 #[derive(Debug, Default, Clone, Copy)]
 pub struct NoOpHooks;
 
 impl EvalHooks for NoOpHooks {
-    // `inline(always)` is the load-bearing piece of the zero-cost
-    // contract documented at the top of this module: every hook
-    // method must inline into the evaluator's hot path so production
-    // builds see no overhead. Returning a `bool` constant is still
-    // the trivial body clippy would otherwise inline by default.
     #[inline(always)]
     #[allow(clippy::inline_always)]
     fn before_eval(
@@ -167,13 +132,12 @@ mod tests {
     #[test]
     fn no_op_hooks_is_copy() {
         let a = NoOpHooks;
-        let _ = a; // Copy
-        let _ = a; // Still valid
+        let _ = a;
+        let _ = a;
     }
 
     #[test]
     fn no_op_hooks_is_default() {
-        // Verify Default is implemented (compile-time check)
         fn assert_default<T: Default>() {}
         assert_default::<NoOpHooks>();
     }
@@ -189,9 +153,7 @@ mod tests {
         hooks.leave_function("test::func");
     }
 
-    /// Hooks implementation that captures console output into a buffer —
-    /// demonstrates the redirect pattern embedders (CLI, LSP, tests)
-    /// will use.
+    /// Hooks implementation that captures console output into a buffer.
     #[derive(Debug, Default)]
     struct CapturingHooks {
         output: String,

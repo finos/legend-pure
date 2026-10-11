@@ -17,9 +17,6 @@
 //! Tests speak the evaluator's language: they build expression trees
 //! (`ValueSpec`) and model elements (`Element::Class`, `Element::Function`,
 //! …) directly and hand them to the evaluator. No source text, no loader.
-//! The table in Step 1 of `docs/rust-evaluator-mvp.md` maps each M3 node a
-//! Pure reader knows to the shape these builders produce; the PELT body
-//! lowering of Step 5 must satisfy the same table.
 //!
 //! Two families live here:
 //!

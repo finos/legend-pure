@@ -126,13 +126,6 @@ public final class PureRustEvaluator implements FunctionExecution, Closeable
         }
         catch (PureRustEvaluationException e)
         {
-            // The cause is the Pure exception the interpreted engine
-            // rethrows as is once it carries a source, so the Rust anchor
-            // survives. Its info is what Pure code observes (assertError
-            // compares it verbatim, the PCT manifests record it): a
-            // Pure-level failure carries the bare text the Java engine
-            // would produce, a Rust-side diagnostic keeps its kind prefix
-            // so the manifests still rank the backlog by kind.
             SourceInformation source = sourceInformationOf(e.getSourceInfo());
             e.initCause(pureCause(e, source));
             throw e;

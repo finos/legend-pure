@@ -30,15 +30,6 @@ use crate::types::{Expression, Multiplicity, Parameter, TypeExpr};
 /// `TypeParameter.contravariant` flag (the metamodel-level form) and
 /// the surface syntax `<-T>` / `<+T>` (the class-level form). Default
 /// `Invariant`.
-///
-/// Java declares `Property<U[contravariant], V>`,
-/// `Column<U[contravariant], V>`, and
-/// `NewPropertyRouteNodeFunctionDefinition<U[contravariant], V>` via
-/// the metamodel-level `^TypeParameter{contravariant: true}` syntax —
-/// `<-U>` prefix syntax is a separate path used only by `Path<-U,V|m>`
-/// in path.pure. Both forms collapse onto the same compiled
-/// `Variance` here so consumers (`bind_type_with_mode`,
-/// `is_type_compatible`) can dispatch uniformly.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum Variance {
     /// Default: invariant. `Container<Integer>` is neither sub- nor
@@ -56,34 +47,16 @@ pub enum Variance {
 }
 
 /// A single type-parameter slot on a parametric class.
-///
-/// Replaces the older parallel `type_parameters: Vec<SmolStr>` +
-/// `type_parameter_variances: Vec<Variance>` shape — the encapsulation
-/// principle is "every element that needs related data carries it"; a
-/// position-aligned sibling Vec violates that and breaks every time a
-/// consumer forgets the alignment.
-///
-/// Source-info isn't on this struct yet because the AST
-/// (`ClassDef.type_parameters: Vec<Identifier>`) discards the parser
-/// span — the parser captures it but throws it away at
-/// `parse_type_and_multiplicity_parameters`. Adding it requires a
-/// parser-level change that's tracked separately; once done, this
-/// struct is the right place to land it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TypeParameter {
     /// Declared name (e.g., `T`, `U`).
     pub name: SmolStr,
-    /// Variance flag. Defaults to `Invariant`. Populated from m3's
-    /// `^TypeParameter{contravariant: true}` instance form (used by
-    /// `Property`, `Column`,
-    /// `NewPropertyRouteNodeFunctionDefinition`) and from the surface
-    /// `<-T>` / `<+T>` prefix syntax (`Path<-U,V|m>` in path.pure).
+    /// Variance flag. Defaults to `Invariant`.
     pub variance: Variance,
 }
 
 impl TypeParameter {
-    /// Build an invariant type parameter from a name. Convenience for
-    /// the common case where no variance flag was declared.
+    /// Build an invariant type parameter from a name.
     #[must_use]
     pub fn invariant(name: SmolStr) -> Self {
         Self {
@@ -92,9 +65,7 @@ impl TypeParameter {
         }
     }
 
-    /// Build a type parameter from an explicit `(name, variance)`
-    /// pair — used by the m3 parser when it sees
-    /// `^TypeParameter{contravariant: true}`.
+    /// Build a type parameter from an explicit `(name, variance)` pair.
     #[must_use]
     pub fn new(name: SmolStr, variance: Variance) -> Self {
         Self { name, variance }
@@ -112,10 +83,7 @@ pub struct Class {
     /// variance flag — see [`TypeParameter`].
     pub type_parameters: Vec<TypeParameter>,
     /// Multiplicity parameters declared on a parametric class —
-    /// `Class Holder<T|m>` carries one parameter named `m`. Position-
-    /// aligned with use-site `TypeExpr::Named.multiplicity_arguments`
-    /// so `compute_type_arg_bindings` can map declared name → use-site
-    /// value when substituting on property access.
+    /// `Class Holder<T|m>` carries one parameter named `m`.
     pub multiplicity_parameters: Vec<SmolStr>,
     /// Type-variable VALUE parameters declared on a parametric class —
     /// `Class C(x:Integer[1]) [...]` carries one parameter named `x`.
@@ -128,13 +96,6 @@ pub struct Class {
     /// extend a parameterized type: `extends List<String>`.
     pub super_types: Vec<TypeExpr>,
     /// Declared properties only.
-    ///
-    /// After milestoning post-processing
-    /// (milestoning synthesis), this slot holds the user-declared
-    /// properties whose target is **not** milestoned, plus any synthesized
-    /// edge-point + date properties. Properties whose target *is* milestoned
-    /// are moved to [`Self::original_milestoned_properties`] and replaced by
-    /// an `nameAllVersions` edge-point property here.
     pub properties: Vec<Property>,
     /// Qualified (derived) properties.
     pub qualified_properties: Vec<QualifiedProperty>,
@@ -147,20 +108,11 @@ pub struct Class {
     /// Properties moved aside by milestoning post-processing because their
     /// target class carries a temporal stereotype. Empty for classes with no
     /// milestoned-target properties.
-    ///
-    /// Java parity: `Class._originalMilestonedProperties()`. Populated by
-    /// milestoning synthesis after Pass 2a. The replacement
-    /// edge-point + qualified properties live in [`Self::properties`] /
-    /// [`Self::qualified_properties`].
     pub original_milestoned_properties: Vec<Property>,
 }
 
 impl Class {
-    /// Materialize the type-parameter declared names. The resolver
-    /// context (`ResolutionContext::type_parameters: &[SmolStr]`) is
-    /// the main consumer — it looks names up to bind type references
-    /// like `T` to `TypeExpr::Generic(T)` and doesn't care about
-    /// variance.
+    /// Materialize the type-parameter declared names.
     #[must_use]
     pub fn type_parameter_names(&self) -> Vec<SmolStr> {
         self.type_parameters
@@ -215,18 +167,13 @@ pub struct QualifiedProperty {
     pub name: SmolStr,
     /// Source location.
     pub source_info: SourceInfo,
-    /// Parameters. Stored as `Arc<[Parameter]>` so that QP dispatch
-    /// shares the parameter list across invocations instead of
-    /// deep-cloning per call (mirrors `Function.parameters`). `Arc`
-    /// (not `Rc`) keeps `PureModel: Send + Sync` for the LSP.
+    /// Parameters.
     pub parameters: Arc<[Parameter]>,
     /// Return type.
     pub return_type: TypeExpr,
     /// Return multiplicity.
     pub return_multiplicity: Multiplicity,
-    /// Body expressions. Stored as `Arc<[Expression]>` for the same
-    /// reason as `Function.body` — eliminates the per-call deep clone
-    /// at `eval_qualified_property` and `apply_qualified_property`.
+    /// Body expressions.
     pub body: Arc<[Expression]>,
     /// Stereotypes on this qualified property.
     pub stereotypes: Vec<StereotypeRef>,

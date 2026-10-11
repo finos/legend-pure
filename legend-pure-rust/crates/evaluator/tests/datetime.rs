@@ -198,7 +198,6 @@ fn adjust_moves_a_date_by_each_calendar_unit() {
             vec![date, expr::int(n), expr::enum_value(unit, member)],
         )
     };
-    // testAdjustByDays, testAdjustByWeeks, testAdjustByMonths, testAdjustByYears
     assert_eq!(
         eval.eval(&adjust(strict(2015, 4, 15), 1, "DAYS")).unwrap(),
         strict_value(2015, 4, 16)
@@ -217,7 +216,6 @@ fn adjust_moves_a_date_by_each_calendar_unit() {
         eval.eval(&adjust(strict(2016, 2, 29), 1, "YEARS")).unwrap(),
         strict_value(2017, 2, 28)
     );
-    // testAdjustByHours
     assert_eq!(
         eval.eval(&adjust(
             second_precision(2015, 4, 15, 12, 12, 11),
@@ -241,7 +239,6 @@ fn date_diff_counts_calendar_and_clock_units() {
         ))
         .unwrap()
     };
-    // testDateDiffWeeks: Sunday boundaries crossed, not days / 7.
     for (from, to, weeks) in [
         ((2015, 7, 5), (2015, 7, 5), 0),
         ((2015, 7, 3), (2015, 7, 4), 0),
@@ -261,7 +258,6 @@ fn date_diff_counts_calendar_and_clock_units() {
             "{from:?} -> {to:?}"
         );
     }
-    // testDateDiffYears, testDateDiffMonths, testDateDiffDays
     assert_eq!(
         diff(strict(2015, 12, 31), strict(2016, 1, 1), "YEARS"),
         Value::Integer(1)
@@ -274,7 +270,6 @@ fn date_diff_counts_calendar_and_clock_units() {
         diff(strict(2015, 2, 28), strict(2015, 3, 1), "DAYS"),
         Value::Integer(1)
     );
-    // testDateDiffHours
     assert_eq!(
         diff(
             second_precision(2015, 7, 5, 10, 0, 0),
@@ -303,7 +298,6 @@ fn date_part_drops_the_time_and_keeps_partial_dates() {
     let registry = NativeRegistry::standard();
     let mut eval = Evaluator::new(&model, &registry);
     let part = |date: ValueSpec| expr::call(DATE_PART, vec![date]);
-    // testDatePart, testDatePartTrivial
     assert_eq!(
         eval.eval(&part(second_precision(2015, 4, 15, 17, 9, 21)))
             .unwrap(),
@@ -313,7 +307,6 @@ fn date_part_drops_the_time_and_keeps_partial_dates() {
         eval.eval(&part(strict(2015, 4, 15))).unwrap(),
         strict_value(2015, 4, 15)
     );
-    // testDatePartYearOnly, testDatePartYearMonthOnly
     let year_only = expr::date(DateValue::StrictDate {
         year: 1973,
         month: None,
@@ -339,14 +332,12 @@ fn day_of_month_reads_the_day_or_fails_with_the_java_message() {
     let model = ModelBuilder::new().finish();
     let registry = NativeRegistry::standard();
     let mut eval = Evaluator::new(&model, &registry);
-    // testDayOfMonth: every fixture from day precision down.
     for date in extract_ladder().into_iter().skip(1) {
         assert_eq!(
             apply(&mut eval, DAY_OF_MONTH, date).unwrap(),
             Value::Integer(15)
         );
     }
-    // testDayOfMonthError
     let err = apply(&mut eval, DAY_OF_MONTH, year_only(2017)).unwrap_err();
     assert_eq!(
         evaluation_error(&err),
@@ -359,11 +350,9 @@ fn hour_reads_the_hour_or_fails_with_the_java_message() {
     let model = ModelBuilder::new().finish();
     let registry = NativeRegistry::standard();
     let mut eval = Evaluator::new(&model, &registry);
-    // testHour: every fixture from hour precision down.
     for date in (1..=4).map(extract_fixture) {
         assert_eq!(apply(&mut eval, HOUR, date).unwrap(), Value::Integer(17));
     }
-    // testHourError
     let err = apply(&mut eval, HOUR, year_only(2017)).unwrap_err();
     assert_eq!(evaluation_error(&err), Some("Cannot get hour for 2017"));
 }
@@ -373,11 +362,9 @@ fn minute_reads_the_minute_or_fails_with_the_java_message() {
     let model = ModelBuilder::new().finish();
     let registry = NativeRegistry::standard();
     let mut eval = Evaluator::new(&model, &registry);
-    // testMinute: every fixture from minute precision down.
     for date in (2..=4).map(extract_fixture) {
         assert_eq!(apply(&mut eval, MINUTE, date).unwrap(), Value::Integer(9));
     }
-    // testMinuteError
     let err = apply(&mut eval, MINUTE, year_only(2017)).unwrap_err();
     assert_eq!(evaluation_error(&err), Some("Cannot get minute for 2017"));
 }
@@ -387,11 +374,9 @@ fn second_reads_the_second_or_fails_with_the_java_message() {
     let model = ModelBuilder::new().finish();
     let registry = NativeRegistry::standard();
     let mut eval = Evaluator::new(&model, &registry);
-    // testSecond: every fixture from second precision down.
     for date in (3..=4).map(extract_fixture) {
         assert_eq!(apply(&mut eval, SECOND, date).unwrap(), Value::Integer(21));
     }
-    // testSecondError
     let err = apply(&mut eval, SECOND, year_only(2017)).unwrap_err();
     assert_eq!(evaluation_error(&err), Some("Cannot get second for 2017"));
 }
@@ -401,7 +386,6 @@ fn month_number_reads_the_month() {
     let model = ModelBuilder::new().finish();
     let registry = NativeRegistry::standard();
     let mut eval = Evaluator::new(&model, &registry);
-    // testMonthNumber: every fixture from month precision down.
     for date in extract_ladder() {
         assert_eq!(
             apply(&mut eval, MONTH_NUMBER, date).unwrap(),
@@ -424,7 +408,6 @@ fn year_reads_the_year_at_every_precision() {
     let model = ModelBuilder::new().finish();
     let registry = NativeRegistry::standard();
     let mut eval = Evaluator::new(&model, &registry);
-    // testYear: year-only through subsecond.
     let mut dates = vec![year_only(2015)];
     dates.extend(extract_ladder());
     for date in dates {

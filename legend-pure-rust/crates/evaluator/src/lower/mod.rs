@@ -16,8 +16,7 @@
 //!
 //! The nodes come from a Java graph through the JNI bridge today and from
 //! PELT files later; both reach this module as heap objects
-//! ([`TypedObject`](crate::heap::TypedObject)), the one node interface the
-//! plan asks for. A lowering turns expression nodes
+//! ([`TypedObject`](crate::heap::TypedObject)). A lowering turns expression nodes
 //! (`SimpleFunctionExpression`, `InstanceValue`, `VariableExpression`,
 //! `LambdaFunction`, `KeyExpression`) into [`ValueSpec`]s and the elements
 //! they reference (functions, classes, enumerations) into model elements
@@ -26,7 +25,10 @@
 //!
 //! The lowering reads what the Java compiler already resolved — calls
 //! carry their target function, every expression its inferred type — and
-//! recomputes nothing. A node shape it does not know is an
+//! recomputes nothing. The one exception today is a qualified-property
+//! call, lowered by name and dispatched by name and arity at run time;
+//! carrying the resolved property is a Step 5 item. A node shape it does
+//! not know is an
 //! [`Unsupported`](LowerError::Unsupported) failure naming the classifier,
 //! which the PCT manifests then record per test.
 
@@ -130,6 +132,9 @@ pub struct Lowering<'m> {
     /// Specs already built for a node, so a node reached twice (a lambda
     /// that is both nested and captured) lowers once.
     specs: HashMap<NodeKey, ValueSpec>,
+    /// Keeps every node in `specs` alive, so its address stays its own
+    /// for as long as the key is used.
+    pinned: Vec<crate::heap::ObjectHandle>,
 }
 
 impl<'m> Lowering<'m> {
@@ -142,6 +147,7 @@ impl<'m> Lowering<'m> {
             ids: M3Ids::resolve(model),
             ext: ModelExtension::new(chunk_id, base_idx),
             specs: HashMap::new(),
+            pinned: Vec::new(),
         }
     }
 

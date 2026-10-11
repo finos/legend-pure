@@ -120,7 +120,7 @@ mod tests {
             chunk_id: 0,
             local_idx: 5,
         };
-        let b = a; // Copy
+        let b = a;
         assert_eq!(a, b);
         assert_eq!(a.to_string(), "0:5");
     }
@@ -140,7 +140,7 @@ mod tests {
         set.insert(ElementId::InstanceId {
             chunk_id: 0,
             local_idx: 0,
-        }); // duplicate
+        });
         assert_eq!(set.len(), 2);
     }
 
@@ -163,7 +163,6 @@ mod tests {
         let b = a;
         assert_eq!(a, b);
         assert_eq!(a.to_string(), "pkg:7");
-        // Package and InstanceId are distinct
         assert_ne!(
             a,
             ElementId::InstanceId {

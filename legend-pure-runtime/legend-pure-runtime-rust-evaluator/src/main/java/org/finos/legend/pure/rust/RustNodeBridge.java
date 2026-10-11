@@ -103,8 +103,6 @@ final class RustNodeBridge
         return PackageableElement.getUserPathForPackageableElement(element, "::");
     }
 
-    // ---- called from Rust: Java -> Rust ----
-
     NodeDescription describe(CoreInstance ci)
     {
         NodeDescription d = new NodeDescription();
@@ -258,9 +256,8 @@ final class RustNodeBridge
 
     /**
      * The values of a variable a lambda captured from the scope it was
-     * evaluated in. The interpreted engine hands such a lambda over as a
-     * {@code LambdaWithContext}; the values live in its variable context,
-     * not in a graph property. {@code null} when the node is not such a
+     * evaluated in.
+     * {@code null} when the node is not such a
      * lambda, empty when it holds no variable of that name.
      */
     NodeDescription[] capturedValue(long id, String name)
@@ -285,8 +282,6 @@ final class RustNodeBridge
         }
         return out;
     }
-
-    // ---- called from Rust: Rust -> Java ----
 
     CoreInstance newBoolean(boolean value)
     {

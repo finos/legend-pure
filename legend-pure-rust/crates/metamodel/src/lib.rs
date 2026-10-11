@@ -19,9 +19,6 @@
 //! `types::ExprKind`) and the M3 bootstrap (`bootstrap`), which embeds
 //! `m3.pure` at compile time and is the only Pure source this workspace
 //! depends on.
-//!
-//! The plan this crate serves is `docs/rust-evaluator-mvp.md` at the
-//! workspace root; Appendix A there records where each module came from.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]

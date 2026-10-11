@@ -108,7 +108,7 @@ impl Default for JniHandleTable {
 }
 
 /// Java-side method ids, resolved once per context.
-#[allow(missing_docs)] // one id per `RustNodeBridge` method of the same name
+#[allow(missing_docs)]
 pub struct BridgeMethods {
     pub describe: JMethodID,
     pub property_values: JMethodID,

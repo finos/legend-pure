@@ -34,7 +34,8 @@ RUSTDOCFLAGS=-Dwarnings cargo doc --workspace --no-deps
 ./scripts/check-copyright.sh
 ```
 
-CI (`.github/workflows/rust.yml` at the repository root) runs exactly these.
+CI (`.github/workflows/rust.yml` at the repository root) runs these plus
+`cargo build --workspace` and a separate doctest pass.
 
 ## PCT through the Java harness (Step 2)
 
@@ -47,7 +48,7 @@ suite prints is the progress metric.
 cargo build --workspace                                   # the cdylib the Java module loads
 cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator clean verify
-#   -> Rust_JNI essential: 303 / 327, Rust_JNI grammar: 126 / 136 (plus 15 boundary tests)
+#   -> Rust_JNI essential: 303 / 327, Rust_JNI grammar: 126 / 136 (plus 16 boundary tests)
 # after a change that moves tests: regenerate the manifests, review the diff, verify again
 JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator \
@@ -62,10 +63,10 @@ gap), then bare Pure error texts (a semantic difference). A lambda reaching
 `JniContext::start` is lowered by `crates/evaluator/src/lower/` (Phase A, model
 read-only) and run after the model grew (Phase B). Natives are fished from the
 archive one `impl NativeFunction` at a time (the natives round of 2026-10-11
-did it with four parallel agents, one module each; `tests/registry.rs` pins the
-exact key set and is regenerated from every module's `register`). Root Maven
-installs on this machine need `clean` (the PAR plugin trips on a stale
-descriptor otherwise).
+did it one module at a time on disjoint files). `tests/registry.rs` pins the
+exact key set by hand: every `register` call must have its key listed there,
+and the test fails otherwise. Root Maven installs need `clean` (the PAR
+plugin trips on a stale descriptor otherwise).
 
 ## The six rules (plan §0)
 
@@ -88,6 +89,7 @@ must return nothing.
 ## Conventions
 
 - Copyright header on every `.rs`, `.toml` and `.sh` file (the script checks).
-- `#![deny(missing_docs)]` on both crates; doc comments must not link into
+- `#![deny(missing_docs)]` on all three crates, `#![forbid(unsafe_code)]` on
+  `metamodel` and `evaluator`; doc comments must not link into
   archived modules.
 - Commit messages record every cut or deviation from the plan's extraction map.

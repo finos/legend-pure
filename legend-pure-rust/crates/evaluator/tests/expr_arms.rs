@@ -55,8 +55,6 @@ fn date_literal() {
         }))
         .unwrap();
     assert!(matches!(value, Value::Date(_)), "{value:?}");
-    // `Value::Latest` is not equal to itself under the archived `PartialEq`
-    // (every `%latest` compares unequal); assert the shape, not equality.
     assert!(matches!(
         eval.eval(&expr::date(DateValue::Latest)).unwrap(),
         Value::Latest

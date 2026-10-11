@@ -19,14 +19,6 @@
 //! and `%2024-03-15T10:30:00.123+0500` is a datetime with subseconds
 //! (stored as UTC after parsing).
 //!
-//! # Design
-//!
-//! The Java `PureDate` interface has seven concrete implementations
-//! (`Year`, `YearMonth`, `StrictDate`, `DateWithHour`, `DateWithMinute`,
-//! `DateWithSecond`, `DateWithSubsecond`). We consolidate these into a
-//! single enum with four variants, using `jiff::civil` types for
-//! `StrictDate` and `DateTime` to get native calendar arithmetic.
-//!
 //! # Timezone Handling
 //!
 //! Pure values are always stored as **UTC**. When a datetime is parsed
@@ -187,14 +179,13 @@ impl PureDate {
     #[must_use]
     pub fn from_civil_datetime(dt: jiff::civil::DateTime) -> Self {
         let precision = if dt.subsec_nanosecond() != 0 {
-            // Count significant digits in the subsecond
             let nanos = dt.subsec_nanosecond();
             let digits = if nanos % 1_000_000 == 0 {
-                3 // millisecond precision
+                3
             } else if nanos % 1_000 == 0 {
-                6 // microsecond precision
+                6
             } else {
-                9 // nanosecond precision
+                9
             };
             DatePrecision::Time(TimePrecision::Subsecond(digits))
         } else {
@@ -347,7 +338,7 @@ impl PureDate {
     /// gate on `precision >= DatePrecision::Day` themselves.
     /// # Errors
     ///
-    /// Always returns `Ok`; the `Result` is kept for API symmetry with `to_civil_datetime`.
+    /// Always returns `Ok`.
     #[allow(clippy::unnecessary_wraps)]
     pub fn to_civil_date(&self) -> Result<jiff::civil::Date, PureRuntimeError> {
         Ok(self.inner.date())
@@ -372,10 +363,6 @@ impl PureDate {
     /// # Errors
     /// Returns an error if the result overflows.
     pub fn add_years(&self, years: i64) -> Result<Self, PureRuntimeError> {
-        // jiff::Span clamps each unit to ±19998 years; large adjustments
-        // outside that range can't be expressed as a Span and would
-        // panic on construction. Surface as a clean overflow error
-        // (BigNumber tests expecting years like 800_002_016 fall here).
         let new_dt = jiff::Span::new()
             .try_years(years)
             .and_then(|sp| self.inner.checked_add(sp))
@@ -516,10 +503,7 @@ impl PureDate {
         self.add_subsecond_unit("nanoseconds", ns, jiff::Span::try_nanoseconds)
     }
 
-    /// Shared helper for sub-second arithmetic. The Pure platform tests
-    /// (testAdjustByMilliseconds, etc.) accept any time-precision input
-    /// — milliseconds added to a date with second precision still work
-    /// in Java Pure (the result simply gains sub-second precision).
+    /// Shared helper for sub-second arithmetic.
     /// We require at least second precision here; sub-second adjustments
     /// to year/month/day-only dates still error per the platform's
     /// "needs time" contract on adjust.
@@ -595,7 +579,6 @@ impl fmt::Display for PureDate {
                     TimePrecision::Subsecond(digits) => {
                         write!(f, ":{:02}:{:02}.", dt.minute(), dt.second())?;
                         let nanos = dt.subsec_nanosecond();
-                        // Format with the original number of digits
                         let s = format!("{nanos:09}");
                         let d = digits as usize;
                         write!(f, "{}+0000", &s[..d])
@@ -793,14 +776,13 @@ mod tests {
     fn add_days_across_month_boundary() {
         let d = PureDate::strict_date(2024, 1, 30).unwrap();
         let d2 = d.add_days(5).unwrap();
-        assert_eq!(d2.to_string(), "2024-02-04"); // 2024 is leap year
+        assert_eq!(d2.to_string(), "2024-02-04");
     }
 
     #[test]
     fn add_months() {
         let d = PureDate::strict_date(2024, 1, 31).unwrap();
         let d2 = d.add_months(1).unwrap();
-        // jiff handles end-of-month clamping
         assert_eq!(d2.get_month(), Some(2));
     }
 
@@ -843,7 +825,7 @@ mod tests {
     #[test]
     fn pure_date_is_copy() {
         let d = PureDate::strict_date(2024, 3, 15).unwrap();
-        let d2 = d; // Copy
+        let d2 = d;
         assert_eq!(d, d2);
     }
 

@@ -17,9 +17,7 @@
 //! `and` and `or` are the canonical **short-circuit** exemplars. They force
 //! the left operand through `ctx.evaluate`, inspect the boolean outcome,
 //! and skip the right operand entirely when the result is already decided.
-//! This matches Pure's `&&` / `||` semantics and is the new model for
-//! every native that used to opt into `defer_execution` — the native owns
-//! its own evaluation order through the activator.
+//! This matches Pure's `&&` / `||` semantics.
 
 use legend_pure_metamodel::types::ValueSpec;
 
@@ -29,10 +27,7 @@ use crate::value::Value;
 
 /// Pure `and(Boolean[1], Boolean[1]): Boolean[1]` — short-circuit.
 ///
-/// When the left operand is `false`, the right operand is never forced —
-/// so patterns like `$x->instanceOf(T) && $x->cast(@T).field == …` work:
-/// a failing cast on the RHS stays un-evaluated whenever the runtime
-/// type-check on the LHS returns `false`.
+/// When the left operand is `false`, the right operand is never forced.
 #[derive(Debug)]
 pub struct And;
 
@@ -144,13 +139,10 @@ mod tests {
 
     #[test]
     fn type_error_on_non_boolean() {
-        // Non-Boolean LHS always errors — `and`/`or` force it to decide.
         assert!(
             And.execute(&[lit_int(1), lit_bool(true)], &mut MockCtx)
                 .is_err()
         );
-        // RHS errors only when LHS forces us to evaluate it: `and(true, X)`
-        // descends into X, `or(true, X)` short-circuits and never touches X.
         assert!(
             And.execute(&[lit_bool(true), lit_str("true")], &mut MockCtx)
                 .is_err()
@@ -166,15 +158,12 @@ mod tests {
 
     #[test]
     fn short_circuit_skips_rhs() {
-        // `and(false, _)` returns false without evaluating the RHS.
-        // A type-error RHS therefore stays silent.
         assert_eq!(
             And.execute(&[lit_bool(false), lit_str("oops")], &mut MockCtx)
                 .unwrap()
                 .into_value(),
             Value::Boolean(false)
         );
-        // `or(true, _)` mirrors with true.
         assert_eq!(
             Or.execute(&[lit_bool(true), lit_str("oops")], &mut MockCtx)
                 .unwrap()

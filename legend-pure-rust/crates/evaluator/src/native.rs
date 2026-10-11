@@ -27,9 +27,7 @@
 //! - [`EvalContextTrait`] — type-erased handle to the evaluator passed to
 //!   native functions so they can force argument expressions, invoke
 //!   callables, and reach the heap.
-//! - [`Evaluated`] — the activator result; wraps [`Value`] and will grow
-//!   inferred type, span, and multiplicity metadata over time without
-//!   churning native signatures.
+//! - [`Evaluated`] — the activator result; wraps [`Value`].
 //!
 //! # Expression-activator model
 //!
@@ -40,7 +38,7 @@
 //!
 //! - Eager primitives (`plus`, `equal`) evaluate every argument up front.
 //! - Short-circuit natives (`and`, `or`, `if`) evaluate arguments on demand
-//!   and skip unused branches entirely — no more zero-param lambda wrapping.
+//!   and skip unused branches entirely.
 //! - Lambda-receiving natives (`map`, `filter`, `fold`) first evaluate the
 //!   lambda spec to a `Value::Function`, then invoke it per element via
 //!   [`EvalContextTrait::call_function`].
@@ -61,12 +59,6 @@ use crate::heap::RuntimeHeap;
 use crate::value::Value;
 
 /// The result of forcing a Pure `ValueSpec`.
-///
-/// `Evaluated` wraps a runtime [`Value`] and carves out a place for the
-/// activation metadata we plan to add over time (inferred type, source
-/// span, multiplicity, … ). Native functions never see `Value` directly
-/// on the hot path — they take and return `Evaluated`, so adding new
-/// fields later won't churn 125 signatures a second time.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Evaluated {
     value: Value,
@@ -192,12 +184,6 @@ pub trait EvalContextTrait {
     ///
     /// Returns `Ok(None)` when the receiver is not a heap object, or when
     /// no QP of that name+arity exists anywhere on the class hierarchy.
-    /// Mirrors Java Pure's `_Class.findQualifiedPropertyWithNoExplicit\
-    /// ArgsUsingGeneralization` + `executeLambdaFromNative` pair (see
-    /// `legend-pure-runtime-java-engine-interpreted/.../ToString.java:50`).
-    /// The generic `toString` native uses this to dispatch to per-class
-    /// `toString()` definitions in platform `.pure` source rather than
-    /// hardcoding classifier names in the runtime.
     ///
     /// # Errors
     /// Propagates any `PureException` raised while evaluating the QP body.
@@ -209,11 +195,7 @@ pub trait EvalContextTrait {
     ) -> Result<Option<Value>, PureException>;
 
     /// Invoke a *pre-found* qualified property on `receiver`. Pairs with
-    /// [`crate::eval::find_qp_with_generalization`] so callers that need
-    /// to inspect the QP before deciding to invoke (e.g. `pure_to_string`
-    /// gates `toString()` on a declared `String[1]` return) can do the
-    /// hierarchy walk **once** and hand the result through here without a
-    /// second lookup.
+    /// [`crate::eval::find_qp_with_generalization`].
     ///
     /// `receiver` must be a `Value::Object` whose class is the same one
     /// the `FoundQp` was located on (or one of its generalizations). The
@@ -235,10 +217,6 @@ pub trait EvalContextTrait {
     fn model(&self) -> &PureModel;
 
     /// Emit console output through the evaluator's configured sink.
-    ///
-    /// Pure's `print`/`println` natives call this instead of writing to
-    /// stdout directly, so embedders (CLI, LSP, DAP, tests) can capture
-    /// or redirect output.
     fn console_output(&mut self, msg: &str);
 }
 
@@ -258,8 +236,7 @@ pub trait NativeFunction: fmt::Debug {
     /// Execute the native against its raw `ValueSpec` arguments.
     ///
     /// The native is responsible for calling `ctx.evaluate(&arg)` on every
-    /// argument it needs. The evaluator does **not** pre-evaluate anything —
-    /// that's the point of the activator pattern.
+    /// argument it needs. The evaluator does **not** pre-evaluate anything.
     ///
     /// # Errors
     /// Return a `PureException` for any failure (argument-count mismatch,
@@ -336,10 +313,6 @@ impl NativeRegistry {
     }
 
     /// Create a registry holding every native fished so far.
-    ///
-    /// Natives are added one at a time, each when a test or a PCT failure
-    /// asks for it (rule 4 of `docs/rust-evaluator-mvp.md`); the registry
-    /// starts empty.
     #[must_use]
     pub fn standard() -> Self {
         let mut registry = Self::new();
@@ -373,9 +346,6 @@ impl fmt::Debug for NativeRegistry {
 
 /// Validate that exactly `n` arguments were provided.
 ///
-/// Generic over argument type `T` so it works for both `&[Value]` (legacy
-/// callers still in-flight) and `&[ValueSpec]` (the new native API).
-///
 /// # Errors
 /// Returns a `PureException` wrapping an `EvaluationError` if the count is wrong.
 pub fn expect_args<T>(func_name: &str, args: &[T], expected: usize) -> Result<(), PureException> {
@@ -406,12 +376,6 @@ pub fn expect_min_args<T>(func_name: &str, args: &[T], min: usize) -> Result<(),
 
 /// Force every argument spec to a concrete [`Value`].
 ///
-/// Shared by eager natives — arithmetic, comparison, collection (non-lambda),
-/// string, math, datetime, meta, and most of lang. Short-circuit natives
-/// (`and`, `or`, `if`, `assert`) and lambda-receiving natives
-/// (`map`, `filter`, `fold`, `match`) call `ctx.evaluate` on individual
-/// args themselves and do not use this helper.
-///
 /// # Errors
 /// Propagates the first `PureException` raised while forcing an argument.
 pub fn force_all(
@@ -430,13 +394,7 @@ pub fn force_all(
 /// Pure signatures that use `Function<{->T[m]}>` parameters (e.g. `if`'s
 /// branches, `assert`'s message) arrive at the native as zero-parameter
 /// `Lambda` specs: the compiler wraps the argument expression in a `|expr`
-/// closure so evaluation can be deferred. Under the new activator model the
-/// native forces the spec itself, which would normally yield the closure
-/// `Value::Function(...)`.
-///
-/// This helper detects that shape and calls the closure with no arguments to
-/// produce the branch's actual value, matching the old `defer_execution +
-/// eval_lambda(&arg, &[])` behaviour without re-introducing the flag.
+/// closure so evaluation can be deferred.
 ///
 /// # Errors
 ///
@@ -513,14 +471,14 @@ pub(crate) fn lit_int(n: i64) -> ValueSpec {
 
 /// Construct a [`ValueSpec`] wrapping a [`FloatLiteral`](ExprKind::FloatLiteral).
 #[cfg(test)]
-#[allow(dead_code)] // promoted to `builders::val` in Step 1, where the natives that use it arrive
+#[allow(dead_code)]
 pub(crate) fn lit_float(f: f64) -> ValueSpec {
     spec(ExprKind::FloatLiteral(f))
 }
 
 /// Construct a [`ValueSpec`] wrapping a [`DecimalLiteral`](ExprKind::DecimalLiteral).
 #[cfg(test)]
-#[allow(dead_code)] // promoted to `builders::val` in Step 1, where the natives that use it arrive
+#[allow(dead_code)]
 pub(crate) fn lit_decimal(d: rust_decimal::Decimal) -> ValueSpec {
     spec(ExprKind::DecimalLiteral(d))
 }
@@ -615,9 +573,6 @@ impl EvalContextTrait for MockCtx {
         _name: &str,
         _args: &[Value],
     ) -> Result<Option<Value>, PureException> {
-        // No model in MockCtx — there can be no class to host a QP, so
-        // the structural answer is "no such QP". Real-evaluator-backed
-        // tests live in eval_tests.rs and exercise the full dispatch.
         Ok(None)
     }
     fn invoke_qualified_property_found(
@@ -626,12 +581,6 @@ impl EvalContextTrait for MockCtx {
         _found: &crate::eval::FoundQp,
         _args: &[Value],
     ) -> Result<Value, PureException> {
-        // The companion lookup-and-invoke method returns `None`, so no
-        // `FoundQp` is ever produced inside a MockCtx-only test. If a
-        // caller manages to fabricate one (e.g. by calling the
-        // free-function `find_qp_with_generalization` with a model that
-        // came from elsewhere), there's still no evaluator behind this
-        // mock to run the body — fail loudly.
         unreachable!(
             "MockCtx::invoke_qualified_property_found should never be called in simple native tests; \
              move this test to eval_tests.rs"
@@ -640,10 +589,7 @@ impl EvalContextTrait for MockCtx {
     fn model(&self) -> &PureModel {
         unreachable!("MockCtx::model should never be called in simple native tests")
     }
-    fn console_output(&mut self, _msg: &str) {
-        // Silent sink — unit tests for side-effect-free natives don't observe
-        // console output, and routing to stdout would pollute cargo-test output.
-    }
+    fn console_output(&mut self, _msg: &str) {}
 }
 
 #[cfg(test)]

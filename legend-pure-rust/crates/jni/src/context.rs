@@ -29,12 +29,10 @@ use smol_str::SmolStr;
 use crate::bridge::{BridgeShared, JniHandleTable};
 use crate::java_node::JavaNode;
 
-/// Classifier of a `.par` native-function node: the only Java function
-/// shape that is callable before any lowering exists.
+/// Classifier of a `.par` native-function node.
 const NATIVE_FUNCTION: &str = "meta::pure::metamodel::function::NativeFunction";
 
-/// Classifier of a Java lambda: lowering it through the bridge is Step 3,
-/// so until then it is refused as unsupported rather than "not found".
+/// Classifier of a Java lambda.
 const LAMBDA_FUNCTION: &str = legend_pure_evaluator::m3_paths::LAMBDA_FUNCTION;
 
 fn ffi_error(message: String) -> PureException {
@@ -55,6 +53,9 @@ pub struct JniContext {
     pub shared: Rc<BridgeShared>,
     /// The chunk the lowering appends to, once the model first grew.
     bridge_chunk: Option<u16>,
+    /// Set once a panic unwound through an entry point: the evaluator's
+    /// state is unknown from then on and every call is refused.
+    pub poisoned: bool,
 }
 
 impl JniContext {
@@ -87,6 +88,7 @@ impl JniContext {
             evaluator: evaluator_ptr,
             shared,
             bridge_chunk: None,
+            poisoned: false,
         }
     }
 
@@ -95,11 +97,6 @@ impl JniContext {
     }
 
     /// Run a function with already-crossed arguments, one scope per call.
-    ///
-    /// A model element runs through `apply_callable`; a Java `NativeFunction`
-    /// node whose name is a registered key runs through `call_native`; a Java
-    /// `LambdaFunction` is `Unsupported` until the bridge can lower it;
-    /// anything else is `FunctionNotFound` with the node's user path.
     ///
     /// # Errors
     /// Whatever the evaluator raises, or a failure recorded while a Java
@@ -134,11 +131,8 @@ impl JniContext {
         result
     }
 
-    /// Phase A: lower the lambda and everything it references, reading
-    /// the model only. Phase B: if the lowering added elements, drop the
-    /// evaluator (the one `&PureModel` borrow besides the bridge's), apply
-    /// the extension, and build a fresh evaluator over the grown model.
-    /// Then run the closure in its own scope.
+    /// Lower the lambda and everything it references, then run the
+    /// closure in its own scope.
     fn lower_and_run(&mut self, function: &Value) -> Result<Value, PureException> {
         let result = self.lower_and_run_inner(function);
         // Whether the lowering or the run failed, the nodes this execution
@@ -169,10 +163,13 @@ impl JniContext {
                 // Every borrow of the model is gone: the lowering was
                 // consumed above and the evaluator is dropped here.
                 unsafe { drop(Box::from_raw(self.evaluator)) };
-                self.bridge_chunk = Some(extension.chunk_id());
-                extension.apply(unsafe { &mut *self.model });
+                self.evaluator = std::ptr::null_mut();
+                let chunk_id = extension.chunk_id();
+                let applied = extension.apply(unsafe { &mut *self.model });
                 let evaluator = Evaluator::new(unsafe { &*self.model }, unsafe { &*self.registry });
                 self.evaluator = Box::into_raw(Box::new(evaluator)).cast::<Evaluator<'static>>();
+                applied?;
+                self.bridge_chunk = Some(chunk_id);
             }
             closure
         };
@@ -197,8 +194,7 @@ impl JniContext {
     }
 
     /// Every value of a property of a Rust object held for Java; empty when
-    /// the property is unset (re-wrapping reads optional slots on every
-    /// value, so an absent property is not an error).
+    /// the property is unset.
     ///
     /// # Errors
     /// Stale handle.
@@ -300,7 +296,9 @@ fn java_function(handle: &ObjectHandle) -> Option<(SmolStr, SmolStr, SmolStr)> {
 impl Drop for JniContext {
     fn drop(&mut self) {
         unsafe {
-            drop(Box::from_raw(self.evaluator));
+            if !self.evaluator.is_null() {
+                drop(Box::from_raw(self.evaluator));
+            }
             drop(Box::from_raw(self.registry));
             drop(Box::from_raw(self.model));
         }

@@ -297,6 +297,7 @@ flowchart TD
 |-------|---------|
 | `legend-pure-metamodel` | Element tables (`PureModel`, `Element`), expression tree (`ValueSpec`, `ExprKind`), M3 bootstrap (embeds `m3.pure`) |
 | `legend-pure-evaluator` | Tree-walking evaluator: values, heap, variable context, dispatch, native registry (fished one native at a time) |
+| `legend-pure-jni` (cdylib `libpure_rust_jni`) | JNI boundary behind `org.finos.legend.pure.rust.PureRustEvaluator`; `CoreInstance` is the only value currency both ways |
 
 The earlier Rust workspace (parser, compiler, LSP, DSL crates, CLI) is frozen at tag
 `archive/pre-evaluator-extract-2026-10`.

@@ -99,15 +99,11 @@ impl Lowering<'_> {
             .name()
             .ok_or_else(|| Self::read_error(node, "missing name"))?;
         let is_native = self.is(node, self.ids.native_function);
-        let id = self
-            .ext
-            .reserve(node.key(), &path, mangled.clone(), node.span());
+        let id = self.ext.reserve(node, &path, mangled.clone(), node.span());
         let function_name = node
             .string("functionName")
             .unwrap_or_else(|| SmolStr::new(mangled.split('_').next().unwrap_or(mangled.as_str())));
         let (parameters, return_type, return_multiplicity) = self.function_signature(node)?;
-        // The id is reserved, so a body that calls this function (directly
-        // or through a sibling) resolves to it while it is being lowered.
         let mut body: Vec<legend_pure_metamodel::types::ValueSpec> = Vec::new();
         if !is_native {
             for e in node.nodes("expressionSequence") {
@@ -133,8 +129,7 @@ impl Lowering<'_> {
     /// Parameters, return type and return multiplicity from the function
     /// type a `FunctionDefinition` / `LambdaFunction` carries at
     /// `classifierGenericType.typeArguments[0].rawType`. A signature the
-    /// node does not carry (some natives) is empty with a `T[*]` return:
-    /// dispatch needs only the node name.
+    /// node does not carry (some natives) is empty with a `T[*]` return.
     pub(crate) fn function_signature(
         &mut self,
         node: &Node,
@@ -180,8 +175,6 @@ impl Lowering<'_> {
     /// parameters, supertypes, properties (with lowered default values),
     /// qualified properties (bodies lowered; the leading `this` parameter
     /// of the M3 function type is the receiver, bound by the evaluator).
-    /// Constraints are not lowered yet: a construction that should have
-    /// failed a constraint passes, which a PCT test then reports.
     ///
     /// # Errors
     /// The node has no path, or a member cannot be lowered.
@@ -195,7 +188,7 @@ impl Lowering<'_> {
         let name = node
             .name()
             .ok_or_else(|| Self::read_error(node, "missing name"))?;
-        let id = self.ext.reserve(node.key(), &path, name, node.span());
+        let id = self.ext.reserve(node, &path, name, node.span());
         let type_parameters = node
             .nodes("typeParameters")
             .iter()
@@ -252,8 +245,6 @@ impl Lowering<'_> {
             Some(m) => self.lower_multiplicity(&m)?,
             None => Multiplicity::ZeroOrMany,
         };
-        // `defaultValue` is a `DefaultValue` node holding a zero-argument
-        // function definition whose body is the value.
         let default_value = match p.node("defaultValue") {
             Some(dv) => {
                 let body = dv
@@ -317,7 +308,7 @@ impl Lowering<'_> {
         let name = node
             .name()
             .ok_or_else(|| Self::read_error(node, "missing name"))?;
-        let id = self.ext.reserve(node.key(), &path, name, node.span());
+        let id = self.ext.reserve(node, &path, name, node.span());
         let values = node
             .nodes("values")
             .iter()

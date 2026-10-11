@@ -16,25 +16,15 @@
 //!
 //! [`TypeExpr`] is the Rust equivalent of Java's `GenericType`. Every property
 //! type, parameter type, and return type in the compiled model is a `TypeExpr`.
-//!
-//! See `DESIGN.md` §6 for full rationale.
 
 use crate::source_info::SourceInfo;
 use smol_str::SmolStr;
 
 use crate::ids::ElementId;
 
-// ---------------------------------------------------------------------------
-// TypeExpr — the Rust equivalent of Java's GenericType
-// ---------------------------------------------------------------------------
-
 /// A resolved or partially-resolved type expression in the Pure model.
 ///
-/// This is the equivalent of Java's `GenericType`. In Java you almost never
-/// reference a `Type` directly — you wrap it in a `GenericType` that carries
-/// type arguments, multiplicity arguments, and type parameter bindings.
-///
-/// `TypeExpr` plays the same role: it's the currency of the Pure type system.
+/// This is the equivalent of Java's `GenericType`.
 ///
 /// # Variants
 ///
@@ -63,24 +53,14 @@ pub enum TypeExpr {
         element: ElementId,
         /// Source range covering the named-element identifier in the
         /// surface text (`String`, `Person`, `meta::pure::Foo`).
-        /// Populated by the resolver when the type expression came
-        /// through the parser. `None` for loaded types,
+        /// `None` for loaded types,
         /// m3-bootstrap types, and synthetically constructed `Named`
-        /// variants. Used by IDE goto-def to underline + click a
-        /// type reference at any position it appears (`extends`,
-        /// parameter type, return type, property type, generic
-        /// argument, …).
+        /// variants.
         source_info: Option<SourceInfo>,
         /// Generic type arguments: `<String, Integer>`.
         type_arguments: Vec<TypeExpr>,
         /// Generic multiplicity arguments: the `*` in `Holder<String|*>`.
         /// Position-aligned with the class's `multiplicity_parameters`.
-        /// Required so class-level mult-vars (`m` in
-        /// `Holder<T|m> { items: T[m] }`) flow through property access:
-        /// without this field, `compute_type_arg_bindings` could only
-        /// substitute `T → String` and `items` would type as
-        /// `String[Variable("m")]`, which `is_multiplicity_compatible`
-        /// then accepted permissively against any declared site.
         multiplicity_arguments: Vec<Multiplicity>,
         /// Compile-time value arguments: `(255, 'ok')`.
         value_arguments: Vec<ConstValue>,
@@ -98,11 +78,7 @@ pub enum TypeExpr {
     },
     /// Structural relation type — an anonymous column bag.
     ///
-    /// Carries the per-column triple `(name, type_expr, multiplicity)`
-    /// inline so callers (overload narrowing, type-checking, deactivate/
-    /// reactivate reflection) can read column metadata directly from
-    /// the type without consulting an external interner. Mirrors what
-    /// Java's `RelationType._columns()` exposes.
+    /// Carries the per-column triple `(name, type_expr, multiplicity)`.
     ///
     /// Not an Element — structural type only. Two `Relation`s with the
     /// same column shape (name, type, multiplicity, in declaration
@@ -113,12 +89,8 @@ pub enum TypeExpr {
     /// A binary relation type-algebra operation, mirroring Java's
     /// `GenericTypeOperation`. Covers `T + V` (column union), `T - V`
     /// (column difference), `T ⊆ V` (subset constraint), and the
-    /// `Z = (?:K)⊆T` column-binding equality. Built by the resolver from
-    /// the parser's `algebra_ops`/`subset_bound`/`equal_binding` fields,
-    /// then evaluated against concrete relation types in
-    /// `substitute_type_with_mults` (Union appends columns, Difference
-    /// removes by name; Subset/Equal drive `(?:K)` binding and pass
-    /// through once binding is done). Left-associative: `T - Z + V`
+    /// `Z = (?:K)⊆T` column-binding equality.
+    /// Left-associative: `T - Z + V`
     /// nests as `Union { left: Difference { left: T, right: Z }, right: V }`.
     GenericTypeOperation {
         /// Which relation-algebra operation this node performs.
@@ -136,32 +108,7 @@ pub enum TypeExpr {
     ///
     /// Distinct from `Generic` (which stands for an in-scope, bound type
     /// variable) and from `Named { element: Any }` (which is what the
-    /// user wrote when they declared `:Any[1]` explicitly). Treating
-    /// these as `Any` would conflate "user said Any" with "compiler gave
-    /// up"; reflective walks of the lambda's parameters
-    /// (`deactivate`/`reactivate`, `genericType.rawType`) would
-    /// mis-report the source. Tooling (LSP hover, formatter, future
-    /// "infer-from-first-use" modes) can render this distinctly.
-    ///
-    /// **Compile-time only.** `lower_lambda_parameters` always pushes a
-    /// `CannotInferLambdaParameterTypes` diagnostic for every lambda
-    /// parameter that lands on this variant, so a clean compile cannot
-    /// produce an IR with `Unresolved`. Downstream type-flow sites
-    /// nonetheless handle it defensively (the diagnostic accumulates
-    /// rather than aborts, so body lowering still walks past the hole):
-    /// - `is_concrete_type` → `false`
-    /// - `bind_type` → skips binding a real generic to an `Unresolved`
-    /// - `substitute_type` → identity (passes through)
-    /// - `is_type_compatible` → permissive (treated as `Any`-like for
-    ///   dispatch checks)
-    /// - `type_lub` → `Any`
-    /// - `narrow_candidates_by_type` → refuses to commit on the
-    ///   declaration-order tiebreaker when any arg reads `Unresolved`
-    /// - `resolve_function_call` → suppresses the redundant
-    ///   "Ambiguous function call" cascade (the lambda already pushed
-    ///   the actionable diagnostic)
-    /// - runtime `match` dispatch → matches any value (same as
-    ///   `Generic(_)`), so partially-broken builds remain inspectable
+    /// user wrote when they declared `:Any[1]` explicitly).
     Unresolved,
 }
 
@@ -209,14 +156,7 @@ pub enum ConstValue {
     String(String),
 }
 
-// ---------------------------------------------------------------------------
-// Multiplicity — mirrors ast::Multiplicity without Spanned metadata
-// ---------------------------------------------------------------------------
-
 /// Multiplicity specification for properties and parameters.
-///
-/// Mirrors `ast::Multiplicity` but without source location metadata —
-/// at the semantic level, multiplicities are structural values.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Multiplicity {
     /// Exactly one: `[1]` — `lower=1, upper=1`.
@@ -235,10 +175,8 @@ pub enum Multiplicity {
         upper: Option<u32>,
     },
     /// A multiplicity variable bound by the enclosing generic signature —
-    /// e.g., `m` in `reverse<T|m>(values:T[m]):T[m]`. Kept as a name so
-    /// function-name mangling reproduces the source form
-    /// (`reverse_T_m__T_m_`) and so generic substitution can bind it at
-    /// call sites. Semantically acts like `ZeroOrMany` everywhere else.
+    /// e.g., `m` in `reverse<T|m>(values:T[m]):T[m]`.
+    /// Semantically acts like `ZeroOrMany` everywhere else.
     Variable(SmolStr),
 }
 
@@ -256,13 +194,6 @@ pub struct Parameter {
 }
 
 /// A parsed date/time value for use in compiled expressions.
-///
-/// Parsed from the raw strings in `ast::StrictDateLiteral`, `ast::DateTimeLiteral`,
-/// and `ast::StrictTimeLiteral`. Avoids carrying raw strings through the
-/// semantic graph.
-///
-/// Field types match `jiff::civil` (and `PureDate`) so the evaluator needs
-/// zero casts.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DateValue {
     /// Strict date: `%2024-01-15`, or a partial date (`%2024`, `%2024-01`).
@@ -301,22 +232,14 @@ pub enum DateValue {
         /// `%…T00:00:00.000` → `.000` (3 digits), `%…T00:00:00.0000` → `.0000`.
         subsecond_digits: u8,
         /// `true` if the literal included `:mm` minutes (or finer).
-        /// `false` for `%…T00` hour-only literals. Phase 6 part 2:
-        /// distinguishes `T17` from `T17:00` so `year(%…T17)` and
-        /// `hasMinute(%…T17) == false` work — these are platform tests
-        /// in `essential/date/has/hasMinute.pure` and
-        /// `essential/date/extract/year.pure`.
+        /// `false` for `%…T00` hour-only literals.
         has_minutes: bool,
         /// `true` if the literal included `:ss` seconds (or finer). `false`
-        /// for `%…T00:00` minute-only literals. Needed so `toRepresentation`
-        /// can round-trip `%2014-01-01T00:00+0000` without promoting to
-        /// `00:00:00`.
+        /// for `%…T00:00` minute-only literals.
         has_seconds: bool,
         /// Signed minute offset from UTC the literal specified (`+0500`
         /// → `300`, `-0500` → `-300`). `None` when the literal carried no
-        /// explicit timezone suffix. The runtime normalises to UTC at
-        /// construction time — this field exists only so the parser can
-        /// report whether the source had a TZ marker.
+        /// explicit timezone suffix.
         tz_offset_minutes: Option<i16>,
     },
     /// Strict time: `%10:30:00`.
@@ -335,23 +258,14 @@ pub enum DateValue {
     },
     /// `%latest` — the milestoning sentinel for "the latest version".
     ///
-    /// Distinct from concrete `StrictDate` values. Lowered from the
-    /// parser's `StrictDateLiteral { value: "%latest" }` AST node. At
-    /// runtime it materialises as `crate::types::Value::Latest` (the
-    /// runtime equivalent — defined in `legend-pure-runtime`).
+    /// Distinct from concrete `StrictDate` values.
     /// Comparison-wise it's greater than every concrete date; in
     /// milestoning dispatch it acts as a wildcard that disables the
     /// date filter on the relevant axis.
-    ///
-    /// Java parity: the `latestDate` instance form recognised by
-    /// `MilestoningFunctionExpressionValidator`.
     Latest,
 }
 
 /// Resolved type and multiplicity for a compiled expression.
-///
-/// After type inference (Pass 2.5), every expression in the model
-/// carries a `ResolvedType` via [`ValueSpec::type_info`].
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResolvedType {
     /// The inferred type of the expression.
@@ -374,28 +288,20 @@ pub struct ResolvedType {
 /// Every expression node carries three fields:
 /// - `kind` — the variant-specific data ([`ExprKind`])
 /// - `source_info` — source location for diagnostics
-/// - `type_info` — inferred type + multiplicity (populated by Pass 2.5)
-///
-/// This "header + kind" pattern avoids repeating `source_info` and
-/// `type_info` across every variant, and enables O(1) field access
-/// without pattern matching.
+/// - `type_info` — inferred type + multiplicity
 #[derive(Debug, Clone, PartialEq)]
 pub struct ValueSpec {
     /// The expression variant and its data.
     pub kind: Box<ExprKind>,
     /// Source location in the original `.pure` file.
     pub source_info: SourceInfo,
-    /// Inferred type annotation. `None` until Pass 2.5 runs.
+    /// Inferred type annotation.
     pub type_info: Option<Box<ResolvedType>>,
 }
 
 /// Shared payload for the three call-shaped IR variants
 /// ([`ExprKind::FunctionCall`], [`ExprKind::PropertyCall`],
-/// [`ExprKind::QualifiedPropertyCall`]). The variant tag carries the
-/// discriminator — mirroring Java's `_functionName` /
-/// `_propertyName` / `_qualifiedPropertyName` slots on
-/// `SimpleFunctionExpression` — and the data is identical across kinds
-/// so dispatch can share helpers without runtime tag fields.
+/// [`ExprKind::QualifiedPropertyCall`]).
 #[derive(Debug, Clone, PartialEq)]
 pub struct FunctionCallData {
     /// Resolved function element (user-defined functions). `None` for
@@ -504,14 +410,6 @@ pub enum ExprKind {
 
     /// Bare multiplicity literal expression: `@[1]`, `@[0..1]`, `@[1..*]`,
     /// `@[*]`, or `@[m]` referencing a declared multiplicity parameter.
-    ///
-    /// Sibling to [`ExprKind::TypeReference`]. The lowered form carries
-    /// the resolved [`Multiplicity`] and the lowering sets
-    /// `type_info.multiplicity` to the same value (with `type_expr = Any`)
-    /// so dispatch can bind a parametric arg's multiplicity directly.
-    /// At runtime it materialises a
-    /// `meta::pure::metamodel::multiplicity::Multiplicity` heap object via
-    /// `build_multiplicity_wrapper`.
     MultiplicityReference {
         /// The resolved multiplicity (concrete or `Variable("name")`).
         multiplicity: Multiplicity,
@@ -524,15 +422,7 @@ pub enum ExprKind {
     },
 
     /// `@(name:Type[mult], …)` or bare `(name:Type[mult], …)` — anonymous
-    /// relation type at expression position. Materialises a
-    /// `meta::pure::metamodel::relation::RelationType` heap object whose
-    /// `columns` slot carries one `Column` per spec, then wraps it in an
-    /// `InstanceValue<Type[1]>` so `@(cols)->genericType().rawType`
-    /// reflection works (mirrors Java's
-    /// `AntlrContextToM3CoreInstance.atomicExpression` line 1098). Bare
-    /// `(cols)` (reachable via the `M3CoreParser.g4 atomicExpression:
-    /// ... | type` alternative) and `@(cols)` lower identically — Java
-    /// routes both through the same processor branch.
+    /// relation type at expression position.
     RelationLiteral {
         /// Column triples in source order.
         columns: Vec<RelationColumnLowered>,
@@ -540,14 +430,6 @@ pub enum ExprKind {
     /// `~[…]`-array column-spec literal — `~[name1, …]`,
     /// `~[name1:f1, …]`, or `~[name1:f1:r1, …]` per the
     /// [`ColSpecLiteralKind`] discriminator.
-    ///
-    /// Mirrors the platform's
-    /// [`colSpecArray`](https://example.invalid/colSpecArray) /
-    /// `funcColSpecArray` / `aggColSpecArray` grammar functions
-    /// (`PCT.grammarCharacters='~[,]'` / `'~[:,:]'` /
-    /// `'~[::,::]'`). The discriminator drives both compile-time
-    /// type inference (`ColSpecArray` vs `FuncColSpecArray` vs
-    /// `AggColSpecArray`) and downstream overload narrowing.
     ColSpecArrayLiteral {
         /// Column triples in source order.
         columns: Vec<RelationColumnLowered>,
@@ -556,12 +438,6 @@ pub enum ExprKind {
     },
     /// `~name` single-column literal — plain name, name+lambda
     /// (init function), or name+init+reduce per [`ColSpecLiteralKind`].
-    ///
-    /// Mirrors the platform's
-    /// `meta::pure::functions::relation::colSpec(s,cl):ColSpec<T>[1]`,
-    /// `funcColSpec(f,s,cl):FuncColSpec<…,T>[1]`, and
-    /// `aggColSpec(map,reduce,s,cl):AggColSpec<…,T>[1]` grammar
-    /// functions (`PCT.grammarCharacters='~'` / `'~:'` / `'~::'`).
     ColSpecLiteral {
         /// The single column triple captured at lowering.
         column: RelationColumnLowered,
@@ -572,22 +448,7 @@ pub enum ExprKind {
     /// Navigation path expression: `#/Type/p1/p2(args)/p3!alias#`.
     ///
     /// Materialises a `meta::pure::metamodel::path::Path<U,V|m>` instance
-    /// at runtime. The lowering captures:
-    ///   - `start_type` — the start type with type-args bound (e.g.
-    ///     `Firm<Any>`)
-    ///   - `steps` — one entry per `/property[(args)]` segment, with the
-    ///     property *name* (resolved at runtime against the running type
-    ///     to support chain-of-types) and lowered parameter
-    ///     `ValueSpec`s
-    ///   - `name` — optional alias (`!alias`)
-    ///
-    /// Property *resolution* through the chain happens in the runtime
-    /// `evaluate(Path,U)` native (Stage 4) since each step's "running
-    /// type" depends on the previous step's return type, which requires
-    /// walking the model with type-arg substitution. The compiler does
-    /// validate that the *first* step's property exists on the start
-    /// type (a cheap correctness check that catches the most common
-    /// typo without committing to full chain inference).
+    /// at runtime.
     PathLiteral {
         /// Resolved start type, including type arguments (e.g.
         /// `Firm<Any>`).
@@ -602,14 +463,6 @@ pub enum ExprKind {
 /// Discriminator for [`ExprKind::ColSpecLiteral`] /
 /// [`ExprKind::ColSpecArrayLiteral`] — which platform classifier the
 /// lowered form maps to.
-///
-/// The lambda payload that distinguishes `Func` / `Agg` from `Plain`
-/// is preserved on the AST `ColumnSpec` rather than threaded through
-/// here — overload narrowing only needs the outer classifier
-/// (`ColSpec` vs `FuncColSpec` vs `AggColSpec`), and the runtime
-/// allocator can re-walk the AST shape if it ever materialises the
-/// lambda-bearing heap forms (today they fall back to the plain
-/// `ColSpec` / `ColSpecArray` allocation).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ColSpecLiteralKind {
     /// `~name` / `~[name1, …]` — name(s) only. Maps to
@@ -624,13 +477,6 @@ pub enum ColSpecLiteralKind {
 }
 
 /// One step in a navigation-path literal: `/property` or `/property(args)`.
-///
-/// Property *resolution* against the running class is deferred to runtime
-/// (Stage 4) so this struct only carries the source-level name plus the
-/// lowered parameter expressions. The runtime walks the chain
-/// `start_type → step[0].return → step[1].return → …`, looking up each
-/// step's property on the previous step's return type with type-arg
-/// substitution.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PathStepLowered {
     /// Property name as it appeared in source (e.g. `"name"`,
@@ -645,12 +491,6 @@ pub struct PathStepLowered {
 
 /// One column in a `RelationLiteral` / `ColSpecArrayLiteral` /
 /// `ColSpecLiteral`.
-///
-/// Captured at lowering so the runtime allocator can materialise the
-/// `Column` / `ColSpec` / `FuncColSpec` heap shape (`name`,
-/// `nameWildCard=false`, `classifierGenericType` chaining down to
-/// `type_element` with `multiplicity`, plus the `function` slot for
-/// `FuncColSpec`) without re-resolving names or re-lowering bodies.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RelationColumnLowered {
     /// Column name (e.g. `"x"` in `~[x:String[1]]`).
@@ -658,31 +498,21 @@ pub struct RelationColumnLowered {
     /// Resolved type element (e.g. `String`'s `ElementId`).
     pub type_element: ElementId,
     /// Column multiplicity. Defaults to `ZeroOrOne` when the source omits
-    /// `[mult]` (matches the platform's expected `'x:String[0..1]'` form).
+    /// `[mult]`.
     pub multiplicity: Multiplicity,
     /// Optional initialiser lambda from `~name:lam` / `~name:T|...:lam`
     /// (the `Func`/`Agg` `ColSpecLiteralKind` cases). `None` for plain
     /// `~name` / `~name:Type[mult]` columns and for `~[…]` array entries
     /// that aren't lambda-bearing.
-    ///
-    /// Populated by `lower_column` when the source carried an
-    /// `ast_expr::ColumnTypeSpec::Lambda(_)`. The runtime allocator
-    /// (`alloc_func_col_spec_literal`) reads this to set the
-    /// `FuncColSpec.function` slot, which the `extend` native then
-    /// invokes per row.
     pub init_lambda: Option<ValueSpec>,
     /// Optional reduce lambda — the *second* function of an `Agg`-kind
     /// ColSpec (`~name:{p,w,r|map}:y|reduce`). `init_lambda` holds the map
     /// half; this holds the reduce half (AST `ColumnSpec.extra_function`).
-    /// `None` for `Plain`/`Func` columns. Populated by `lower_column` when
-    /// the source carried an `extra_function` lambda; the runtime allocator
-    /// (`alloc_agg_col_spec_literal`) reads it to set the `AggColSpec.reduce`
-    /// slot.
+    /// `None` for `Plain`/`Func` columns.
     pub reduce_lambda: Option<ValueSpec>,
 }
 
-/// Backward-compatible alias: existing code uses `Expression` throughout
-/// (`Function.body`, `Constraint.function`, `QualifiedProperty.body`, etc.).
+/// Alias of [`ValueSpec`].
 pub type Expression = ValueSpec;
 
 /// A primitive type element (String, Integer, Boolean, etc.).
@@ -721,8 +551,7 @@ pub struct PrimitiveType {
     pub super_type: Option<crate::ids::ElementId>,
     /// Type-variable VALUES bound on the parent at declaration time —
     /// `Primitive OP8 extends OP(8)` stores `[ConstValue::Integer(8)]`
-    /// here so cast-time constraint inheritance can evaluate OP's
-    /// `$this < $x` constraint with `x = 8`. Empty when the parent is
+    /// here. Empty when the parent is
     /// non-parametric or the binding is absent.
     pub super_type_value_arguments: Vec<ConstValue>,
     /// Type-variable parameters declared on a parametric primitive, e.g.
@@ -758,7 +587,6 @@ mod tests {
 
     #[test]
     fn type_expr_named_with_type_args() {
-        // List<String>
         let string_ty = TypeExpr::Named {
             element: ElementId::InstanceId {
                 chunk_id: 0,
@@ -786,7 +614,6 @@ mod tests {
 
     #[test]
     fn type_expr_named_with_value_args() {
-        // Varchar(255)
         let ty = TypeExpr::Named {
             element: ElementId::InstanceId {
                 chunk_id: 0,
@@ -808,7 +635,6 @@ mod tests {
 
     #[test]
     fn type_expr_function_type() {
-        // {String[1] -> Boolean[1]}
         let string = TypeExpr::Named {
             element: ElementId::InstanceId {
                 chunk_id: 0,

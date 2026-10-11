@@ -68,8 +68,7 @@ pub struct M3Registration {
 ///
 /// # Panics
 ///
-/// Panics on malformed input — the m3.pure file is a known-good input
-/// from the Java codebase, so we treat parse failures as bugs.
+/// Panics on malformed input.
 pub fn parse_m3_into_chunk(
     source: &str,
     nodes: &mut Arena<ElementNode>,
@@ -82,15 +81,15 @@ pub fn parse_m3_into_chunk(
 
 #[derive(Debug, Clone, PartialEq)]
 enum Token {
-    Caret,  // ^
-    Dot,    // .
-    LBrack, // [
-    RBrack, // ]
-    LBrace, // {
-    RBrace, // }
-    Colon,  // :
-    Comma,  // ,
-    At,     // @
+    Caret,
+    Dot,
+    LBrack,
+    RBrack,
+    LBrace,
+    RBrace,
+    Colon,
+    Comma,
+    At,
     Ident(SmolStr),
     StringLit(SmolStr),
     IntLit(i64),
@@ -124,7 +123,6 @@ impl Tokenizer {
 
     fn skip_whitespace_and_comments(&mut self) {
         loop {
-            // Skip whitespace
             while let Some(ch) = self.peek_char() {
                 if ch.is_ascii_whitespace() {
                     self.advance_char();
@@ -132,7 +130,6 @@ impl Tokenizer {
                     break;
                 }
             }
-            // Skip `// ...` line comments
             if self.pos + 1 < self.chars.len()
                 && self.chars[self.pos] == '/'
                 && self.chars[self.pos + 1] == '/'
@@ -166,7 +163,6 @@ impl Tokenizer {
             ',' => Token::Comma,
             '@' => Token::At,
             '\'' => {
-                // String literal: 'content'
                 let mut s = String::new();
                 loop {
                     match self.advance_char() {
@@ -177,7 +173,6 @@ impl Tokenizer {
                 Token::StringLit(SmolStr::new(&s))
             }
             c if c.is_ascii_digit() || c == '-' => {
-                // Integer literal
                 let mut s = String::new();
                 s.push(c);
                 while let Some(ch) = self.peek_char() {
@@ -191,7 +186,6 @@ impl Tokenizer {
                 Token::IntLit(s.parse().unwrap_or(0))
             }
             c if c.is_alphanumeric() || c == '_' => {
-                // Identifier
                 let mut s = String::new();
                 s.push(c);
                 while let Some(ch) = self.peek_char() {
@@ -204,10 +198,7 @@ impl Tokenizer {
                 }
                 Token::Ident(SmolStr::new(&s))
             }
-            _ => {
-                // Skip unexpected chars and try next
-                self.next_token()
-            }
+            _ => self.next_token(),
         }
     }
 }
@@ -237,7 +228,6 @@ impl<'a> M3Parser<'a> {
         nodes: &'a mut Arena<ElementNode>,
         elements: &'a mut Arena<Element>,
     ) -> Self {
-        // Pre-tokenize the entire file
         let mut tokenizer = Tokenizer::new(source);
         let mut tokens = Vec::new();
         loop {
@@ -308,7 +298,6 @@ impl<'a> M3Parser<'a> {
                 Token::Eof => break,
                 Token::Caret => self.parse_top_level_instance(),
                 _ => {
-                    // Skip unexpected tokens
                     self.advance();
                 }
             }
@@ -318,30 +307,18 @@ impl<'a> M3Parser<'a> {
     fn parse_top_level_instance(&mut self) {
         self.expect(&Token::Caret);
 
-        // Parse classifier path — the tail identifier tells us the type
         let classifier_tail = self.parse_classifier_path();
 
-        // Parse instance name
         let name = self.expect_ident();
 
-        // Parse optional @parent_path
         let package_segments = if self.eat(&Token::At) {
             self.parse_package_path()
         } else {
             vec![]
         };
 
-        // Parse body (if present)
         match classifier_tail.as_str() {
             "Class" => {
-                // `Any` and `Nil` already exist as the top/bottom-type
-                // bootstrap classes (slots 0 and 1) and are registered in
-                // `meta::pure::metamodel::type` via `M3_ALIASES`. m3.pure
-                // re-declares them; allocating a second slot here would
-                // create a duplicate registration that wins
-                // `resolve_by_path` over the bootstrap alias and breaks
-                // `is_metatype_carrier` on FQN round-trip.
-                // Skip the body so the bootstrap slot stays canonical.
                 let is_metamodel_type_pkg = package_segments.iter().map(SmolStr::as_str).eq([
                     "meta",
                     "pure",
@@ -364,14 +341,11 @@ impl<'a> M3Parser<'a> {
                 self.parse_multiplicity_body(&name, &package_segments);
             }
             "Package" => {
-                // Skip package bodies — we handle packages via the @path
                 if self.at(&Token::LBrace) {
                     self.skip_balanced_braces();
                 }
             }
             "PrimitiveType" => {
-                // The 11 standard primitives are already in bootstrap slots 0-12.
-                // Any additional PrimitiveTypes (e.g., LatestDate) must be allocated.
                 const BOOTSTRAP_PRIMS: &[&str] = &[
                     "String",
                     "Boolean",
@@ -390,12 +364,10 @@ impl<'a> M3Parser<'a> {
                         self.skip_balanced_braces();
                     }
                 } else {
-                    // Non-bootstrap primitive — parse body to extract supertype
                     self.parse_primitive_type_body(&name, &package_segments);
                 }
             }
             _ => {
-                // Unknown classifier — skip body if present
                 if self.at(&Token::LBrace) {
                     self.skip_balanced_braces();
                 }
@@ -408,12 +380,11 @@ impl<'a> M3Parser<'a> {
     fn parse_classifier_path(&mut self) -> SmolStr {
         let mut tail = self.expect_ident();
 
-        // Follow `.children[X]` or `.properties[X]` chains
         while self.at(&Token::Dot) {
-            self.advance(); // .
+            self.advance();
             let segment = self.expect_ident();
             if self.at(&Token::LBrack) {
-                self.advance(); // [
+                self.advance();
                 tail = self.expect_ident();
                 self.expect(&Token::RBrack);
             } else {
@@ -429,15 +400,13 @@ impl<'a> M3Parser<'a> {
     fn parse_package_path(&mut self) -> Vec<SmolStr> {
         let mut segments = Vec::new();
 
-        // Start: expect "Root" or first identifier
         let _root = self.expect_ident();
 
-        // Parse .children[X] chains
         while self.at(&Token::Dot) {
-            self.advance(); // .
-            let _accessor = self.expect_ident(); // "children" or "properties" etc.
+            self.advance();
+            let _accessor = self.expect_ident();
             if self.at(&Token::LBrack) {
-                self.advance(); // [
+                self.advance();
                 let seg = self.expect_ident();
                 segments.push(seg);
                 self.expect(&Token::RBrack);
@@ -457,7 +426,7 @@ impl<'a> M3Parser<'a> {
             name: name.clone(),
             source_info: synthetic_source(),
             name_source_info: synthetic_source(),
-            parent_package: crate::ids::PackageId(0), // placeholder — wired later
+            parent_package: crate::ids::PackageId(0),
         });
         let elem_idx = self.elements.alloc(element);
         debug_assert_eq!(idx, elem_idx, "node and element arenas out of sync");
@@ -483,7 +452,6 @@ impl<'a> M3Parser<'a> {
         let mut multiplicity_parameters: Vec<SmolStr> = Vec::new();
 
         if !self.at(&Token::LBrace) {
-            // No body — allocate empty class
             self.alloc_element(
                 name,
                 package_segments,
@@ -503,49 +471,30 @@ impl<'a> M3Parser<'a> {
             return;
         }
 
-        self.advance(); // {
+        self.advance();
 
-        // Parse body assignments
         loop {
             match self.peek() {
                 Token::RBrace | Token::Eof => break,
                 Token::Caret => {
-                    // Inline instance — could be inside properties list,
-                    // but at top-level of the body it's unexpected.
-                    // Skip it.
                     self.skip_inline_instance();
                 }
                 _ => {
-                    // Parse: property_path ':' value
                     let prop_path = self.parse_property_path_tail();
 
                     if !self.eat(&Token::Colon) {
-                        // Malformed — skip to comma or closing brace
                         self.skip_to_comma_or_brace();
                         continue;
                     }
 
                     match prop_path.as_str() {
                         "properties" => {
-                            // Class.properties[properties] : [...]
                             properties = self.parse_property_list();
                         }
                         "generalizations" => {
-                            // Type.properties[generalizations] : [...]
-                            // In m3.pure, generalizations stored on a type include entries
-                            // for ALL subclasses, not just this class itself. We filter by
-                            // `specific` to only keep entries for the current class.
                             super_types = self.parse_generalizations(name);
                         }
                         "typeParameters" => {
-                            // Class.properties[typeParameters] : [...]
-                            // Captures both the parameter names and
-                            // their variance flags
-                            // (`contravariant: true` /
-                            // `covariant: true`). m3.pure declares
-                            // Property's U and Column's U as
-                            // contravariant via this metamodel-level
-                            // form.
                             let (params, variances) = self.parse_type_parameters();
                             type_parameters = params
                                 .into_iter()
@@ -554,29 +503,16 @@ impl<'a> M3Parser<'a> {
                                 .collect();
                         }
                         "multiplicityParameters" => {
-                            // Class.properties[multiplicityParameters] :
-                            // ^InstanceValue{values: ['m'], …} — extract
-                            // the names from the values slot. Without
-                            // this, `Property<U,V|m>` lost its `m`
-                            // parameter and `subtype_view`'s mult
-                            // substitution couldn't fire on the
-                            // generalization, leaving downstream
-                            // `eval(Property<…>)` unable to bind the
-                            // FunctionType slot's `m` (1,628 cases on
-                            // platform pre-fix; this lifts the lid on
-                            // the residual ones).
                             multiplicity_parameters =
                                 self.parse_multiplicity_parameters_instance_value();
                         }
                         _ => {
-                            // Skip the value
                             self.skip_value();
                         }
                     }
                 }
             }
 
-            // Expect comma between assignments
             self.eat(&Token::Comma);
         }
 
@@ -612,7 +548,7 @@ impl<'a> M3Parser<'a> {
             self.skip_value();
             return names;
         }
-        self.advance(); // ^
+        self.advance();
         let _classifier = self.parse_classifier_path();
 
         if !self.eat(&Token::LBrace) {
@@ -628,7 +564,6 @@ impl<'a> M3Parser<'a> {
                         continue;
                     }
                     if path_tail.as_str() == "values" {
-                        // values is `['m', 'n', …]`
                         if self.eat(&Token::LBrack) {
                             loop {
                                 match self.peek() {
@@ -664,8 +599,7 @@ impl<'a> M3Parser<'a> {
     /// Parses a non-bootstrap `PrimitiveType` body from m3.pure.
     ///
     /// Extracts the supertype from its generalizations and allocates it as a
-    /// `PrimitiveType` element. The supertype is resolved later during the
-    /// compilation pipeline when package registration wires up the references.
+    /// `PrimitiveType` element.
     fn parse_primitive_type_body(&mut self, name: &SmolStr, package_segments: &[SmolStr]) {
         let mut super_type_name: Option<SmolStr> = None;
 
@@ -698,7 +632,6 @@ impl<'a> M3Parser<'a> {
             self.eat(&Token::RBrace);
         }
 
-        // Look up the supertype ElementId from the bootstrap primitives
         let super_type = super_type_name.and_then(|sn| {
             crate::bootstrap::BOOTSTRAP_PRIMITIVES
                 .iter()
@@ -723,7 +656,6 @@ impl<'a> M3Parser<'a> {
         let mut props = Vec::new();
 
         if self.eat(&Token::LBrack) {
-            // Array of properties
             loop {
                 match self.peek() {
                     Token::RBrack | Token::Eof => break,
@@ -738,7 +670,6 @@ impl<'a> M3Parser<'a> {
             }
             self.eat(&Token::RBrack);
         } else if self.at(&Token::Caret) {
-            // Single property (not in array)
             props.push(self.parse_property_instance());
         } else {
             self.skip_value();
@@ -772,20 +703,12 @@ impl<'a> M3Parser<'a> {
 
                         match path_tail.as_str() {
                             "name" => {
-                                // ModelElement.properties[name] : 'xxx'
-                                // We already have the name from the instance header
                                 self.skip_value();
                             }
                             "multiplicity" => {
-                                // Extract multiplicity from a reference like:
-                                // Root...multiplicity.children[PureOne]
                                 multiplicity = self.parse_multiplicity_ref();
                             }
                             "genericType" => {
-                                // Parse the full inline TypeExpr so
-                                // parametric property types like
-                                // `Property<U, V>[*]` and inline-FunctionType
-                                // shapes survive the bootstrap pass.
                                 type_expr_opt = Some(self.parse_generic_type_full());
                             }
                             _ => {
@@ -799,10 +722,6 @@ impl<'a> M3Parser<'a> {
             self.eat(&Token::RBrace);
         }
 
-        // `parse_generic_type_full` encodes the right shape internally:
-        // `Generic(name)` for bare references, the pack-typeexpr sentinel
-        // for parametric Class refs, or `TypeExpr::FunctionType{…}` for
-        // inline FunctionType (m3.pure's `Function<{T->X}>`-style typeArgs).
         let type_expr =
             type_expr_opt.unwrap_or(crate::types::TypeExpr::Generic(SmolStr::new("Any")));
 
@@ -819,15 +738,6 @@ impl<'a> M3Parser<'a> {
     }
 
     /// Parses the generalizations list and extracts super-type names.
-    ///
-    /// In m3.pure, `Type.properties[generalizations]` stores Generalization
-    /// instances for ALL subclasses (e.g., Class, `PrimitiveType`), not just
-    /// the current class. Each Generalization has:
-    /// - `general.rawType` — the supertype
-    /// - `specific` — the actual subtype this applies to
-    ///
-    /// We filter by `specific` to only keep entries where the subtype matches
-    /// the class we are currently parsing (`class_name`).
     fn parse_generalizations(&mut self, class_name: &str) -> Vec<crate::types::TypeExpr> {
         let mut supers = Vec::new();
 
@@ -836,7 +746,6 @@ impl<'a> M3Parser<'a> {
                 match self.peek() {
                     Token::RBrack | Token::Eof => break,
                     Token::Caret => {
-                        // ^Generalization { general: ^GenericType { rawType: SuperClass, typeArguments: …, multiplicityArguments: … }, specific: SubClass }
                         if let Some((te, specific)) = self.parse_generalization_instance() {
                             // Only keep this generalization if `specific` matches
                             // the class we are currently parsing.
@@ -853,7 +762,6 @@ impl<'a> M3Parser<'a> {
             }
             self.eat(&Token::RBrack);
         } else if self.at(&Token::Caret) {
-            // Single generalization (not in array)
             if let Some((te, specific)) = self.parse_generalization_instance()
                 && (specific.as_deref() == Some(class_name) || specific.is_none())
             {
@@ -875,11 +783,7 @@ impl<'a> M3Parser<'a> {
     /// value_arguments: [String(rawType)] }` form when typeArguments /
     /// multiplicityArguments are present (`resolve_m3_supertypes`
     /// rewrites the element id during bootstrap finalisation —
-    /// preserving the args). Without this, `Property` lost its
-    /// `Function<{U[1]->V[m]}>` generalization shape and
-    /// `bind_type`'s subtype-walk had no FunctionType slot to extract
-    /// T/V/m/n from when an `eval` overload bound against a
-    /// `Property<...>` arg.
+    /// preserving the args).
     ///
     /// The `specific` is the simple name of the subclass extracted from the
     /// path reference (e.g., `Root.children[...].children[Class]` → `"Class"`).
@@ -889,15 +793,11 @@ impl<'a> M3Parser<'a> {
         self.expect(&Token::Caret);
         let _classifier = self.parse_classifier_path();
 
-        // May or may not have a name
         if self.at(&Token::Ident(SmolStr::default()))
             && !self.at(&Token::LBrace)
             && let Token::Ident(_) = self.peek()
             && !self.at(&Token::LBrace)
-        {
-            // Check if next token after ident is { — if so, it's a body
-            // Otherwise it might be something else
-        }
+        {}
 
         let mut general_type: Option<crate::types::TypeExpr> = None;
         let mut specific_type = None;
@@ -918,19 +818,9 @@ impl<'a> M3Parser<'a> {
 
                         match path_tail.as_str() {
                             "general" => {
-                                // Parametric-aware: `parse_generic_type_full`
-                                // now returns the right TypeExpr shape
-                                // (Generic for plain refs, pack-typeexpr
-                                // for parametric Class refs, FunctionType
-                                // for inline `^FunctionType{...}` —
-                                // critical for Property's
-                                // `Function<{U[1]->V[m]}>` generalization).
                                 general_type = Some(self.parse_generic_type_full());
                             }
                             "specific" => {
-                                // The value is a path reference like:
-                                // Root.children[meta]...children[Class]
-                                // Extract the last segment as the specific class name.
                                 specific_type = Some(self.parse_classifier_path());
                             }
                             _ => {
@@ -950,12 +840,7 @@ impl<'a> M3Parser<'a> {
     /// Parses a type parameters list: `[^TypeParameter{name:'T'}, ...]`.
     /// Returns parallel vectors of names and variances. Variance comes
     /// from the optional `contravariant: true` / `covariant: true`
-    /// fields on the TypeParameter instance — m3.pure declares
-    /// `Property<U[contravariant], V>`,
-    /// `Column<U[contravariant], V>`, and
-    /// `NewPropertyRouteNodeFunctionDefinition<U[contravariant], V>`
-    /// via this metamodel-level form. (The class-level `<-T>` /
-    /// `<+T>` prefix syntax is a separate path used only by path.pure.)
+    /// fields on the TypeParameter instance.
     fn parse_type_parameters(&mut self) -> (Vec<SmolStr>, Vec<crate::nodes::class::Variance>) {
         let mut params = Vec::new();
         let mut variances = Vec::new();
@@ -1020,10 +905,6 @@ impl<'a> M3Parser<'a> {
                                 }
                             }
                             "contravariant" => {
-                                // The lexer maps the literal `true` /
-                                // `false` to Ident; check the spelling
-                                // explicitly. Treat any non-`true`
-                                // value as the absence of the flag.
                                 if matches!(&self.advance(), Token::Ident(s) if s.as_str() == "true")
                                 {
                                     variance = Variance::Contravariant;
@@ -1065,33 +946,19 @@ impl<'a> M3Parser<'a> {
     ///    return_multiplicity }`** — when the classifier is FunctionType
     ///    OR when an outer GenericType's `rawType` is itself an inline
     ///    `^FunctionType{...}` (the m3.pure shape for Property's
-    ///    `Function<{U[1]->V[m]}>` generalization). Critical for
-    ///    `bind_type_with_mode`'s Function-vs-Property subtype-walk to
-    ///    extract T/V/m/n at platform `getProperty('a')->toOne()->eval(…)`
-    ///    sites.
-    ///
-    /// Used by property-instance parsing, generalization parsing, and
-    /// `parse_type_argument_list` to feed `resolve_m3_supertypes`.
+    ///    `Function<{U[1]->V[m]}>` generalization).
     fn parse_generic_type_full(&mut self) -> crate::types::TypeExpr {
         if !self.at(&Token::Caret) {
-            // Direct element reference: Root.children[...].children[Type]
             return crate::types::TypeExpr::Generic(self.parse_element_ref_tail());
         }
 
-        self.advance(); // ^
+        self.advance();
         let classifier = self.parse_classifier_path();
 
-        // `^FunctionType{...}` directly — m3.pure uses this when the
-        // typeArgument slot is itself a FunctionType (no surrounding
-        // GenericType wrapper).
         if classifier.as_str() == "FunctionType" {
             return self.parse_function_type_body();
         }
 
-        // Default: ^GenericType{rawType: …, typeArguments: […], multiplicityArguments: …}
-        // GenericType can also be `{typeParameter: ^TypeParameter{name:'T'}}` — the
-        // latter is a forward reference to one of the surrounding class's
-        // declared type parameters and survives as `Generic("T")`.
         let mut raw_type_name = SmolStr::new("Any");
         let mut raw_type_inline_te: Option<crate::types::TypeExpr> = None;
         let mut type_arguments: Vec<crate::types::TypeExpr> = Vec::new();
@@ -1111,14 +978,6 @@ impl<'a> M3Parser<'a> {
 
                         match path_tail.as_str() {
                             "rawType" => {
-                                // rawType can be either:
-                                //   - a direct element ref (Root.children[…].children[Foo])
-                                //   - an inline `^FunctionType{...}` (m3.pure's
-                                //     `Function<{->Z[y]}>`-style typeArgs)
-                                //   - an inline `^GenericType{...}` (rare)
-                                // Recurse so the FunctionType case produces a
-                                // real `TypeExpr::FunctionType` rather than the
-                                // previous "Any" fallback.
                                 if self.at(&Token::Caret) {
                                     raw_type_inline_te = Some(self.parse_generic_type_full());
                                 } else {
@@ -1145,17 +1004,9 @@ impl<'a> M3Parser<'a> {
             self.eat(&Token::RBrace);
         }
 
-        // `typeParameter` form short-circuits to the parameter name.
         if let Some(name) = type_parameter_name {
             return crate::types::TypeExpr::Generic(name);
         }
-        // If rawType was a nested inline (typically FunctionType), the
-        // outer GenericType is just a wrapper — the inner TypeExpr IS
-        // the type. M3 typically puts no extra type/mult args on this
-        // outer GenericType, but if there are some we discard them to
-        // match Java's M3 representation (a GenericType with rawType =
-        // FunctionType doesn't have meaningful typeArguments; the
-        // FunctionType IS the type).
         if let Some(te) = raw_type_inline_te {
             return te;
         }
@@ -1166,12 +1017,6 @@ impl<'a> M3Parser<'a> {
     /// returnType: ..., returnMultiplicity: ... }` instance (after the
     /// `^FunctionType` classifier has been consumed) and returns a
     /// `TypeExpr::FunctionType`.
-    ///
-    /// Each entry in `parameters` is a `^VariableExpression { name,
-    /// genericType: ^GenericType{...}, multiplicity: ... }` — we
-    /// extract the genericType and multiplicity and discard the name
-    /// (our `TypeExpr::FunctionType.parameters` is
-    /// `Vec<(TypeExpr, Multiplicity)>`).
     fn parse_function_type_body(&mut self) -> crate::types::TypeExpr {
         let mut parameters: Vec<(crate::types::TypeExpr, Multiplicity)> = Vec::new();
         let mut return_type = crate::types::TypeExpr::Generic(SmolStr::new("Any"));
@@ -1223,12 +1068,10 @@ impl<'a> M3Parser<'a> {
 
     /// Parses a FunctionType `parameters: [...]` list. Each entry is a
     /// `^VariableExpression { name, genericType: ^GenericType{...},
-    /// multiplicity: ^Multiplicity{...} | <ref> }`. Discards the name
-    /// (our internal FunctionType doesn't carry param names).
+    /// multiplicity: ^Multiplicity{...} | <ref> }`. Discards the name.
     fn parse_function_type_parameters(&mut self) -> Vec<(crate::types::TypeExpr, Multiplicity)> {
         let mut out = Vec::new();
         if self.at(&Token::Caret) {
-            // Single VariableExpression (no surrounding brackets).
             if let Some(pair) = self.parse_variable_expression_typeslot() {
                 out.push(pair);
             }
@@ -1266,7 +1109,7 @@ impl<'a> M3Parser<'a> {
         if !self.at(&Token::Caret) {
             return None;
         }
-        self.advance(); // ^
+        self.advance();
         let _classifier = self.parse_classifier_path();
 
         let mut generic_type = crate::types::TypeExpr::Generic(SmolStr::new("Any"));
@@ -1309,8 +1152,6 @@ impl<'a> M3Parser<'a> {
     /// shape isn't recognised.
     fn parse_multiplicity_value(&mut self) -> Multiplicity {
         if self.at(&Token::Caret) {
-            // Inline Multiplicity instance — skip and default. The
-            // platform mostly uses direct refs.
             self.skip_inline_instance();
             return Multiplicity::PureOne;
         }
@@ -1324,7 +1165,6 @@ impl<'a> M3Parser<'a> {
     /// `TypeExpr::Generic(param_name)`.
     fn parse_type_argument_list(&mut self) -> Vec<crate::types::TypeExpr> {
         let mut out = Vec::new();
-        // Single ^GenericType / ^FunctionType (no surrounding brackets).
         if self.at(&Token::Caret) {
             out.push(self.parse_generic_type_full());
             return out;
@@ -1360,7 +1200,6 @@ impl<'a> M3Parser<'a> {
                 match self.peek() {
                     Token::RBrack | Token::Eof => break,
                     Token::Caret => {
-                        // Inline ^Multiplicity{...}; not used by m3.pure today.
                         self.skip_inline_instance();
                         out.push(Multiplicity::PureOne);
                     }
@@ -1411,11 +1250,9 @@ impl<'a> M3Parser<'a> {
 
     /// Folds a `(rawType_name, type_arguments, multiplicity_arguments)`
     /// triple into a single `TypeExpr`. With no args, it stays
-    /// `Generic(name)` so the existing forward-ref resolution in
-    /// `resolve_m3_supertypes` handles it. With args, it becomes a
-    /// `Named` whose `element` is a placeholder (`Any`) — the resolver
-    /// detects the marker via `value_arguments[0] == String(rawType)`
-    /// and rewrites the element while preserving the type/mult args.
+    /// `Generic(name)`.
+    /// With args, it becomes a
+    /// `Named` whose `element` is a placeholder (`Any`).
     fn build_pack_typeexpr(
         &self,
         raw: SmolStr,
@@ -1425,9 +1262,6 @@ impl<'a> M3Parser<'a> {
         if type_arguments.is_empty() && multiplicity_arguments.is_empty() {
             crate::types::TypeExpr::Generic(raw)
         } else {
-            // Sidecar inline encoding: ANY_ID + value_arguments[0] = String(raw_name).
-            // resolve_m3_supertypes detects this pattern and rewrites
-            // element to the resolved class id.
             crate::types::TypeExpr::Named {
                 element: crate::bootstrap::ANY_ID,
                 type_arguments,
@@ -1454,7 +1288,6 @@ impl<'a> M3Parser<'a> {
     /// and returns the corresponding `Multiplicity` variant.
     fn parse_multiplicity_ref(&mut self) -> Multiplicity {
         if self.at(&Token::Caret) {
-            // Inline multiplicity instance — skip and default to PureOne
             self.skip_inline_instance();
             return Multiplicity::PureOne;
         }
@@ -1484,7 +1317,7 @@ impl<'a> M3Parser<'a> {
             return;
         }
 
-        self.advance(); // {
+        self.advance();
 
         loop {
             match self.peek() {
@@ -1528,11 +1361,10 @@ impl<'a> M3Parser<'a> {
                 match self.peek() {
                     Token::RBrack | Token::Eof => break,
                     Token::Caret => {
-                        self.advance(); // ^
+                        self.advance();
                         let _classifier = self.parse_classifier_path();
                         let value_name = self.expect_ident();
 
-                        // Skip body
                         if self.at(&Token::LBrace) {
                             self.skip_balanced_braces();
                         }
@@ -1574,7 +1406,7 @@ impl<'a> M3Parser<'a> {
             return;
         }
 
-        self.advance(); // {
+        self.advance();
 
         loop {
             match self.peek() {
@@ -1604,12 +1436,6 @@ impl<'a> M3Parser<'a> {
 
         self.eat(&Token::RBrace);
 
-        // m3 bootstrap parser doesn't carry per-name source info — the
-        // IDE can't navigate to declarations inside m3-bootstrapped
-        // Profiles (e.g. `meta::pure::profiles::test`) without these.
-        // Wrap each name with the bootstrap-source sentinel so the
-        // shape matches parser-loaded profiles; the reference index
-        // recognises the sentinel and skips emitting entries for it.
         use crate::nodes::profile::bootstrap_spanned_name;
         self.alloc_element(
             name,
@@ -1633,11 +1459,10 @@ impl<'a> M3Parser<'a> {
                 match self.peek() {
                     Token::RBrack | Token::Eof => break,
                     Token::Caret => {
-                        self.advance(); // ^
+                        self.advance();
                         let _classifier = self.parse_classifier_path();
                         let anno_name = self.expect_ident();
 
-                        // Skip body
                         if self.at(&Token::LBrace) {
                             self.skip_balanced_braces();
                         }
@@ -1659,7 +1484,6 @@ impl<'a> M3Parser<'a> {
     }
 
     fn parse_multiplicity_body(&mut self, name: &SmolStr, package_segments: &[SmolStr]) {
-        // Map well-known multiplicity names to Multiplicity variants
         let mult = match name.as_str() {
             "PureZero" => Multiplicity::Range {
                 lower: 0,
@@ -1671,7 +1495,6 @@ impl<'a> M3Parser<'a> {
             _ => Multiplicity::PureOne,
         };
 
-        // Skip body
         if self.at(&Token::LBrace) {
             self.skip_balanced_braces();
         }
@@ -1690,10 +1513,10 @@ impl<'a> M3Parser<'a> {
         let mut tail = self.expect_ident();
 
         while self.at(&Token::Dot) {
-            self.advance(); // .
+            self.advance();
             let segment = self.expect_ident();
             if self.at(&Token::LBrack) {
-                self.advance(); // [
+                self.advance();
                 tail = self.expect_ident();
                 self.expect(&Token::RBrack);
             } else {
@@ -1710,10 +1533,10 @@ impl<'a> M3Parser<'a> {
         let mut tail = self.expect_ident();
 
         while self.at(&Token::Dot) {
-            self.advance(); // .
+            self.advance();
             let segment = self.expect_ident();
             if self.at(&Token::LBrack) {
-                self.advance(); // [
+                self.advance();
                 tail = self.expect_ident();
                 self.expect(&Token::RBrack);
             } else {
@@ -1747,7 +1570,6 @@ impl<'a> M3Parser<'a> {
     fn skip_value(&mut self) {
         match self.peek() {
             Token::LBrack => {
-                // Array value — skip balanced brackets
                 self.advance();
                 let mut depth = 1u32;
                 loop {
@@ -1768,7 +1590,6 @@ impl<'a> M3Parser<'a> {
                 self.skip_inline_instance();
             }
             Token::Ident(_) => {
-                // Element reference — consume path
                 let _ = self.parse_element_ref_tail();
             }
             _ => {
@@ -1779,19 +1600,16 @@ impl<'a> M3Parser<'a> {
 
     /// Skips an inline `^ClassifierPath Name? { body }` instance.
     fn skip_inline_instance(&mut self) {
-        self.advance(); // ^
+        self.advance();
         let _ = self.parse_classifier_path();
 
-        // Optional name
         if let Token::Ident(_) = self.peek() {
-            // Check if this is a name followed by { or if it's something else
             let saved_pos = self.pos;
-            self.advance(); // consume potential name
+            self.advance();
             if self.at(&Token::LBrace) {
                 self.skip_balanced_braces();
                 return;
             }
-            // Not a body — restore position
             self.pos = saved_pos;
         }
 
@@ -1907,7 +1725,6 @@ mod tests {
         ";
 
         let (_nodes, _elements, regs) = parse_fragment(src);
-        // Packages don't produce elements
         assert_eq!(regs.len(), 0);
     }
 
@@ -1919,14 +1736,12 @@ mod tests {
 
         let (nodes, elements, regs) = parse_fragment(source);
 
-        // Should have parsed a significant number of elements
         assert!(
             regs.len() > 80,
             "expected > 80 M3 elements from m3.pure, got {}",
             regs.len()
         );
 
-        // Count registrations with and without package segments
         let with_pkg = regs
             .iter()
             .filter(|r| !r.package_segments.is_empty())
@@ -1937,7 +1752,6 @@ mod tests {
             regs.len()
         );
 
-        // Verify ProtocolInfo profile has stereotypes
         let protocol_idx = (0..nodes.len())
             .find(|&i| nodes.get(i).name == "ProtocolInfo")
             .expect("ProtocolInfo should exist");
@@ -1952,7 +1766,6 @@ mod tests {
             panic!("ProtocolInfo should be a Profile");
         }
 
-        // Verify AggregationKind enumeration has values
         let agg_idx = (0..nodes.len())
             .find(|&i| nodes.get(i).name == "AggregationKind")
             .expect("AggregationKind should exist");
@@ -1963,7 +1776,6 @@ mod tests {
             panic!("AggregationKind should be an Enumeration");
         }
 
-        // Verify PureOne multiplicity exists
         let pure_one_idx = (0..nodes.len())
             .find(|&i| nodes.get(i).name == "PureOne")
             .expect("PureOne should exist");

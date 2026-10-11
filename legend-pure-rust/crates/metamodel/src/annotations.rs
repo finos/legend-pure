@@ -33,10 +33,9 @@ pub struct StereotypeRef {
     /// The stereotype name within the profile.
     pub value: SmolStr,
     /// Source range covering the entire `profile.value` reference inside
-    /// the surrounding `<<...>>`. Populated by a compiler from the
-    /// source. `None` for synthetic refs constructed by tests or
+    /// the surrounding `<<...>>`.
+    /// `None` for synthetic refs constructed by tests or
     /// loaded from a graph that does not carry source info.
-    /// Used by IDE goto / hover to know which source range is clickable.
     pub source_info: Option<SourceInfo>,
 }
 
@@ -53,8 +52,7 @@ pub struct TaggedValueRef {
     /// The string value assigned to this tag.
     pub value: String,
     /// Source range covering the entire `profile.tag` reference inside
-    /// the surrounding `{...}`. Same shape and rationale as
-    /// [`StereotypeRef::source_info`].
+    /// the surrounding `{...}`.
     pub source_info: Option<SourceInfo>,
 }
 

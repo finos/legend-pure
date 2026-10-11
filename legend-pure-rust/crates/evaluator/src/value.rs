@@ -21,8 +21,7 @@
 //! [`StrictTime`] for native calendar arithmetic.
 //!
 //! Collections use persistent data structures (`im_rc::Vector`, `im_rc::HashMap`)
-//! for structural sharing — this transforms fold+put patterns from
-//! O(N²) to O(N log N).
+//! for structural sharing.
 //!
 //! Object references use `ObjectId` handles into the [`RuntimeHeap`](super::heap::RuntimeHeap),
 //! providing identity-preserving semantics for `mutateAdd`.
@@ -42,18 +41,12 @@ use crate::heap::ObjectHandle;
 
 /// Backing state for a [`Value::Map`].
 ///
-/// Keeps the entries and the `getIfAbsentCounter` together so they share
-/// the same `Rc<RefCell<…>>` identity — mirrors Java Pure's
-/// `MapCoreInstance` which holds a mutable map alongside its
-/// `PureMapStats`. Mutating natives (`getIfAbsentPutWithKey`) reach
-/// through `Rc<RefCell<MapState>>::borrow_mut()`; non-mutating natives
-/// read via `borrow()`. Two distinct `MapState` values with the same
+/// Two distinct `MapState` values with the same
 /// entries are equal (see [`Value::eq`]) — identity is for sharing, not
 /// for equality.
 #[derive(Debug, Clone, Default)]
 pub struct MapState {
-    /// HAMT-backed entries — `im_rc::HashMap` keeps `clone()` O(1) for
-    /// reads and `insert` O(log N) with structural sharing.
+    /// HAMT-backed entries.
     pub entries: im_rc::HashMap<ValueKey, Value>,
     /// Number of times `getIfAbsentPutWithKey` evaluated its lambda
     /// because the key was absent. Surfaced to Pure code by the
@@ -62,15 +55,6 @@ pub struct MapState {
 }
 
 /// A runtime value produced by evaluating a Pure expression.
-///
-/// Design decisions:
-/// - Primitives are unboxed (no heap allocation for `Integer`, `Float`, `Boolean`)
-/// - `Decimal` uses `rust_decimal::Decimal` — `Copy`, native arithmetic
-/// - `Date` uses `PureDate` — `jiff`-backed, `Copy`, native calendar arithmetic
-/// - `StrictTime` uses `jiff::civil::Time` — `Copy`
-/// - Strings use `SmolStr` (inline for short strings, shared heap for longer)
-/// - Collections use `im_rc` persistent structures for structural sharing
-/// - Objects are handles (`ObjectId`) into the `RuntimeHeap`, not direct pointers
 #[derive(Debug)]
 pub enum Value {
     /// Pure `Boolean` — stored inline.
@@ -83,10 +67,6 @@ pub enum Value {
     Float(f64),
 
     /// Pure `Decimal` — fixed-point decimal.
-    ///
-    /// Uses `rust_decimal::Decimal` (`Copy`) for native arithmetic.
-    /// Supports up to 28-29 significant digits — sufficient for all financial
-    /// calculations in Legend Engine.
     Decimal(Decimal),
 
     /// Pure `String` — inline for short strings via `SmolStr`.
@@ -94,8 +74,7 @@ pub enum Value {
 
     /// Pure `Date`, `StrictDate`, `DateTime` — variable-precision temporal value.
     ///
-    /// Uses `PureDate` backed by `jiff::civil::DateTime` for native calendar
-    /// arithmetic (`add_days`, `add_months`, etc.). All datetime values are
+    /// All datetime values are
     /// stored as UTC. Timezone conversion is done at format-time only.
     Date(PureDate),
 
@@ -106,9 +85,6 @@ pub enum Value {
     /// concrete `Date`. In equality (`Value == Value` / `values_equal`)
     /// it is reflexive — `%latest == %latest` — and unequal to any
     /// concrete date.
-    ///
-    /// Java parity: the `latestDate` instance form recognised by
-    /// `MilestoningFunctionExpressionValidator`.
     Latest,
 
     /// Pure `StrictTime` — time of day without date.
@@ -122,11 +98,7 @@ pub enum Value {
     /// identity is `Rc::ptr_eq`, freed when the last clone drops.
     Object(ObjectHandle),
 
-    /// An ordered collection of values — backed by an RRB-tree persistent
-    /// vector (`im_rc::Vector`).
-    ///
-    /// Operations like `map`, `filter`, `concatenate` produce new vectors
-    /// via structural sharing instead of full copies.
+    /// An ordered collection of values.
     Collection(Box<PVector<Value>>),
 
     /// A Pure `Map<K, V>` — entries plus stats live behind a shared,
@@ -134,19 +106,9 @@ pub enum Value {
     /// `getIfAbsentPutWithKey` are observable through every binding that
     /// references the same `Value::Map`.
     ///
-    /// In Java Pure the `MapCoreInstance` is a heap object whose entries
-    /// are mutated in place; the parity here is `Rc<RefCell<MapState>>`.
     /// Pure semantics for `put` / `putAll` / `replaceAll` still produce
-    /// fresh map identities (the Java natives explicitly construct a new
-    /// `MapCoreInstance`); only `getIfAbsentPutWithKey` mutates the shared
-    /// cell in place. The stats counter (incremented when
-    /// `getIfAbsentPutWithKey` materialises a missing entry) lives next
-    /// to the entries so it shares the same identity.
-    ///
-    /// `Rc<RefCell<…>>` is `!Send` — see `RuntimeHeap`'s thread-safety
-    /// note: the runtime is already thread-local, so this is the natural
-    /// representation for a tree-walking interpreter that mirrors Java's
-    /// mutable map semantics.
+    /// fresh map identities; only `getIfAbsentPutWithKey` mutates the shared
+    /// cell in place.
     Map(Rc<RefCell<MapState>>),
 
     /// A Pure `Function` value — anonymous lambda or compiled function reference.
@@ -173,15 +135,6 @@ pub enum Value {
     /// structural: two `EnumValue`s are equal iff their `enum_id` and
     /// `member` both match — so two enums with the same simple name in
     /// different packages never collide.
-    ///
-    /// The enumeration's human-readable name is **not** cached here —
-    /// it is recoverable from `enum_id` via
-    /// [`PureModel::element_name`](legend_pure_metamodel::model::PureModel::element_name),
-    /// and denormalising it would split identity from presentation and
-    /// invite drift. Renderers that need the pretty `EnumName.MEMBER`
-    /// form (`render_representation`, `render_id`) already have model
-    /// access; the `Display` impl prints just the `member`, mirroring
-    /// how [`Value::Object`] prints the id without the classifier.
     EnumValue {
         /// The owning [`Enumeration`](legend_pure_metamodel::model::Element::Enumeration) element.
         enum_id: ElementId,
@@ -227,10 +180,7 @@ pub enum FunctionValue {
     /// Reference to a named compiled Pure function (native or concrete).
     ///
     /// The `ElementId` uniquely identifies the specific overload resolved by
-    /// the compiler. At call time the evaluator reads the mangled FQN via
-    /// `model.get_node(id).name` and routes through the native registry
-    /// (for `NativeFunctionDefinition`) or `call_user_function`
-    /// (for `ConcreteFunctionDefinition`).
+    /// the compiler.
     Compiled(ElementId),
 
     /// A navigation-path closure: `#/Type/p1/p2(args)/p3!alias#`.
@@ -261,8 +211,7 @@ pub struct PathClosure {
     /// Optional alias suffix (`!alias`).
     pub name: Option<SmolStr>,
     /// Variables captured from the enclosing scope at the point of
-    /// path construction (typically empty — path parameters are usually
-    /// scalar literals or enum stubs).
+    /// path construction.
     pub captures: HashMap<SmolStr, Value>,
 }
 
@@ -271,14 +220,6 @@ pub struct PathClosure {
 /// Mirrors Java's `LambdaFunction` + captured `VariableContext`.
 /// The `captures` map snapshots the enclosing scope at the point of
 /// lambda creation for lexical scoping.
-///
-/// `parameters` and `body` are `Arc<[T]>` (matching `PureModel`'s
-/// `Function`/`QualifiedProperty` shape) so propagating a
-/// `LambdaClosure` (e.g. into the heap-side `LambdaFunction` wrapper
-/// the surveyor reads via `expressionSequence`) is an O(1) refcount
-/// bump — not a deep AST clone. `Arc` (vs `Rc`) keeps the underlying
-/// AST slices `Send + Sync`, which the LSP requires; the rest of
-/// `Value` remains single-threaded.
 #[derive(Debug, Clone)]
 pub struct LambdaClosure {
     /// Parameter declarations from the lambda syntax.
@@ -396,18 +337,11 @@ impl std::hash::Hash for ValueKey {
 }
 
 impl PartialEq for Value {
-    #[allow(clippy::match_same_arms)] // Arms kept separate for clarity — each variant is semantically distinct
+    #[allow(clippy::match_same_arms)]
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Boolean(a), Self::Boolean(b)) => a == b,
             (Self::Integer(a), Self::Integer(b)) => a == b,
-            // Mirror Java Pure's `CompiledSupport.eq` (compiled-engine
-            // path): `-0.0` and `+0.0` compare equal (Java normalizes
-            // both to `0.0` before comparing), and NaN compares equal
-            // to NaN (Java's `Double.equals` semantics — distinct from
-            // IEEE 754 `==`). Our previous `to_bits()` check inverted
-            // both: `parseFloat('-000.000') == 0.0` returned false, and
-            // NaN-bearing comparisons disagreed by NaN bit pattern.
             (Self::Float(a), Self::Float(b)) => a == b || (a.is_nan() && b.is_nan()),
             (Self::Decimal(a), Self::Decimal(b)) => a == b,
             (Self::String(a), Self::String(b)) => a == b,
@@ -415,10 +349,6 @@ impl PartialEq for Value {
             (Self::StrictTime(a), Self::StrictTime(b)) => a == b,
             (Self::Object(a), Self::Object(b)) => Rc::ptr_eq(a, b),
             (Self::Collection(a), Self::Collection(b)) => a == b,
-            // Map equality is structural over entries (Pure semantics):
-            // two distinct `Rc<RefCell<MapState>>`s with the same
-            // bindings compare equal. Stats are bookkeeping, not part of
-            // value identity.
             (Self::Map(a), Self::Map(b)) => {
                 Rc::ptr_eq(a, b) || a.borrow().entries == b.borrow().entries
             }
@@ -445,6 +375,7 @@ impl PartialEq for Value {
                     inner: i2,
                 },
             ) => u1 == u2 && i1 == i2,
+            (Self::Latest, Self::Latest) => true,
             (Self::Unit, Self::Unit) => true,
             _ => false,
         }
@@ -486,7 +417,7 @@ impl Value {
     ///
     /// # Errors
     /// Returns `TypeMismatch` if this value is not a `Float` or `Integer`.
-    #[allow(clippy::cast_precision_loss)] // Intentional: Pure semantics require Integer→Float promotion
+    #[allow(clippy::cast_precision_loss)]
     pub fn as_float(&self) -> Result<f64, crate::error::PureRuntimeError> {
         match self {
             Self::Float(f) => Ok(*f),
@@ -620,7 +551,7 @@ impl Value {
                 expected: "[1]".into(),
                 actual: 0,
             }),
-            other => Ok(other), // already scalar
+            other => Ok(other),
         }
     }
 
@@ -654,7 +585,7 @@ impl Value {
     #[must_use]
     pub fn to_collection(&self) -> PVector<Value> {
         match self {
-            Self::Collection(v) => (**v).clone(), // O(1) persistent clone
+            Self::Collection(v) => (**v).clone(),
             Self::Unit => PVector::new(),
             other => {
                 let mut v = PVector::new();
@@ -665,8 +596,6 @@ impl Value {
     }
 
     /// Whether this value is "empty" — `Unit` or an empty collection.
-    ///
-    /// Used for multiplicity checks and short-circuit evaluation.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         match self {
@@ -704,11 +633,6 @@ impl Value {
     ///   without an M3 metatype, etc.)
     /// - `Value::Function(Compiled(eid))` → same projection as `Element`
     /// - everything else → `None`
-    ///
-    /// Used by `values_equal` to make `Element(eid) == Object(oid)` hold
-    /// when both refer to the same metamodel entity, by `eval_property_access`
-    /// to route every reflection through the same heap accessor (step 3),
-    /// and by `assertIs` to compare metamodel references uniformly.
     #[must_use]
     pub fn as_object_handle(&self, heap: &crate::heap::RuntimeHeap) -> Option<ObjectHandle> {
         match self {
@@ -743,46 +667,12 @@ impl Value {
 impl Clone for Value {
     /// Iterative clone for `Value`, scaling with heap allocations
     /// instead of Rust thread-stack frames.
-    ///
-    /// The auto-derived `#[derive(Clone)]` expansion recurses one
-    /// frame per nesting level for `Collection(Box<PVector<Value>>)`:
-    /// `Value::clone` → `Box::clone` → `PVector::clone` → (per-element)
-    /// `Value::clone` → … . `im_rc::Vector::clone` is `O(1)` for the
-    /// fully-shared tree representation but **clones each element by
-    /// value** when the vector is small enough to stay inline in a
-    /// single chunk (`CHUNK_SIZE = 64`). Every level in our test
-    /// fixtures is a 1-element vector → always inline → always
-    /// per-element clone → 10 000 levels = 10 000 Rust frames =
-    /// stack overflow.
-    ///
-    /// This impl drives the work through an explicit-frame DFS. Each
-    /// recursive variant pushes an `Assemble` marker after queueing
-    /// its child visits; the `built` stack then carries the cloned
-    /// children in source order until the marker fires and pops them
-    /// into a fresh parent. Non-recursive variants are cloned in
-    /// place — they can't grow the work-stack indefinitely.
     fn clone(&self) -> Self {
         deep_clone_iter(self)
     }
 }
 
 /// Bottom-up iterative clone of an arbitrarily nested `Value`.
-///
-/// Two work-stacks:
-/// - `ops`: the DFS frontier; mixes `Visit(&Value)` (descend) and
-///   `Assemble(spec)` (collect built children into a parent).
-/// - `built`: cloned children waiting to be consumed by the next
-///   `Assemble` frame. Order matches source order — children are
-///   visited in reverse so that popping gives the original sequence.
-///
-/// The two `expect` calls below are algorithmic-invariant guards
-/// (every `AssembleUnitInstance` pushes exactly one `Visit` child;
-/// the loop net-pushes one entry per top-level `Visit`). They can
-/// only fire on a driver bug — there's no runtime input that
-/// triggers them — and there's no `Result` to thread an error
-/// through (`Clone` returns `Value`). `clippy::expect_used` is
-/// allowed here for that reason; cross-references for both sites
-/// are in the inline comments.
 #[allow(clippy::expect_used)]
 fn deep_clone_iter(root: &Value) -> Value {
     enum Op<'a> {
@@ -808,23 +698,14 @@ fn deep_clone_iter(root: &Value) -> Value {
                     ops.push(Op::AssembleUnitInstance(*unit_id));
                     ops.push(Op::Visit(inner));
                 }
-                // Non-recursive variants — cloned in place. No
-                // sub-`Value` field, so no work-stack growth.
                 other => built.push(clone_leaf(other)),
             },
             Op::AssembleCollection(len) => {
-                // Pop `len` items off `built` in source order. They
-                // were pushed in source order because we queued
-                // children in reverse, so a straight `drain` reads
-                // them as written.
                 let start = built.len() - len;
                 let items: PVector<Value> = built.drain(start..).collect();
                 built.push(Value::Collection(Box::new(items)));
             }
             Op::AssembleUnitInstance(unit_id) => {
-                // Safe: every UnitInstance visit pushes exactly one
-                // child `Visit` *and* this `Assemble` marker — so
-                // `built` has at least one entry when we pop.
                 let inner = built
                     .pop()
                     .expect("deep_clone_iter: AssembleUnitInstance reached with empty built stack");
@@ -864,8 +745,6 @@ fn clone_leaf(v: &Value) -> Value {
             member: member.clone(),
         },
         Value::Unit => Value::Unit,
-        // Recursive variants are handled by `deep_clone_iter`; the
-        // contract is that they never reach this leaf helper.
         Value::Collection(_) | Value::UnitInstance { .. } => {
             unreachable!("deep_clone_iter must not delegate recursive variants to clone_leaf")
         }
@@ -875,35 +754,7 @@ fn clone_leaf(v: &Value) -> Value {
 impl Drop for Value {
     /// Iterative drop for `Value`, scaling with heap allocations instead
     /// of Rust thread-stack frames.
-    ///
-    /// `Value::Collection(Box<PVector<Value>>)` nests arbitrarily — the
-    /// auto-derived drop chain (`Box::drop` → `PVector::drop` →
-    /// `Value::drop` → `Box::drop` → …) recurses one stack frame per
-    /// nesting level and overflows somewhere between ~3 000 and ~5 000
-    /// levels on a default 8 MiB thread (Phase M's equality test had
-    /// to clamp depth to 1 500 specifically because of this).
-    ///
-    /// This impl drains the recursive variants into a `Vec<Value>`
-    /// work-stack: extract `Collection`'s inner `PVector` (and
-    /// `UnitInstance`'s inner `Value`), push children onto the stack,
-    /// then pop and dismantle each in turn. Each `Drop` call enters
-    /// only one layer of `match`; pathological depths just allocate
-    /// more entries in the heap-resident work-stack.
-    ///
-    /// `Object`, `Map`, `Function`, and similar `Rc`-wrapped variants
-    /// are left to their natural drop: their recursive structure is
-    /// bounded by the heap-cycle's reference count, not by syntactic
-    /// nesting, and unwrapping them here would require interfering
-    /// with shared ownership. If those variants point at deeply
-    /// nested `Collection`s, dropping the last reference will still
-    /// hit this iterative path on each owned `Value::Collection`
-    /// inside the entry.
     fn drop(&mut self) {
-        // Extract the immediate recursive children of `self` without
-        // letting the natural drop chain recurse. We replace `self`'s
-        // inner state with empty placeholders so when `self` goes out
-        // of scope after this fn returns, the auto-derived drop on the
-        // remaining fields is a no-op (empty `PVector`, empty `Value::Unit`).
         let mut stack: Vec<Value> = Vec::new();
         match self {
             Value::Collection(boxed) => {
@@ -917,14 +768,7 @@ impl Drop for Value {
             _ => {}
         }
 
-        // Drain the stack iteratively. Each popped `Value` enters only
-        // one layer of dispatch — no recursion into Rust frames.
         while let Some(mut v) = stack.pop() {
-            // Drop `v` manually: we can't `match v` and move out of
-            // its fields (since `Value` itself has `Drop`), so we
-            // mutate-in-place through `&mut v`, extract the recursive
-            // payload into the work-stack, and then let `v` go out
-            // of scope with empty inner state.
             match &mut v {
                 Value::Collection(boxed) => {
                     let pvec = std::mem::take(&mut **boxed);
@@ -936,10 +780,6 @@ impl Drop for Value {
                 }
                 _ => {}
             }
-            // `v` drops here. For Collection / UnitInstance the inner
-            // is now empty, so the natural drop is a no-op. Other
-            // variants drop normally (single-ownership transfer of an
-            // `Rc` is bounded by reference count, not depth).
         }
     }
 }
@@ -984,14 +824,7 @@ impl fmt::Display for Value {
                 }
             },
             Self::Element(id) => write!(f, "<Element:{id}>"),
-            // Display prints just the member — matches `Value::Object`
-            // printing the id without the classifier. Consumers that
-            // need the qualified `EnumName.MEMBER` form have model
-            // access (see `render_representation` / `render_id`).
             Self::EnumValue { member, .. } => write!(f, "{member}"),
-            // `{inner} <UnitId>` — a terse trace form; the pretty
-            // `5 RomanLength~Pes` shape needs model access, so
-            // `render_representation` handles that elsewhere.
             Self::UnitInstance { unit_id, inner } => write!(f, "{inner} <Unit:{unit_id}>"),
             Self::Unit => write!(f, "[]"),
         }
@@ -1034,7 +867,6 @@ mod tests {
 
     #[test]
     fn value_decimal_precision() {
-        // No floating-point surprises
         let a = Decimal::from_str("0.1").unwrap();
         let b = Decimal::from_str("0.2").unwrap();
         let result = a + b;
@@ -1069,7 +901,6 @@ mod tests {
         let v2 = v1.clone() + PVector::unit(Value::Integer(1));
         let v3 = v2.clone() + PVector::unit(Value::Integer(2));
 
-        // v1 is still empty — structural sharing, not mutation
         assert_eq!(v1.len(), 0);
         assert_eq!(v2.len(), 1);
         assert_eq!(v3.len(), 2);
@@ -1081,7 +912,6 @@ mod tests {
         let m2 = m1.update(ValueKey::String("a".into()), Value::Integer(1));
         let m3 = m2.update(ValueKey::String("b".into()), Value::Integer(2));
 
-        // m1 is still empty
         assert_eq!(m1.len(), 0);
         assert_eq!(m2.len(), 1);
         assert_eq!(m3.len(), 2);
@@ -1248,25 +1078,12 @@ mod tests {
     /// Locks the iterative `Value::Drop` contract: constructing a 10 000-
     /// level-deep `Collection(Collection(...))` chain and letting it go
     /// out of scope must not overflow the thread stack.
-    ///
-    /// The naive auto-derived `Drop` chain on `Box<PVector<Value>>`
-    /// recurses one Rust stack frame per nesting level. On a default
-    /// 8 MiB thread stack this used to overflow somewhere between 3 000
-    /// and 5 000 levels deep (Phase M had to clamp its equality test
-    /// to 1 500 specifically because of this). The iterative drop
-    /// scales with heap allocations only, so 10 000 — and beyond —
-    /// completes cleanly.
     #[test]
     fn deep_nested_collection_drops_without_overflow() {
         let v = deep_nested_collection(10_000);
         drop(v);
     }
 
-    /// Probe: does cloning a deep-nested Value overflow? If `Value::Clone`
-    /// derived expansion is O(depth) recursive (advisor's hypothesis),
-    /// this overflows at 10 000. If it's O(1) per level because im_rc
-    /// shares structurally, this completes. Once locked, this is the
-    /// contract for the iterative-Clone follow-up.
     #[test]
     fn deep_nested_collection_clones_without_overflow() {
         let v = deep_nested_collection(10_000);

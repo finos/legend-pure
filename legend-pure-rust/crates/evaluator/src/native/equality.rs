@@ -46,12 +46,7 @@ use crate::value::Value;
 /// to the same key.
 type HandlePtr = *const RefCell<HeapEntry>;
 
-/// Structural value equality, heap-aware. Iterative implementation —
-/// uses an explicit work-stack instead of mutual recursion so deep
-/// inputs (`List<List<…>>` chains, equality-keyed self-references,
-/// long `Pair<U, Pair<…>>` walks) can't overflow the Rust stack.
-/// Pathological depths just allocate more entries in the work-stack
-/// `Vec` instead.
+/// Structural value equality, heap-aware.
 ///
 /// Primitives compare by value (delegating to `PartialEq for Value`).
 /// Collections compare length then element-wise.
@@ -101,16 +96,6 @@ fn step_value_equal(
         (Value::Object(oa), Value::Object(ob)) => {
             push_object_key_pairs(ctx, oa.clone(), ob.clone(), work, seen)
         }
-        // Cross-variant equality for metamodel references — when one
-        // side is `Element(eid)` / `Function(Compiled(eid))` and the
-        // other is the heap row produced by `bootstrap_metamodel`,
-        // both views point at the same `ObjectHandle`. Without this
-        // bridge `assertIs($cls, ^Class<…>(...)->class())` fails
-        // because the bare `Element` and the materialised `Object`
-        // wouldn't compare equal even though Java treats them as
-        // the same `CoreInstance`. Bridges `Element ↔ Object`,
-        // `Function(Compiled) ↔ Object`, and the symmetric
-        // `Element ↔ Function(Compiled)` (same compiled-element id).
         (
             Value::Element(_) | Value::Function(_) | Value::Object(_),
             Value::Element(_) | Value::Function(_) | Value::Object(_),
@@ -123,23 +108,10 @@ fn step_value_equal(
                 _ => a == b,
             }
         }
-        // Pure multiplicity coercion: a single-element collection equals
-        // its scalar (`[x] == x` holds, `[x, y] == x` does not). The
-        // heap's `apply_property_to_instance` returns `Value::from_vec`'d
-        // results which collapse 1-element lists to the bare element,
-        // while Element-side property access (`eval_function_property`'s
-        // `expressionSequence`) explicitly wraps as `Value::Collection`.
-        // Without this branch, `$f1.expressionSequence` (Collection) and
-        // `$f2.expressionSequence` (bare Function) would compare unequal
-        // even though Pure considers them the same value.
         (Value::Collection(xs), other) | (other, Value::Collection(xs)) if xs.len() == 1 => {
             work.push((xs[0].clone(), other.clone()));
             true
         }
-        // Empty collection equals `Unit` — same multiplicity coercion
-        // applied at the zero end. `from_vec(Vec::new())` produces
-        // `Value::Unit`, so a heap slot with no values vs an explicit
-        // empty Collection should still compare equal.
         (Value::Collection(xs), Value::Unit) | (Value::Unit, Value::Collection(xs))
             if xs.is_empty() =>
         {
@@ -155,11 +127,6 @@ fn step_value_equal(
 /// Returns `false` immediately on classifier mismatch / unresolved
 /// classifier / no equality keys; returns `true` to mean "every key
 /// pair has been queued — keep iterating."
-///
-/// Cycle guard records the (smaller-pointer, larger-pointer) pair so a
-/// re-encounter short-circuits to `true` without re-pushing. Without
-/// it, an `<<equality.Key>>` cycle (e.g. mutually-keyed self-references)
-/// would re-push pairs forever.
 fn push_object_key_pairs(
     ctx: &dyn EvalContextTrait,
     a: ObjectHandle,
@@ -171,16 +138,10 @@ fn push_object_key_pairs(
         return true;
     }
 
-    // Canonical ordering: smaller pointer first, so (A,B) and (B,A) map
-    // to the same key — equality is symmetric, so we should never
-    // re-enter a comparison whose mirror was already in flight.
     let pa = std::rc::Rc::as_ptr(&a);
     let pb = std::rc::Rc::as_ptr(&b);
     let cycle_key = if pa <= pb { (pa, pb) } else { (pb, pa) };
     if !seen.insert(cycle_key) {
-        // Already in the comparison frontier — assume equal so the
-        // cycle resolves without infinite work. Concrete mismatches
-        // elsewhere in the graph still surface via the outer loop.
         return true;
     }
 
@@ -190,18 +151,15 @@ fn push_object_key_pairs(
     let Ok(b_classifier) = ctx.heap().classifier(&b) else {
         return false;
     };
-    // Identify the class by resolved element, never by classifier string:
-    // two spellings of one class are the same class, two unknown
-    // classifiers are not comparable.
     let Some(class_id) = crate::m3_paths::resolve(ctx.model(), &a_classifier) else {
-        return false; // unknown classifier — can't structurally compare
+        return false;
     };
     if crate::m3_paths::resolve(ctx.model(), &b_classifier) != Some(class_id) {
         return false;
     }
     let keys = equality_key_properties(ctx.model(), class_id);
     if keys.is_empty() {
-        return false; // no <<equality.Key>> → identity semantics (already checked above)
+        return false;
     }
     for prop in &keys {
         let Ok(av) = ctx.heap().get_property_values(&a, prop.as_str()) else {
@@ -223,28 +181,13 @@ fn push_object_key_pairs(
 /// Property names annotated with `<<equality.Key>>` on the given Class,
 /// in declaration order. Empty ⇒ class uses identity equality.
 ///
-/// Resolves `meta::pure::profiles::equality` on the model once so every
-/// stereotype-ref check is a cheap `ElementId` compare rather than a
-/// string match. Returns empty if the equality profile isn't loaded.
+/// Returns empty if the equality profile isn't loaded.
 #[must_use]
 pub fn equality_key_properties(model: &PureModel, class_id: ElementId) -> Vec<SmolStr> {
     let Some(equality_profile) = crate::m3_paths::resolve(model, crate::m3_paths::EQUALITY_PROFILE)
     else {
         return Vec::new();
     };
-    // Walk class + supertypes (BFS) so an `<<equality.Key>>` declared on
-    // `TopClass` is honoured when comparing two `LeftClass extends
-    // TopClass` instances. Keep declaration order: subclass properties
-    // appear before inherited supertype properties.
-    //
-    // Override semantics: a subclass that redefines a property — with or
-    // without the `<<equality.Key>>` stereotype — wins for that property
-    // name. So `OtherBottomClass.sides : SideClass[*]` (no stereotype)
-    // overrides `TopClass.<<equality.Key>> sides : SideClass[*]` and the
-    // result excludes `sides` from equality keys for `OtherBottomClass`
-    // instances. Tracking *all* seen property names (not just keys)
-    // enforces this: when the BFS reaches the supertype with a key, the
-    // name is already in `seen_names` and gets skipped.
     let mut visited: std::collections::HashSet<ElementId> = std::collections::HashSet::new();
     let mut queue: std::collections::VecDeque<ElementId> = std::collections::VecDeque::new();
     let mut seen_names: std::collections::HashSet<SmolStr> = std::collections::HashSet::new();
@@ -257,7 +200,7 @@ pub fn equality_key_properties(model: &PureModel, class_id: ElementId) -> Vec<Sm
         };
         for prop in &class.properties {
             if !seen_names.insert(prop.name.clone()) {
-                continue; // subclass already defined (or redefined) this name
+                continue;
             }
             if prop
                 .stereotypes
@@ -307,23 +250,7 @@ mod tests {
     }
 
     /// Locks the iterative-equality + iterative-`Drop` +
-    /// iterative-`Clone` triple. The old recursive `values_equal`
-    /// hit `MAX_EQUALITY_DEPTH = 1000` and silently returned `false`;
-    /// the auto-derived `Drop` overflowed around 3 000–5 000; the
-    /// derived `Clone` (used to seed `work` from `(a.clone(),
-    /// b.clone())` and re-clone children on every push) overflowed at
-    /// the same level. All three are now bounded by heap allocations,
-    /// not Rust frames.
-    ///
-    /// Depth 3 000 is comfortably past every previous overflow point
-    /// while keeping the test under a couple of seconds — the
-    /// iterative equality clones each child pair onto the work-stack
-    /// via the new iterative `Value::Clone`, so this is `O(depth²)`
-    /// total work (~9 million ops at 3 000; depth 10 000 would be
-    /// ~100 million → 30+ s in debug builds). The "no overflow at
-    /// all" leg of the contract is locked separately and cheaply by
-    /// `value::tests::deep_nested_collection_{drops,clones}_without_overflow`
-    /// at depth 10 000.
+    /// iterative-`Clone` triple.
     #[test]
     fn deeply_nested_collections_compare_equal_past_old_recursion_cap() {
         let a = deep_nested_collection(3_000, 42);
@@ -343,8 +270,7 @@ mod tests {
     }
 
     /// Multiplicity coercion (`[x] == x`) still works through the new
-    /// iterative path. Locks one of the trickier branches of the
-    /// dispatch that the old recursive form encoded inline.
+    /// iterative path.
     #[test]
     fn singleton_collection_equals_scalar() {
         let mut single = Vector::new();
@@ -353,7 +279,7 @@ mod tests {
         let b = Value::Integer(7);
         let ctx = MockCtx;
         assert!(values_equal(&ctx, &a, &b));
-        assert!(values_equal(&ctx, &b, &a)); // symmetric
+        assert!(values_equal(&ctx, &b, &a));
     }
 
     /// Empty collection equals `Unit`. Same multiplicity-coercion

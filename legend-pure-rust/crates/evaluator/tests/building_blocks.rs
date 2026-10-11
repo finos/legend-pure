@@ -13,9 +13,6 @@
 // limitations under the License.
 
 //! The evaluator over the bootstrap alone, driven by hand-built nodes.
-//!
-//! These are the fourteen tests that lived at the bottom of the archived
-//! `eval.rs`; Step 1 of the plan grows them row by row.
 
 use legend_pure_metamodel::source_info::SourceInfo;
 use legend_pure_metamodel::types::{ExprKind, FunctionCallData, ValueSpec};
@@ -108,8 +105,6 @@ fn eval_native_function_call() {
     let model = test_model();
     let registry = NativeRegistry::standard();
     let mut eval = Evaluator::new(&model, &registry);
-    // `plus` has the single signature `(Number[*]):Number[1]`, so the
-    // call shape is `plus([2, 3])` — one argument wrapping a Collection.
     let expr = make_expr(ExprKind::FunctionCall(FunctionCallData {
         function: None,
         function_name: "plus_Number_MANY__Number_1_".into(),
@@ -128,7 +123,6 @@ fn eval_nested_function_calls() {
     let model = test_model();
     let registry = NativeRegistry::standard();
     let mut eval = Evaluator::new(&model, &registry);
-    // plus([2, times([3, 4])]) -> 14
     let expr = make_expr(ExprKind::FunctionCall(FunctionCallData {
         function: None,
         function_name: "plus_Number_MANY__Number_1_".into(),

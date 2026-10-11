@@ -14,12 +14,6 @@
 
 //! Reusable helpers that operate on a [`PureModel`] — element path
 //! construction, package-qualified path resolution, simple-name lookup.
-//!
-//! These functions back the `elementToPath` / `pathToElement` natives but
-//! are equally useful to the evaluator, test-surveyor scaffolding, and
-//! CLI diagnostics. Exposing them here avoids having every caller reach
-//! into `native::meta` (which is about *Pure-native* dispatch, not
-//! general model navigation).
 
 use legend_pure_metamodel::ids::ElementId;
 use legend_pure_metamodel::model::{Element, PureModel};
@@ -61,7 +55,6 @@ pub fn build_element_path(
     separator: &str,
     include_root: bool,
 ) -> String {
-    // Calling elementToPath on the root package itself.
     if let ElementId::Package(pkg_id) = id
         && model.get_package(pkg_id).parent.is_none()
     {
@@ -80,10 +73,6 @@ pub fn build_element_path(
         ElementId::InstanceId { .. } => Some(model.get_node(id).parent_package),
     };
 
-    // Collect intermediate package names (everything between the element
-    // and the root). Whether to prepend "Root" is decided only once we
-    // know if there is at least one intermediate segment — top-level
-    // elements stay root-less.
     let mut intermediate_packages: Vec<SmolStr> = Vec::new();
     while let Some(pkg_id) = parent_pkg {
         let pkg = model.get_package(pkg_id);

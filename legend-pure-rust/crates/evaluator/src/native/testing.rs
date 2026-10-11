@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Test-support natives fished so far: `assert`. `executeTest`,
-//! `executePCTTest`, `assertError` and `loadPCTManifest` stay on the
-//! archive until the PCT run needs them.
+//! Test-support natives: `assert`.
 
 use legend_pure_metamodel::types::ValueSpec;
 
@@ -26,7 +24,7 @@ use crate::value::Value;
 ///
 /// Asserts a boolean condition. If false, evaluates the message expression
 /// and returns an error with that message. The message is only evaluated
-/// on failure — short-circuit via direct `ctx.evaluate` calls.
+/// on failure.
 #[derive(Debug)]
 pub struct Assert;
 
@@ -37,10 +35,6 @@ impl NativeFunction for Assert {
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
         expect_args("assert", args, 2)?;
-        // Condition is plain `Boolean[1]` — force directly. Message is
-        // typed `Function<{->String[1]}>`, so the compiler wraps it in a
-        // zero-parameter lambda; `force_thunk` unwraps that only on failure
-        // so a passing assertion never builds its message.
         let condition = ctx.evaluate(&args[0])?.as_boolean()?;
         if condition {
             Ok(Evaluated::new(Value::Boolean(true)))
@@ -75,9 +69,6 @@ mod tests {
 
     #[test]
     fn assert_false_fails_with_the_message() {
-        // The message argument is declared as a function, but `force_thunk`
-        // accepts a plain string too; that is how callers without lambdas
-        // (the JNI boundary) reach this native.
         let err = Assert
             .execute(&[lit_bool(false), lit_str("boom")], &mut MockCtx)
             .unwrap_err();

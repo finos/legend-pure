@@ -96,7 +96,6 @@ fn association_feeds_the_association_properties_index_for_both_ends() {
     );
     let model = b.finish();
     assert_eq!(model.resolve_fqn_str("my::Employment"), Some(assoc));
-    // The index is keyed by the *target* type of each property.
     assert_eq!(model.association_properties(person), &[(assoc, 0)]);
     assert_eq!(model.association_properties(firm), &[(assoc, 1)]);
 }
@@ -117,8 +116,6 @@ fn profile_round_trips_with_its_stereotypes_and_tags() {
 #[test]
 fn bootstrap_elements_resolve_through_the_builder() {
     let b = ModelBuilder::new();
-    // Primitives sit in chunk 0 but are not package children; they are
-    // reached through the `bootstrap::*_ID` constants.
     assert_eq!(b.model().element_name(STRING_ID), "String");
     assert!(b.resolve("meta::pure::metamodel::type::Class").is_some());
     assert!(b.resolve("my::nothing").is_none());
@@ -201,8 +198,6 @@ fn measure_and_unit_reflect_their_canonical_unit_and_local_name() {
             non_canonical_units: Vec::new(),
         }),
     );
-    // Units are named `Measure~Unit` in the model; the evaluator reports
-    // the local part after `~`.
     let kilogram = b.add(
         "my::Mass~Kilogram",
         Element::Unit(Unit {
@@ -272,7 +267,6 @@ fn packages_are_elements_too() {
     let mut b = ModelBuilder::new();
     let person = b.class("my::deep::Person", class(Vec::new(), Vec::new()));
     let model = b.finish();
-    // Packages are not resolved by path; reach them from an element.
     let pkg_id = model.get_node(person).parent_package;
     let pkg = model.get_package(pkg_id);
     assert_eq!(pkg.name, "deep");
@@ -305,9 +299,6 @@ fn unknown_property_on_an_instance_reads_as_unit() {
         eval.eval(&expr::prop(expr::var("p"), "name")).unwrap(),
         Value::String("Ann".into())
     );
-    // The archived evaluator treats an unknown property on a heap object
-    // as an unset `[0..1]` slot rather than an error; record that here so
-    // a change in the contract shows up.
     assert_eq!(
         eval.eval(&expr::prop(expr::var("p"), "nope")).unwrap(),
         Value::Unit
