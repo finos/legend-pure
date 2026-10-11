@@ -1,0 +1,7 @@
+{
+  "name": "platform_rust_jni",
+  "pattern": "(meta::pure::rust::jni)(::.*)?",
+  "dependencies": [
+    "platform"
+  ]
+}

@@ -1,4 +1,4 @@
 {
-  "adapter": "meta::pure::test::pct::testAdapterForRustNativeExecution_Function_1__X_o_",
+  "adapter": "meta::pure::rust::standalone::testAdapterForRustNativeExecution_Function_1__X_o_",
   "exclusions": []
 }

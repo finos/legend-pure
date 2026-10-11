@@ -41,8 +41,8 @@ public class BenchmarkPctExpressions
     {
         new PctExpressionsBenchmark(Lists.mutable.with(
                 Mode.host(Engine.INTERPRETED, PlatformCodeRepositoryProvider.nativeAdapter),
-                Mode.rust(Engine.INTERPRETED, PlatformCodeRepositoryProvider.rustJniAdapter, PureRustEvaluator::lastTimings),
+                Mode.rust(Engine.INTERPRETED, RustJniCodeRepositoryProvider.rustJniAdapter, PureRustEvaluator::lastTimings),
                 Mode.host(Engine.COMPILED, PlatformCodeRepositoryProvider.nativeAdapter),
-                Mode.rust(Engine.COMPILED, PlatformCodeRepositoryProvider.rustJniAdapter, PureRustEvaluator::lastTimings))).run();
+                Mode.rust(Engine.COMPILED, RustJniCodeRepositoryProvider.rustJniAdapter, PureRustEvaluator::lastTimings))).run();
     }
 }

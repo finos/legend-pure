@@ -33,7 +33,7 @@ import java.io.IOException;
  */
 public class RebaseRustJniManifests
 {
-    private static final Adapter adapter = PlatformCodeRepositoryProvider.rustJniAdapter;
+    private static final Adapter adapter = RustJniCodeRepositoryProvider.rustJniAdapter;
 
     @Test
     public void rebaseEssential() throws IOException

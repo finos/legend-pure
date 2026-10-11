@@ -41,7 +41,7 @@ import java.util.Stack;
 
 /**
  * Interpreted implementation of
- * {@code meta::pure::functions::lang::evalRust<V|m>(f:Function<{->V[m]}>[1]):V[m]}:
+ * {@code meta::pure::rust::jni::evalRust<V|m>(f:Function<{->V[m]}>[1]):V[m]}:
  * the zero-argument lambda crosses the JNI boundary as a graph node and the
  * Rust evaluator runs it. This is the body of the {@code Rust_JNI} PCT adapter.
  *

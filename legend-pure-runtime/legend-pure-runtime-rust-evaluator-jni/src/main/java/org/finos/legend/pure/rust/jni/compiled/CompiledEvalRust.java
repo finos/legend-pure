@@ -26,7 +26,6 @@ import org.finos.legend.pure.rust.PureRustException;
 import org.finos.legend.pure.rust.compiled.CompiledHost;
 import org.finos.legend.pure.rust.compiled.CompiledObjects;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
-import org.finos.legend.pure.runtime.java.compiled.extension.EvalRustExecutor;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -38,14 +37,24 @@ import java.util.Map;
  * Java values for primitives and maps, generated-class instances for Rust
  * objects ({@link CompiledObjects}).
  * One evaluator per {@link CompiledExecutionSupport}, created on first use.
- * Discovered through {@code META-INF/services}.
+ * The generated code of {@link EvalRust} calls {@link #evaluate}.
  */
-public final class CompiledEvalRust implements EvalRustExecutor
+public final class CompiledEvalRust
 {
-    private final Map<ExecutionSupport, PureRustEvaluator> evaluators = new IdentityHashMap<>();
+    private static final Map<ExecutionSupport, PureRustEvaluator> evaluators = new IdentityHashMap<>();
 
-    @Override
-    public Object evaluate(ExecutionSupport executionSupport, Function<?> function)
+    private CompiledEvalRust()
+    {
+    }
+
+    /**
+     * The run-time entry the generated code calls.
+     *
+     * @param executionSupport the execution support of the calling function
+     * @param function         the function value to evaluate, a compiled lambda or a function element
+     * @return the result values, as compiled values, in a collection
+     */
+    public static Object evaluate(ExecutionSupport executionSupport, Function<?> function)
     {
         PureRustEvaluator evaluator = evaluator(executionSupport);
         CoreInstance[] results;
@@ -86,22 +95,22 @@ public final class CompiledEvalRust implements EvalRustExecutor
         }
     }
 
-    private synchronized PureRustEvaluator evaluator(ExecutionSupport executionSupport)
+    private static synchronized PureRustEvaluator evaluator(ExecutionSupport executionSupport)
     {
-        PureRustEvaluator evaluator = this.evaluators.get(executionSupport);
+        PureRustEvaluator evaluator = evaluators.get(executionSupport);
         if (evaluator == null)
         {
             evaluator = PureRustEvaluator.over(new CompiledHost(((CompiledExecutionSupport) executionSupport).getProcessorSupport()));
-            this.evaluators.put(executionSupport, evaluator);
+            evaluators.put(executionSupport, evaluator);
         }
         return evaluator;
     }
 
-    private synchronized void discard(ExecutionSupport executionSupport, PureRustEvaluator poisoned)
+    private static synchronized void discard(ExecutionSupport executionSupport, PureRustEvaluator poisoned)
     {
-        if (this.evaluators.get(executionSupport) == poisoned)
+        if (evaluators.get(executionSupport) == poisoned)
         {
-            this.evaluators.remove(executionSupport);
+            evaluators.remove(executionSupport);
         }
         poisoned.close();
     }

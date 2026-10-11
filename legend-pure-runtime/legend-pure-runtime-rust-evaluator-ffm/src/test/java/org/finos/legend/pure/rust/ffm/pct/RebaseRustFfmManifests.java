@@ -22,7 +22,7 @@ import java.io.IOException;
 
 public class RebaseRustFfmManifests
 {
-    private static final Adapter adapter = PlatformCodeRepositoryProvider.rustFfmAdapter;
+    private static final Adapter adapter = RustFfmCodeRepositoryProvider.rustFfmAdapter;
 
     @Test
     public void rebaseEssential() throws IOException

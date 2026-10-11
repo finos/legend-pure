@@ -36,46 +36,6 @@ function
   $f->eval();
 }
 
-// Evaluates a zero-argument lambda on the Rust evaluator (legend-pure-runtime-rust-evaluator-jni):
-// the interpreted engine through an InterpretedExtension, the compiled engine through its
-// EvalRustExecutor hook, both provided by that module.
-native function meta::pure::functions::lang::evalRust<V|m>(f:Function<{->V[m]}>[1]):V[m];
-
-function
-    <<PCT.adapter>>
-    {
-        PCT.adapterName='Rust_JNI'
-    }
-    meta::pure::test::pct::testAdapterForRustExecution<X|o>(f:Function<{->X[o]}>[1]):X[o]
-{
-  $f->evalRust();
-}
-
-// Evaluates a zero-argument lambda on the Rust evaluator over the Foreign Function & Memory API
-// (legend-pure-runtime-rust-evaluator-ffm): the interpreted engine through an InterpretedExtension,
-// the compiled engine through its EvalRustFfmExecutor hook, both provided by that module.
-native function meta::pure::functions::lang::evalRustFfm<V|m>(f:Function<{->V[m]}>[1]):V[m];
-
-function
-    <<PCT.adapter>>
-    {
-        PCT.adapterName='Rust_FFM'
-    }
-    meta::pure::test::pct::testAdapterForRustFfmExecution<X|o>(f:Function<{->X[o]}>[1]):X[o]
-{
-  $f->evalRustFfm();
-}
-
-function
-    <<PCT.adapter>>
-    {
-        PCT.adapterName='Rust_Native'
-    }
-    meta::pure::test::pct::testAdapterForRustNativeExecution<X|o>(f:Function<{->X[o]}>[1]):X[o]
-{
-  $f->eval();
-}
-
 // ----------------------------------------------------------------------------------
 // PCT Manifest — portable, JSON-driven test configuration
 // ----------------------------------------------------------------------------------

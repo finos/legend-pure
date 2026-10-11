@@ -26,7 +26,7 @@ import org.finos.legend.pure.rust.pct.PctSuites;
 public class Test_RustFfm_GrammarFunctions_PCT extends PCTReportConfiguration
 {
     private static final ReportScope reportScope = PlatformCodeRepositoryProvider.grammarFunctions;
-    private static final Adapter adapter = PlatformCodeRepositoryProvider.rustFfmAdapter;
+    private static final Adapter adapter = RustFfmCodeRepositoryProvider.rustFfmAdapter;
     private static final String platform = "interpreted";
     private static final String manifestPath = "platform/pure/grammar/functions/pct_grammar_interpreted_rust_ffm.json";
 

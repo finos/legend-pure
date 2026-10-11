@@ -33,7 +33,7 @@ pub const SURVEYOR: &str =
 /// The adapter the `Rust_Native` manifests name: `$f->eval()` on the
 /// evaluator itself.
 pub const ADAPTER: &str =
-    "meta::pure::test::pct::testAdapterForRustNativeExecution_Function_1__X_o_";
+    "meta::pure::rust::standalone::testAdapterForRustNativeExecution_Function_1__X_o_";
 
 /// One report scope of the corpus, as the Java harness defines it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

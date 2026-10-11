@@ -86,7 +86,7 @@ public final class PureRustEvaluator implements FunctionExecution, RustHeap, Clo
     /**
      * An evaluator over any engine's graph, for engines that are not a
      * {@link PureRuntime}: the compiled engine reaches it through
-     * {@code evalRust}'s executor.
+     * {@code evalRust}'s entry, {@code CompiledEvalRust}.
      *
      * @param host the engine's side of the bridge
      * @return an initialised evaluator; {@link #start} is for the interpreted engine, {@link #evaluate} for any

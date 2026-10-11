@@ -111,7 +111,7 @@ public final class PureRustFfmEvaluator implements FunctionExecution, RustHeap, 
     /**
      * An evaluator over any engine's graph, for engines that are not a
      * {@link PureRuntime}: the compiled engine reaches it through
-     * {@code evalRustFfm}'s executor.
+     * {@code evalRustFfm}'s entry, {@code CompiledEvalRustFfm}.
      *
      * @param host the engine's side of the bridge
      * @return an initialised evaluator; {@link #start} is for the interpreted engine, {@link #evaluate} for any

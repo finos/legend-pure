@@ -26,7 +26,7 @@ import org.finos.legend.pure.rust.pct.PctSuites;
 public class Test_RustFfm_EssentialFunctions_PCT extends PCTReportConfiguration
 {
     private static final ReportScope reportScope = PlatformCodeRepositoryProvider.essentialFunctions;
-    private static final Adapter adapter = PlatformCodeRepositoryProvider.rustFfmAdapter;
+    private static final Adapter adapter = RustFfmCodeRepositoryProvider.rustFfmAdapter;
     private static final String platform = "interpreted";
     private static final String manifestPath = "platform/pure/essential/pct_essential_interpreted_rust_ffm.json";
 

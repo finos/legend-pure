@@ -26,16 +26,18 @@ import org.finos.legend.pure.rust.PureRustFfmEvaluator;
 import org.finos.legend.pure.rust.compiled.CompiledHost;
 import org.finos.legend.pure.rust.compiled.CompiledObjects;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
-import org.finos.legend.pure.runtime.java.compiled.extension.EvalRustFfmExecutor;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
-public final class CompiledEvalRustFfm implements EvalRustFfmExecutor
+public final class CompiledEvalRustFfm
 {
-    private final Map<ExecutionSupport, PureRustFfmEvaluator> evaluators = new IdentityHashMap<>();
+    private static final Map<ExecutionSupport, PureRustFfmEvaluator> evaluators = new IdentityHashMap<>();
 
-    @Override
-    public Object evaluate(ExecutionSupport executionSupport, Function<?> function)
+    private CompiledEvalRustFfm()
+    {
+    }
+
+    public static Object evaluate(ExecutionSupport executionSupport, Function<?> function)
     {
         PureRustFfmEvaluator evaluator = evaluator(executionSupport);
         CoreInstance[] results;
@@ -76,17 +78,17 @@ public final class CompiledEvalRustFfm implements EvalRustFfmExecutor
         }
     }
 
-    private synchronized PureRustFfmEvaluator evaluator(ExecutionSupport executionSupport)
+    private static synchronized PureRustFfmEvaluator evaluator(ExecutionSupport executionSupport)
     {
-        return this.evaluators.computeIfAbsent(executionSupport,
+        return evaluators.computeIfAbsent(executionSupport,
                 es -> PureRustFfmEvaluator.over(new CompiledHost(((CompiledExecutionSupport) es).getProcessorSupport())));
     }
 
-    private synchronized void discard(ExecutionSupport executionSupport, PureRustFfmEvaluator poisoned)
+    private static synchronized void discard(ExecutionSupport executionSupport, PureRustFfmEvaluator poisoned)
     {
-        if (this.evaluators.get(executionSupport) == poisoned)
+        if (evaluators.get(executionSupport) == poisoned)
         {
-            this.evaluators.remove(executionSupport);
+            evaluators.remove(executionSupport);
         }
         poisoned.close();
     }

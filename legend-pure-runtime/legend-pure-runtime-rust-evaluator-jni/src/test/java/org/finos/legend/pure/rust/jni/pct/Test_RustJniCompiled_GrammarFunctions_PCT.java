@@ -32,7 +32,7 @@ import org.finos.legend.pure.rust.pct.PctSuites;
 public class Test_RustJniCompiled_GrammarFunctions_PCT extends PCTReportConfiguration
 {
     private static final ReportScope reportScope = PlatformCodeRepositoryProvider.grammarFunctions;
-    private static final Adapter adapter = PlatformCodeRepositoryProvider.rustJniAdapter;
+    private static final Adapter adapter = RustJniCodeRepositoryProvider.rustJniAdapter;
     private static final String platform = "compiled";
     private static final String manifestPath = "platform/pure/grammar/functions/pct_grammar_compiled_rust_jni.json";
 

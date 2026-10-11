@@ -18,6 +18,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.PlatformCodeRepositoryProvider;
 import org.finos.legend.pure.rust.PureRustEvaluator;
 import org.finos.legend.pure.rust.PureRustFfmEvaluator;
+import org.finos.legend.pure.rust.jni.pct.RustJniCodeRepositoryProvider;
 import org.finos.legend.pure.rust.pct.PctExpressionsBenchmark;
 import org.finos.legend.pure.rust.pct.PctExpressionsBenchmark.Engine;
 import org.finos.legend.pure.rust.pct.PctExpressionsBenchmark.Mode;
@@ -30,10 +31,10 @@ public class BenchmarkPctExpressions
     {
         new PctExpressionsBenchmark(Lists.mutable.with(
                 Mode.host(Engine.INTERPRETED, PlatformCodeRepositoryProvider.nativeAdapter),
-                Mode.rust(Engine.INTERPRETED, PlatformCodeRepositoryProvider.rustJniAdapter, PureRustEvaluator::lastTimings),
-                Mode.rust(Engine.INTERPRETED, PlatformCodeRepositoryProvider.rustFfmAdapter, () -> PureRustFfmEvaluator.lastTimings().toArray()),
+                Mode.rust(Engine.INTERPRETED, RustJniCodeRepositoryProvider.rustJniAdapter, PureRustEvaluator::lastTimings),
+                Mode.rust(Engine.INTERPRETED, RustFfmCodeRepositoryProvider.rustFfmAdapter, () -> PureRustFfmEvaluator.lastTimings().toArray()),
                 Mode.host(Engine.COMPILED, PlatformCodeRepositoryProvider.nativeAdapter),
-                Mode.rust(Engine.COMPILED, PlatformCodeRepositoryProvider.rustJniAdapter, PureRustEvaluator::lastTimings),
-                Mode.rust(Engine.COMPILED, PlatformCodeRepositoryProvider.rustFfmAdapter, () -> PureRustFfmEvaluator.lastTimings().toArray()))).run();
+                Mode.rust(Engine.COMPILED, RustJniCodeRepositoryProvider.rustJniAdapter, PureRustEvaluator::lastTimings),
+                Mode.rust(Engine.COMPILED, RustFfmCodeRepositoryProvider.rustFfmAdapter, () -> PureRustFfmEvaluator.lastTimings().toArray()))).run();
     }
 }

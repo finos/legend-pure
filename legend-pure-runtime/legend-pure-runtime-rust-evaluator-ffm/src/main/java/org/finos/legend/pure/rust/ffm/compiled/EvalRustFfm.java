@@ -12,30 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.eval;
+package org.finos.legend.pure.rust.ffm.compiled;
 
 import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
-import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.runtime.java.compiled.extension.EvalRustFfmExecutor;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 
 /**
- * {@code evalRustFfm}: a call compiles to {@link #evaluate(ExecutionSupport, Function)}, which hands the function
- * value to the {@link EvalRustFfmExecutor} found on the class path at run time. Without one the call fails at run
- * time; the compiled platform itself needs no Rust evaluator to build.
+ * The compiled engine's code generation for {@code meta::pure::rust::ffm::evalRustFfm}: a call compiles to
+ * {@link CompiledEvalRustFfm#evaluate}, which runs the function value in the Rust evaluator over the Foreign
+ * Function and Memory API. Registered through {@link RustFfmCompiledExtension}.
  */
 public class EvalRustFfm extends AbstractNative
 {
     public static final String SIGNATURE = "evalRustFfm_Function_1__V_m_";
+
+    private static final String EVALUATE = CompiledEvalRustFfm.class.getName() + ".evaluate";
 
     public EvalRustFfm()
     {
@@ -48,7 +47,7 @@ public class EvalRustFfm extends AbstractNative
         ProcessorSupport processorSupport = processorContext.getSupport();
         String type = TypeProcessor.typeToJavaObjectWithMul(Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.genericType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.multiplicity, processorSupport), processorSupport);
         CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.multiplicity, processorSupport);
-        String eval = EvalRustFfm.class.getName() + ".evaluate(es, (" + FullJavaPaths.Function + "<?>)" + transformedParams.get(0) + ")";
+        String eval = EVALUATE + "(es, (" + FullJavaPaths.Function + "<?>)" + transformedParams.get(0) + ")";
         return "((" + type + ")(Object)" + (Multiplicity.isToOne(multiplicity, false) ? "CompiledSupport.makeOne(" + eval + ")" : "CompiledSupport.toPureCollection(" + eval + ")") + ")";
     }
 
@@ -60,31 +59,9 @@ public class EvalRustFfm extends AbstractNative
                 "        @Override\n" +
                 "        public Object execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
                 "        {\n" +
-                "           Object value = " + EvalRustFfm.class.getName() + ".evaluate(es, (" + FullJavaPaths.Function + "<?>) vars.get(0));\n" +
+                "           Object value = " + EVALUATE + "(es, (" + FullJavaPaths.Function + "<?>) vars.get(0));\n" +
                 "           return value instanceof Iterable ? CompiledSupport.toPureCollection(value) : value;\n" +
                 "        }\n" +
                 "}";
-    }
-
-    /**
-     * The run-time entry the generated code calls.
-     *
-     * @param executionSupport the execution support of the calling function
-     * @param function         the function value to evaluate
-     * @return the result as compiled values
-     */
-    public static Object evaluate(ExecutionSupport executionSupport, Function<?> function)
-    {
-        EvalRustFfmExecutor executor = Holder.EXECUTOR;
-        if (executor == null)
-        {
-            throw RustExecutors.missing(SIGNATURE, "legend-pure-runtime-rust-evaluator-ffm");
-        }
-        return executor.evaluate(executionSupport, function);
-    }
-
-    private static final class Holder
-    {
-        private static final EvalRustFfmExecutor EXECUTOR = RustExecutors.load(EvalRustFfmExecutor.class);
     }
 }

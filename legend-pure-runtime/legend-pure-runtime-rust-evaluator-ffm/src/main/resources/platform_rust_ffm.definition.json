@@ -1,0 +1,7 @@
+{
+  "name": "platform_rust_ffm",
+  "pattern": "(meta::pure::rust::ffm)(::.*)?",
+  "dependencies": [
+    "platform"
+  ]
+}

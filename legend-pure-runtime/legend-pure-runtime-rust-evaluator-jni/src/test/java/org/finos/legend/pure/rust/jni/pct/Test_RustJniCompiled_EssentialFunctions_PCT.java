@@ -32,7 +32,7 @@ import org.finos.legend.pure.rust.pct.PctSuites;
 public class Test_RustJniCompiled_EssentialFunctions_PCT extends PCTReportConfiguration
 {
     private static final ReportScope reportScope = PlatformCodeRepositoryProvider.essentialFunctions;
-    private static final Adapter adapter = PlatformCodeRepositoryProvider.rustJniAdapter;
+    private static final Adapter adapter = RustJniCodeRepositoryProvider.rustJniAdapter;
     private static final String platform = "compiled";
     private static final String manifestPath = "platform/pure/essential/pct_essential_compiled_rust_jni.json";
 
