@@ -29,9 +29,12 @@ use legend_pure_metamodel::model::PureModel;
 use legend_pure_metamodel::types::{Parameter, ValueSpec};
 use smol_str::SmolStr;
 
+use legend_pure_evaluator::bridge::handles::HandleTable;
+use legend_pure_evaluator::bridge::timings::{self, Timings};
+
 use crate::PVector;
-use crate::bridge::{BridgeShared, JniHandleTable};
-use crate::failure::ffi_error;
+use crate::bridge::BridgeShared;
+use crate::failure::boundary_error;
 use crate::java_node::JavaNode;
 
 /// The function classifiers `start` tells apart, resolved once to the
@@ -204,27 +207,6 @@ enum Callable {
     Value(Value),
 }
 
-/// Where the last `start` on this thread spent its time: the lowering
-/// (Phase A and B, including every JNI read it made) and the run.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Timings {
-    /// Lowering, nanoseconds.
-    pub lower_ns: u64,
-    /// Running the lowered closure, nanoseconds.
-    pub run_ns: u64,
-    /// JNI property or capture reads made while the closure ran: zero
-    /// means the run was the evaluator alone.
-    pub run_jni_reads: u64,
-    /// JNI property or capture reads made by the lowering: zero means
-    /// everything came from the closure cache and the model.
-    pub lower_jni_reads: u64,
-}
-
-thread_local! {
-    /// The timings of the last lowered `start` on this thread.
-    pub static LAST_TIMINGS: std::cell::Cell<Timings> = const { std::cell::Cell::new(Timings { lower_ns: 0, run_ns: 0, run_jni_reads: 0, lower_jni_reads: 0 }) };
-}
-
 /// Model, registry and evaluator behind raw pointers (freed in `Drop`),
 /// plus the state shared with every Java-backed node.
 ///
@@ -278,7 +260,7 @@ impl JniContext {
             fields,
             model: model_ptr.cast_const(),
             java_nodes: std::cell::RefCell::new(std::collections::HashMap::new()),
-            handles: std::cell::RefCell::new(JniHandleTable::new()),
+            handles: std::cell::RefCell::new(HandleTable::new()),
             last_error: std::cell::RefCell::new(None),
             jni_reads: std::cell::Cell::new(0),
             released: std::cell::RefCell::new(Vec::new()),
@@ -366,13 +348,11 @@ impl JniContext {
         };
         evaluator.context_mut().pop_scope();
         let ran = std::time::Instant::now();
-        LAST_TIMINGS.with(|t| {
-            t.set(Timings {
-                lower_ns: u64::try_from((lowered - started).as_nanos()).unwrap_or(u64::MAX),
-                run_ns: u64::try_from((ran - lowered).as_nanos()).unwrap_or(u64::MAX),
-                run_jni_reads: self.shared.jni_reads.get() - reads_before,
-                lower_jni_reads: reads_before - reads_at_start,
-            });
+        timings::record(Timings {
+            lower_ns: u64::try_from((lowered - started).as_nanos()).unwrap_or(u64::MAX),
+            run_ns: u64::try_from((ran - lowered).as_nanos()).unwrap_or(u64::MAX),
+            run_host_reads: self.shared.jni_reads.get() - reads_before,
+            lower_host_reads: reads_before - reads_at_start,
         });
         result
     }
@@ -416,11 +396,11 @@ impl JniContext {
                         )));
                     }
                     FunctionKind::Other(None) => {
-                        return Err(ffi_error("start: the function is not a function node"));
+                        return Err(boundary_error("start: the function is not a function node"));
                     }
                 },
                 other => {
-                    return Err(ffi_error(format!(
+                    return Err(boundary_error(format!(
                         "start: expected a function node, got {}",
                         other.type_name()
                     )));
@@ -451,12 +431,12 @@ impl JniContext {
         self.shared
             .handles
             .borrow()
-            .lookup(JniHandleTable::from_i64(raw))
+            .lookup(HandleTable::from_i64(raw))
             .cloned()
     }
 
     fn stale(raw: i64) -> PureException {
-        ffi_error(format!("Stale or unknown JNI handle: {raw}"))
+        boundary_error(format!("Stale or unknown JNI handle: {raw}"))
     }
 
     /// Every value of a property of a Rust object held for Java; empty when
@@ -528,7 +508,7 @@ impl JniContext {
 
     /// Register a Rust object for Java and return its id.
     pub fn emit_handle(&self, handle: ObjectHandle) -> i64 {
-        JniHandleTable::to_i64(self.shared.handles.borrow_mut().register(handle))
+        HandleTable::to_i64(self.shared.handles.borrow_mut().register(handle))
     }
 
     /// Drop the strong reference Java held for `raw`. Idempotent.
@@ -536,7 +516,7 @@ impl JniContext {
         self.shared
             .handles
             .borrow_mut()
-            .release(JniHandleTable::from_i64(raw));
+            .release(HandleTable::from_i64(raw));
     }
 
     /// Live handles in both directions.

@@ -28,3 +28,4 @@ rust_decimal = { workspace = true }
 im-rc = { workspace = true }
 jiff = { workspace = true }
 tracing = { workspace = true }
+slotmap = { workspace = true }

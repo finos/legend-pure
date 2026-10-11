@@ -31,84 +31,10 @@ use std::rc::Weak;
 use jni::objects::{GlobalRef, JFieldID, JMethodID, JValue};
 use jni::signature::{Primitive, ReturnType};
 use jni::{JNIEnv, JavaVM};
+use legend_pure_evaluator::bridge::handles::HandleTable;
 use legend_pure_evaluator::error::PureException;
 use legend_pure_evaluator::heap::{HeapEntry, ObjectHandle};
 use legend_pure_metamodel::model::PureModel;
-use slotmap::{SlotMap, new_key_type};
-
-new_key_type! {
-    /// Key of a Rust heap object exposed to Java.
-    pub struct JniHandle;
-}
-
-/// Rust objects exposed to Java: one slot per `Rc`, idempotent.
-pub struct JniHandleTable {
-    live: SlotMap<JniHandle, ObjectHandle>,
-    by_ptr: HashMap<*const RefCell<HeapEntry>, JniHandle>,
-}
-
-impl JniHandleTable {
-    /// An empty table.
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
-            live: SlotMap::with_key(),
-            by_ptr: HashMap::new(),
-        }
-    }
-
-    /// Register a handle and return its stable key. Idempotent — the same
-    /// `Rc` pointer always maps to the same key, so one object keeps one
-    /// id on the Java side.
-    pub fn register(&mut self, handle: ObjectHandle) -> JniHandle {
-        let key_ptr = std::rc::Rc::as_ptr(&handle);
-        if let Some(&existing) = self.by_ptr.get(&key_ptr) {
-            return existing;
-        }
-        let h = self.live.insert(handle);
-        self.by_ptr.insert(key_ptr, h);
-        h
-    }
-
-    /// Look up the object for a key; `None` once released.
-    #[must_use]
-    pub fn lookup(&self, h: JniHandle) -> Option<&ObjectHandle> {
-        self.live.get(h)
-    }
-
-    /// Number of live entries.
-    #[must_use]
-    pub fn live_count(&self) -> usize {
-        self.live.len()
-    }
-
-    /// Drop the strong reference for a key. Re-releasing is a no-op.
-    pub fn release(&mut self, h: JniHandle) {
-        if let Some(handle) = self.live.remove(h) {
-            self.by_ptr.remove(&std::rc::Rc::as_ptr(&handle));
-        }
-    }
-
-    /// The `long` Java holds for a key.
-    #[allow(clippy::cast_possible_wrap)]
-    #[must_use]
-    pub fn to_i64(h: JniHandle) -> i64 {
-        slotmap::Key::data(&h).as_ffi() as i64
-    }
-
-    /// The key behind a `long` Java handed back.
-    #[allow(clippy::cast_sign_loss)]
-    #[must_use]
-    pub fn from_i64(v: i64) -> JniHandle {
-        JniHandle::from(slotmap::KeyData::from_ffi(v as u64))
-    }
-}
-
-impl Default for JniHandleTable {
-    fn default() -> Self {
-        Self::new()
-    }
-}
 
 /// Java-side method ids, resolved once per context.
 #[allow(missing_docs)]
@@ -288,7 +214,7 @@ pub struct BridgeShared {
     /// Java-to-Rust identity: bridge id → the one heap entry wrapping it.
     pub java_nodes: RefCell<HashMap<i64, Weak<RefCell<HeapEntry>>>>,
     /// Rust-to-Java identity: Rust objects exposed to Java.
-    pub handles: RefCell<JniHandleTable>,
+    pub handles: RefCell<HandleTable>,
     /// The first failure raised while reading a node through the heap's
     /// infallible view, with its kind; surfaced when the call ends.
     pub last_error: RefCell<Option<PureException>>,

@@ -12,60 +12,82 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Conversion from runtime [`PureException`] into the JNI-side payload
-//! the Java `PureRustEvaluationException` constructor consumes.
+//! Failures at the boundary as typed [`PureException`]s, and the payload a
+//! host receives for any failure.
 
-use legend_pure_evaluator::error::{
-    ConstraintKind, PureException, PureExceptionKind, PureRuntimeError,
-};
+use legend_pure_metamodel::source_info::SourceInfo;
 
-/// Pure-data payload for the Java `PureRustEvaluationException`
-/// constructor. Every field is a `String` (or `Vec<String>`) so the
-/// JNI side just builds Java strings and a string array.
+use crate::error::{ConstraintKind, PureException, PureExceptionKind, PureRuntimeError};
+
+/// The source id of a failure raised by the boundary itself.
+pub const BOUNDARY_SOURCE: &str = "<ffi>";
+
+/// The anchor of a failure raised by the boundary itself.
+fn boundary_source() -> SourceInfo {
+    SourceInfo::new(BOUNDARY_SOURCE, 0, 0, 0, 0)
+}
+
+/// A failure of the boundary itself (an execution error anchored at
+/// [`BOUNDARY_SOURCE`]).
+pub fn boundary_error(message: impl Into<String>) -> PureException {
+    typed(PureRuntimeError::EvaluationError(message.into()))
+}
+
+/// A value kind or shape the boundary cannot carry yet.
+pub fn unsupported(what: impl Into<String>) -> PureException {
+    typed(PureRuntimeError::Unsupported(what.into()))
+}
+
+/// A runtime error anchored at [`BOUNDARY_SOURCE`].
+#[must_use]
+pub fn typed(error: PureRuntimeError) -> PureException {
+    PureException::execution(error, boundary_source(), Vec::new())
+}
+
+/// Whether a failure is anchored at the boundary or nowhere: such a
+/// failure takes the anchor of the node it was raised for.
+#[must_use]
+pub fn is_unanchored(failure: &PureException) -> bool {
+    failure
+        .source
+        .as_ref()
+        .is_none_or(|s| s.source == BOUNDARY_SOURCE)
+}
+
+/// A failure as plain data for a host's exception type. Every field is
+/// text (or a list of texts) so a transport only builds strings.
 ///
-/// `Option<String>` maps to a Java `null` in the constructor invocation.
+/// An `Option` is a host `null`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExceptionPayload {
-    /// Inner failure reason.
+    /// The failure text with its kind prefix (`FunctionNotFound: …`,
+    /// `AssertionFailed: …`), the one the PCT manifests match.
     pub message: String,
     /// The failure text alone, without the kind prefix: what Pure's
     /// `PureException.getInfo()` reports for the same failure.
     pub info: String,
-    /// Top-level kind: `"EXECUTION_ERROR"` / `"ASSERTION_FAILED"` /
-    /// `"CONSTRAINT_VIOLATION"`. Java side `enum Kind` parses this.
+    /// Top-level kind, as a host's kind enumeration spells it:
+    /// `EXECUTION_ERROR`, `ASSERTION_FAILED`, `CONSTRAINT_VIOLATION`,
+    /// `FUNCTION_NOT_FOUND`, `UNSUPPORTED`, `NOT_IMPLEMENTED`.
     pub kind: &'static str,
     /// Rendered source location (`file:line:col`), `None` when the
-    /// exception has no anchor (e.g. FFI-boundary errors built via
-    /// [`payload_for_message`]).
+    /// exception has no anchor.
     pub source_info: Option<String>,
-    /// Each entry rendered as `"<function-name> <- file:line:col"`,
-    /// outermost-first (matches the Display ordering). Empty when no
-    /// frames were captured.
+    /// Each frame rendered as `<function-name> <- file:line:col`,
+    /// innermost first. Empty when no frames were captured.
     pub call_stack: Vec<String>,
     /// Constraint name (for `CONSTRAINT_VIOLATION`). `None` otherwise.
     pub constraint_id: Option<String>,
-    /// Constraint axis: `"CLASS"` / `"PRE"` / `"POST"`.
+    /// Constraint axis: `CLASS` / `PRE` / `POST`.
     pub constraint_kind: Option<&'static str>,
-    /// `::`-joined FQN of the constraint-owning Class / Function.
+    /// `::`-joined path of the constraint-owning class or function.
     /// `None` for non-constraint kinds.
     pub owner_fqn: Option<String>,
 }
 
-impl ExceptionPayload {
-    /// JVM-side throw signature mirror — the constructor that
-    /// `throw_pure_exception` in `lib.rs` invokes.
-    ///
-    /// `(message, info, kind, sourceInfo, callStack, constraintId, constraintKind, ownerFqn)`
-    pub const RICH_CTOR_SIG: &'static str = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
-}
-
-/// Build an [`ExceptionPayload`] from a runtime [`PureException`].
+/// The payload of a [`PureException`].
 #[must_use]
-pub fn pure_exception_to_payload(exc: &PureException) -> ExceptionPayload {
-    // The kind string is the Java `PureRustEvaluationException.Kind` enum
-    // name (parsed with `Kind.valueOf`); the message starts with the
-    // kind's display name because the PCT expected-failures manifest
-    // matches `expectedError` by substring and has no kind field.
+pub fn payload_of(exc: &PureException) -> ExceptionPayload {
     let (prefix, info, kind) = match &exc.kind {
         PureExceptionKind::ExecutionError(PureRuntimeError::FunctionNotFound(name)) => {
             ("FunctionNotFound", name.to_string(), "FUNCTION_NOT_FOUND")
@@ -104,9 +126,6 @@ pub fn pure_exception_to_payload(exc: &PureException) -> ExceptionPayload {
         .as_ref()
         .map(|s| format!("{}:{}:{}", s.source, s.start_line, s.start_column));
 
-    // Innermost-first ordering matches the `Display` output (which
-    // iterates `call_stack.iter().rev()`), so consumers see the
-    // failing frame at index 0 and the outermost caller last.
     let call_stack: Vec<String> = exc
         .call_stack
         .iter()
@@ -159,7 +178,7 @@ const fn constraint_kind_label(k: ConstraintKind) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use legend_pure_evaluator::error::{PureRuntimeError, StackFrame};
+    use crate::error::{PureRuntimeError, StackFrame};
     use legend_pure_metamodel::source_info::SourceInfo;
     use smol_str::SmolStr;
 
@@ -180,7 +199,7 @@ mod tests {
             dummy_source("a.pure", 10, 4),
             vec![],
         );
-        let p = pure_exception_to_payload(&exc);
+        let p = payload_of(&exc);
         assert_eq!(p.kind, "EXECUTION_ERROR");
         assert!(p.message.contains("divide by zero"));
         assert_eq!(p.source_info.as_deref(), Some("a.pure:10:4"));
@@ -199,7 +218,7 @@ mod tests {
             dummy_source("a.pure", 2, 3),
             vec![],
         );
-        let p = pure_exception_to_payload(&exc);
+        let p = payload_of(&exc);
         assert_eq!(p.kind, "NOT_IMPLEMENTED");
         assert_eq!(
             p.message,
@@ -215,7 +234,7 @@ mod tests {
             dummy_source("assert.pure", 3, 1),
             vec![],
         );
-        let p = pure_exception_to_payload(&exc);
+        let p = payload_of(&exc);
         assert_eq!(p.kind, "ASSERTION_FAILED");
         assert_eq!(p.message, "AssertionFailed: expected 5 got 6");
         assert_eq!(p.info, "expected 5 got 6");
@@ -232,7 +251,7 @@ mod tests {
             dummy_source("new.pure", 113, 0),
             vec![],
         );
-        let p = pure_exception_to_payload(&exc);
+        let p = payload_of(&exc);
         assert_eq!(p.kind, "CONSTRAINT_VIOLATION");
         assert_eq!(p.constraint_id.as_deref(), Some("ageNonNeg"));
         assert_eq!(p.constraint_kind, Some("CLASS"));
@@ -260,9 +279,23 @@ mod tests {
                 },
             ],
         );
-        let p = pure_exception_to_payload(&exc);
+        let p = payload_of(&exc);
         assert_eq!(p.call_stack.len(), 2);
         assert!(p.call_stack[0].starts_with("inner <- "));
         assert!(p.call_stack[1].starts_with("outer <- "));
+    }
+
+    #[test]
+    fn a_boundary_failure_is_unanchored_and_a_located_one_is_not() {
+        assert!(is_unanchored(&boundary_error("x")));
+        assert!(is_unanchored(&PureException::from(
+            PureRuntimeError::EvaluationError("x".into())
+        )));
+        let located = PureException::execution(
+            PureRuntimeError::EvaluationError("x".into()),
+            dummy_source("a.pure", 1, 1),
+            vec![],
+        );
+        assert!(!is_unanchored(&located));
     }
 }

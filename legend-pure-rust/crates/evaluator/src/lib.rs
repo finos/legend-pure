@@ -23,6 +23,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod bridge;
 pub mod builder;
 pub mod builders;
 pub mod context;

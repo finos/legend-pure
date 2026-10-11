@@ -295,6 +295,7 @@ dependencies = [
  "jiff",
  "legend-pure-metamodel",
  "rust_decimal",
+ "slotmap",
  "smol_str",
  "thiserror 2.0.21",
  "tracing",
@@ -308,7 +309,6 @@ dependencies = [
  "legend-pure-evaluator",
  "legend-pure-metamodel",
  "rust_decimal",
- "slotmap",
  "smol_str",
 ]
 

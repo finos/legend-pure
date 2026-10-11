@@ -28,7 +28,7 @@ use std::cell::{Cell, UnsafeCell};
 use jni::sys::jlong;
 use legend_pure_evaluator::error::PureException;
 
-use crate::failure::{ffi_error, unsupported};
+use crate::failure::{boundary_error, unsupported};
 
 /// The context and its busy flag. Only ever accessed through shared
 /// references: the flag is a `Cell`, the context sits in an `UnsafeCell`
@@ -57,7 +57,7 @@ impl<C> Session<C> {
     /// refuses every call after that (`checkOpen`).
     unsafe fn get<'a>(ptr: jlong) -> Result<&'a Session<C>, PureException> {
         if ptr == 0 {
-            return Err(ffi_error("the evaluator has no context"));
+            return Err(boundary_error("the evaluator has no context"));
         }
         // SAFETY: per this function's contract the pointer came from
         // `Box::into_raw` and is still live; a shared reference is sound

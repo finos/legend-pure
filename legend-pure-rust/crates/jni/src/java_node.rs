@@ -29,6 +29,9 @@ use std::str::FromStr;
 use jni::JNIEnv;
 use jni::objects::{JFieldID, JObject, JObjectArray, JString, JValue};
 use jni::signature::{Primitive, ReturnType};
+use legend_pure_evaluator::bridge::description::{Description, kind};
+use legend_pure_evaluator::bridge::failure::is_unanchored;
+use legend_pure_evaluator::bridge::handles::HandleTable;
 use legend_pure_evaluator::date::{PureDate, StrictTime, TimePrecision};
 use legend_pure_evaluator::error::{PureException, PureRuntimeError};
 use legend_pure_evaluator::heap::{HeapEntry, ObjectHandle, RuntimeHeap, TypedObject};
@@ -37,76 +40,8 @@ use legend_pure_metamodel::source_info::SourceInfo;
 use smol_str::SmolStr;
 
 use crate::PVector;
-use crate::bridge::{BridgeShared, DescriptionFields, JniHandleTable};
-use crate::failure::{ffi_error, in_local_frame, jni_failure, unsupported};
-
-/// Kind tags of a `NodeDescription`, mirrored from the Java constants.
-pub mod kind {
-    /// `Boolean` primitive.
-    pub const BOOLEAN: i32 = 0;
-    /// `Integer` primitive (decimal text payload).
-    pub const INTEGER: i32 = 1;
-    /// `Float` primitive (plain decimal text payload).
-    pub const FLOAT: i32 = 2;
-    /// `Decimal` primitive (plain decimal text payload).
-    pub const DECIMAL: i32 = 3;
-    /// `String` primitive.
-    pub const STRING: i32 = 4;
-    /// `Date`, `StrictDate` or `DateTime`, as components.
-    pub const DATE: i32 = 5;
-    /// `%latest`.
-    pub const LATEST_DATE: i32 = 6;
-    /// `StrictTime`, as components.
-    pub const STRICT_TIME: i32 = 7;
-    /// `Byte` primitive.
-    pub const BYTE: i32 = 8;
-    /// A value of an `Enumeration`.
-    pub const ENUM_VALUE: i32 = 10;
-    /// A `PackageableElement` with a user path.
-    pub const PACKAGEABLE_ELEMENT: i32 = 11;
-    /// Any other node.
-    pub const NODE: i32 = 12;
-    /// A Rust object previously handed to Java.
-    pub const RUST_OBJECT: i32 = 13;
-}
-
-/// A decoded `NodeDescription`.
-#[derive(Debug, Clone)]
-pub struct Description {
-    /// One of the [`kind`] constants.
-    pub kind: i32,
-    /// Bridge id (NODE, ENUM_VALUE, PACKAGEABLE_ELEMENT) or Rust handle (RUST_OBJECT).
-    pub id: i64,
-    /// Classifier user path.
-    pub classifier: Option<SmolStr>,
-    /// `getName()`.
-    pub name: Option<SmolStr>,
-    /// User path of a packageable element.
-    pub user_path: Option<SmolStr>,
-    /// Text payload of a primitive.
-    pub payload: Option<String>,
-    /// Date / time components.
-    pub year: i32,
-    /// Month, 0 when absent.
-    pub month: i32,
-    /// Day, 0 when absent.
-    pub day: i32,
-    /// Hour, 0 when absent.
-    pub hour: i32,
-    /// Minute, 0 when absent.
-    pub minute: i32,
-    /// Second, 0 when absent.
-    pub second: i32,
-    /// 0 year, 1 month, 2 day, 3 hour, 4 minute, 5 second, 6 subsecond.
-    pub precision: i32,
-    /// Subsecond digits, when `precision == 6`.
-    pub subsecond: Option<String>,
-    /// Source span of the node, when the Java graph knows one.
-    pub source: Option<SourceInfo>,
-    /// Bridge id of the lambda definition a per-evaluation lambda value
-    /// stands for (`RustEngineHost.lambdaDefinition`); -1 when none.
-    pub definition: i64,
-}
+use crate::bridge::{BridgeShared, DescriptionFields};
+use crate::failure::{boundary_error, in_local_frame, jni_failure, unsupported};
 
 fn string_field(
     env: &mut JNIEnv,
@@ -141,36 +76,14 @@ pub fn read_description(
         env.get_field_unchecked(obj, field, ReturnType::Primitive(Primitive::Long))?
             .j()
     };
-    let unsigned = |env: &mut JNIEnv, field: JFieldID| -> jni::errors::Result<u32> {
-        Ok(u32::try_from(int(env, field)?).unwrap_or(0))
-    };
-    let kind = int(env, fields.kind)?;
-    let id = long(env, fields.id)?;
-    let definition = long(env, fields.definition)?;
-    let classifier = string_field(env, obj, fields.classifier)?.map(SmolStr::new);
-    let name = string_field(env, obj, fields.name)?.map(SmolStr::new);
-    let user_path = string_field(env, obj, fields.user_path)?.map(SmolStr::new);
-    let payload = string_field(env, obj, fields.payload)?;
-    let subsecond = string_field(env, obj, fields.subsecond)?;
-    let source = match string_field(env, obj, fields.source_id)? {
-        // Java's anchor (`line`/`column`) is the span's start on this
-        // side; the evaluator and `assertError` both read the anchor.
-        Some(source_id) => Some(SourceInfo::new(
-            source_id,
-            unsigned(env, fields.line)?,
-            unsigned(env, fields.column)?,
-            unsigned(env, fields.end_line)?,
-            unsigned(env, fields.end_column)?,
-        )),
-        None => None,
-    };
     Ok(Description {
-        kind,
-        id,
-        classifier,
-        name,
-        user_path,
-        payload,
+        kind: int(env, fields.kind)?,
+        id: long(env, fields.id)?,
+        definition: long(env, fields.definition)?,
+        classifier: string_field(env, obj, fields.classifier)?.map(SmolStr::new),
+        name: string_field(env, obj, fields.name)?.map(SmolStr::new),
+        user_path: string_field(env, obj, fields.user_path)?.map(SmolStr::new),
+        payload: string_field(env, obj, fields.payload)?,
         year: int(env, fields.year)?,
         month: int(env, fields.month)?,
         day: int(env, fields.day)?,
@@ -178,9 +91,12 @@ pub fn read_description(
         minute: int(env, fields.minute)?,
         second: int(env, fields.second)?,
         precision: int(env, fields.precision)?,
-        subsecond,
-        source,
-        definition,
+        subsecond: string_field(env, obj, fields.subsecond)?,
+        source_id: string_field(env, obj, fields.source_id)?,
+        line: int(env, fields.line)?,
+        column: int(env, fields.column)?,
+        end_line: int(env, fields.end_line)?,
+        end_column: int(env, fields.end_column)?,
     })
 }
 
@@ -194,7 +110,7 @@ fn subsecond_nanos(digits: &str) -> Result<(i32, u8), PureException> {
     let padded = format!("{trimmed:0<9}");
     let nanos = padded
         .parse::<i32>()
-        .map_err(|_| ffi_error(format!("bad subsecond digits `{digits}`")))?;
+        .map_err(|_| boundary_error(format!("bad subsecond digits `{digits}`")))?;
     let count = u8::try_from(trimmed.len()).unwrap_or(9);
     Ok((nanos, count))
 }
@@ -219,15 +135,15 @@ pub fn description_to_value(
         kind::FLOAT => payload(&d)
             .parse::<f64>()
             .map(Value::Float)
-            .map_err(|_| ffi_error(format!("bad Float `{}`", payload(&d)))),
+            .map_err(|_| boundary_error(format!("bad Float `{}`", payload(&d)))),
         kind::DECIMAL => rust_decimal::Decimal::from_str(&payload(&d))
             .map(Value::Decimal)
-            .map_err(|_| ffi_error(format!("bad Decimal `{}`", payload(&d)))),
+            .map_err(|_| boundary_error(format!("bad Decimal `{}`", payload(&d)))),
         kind::STRING => Ok(Value::String(SmolStr::new(payload(&d)))),
         kind::LATEST_DATE => Ok(Value::Latest),
         kind::DATE => {
             let (year, month, day) = (
-                i16::try_from(d.year).map_err(|_| ffi_error("year out of range"))?,
+                i16::try_from(d.year).map_err(|_| boundary_error("year out of range"))?,
                 small(d.month),
                 small(d.day),
             );
@@ -303,9 +219,9 @@ pub fn description_to_value(
             let handle = shared
                 .handles
                 .borrow()
-                .lookup(JniHandleTable::from_i64(d.id))
+                .lookup(HandleTable::from_i64(d.id))
                 .cloned()
-                .ok_or_else(|| ffi_error(format!("Stale or unknown JNI handle: {}", d.id)))?;
+                .ok_or_else(|| boundary_error(format!("Stale or unknown JNI handle: {}", d.id)))?;
             Ok(match RuntimeHeap::element_for_object(&handle) {
                 Some(eid) => Value::Element(eid),
                 None => Value::Object(handle),
@@ -325,6 +241,7 @@ fn canonical_node(shared: &Rc<BridgeShared>, d: Description) -> ObjectHandle {
     {
         return existing;
     }
+    let source = d.source_info();
     let node = JavaNode {
         id: d.id,
         classifier: d
@@ -333,7 +250,7 @@ fn canonical_node(shared: &Rc<BridgeShared>, d: Description) -> ObjectHandle {
         name: d.name,
         user_path: d.user_path,
         keys: RefCell::new(None),
-        source: d.source,
+        source,
         definition: (d.definition >= 0).then_some(d.definition),
         cache: RefCell::new(HashMap::new()),
         local: HashMap::new(),
@@ -402,7 +319,7 @@ impl JavaNode {
             .shared
             .vm
             .attach_current_thread()
-            .map_err(|e| ffi_error(format!("attach: {e}")))?;
+            .map_err(|e| boundary_error(format!("attach: {e}")))?;
         let env: &mut JNIEnv = &mut guard;
         let shared = &self.shared;
         let keys = in_local_frame(env, shared, 8, |env| {
@@ -449,11 +366,9 @@ impl JavaNode {
     /// heap's object view has no error channel. A failure the boundary
     /// raised itself is anchored at this node, the place it was read from.
     fn note_failure(&self, mut failure: PureException) {
-        let at_boundary = failure
-            .source
-            .as_ref()
-            .is_none_or(|s| s.source == crate::failure::FFI_SOURCE);
-        if at_boundary && let Some(source) = &self.source {
+        if is_unanchored(&failure)
+            && let Some(source) = &self.source
+        {
             failure.source = Some(source.clone());
         }
         self.shared.note_error(failure);
@@ -477,7 +392,7 @@ impl JavaNode {
             .shared
             .vm
             .attach_current_thread()
-            .map_err(|e| ffi_error(format!("attach: {e}")))?;
+            .map_err(|e| boundary_error(format!("attach: {e}")))?;
         let env: &mut JNIEnv = &mut guard;
         let shared = &self.shared;
         in_local_frame(env, shared, 16, |env| {

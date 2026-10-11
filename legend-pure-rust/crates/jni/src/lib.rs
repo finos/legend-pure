@@ -27,7 +27,6 @@
 
 pub mod bridge;
 mod context;
-mod exception;
 mod failure;
 pub mod java_node;
 pub mod materialize;
@@ -41,6 +40,8 @@ use jni::JNIEnv;
 use jni::objects::{JClass, JObject, JObjectArray, JString, JValue};
 use jni::signature::ReturnType;
 use jni::sys::jlong;
+use legend_pure_evaluator::bridge::failure::{ExceptionPayload, payload_of};
+use legend_pure_evaluator::bridge::timings;
 use legend_pure_evaluator::error::PureException;
 use legend_pure_evaluator::native::NativeRegistry;
 use legend_pure_evaluator::value::Value;
@@ -48,8 +49,7 @@ use legend_pure_metamodel::model::PureModel;
 
 use crate::bridge::{BridgeMethods, CORE_INSTANCE_CLASS, DescriptionFields};
 use crate::context::JniContext;
-use crate::exception::{ExceptionPayload, pure_exception_to_payload};
-use crate::failure::{ffi_error, in_local_frame, jni_failure};
+use crate::failure::{boundary_error, in_local_frame, jni_failure};
 use crate::session::{Entered, Session};
 
 type ContextSession = Session<JniContext>;
@@ -57,6 +57,11 @@ type ContextSession = Session<JniContext>;
 const PURE_RUST_EXC: &str = "org/finos/legend/pure/rust/PureRustException";
 
 const PURE_RUST_EVAL_EXC: &str = "org/finos/legend/pure/rust/PureRustEvaluationException";
+
+/// The constructor of `PureRustEvaluationException` that takes every
+/// field of an [`ExceptionPayload`]:
+/// `(message, info, kind, sourceInfo, callStack, constraintId, constraintKind, ownerFqn)`.
+const RICH_CTOR_SIG: &str = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
 
 /// Build the Java `PureRustEvaluationException` from a structured
 /// `PureException` and throw it via JNI.
@@ -67,7 +72,7 @@ const PURE_RUST_EVAL_EXC: &str = "org/finos/legend/pure/rust/PureRustEvaluationE
 /// pre-existing message-only constructor.
 pub(crate) fn throw_pure_exception(env: &mut JNIEnv, exc: &PureException) {
     let _ = failure::take_pending(env);
-    let payload = pure_exception_to_payload(exc);
+    let payload = payload_of(exc);
     if try_throw_rich(env, &payload).is_err() {
         let _ = failure::take_pending(env);
         let _ = env.throw_new(PURE_RUST_EVAL_EXC, &payload.message);
@@ -107,7 +112,7 @@ fn try_throw_rich(env: &mut JNIEnv, payload: &ExceptionPayload) -> jni::errors::
 
     let exc_obj = env.new_object(
         PURE_RUST_EVAL_EXC,
-        ExceptionPayload::RICH_CTOR_SIG,
+        RICH_CTOR_SIG,
         &[
             JValue::Object(&message.into()),
             JValue::Object(&info.into()),
@@ -219,7 +224,7 @@ fn live_context<'a>(context_ptr: jlong) -> Result<Entered<'a, JniContext>, PureE
     // call after (`checkOpen`).
     let ctx = unsafe { ContextSession::enter(context_ptr) }?;
     if ctx.poisoned {
-        return Err(ffi_error(
+        return Err(boundary_error(
             "the evaluator is poisoned by an earlier panic; close it and create a new one",
         ));
     }
@@ -465,7 +470,7 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeN
             .get_array_length(&property_values)
             .map_err(|e| jni_failure(&mut env, &shared, "new", &e))?;
         if names_len != values_len {
-            return Err(ffi_error(format!(
+            return Err(boundary_error(format!(
                 "new: property name/value array length mismatch ({names_len} vs {values_len})"
             )));
         }
@@ -548,12 +553,12 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeL
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
 ) -> jni::sys::jlongArray {
-    let t = context::LAST_TIMINGS.with(std::cell::Cell::get);
+    let t = timings::last();
     let values = [
         i64::try_from(t.lower_ns).unwrap_or(i64::MAX),
         i64::try_from(t.run_ns).unwrap_or(i64::MAX),
-        i64::try_from(t.run_jni_reads).unwrap_or(i64::MAX),
-        i64::try_from(t.lower_jni_reads).unwrap_or(i64::MAX),
+        i64::try_from(t.run_host_reads).unwrap_or(i64::MAX),
+        i64::try_from(t.lower_host_reads).unwrap_or(i64::MAX),
     ];
     match env.new_long_array(4) {
         Ok(array) => {

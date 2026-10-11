@@ -27,33 +27,11 @@ use jni::JNIEnv;
 use jni::objects::{JObjectArray, JString, JThrowable, JValue};
 use jni::signature::ReturnType;
 use legend_pure_evaluator::error::{PureException, PureRuntimeError};
-use legend_pure_metamodel::source_info::SourceInfo;
 use smol_str::SmolStr;
 
+pub(crate) use legend_pure_evaluator::bridge::failure::{boundary_error, typed, unsupported};
+
 use crate::bridge::BridgeShared;
-
-/// The source id of a failure raised by the boundary itself.
-pub(crate) const FFI_SOURCE: &str = "<ffi>";
-
-/// The anchor of a failure raised by the boundary itself.
-fn ffi_source() -> SourceInfo {
-    SourceInfo::new(FFI_SOURCE, 0, 0, 0, 0)
-}
-
-/// A failure of the boundary itself (an execution error anchored at `<ffi>`).
-pub(crate) fn ffi_error(message: impl Into<String>) -> PureException {
-    typed(PureRuntimeError::EvaluationError(message.into()))
-}
-
-/// A value kind or shape the boundary cannot carry yet.
-pub(crate) fn unsupported(what: impl Into<String>) -> PureException {
-    typed(PureRuntimeError::Unsupported(what.into()))
-}
-
-/// A runtime error anchored at `<ffi>`.
-pub(crate) fn typed(error: PureRuntimeError) -> PureException {
-    PureException::execution(error, ffi_source(), Vec::new())
-}
 
 /// Take and clear the pending Java exception, if there is one. Nothing
 /// else may be called on `env` while an exception is pending.
@@ -76,7 +54,7 @@ pub(crate) fn jni_failure(
 ) -> PureException {
     match take_pending(env) {
         Some(throwable) => from_throwable(env, shared, what, &throwable),
-        None => ffi_error(format!("{what}: {error}")),
+        None => boundary_error(format!("{what}: {error}")),
     }
 }
 
@@ -88,7 +66,7 @@ pub(crate) fn jni_failure_unwired(
     error: &jni::errors::Error,
 ) -> PureException {
     let _ = take_pending(env);
-    ffi_error(format!("{what}: {error}"))
+    boundary_error(format!("{what}: {error}"))
 }
 
 fn from_throwable(
@@ -102,11 +80,11 @@ fn from_throwable(
             "UNSUPPORTED" => typed(PureRuntimeError::Unsupported(text)),
             "NOT_IMPLEMENTED" => typed(PureRuntimeError::NotImplemented(SmolStr::new(text))),
             "FUNCTION_NOT_FOUND" => typed(PureRuntimeError::FunctionNotFound(SmolStr::new(text))),
-            _ => ffi_error(format!("{what}: {text}")),
+            _ => boundary_error(format!("{what}: {text}")),
         },
         Err(_) => {
             let _ = take_pending(env);
-            ffi_error(format!(
+            boundary_error(format!(
                 "{what}: a Java exception that could not be described"
             ))
         }

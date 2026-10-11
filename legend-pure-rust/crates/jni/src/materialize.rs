@@ -32,8 +32,11 @@ use legend_pure_evaluator::model_utils::build_element_path;
 use legend_pure_evaluator::value::{MapState, Value, ValueKey};
 use legend_pure_metamodel::ids::ElementId;
 
-use crate::bridge::{BridgeShared, CORE_INSTANCE_CLASS, JniHandleTable};
-use crate::failure::{ffi_error, in_local_frame, jni_failure, unsupported};
+use legend_pure_evaluator::bridge::handles::HandleTable;
+pub use legend_pure_evaluator::bridge::outbound::leaves;
+
+use crate::bridge::{BridgeShared, CORE_INSTANCE_CLASS};
+use crate::failure::{boundary_error, in_local_frame, jni_failure, unsupported};
 use crate::java_node::JavaNode;
 
 /// Call one of the bridge's materialising methods (`newInteger`,
@@ -56,7 +59,7 @@ fn call_object<'l>(
     };
     match result.and_then(|v| v.l()) {
         Ok(obj) if !obj.is_null() => Ok(obj),
-        Ok(_) => Err(ffi_error(format!(
+        Ok(_) => Err(boundary_error(format!(
             "{what}: the Java graph has no such node"
         ))),
         Err(e) => Err(jni_failure(env, shared, what, &e)),
@@ -151,20 +154,6 @@ fn single(value: &Value) -> Result<&Value, PureException> {
     }
 }
 
-/// The values `value` stands for once collections are flattened and
-/// `Unit` dropped, in order: one Java object each.
-pub fn leaves<'v>(value: &'v Value, out: &mut Vec<&'v Value>) {
-    match value {
-        Value::Unit => {}
-        Value::Collection(items) => {
-            for item in items.iter() {
-                leaves(item, out);
-            }
-        }
-        other => out.push(other),
-    }
-}
-
 /// The Java object standing for one value that is neither a collection
 /// nor `Unit` (see [`leaves`]).
 ///
@@ -180,7 +169,9 @@ pub fn leaf_to_java<'l>(
     let m = &shared.methods;
     let obj = match value {
         Value::Unit | Value::Collection(_) => {
-            return Err(ffi_error("a collection is flattened before it crosses"));
+            return Err(boundary_error(
+                "a collection is flattened before it crosses",
+            ));
         }
         Value::Boolean(b) => call_object(
             env,
@@ -346,7 +337,7 @@ pub fn leaf_to_java<'l>(
             } else {
                 let classifier = handle.borrow().classifier();
                 let key = shared.handles.borrow_mut().register(handle.clone());
-                let id = JniHandleTable::to_i64(key);
+                let id = HandleTable::to_i64(key);
                 let path = env
                     .new_string(classifier.as_str())
                     .map_err(|e| jni_failure(env, shared, "rustObject", &e))?;
