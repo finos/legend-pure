@@ -47,16 +47,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Install sccache
-        uses: mozilla-actions/sccache-action@v0.0.4
-
-      - name: Enable sccache as RUSTC_WRAPPER
-        # A cache service outage degrades to an uncached build, not a failure.
-        run: |
-          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
-          echo "SCCACHE_IGNORE_SERVER_IO_ERROR=1" >> $GITHUB_ENV
-
       - name: Check Formatting (cargo fmt)
         run: cargo fmt --check
 
