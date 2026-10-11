@@ -122,10 +122,13 @@ binary snapshot format) is frozen at tag `archive/pre-evaluator-extract-2026-10`
 it is current.
 
 State (October 2026): Steps 0–2 of the plan, the Java-lambda lowering, natives rounds 1 and 2,
-Step 2b (the evaluator's own cost) and the bridge's cost are done; next is Step 3 (PELT). The
-Java module `legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni` compiles with release 17
-and joins the reactor only on JDK 17+ (profile `rust-evaluator-jdk17` in
-`legend-pure-runtime/pom.xml`); its tests skip when the cdylib is absent. The platform declares
+Step 2b (the evaluator's own cost) and the bridge's cost are done; Step 2c (one C ABI for
+every host) is under way, its phase 1 Java split done; then Step 3 (PELT). Two Java modules
+under `legend-pure-runtime/`, both release 17, in the reactor only on JDK 17+ (profile
+`rust-evaluator-jdk17` in `legend-pure-runtime/pom.xml`): `legend-pure-runtime-rust-evaluator-api`
+(the transport-free side: hosts, node bridge, proxies, exception kinds, PCT and benchmark
+tooling) and `legend-pure-runtime-rust-evaluator-jni` (the JNI evaluator, `evalRust`, the
+`Rust_JNI` suites and manifests; its tests skip when the cdylib is absent). The platform declares
 the native `evalRust` and the PCT adapters `Rust_JNI` (both Java engines run the corpus through
 the Rust evaluator over JNI; the counts are in `legend-pure-rust/CLAUDE.md`) and `Rust_Native`
 (the corpus on the evaluator alone, driven from cargo, red until Step 3 loads the platform).
@@ -133,5 +136,5 @@ the Rust evaluator over JNI; the counts are in `legend-pure-rust/CLAUDE.md`) and
 ```bash
 cd legend-pure-rust && cargo build --workspace && cargo test --workspace
 cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
-  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni clean verify
+  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-api,legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni clean verify
 ```

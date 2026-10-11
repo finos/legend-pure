@@ -48,7 +48,7 @@
         <module>legend-pure-runtime-java-engine-interpreted</module>
         <module>legend-pure-runtime-java-engine-mixed</module>
         <module>legend-pure-runtime-java-engine-shared</module>
-        <!-- legend-pure-runtime-rust-evaluator-jni is added by the profile below. -->
+        <!-- legend-pure-runtime-rust-evaluator-api and -jni are added by the profile below. -->
     </modules>
 
     <profiles>
@@ -58,6 +58,7 @@
                 <jdk>[17,)</jdk>
             </activation>
             <modules>
+                <module>legend-pure-runtime-rust-evaluator-api</module>
                 <module>legend-pure-runtime-rust-evaluator-jni</module>
             </modules>
         </profile>

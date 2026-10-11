@@ -47,7 +47,7 @@ suite prints is the progress metric.
 ```bash
 cargo build --workspace                                   # the cdylib the Java module loads
 cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
-  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni clean verify
+  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-api,legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni clean verify
 #   -> Rust_JNI essential: 339 / 346, Rust_JNI grammar: 133 / 137 (interpreted engine)
 #      Rust_JNI essential (compiled): 340 / 346, grammar (compiled): 133 / 137 (plus 22 boundary tests)
 # after a change that moves tests: regenerate the manifests, review the diff, verify again
@@ -62,7 +62,14 @@ path on the evaluator alone (`src/pct.rs`, manifests under `crates/evaluator/pct
 and, until Step 3 loads the platform, reports `MetadataNotFound` for the
 surveyor's own definition; `tests/pct_native.rs` pins that.
 
-The manifests under that module's `src/test/resources/platform/` are generated,
+Two Java modules under `legend-pure-runtime/` (Step 2c phase 1):
+`legend-pure-runtime-rust-evaluator-api`, the transport-free side (the hosts,
+`NodeBridge`, `RustCoreInstance` over `RustHeap`, the exception kinds, the PCT
+suite builder, manifest rebase and benchmark harness), and
+`legend-pure-runtime-rust-evaluator-jni`, the JNI transport (`PureRustEvaluator`,
+`RustNodeBridge`, `evalRust`, the `Rust_JNI` suites and manifests), which
+depends on it. The manifests under the `-jni` module's
+`src/test/resources/platform/` are generated,
 never edited by hand; they rank what is left by kind: `FunctionNotFound: <key>`
 (nothing registered), `NotImplemented: <key>` (registered under its key through
 `native::NotYet`, body not fished), `Unsupported: …` (a lowering or value-shape
@@ -73,10 +80,10 @@ archive one `impl NativeFunction` at a time (the natives round of 2026-10-11
 did it one module at a time on disjoint files). `tests/registry.rs` pins the
 exact key set by hand: every `register` call must have its key listed there,
 and the test fails otherwise. Root Maven installs need `clean` (the PAR
-plugin trips on a stale descriptor otherwise). The Java module compiles with
-release 17 and joins the reactor only on JDK 17+ (profile
-`rust-evaluator-jdk17` in `legend-pure-runtime/pom.xml`): run its Maven
-commands with JDK 17; a JDK 11 build leaves it out.
+plugin trips on a stale descriptor otherwise). Both Java modules compile with
+release 17 and join the reactor only on JDK 17+ (profile
+`rust-evaluator-jdk17` in `legend-pure-runtime/pom.xml`): run their Maven
+commands with JDK 17; a JDK 11 build leaves them out.
 
 ## The six rules (plan §0)
 

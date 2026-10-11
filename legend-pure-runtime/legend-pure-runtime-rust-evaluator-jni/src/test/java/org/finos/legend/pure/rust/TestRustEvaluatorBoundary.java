@@ -28,6 +28,7 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
+import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
@@ -62,7 +63,7 @@ public class TestRustEvaluatorBoundary
     @BeforeClass
     public static void setUp()
     {
-        evaluator = RustPlatformGraph.newEvaluator();
+        evaluator = newEvaluator();
         ps = RustPlatformGraph.processorSupport();
         repository = RustPlatformGraph.modelRepository();
     }
@@ -71,6 +72,13 @@ public class TestRustEvaluatorBoundary
     public static void tearDown()
     {
         evaluator.close();
+    }
+
+    private static PureRustEvaluator newEvaluator()
+    {
+        PureRustEvaluator created = new PureRustEvaluator();
+        created.init(RustPlatformGraph.runtime(), new Message(""));
+        return created;
     }
 
     private static CoreInstance node(String path)
@@ -540,7 +548,7 @@ public class TestRustEvaluatorBoundary
     @Test
     public void closedEvaluatorRefusesCalls()
     {
-        PureRustEvaluator own = RustPlatformGraph.newEvaluator();
+        PureRustEvaluator own = newEvaluator();
         Assert.assertTrue(own.isFullyInitializedForExecution());
         own.close();
         Assert.assertFalse(own.isFullyInitializedForExecution());

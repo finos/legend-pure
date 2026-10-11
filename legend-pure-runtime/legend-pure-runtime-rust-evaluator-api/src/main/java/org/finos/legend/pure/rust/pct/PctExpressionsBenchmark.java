@@ -15,8 +15,6 @@
 package org.finos.legend.pure.rust.pct;
 
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.PlatformCodeRepositoryProvider;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -25,17 +23,16 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.pct.reports.model.Adapter;
 import org.finos.legend.pure.m3.pct.shared.PCTTools;
 import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.rust.PureRustEvaluator;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.FunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.testHelper.PureTestBuilderCompiled;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.testHelper.PureTestBuilderInterpreted;
-import org.junit.Test;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -51,68 +48,151 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 
 /**
- * Times every PCT test of the platform under four modes: each Java engine
- * with its own adapter ({@code In-Memory}) and with the Rust evaluator
- * ({@code Rust_JNI}). Not part of the default surefire run; invoke with
- * <pre>
- * mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni -Dtest=BenchmarkPctExpressions -DfailIfNoTests=false
- * </pre>
- * after {@code cargo build --release --workspace} (and
- * {@code -Dlegend.rust.libdir=.../target/release}) for a Rust side that is
- * optimised. System properties: {@code legend.bench.warmup} (default 5),
+ * Times every PCT test of the platform under a list of modes: a Java engine
+ * with an adapter, the engine's own or a Rust transport's. Each transport
+ * module invokes it from a test class of its own with the modes it adds.
+ * System properties: {@code legend.bench.warmup} (default 5),
  * {@code legend.bench.runs} (default 20), {@code legend.bench.filter} (a
  * substring of the test's path). Results: {@code target/benchmarks/pct-expressions.csv}
  * (one row per test and mode: status, first run, median and minimum in
- * microseconds) and {@code pct-expressions.md} (the summary per mode).
+ * microseconds, and for a Rust mode the Rust side's split) and
+ * {@code pct-expressions.md} (the summary per mode).
  *
  * <p>A test's time is the whole test function: the adapter call, the
  * expression under it and its assertions. The first run is reported apart
  * from the rest.
  */
-public class BenchmarkPctExpressions
+public final class PctExpressionsBenchmark
 {
-    private static final String IN_MEMORY = "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_";
-    private static final String RUST_JNI = "meta::pure::test::pct::testAdapterForRustExecution_Function_1__X_o_";
-    private static final String[] MODES = {"interpreted/In-Memory", "interpreted/Rust_JNI", "compiled/In-Memory", "compiled/Rust_JNI"};
+    /**
+     * The Java engine a mode runs the tests on.
+     */
+    public enum Engine
+    {
+        INTERPRETED,
+        COMPILED
+    }
 
+    /**
+     * One way of running every test: an engine and the adapter it hands the
+     * test, with, for a Rust adapter, where the Rust side's split of the last
+     * call is read ({@code [loweringNanos, runNanos, readsDuringRun, readsDuringLowering]}).
+     */
+    public static final class Mode
+    {
+        private final Engine engine;
+        private final Adapter adapter;
+        private final Supplier<long[]> rustTimings;
+        private final String label;
+
+        private Mode(Engine engine, Adapter adapter, Supplier<long[]> rustTimings)
+        {
+            this.engine = engine;
+            this.adapter = adapter;
+            this.rustTimings = rustTimings;
+            this.label = engine.name().toLowerCase(Locale.ROOT) + "/" + adapter.name;
+        }
+
+        /**
+         * The engine with one of its own adapters.
+         *
+         * @param engine  the engine
+         * @param adapter the adapter
+         * @return the mode
+         */
+        public static Mode host(Engine engine, Adapter adapter)
+        {
+            return new Mode(engine, adapter, null);
+        }
+
+        /**
+         * The engine with a Rust transport's adapter.
+         *
+         * @param engine      the engine
+         * @param adapter     the adapter
+         * @param rustTimings the transport's split of the last call on this thread
+         * @return the mode
+         */
+        public static Mode rust(Engine engine, Adapter adapter, Supplier<long[]> rustTimings)
+        {
+            return new Mode(engine, adapter, rustTimings);
+        }
+
+        private boolean isRust()
+        {
+            return this.rustTimings != null;
+        }
+    }
+
+    private final List<Mode> modes;
     private final int warmup = Integer.getInteger("legend.bench.warmup", 5);
     private final int runs = Integer.getInteger("legend.bench.runs", 20);
     private final String filter = System.getProperty("legend.bench.filter", "");
 
-    @Test
-    public void benchmark() throws Throwable
+    /**
+     * @param modes the modes, in the order they are reported; the first is the baseline of the ratios, and each
+     *              Rust mode is set against the first host mode of its engine
+     */
+    public PctExpressionsBenchmark(List<Mode> modes)
+    {
+        this.modes = modes;
+    }
+
+    /**
+     * Run every test under every mode and write the results.
+     *
+     * @throws Throwable when an engine cannot be built or a result cannot be written
+     */
+    public void run() throws Throwable
     {
         List<ReportScope> scopes = Arrays.asList(PlatformCodeRepositoryProvider.essentialFunctions, PlatformCodeRepositoryProvider.grammarFunctions);
         Map<String, Sample[]> samples = new TreeMap<>();
 
-        FunctionExecutionInterpreted fe = PureTestBuilderInterpreted.getFunctionExecutionInterpreted();
-        ProcessorSupport ips = fe.getProcessorSupport();
-        for (ReportScope scope : scopes)
+        if (this.modes.stream().anyMatch(m -> m.engine == Engine.INTERPRETED))
         {
-            for (CoreInstance test : tests(scope, ips))
+            FunctionExecutionInterpreted fe = PureTestBuilderInterpreted.getFunctionExecutionInterpreted();
+            ProcessorSupport ips = fe.getProcessorSupport();
+            for (ReportScope scope : scopes)
             {
-                String fqn = PackageableElement.getUserPathForPackageableElement(test, "::");
-                Sample[] row = samples.computeIfAbsent(fqn, k -> new Sample[MODES.length]);
-                row[0] = time(() -> fe.start(test, Lists.immutable.with(adapterValue(IN_MEMORY, ips))), false);
-                row[1] = time(() -> fe.start(test, Lists.immutable.with(adapterValue(RUST_JNI, ips))), true);
+                for (CoreInstance test : tests(scope, ips))
+                {
+                    Sample[] row = samples.computeIfAbsent(PackageableElement.getUserPathForPackageableElement(test, "::"), k -> new Sample[this.modes.size()]);
+                    for (int i = 0; i < this.modes.size(); i++)
+                    {
+                        Mode mode = this.modes.get(i);
+                        if (mode.engine == Engine.INTERPRETED)
+                        {
+                            CoreInstance adapter = adapterValue(mode.adapter.function, ips);
+                            row[i] = time(() -> fe.start(test, Lists.immutable.with(adapter)), mode);
+                        }
+                    }
+                }
             }
         }
 
-        CompiledExecutionSupport es = PureTestBuilderCompiled.getClassLoaderExecutionSupport();
-        ProcessorSupport cps = es.getProcessorSupport();
-        for (ReportScope scope : scopes)
+        if (this.modes.stream().anyMatch(m -> m.engine == Engine.COMPILED))
         {
-            for (CoreInstance test : tests(scope, cps))
+            CompiledExecutionSupport es = PureTestBuilderCompiled.getClassLoaderExecutionSupport();
+            ProcessorSupport cps = es.getProcessorSupport();
+            for (ReportScope scope : scopes)
             {
-                String fqn = PackageableElement.getUserPathForPackageableElement(test, "::");
-                Sample[] row = samples.computeIfAbsent(fqn, k -> new Sample[MODES.length]);
-                Method method = compiledMethod(test);
-                CoreInstance inMemory = _Package.getByUserPath(IN_MEMORY, cps);
-                CoreInstance rust = _Package.getByUserPath(RUST_JNI, cps);
-                row[2] = time(() -> invoke(method, inMemory, es), false);
-                row[3] = time(() -> invoke(method, rust, es), true);
+                for (CoreInstance test : tests(scope, cps))
+                {
+                    Sample[] row = samples.computeIfAbsent(PackageableElement.getUserPathForPackageableElement(test, "::"), k -> new Sample[this.modes.size()]);
+                    Method method = compiledMethod(test);
+                    for (int i = 0; i < this.modes.size(); i++)
+                    {
+                        Mode mode = this.modes.get(i);
+                        if (mode.engine == Engine.COMPILED)
+                        {
+                            CoreInstance adapter = _Package.getByUserPath(mode.adapter.function, cps);
+                            row[i] = time(() -> invoke(method, adapter, es), mode);
+                        }
+                    }
+                }
             }
         }
 
@@ -185,9 +265,9 @@ public class BenchmarkPctExpressions
      * Time a run: the first run apart, then warm-up, then the timed runs.
      * For a Rust mode the Rust side's own split of each timed run is read
      * back: the lowering, the run of the lowered closure (the evaluator
-     * alone when no JNI read happened during it), and those reads.
+     * alone when no bridge read happened during it), and those reads.
      */
-    private Sample time(Run run, boolean rust)
+    private Sample time(Run run, Mode mode)
     {
         Sample sample = new Sample();
         try
@@ -208,9 +288,9 @@ public class BenchmarkPctExpressions
                 start = System.nanoTime();
                 run.run();
                 times[i] = (System.nanoTime() - start) / 1000L;
-                if (rust)
+                if (mode.isRust())
                 {
-                    long[] split = PureRustEvaluator.lastTimings();
+                    long[] split = mode.rustTimings.get();
                     lower[i] = split[0] / 1000L;
                     evaluator[i] = split[1] / 1000L;
                     reads[i] = split[2];
@@ -234,19 +314,19 @@ public class BenchmarkPctExpressions
         return sample;
     }
 
-    private static void writeCsv(Path target, Map<String, Sample[]> samples) throws IOException
+    private void writeCsv(Path target, Map<String, Sample[]> samples) throws IOException
     {
-        StringBuilder csv = new StringBuilder("test,mode,status,first_us,median_us,min_us,rust_lower_us,rust_evaluator_us,jni_reads_in_run\n");
+        StringBuilder csv = new StringBuilder("test,mode,status,first_us,median_us,min_us,rust_lower_us,rust_evaluator_us,rust_reads_in_run\n");
         for (Map.Entry<String, Sample[]> entry : samples.entrySet())
         {
-            for (int i = 0; i < MODES.length; i++)
+            for (int i = 0; i < this.modes.size(); i++)
             {
                 Sample s = entry.getValue()[i];
                 if (s == null)
                 {
                     continue;
                 }
-                csv.append(entry.getKey()).append(',').append(MODES[i]).append(',').append(s.status).append(',')
+                csv.append(entry.getKey()).append(',').append(this.modes.get(i).label).append(',').append(s.status).append(',')
                         .append(s.firstUs).append(',').append(s.medianUs).append(',').append(s.minUs).append(',')
                         .append(s.lowerUs).append(',').append(s.evaluatorUs).append(',').append(s.runReads).append('\n');
             }
@@ -255,19 +335,39 @@ public class BenchmarkPctExpressions
     }
 
     /**
+     * The index of the first host mode on the same engine as a Rust mode,
+     * or -1.
+     */
+    private int hostModeOf(int rustMode)
+    {
+        Engine engine = this.modes.get(rustMode).engine;
+        for (int i = 0; i < this.modes.size(); i++)
+        {
+            Mode mode = this.modes.get(i);
+            if (!mode.isRust() && (mode.engine == engine))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
      * Per mode: how many tests ran, the sum and the median of their medians,
-     * and the geometric mean of the ratio to the interpreted engine's own
-     * adapter over the tests every mode completed; then the ten tests where
-     * the Rust evaluator loses the most time against the host engine.
+     * and the geometric mean of the ratio to the first mode over the tests
+     * every mode completed; then the ten tests where the Rust modes lose the
+     * most time against their host modes.
      */
     private String summary(Map<String, Sample[]> samples)
     {
+        String baseline = this.modes.get(0).label;
         StringBuilder md = new StringBuilder();
         md.append("# PCT expressions: time per test by mode\n\n");
         md.append("Warm-up ").append(this.warmup).append(", timed runs ").append(this.runs).append(", times in microseconds; ")
                 .append("ratios over the ").append(countAllOk(samples)).append(" tests every mode completed.\n\n");
-        md.append("| Mode | Tests ok | Sum of medians (ms) | Median of medians | Median first run | Geomean ratio to interpreted/In-Memory | Rust lowering (median) | Rust evaluator alone (median) | Evaluator-alone geomean ratio |\n|---|---|---|---|---|---|---|---|---|\n");
-        for (int i = 0; i < MODES.length; i++)
+        md.append("| Mode | Tests ok | Sum of medians (ms) | Median of medians | Median first run | Geomean ratio to ").append(baseline)
+                .append(" | Rust lowering (median) | Rust evaluator alone (median) | Evaluator-alone geomean ratio |\n|---|---|---|---|---|---|---|---|---|\n");
+        for (int i = 0; i < this.modes.size(); i++)
         {
             List<Long> medians = new ArrayList<>();
             List<Long> firsts = new ArrayList<>();
@@ -277,7 +377,7 @@ public class BenchmarkPctExpressions
             double evaluatorLogSum = 0;
             int ratioCount = 0;
             int evaluatorRatioCount = 0;
-            boolean rust = MODES[i].endsWith("Rust_JNI");
+            boolean rust = this.modes.get(i).isRust();
             for (Sample[] row : samples.values())
             {
                 Sample s = row[i];
@@ -305,30 +405,49 @@ public class BenchmarkPctExpressions
                     }
                 }
             }
-            md.append("| ").append(MODES[i]).append(" | ").append(medians.size()).append(" | ")
+            md.append("| ").append(this.modes.get(i).label).append(" | ").append(medians.size()).append(" | ")
                     .append(String.format(Locale.ROOT, "%.1f", sum(medians) / 1000.0)).append(" | ")
                     .append(median(medians)).append(" | ").append(median(firsts)).append(" | ")
                     .append(ratioCount == 0 ? "n/a" : String.format(Locale.ROOT, "%.2fx", Math.exp(logSum / ratioCount))).append(" | ")
                     .append(rust ? String.valueOf(median(lowers)) : "").append(" | ")
-                    .append(rust ? median(evaluators) + " (" + evaluators.size() + " tests with no JNI read in the run)" : "").append(" | ")
+                    .append(rust ? median(evaluators) + " (" + evaluators.size() + " tests with no bridge read in the run)" : "").append(" | ")
                     .append(rust && (evaluatorRatioCount > 0) ? String.format(Locale.ROOT, "%.2fx", Math.exp(evaluatorLogSum / evaluatorRatioCount)) : "").append(" |\n");
         }
-        md.append("\n## Where Rust loses the most against its host engine (median, warm)\n\n| Test | interpreted In-Memory | interpreted Rust_JNI | compiled In-Memory | compiled Rust_JNI |\n|---|---|---|---|---|\n");
+        md.append("\n## Where Rust loses the most against its host engine (median, warm)\n\n| Test |");
+        StringBuilder rule = new StringBuilder("|---|");
+        for (Mode mode : this.modes)
+        {
+            md.append(' ').append(mode.label).append(" |");
+            rule.append("---|");
+        }
+        md.append('\n').append(rule).append('\n');
         Map<String, Long> loss = new LinkedHashMap<>();
         for (Map.Entry<String, Sample[]> entry : samples.entrySet())
         {
             Sample[] row = entry.getValue();
             if (allOk(row))
             {
-                loss.put(entry.getKey(), (row[1].medianUs - row[0].medianUs) + (row[3].medianUs - row[2].medianUs));
+                long total = 0;
+                for (int i = 0; i < this.modes.size(); i++)
+                {
+                    int host = this.modes.get(i).isRust() ? hostModeOf(i) : -1;
+                    if (host >= 0)
+                    {
+                        total += row[i].medianUs - row[host].medianUs;
+                    }
+                }
+                loss.put(entry.getKey(), total);
             }
         }
         loss.entrySet().stream().sorted((a, b) -> Long.compare(b.getValue(), a.getValue())).limit(10).forEach(e ->
         {
             Sample[] row = samples.get(e.getKey());
-            md.append("| ").append(e.getKey().substring(e.getKey().lastIndexOf("::") + 2)).append(" | ")
-                    .append(row[0].medianUs).append(" | ").append(row[1].medianUs).append(" | ")
-                    .append(row[2].medianUs).append(" | ").append(row[3].medianUs).append(" |\n");
+            md.append("| ").append(e.getKey().substring(e.getKey().lastIndexOf("::") + 2)).append(" |");
+            for (Sample s : row)
+            {
+                md.append(' ').append(s.medianUs).append(" |");
+            }
+            md.append('\n');
         });
         return md.toString();
     }

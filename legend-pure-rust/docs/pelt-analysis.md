@@ -798,7 +798,7 @@ shape: classifier + property bag.
   `LambdaFunction_Impl` tree then lowers like a PELT body. Lowering is cached
   per Java object identity (once per request).
 - One JNI transition per *object*, not per read: a small Java helper in
-  `legend-pure-runtime-rust-evaluator-jni` returns a whole node in one call
+  `legend-pure-runtime-rust-evaluator-api` returns a whole node in one call
   (classifier, keys, values as primitives or handles — the mirror of the
   existing `nativeNew` arrays). Rust snapshots the node on first touch; nested
   objects stay lazy handles.

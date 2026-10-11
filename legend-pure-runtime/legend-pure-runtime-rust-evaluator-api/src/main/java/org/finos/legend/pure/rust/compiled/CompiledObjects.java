@@ -43,7 +43,7 @@ import java.util.Set;
  * properties and are not copied; any other key the class does not declare
  * is a typed failure, not a dropped value.
  */
-final class CompiledObjects
+public final class CompiledObjects
 {
     private static final String EVALUATOR_SLOT_PREFIX = "__";
 
@@ -51,7 +51,7 @@ final class CompiledObjects
     private final ProcessorSupport processorSupport;
     private final Map<RustCoreInstance, Object> converted = new IdentityHashMap<>();
 
-    CompiledObjects(CompiledExecutionSupport executionSupport)
+    public CompiledObjects(CompiledExecutionSupport executionSupport)
     {
         this.executionSupport = executionSupport;
         this.processorSupport = executionSupport.getProcessorSupport();
@@ -61,7 +61,7 @@ final class CompiledObjects
      * A value the bridge materialised for the compiled engine, as generated
      * code holds it.
      */
-    Object toCompiled(CoreInstance value)
+    public Object toCompiled(CoreInstance value)
     {
         if (value instanceof RustCoreInstance)
         {
@@ -74,7 +74,7 @@ final class CompiledObjects
      * Release every Rust object this conversion read: the compiled copies are
      * all that remains of them.
      */
-    void release()
+    public void release()
     {
         for (RustCoreInstance proxy : this.converted.keySet())
         {

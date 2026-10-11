@@ -29,12 +29,11 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJarLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.binary.SimplePureRepositoryJarLibrary;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.rust.PureRustEvaluator;
 
 /**
  * The platform graph loaded once per JVM from the {@code .par} archives on
- * the classpath (the recipe the PCT report generators use), and Rust
- * evaluators bound to it.
+ * the classpath (the recipe the PCT report generators use), for tests that
+ * bind an evaluator to it.
  */
 public final class RustPlatformGraph
 {
@@ -83,17 +82,5 @@ public final class RustPlatformGraph
     public static ModelRepository modelRepository()
     {
         return runtime().getModelRepository();
-    }
-
-    /**
-     * A fresh Rust evaluator initialised over the shared runtime.
-     *
-     * @return the evaluator; the caller closes it
-     */
-    public static PureRustEvaluator newEvaluator()
-    {
-        PureRustEvaluator evaluator = new PureRustEvaluator();
-        evaluator.init(runtime(), new Message(""));
-        return evaluator;
     }
 }

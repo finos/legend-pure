@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.rust.compiled;
+package org.finos.legend.pure.rust.jni.compiled;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
@@ -23,6 +23,8 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.rust.PureRustEvaluationException;
 import org.finos.legend.pure.rust.PureRustEvaluator;
 import org.finos.legend.pure.rust.PureRustException;
+import org.finos.legend.pure.rust.compiled.CompiledHost;
+import org.finos.legend.pure.rust.compiled.CompiledObjects;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.extension.EvalRustExecutor;
 

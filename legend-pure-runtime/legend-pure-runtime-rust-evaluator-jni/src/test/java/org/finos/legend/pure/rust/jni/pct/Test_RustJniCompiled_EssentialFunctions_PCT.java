@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.rust.pct;
+package org.finos.legend.pure.rust.jni.pct;
 
 import junit.framework.Test;
 import org.eclipse.collections.api.list.MutableList;
@@ -21,6 +21,7 @@ import org.finos.legend.pure.m3.pct.reports.config.PCTReportConfiguration;
 import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionSpecification;
 import org.finos.legend.pure.m3.pct.reports.model.Adapter;
 import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
+import org.finos.legend.pure.rust.pct.PctSuites;
 
 /**
  * The essential PCT corpus through the compiled engine with the
@@ -37,7 +38,7 @@ public class Test_RustJniCompiled_EssentialFunctions_PCT extends PCTReportConfig
 
     public static Test suite()
     {
-        return RustJniSuites.buildCompiled(reportScope, manifestPath);
+        return PctSuites.compiled(adapter, reportScope, manifestPath);
     }
 
     @Override

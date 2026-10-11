@@ -37,7 +37,8 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
- * A Rust heap object seen from Java as a read-only {@link CoreInstance}.
+ * A Rust heap object seen from Java as a read-only {@link CoreInstance},
+ * read through the {@link RustHeap} of the evaluator that owns it.
  * One proxy exists per Rust handle; equality is identity. The classifier
  * is the Java graph node for the Rust classifier path.
  */
@@ -46,13 +47,13 @@ public final class RustCoreInstance extends AbstractCoreInstance implements Clos
     private static final String ANONYMOUS_PREFIX = "@_";
     private static final int ANONYMOUS_DIGITS = Long.toUnsignedString(-1L, 32).length();
 
-    private final PureRustEvaluator owner;
+    private final RustHeap owner;
     private final long handle;
     private final String classifierPath;
     private CoreInstance classifier;
     private String name;
 
-    RustCoreInstance(PureRustEvaluator owner, long handle, String classifierPath)
+    public RustCoreInstance(RustHeap owner, long handle, String classifierPath)
     {
         this.owner = owner;
         this.handle = handle;
@@ -157,7 +158,7 @@ public final class RustCoreInstance extends AbstractCoreInstance implements Clos
     @Override
     public RichIterable<String> getKeys()
     {
-        return this.owner.propertyNames(this);
+        return this.owner.propertyNames(this.handle);
     }
 
     @Override
@@ -175,7 +176,7 @@ public final class RustCoreInstance extends AbstractCoreInstance implements Clos
     @Override
     public ListIterable<? extends CoreInstance> getValueForMetaPropertyToMany(String keyName)
     {
-        return this.owner.propertyValues(this, keyName);
+        return this.owner.propertyValues(this.handle, keyName);
     }
 
     @Override
@@ -336,7 +337,7 @@ public final class RustCoreInstance extends AbstractCoreInstance implements Clos
     @Override
     public void close()
     {
-        this.owner.release(this);
+        this.owner.release(this.handle);
     }
 
     private static UnsupportedOperationException readOnly()

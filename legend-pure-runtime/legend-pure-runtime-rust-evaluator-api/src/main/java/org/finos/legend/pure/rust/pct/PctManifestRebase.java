@@ -23,13 +23,13 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.finos.legend.pure.m3.PlatformCodeRepositoryProvider;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.pct.reports.model.Adapter;
 import org.finos.legend.pure.m3.pct.shared.PCTManifestLoader;
 import org.finos.legend.pure.m3.pct.shared.model.PCTManifest;
 import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
@@ -40,7 +40,6 @@ import org.finos.legend.pure.runtime.java.compiled.testHelper.PureTestBuilderCom
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.testHelper.PureTestBuilderInterpreted;
 import org.junit.Assert;
-import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -50,55 +49,45 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Regenerates the {@code Rust_JNI} manifests from a run of the surveyor: the
- * manifests are never edited by hand. Not part of the default surefire run
- * (the class name matches no include pattern); invoke with
- * <pre>
- * mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni -Dtest=RebaseRustJniManifests -DfailIfNoTests=false
- * </pre>
- * after {@code cargo build --workspace}, then review the diff and run the
- * module's {@code verify}.
+ * Regenerates a Rust adapter's manifest from a run of the surveyor: the
+ * manifests are never edited by hand. Each transport module invokes it from
+ * a test class of its own, one call per engine and scope.
  *
- * <p>Per scope the surveyor runs every PCT test under the committed manifest,
- * exactly as the suite does, and the new manifest is derived from its report:
- * a FAIL or ERROR becomes an exclusion recording the first line of its
- * message; a PASS that was an expected failure keeps its committed entry; a
- * test that was excluded and now passes is dropped; a SKIP stays out.
+ * <p>The surveyor runs every PCT test of the scope under the committed
+ * manifest, exactly as the suite does, and the new manifest is derived from
+ * its report: a FAIL or ERROR becomes an exclusion recording the first line
+ * of its message; a PASS that was an expected failure keeps its committed
+ * entry; a test that was excluded and now passes is dropped; a SKIP stays
+ * out. The file is written under the directory named by the system property
+ * {@link #MANIFEST_DIR_PROPERTY}, which the calling module's surefire
+ * configuration sets to its test resources.
  */
-public class RebaseRustJniManifests
+public final class PctManifestRebase
 {
-    static final String MANIFEST_DIR_PROPERTY = "legend.pct.rust.manifestDir";
+    /**
+     * System property naming the test resources directory the manifests are written under.
+     */
+    public static final String MANIFEST_DIR_PROPERTY = "legend.pct.rust.manifestDir";
+
     private static final String SURVEYOR = "meta::pure::test::surveyor::runPCTTestsFromPath_String_1__String_1__String_1__TestReport_1_";
     private static final String EXPECTED_FAILURE = "Expected failure: ";
     private static final String NOW_PASSES = " was expected to fail but now PASSES";
     private static final String MISMATCH = "PCT expected-failure mismatch for ";
     private static final String ACTUAL = "  actual   : ";
 
-    @Test
-    public void rebaseEssential() throws IOException
+    private PctManifestRebase()
     {
-        rebase(PlatformCodeRepositoryProvider.essentialFunctions, "platform/pure/essential/pct_essential_interpreted_rust_jni.json");
     }
 
-    @Test
-    public void rebaseGrammar() throws IOException
-    {
-        rebase(PlatformCodeRepositoryProvider.grammarFunctions, "platform/pure/grammar/functions/pct_grammar_interpreted_rust_jni.json");
-    }
-
-    @Test
-    public void rebaseEssentialCompiled() throws Throwable
-    {
-        rebaseCompiled(PlatformCodeRepositoryProvider.essentialFunctions, "platform/pure/essential/pct_essential_compiled_rust_jni.json");
-    }
-
-    @Test
-    public void rebaseGrammarCompiled() throws Throwable
-    {
-        rebaseCompiled(PlatformCodeRepositoryProvider.grammarFunctions, "platform/pure/grammar/functions/pct_grammar_compiled_rust_jni.json");
-    }
-
-    static void rebase(ReportScope scope, String manifestPath) throws IOException
+    /**
+     * Rebase the manifest of a scope on the interpreted engine.
+     *
+     * @param adapter      the Rust adapter
+     * @param scope        the corpus
+     * @param manifestPath the classpath path of the manifest, also its path under the manifest directory
+     * @throws IOException when the manifest cannot be written
+     */
+    public static void interpreted(Adapter adapter, ReportScope scope, String manifestPath) throws IOException
     {
         FunctionExecutionInterpreted fe = PureTestBuilderInterpreted.getFunctionExecutionInterpreted();
         ProcessorSupport ps = fe.getProcessorSupport();
@@ -114,10 +103,18 @@ public class RebaseRustJniManifests
         {
             report = Instance.getValueForMetaPropertyToOneResolved(report, "values", ps);
         }
-        derive(scope, manifestPath, "", report, ps);
+        derive(adapter, scope, manifestPath, "", report, ps);
     }
 
-    static void rebaseCompiled(ReportScope scope, String manifestPath) throws Throwable
+    /**
+     * Rebase the manifest of a scope on the compiled engine.
+     *
+     * @param adapter      the Rust adapter
+     * @param scope        the corpus
+     * @param manifestPath the classpath path of the manifest, also its path under the manifest directory
+     * @throws Throwable when the surveyor or the write fails
+     */
+    public static void compiled(Adapter adapter, ReportScope scope, String manifestPath) throws Throwable
     {
         CompiledExecutionSupport es = PureTestBuilderCompiled.getClassLoaderExecutionSupport();
         ProcessorSupport ps = es.getProcessorSupport();
@@ -125,10 +122,10 @@ public class RebaseRustJniManifests
         Assert.assertNotNull(SURVEYOR, surveyor);
         CoreInstance report = (CoreInstance) PureTestBuilderCompiled.executeFn(surveyor, null, Maps.mutable.empty(), es,
                 Lists.mutable.with(scope._package, scope.filePath, manifestPath));
-        derive(scope, manifestPath, " (compiled)", report, ps);
+        derive(adapter, scope, manifestPath, " (compiled)", report, ps);
     }
 
-    private static void derive(ReportScope scope, String manifestPath, String platformTag, CoreInstance report, ProcessorSupport ps) throws IOException
+    private static void derive(Adapter adapter, ReportScope scope, String manifestPath, String platformTag, CoreInstance report, ProcessorSupport ps) throws IOException
     {
         String manifestDir = System.getProperty(MANIFEST_DIR_PROPERTY);
         Assert.assertNotNull("system property " + MANIFEST_DIR_PROPERTY + " (set by the module's surefire configuration)", manifestDir);
@@ -190,7 +187,7 @@ public class RebaseRustJniManifests
 
         Path target = Paths.get(manifestDir, manifestPath);
         write(target, committed.adapter, exclusions);
-        System.out.println("Rust_JNI " + scope.module + platformTag + ": " + passes + " / " + (results.size() - skipped)
+        System.out.println(adapter.name + " " + scope.module + platformTag + ": " + passes + " / " + (results.size() - skipped)
                 + (skipped == 0 ? "" : " (" + skipped + " skipped)") + " -> " + target);
     }
 

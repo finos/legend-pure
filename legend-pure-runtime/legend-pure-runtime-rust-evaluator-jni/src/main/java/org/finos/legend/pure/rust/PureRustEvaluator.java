@@ -45,8 +45,11 @@ import java.nio.file.Paths;
  * a {@link PureRuntime} by {@link #init}, and driven with
  * {@link #start(CoreInstance, ListIterable)} exactly like the interpreted
  * engine. The only value currency across the boundary is {@link CoreInstance}.
+ * The JNI transport: the native methods below are the exported symbols of
+ * {@code libpure_rust_jni}, and the Rust objects it returns are read back
+ * through it as the {@link RustHeap} of their proxies.
  */
-public final class PureRustEvaluator implements FunctionExecution, Closeable
+public final class PureRustEvaluator implements FunctionExecution, RustHeap, Closeable
 {
     /**
      * System property naming the directory that holds the cdylib; set by surefire.
@@ -270,24 +273,27 @@ public final class PureRustEvaluator implements FunctionExecution, Closeable
         return nativeCrossingKind(this.contextPointer, node);
     }
 
-    synchronized ListIterable<? extends CoreInstance> propertyValues(RustCoreInstance proxy, String key)
+    @Override
+    public synchronized ListIterable<? extends CoreInstance> propertyValues(long handle, String key)
     {
         checkOpen();
-        return Lists.immutable.with(nativeGetProperty(this.contextPointer, proxy.handle(), key));
+        return Lists.immutable.with(nativeGetProperty(this.contextPointer, handle, key));
     }
 
-    synchronized ListIterable<String> propertyNames(RustCoreInstance proxy)
+    @Override
+    public synchronized ListIterable<String> propertyNames(long handle)
     {
         checkOpen();
-        return Lists.immutable.with(nativePropertyNames(this.contextPointer, proxy.handle()));
+        return Lists.immutable.with(nativePropertyNames(this.contextPointer, handle));
     }
 
-    synchronized void release(RustCoreInstance proxy)
+    @Override
+    public synchronized void release(long handle)
     {
         if (!this.closed)
         {
-            nativeFreeInstance(this.contextPointer, proxy.handle());
-            this.bridge.forgetProxy(proxy.handle());
+            nativeFreeInstance(this.contextPointer, handle);
+            this.bridge.forgetProxy(handle);
         }
     }
 
@@ -300,9 +306,9 @@ public final class PureRustEvaluator implements FunctionExecution, Closeable
         }
         if (this.contextPointer != 0)
         {
-            for (RustCoreInstance proxy : this.bridge.proxies())
+            for (long handle : this.bridge.proxyHandles())
             {
-                nativeFreeInstance(this.contextPointer, proxy.handle());
+                nativeFreeInstance(this.contextPointer, handle);
             }
             this.bridge.clear();
             nativeFreeContext(this.contextPointer);
