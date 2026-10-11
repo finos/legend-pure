@@ -111,10 +111,11 @@ Authoritative developer docs live in `/docs` and are maintained alongside code. 
 
 ## Rust evaluator (`legend-pure-rust/`)
 
-A Pure evaluator in Rust lives beside the Java stack as a Cargo workspace of three crates:
+A Pure evaluator in Rust lives beside the Java stack as a Cargo workspace of four crates:
 `crates/metamodel` (element tables, the expression tree, the M3 bootstrap embedding
 `platform/pure/grammar/m3.pure`), `crates/evaluator` (values, heap, variable context, dispatch,
-the native registry) and `crates/jni` (the cdylib the Java module loads). **The plan for
+the native registry, the host-agnostic core of every boundary), `crates/ffi` (the C ABI, the one
+host surface, with its hand-written header) and `crates/jni` (the JNI transport). **The plan for
 everything Rust is `legend-pure-rust/docs/rust-evaluator-mvp.md`**; `legend-pure-rust/CLAUDE.md`
 is the working guide (build, test and lint commands, the six rules). Read the plan's §0 before
 touching that directory. The earlier Rust workspace (parser, compiler, LSP, DSL crates, CLI,
@@ -122,16 +123,18 @@ binary snapshot format) is frozen at tag `archive/pre-evaluator-extract-2026-10`
 it is current.
 
 State (October 2026): Steps 0–2 of the plan, the Java-lambda lowering, natives rounds 1 and 2,
-Step 2b (the evaluator's own cost) and the bridge's cost are done; Step 2c (one C ABI for
-every host) is under way, its phase 1 Java split done; then Step 3 (PELT). Two Java modules
-under `legend-pure-runtime/`, both release 17, in the reactor only on JDK 17+ (profile
-`rust-evaluator-jdk17` in `legend-pure-runtime/pom.xml`): `legend-pure-runtime-rust-evaluator-api`
-(the transport-free side: hosts, node bridge, proxies, exception kinds, PCT and benchmark
-tooling) and `legend-pure-runtime-rust-evaluator-jni` (the JNI evaluator, `evalRust`, the
-`Rust_JNI` suites and manifests; its tests skip when the cdylib is absent). The platform declares
-the native `evalRust` and the PCT adapters `Rust_JNI` (both Java engines run the corpus through
-the Rust evaluator over JNI; the counts are in `legend-pure-rust/CLAUDE.md`) and `Rust_Native`
-(the corpus on the evaluator alone, driven from cargo, red until Step 3 loads the platform).
+Step 2b (the evaluator's own cost), the bridge's cost and Step 2c phases 1 and 2 (one C ABI
+for every host) are done; next is Step 3 (PELT). Three Java modules under `legend-pure-runtime/`:
+`legend-pure-runtime-rust-evaluator-api` and `legend-pure-runtime-rust-evaluator-jni`, release 17,
+in the reactor only on JDK 17+ (profile `rust-evaluator-jdk17` in `legend-pure-runtime/pom.xml`),
+the transport-free side (hosts, node bridge, proxies, exception kinds, PCT and benchmark tooling)
+and the JNI transport (`evalRust`, the `Rust_JNI` suites and manifests); and
+`legend-pure-runtime-rust-evaluator-ffm`, release 25, in the reactor only on JDK 25+ (profile
+`rust-evaluator-jdk25`), the client of the C ABI (`evalRustFfm`, the `Rust_FFM` suites and
+manifests). Every module's tests skip when its cdylib is absent. The platform declares the PCT
+adapters `Rust_JNI` and `Rust_FFM` (both Java engines run the corpus through the Rust evaluator
+over each transport; the counts are in `legend-pure-rust/CLAUDE.md`) and `Rust_Native` (the
+corpus on the evaluator alone, driven from cargo, red until Step 3 loads the platform).
 
 ```bash
 cd legend-pure-rust && cargo build --workspace && cargo test --workspace

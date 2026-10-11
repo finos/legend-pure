@@ -51,6 +51,10 @@ cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-api,legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni clean verify
 #   -> Rust_JNI essential: 339 / 346, Rust_JNI grammar: 133 / 137 (interpreted engine)
 #      Rust_JNI essential (compiled): 340 / 346, grammar (compiled): 133 / 137 (plus 22 boundary tests)
+# the C ABI client, JDK 25 only (the -ffm module joins the reactor on JDK 25+):
+JAVA_HOME=$(/usr/libexec/java_home -v 25) \
+  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-api,legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni,legend-pure-runtime/legend-pure-runtime-rust-evaluator-ffm clean verify
+#   -> Rust_FFM at the same four numbers (plus 25 boundary tests)
 # after a change that moves tests: regenerate the manifests, review the diff, verify again
 JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   mvn test -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni \
@@ -69,7 +73,10 @@ Two Java modules under `legend-pure-runtime/` (Step 2c phase 1):
 suite builder, manifest rebase and benchmark harness), and
 `legend-pure-runtime-rust-evaluator-jni`, the JNI transport (`PureRustEvaluator`,
 `RustNodeBridge`, `evalRust`, the `Rust_JNI` suites and manifests), which
-depends on it. The manifests under the `-jni` module's
+depends on it; and `legend-pure-runtime-rust-evaluator-ffm` (release 25),
+the client of the C ABI (`PureAbi`, `PureRustFfmEvaluator`, `FfmNodeBridge`,
+`evalRustFfm`, the `Rust_FFM` suites and manifests), which depends on `-api`
+and joins the reactor only on JDK 25+. The manifests under the `-jni` module's
 `src/test/resources/platform/` are generated,
 never edited by hand; they rank what is left by kind: `FunctionNotFound: <key>`
 (nothing registered), `NotImplemented: <key>` (registered under its key through

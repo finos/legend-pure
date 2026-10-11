@@ -7,9 +7,12 @@
 > compiled 321 / 327 and 132 / 136; the bridge within 1.15x of the
 > interpreted engine's own adapter; rebased on finos master the same day,
 > where the corpus is 346 and 137 tests: 339 / 346 and 133 / 137,
-> compiled 340 / 346 and 133 / 137). Next: Step 2c, one C ABI for every
-> host (decided 2026-10-11), then Step 3, read PELT, with the `Directory`
-> trait of Step 4 (Appendix C item 6). Archive tag
+> compiled 340 / 346 and 133 / 137). Step 2c, one C ABI for every host,
+> phases 1 and 2 done 2026-10-11: `Rust_FFM` on JDK 25 at the same four
+> numbers beside `Rust_JNI`, a PCT test 51 µs against 58 over JNI on the
+> interpreted engine and 86 against 188 on the compiled one. Next: Step
+> 3, read PELT, with the `Directory` trait of Step 4 (Appendix C item 6).
+> Archive tag
 > `archive/pre-evaluator-extract-2026-10`.**
 > This document is
 > self-contained. It assumes the reader knows Legend Pure and legend-engine as
@@ -80,14 +83,14 @@ interpreted engine's own adapter (median 94 µs against 82 µs), the
 lowering cached per lambda definition. The order from here, each phase
 with its gate:
 
-0. **Step 2c** (next; decided 2026-10-11) — one C ABI for every host, in
-   three phases: the seam (the host-agnostic bridge core into the
-   evaluator crate behind one trait; three Java modules, `-api`, `-jni`,
-   `-ffm`), the `ffi` crate with its hand-written header and the Java
-   client on JDK 25 with a `Rust_FFM` adapter measured beside `Rust_JNI`,
-   then the deletion of JNI when legend-engine's floor moves. Phase 1
-   serves Step 3 as well; Python follows Step 3.
-1. **Step 3 and Step 4** — read PELT, the `Directory` trait, the
+0. **Step 2c** (phases 1 and 2 done 2026-10-11) — one C ABI for every
+   host: the seam (the host-agnostic bridge core in the evaluator crate
+   behind the `Host` trait; three Java modules, `-api`, `-jni`, `-ffm`),
+   the `ffi` crate with its hand-written header, and the Java client on
+   JDK 25 with the `Rust_FFM` adapter measured beside `Rust_JNI`. Phase 3,
+   the deletion of JNI, waits for legend-engine's floor; Python follows
+   Step 3.
+1. **Step 3 and Step 4** (next) — read PELT, the `Directory` trait, the
    static graph: the per-call lowering disappears for everything static,
    and the `Rust_Native` run (Step 2, the paragraph of that name) resolves
    the surveyor instead of stopping at `MetadataNotFound`.
@@ -1245,6 +1248,58 @@ declarations, constants and version to the crate's exports and back;
 natives over slots, a Rust object through new, read, names, classifier,
 crossing and release, re-entry refused from inside a callback, the
 failure kinds, the poisoned context.
+
+**Phase 2, the Java half, as shipped (2026-10-11).**
+`legend-pure-runtime-rust-evaluator-ffm` (release 25, in the reactor
+through `rust-evaluator-jdk25`, depending on `-api`; checkstyle 10.21.4
+module-only; the surefire fork runs with `--enable-native-access`). `PureAbi`
+is the header as Java: the nine `StructLayout`s with the header's sizes
+asserted once at class init (`pure_string` 16, `pure_description` 160,
+`pure_slot` 16, `pure_property` 32, `pure_leaf` 96, `pure_result` 16,
+`pure_failure` 120, `pure_timings` 32, `pure_host_table` 40), the
+seventeen downcall handles resolved once, the four callback descriptors,
+`pure_abi_version` checked against `PURE_ABI_VERSION` at load.
+`PureRustFfmEvaluator` is the `FunctionExecution` and the `RustHeap`:
+one shared arena per evaluator for the upcall stubs and the host table,
+closed in `close()` after `pure_context_free`; a confined arena per call
+for descriptions, slots, strings and out-pointers; a confined arena per
+upcall for what it pushes; every non-OK status read through
+`pure_last_failure` on the same thread and raised as the typed exception
+with the kind, info, source, call stack and constraint fields; a panic
+discards the evaluator. `FfmNodeBridge extends NodeBridge` writes a
+`NodeDescription` into a `pure_description` segment, answers the four
+upcalls (ABSENT for an unknown node or a non-closure; anything thrown is
+caught at the stub and recorded through `pure_reply_fail` with the kind
+`failureOf` gives, since an exception escaping an upcall ends the JVM)
+and turns `pure_leaf`s into host objects through the engine's factories.
+`evalRustFfm` on both engines (`ffm.interpreted.EvalRustFfm`,
+`ffm.compiled.CompiledEvalRustFfm`), the `Rust_FFM` suites, manifests
+(equal to the `Rust_JNI` ones byte for byte but for the adapter name;
+the rebase reproduces them) and reports, 25 boundary tests, and
+`BenchmarkPctExpressions` with both transports. Numbers: `Rust_FFM
+essential: 339 / 346`, `grammar: 133 / 137`, compiled `340 / 346` and
+`133 / 137`, the `Rust_JNI` four unchanged; JDK 17 and 11 reactors
+without the module. The benchmark (release cdylibs, JDK 25, median of
+per-test medians over the 472 tests every mode completed, µs):
+
+| Mode | Median | First run | Rust lowering |
+|---|---:|---:|---:|
+| interpreted, the engine's own adapter | 47 | 90 | |
+| interpreted, `Rust_JNI` | 58 | 350 | 1 |
+| interpreted, `Rust_FFM` | 51 | 213 | 1 |
+| compiled, the engine's own adapter | 1 | 55 | |
+| compiled, `Rust_JNI` | 188 | 336 | 75 |
+| compiled, `Rust_FFM` | 86 | 154 | 32 |
+
+On the interpreted engine, where the closure cache holds, the transport
+is most of what is left: 58 → 51 against 47 for the engine itself. On the
+compiled engine every call lowers (no lambda definition key), so the
+cheaper upcalls show in the lowering column, 75 → 32 µs; what remains is
+Step 3's. Two notes for later: the `-api` tooling truncates the Rust
+split to whole microseconds, so the run and the host reads during it
+read 0; and a `pure_leaf` float crosses as a `double`, which the client
+renders as Rust's `Display` does for `newFloat(String)` (`-0.0` prints
+`0` where Rust prints `-0`; no corpus test reaches it).
 
 **Phase 3 — deletion.** When legend-engine's floor reaches 25: delete
 `crates/jni`, the JNI module, `evalRust` and the `Rust_JNI` adapter with
