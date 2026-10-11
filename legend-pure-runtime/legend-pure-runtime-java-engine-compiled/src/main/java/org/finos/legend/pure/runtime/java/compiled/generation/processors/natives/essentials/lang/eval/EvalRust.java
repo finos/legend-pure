@@ -28,9 +28,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 
-import java.util.Iterator;
-import java.util.ServiceLoader;
-
 /**
  * {@code evalRust}: a call compiles to {@link #evaluate(ExecutionSupport, Function)}, which hands the function value
  * to the {@link EvalRustExecutor} found on the class path at run time. Without one the call fails at run time; the
@@ -81,26 +78,13 @@ public class EvalRust extends AbstractNative
         EvalRustExecutor executor = Holder.EXECUTOR;
         if (executor == null)
         {
-            throw new UnsupportedOperationException(SIGNATURE + " needs the Rust evaluator (legend-pure-runtime-rust-evaluator-jni) on the class path");
+            throw RustExecutors.missing(SIGNATURE, "legend-pure-runtime-rust-evaluator-jni");
         }
         return executor.evaluate(executionSupport, function);
     }
 
     private static final class Holder
     {
-        private static final EvalRustExecutor EXECUTOR = load();
-
-        private static EvalRustExecutor load()
-        {
-            ClassLoader context = Thread.currentThread().getContextClassLoader();
-            EvalRustExecutor found = (context == null) ? null : first(context);
-            return (found == null) ? first(EvalRust.class.getClassLoader()) : found;
-        }
-
-        private static EvalRustExecutor first(ClassLoader loader)
-        {
-            Iterator<EvalRustExecutor> found = ServiceLoader.load(EvalRustExecutor.class, loader).iterator();
-            return found.hasNext() ? found.next() : null;
-        }
+        private static final EvalRustExecutor EXECUTOR = RustExecutors.load(EvalRustExecutor.class);
     }
 }

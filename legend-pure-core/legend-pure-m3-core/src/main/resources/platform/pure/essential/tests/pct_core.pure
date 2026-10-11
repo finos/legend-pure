@@ -51,6 +51,21 @@ function
   $f->evalRust();
 }
 
+// Evaluates a zero-argument lambda on the Rust evaluator over the Foreign Function & Memory API
+// (legend-pure-runtime-rust-evaluator-ffm): the interpreted engine through an InterpretedExtension,
+// the compiled engine through its EvalRustFfmExecutor hook, both provided by that module.
+native function meta::pure::functions::lang::evalRustFfm<V|m>(f:Function<{->V[m]}>[1]):V[m];
+
+function
+    <<PCT.adapter>>
+    {
+        PCT.adapterName='Rust_FFM'
+    }
+    meta::pure::test::pct::testAdapterForRustFfmExecution<X|o>(f:Function<{->X[o]}>[1]):X[o]
+{
+  $f->evalRustFfm();
+}
+
 function
     <<PCT.adapter>>
     {

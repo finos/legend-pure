@@ -85,6 +85,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.creation.DynamicNew;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.eval.Eval;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.eval.EvalRust;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.eval.EvalRustFfm;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.eval.Evaluate;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.eval.RawEvalProperty;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.flow.If;
@@ -443,6 +444,7 @@ public class NativeFunctionProcessor
         registerNative(map, new Eval());
         registerNative(map, new Evaluate());
         registerNative(map, new EvalRust());
+        registerNative(map, new EvalRustFfm());
         registerNative(map, new RawEvalProperty());
         //  Flow
         registerNative(map, new If());
