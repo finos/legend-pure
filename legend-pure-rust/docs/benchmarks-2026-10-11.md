@@ -4,8 +4,8 @@ The same Pure under five modes, on one machine:
 
 1. **Rust native**: the evaluator alone, no host (`crates/evaluator/examples/expressions.rs`,
    `examples/hot_path.rs`).
-2. **Rust through JNI**: `legend-pure-runtime-rust-evaluator-jni`, `PureRustEvaluator`.
-3. **Rust through the C ABI and FFM**: `legend-pure-runtime-rust-evaluator-ffm`,
+2. **Rust through JNI**: `legend-pure-rust-jni`, `PureRustEvaluator`.
+3. **Rust through the C ABI and FFM**: `legend-pure-rust-ffm`,
    `PureRustFfmEvaluator`.
 4. **The Java interpreted engine.**
 5. **The Java compiled engine**, through its `start` entry and through the generated method
@@ -29,7 +29,7 @@ Tooling at commit `7da9cde` (on `8b3a42c3042`, branch `legend-pure-rust`).
 
 ## Method
 
-**The twelve expressions** (`legend-pure-runtime-rust-evaluator-api/src/test/resources/bench/expressions.pure`,
+**The twelve expressions** (`legend-pure-rust-api/src/test/resources/bench/expressions.pure`,
 one zero-argument function each). The timed unit is one call, with the result returned as a value:
 
 | Mode | The call | Tool |
@@ -374,12 +374,12 @@ cargo run -q --release -p legend-pure-evaluator --example pct_native
 cd ..
 
 # the twelve expressions under every Java mode and both transports, one JVM per run, three runs
-M=legend-pure-runtime/legend-pure-runtime-rust-evaluator-api,legend-pure-runtime/legend-pure-runtime-rust-evaluator-jni,legend-pure-runtime/legend-pure-runtime-rust-evaluator-ffm
+M=legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni,legend-pure-rust/java/legend-pure-rust-ffm
 for i in 1 2 3; do
   JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn -q -pl $M test -Dtest=BenchmarkTransportExpressions \
     -Dsurefire.failIfNoSpecifiedTests=false -DfailIfNoTests=false \
     -Dlegend.rust.libdir=$PWD/legend-pure-rust/target/release
-  cp legend-pure-runtime/legend-pure-runtime-rust-evaluator-ffm/target/benchmarks/expressions-java.csv /tmp/bench/expressions-java-$i.csv
+  cp legend-pure-rust/java/legend-pure-rust-ffm/target/benchmarks/expressions-java.csv /tmp/bench/expressions-java-$i.csv
 done
 
 # median of the three runs and the range, per expression and mode; c=3 median_ns, 4 p90_ns, 5 min_ns,
@@ -391,7 +391,7 @@ cat /tmp/bench/expressions-rust-[123].csv /tmp/bench/expressions-java-[123].csv 
         print k "," a[int((m + 1) / 2)] "," a[1] "," a[m] } }' | sort
 
 # the generated method under C1 only (Java modes only, one run)
-JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn -q -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator-api \
+JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn -q -pl legend-pure-rust/java/legend-pure-rust-api \
   test -Dtest=BenchmarkNativeExpressions -Dsurefire.failIfNoSpecifiedTests=false -DfailIfNoTests=false \
   "-DargLine=-XX:TieredStopAtLevel=1"
 
@@ -401,8 +401,8 @@ for i in 1 2 3; do
     -Dtest=org.finos.legend.pure.rust.ffm.pct.BenchmarkPctExpressions \
     -Dsurefire.failIfNoSpecifiedTests=false -DfailIfNoTests=false \
     -Dlegend.rust.libdir=$PWD/legend-pure-rust/target/release
-  cp legend-pure-runtime/legend-pure-runtime-rust-evaluator-ffm/target/benchmarks/pct-expressions.md /tmp/bench/pct-defaults-$i.md
-  cp legend-pure-runtime/legend-pure-runtime-rust-evaluator-ffm/target/benchmarks/pct-expressions.csv /tmp/bench/pct-defaults-$i.csv
+  cp legend-pure-rust/java/legend-pure-rust-ffm/target/benchmarks/pct-expressions.md /tmp/bench/pct-defaults-$i.md
+  cp legend-pure-rust/java/legend-pure-rust-ffm/target/benchmarks/pct-expressions.csv /tmp/bench/pct-defaults-$i.csv
 done
 # 221 calls per test: add -Dlegend.bench.warmup=20 -Dlegend.bench.runs=50 -Dlegend.bench.batch=4
 # 451 calls per test: add -Dlegend.bench.warmup=50 -Dlegend.bench.runs=100 -Dlegend.bench.batch=4
