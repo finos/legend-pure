@@ -208,6 +208,15 @@ unsafe fn write_out<T>(out: *mut T, value: T) -> Result<(), PureException> {
     Ok(())
 }
 
+/// Refuse a NULL out pointer before any work is done for it, so a
+/// result or a handle is never made for nobody.
+fn ensure_out<T>(out: *const T) -> Result<(), PureException> {
+    if out.is_null() {
+        return Err(boundary_error("the out pointer is NULL"));
+    }
+    Ok(())
+}
+
 /// The ABI version this library implements.
 #[unsafe(no_mangle)]
 pub extern "C" fn pure_abi_version() -> u32 {
@@ -292,6 +301,7 @@ pub unsafe extern "C" fn pure_start(
     out: *mut *mut PureResult,
 ) -> i32 {
     let call = |context: &mut BridgeContext| {
+        ensure_out(out)?;
         if function.is_null() {
             return Err(boundary_error("start: the function is NULL"));
         }
@@ -358,6 +368,7 @@ pub unsafe extern "C" fn pure_object_property_values(
     out: *mut *mut PureResult,
 ) -> i32 {
     let call = |context: &mut BridgeContext| {
+        ensure_out(out)?;
         // SAFETY: this function's contract is `decode::text`'s for `name`.
         let name = unsafe { decode::text(name, name_len, "property name") }?;
         let object = resolve_handle(context, handle)?;
@@ -384,6 +395,7 @@ pub unsafe extern "C" fn pure_object_property_names(
     out: *mut *mut PureResult,
 ) -> i32 {
     let call = |context: &mut BridgeContext| {
+        ensure_out(out)?;
         let object = resolve_handle(context, handle)?;
         let names = context.property_names(&object)?;
         let result = ResultBox::of_strings(names.into_iter().map(|n| n.to_string()));
@@ -408,6 +420,7 @@ pub unsafe extern "C" fn pure_object_classifier(
     out: *mut *mut PureResult,
 ) -> i32 {
     let call = |context: &mut BridgeContext| {
+        ensure_out(out)?;
         let object = resolve_handle(context, handle)?;
         let classifier = context.classifier(&object)?;
         let result = ResultBox::of_strings([classifier]);
@@ -437,6 +450,7 @@ pub unsafe extern "C" fn pure_object_new(
     out_handle: *mut i64,
 ) -> i32 {
     let call = |context: &mut BridgeContext| {
+        ensure_out(out_handle)?;
         // SAFETY: this function's contract is `decode::text`'s for
         // `classifier`.
         let classifier = unsafe { decode::text(classifier, classifier_len, "new: classifier") }?;
@@ -522,6 +536,7 @@ pub unsafe extern "C" fn pure_crossing(
     out: *mut i32,
 ) -> i32 {
     let call = |context: &mut BridgeContext| {
+        ensure_out(out)?;
         if node.is_null() {
             return Err(boundary_error("crossing: the node is NULL"));
         }

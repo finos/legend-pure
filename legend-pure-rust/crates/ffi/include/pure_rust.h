@@ -84,9 +84,13 @@
  *
  * Every struct is declared with its 8-byte fields first, then 4-byte
  * fields, so there is no interior padding; sizes on a 64-bit target are
- * asserted at the end of this header and mirrored in the Rust crate. All
- * enumerations below are integer constants; the fields that carry them
- * are typed int32_t, never an enum type.
+ * asserted at the end of this header and mirrored in the Rust crate.
+ * Every struct has 8-byte alignment, and a host allocates the ones it
+ * passes by pointer (descriptions, slots, properties, the callback
+ * table, the timings) with that alignment: a struct layout does, a plain
+ * byte buffer may not, and Rust reads them in place. All enumerations
+ * below are integer constants; the fields that carry them are typed
+ * int32_t, never an enum type.
  */
 
 #ifndef PURE_RUST_H
@@ -438,11 +442,13 @@ int32_t pure_crossing(pure_context *ctx, const pure_description *node,
 /* Where the last pure_start on this thread spent its time. */
 void pure_last_timings(pure_timings *out);
 
-/* The failure of the last status-returning function called on this
- * thread, or NULL when it returned OK. The struct and everything it
- * points to are Rust-owned and valid until the next call into the
- * library on this thread other than this one. The pure_reply_* functions
- * do not touch it. */
+/* The failure of the last call on this thread, or NULL when it
+ * succeeded. It is set by pure_context_new and by every function that
+ * takes a context (cleared when they return OK, or succeed), and left
+ * untouched by pure_result_free, pure_last_timings, pure_abi_version,
+ * the pure_reply_* functions and this one. The struct and everything it
+ * points to are Rust-owned and valid until the next call that sets it
+ * on this thread. */
 const pure_failure *pure_last_failure(void);
 
 /* Push `count` descriptions into a reply (property_values and
