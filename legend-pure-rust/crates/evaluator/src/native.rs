@@ -282,7 +282,10 @@ pub trait NativeFunction: fmt::Debug {
 /// `ConcreteFunctionDefinitionNameProcessor` format:
 /// `funcName_ParamType_Mult__ReturnType_Mult_`
 pub struct NativeRegistry {
-    functions: crate::context::NameMap<Box<dyn NativeFunction>>,
+    /// Every function, at the position its name was first registered.
+    entries: Vec<Box<dyn NativeFunction>>,
+    /// Name to position in `entries`.
+    positions: crate::context::NameMap<usize>,
 }
 
 impl NativeRegistry {
@@ -290,15 +293,24 @@ impl NativeRegistry {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            functions: crate::context::NameMap::default(),
+            entries: Vec::new(),
+            positions: crate::context::NameMap::default(),
         }
     }
 
     /// Register a native function under the given name.
     ///
-    /// If a function with the same name already exists, it is replaced.
+    /// If a function with the same name already exists, it is replaced,
+    /// at the same position.
     pub fn register(&mut self, name: impl Into<SmolStr>, func: impl NativeFunction + 'static) {
-        self.functions.insert(name.into(), Box::new(func));
+        let name = name.into();
+        match self.positions.get(&name) {
+            Some(&position) => self.entries[position] = Box::new(func),
+            None => {
+                self.positions.insert(name, self.entries.len());
+                self.entries.push(Box::new(func));
+            }
+        }
     }
 
     /// Look up a native function by name.
@@ -306,7 +318,23 @@ impl NativeRegistry {
     /// Returns `None` if no function is registered under that name.
     #[must_use]
     pub fn get(&self, name: &str) -> Option<&dyn NativeFunction> {
-        self.functions.get(name).map(AsRef::as_ref)
+        self.position(name).map(|position| self.at(position))
+    }
+
+    /// The position of a name, stable for the registry's life: a caller
+    /// that hashes a name once keeps the position instead.
+    #[must_use]
+    pub fn position(&self, name: &str) -> Option<usize> {
+        self.positions.get(name).copied()
+    }
+
+    /// The function at a position [`position`](Self::position) returned.
+    ///
+    /// # Panics
+    /// The position was not returned by this registry.
+    #[must_use]
+    pub fn at(&self, position: usize) -> &dyn NativeFunction {
+        self.entries[position].as_ref()
     }
 
     /// Look up a native function, returning a `FunctionNotFound` error if missing.
@@ -320,19 +348,19 @@ impl NativeRegistry {
 
     /// Every registered mangled name, in no particular order.
     pub fn keys(&self) -> impl Iterator<Item = &SmolStr> {
-        self.functions.keys()
+        self.positions.keys()
     }
 
     /// The number of registered functions.
     #[must_use]
     pub fn len(&self) -> usize {
-        self.functions.len()
+        self.entries.len()
     }
 
     /// Whether the registry is empty.
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.functions.is_empty()
+        self.entries.is_empty()
     }
 
     /// Create a registry holding every native fished so far.
@@ -362,7 +390,7 @@ impl Default for NativeRegistry {
 impl fmt::Debug for NativeRegistry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("NativeRegistry")
-            .field("count", &self.functions.len())
+            .field("count", &self.entries.len())
             .finish()
     }
 }

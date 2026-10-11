@@ -190,3 +190,32 @@ fn standard_registry_holds_exactly_the_fished_natives() {
         assert!(registry.get(key).is_some(), "{key} must dispatch");
     }
 }
+
+#[derive(Debug)]
+struct Constant(i64);
+
+impl legend_pure_evaluator::native::NativeFunction for Constant {
+    fn execute(
+        &self,
+        _args: &[legend_pure_metamodel::types::ValueSpec],
+        _ctx: &mut dyn legend_pure_evaluator::native::EvalContextTrait,
+    ) -> Result<legend_pure_evaluator::native::Evaluated, legend_pure_evaluator::error::PureException>
+    {
+        Ok(legend_pure_evaluator::native::Evaluated::new(
+            legend_pure_evaluator::value::Value::Integer(self.0),
+        ))
+    }
+}
+
+#[test]
+fn registering_a_name_again_replaces_it_at_the_same_position() {
+    let mut registry = NativeRegistry::new();
+    registry.register("a", Constant(1));
+    registry.register("b", Constant(2));
+    let position = registry.position("a").expect("registered");
+    registry.register("a", Constant(3));
+    assert_eq!(registry.len(), 2);
+    assert_eq!(registry.position("a"), Some(position));
+    assert_eq!(format!("{:?}", registry.at(position)), "Constant(3)");
+    assert!(registry.position("c").is_none());
+}

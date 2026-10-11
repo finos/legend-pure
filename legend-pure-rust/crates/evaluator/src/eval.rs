@@ -63,9 +63,50 @@ use crate::hooks::{EvalHooks, NoOpHooks};
 use crate::native::{Evaluated, NativeFunction, NativeRegistry};
 use crate::value::{FunctionValue, LambdaClosure, Value};
 
-/// Per chunk, per local index: not looked up yet, or the registry entry
-/// (or its absence) for that element.
-type NativeByElement<'model> = Vec<Vec<Option<Option<&'model dyn NativeFunction>>>>;
+/// Per chunk, per local index: not looked up yet, or the registry
+/// position (or its absence) for that element.
+type NativeByElement = Vec<Vec<Option<Option<usize>>>>;
+
+/// What an evaluator holds besides its borrows of the model and the
+/// registry: the heap, the variable context and the caches. It has no
+/// lifetime, so an owner of the model can keep it across calls, build an
+/// evaluator over it for each call ([`Evaluator::with_state`]) and take
+/// it back ([`Evaluator::into_state`]).
+///
+/// [`new`](Self::new) is the state of an evaluator that has run nothing;
+/// [`Default`] is the same over an empty model.
+#[derive(Default)]
+pub struct EvaluatorState {
+    heap: RuntimeHeap,
+    context: VariableContext,
+    native_by_element: std::cell::RefCell<NativeByElement>,
+    member_wrapper_cache: HashMap<(ElementId, &'static str), Value>,
+}
+
+impl EvaluatorState {
+    /// The state of an evaluator that has run nothing over `model`: one
+    /// heap row per model element, empty scopes, empty caches.
+    #[must_use]
+    pub fn new(model: &PureModel) -> Self {
+        let mut heap = RuntimeHeap::new();
+        heap.bootstrap_metamodel(model);
+        Self {
+            heap,
+            ..Self::default()
+        }
+    }
+
+    /// The object heap.
+    #[must_use]
+    pub fn heap(&self) -> &RuntimeHeap {
+        &self.heap
+    }
+
+    /// The object heap, mutably.
+    pub fn heap_mut(&mut self) -> &mut RuntimeHeap {
+        &mut self.heap
+    }
+}
 
 /// Evaluator state — holds mutable context during expression evaluation.
 ///
@@ -99,10 +140,10 @@ pub struct Evaluator<'model, H: EvalHooks = NoOpHooks> {
     /// Immutable registry of native functions.
     natives: &'model NativeRegistry,
 
-    /// The registry entry of each function element, found once: indexed
-    /// by chunk and local index, `None` until looked up, then the entry
-    /// or its absence.
-    native_by_element: std::cell::RefCell<NativeByElement<'model>>,
+    /// The registry position of each function element, found once:
+    /// indexed by chunk and local index, `None` until looked up, then the
+    /// position or its absence.
+    native_by_element: std::cell::RefCell<NativeByElement>,
 
     /// Memoised per-class member wrappers (`.properties`,
     /// `.qualifiedProperties`, `.propertiesFromAssociations`). Keyed by
@@ -126,17 +167,42 @@ impl<'model> Evaluator<'model, NoOpHooks> {
     /// The evaluator starts with an empty heap and variable context.
     #[must_use]
     pub fn new(model: &'model PureModel, natives: &'model NativeRegistry) -> Self {
-        let mut heap = RuntimeHeap::new();
-        heap.bootstrap_metamodel(model);
+        Self::with_state(model, natives, EvaluatorState::new(model))
+    }
+
+    /// An evaluator over `model` and `natives` that resumes `state`.
+    #[must_use]
+    pub fn with_state(
+        model: &'model PureModel,
+        natives: &'model NativeRegistry,
+        state: EvaluatorState,
+    ) -> Self {
+        let EvaluatorState {
+            heap,
+            context,
+            native_by_element,
+            member_wrapper_cache,
+        } = state;
         Self {
             model,
             heap,
-            context: VariableContext::new(),
+            context,
             natives,
-            native_by_element: std::cell::RefCell::new(Vec::new()),
-            member_wrapper_cache: HashMap::new(),
+            native_by_element,
+            member_wrapper_cache,
             hooks: NoOpHooks,
             rendering_depth: 0,
+        }
+    }
+
+    /// The state to resume this evaluator from later.
+    #[must_use]
+    pub fn into_state(self) -> EvaluatorState {
+        EvaluatorState {
+            heap: self.heap,
+            context: self.context,
+            native_by_element: self.native_by_element,
+            member_wrapper_cache: self.member_wrapper_cache,
         }
     }
 
@@ -582,16 +648,16 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
             slots.resize(index + 1, None);
         }
         if let Some(known) = slots[index] {
-            return known;
+            return known.map(|position| self.natives.at(position));
         }
         let found = match self.model.get_element(id) {
             Element::Function(f) if f.is_native => {
-                self.natives.get(self.model.get_node(id).name.as_str())
+                self.natives.position(self.model.get_node(id).name.as_str())
             }
             _ => None,
         };
         slots[index] = Some(found);
-        found
+        found.map(|position| self.natives.at(position))
     }
 
     /// Dispatch a native function using the expression-activator model.
