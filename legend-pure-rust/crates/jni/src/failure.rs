@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Failures at the boundary as typed [`PureException`]s, and the JNI
-//! exception discipline.
+//! The JNI exception discipline.
 //!
 //! A JNI call that fails because Java threw leaves that exception pending,
 //! and no other JNI function may be called until it is cleared. Every
@@ -29,9 +28,9 @@ use jni::signature::ReturnType;
 use legend_pure_evaluator::error::{PureException, PureRuntimeError};
 use smol_str::SmolStr;
 
-pub(crate) use legend_pure_evaluator::bridge::failure::{boundary_error, typed, unsupported};
+pub(crate) use legend_pure_evaluator::bridge::failure::{boundary_error, typed};
 
-use crate::bridge::BridgeShared;
+use crate::host::JniHost;
 
 /// Take and clear the pending Java exception, if there is one. Nothing
 /// else may be called on `env` while an exception is pending.
@@ -48,12 +47,12 @@ pub(crate) fn take_pending<'l>(env: &mut JNIEnv<'l>) -> Option<JThrowable<'l>> {
 /// any, is taken and cleared first and then described through the bridge.
 pub(crate) fn jni_failure(
     env: &mut JNIEnv,
-    shared: &BridgeShared,
+    host: &JniHost,
     what: &str,
     error: &jni::errors::Error,
 ) -> PureException {
     match take_pending(env) {
-        Some(throwable) => from_throwable(env, shared, what, &throwable),
+        Some(throwable) => from_throwable(env, host, what, &throwable),
         None => boundary_error(format!("{what}: {error}")),
     }
 }
@@ -71,11 +70,11 @@ pub(crate) fn jni_failure_unwired(
 
 fn from_throwable(
     env: &mut JNIEnv,
-    shared: &BridgeShared,
+    host: &JniHost,
     what: &str,
     throwable: &JThrowable,
 ) -> PureException {
-    match describe_throwable(env, shared, throwable) {
+    match describe_throwable(env, host, throwable) {
         Ok((kind, text)) => match kind.as_str() {
             "UNSUPPORTED" => typed(PureRuntimeError::Unsupported(text)),
             "NOT_IMPLEMENTED" => typed(PureRuntimeError::NotImplemented(SmolStr::new(text))),
@@ -94,7 +93,7 @@ fn from_throwable(
 /// `RustNodeBridge.failureOf(throwable)`: `{kind name, text}`.
 fn describe_throwable(
     env: &mut JNIEnv,
-    shared: &BridgeShared,
+    host: &JniHost,
     throwable: &JThrowable,
 ) -> jni::errors::Result<(String, String)> {
     // SAFETY: `failure_of` was resolved on the bridge's class with the
@@ -103,8 +102,8 @@ fn describe_throwable(
     // is a `Throwable` passed as an object.
     let described = unsafe {
         env.call_method_unchecked(
-            shared.bridge.as_obj(),
-            shared.methods.failure_of,
+            host.bridge(),
+            host.methods().failure_of,
             ReturnType::Array,
             &[JValue::Object(throwable).as_jni()],
         )
@@ -123,7 +122,7 @@ fn describe_throwable(
 /// values and must not hold one reference per value until it ends.
 pub(crate) fn in_local_frame<T>(
     env: &mut JNIEnv,
-    shared: &BridgeShared,
+    host: &JniHost,
     capacity: i32,
     f: impl FnOnce(&mut JNIEnv) -> Result<T, PureException>,
 ) -> Result<T, PureException> {
@@ -131,6 +130,6 @@ pub(crate) fn in_local_frame<T>(
         Ok::<Result<T, PureException>, jni::errors::Error>(f(env))
     }) {
         Ok(inner) => inner,
-        Err(e) => Err(jni_failure(env, shared, "local frame", &e)),
+        Err(e) => Err(jni_failure(env, host, "local frame", &e)),
     }
 }

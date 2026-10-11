@@ -18,14 +18,27 @@
 //! A *host* is a program holding a Pure graph of its own (a Java engine,
 //! later any program that can call C); a *transport* is the code that
 //! carries calls between the host and this crate. Everything a transport
-//! does not have to know about lives here: how a host describes a node
-//! ([`description`]), the identity of Rust objects a host holds
-//! ([`handles`]), the shape a value takes on its way out ([`outbound`]),
-//! the failure a host receives ([`failure`]) and where a call spent its
-//! time ([`timings`]).
+//! does not have to know about lives here: what a host node is once it
+//! has crossed and what Rust asks the host about it ([`host`]), how a
+//! host describes a node ([`description`]), the lowering of one call
+//! through the closure cache and the model's growth ([`context`]), the
+//! one-call-at-a-time guard ([`session`]), the identity of Rust objects
+//! a host holds ([`handles`]), the shape a value takes on its way out
+//! ([`outbound`]), the failure a host receives ([`failure`]) and where a
+//! call spent its time ([`timings`]).
+//!
+//! A transport implements [`Host`](host::Host) over its host's graph,
+//! builds a [`BridgeContext`](context::BridgeContext) behind a
+//! [`Session`](session::Session), fills a
+//! [`Description`](description::Description) for every node it hands in
+//! through [`description_to_value`](host::description_to_value), and
+//! materialises the [`Leaf`](outbound::Leaf) of every value it takes out.
 
+pub mod context;
 pub mod description;
 pub mod failure;
 pub mod handles;
+pub mod host;
 pub mod outbound;
+pub mod session;
 pub mod timings;

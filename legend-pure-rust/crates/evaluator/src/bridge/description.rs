@@ -50,8 +50,9 @@ pub mod kind {
     pub const RUST_OBJECT: i32 = 13;
 }
 
-/// One node of the host's graph, described.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+/// One node of the host's graph, described. [`Default`] is a description
+/// with no definition (`-1`), no strings and every number zero.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Description {
     /// One of the [`kind`] constants.
     pub kind: i32,
@@ -95,6 +96,33 @@ pub struct Description {
     pub end_line: i32,
     /// End column of the span.
     pub end_column: i32,
+}
+
+impl Default for Description {
+    fn default() -> Self {
+        Self {
+            kind: 0,
+            id: 0,
+            definition: -1,
+            classifier: None,
+            name: None,
+            user_path: None,
+            payload: None,
+            year: 0,
+            month: 0,
+            day: 0,
+            hour: 0,
+            minute: 0,
+            second: 0,
+            precision: 0,
+            subsecond: None,
+            source_id: None,
+            line: 0,
+            column: 0,
+            end_line: 0,
+            end_column: 0,
+        }
+    }
 }
 
 impl Description {
