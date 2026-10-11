@@ -76,8 +76,6 @@ public final class CompiledEvalRust implements EvalRustExecutor
         }
         catch (PureRustEvaluationException e)
         {
-            // A result the compiled engine cannot hold: reported as the Rust
-            // side's own diagnostics are, kind-prefixed, as a Pure failure.
             throw new PureExecutionException(e.getMessage(), e);
         }
         finally

@@ -382,8 +382,6 @@ impl BridgeShared {
             Ok(())
         });
         if told.is_err() {
-            // The ids stay known on the Java side: a leak, not an error
-            // of the call that just ended.
             let _ = crate::failure::take_pending(env);
         }
     }

@@ -35,8 +35,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 import java.math.BigDecimal;
 
 /**
- * The compiled engine: a node's keys are its class's properties (compiled
- * instances do not enumerate their own), and primitives are the compiled
+ * The compiled engine: a node's keys are its class's properties, and
+ * primitives are the compiled
  * engine's {@link ValCoreInstance} wrappers over plain Java values, which
  * {@link CompiledEvalRust} unwraps before handing results to generated code.
  */
@@ -97,9 +97,8 @@ public final class CompiledHost implements RustEngineHost
     }
 
     /**
-     * A compiled lambda value is a new object per evaluation, and its metadata
-     * lambda (the stable identity) is not exposed; no key, so nothing is
-     * cached for it.
+     * A compiled lambda value exposes no stable identity: no key, nothing
+     * cached.
      */
     @Override
     public Object lambdaDefinition(CoreInstance lambda)

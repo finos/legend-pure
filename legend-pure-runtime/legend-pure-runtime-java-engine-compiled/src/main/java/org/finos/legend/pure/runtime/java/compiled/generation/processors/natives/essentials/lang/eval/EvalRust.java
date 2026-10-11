@@ -92,8 +92,14 @@ public class EvalRust extends AbstractNative
 
         private static EvalRustExecutor load()
         {
-            ClassLoader loader = Thread.currentThread().getContextClassLoader();
-            Iterator<EvalRustExecutor> found = ServiceLoader.load(EvalRustExecutor.class, (loader == null) ? EvalRust.class.getClassLoader() : loader).iterator();
+            ClassLoader context = Thread.currentThread().getContextClassLoader();
+            EvalRustExecutor found = (context == null) ? null : first(context);
+            return (found == null) ? first(EvalRust.class.getClassLoader()) : found;
+        }
+
+        private static EvalRustExecutor first(ClassLoader loader)
+        {
+            Iterator<EvalRustExecutor> found = ServiceLoader.load(EvalRustExecutor.class, loader).iterator();
             return found.hasNext() ? found.next() : null;
         }
     }

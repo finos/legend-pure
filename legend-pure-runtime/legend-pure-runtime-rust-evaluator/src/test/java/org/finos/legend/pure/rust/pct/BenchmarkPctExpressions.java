@@ -19,6 +19,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.PlatformCodeRepositoryProvider;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -68,8 +69,7 @@ import java.util.TreeMap;
  *
  * <p>A test's time is the whole test function: the adapter call, the
  * expression under it and its assertions. The first run is reported apart
- * from the rest because it carries what happens once: for the Rust modes,
- * the lowering of every function and class the expression reaches.
+ * from the rest.
  */
 public class BenchmarkPctExpressions
 {
@@ -136,7 +136,7 @@ public class BenchmarkPctExpressions
     {
         for (CoreInstance child : Instance.getValueForMetaPropertyToManyResolved(pkg, M3Properties.children, ps))
         {
-            if (Instance.instanceOf(child, "Package", ps))
+            if (Instance.instanceOf(child, M3Paths.Package, ps))
             {
                 collect(child, sourceFilter, ps, out);
             }

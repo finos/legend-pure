@@ -197,11 +197,9 @@ pub enum ConstraintKind {
 /// Created by the evaluator; low-level operations return [`PureRuntimeError`]
 /// which the evaluator enriches with location via [`PureException::execution`].
 ///
-/// The payload lives behind one pointer so that `Result<Value,
-/// PureException>` is the size of a `Value` and every return of the
-/// recursive evaluator moves a word, not the whole exception. The fields
-/// are reached through `Deref`; [`into_data`](Self::into_data) takes
-/// them by value.
+/// The payload lives behind one pointer, so a `Result<Value,
+/// PureException>` is the size of a `Value`. The fields are reached
+/// through `Deref`; [`into_data`](Self::into_data) takes them by value.
 #[derive(Debug)]
 pub struct PureException(Box<ExceptionData>);
 
@@ -317,7 +315,7 @@ impl PureException {
         matches!(self.kind, PureExceptionKind::ConstraintViolation { .. })
     }
 
-    /// Append a stack frame and return self (builder pattern).
+    /// Add the frame as the outermost and return self.
     #[must_use]
     pub fn with_frame(mut self, frame: StackFrame) -> Self {
         if self.source.is_none() {

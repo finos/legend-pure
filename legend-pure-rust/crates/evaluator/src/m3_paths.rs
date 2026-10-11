@@ -79,7 +79,7 @@ pub const PROFILE: &Classifier = "meta::pure::metamodel::extension::Profile";
 pub const ENUM: &Classifier = "meta::pure::metamodel::type::Enum";
 /// `meta::pure::metamodel::type::PrimitiveType`.
 pub const PRIMITIVE_TYPE: &Classifier = "meta::pure::metamodel::type::PrimitiveType";
-/// `meta::pure::metamodel::Package`.
+/// `Package`, the root-level M3 class of packages.
 pub const PACKAGE: &Classifier = "Package";
 /// `meta::pure::metamodel::function::NativeFunction`.
 pub const NATIVE_FUNCTION: &Classifier = "meta::pure::metamodel::function::NativeFunction";

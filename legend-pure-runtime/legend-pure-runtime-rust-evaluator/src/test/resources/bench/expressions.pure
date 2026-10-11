@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The expressions the Rust example `crates/evaluator/examples/expressions.rs`
-// builds with the evaluator's builders, one function each, so both engines
-// and the Rust evaluator run the same thing. Every call names the native
-// directly (no platform wrapper), which is what the Rust side can build.
+// The expressions `crates/evaluator/examples/expressions.rs` builds with the
+// evaluator's builders, one function each; every call names the native directly.
 
 function bench::e01_plus():Integer[1]
 {

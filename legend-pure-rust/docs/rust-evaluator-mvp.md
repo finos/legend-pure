@@ -56,7 +56,7 @@ Read this first; everything below assumes it.
 | PELT byte-level reference | `docs/architecture/pelt-serialization.md` at the repository root — on branch `docs/pelt-format`, submitted upstream as finos/legend-pure PR #1360. **Not on `legend-pure-rust` yet**: before Step 3, `git cherry-pick -n c989b50953b`, keep `docs/architecture/pelt-serialization.md`, and redo by hand its three link edits (`docs/README.md`, `docs/architecture/compiler-pipeline.md`, `docs/reference/maven-plugins-reference.md`; the first two already differ between the branches). Do **not** merge the branch — it tracks upstream `master` and differs from `legend-pure-rust` by ~1,500 files. |
 | Background analysis (why PELT, what it contains, how it maps) | `legend-pure-rust/docs/pelt-analysis.md` (moved from `docs/deferred/` in Step 0). Sections 6.3–6.8 are the source of Steps 2–7 here. |
 | legend-engine | A sibling checkout (`upstream/master` is the FINOS main line — see Appendix C for which branch is the target; it matters from Step 5, when the engine suite class is added). Its `*-pure` modules emit PELT into their jars (e.g. 414 `.pelt` in `functions-standard`); its PCT suite classes are the `Test_*_PCT.java` classes (42 on `upstream/master`); the engine compiler is `legend-engine-language-pure-compiler` (`toPureGraph`); the Pure function libraries are `legend-engine-core/legend-engine-core-pure/legend-engine-pure-code-functions-{standard,relation,json,planExecution,…}`. |
-| PCT in the platform | Profile `meta::pure::test::pct::PCT` in `legend-pure-core/legend-pure-m3-core/src/main/resources/platform/pure/essential/tests/pct_core.pure`, which since Step 2 also declares the native `evalRust` and the `Rust_JNI` adapter `testAdapterForRustExecution`; 463 `<<PCT.test>>` functions in the platform sources (327 essential, 136 grammar); Java report providers `Essential_Functions_PCTReportProvider`, `Grammar_Functions_PCTReportProvider`, `Core_{Compiled,Interpreted}_PCTReportProvider`, and `Core_RustJni_PCTReportProvider` in the fork's `legend-pure-runtime-rust-evaluator`; shared helpers in `m3/pct/shared/PCTTools.java`. |
+| PCT in the platform | Profile `meta::pure::test::pct::PCT` in `legend-pure-core/legend-pure-m3-core/src/main/resources/platform/pure/essential/tests/pct_core.pure`, which since Step 2 also declares the native `evalRust`, the `Rust_JNI` adapter `testAdapterForRustExecution` and, since 2026-10-11, the `Rust_Native` adapter `testAdapterForRustNativeExecution`; 463 `<<PCT.test>>` functions in the platform sources (327 essential, 136 grammar); Java report providers `Essential_Functions_PCTReportProvider`, `Grammar_Functions_PCTReportProvider`, `Core_{Compiled,Interpreted}_PCTReportProvider`, and `Core_RustJni_PCTReportProvider` in the fork's `legend-pure-runtime-rust-evaluator`; shared helpers in `m3/pct/shared/PCTTools.java`. |
 | What to extract, and what to leave | Appendix A (extraction map). Read it before Step 0 and before fishing anything later. |
 | Step 0 mechanics | Appendix B: archive commands, workspace skeleton, gates. |
 | Decisions still owned by the author | Appendix C. Do not guess these; ask. |
@@ -70,9 +70,9 @@ bridge's cost", each line a representation choice rather than a missing
 native). Two measurement tools exist: `BenchmarkPctExpressions` (every PCT
 test under four modes, with the Rust side's own split per call) and the
 apples-to-apples pair (`examples/expressions.rs`, `examples/hot_path.rs`,
-`BenchmarkNativeExpressions`). They say the evaluator alone is within 3x
-of the compiled engine's generated method on the twelve expressions (Step
-2b's table) and that a PCT test through `Rust_JNI` takes 1.15x the
+`BenchmarkNativeExpressions`). They say six of the twelve expressions are
+within 3x of the compiled engine's generated method and the rest 4 to 9x
+(Step 2b's table), and that a PCT test through `Rust_JNI` takes 1.15x the
 interpreted engine's own adapter (median 94 µs against 82 µs), the
 lowering cached per lambda definition. The order from here, each phase
 with its gate:
@@ -81,10 +81,10 @@ with its gate:
    static graph: the per-call lowering disappears for everything static,
    and the `Rust_Native` run (Step 2, the paragraph of that name) resolves
    the surveyor instead of stopping at `MetadataNotFound`.
-   Before it, two decisions the author owns: the Java 17 floor for the
-   `legend-pure-runtime-rust-evaluator` module and whether the bridge
-   moves from JNI to the Foreign Function & Memory API (assessed
-   2026-10-11; the spike and its numbers are on the author's branch).
+   Two decisions taken before it (2026-10-11): the
+   `legend-pure-runtime-rust-evaluator` module compiles with release 17,
+   and the bridge stays on JNI until the JDK floor reaches 22 (Step 2,
+   "JNI or the Foreign Function & Memory API"; Appendix C item 7).
 2. **Steps 5–7** as written.
 
 Done phases and their closing paragraphs: Step 2b (its own section, the
@@ -95,7 +95,7 @@ element resolution cache; the gate did not need them, and Step 3 changes
 what crosses.
 
 Before any push: the review's decision list (files from the archived
-direction, the uncommitted `pom.xml` release change, the archive tag and
+direction, the archive tag and
 branch on `origin`, the merge from `master` and the manifest rebase after
 it) is the author's.
 
@@ -504,13 +504,14 @@ from here on, each later step is measured by how many turn green.
   substring; `ASSERTION_FAILED` carries a `PureAssertFailException` cause so
   the harness's fail / error split applies.
 - **Java module `legend-pure-runtime/legend-pure-runtime-rust-evaluator`**
-  (back in the reactor; `…-bindings-ap` stays out): `PureRustEvaluator
+  (back in the reactor; `…-bindings-ap` deleted 2026-10-11, it lives on the
+  archive tag): `PureRustEvaluator
   implements FunctionExecution` (`init(runtime, message)`, `start(function,
   args)`), `RustNodeBridge`, `RustCoreInstance`, and `TestRustEvaluatorBoundary`
   (nine tests at the end of the step — primitives, collections, element
   identity, Rust objects, `FunctionNotFound` with the user path, assertion
   cause, lambda `Unsupported`, ten thousand round trips leave no live handle,
-  a closed evaluator refuses calls — sixteen today).
+  a closed evaluator refuses calls — twenty-two today).
 - **The PCT seam is the adapter, not a platform.** Every PCT test takes its
   adapter function as argument 0 and calls `$f->eval(|…)`; the adapter decides
   which engine runs the lambda. The platform (`pct_core.pure`) gained a native
@@ -529,7 +530,8 @@ from here on, each later step is measured by how many turn green.
   engines' own.
 - **Suites, manifests, reports** in the Java module:
   `Test_RustJni_{Essential,Grammar}Functions_PCT` are the interpreted suites
-  with the `Rust_JNI` adapter and the manifests
+  with the `Rust_JNI` adapter (`Test_RustJniCompiled_*` the compiled ones,
+  with `…_compiled_rust_jni.json` manifests) and the manifests
   `src/test/resources/platform/pure/essential/pct_essential_interpreted_rust_jni.json`
   and `…/grammar/functions/pct_grammar_interpreted_rust_jni.json` (inside a
   repository tree, because the surveyor reads them through code storage and
@@ -539,7 +541,7 @@ from here on, each later step is measured by how many turn green.
   the message; PASS as expected failure → carried forward; an excluded test
   that now passes → dropped; a second run reproduces the files byte for
   byte). `PCTReportGenerator` writes
-  `ADAPTER_{essential,grammar}_interpreted_Rust_JNI.json` at
+  `ADAPTER_{essential,grammar}_{interpreted,compiled}_Rust_JNI.json` at
   `process-test-classes` from the manifests alone, published by
   `Core_RustJni_PCTReportProvider`, so the report step needs no Rust library.
   Without the cdylib the module's tests are skipped and the build stays green.
@@ -742,7 +744,7 @@ JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   -Dtest=RebaseRustJniManifests -DfailIfNoTests=false
 ```
 
-**Deferred: the cost of the bridge (profile first, decided 2026-10-10).**
+**The cost of the bridge, first measurement (profile first, decided 2026-10-10; cut in the phase recorded above).**
 Property fetches on a `JavaNode` are already lazy; what is eager is the
 per-value `NodeDescription`, read through about fifteen JNI field calls plus
 a string copy per text field, and the `getKeys()` array built for every
@@ -827,7 +829,7 @@ and the surveyor path is used after all, since discovery runs in the Java
 engine, not in Rust. Lambdas across the bridge reported `Unsupported` (not
 `FunctionNotFound(testPath)`) until the lowering of 2026-10-10.
 
-### Step 2b — The evaluator's own cost (next, decided 2026-10-11)
+### Step 2b — The evaluator's own cost (done 2026-10-11)
 
 **Why now.** The apples-to-apples pair (Step 2, "Deferred: the cost of
 the bridge") put the evaluator between the two Java engines: 10 to 20
@@ -1258,7 +1260,7 @@ legend-engine, with no Rust compiler.
   as handles. On the Rust side the same node interface as PELT, so the same
   lowering applies. *(Done 2026-10-10 as `RustNodeBridge` / `JavaNode`;
   proven on compiled objects 2026-10-11: the compiled engine runs the same
-  corpus through `RustEngineHost` at 300 / 327 and 125 / 136, the difference
+  corpus through `RustEngineHost` at 321 / 327 and 132 / 136, the difference
   being Rust-built objects handed back to generated code.)*
 - The JNI `Directory` (Step 4): `node(path)` through `_Package.getByUserPath`,
   `instances(classifier)` and `overloads(name)` as one bulk call each into the
@@ -1278,6 +1280,10 @@ legend-engine, with no Rust compiler.
 - Lowering of engine-built lambdas (`LambdaFunction_Impl` trees) through the
   same body lowering, cached per Java object.
 - Read-only in the first increment: no writes back into Java objects.
+- Before this step, an evaluator's lifetime: `CompiledEvalRust` keeps one
+  per `CompiledExecutionSupport` for the JVM's life and the interpreted
+  `EvalRust` closes its own only when the runtime changes; an engine that
+  compiles many models needs an explicit close or weak keys.
 
 **Integrates with.** `PureModel` in legend-engine: pass its objects straight
 into `evaluate`. Whole-model queries (`Class.all()`) use a bulk call into the

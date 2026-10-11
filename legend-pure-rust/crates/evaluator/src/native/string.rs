@@ -236,8 +236,6 @@ impl NativeFunction for Format {
         let template: &str = a0.as_string()?;
         let subs = a1.to_collection();
 
-        // Every directive character is ASCII, so the scan runs over bytes
-        // and copies the text between directives as whole slices.
         let bytes = template.as_bytes();
         let mut result = String::with_capacity(template.len());
         let mut i = 0usize;
@@ -457,8 +455,6 @@ fn format_date_pattern(d: &crate::date::PureDate, pat: &str) -> String {
             j += 1;
         }
         let count = j - i;
-        let token: String = std::iter::repeat_n(c, count).collect();
-        let _ = token;
         match (c, count) {
             ('y', 4) => {
                 let _ = write!(out, "{:04}", inner.year());

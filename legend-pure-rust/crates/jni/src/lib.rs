@@ -23,7 +23,6 @@
 //! as `PureRustException` rather than aborting the JVM.
 
 #![deny(missing_docs)]
-#![allow(clippy::result_large_err)]
 #![deny(clippy::undocumented_unsafe_blocks)]
 
 pub mod bridge;
@@ -67,14 +66,9 @@ const PURE_RUST_EVAL_EXC: &str = "org/finos/legend/pure/rust/PureRustEvaluationE
 /// to `env.throw_new(PURE_RUST_EVAL_EXC, message)` which targets the
 /// pre-existing message-only constructor.
 pub(crate) fn throw_pure_exception(env: &mut JNIEnv, exc: &PureException) {
-    // The failure being thrown supersedes anything still pending, and no
-    // JNI call may be made while an exception is pending.
     let _ = failure::take_pending(env);
     let payload = pure_exception_to_payload(exc);
     if try_throw_rich(env, &payload).is_err() {
-        // Clear any exception the failed rich throw left pending before
-        // the fallback throw, otherwise `throw_new` fails and Java never
-        // sees an exception.
         let _ = failure::take_pending(env);
         let _ = env.throw_new(PURE_RUST_EVAL_EXC, &payload.message);
     }
@@ -220,7 +214,10 @@ fn throw_panic(env: &mut JNIEnv, what: &str) {
 /// The context behind `context_ptr` for one call, refused while another
 /// call on it runs and once a panic has unwound through it.
 fn live_context<'a>(context_ptr: jlong) -> Result<Entered<'a, JniContext>, PureException> {
-    let ctx = ContextSession::enter(context_ptr)?;
+    // SAFETY: `context_ptr` is the value `nativeInitContext` returned: Java
+    // keeps it in one field, frees it once in `close()` and refuses every
+    // call after (`checkOpen`).
+    let ctx = unsafe { ContextSession::enter(context_ptr) }?;
     if ctx.poisoned {
         return Err(ffi_error(
             "the evaluator is poisoned by an earlier panic; close it and create a new one",
@@ -232,7 +229,10 @@ fn live_context<'a>(context_ptr: jlong) -> Result<Entered<'a, JniContext>, PureE
 /// Mark the context unusable after a panic unwound through an entry
 /// point (the `Entered` of that call was dropped by the unwind).
 fn poison(context_ptr: jlong) {
-    if let Ok(mut ctx) = ContextSession::enter(context_ptr) {
+    // SAFETY: `context_ptr` is the value `nativeInitContext` returned: Java
+    // keeps it in one field, frees it once in `close()` and refuses every
+    // call after (`checkOpen`).
+    if let Ok(mut ctx) = unsafe { ContextSession::enter(context_ptr) } {
         ctx.poisoned = true;
     }
 }
@@ -581,7 +581,10 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeL
     if context_ptr == 0 {
         return 0;
     }
-    std::panic::catch_unwind(|| match ContextSession::enter(context_ptr) {
+    // SAFETY: `context_ptr` is the value `nativeInitContext` returned: Java
+    // keeps it in one field, frees it once in `close()` and refuses every
+    // call after (`checkOpen`).
+    std::panic::catch_unwind(|| match unsafe { ContextSession::enter(context_ptr) } {
         Ok(ctx) => i64::try_from(ctx.live_handle_count()).unwrap_or(i64::MAX),
         Err(_) => -1,
     })
@@ -597,7 +600,10 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeF
     _class: JClass<'local>,
     context_ptr: jlong,
 ) {
-    match std::panic::catch_unwind(|| ContextSession::free(context_ptr)) {
+    // SAFETY: `context_ptr` is the value `nativeInitContext` returned: Java
+    // keeps it in one field, frees it once in `close()` and refuses every
+    // call after (`checkOpen`).
+    match std::panic::catch_unwind(|| unsafe { ContextSession::free(context_ptr) }) {
         Ok(Ok(())) => {}
         Ok(Err(err)) => throw_pure_exception(&mut env, &err),
         Err(_) => throw_panic(&mut env, "close"),
@@ -616,7 +622,10 @@ pub extern "system" fn Java_org_finos_legend_pure_rust_PureRustEvaluator_nativeF
 ) {
     if context_ptr != 0 {
         let _ = std::panic::catch_unwind(|| {
-            if let Ok(ctx) = ContextSession::enter(context_ptr) {
+            // SAFETY: `context_ptr` is the value `nativeInitContext` returned: Java
+            // keeps it in one field, frees it once in `close()` and refuses every
+            // call after (`checkOpen`).
+            if let Ok(ctx) = unsafe { ContextSession::enter(context_ptr) } {
                 ctx.release(handle);
             }
         });

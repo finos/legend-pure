@@ -63,6 +63,10 @@ use crate::hooks::{EvalHooks, NoOpHooks};
 use crate::native::{Evaluated, NativeFunction, NativeRegistry};
 use crate::value::{FunctionValue, LambdaClosure, Value};
 
+/// Per chunk, per local index: not looked up yet, or the registry entry
+/// (or its absence) for that element.
+type NativeByElement<'model> = Vec<Vec<Option<Option<&'model dyn NativeFunction>>>>;
+
 /// Evaluator state — holds mutable context during expression evaluation.
 ///
 /// The evaluator walks the compiler's IR and produces [`Value`]s. It owns:
@@ -74,10 +78,6 @@ use crate::value::{FunctionValue, LambdaClosure, Value};
 ///
 /// # Lazy call stack
 ///
-/// Per chunk, per local index: not looked up yet, or the registry entry
-/// (or its absence) for that element.
-type NativeByElement<'model> = Vec<Vec<Option<Option<&'model dyn NativeFunction>>>>;
-
 /// The evaluator has **no call stack field**. The Pure-level call stack is
 /// built lazily via `map_err` only when an error propagates through the
 /// recursive `eval()` calls.
@@ -93,7 +93,7 @@ pub struct Evaluator<'model, H: EvalHooks = NoOpHooks> {
     /// The object heap — mutable storage for runtime objects.
     heap: RuntimeHeap,
 
-    /// Scoped variable bindings with O(1) flat-undo.
+    /// Scoped variable bindings.
     context: VariableContext,
 
     /// Immutable registry of native functions.
@@ -2108,12 +2108,9 @@ fn multiplicity_constant_bounds(
     }
 }
 
-/// Collect the free-variable names of a lambda `body` given its declared
-/// `parameters`. A "free" variable is any `Variable { name }` reference in
-/// the body that isn't introduced by one of the lambda's own parameters or
-/// by a `let` / nested-lambda binding along the walk.
 /// The free variables of a lambda body, in a stable order, as the node
-/// stores them: computed once when the node is built.
+/// stores them: computed once when the node is built. A variable is free
+/// when no parameter, `let` or nested lambda along the walk binds it.
 #[must_use]
 pub fn free_variable_names(
     body: &[ValueSpec],

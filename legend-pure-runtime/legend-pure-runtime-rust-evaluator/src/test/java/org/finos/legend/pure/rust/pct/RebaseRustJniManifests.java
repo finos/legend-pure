@@ -25,6 +25,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.PlatformCodeRepositoryProvider;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
@@ -107,7 +108,7 @@ public class RebaseRustJniManifests
                 ValueSpecificationBootstrap.newStringLiteral(repository, scope._package, ps),
                 ValueSpecificationBootstrap.newStringLiteral(repository, scope.filePath, ps),
                 ValueSpecificationBootstrap.newStringLiteral(repository, manifestPath, ps)));
-        if ("InstanceValue".equals(report.getClassifier().getName()))
+        if (Instance.instanceOf(report, M3Paths.InstanceValue, ps))
         {
             report = Instance.getValueForMetaPropertyToOneResolved(report, "values", ps);
         }

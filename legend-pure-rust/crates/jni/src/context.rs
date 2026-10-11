@@ -345,8 +345,6 @@ impl JniContext {
     /// failed read is its consequence).
     pub fn start(&mut self, function: &Value, args: &[Value]) -> Result<Value, PureException> {
         let result = self.lower_and_run(function, args);
-        // Whether the lowering or the run failed, the nodes this execution
-        // touched hold caches (and cycles) that must go now.
         self.shared.end_execution();
         if let Some(failure) = self.shared.take_error() {
             return Err(failure);
@@ -434,8 +432,6 @@ impl JniContext {
                 .collect::<Result<Vec<_>, _>>()?;
             Ok((callable, args))
         })();
-        // A property that could not be read lowers to nothing; surface the
-        // read failure before trusting the tree.
         if let Some(failure) = self.shared.take_error() {
             return Err(failure);
         }

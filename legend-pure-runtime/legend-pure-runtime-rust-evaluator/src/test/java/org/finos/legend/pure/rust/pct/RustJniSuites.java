@@ -22,9 +22,8 @@ import org.finos.legend.pure.runtime.java.compiled.testHelper.PureTestBuilderCom
 import org.finos.legend.pure.runtime.java.interpreted.testHelper.PureTestBuilderInterpreted;
 
 /**
- * Builds a {@code Rust_JNI} surveyor suite and prints the honest tally: the
- * suite is green only when every excluded test still fails as recorded and
- * every other test passes, so {@code total - excluded} is the pass count.
+ * Builds a {@code Rust_JNI} surveyor suite and prints its tally,
+ * {@code total - excluded} passes.
  */
 final class RustJniSuites
 {

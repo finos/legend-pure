@@ -111,11 +111,27 @@ Authoritative developer docs live in `/docs` and are maintained alongside code. 
 
 ## Rust evaluator (`legend-pure-rust/`)
 
-A Pure evaluator in Rust lives beside the Java stack as a Cargo workspace. **The plan for
+A Pure evaluator in Rust lives beside the Java stack as a Cargo workspace of three crates:
+`crates/metamodel` (element tables, the expression tree, the M3 bootstrap embedding
+`platform/pure/grammar/m3.pure`), `crates/evaluator` (values, heap, variable context, dispatch,
+the native registry) and `crates/jni` (the cdylib the Java module loads). **The plan for
 everything Rust is `legend-pure-rust/docs/rust-evaluator-mvp.md`**; `legend-pure-rust/CLAUDE.md`
 is the working guide (build, test and lint commands, the six rules). Read the plan's §0 before
 touching that directory. The earlier Rust workspace (parser, compiler, LSP, DSL crates, CLI,
 binary snapshot format) is frozen at tag `archive/pre-evaluator-extract-2026-10`; nothing from
-it is current, pieces are fished back one at a time when the plan asks for them. The Rust
-metamodel crate embeds exactly one platform file, `platform/pure/grammar/m3.pure`, as its
-bootstrap.
+it is current.
+
+State (October 2026): Steps 0–2 of the plan, the Java-lambda lowering, natives rounds 1 and 2,
+Step 2b (the evaluator's own cost) and the bridge's cost are done; next is Step 3 (PELT). The
+Java module `legend-pure-runtime/legend-pure-runtime-rust-evaluator` compiles with release 17
+and joins the reactor only on JDK 17+ (profile `rust-evaluator-jdk17` in
+`legend-pure-runtime/pom.xml`); its tests skip when the cdylib is absent. The platform declares
+the native `evalRust` and the PCT adapters `Rust_JNI` (both Java engines run the corpus through
+the Rust evaluator over JNI; the counts are in `legend-pure-rust/CLAUDE.md`) and `Rust_Native`
+(the corpus on the evaluator alone, driven from cargo, red until Step 3 loads the platform).
+
+```bash
+cd legend-pure-rust && cargo build --workspace && cargo test --workspace
+cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
+  mvn -pl legend-pure-runtime/legend-pure-runtime-rust-evaluator clean verify
+```

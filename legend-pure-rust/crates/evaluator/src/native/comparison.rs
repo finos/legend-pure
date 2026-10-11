@@ -147,13 +147,9 @@ impl NativeFunction for LessThanEqual {
 pub fn compare_values(a: &Value, b: &Value) -> i64 {
     let ord = match (a, b) {
         (Value::Integer(a), Value::Integer(b)) => a.cmp(b),
-        (Value::Integer(a), Value::Float(b)) => {
-            (*a as f64).partial_cmp(b).unwrap_or(Ordering::Equal)
-        }
-        (Value::Float(a), Value::Integer(b)) => {
-            a.partial_cmp(&(*b as f64)).unwrap_or(Ordering::Equal)
-        }
-        (Value::Float(a), Value::Float(b)) => a.partial_cmp(b).unwrap_or(Ordering::Equal),
+        (Value::Integer(a), Value::Float(b)) => (*a as f64).total_cmp(b),
+        (Value::Float(a), Value::Integer(b)) => a.total_cmp(&(*b as f64)),
+        (Value::Float(a), Value::Float(b)) => a.total_cmp(b),
         (Value::Decimal(a), Value::Decimal(b)) => a.cmp(b),
         (Value::Integer(a), Value::Decimal(b)) => Decimal::from(*a).cmp(b),
         (Value::Decimal(a), Value::Integer(b)) => a.cmp(&Decimal::from(*b)),

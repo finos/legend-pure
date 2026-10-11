@@ -58,13 +58,10 @@ import java.util.Locale;
  * </pre>
  * Results: {@code target/benchmarks/expressions-java.csv} (expression, engine,
  * median, p90 and minimum in nanoseconds per call; each timed sample covers a
- * batch of calls, because the clock ticks every 41.7 ns on Apple Silicon and a
- * single call would be quantised to that). The timed unit on both sides is one
- * call of the zero-argument function, result delivered as a value. The compiled
- * engine is measured twice: through its {@code start} entry, which builds
- * processor supports and converts the result on every call, and by invoking
- * the generated static method directly, resolved once, which is the cost of
- * the expression itself.
+ * batch of calls). The timed unit on both sides is one call of the
+ * zero-argument function, result delivered as a value. The compiled engine is
+ * measured through its {@code start} entry and by invoking the generated
+ * static method directly.
  */
 public class BenchmarkNativeExpressions extends AbstractPureTestWithCoreCompiled
 {

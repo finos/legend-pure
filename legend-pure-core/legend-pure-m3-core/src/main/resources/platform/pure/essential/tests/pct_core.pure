@@ -36,9 +36,9 @@ function
   $f->eval();
 }
 
-// Evaluates a zero-argument lambda on the Rust evaluator (legend-pure-runtime-rust-evaluator).
-// The interpreted engine implements it through an InterpretedExtension; the compiled
-// platform carries a stub that fails at runtime.
+// Evaluates a zero-argument lambda on the Rust evaluator (legend-pure-runtime-rust-evaluator):
+// the interpreted engine through an InterpretedExtension, the compiled engine through its
+// EvalRustExecutor hook, both provided by that module.
 native function meta::pure::functions::lang::evalRust<V|m>(f:Function<{->V[m]}>[1]):V[m];
 
 function
@@ -51,9 +51,6 @@ function
   $f->evalRust();
 }
 
-// The corpus on the Rust evaluator alone, the surveyor included (legend-pure-rust,
-// `cargo run -p legend-pure-evaluator --example pct_native`): no host engine in the loop,
-// so the adapter is the evaluator's own eval.
 function
     <<PCT.adapter>>
     {

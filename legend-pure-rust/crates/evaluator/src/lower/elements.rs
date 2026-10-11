@@ -238,7 +238,9 @@ impl Lowering<'_> {
     /// whose supertype is its one generalization.
     ///
     /// # Errors
-    /// The node has no path or name, or its supertype cannot be lowered.
+    /// The node has no path or name, or its supertype cannot be lowered;
+    /// `Unsupported` for type variables, constraints or type-variable
+    /// values on the supertype, which the element would otherwise lose.
     pub fn lower_primitive_type(&mut self, node: &Node) -> Result<ElementId, LowerError> {
         if let Some(id) = self.ext.lookup_node(node.key()) {
             return Ok(id);
@@ -249,16 +251,36 @@ impl Lowering<'_> {
         let name = node
             .name()
             .ok_or_else(|| Self::read_error(node, "missing name"))?;
-        let id = self.ext.reserve(node, &path, name, node.span());
+        if !node.nodes("typeVariables").is_empty() || !node.nodes("constraints").is_empty() {
+            return Err(Self::unsupported(
+                node,
+                &format!("`{path}` with type variables or constraints"),
+            ));
+        }
         let mut super_type = None;
         if let Some(g) = node.nodes("generalizations").first() {
             let general = g
                 .one("general")
                 .ok_or_else(|| Self::read_error(g, "missing general"))?;
-            if let TypeExpr::Named { element, .. } = self.lower_generic_type(&general)? {
-                super_type = Some(element);
+            if let Value::Object(h) = &general
+                && !Node::new(h.clone()).nodes("typeVariableValues").is_empty()
+            {
+                return Err(Self::unsupported(
+                    node,
+                    &format!("`{path}` with type-variable values on its supertype"),
+                ));
+            }
+            match self.lower_generic_type(&general)? {
+                TypeExpr::Named { element, .. } => super_type = Some(element),
+                other => {
+                    return Err(Self::unsupported(
+                        node,
+                        &format!("`{path}` extending {other:?}"),
+                    ));
+                }
             }
         }
+        let id = self.ext.reserve(node, &path, name, node.span());
         self.ext.fill(
             id,
             Element::PrimitiveType(legend_pure_metamodel::types::PrimitiveType {

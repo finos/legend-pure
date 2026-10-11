@@ -54,11 +54,7 @@ pub struct MapState {
 }
 
 /// The sequence behind a collection value: a reference-counted vector,
-/// shared on clone and copied on the first write to a shared one. Pure
-/// collections are immutable and small, so building, iterating and
-/// indexing a plain vector beats a persistent structure several times
-/// over, and the one operation that loses, appending to a large shared
-/// collection, is a copy in Pure's own semantics.
+/// shared on clone and copied on the first write to a shared one.
 #[derive(Debug, PartialEq, Eq)]
 pub struct PVector<T>(Rc<Vec<T>>);
 

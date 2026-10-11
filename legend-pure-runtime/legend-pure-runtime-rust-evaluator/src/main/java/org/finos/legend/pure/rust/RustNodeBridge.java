@@ -192,7 +192,7 @@ final class RustNodeBridge
 
     /**
      * A primitive by its classifier (the M3 primitive types are root-level
-     * names) and its Java value, the two things both engines agree on.
+     * names) and its Java value.
      */
     private static void describePrimitive(NodeDescription d, Object value)
     {
@@ -314,7 +314,7 @@ final class RustNodeBridge
 
     /**
      * The property names of a node, read when the Rust side first asks for
-     * them (the lowering reads properties by name and never does).
+     * them.
      */
     String[] keysOf(long id)
     {

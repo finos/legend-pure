@@ -69,7 +69,7 @@ lowered through the bridge (`crates/evaluator/src/lower/`): its body, the functi
 classes and enumerations it references, and the variables it captured (`RustNodeBridge.capturedValue`,
 read through the host from the interpreted engine's `LambdaWithContext` or the compiled lambda's open
 variables); the natives it calls are
-fished from the archive (158 keys, pinned by `crates/evaluator/tests/registry.rs`). What remains red is ranked by its first line:
+fished from the archive (156 keys, pinned by `crates/evaluator/tests/registry.rs`). What remains red is ranked by its first line:
 `FunctionNotFound: <mangled key>` (nothing registered), `NotImplemented: <key>` (registered,
 body not fished), `Unsupported: …` (a lowering or value-shape gap, e.g. a `Map` crossing the
 boundary), then bare Pure texts for semantic differences. A Rust failure reaches the engine as a
@@ -99,7 +99,3 @@ Surefire passes the library directory to the tests as the system property
 `System.loadLibrary("pure_rust_jni")`. When the library is absent the module's
 tests are skipped (profile `rust-cdylib-missing-*`), so `mvn install` stays green on
 hosts and CI without a Rust toolchain. Override with `-DskipTests=false` to force a run.
-
-The bindings annotation processor module (`…-bindings-ap`) is out of the reactor:
-its generator is the archived Rust `java-codegen` crate. It is not part of the MVP (plan §7);
-if typed Java proxies are ever wanted, it is the place for them.

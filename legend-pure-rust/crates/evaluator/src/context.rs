@@ -28,9 +28,8 @@ use smol_str::SmolStr;
 use crate::error::PureRuntimeError;
 use crate::value::Value;
 
-/// A multiplicative hash for short identifier keys: a few nanoseconds
-/// where SipHash spends tens, on names that come from source text and
-/// never from an adversary.
+/// A multiplicative hash for short identifier keys that come from source
+/// text, never from an adversary.
 #[derive(Default, Clone, Copy)]
 pub struct NameHasher(u64);
 
@@ -54,9 +53,7 @@ pub type NameMap<V> = HashMap<SmolStr, V, BuildHasherDefault<NameHasher>>;
 
 /// A stack of variable scopes: bindings in the order they were made,
 /// read by scanning from the top, so the latest binding of a name wins.
-/// A scope is a position in the stack; popping it truncates. Binding
-/// costs a push and reading a short scan: lambda bodies see a handful of
-/// bindings, and a scan over a handful beats hashing and undoing.
+/// A scope is a position in the stack; popping it truncates.
 ///
 /// # Example
 ///

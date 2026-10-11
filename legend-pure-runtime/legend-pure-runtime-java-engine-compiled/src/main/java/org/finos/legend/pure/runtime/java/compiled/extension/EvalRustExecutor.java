@@ -31,7 +31,7 @@ public interface EvalRustExecutor
      *
      * @param executionSupport the compiled engine's execution support
      * @param function         the function value, a compiled lambda or a function element
-     * @return the result as compiled values: a Java object for one value, a {@code RichIterable} for many
+     * @return the result values, as compiled values, in a collection
      */
     Object evaluate(ExecutionSupport executionSupport, Function<?> function);
 }

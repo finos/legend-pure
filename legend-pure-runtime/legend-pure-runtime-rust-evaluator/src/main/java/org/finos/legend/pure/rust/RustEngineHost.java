@@ -22,8 +22,9 @@ import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime
 
 /**
  * What the bridge needs from the Java engine it serves: the graph's
- * {@link ProcessorSupport}, the property names of a node, and the engine's
- * own representation of each primitive the Rust evaluator hands back.
+ * {@link ProcessorSupport}, the property names of a node, a lambda's captured
+ * values and definition, and the engine's own representation of each
+ * primitive and of a map the Rust evaluator hands back.
  */
 public interface RustEngineHost
 {

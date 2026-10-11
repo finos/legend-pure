@@ -37,15 +37,11 @@ import java.util.Set;
  * code casts to. The interpreted engine works on any {@link CoreInstance}, so
  * a {@link RustCoreInstance} proxy serves it; generated code does not.
  *
- * <p>An object is copied when the call that returned it has ended (reading a
- * proxy re-enters the evaluator, which a running call refuses): every
- * property the Rust object holds is read through its proxy and set on the
- * new instance with the generated {@code _property(RichIterable)} setter,
- * nested Rust objects first converted the same way. One conversion keeps
- * identity and cycles (each proxy converts once); the proxies it read are
- * released at the end. Slots the evaluator keeps for itself
- * ({@code __}-prefixed) are not properties and are not copied; any other
- * key the class does not declare is a typed failure, not a dropped value.
+ * <p>Objects are copied after the call that returned them has ended; one
+ * conversion keeps identity and cycles, and releases the proxies it read.
+ * Slots the evaluator keeps for itself ({@code __}-prefixed) are not
+ * properties and are not copied; any other key the class does not declare
+ * is a typed failure, not a dropped value.
  */
 final class CompiledObjects
 {

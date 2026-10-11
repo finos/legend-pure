@@ -23,7 +23,7 @@ import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProviderTool;
 
 /**
  * Publishes the {@code Rust_JNI} adapter reports generated at build time by
- * {@code PCTReportGenerator} from the two {@code Test_RustJni_*_PCT} suites.
+ * {@code PCTReportGenerator} from the four {@code Test_RustJni*_PCT} suites.
  */
 public class Core_RustJni_PCTReportProvider implements PCTReportProvider
 {

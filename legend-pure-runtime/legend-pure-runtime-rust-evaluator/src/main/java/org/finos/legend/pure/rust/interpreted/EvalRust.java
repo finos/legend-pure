@@ -47,8 +47,7 @@ import java.util.Stack;
  *
  * <p>The {@link PureRustEvaluator} is created on the first call, not in the
  * constructor: {@code InterpretedExtensionLoader} drops an extension whose
- * construction throws, and loading the cdylib must never hide the native.
- * One evaluator per engine, bound to the engine's runtime.
+ * construction throws. One evaluator per engine, bound to the engine's runtime.
  */
 public class EvalRust extends NativeFunction
 {

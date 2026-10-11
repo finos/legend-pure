@@ -67,12 +67,14 @@ impl<C> Session<C> {
 
     /// Enter the context behind `ptr` for one call.
     ///
+    /// # Safety
+    /// As for [`get`](Self::get).
+    ///
     /// # Errors
     /// A null pointer, or a call made while another call on the same
     /// evaluator is still running (re-entry from Java).
-    pub(crate) fn enter<'a>(ptr: jlong) -> Result<Entered<'a, C>, PureException> {
-        // SAFETY: every pointer the entry points receive is the one Java
-        // holds for a live evaluator (see `get`).
+    pub(crate) unsafe fn enter<'a>(ptr: jlong) -> Result<Entered<'a, C>, PureException> {
+        // SAFETY: this function's contract is `get`'s.
         let session = unsafe { Self::get(ptr) }?;
         if session.busy.replace(true) {
             return Err(unsupported(
@@ -84,13 +86,16 @@ impl<C> Session<C> {
 
     /// Free the session behind `ptr`.
     ///
+    /// # Safety
+    /// As for [`get`](Self::get), and `ptr` is not used again.
+    ///
     /// # Errors
     /// A call on the same evaluator is still running.
-    pub(crate) fn free(ptr: jlong) -> Result<(), PureException> {
+    pub(crate) unsafe fn free(ptr: jlong) -> Result<(), PureException> {
         if ptr == 0 {
             return Ok(());
         }
-        // SAFETY: as for `enter`; Java calls this once, from `close()`.
+        // SAFETY: this function's contract is `get`'s.
         let session = unsafe { Self::get(ptr) }?;
         if session.busy.get() {
             return Err(unsupported(
@@ -140,23 +145,29 @@ mod tests {
     #[test]
     fn a_second_entry_while_the_first_is_held_is_refused() {
         let ptr = Session::into_raw(41_i32);
-        {
-            let mut first = Session::<i32>::enter(ptr).unwrap();
-            *first += 1;
-            let second = Session::<i32>::enter(ptr);
-            assert!(second.is_err(), "re-entry must be refused");
-            assert!(
-                Session::<i32>::free(ptr).is_err(),
-                "no free while a call runs"
-            );
+        // SAFETY: `ptr` comes from `into_raw` above and is freed once, last.
+        unsafe {
+            {
+                let mut first = Session::<i32>::enter(ptr).unwrap();
+                *first += 1;
+                let second = Session::<i32>::enter(ptr);
+                assert!(second.is_err(), "re-entry must be refused");
+                assert!(
+                    Session::<i32>::free(ptr).is_err(),
+                    "no free while a call runs"
+                );
+            }
+            assert_eq!(*Session::<i32>::enter(ptr).unwrap(), 42);
+            Session::<i32>::free(ptr).unwrap();
         }
-        assert_eq!(*Session::<i32>::enter(ptr).unwrap(), 42);
-        Session::<i32>::free(ptr).unwrap();
     }
 
     #[test]
     fn a_null_pointer_is_an_error_not_a_dereference() {
-        assert!(Session::<i32>::enter(0).is_err());
-        assert!(Session::<i32>::free(0).is_ok());
+        // SAFETY: zero is never dereferenced.
+        unsafe {
+            assert!(Session::<i32>::enter(0).is_err());
+            assert!(Session::<i32>::free(0).is_ok());
+        }
     }
 }

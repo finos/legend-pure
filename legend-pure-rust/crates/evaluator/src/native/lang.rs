@@ -32,7 +32,7 @@ use crate::error::{PureException, PureRuntimeError};
 use crate::heap::{ObjectHandle, RuntimeHeap};
 use crate::native::{
     EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args, force_all, force1,
-    force2,
+    force2, force3,
 };
 use crate::value::Value;
 
@@ -679,17 +679,11 @@ fn apply_property_defaults(
     Ok(())
 }
 
-/// Pure `copy<T>(source:T[1], keyExpressions:KeyExpression[*]):T[1]`
-///
-/// The compiler's `^$source(prop=val)` desugaring calls this native with
-/// flat key/value pairs after the source:
-///
-/// ```text
-/// copy(<Object:...>, "prop1", val1, "prop2", val2, ...)
-/// ```
-///
-/// Allocates a new heap object that shares the source's classifier, copies
-/// every property from the source, then applies the overrides.
+/// The flat spelling of `copy`, `copy(source, "prop", values, add, ...)`,
+/// which tests register under `copy_T_1__String_1__Any_MANY__T_1_`; the
+/// platform's `copy` over `KeyExpression` objects is
+/// [`CopyWithKeyExpressions`]. A new heap object with the source's
+/// classifier and properties, then the overrides.
 #[derive(Debug)]
 pub struct Copy;
 
@@ -826,19 +820,12 @@ impl NativeFunction for CopyWithKeyExpressions {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        if values.len() < 2 {
-            return Err(PureRuntimeError::EvaluationError(format!(
-                "copy(object, id, [keyExpressions]): expected at least 2 arguments, got {}",
-                values.len()
-            ))
-            .into());
-        }
+        let (source, _id, key_expressions) = force3("copy", args, ctx)?;
         let key_expr_id = crate::m3_paths::resolve(ctx.model(), crate::m3_paths::KEY_EXPRESSION);
-        let payload: Vec<&Value> = match values.get(2) {
-            Some(Value::Collection(coll)) => coll.iter().collect(),
-            Some(Value::Unit) | None => Vec::new(),
-            Some(single) => vec![single],
+        let payload: Vec<&Value> = match &key_expressions {
+            Value::Collection(coll) => coll.iter().collect(),
+            Value::Unit => Vec::new(),
+            single => vec![single],
         };
         let triples = decode_key_expressions(ctx, key_expr_id, &payload)?;
         let mut kvs: Vec<Value> = Vec::with_capacity(triples.len() * 3);
@@ -847,7 +834,7 @@ impl NativeFunction for CopyWithKeyExpressions {
             kvs.push(Value::from_vec(expression_values));
             kvs.push(Value::Boolean(add));
         }
-        copy_with_triples(ctx, &values[0], &kvs)
+        copy_with_triples(ctx, &source, &kvs)
     }
 }
 
