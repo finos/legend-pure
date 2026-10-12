@@ -34,7 +34,7 @@ import java.io.IOException;
  * A value the compiled engine represents as a plain Java object that is not
  * a {@link CoreInstance} (a {@code PureMap}), carried across the boundary,
  * whose only currency is {@code CoreInstance}, and unwrapped by
- * {@link CompiledEvalRust} before generated code sees it. It has no
+ * {@link CompiledEvaluators} before generated code sees it. It has no
  * properties of its own.
  */
 final class CompiledValue extends AbstractCoreInstance

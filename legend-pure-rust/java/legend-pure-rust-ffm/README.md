@@ -56,10 +56,10 @@ runs the platform corpus through each, beside `Rust_JNI`.
 
 | Class | Role |
 |---|---|
-| `ffm.interpreted.EvalRustFfm` | The native: unwraps the lambda node and calls `PureRustFfmEvaluator.start(lambda, [])`. One evaluator per engine, bound to its `PureRuntime`, replaced when the runtime changes, discarded after a panic. |
+| `ffm.interpreted.EvalRustFfm` | The native: `-api`'s `InterpretedEvalRust` over `PureRustFfmEvaluator` (one evaluator per engine, bound to its `PureRuntime`, replaced and closed when the runtime changes, discarded after a panic). |
 | `ffm.interpreted.RustFfmInterpretedExtension` | Registers `evalRustFfm_Function_1__V_m_`; discovered through `META-INF/services/…InterpretedExtension`. Its constructor never touches the library. |
-| `ffm.compiled.RustFfmCompiledExtension` | Registers the generation native `ffm.compiled.EvalRustFfm` for `platform_rust_ffm`; discovered through `META-INF/services/…CompiledExtension`. The module generates its repository's Java at build time (`JavaCodeGeneration platform_rust_ffm` at `compile`), compiled with the tests. |
-| `ffm.compiled.CompiledEvalRustFfm` | The compiled engine's `evalRustFfm`: the generated code calls the static `CompiledEvalRustFfm.evaluate(es, f)`; results cross as compiled values through `CompiledObjects`. One evaluator per `CompiledExecutionSupport`. |
+| `ffm.compiled.RustFfmCompiledExtension` | Registers the generation native `ffm.compiled.EvalRustFfm` (`-api`'s `CompiledEvalRustNative` naming `CompiledEvalRustFfm`) for `platform_rust_ffm`; discovered through `META-INF/services/…CompiledExtension`. The module generates its repository's Java at build time (`JavaCodeGeneration platform_rust_ffm` at `compile`), compiled with the tests. |
+| `ffm.compiled.CompiledEvalRustFfm` | The compiled engine's `evalRustFfm`: the generated code calls the static `CompiledEvalRustFfm.evaluate(es, f)`, which is `-api`'s `CompiledEvaluators` over `PureRustFfmEvaluator`; results cross as compiled values through `CompiledObjects`. One evaluator per `CompiledExecutionSupport`, held weakly: the evaluator of a support the garbage collector reclaimed is closed on a later call. |
 | `ffm.pct.Test_RustFfm_{Essential,Grammar}Functions_PCT` | The interpreted engine's suites with the `Rust_FFM` adapter; each prints `Rust_FFM <scope>: <passes> / <total>`. |
 | `ffm.pct.Test_RustFfmCompiled_{Essential,Grammar}Functions_PCT` | The same corpus through the compiled engine; prints `Rust_FFM <scope> (compiled): <passes> / <total>`. |
 | `ffm.pct.RebaseRustFfmManifests` | Regenerates the four manifests (`PctManifestRebase`); not in the default surefire run. |

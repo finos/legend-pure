@@ -14,82 +14,33 @@
 
 package org.finos.legend.pure.rust.ffm.compiled;
 
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.rust.PureRustEvaluationException;
-import org.finos.legend.pure.rust.PureRustException;
 import org.finos.legend.pure.rust.PureRustFfmEvaluator;
-import org.finos.legend.pure.rust.compiled.CompiledHost;
-import org.finos.legend.pure.rust.compiled.CompiledObjects;
-import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
-import java.util.IdentityHashMap;
-import java.util.Map;
+import org.finos.legend.pure.rust.compiled.CompiledEvaluators;
 
+/**
+ * The compiled engine's {@code evalRustFfm} over {@link PureRustFfmEvaluator}
+ * ({@link CompiledEvaluators}). The generated code of {@link EvalRustFfm}
+ * calls {@link #evaluate}.
+ */
 public final class CompiledEvalRustFfm
 {
-    private static final Map<ExecutionSupport, PureRustFfmEvaluator> evaluators = new IdentityHashMap<>();
+    private static final CompiledEvaluators evaluators = new CompiledEvaluators(PureRustFfmEvaluator::over);
 
     private CompiledEvalRustFfm()
     {
     }
 
+    /**
+     * The run-time entry the generated code calls.
+     *
+     * @param executionSupport the execution support of the calling function
+     * @param function         the function value to evaluate, a compiled lambda or a function element
+     * @return the result values, as compiled values, in a collection
+     */
     public static Object evaluate(ExecutionSupport executionSupport, Function<?> function)
     {
-        PureRustFfmEvaluator evaluator = evaluator(executionSupport);
-        CoreInstance[] results;
-        try
-        {
-            results = evaluator.evaluate(function, new CoreInstance[0][]);
-        }
-        catch (PureRustEvaluationException e)
-        {
-            if (e.getCause() instanceof RuntimeException cause)
-            {
-                throw cause;
-            }
-            throw e;
-        }
-        catch (PureRustException e)
-        {
-            discard(executionSupport, evaluator);
-            throw e;
-        }
-        CompiledObjects objects = new CompiledObjects((CompiledExecutionSupport) executionSupport);
-        try
-        {
-            MutableList<Object> values = Lists.mutable.ofInitialCapacity(results.length);
-            for (CoreInstance result : results)
-            {
-                values.add(objects.toCompiled(result));
-            }
-            return values;
-        }
-        catch (PureRustEvaluationException e)
-        {
-            throw new PureExecutionException(e.getMessage(), e);
-        }
-        finally
-        {
-            objects.release();
-        }
-    }
-
-    private static synchronized PureRustFfmEvaluator evaluator(ExecutionSupport executionSupport)
-    {
-        return evaluators.computeIfAbsent(executionSupport,
-                es -> PureRustFfmEvaluator.over(new CompiledHost(((CompiledExecutionSupport) es).getProcessorSupport())));
-    }
-
-    private static synchronized void discard(ExecutionSupport executionSupport, PureRustFfmEvaluator poisoned)
-    {
-        if (evaluators.get(executionSupport) == poisoned)
-        {
-            evaluators.remove(executionSupport);
-        }
-        poisoned.close();
+        return evaluators.evaluate(executionSupport, function);
     }
 }

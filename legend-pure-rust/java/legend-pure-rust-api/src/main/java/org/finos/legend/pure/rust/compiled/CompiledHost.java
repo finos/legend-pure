@@ -38,7 +38,7 @@ import java.math.BigDecimal;
  * The compiled engine: a node's keys are its class's properties, and
  * primitives are the compiled
  * engine's {@link ValCoreInstance} wrappers over plain Java values, which
- * {@link CompiledEvalRust} unwraps before handing results to generated code.
+ * {@link CompiledEvaluators} unwraps before handing results to generated code.
  */
 public final class CompiledHost implements RustEngineHost
 {
@@ -158,7 +158,7 @@ public final class CompiledHost implements RustEngineHost
      * A {@link PureMap} as the engine's {@code newMap} builds one (keys
      * hashed with {@code PureEqualsHashingStrategy}), over plain Java values.
      * A {@code PureMap} is not a {@link CoreInstance}, so it crosses in a
-     * {@link CompiledValue}, which {@link CompiledEvalRust} unwraps.
+     * {@link CompiledValue}, which {@link CompiledEvaluators} unwraps.
      */
     @Override
     public CoreInstance newMap(CoreInstance[] keys, CoreInstance[] values)
