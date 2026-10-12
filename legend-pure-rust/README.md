@@ -11,9 +11,9 @@ cargo build --workspace
 cargo test --workspace
 ```
 
-Three crates: `crates/metamodel`, `crates/evaluator` and `crates/jni` (the cdylib
-`libpure_rust_jni` behind the Java module
-`java/legend-pure-rust-jni`, over the shared
-`java/legend-pure-rust-api`). The earlier Rust
+Four crates: `crates/metamodel`, `crates/evaluator`, `crates/ffi` (the C ABI,
+`libpure_rust_ffi`, behind the Java module `java/legend-pure-rust-ffm`) and
+`crates/jni` (`libpure_rust_jni`, behind `java/legend-pure-rust-jni`); both
+Java modules share `java/legend-pure-rust-api`. The earlier Rust
 workspace (parser, compiler, tooling) is on tag
 `archive/pre-evaluator-extract-2026-10`.

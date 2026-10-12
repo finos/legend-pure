@@ -58,7 +58,7 @@ Read this first; everything below assumes it.
 | What | Where |
 |---|---|
 | This document | `legend-pure-rust/docs/rust-evaluator-mvp.md` on branch `legend-pure-rust` of the `legend-pure` fork (`rafaelbey/legend-pure`). It is the single source of truth for the Rust direction. |
-| The Rust workspace **after Step 0** | `legend-pure-rust/` (Cargo workspace, edition 2024) holding `crates/metamodel` and `crates/evaluator`, plus `crates/jni` since Step 2. Build and test: `cargo build --workspace`, `cargo test --workspace`. `legend-pure-rust/CLAUDE.md` is rewritten in Step 0 to match. |
+| The Rust workspace **after Step 0** | `legend-pure-rust/` (Cargo workspace, edition 2024) holding `crates/metamodel` and `crates/evaluator`, plus `crates/jni` since Step 2 and `crates/ffi` since Step 2c. Build and test: `cargo build --workspace`, `cargo test --workspace`. `legend-pure-rust/CLAUDE.md` is rewritten in Step 0 to match. |
 | The Rust workspace **before Step 0** (the archive) | Tag `archive/pre-evaluator-extract-2026-10` and branch `legend-pure-rust-archive`, both at the last commit before extraction. Every path in Appendix A is an archive path. |
 | The Java stack (upstream FINOS code) | Sibling directories at the repository root: `legend-pure-core/`, `legend-pure-runtime/`, `legend-pure-maven/`, … Requires JDK 11 or 17 and Maven. |
 | The bootstrap source | `legend-pure-core/legend-pure-m3-core/src/main/resources/platform/pure/grammar/m3.pure`, embedded at compile time by the metamodel crate. This is the one `.pure` file the evaluator may depend on. |
@@ -1852,11 +1852,14 @@ model: `examples/pct_native` resolves the surveyor instead of reporting
 error to pinning the first `Rust_Native` counts, with every missing
 native ranked in its manifests as `Rust_JNI`'s were.
 
-**Start here.** New leaf crate `crates/pelt` — the fourth crate, and the only
+**Start here.** New leaf crate `crates/pelt` — the fifth crate, and the only
 one this step adds (dependencies: `flate2`, a zip reader only; it does not
-depend on `metamodel` or `evaluator`). The classloader-backed store uses the
-Java module from Step 2: a `ClassLoader.getResource` callback exposed to
-native code (~100 lines Java). Fixtures: copy a dozen representative
+depend on `metamodel` or `evaluator`). The store reads bytes through a
+source a host supplies, so it is host-neutral like the rest of the boundary:
+a directory or jar path for a host with none of its own (cargo, Python), or
+a byte-source callback in the C ABI's host table (`pure_rust.h`), answered
+on the JVM by `ClassLoader.getResource` in `-api` and called from both Java
+transports' tables while JNI lives. Fixtures: copy a dozen representative
 files from the platform `target/classes` (a class, an enumeration, a profile,
 an association, a native function, a test function with a lambda, `Root.pelt`,
 `Integer.pelt`, the five `platform.*` module files) into
@@ -1924,11 +1927,13 @@ Rust keeps those apart, and only the first half still lacks an abstraction:
   sees the string form), `overloads(simple_name) -> Vec<Node>`,
   `instances(classifier) -> Vec<Node>`, `module_of(path) -> ModuleId`.
   Two implementations: the PELT one in this step, over the Step 3 readers
-  (manifests, `.pfn`, `.pbr`, the element loader); the JNI one in Step 6, in
-  the `jni` crate, as bulk calls into the engine's indexes. The bridge today
-  needs none of it because Java hands the lowering every referenced object
-  already; it grows the JNI directory when Step 6 asks "who are the
-  instances of `X`".
+  (manifests, `.pfn`, `.pbr`, the element loader); the live one in Step 6,
+  in `bridge/`, as new methods of the `Host` trait (and the matching
+  callbacks of the C ABI's host table) that a host answers with bulk calls
+  into its own indexes. No transport owns it, so deleting JNI (Step 2c
+  phase 3) does not touch it. The bridge today needs none of it because the
+  host hands the lowering every referenced object already; it grows the
+  live directory when Step 6 asks "who are the instances of `X`".
 
 What this changes in the existing lowering, and it is small: `Lowering`
 takes a `&dyn Directory`, and the three places that follow a reference
@@ -2049,19 +2054,20 @@ rather than demanded up front.
 legend-engine, with no Rust compiler.
 
 **Build.**
-- A JNI-backed node source: a small Java helper that, given any `CoreInstance`
-  (handcrafted `Root_..._Impl`, PELT-lazy, or interpreted), returns its
-  classifier, keys and values in one call, primitives inline and other objects
-  as handles. On the Rust side the same node interface as PELT, so the same
-  lowering applies. *(Done 2026-10-10 as `RustNodeBridge` / `JavaNode`;
-  proven on compiled objects 2026-10-11: the compiled engine runs the same
-  corpus through `RustEngineHost` at 321 / 327 and 132 / 136, the difference
-  being Rust-built objects handed back to generated code.)*
-- The JNI `Directory` (Step 4): `node(path)` through `_Package.getByUserPath`,
-  `instances(classifier)` and `overloads(name)` as one bulk call each into the
-  engine's own indexes, `resolve(reference_id)` through the Java
-  `ReferenceIdResolver`. Whole-model queries never walk the graph node by
-  node across the boundary.
+- A host-backed node source: given any `CoreInstance` (handcrafted
+  `Root_..._Impl`, PELT-lazy, or interpreted), the host returns its
+  classifier, keys and values in one call, primitives inline and other
+  objects as handles. On the Rust side the same node interface as PELT, so the
+  same lowering applies. *(Done 2026-10-10 over JNI as `RustNodeBridge` /
+  `JavaNode`; since Step 2c the `Host` trait in `bridge/` and `NodeBridge` in
+  `-api`, served by both transports; proven on compiled objects 2026-10-11.)*
+- The live `Directory` (Step 4): new `Host` methods and host-table callbacks,
+  `node(path)` through `_Package.getByUserPath`, `instances(classifier)` and
+  `overloads(name)` as one bulk call each into the engine's own indexes,
+  `resolve(reference_id)` through the Java `ReferenceIdResolver`, answered
+  in `-api` for both transports. Whole-model queries never walk the graph
+  node by node across the boundary, `getAll` included: a walk that reaches a
+  host node is a typed `Unsupported` until this directory answers it.
 - **Identity unification.** When a crossing object is a packageable element
   whose path the evaluator already knows (`String`, `Any`, a platform class, a
   profile), substitute the known element. Without this, `instanceOf`, type
@@ -2146,7 +2152,7 @@ Java. Rough size: ~1 k lines.
 | `m3.pure` (M3 bootstrap) | 0 onward | in | embedded at compile time; chunk 0 of every model |
 | Maven-built jars with PELT | 3–4 | in | PELT store over directory / jars / classloader |
 | Java Pure compiler | all | upstream | unchanged; its PELT output is the contract |
-| PCT corpus and adapters | 2 onward | test | `Rust_JNI` adapter: `evalRust` on the interpreted engine, suites and generated manifests in the fork's `legend-pure-runtime-rust-evaluator-jni` from Step 2 (red), engine suite class from Step 5; failures typed by kind; `Rust_Native` through the Rust surveyor later |
+| PCT corpus and adapters | 2 onward | test | `Rust_JNI` adapter: `evalRust` on the interpreted engine, suites and generated manifests in `legend-pure-rust/java/legend-pure-rust-jni` from Step 2 (red), `Rust_FFM` in `-ffm` since Step 2c, engine suite class from Step 5; failures typed by kind; `Rust_Native` through the Rust surveyor later |
 | JNI | 2, 3, 6 | both | `start()`, `CoreInstance` both ways, node bridge, handles, typed failures |
 | legend-engine compiler (`toPureGraph`) | 6, 7 | in | live `CoreInstance` objects consumed through the node bridge; identity unification by path |
 | `MetadataPelt` (class in `legend-pure-runtime-java-engine-compiled`, used by legend-engine's `PureModel`) | 6 | in | its lazy objects are also `CoreInstance`s; unified with the evaluator's own PELT-loaded elements by path |
