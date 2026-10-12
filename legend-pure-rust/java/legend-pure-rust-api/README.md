@@ -6,7 +6,8 @@ The Java side of the Rust Pure evaluator in `legend-pure-rust/` that no transpor
 Java, how a graph node is described for the Rust side, the typed failures, and the tooling the
 PCT suites and benchmarks of every transport are built from. A transport module
 (`legend-pure-rust-jni`, `legend-pure-rust-ffm`) depends on this one and supplies the native
-calls of `RustEvaluator`, nothing else.
+calls of `RustEvaluator`, its bridge's encoding, natives that name its evaluator class, and its
+own Pure repository, suites and manifests.
 
 ## Surface
 
