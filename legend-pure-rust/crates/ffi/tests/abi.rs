@@ -769,3 +769,27 @@ fn a_failure_the_host_reports_keeps_its_kind() {
         assert!(pure_last_failure().is_null());
     }
 }
+
+/// Freeing a context releases every Rust object the host still holds and
+/// the host nodes they refer to (a Rust object over a host node would
+/// otherwise keep the node, the context's shared state and the host
+/// alive in a cycle): the host is told, from inside the free, that the
+/// node died.
+#[test]
+fn freeing_a_context_releases_an_unreleased_object_over_a_host_node() {
+    let driver = Driver::new(graph());
+    driver.new_object(
+        "my::Holder",
+        &[("node", vec![node(2, m3_paths::SIMPLE_FUNCTION_EXPRESSION)])],
+    );
+    assert_eq!(driver.live(), 2, "the object and the node it holds");
+    let Driver { table, ctx } = driver;
+    // SAFETY: the context is live and passed to nothing after this.
+    assert_eq!(unsafe { pure_context_free(ctx) }, status::OK);
+    assert!(pure_last_failure().is_null());
+    assert_eq!(
+        *table.forgotten.borrow(),
+        vec![2],
+        "the node died with the context and its host was told"
+    );
+}

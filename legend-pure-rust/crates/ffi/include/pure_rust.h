@@ -66,10 +66,11 @@
  *    object again later may use a fresh id.
  *
  * 6. Callbacks happen only from inside an entered call, on the thread
- *    that made it, and never after pure_context_free. A callback must
- *    not call back into the context it was made from (rule 4); it may
- *    call the pure_reply_* functions on the reply it was handed, which
- *    is the only way to answer, and it may read pure_abi_version.
+ *    that made it (forget also from inside pure_context_free), and never
+ *    after pure_context_free returns. A callback must not call back into
+ *    the context it was made from (rule 4); it may call the pure_reply_*
+ *    functions on the reply it was handed, which is the only way to
+ *    answer, and it may read pure_abi_version.
  *
  * 7. The ABI is versioned by one function. PURE_ABI_VERSION below is the
  *    version this header describes; pure_abi_version() is the version the
@@ -385,9 +386,11 @@ uint32_t pure_abi_version(void);
 int32_t pure_context_new(const pure_host_table *table, pure_context **out);
 
 /* Release a context: every Rust object the host still holds a handle to,
- * the model, the state. Fails (and releases nothing) while a call on the
- * context is running. After it returns OK no callback is made and `ctx`
- * is never passed again. NULL is accepted and does nothing. */
+ * the model, the state. The host nodes that die with them are reported
+ * through `forget` before it returns (rule 5), the last callback the host
+ * sees. Fails (and releases nothing) while a call on the context is
+ * running. After it returns OK no callback is made and `ctx` is never
+ * passed again. NULL is accepted and does nothing. */
 int32_t pure_context_free(pure_context *ctx);
 
 /* Run `function` (a lambda, a native function or a function definition,

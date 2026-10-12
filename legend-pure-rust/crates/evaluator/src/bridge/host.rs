@@ -237,6 +237,43 @@ impl HostShared {
         }
     }
 
+    /// The end of the context: drop every Rust object the host still
+    /// holds, empty the caches and local slots of every host node still
+    /// alive, and tell the host which of its nodes died.
+    ///
+    /// Every host node holds this shared state, and the handle table
+    /// holds the Rust objects the host keeps: a Rust object that refers
+    /// to a host node closes a cycle (the object, the node, this state,
+    /// the table), and so do two nodes whose caches hold each other. The
+    /// owner of the state breaks them here when it ends; nothing then
+    /// keeps the state, and with it the host, alive past its owner.
+    pub fn release_all(&self) {
+        let handles = std::mem::take(&mut *self.handles.borrow_mut());
+        drop(handles);
+        let live: Vec<ObjectHandle> = self
+            .nodes
+            .borrow()
+            .values()
+            .filter_map(Weak::upgrade)
+            .collect();
+        for handle in &live {
+            let emptied = match handle.try_borrow_mut() {
+                Ok(mut entry) => match &mut *entry {
+                    HeapEntry::Typed(obj) => obj
+                        .as_any_mut()
+                        .downcast_mut::<HostNode>()
+                        .map(HostNode::empty),
+                    HeapEntry::Dynamic(_) => None,
+                },
+                Err(_) => None,
+            };
+            drop(emptied);
+        }
+        drop(live);
+        drop(self.last_error.borrow_mut().take());
+        self.end_execution();
+    }
+
     /// Drop the identity entries of the nodes dropped since the last call
     /// and keep their ids for the host to forget. An id the host
     /// described again in between (a new node under the same id, since
@@ -467,6 +504,21 @@ impl HostNode {
     /// it ends or those nodes would never be freed.
     pub fn clear_cache(&self) {
         self.cache.borrow_mut().clear();
+    }
+
+    /// Take every value the node holds (its cache and its local slots),
+    /// for the caller to drop once it no longer borrows the node.
+    #[allow(clippy::type_complexity)]
+    fn empty(
+        &mut self,
+    ) -> (
+        HashMap<SmolStr, PVector<Value>>,
+        HashMap<SmolStr, PVector<Value>>,
+    ) {
+        (
+            std::mem::take(self.cache.get_mut()),
+            std::mem::take(&mut self.local),
+        )
     }
 
     /// The node's property keys, read once.

@@ -17,7 +17,7 @@
 //! call whose lowering grows the model.
 
 use legend_pure_evaluator::builders::on_both_paths;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -74,10 +74,18 @@ fn string(s: &str) -> Description {
 }
 
 /// A host whose graph is a table: node id → property → descriptions.
+/// It records the ids it is told to forget, and its own drop.
 #[derive(Default)]
 struct TableHost {
     nodes: HashMap<i64, HashMap<&'static str, Vec<Description>>>,
     forgotten: Rc<RefCell<Vec<i64>>>,
+    dropped: Rc<Cell<bool>>,
+}
+
+impl Drop for TableHost {
+    fn drop(&mut self) {
+        self.dropped.set(true);
+    }
 }
 
 impl TableHost {
@@ -378,5 +386,40 @@ fn a_call_ends_over_the_nodes_it_read_and_the_nodes_that_died() {
         drop(second);
         context.start(&function, &[]).unwrap();
         assert!(forgotten.borrow().contains(&40));
+    });
+}
+
+#[test]
+fn freeing_a_context_frees_its_host_though_the_host_still_holds_a_rust_object_over_a_host_node() {
+    on_both_paths(|| {
+        let host = graph();
+        let dropped = Rc::clone(&host.dropped);
+        let forgotten = Rc::clone(&host.forgotten);
+        let mut context = context(host);
+        let held = description_to_value(context.shared(), node(6, m3_paths::MULTIPLICITY)).unwrap();
+        let Value::Object(node_six) = &held else {
+            panic!("a host node: {held:?}")
+        };
+        // Read outside any call: node 6's cache holds node 7 until a call ends.
+        assert_eq!(
+            context
+                .property_values(node_six, "lowerBound")
+                .unwrap()
+                .len(),
+            1
+        );
+        // A Rust object the host holds and never releases, over node 6.
+        context
+            .new_object("my::Holder", &[("node".to_string(), vec![held.clone()])])
+            .unwrap();
+        drop(held);
+        assert!(!dropped.get());
+        drop(context);
+        assert!(dropped.get(), "the host outlived its context");
+        assert!(
+            forgotten.borrow().contains(&6) && forgotten.borrow().contains(&7),
+            "the host is told which nodes died with the context: {:?}",
+            forgotten.borrow()
+        );
     });
 }

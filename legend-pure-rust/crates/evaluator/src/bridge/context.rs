@@ -509,3 +509,17 @@ impl BridgeContext {
         self.shared.live_count()
     }
 }
+
+impl Drop for BridgeContext {
+    /// The context owns the state it shares with every host node; a Rust
+    /// object the host still holds that refers to a host node would keep
+    /// that state, and the host behind it, alive in a cycle past this
+    /// point (see [`HostShared::release_all`]). Freeing the context drops
+    /// the evaluator's state and the closure cache first, then breaks the
+    /// cycles and tells the host which of its nodes died.
+    fn drop(&mut self) {
+        self.closures.clear();
+        drop(std::mem::take(&mut self.state));
+        self.shared.release_all();
+    }
+}
