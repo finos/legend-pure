@@ -341,15 +341,43 @@ The compiled-host modes stay flat. So does the expression benchmark on the inter
 - The fixed 1.0 to 1.3 µs of lowering setup per call, with no host read, is not a host read.
   It stays until the lowering's per-call setup changes.
 
-**Not explained by these measurements.** The interpreted-host Rust modes slow down as calls
-accumulate in a JVM: +49 µs per test from 26 to 451 calls per test, the same in both transports.
+**The interpreted-host slowdown, explained and fixed (later the same day).** The tables above
+were taken before the fix: the interpreted-host Rust modes slowed down as calls accumulated in a
+JVM, +49 µs per test from 26 to 451 calls per test in both transports. Cause, measured with
+per-call traces since removed: every Rust object returned to the interpreted engine as a
+`RustCoreInstance` proxy was held forever (the bridges kept proxies in a strong map, and the
+interpreted engine never closes them; the compiled host does, which is why it stayed flat), each
+leaked object kept its host nodes alive in Rust, and `HostShared::end_execution` walked every live
+host node on every call, about 7.5 ns per node.
 
-- What stays flat: the Rust split, the compiled-host modes, and the expression benchmark's
-  interpreted-host modes (function nodes, not lambdas).
-- So the rise is outside lowering and run, in what both transports share for a lambda on the
-  interpreted host.
-- `HostShared::end_execution` (`crates/evaluator/src/bridge/host.rs`) walks every live host node
-  on every call. The live node count was not measured.
+| Calls per test | 26 | 221 | 451 |
+|---|---:|---:|---:|
+| Handles held, before (never fall) | 728 | 6,188 | 12,628 |
+| Live host nodes, before | 313 | 2,653 | 5,413 |
+| `end_execution` per call, before | 2.8 µs | 19.5 µs | 39.5 µs |
+| Handles after, peak between collections / at the end | 364 / 0 | 884 / 0 | 1,800 / 0 |
+| `end_execution` per call, after | 0.4 to 0.7 µs | 0.4 to 0.7 µs | 0.4 to 0.7 µs |
+
+The fix: `end_execution` visits only the nodes whose cache filled during the call and the nodes
+that died (`crates/evaluator/src/bridge/host.rs`), and both bridges hold proxies through weak
+references, releasing a collected proxy's handle on the evaluator's next call
+(`legend-pure-rust-api`'s `RustProxies`). The same change resolves the lowering's fifteen M3 ids
+once per context instead of once per call: the 1.0 to 1.3 µs of lowering setup above falls to
+about 40 ns on the twelve expressions and 208 ns on the corpus.
+
+The corpus after the fix, median of per-test medians, µs, release libraries, JDK 25, one clean
+run per column:
+
+| Calls per test | 26 | 221 | 451 |
+|---|---:|---:|---:|
+| interpreted, own adapter | 46.3 | 42.1 | 42.0 |
+| interpreted, `Rust_JNI` | 50.6 | 50.2 | 49.6 |
+| interpreted, `Rust_FFM` | 43.8 | 42.5 | 42.2 |
+| compiled, `Rust_JNI` | about 182 to 187 | | |
+| compiled, `Rust_FFM` | about 79 to 84 | | |
+
+`Rust_FFM` is at parity with the interpreted engine's own adapter. On the twelve expressions the
+median per call falls from 2,056 to 996 ns over FFM and from 4,557 to 3,555 ns over JNI.
 
 ## Reproduce
 

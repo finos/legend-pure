@@ -1325,6 +1325,17 @@ Outside `legend-pure-rust/`, a two-line pointer in the root `CLAUDE.md`
 and the row in `docs/README.md` remain; the other documents return to
 finos master.
 
+**Two defects the five-way benchmark found, fixed (2026-10-11).** Rust objects returned to the
+interpreted engine were never released (the bridges held their proxies strongly and the
+interpreted engine never closes them), so their host nodes stayed alive and `end_execution`,
+which walked every live host node per call, grew with every call: +49 µs per PCT test between 26
+and 451 calls. Now `end_execution` visits only the nodes the call touched and the nodes that
+died, and proxies are held weakly, a collected one releasing its handle on the evaluator's next
+call (`RustProxies` in `-api`). And the lowering resolved fifteen M3 ids by path on every call
+(about 1 µs); the context now resolves them once and again only when the model grows. After both,
+a PCT test on the interpreted engine takes 42 µs over FFM and 50 µs over JNI against 42 µs for the
+engine's own adapter, flat at any call count (`docs/benchmarks-2026-10-11.md`).
+
 **Phase 3 — deletion.** When legend-engine's floor reaches 25: delete
 `crates/jni`, the JNI module, `evalRust` and the `Rust_JNI` adapter with
 its manifests and reports; the shared module and the FFM module remain,
