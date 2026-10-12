@@ -38,6 +38,8 @@ RUSTDOCFLAGS=-Dwarnings cargo doc --workspace --no-deps
 CI (`.github/workflows/rust.yml` at the repository root) runs these plus
 `cargo build --workspace` and a separate doctest pass.
 
+Function and lambda bodies run on the body executor (`crates/evaluator/src/exec/`, plan Step 2d), on by default; `LEGEND_PURE_RUST_EXEC=off` (read once per process, also by the cdylibs under Maven) puts every body back on the tree walker, and every evaluator integration test runs both ways through `builders::on_both_paths`.
+
 ## PCT through the Java harness (Step 2)
 
 The platform PCT corpus runs through the Rust evaluator as the `Rust_JNI`

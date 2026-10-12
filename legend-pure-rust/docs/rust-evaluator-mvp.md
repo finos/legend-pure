@@ -1554,6 +1554,70 @@ corpus benchmark no slower than R0 on any line (beyond the measured spread),
 with the gain on e05/e06 and the lambda hot-path lines reported. Then the
 switch defaults on.
 
+**Part R, as shipped (2026-10-11).** `crates/evaluator/src/exec/` (`build`,
+`run`, `lazy`); the switch is `LEGEND_PURE_RUST_EXEC` (on/off, read once),
+`Evaluator::set_exec`, default on. Ops as built: `Const`, `Local`,
+`Captured`, `Let`, `If`/`And`/`Or`, `CallPure`, `CallNative` (eager),
+`CallLazyNative`, `Property`, `Lambda`, `Collection`, `Fallback`; no
+`CallValue` (`eval` is an eager native) and no `Block`. Where it differs
+from the shape above: slots live in the `VariableContext` (an invocation
+binds captures then parameters as the tree walker does; a parameter or
+statement-level `let` is read by its position from the invocation's first
+binding, a capture by name among the captures), so the tree walker under
+a `Fallback`, lazy natives and `getAll` see every name with no view to
+build; a body where a binding could land elsewhere (a `let` that is not a
+statement, a computed name) is not built and runs on the tree walker
+whole. A lazy native forcing one of its argument expressions runs that
+argument's node. Control forms and eager natives are recognised by the
+native's own declaration (`NativeFunction::arg_mode`), reached by element
+or key as dispatch reaches it. R2: the Rust model has no element for a
+property, so a `PropertyCall` records its declaring class or association
+(`FunctionCallData::owner`, resolved only against what is already known);
+nothing reads it yet, the heap reading every property by name. R3: 53
+natives under 69 keys eager, 4 control forms, 84 keys lazy (plus/minus/times
+fold a collection literal while forcing it; `cast` reads its type
+argument's expression; constructors, `copy`, `getAll`, `assert` stay lazy).
+Every evaluator integration test runs both ways (`builders::on_both_paths`);
+`cargo test --workspace` went from 638 to 655 passing (3 ignored). The
+eight PCT numbers were unchanged with the switch on, then with it on by
+default, on both hosts and both transports (339/346, 133/137, compiled
+340/346, 133/137), and both manifest rebases left the manifests
+byte-identical. Measured as R0's tree (`517eff6e079`) and Gate R built
+side by side and run alternately on one machine (release; the Rust lines
+five runs each, median [range], ns; the corpus three rounds at the tool's
+defaults, median of per-test medians in µs [range], with the Rust run
+summed over the corpus):
+
+| Line | R0 | Gate R |
+|---|---|---|
+| `literal 1` | 13 [13–13] | 11 [11–22] |
+| `1 + 2` | 61 [61–61] | 58 [56–109] |
+| `range(0,100,1)->size()` | 725 [721–744] | 674 [665–929] |
+| `range->filter(x \| true)->size()` | 2,947 [2,932–2,959] | 2,678 [2,661–2,695] |
+| `range->filter(x \| $x->mod(2) == 0)->size()` | 11,078 [11,061–11,225] | 4,989 [4,947–5,007] |
+| `range->map(x \| $x)->size()` | 3,265 [3,253–3,287] | 2,544 [2,532–2,554] |
+| `range->map(x \| $x * 2)->size()` | 8,122 [8,085–8,166] | 6,654 [6,645–6,660] |
+| `[100 literals]->size()` | 1,003 [984–1,035] | 33 [32–35] |
+| e01 / e02 / e03 / e04 | 59 / 158 / 125 / 113 | 56 / 143 / 63 / 48 |
+| e05 `map` then `fold` | 1,097 [1,069–1,117] | 799 [786–822] |
+| e06 `range`, `filter`, `size` | 11,098 [11,082–11,141] | 5,002 [4,992–5,013] |
+| e07 / e08 / e09 / e10 / e11 / e12 | 270 / 173 / 85 / 247 / 380 / 191 | 127 / 104 / 52 / 217 / 207 / 106 |
+| corpus, interpreted `Rust_JNI` | 52.5 [52.4–52.7]; run 0.474 ms | 51.6 [51.2–52.3]; run 0.444 ms |
+| corpus, interpreted `Rust_FFM` | 44.2 [44.1–44.5]; run 0.379 ms | 43.6 [43.4–44.5]; run 0.352 ms |
+| corpus, compiled `Rust_JNI` | 192.3 [187.9–195.5] | 190.4 [189.3–190.8] |
+| corpus, compiled `Rust_FFM` | 84.4 [84.3–85.2] | 85.1 [84.0–85.5] |
+
+e06's lambda now costs about 43 ns per element against about 104 at R0;
+through FFM e06 takes 6,062 ns a call against 9,563 (the Rust run 5,084
+against 8,709) and e05 875 ns of run against 1,042. The compiled host's
+corpus lines do not move, as intended: its lambdas name no definition and
+stay on the tree walker, and nothing was added to its per-call lowering
+(76.8 against 77.6 µs over JNI, 31.8 against 31.6 over FFM). The
+first R0 measurements of the session, before anything changed, were
+50.0, 42.5, 177.2 and 83.3 µs on the four corpus lines; the machine drifted
+by up to 9 % during the session, which is why the gate compares the two
+trees run alternately.
+
 #### Part T: types (representations and fast paths)
 
 **T0. Coverage, then decide.** Count, over the lowered bodies the corpus runs

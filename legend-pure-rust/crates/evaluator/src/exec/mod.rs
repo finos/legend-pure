@@ -67,7 +67,7 @@ pub const ENV_VAR: &str = "LEGEND_PURE_RUST_EXEC";
 
 /// Whether the body executor runs when neither the environment nor the
 /// creator of an evaluator chooses.
-pub const DEFAULT_ENABLED: bool = false;
+pub const DEFAULT_ENABLED: bool = true;
 
 thread_local! {
     static SCOPED_DEFAULT: Cell<Option<bool>> = const { Cell::new(None) };
