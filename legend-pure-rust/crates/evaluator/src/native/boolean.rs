@@ -25,7 +25,7 @@ use crate::error::PureException;
 use crate::native::{
     ArgMode, Control, EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args,
 };
-use crate::native::{Arity, force_then_values};
+use crate::native::{Arity, Intrinsic, force_then_values};
 use crate::value::Value;
 
 /// Pure `and(Boolean[1], Boolean[1]): Boolean[1]` — short-circuit.
@@ -87,6 +87,10 @@ pub struct Not;
 impl NativeFunction for Not {
     fn arg_mode(&self) -> ArgMode {
         ArgMode::Eager(Arity::Exactly(1))
+    }
+
+    fn intrinsic(&self) -> Option<Intrinsic> {
+        Some(Intrinsic::Not)
     }
 
     fn execute(

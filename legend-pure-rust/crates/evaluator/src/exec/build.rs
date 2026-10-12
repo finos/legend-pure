@@ -18,13 +18,20 @@
 //! the call names one, by registry key otherwise. A native's declared
 //! [`ArgMode`] decides its operation. Variables resolve, in program
 //! order, to the latest binder of their name in the body, or to a lookup
-//! by name when the body binds none.
+//! by name when the body binds none. An eager native that declares an
+//! intrinsic becomes one when its arguments' static representations
+//! select it; a representation changes through [`Op::Unbox`] and
+//! [`Op::Box`] where a consumer needs another than its operand holds.
 
 use legend_pure_metamodel::model::Element;
 use legend_pure_metamodel::types::{ExprKind, FunctionCallData, Parameter, TypeExpr, ValueSpec};
 use smol_str::SmolStr;
 
-use super::{Body, BodyKind, LambdaBody, LambdaOp, NodeIdx, Op, Slot, SlotInfo, SlotKind, Thunk};
+use super::types::rep_of_type;
+use super::{
+    Body, BodyKind, IntrinsicOp, LambdaBody, LambdaOp, NodeIdx, Op, Rep, Slot, SlotInfo, SlotKind,
+    Thunk, rep_of,
+};
 use crate::eval::Evaluator;
 use crate::hooks::EvalHooks;
 use crate::native::{ArgMode, Control};
@@ -49,10 +56,7 @@ impl<H: EvalHooks> Evaluator<'_, H> {
         statements: &[ValueSpec],
     ) -> Option<Body> {
         let mut builder = Builder::new(self, BodyKind::Function);
-        for p in parameters {
-            let slot = builder.bind(p.name.clone(), SlotKind::Parameter);
-            builder.body.parameters.push(slot);
-        }
+        builder.parameters(parameters);
         builder.statements(statements)
     }
 
@@ -67,13 +71,10 @@ impl<H: EvalHooks> Evaluator<'_, H> {
         let mut builder = Builder::new(self, BodyKind::Lambda);
         let free = crate::eval::free_variable_names(statements, parameters, &|d| self.is_let(d));
         for name in free.iter() {
-            let slot = builder.bind(name.clone(), SlotKind::Capture);
+            let slot = builder.bind(name.clone(), SlotKind::Capture, Rep::Value);
             builder.body.captures.push(slot);
         }
-        for p in parameters {
-            let slot = builder.bind(p.name.clone(), SlotKind::Parameter);
-            builder.body.parameters.push(slot);
-        }
+        builder.parameters(parameters);
         builder.statements(statements)
     }
 
@@ -146,6 +147,7 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
                 statements: Vec::new(),
                 spans: Vec::new(),
                 fallbacks: 0,
+                intrinsics: 0,
             },
             visible: Vec::new(),
             refused: false,
@@ -160,11 +162,20 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
         (!self.refused).then_some(self.body)
     }
 
-    fn bind(&mut self, name: SmolStr, kind: SlotKind) -> Slot {
+    fn parameters(&mut self, parameters: &[Parameter]) {
+        for p in parameters {
+            let rep = rep_of_type(&p.type_expr, &p.multiplicity);
+            let slot = self.bind(p.name.clone(), SlotKind::Parameter, rep);
+            self.body.parameters.push(slot);
+        }
+    }
+
+    fn bind(&mut self, name: SmolStr, kind: SlotKind, rep: Rep) -> Slot {
         let slot = Slot::try_from(self.body.slots.len()).expect("slot count fits u32");
         self.body.slots.push(SlotInfo {
             name: name.clone(),
             kind,
+            rep,
         });
         self.body.names.push((name.clone(), slot));
         self.visible.push((name, slot));
@@ -180,15 +191,49 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
     }
 
     fn push(&mut self, op: Op, spec: &ValueSpec) -> NodeIdx {
+        self.push_rep(op, spec, Rep::Value)
+    }
+
+    fn push_rep(&mut self, op: Op, spec: &ValueSpec, rep: Rep) -> NodeIdx {
         let span = u32::try_from(self.body.spans.len()).expect("span count fits u32");
         self.body.spans.push(spec.source_info.clone());
         let idx = NodeIdx::try_from(self.body.nodes.len()).expect("node count fits u32");
         self.body.nodes.push(super::Node {
             op,
             ty: spec.type_info.clone(),
+            rep,
             span,
         });
         idx
+    }
+
+    /// A node over `idx` holding its value in `rep`: `idx` itself when it
+    /// does, a constant read unboxed, else an [`Op::Box`] or [`Op::Unbox`]
+    /// with the same type and source information.
+    fn in_rep(&mut self, idx: NodeIdx, rep: Rep) -> NodeIdx {
+        let node = &mut self.body.nodes[idx as usize];
+        if node.rep == rep {
+            return idx;
+        }
+        let (op, ty, span) = match (node.rep, rep) {
+            (_, Rep::Value) => (Op::Box(idx), node.ty.clone(), node.span),
+            (Rep::Value, _) => {
+                if let Op::Const(value) = &node.op
+                    && holds(value, rep)
+                {
+                    node.rep = rep;
+                    return idx;
+                }
+                (Op::Unbox(idx), node.ty.clone(), node.span)
+            }
+            _ => {
+                let boxed = self.in_rep(idx, Rep::Value);
+                return self.in_rep(boxed, rep);
+            }
+        };
+        let at = NodeIdx::try_from(self.body.nodes.len()).expect("node count fits u32");
+        self.body.nodes.push(super::Node { op, ty, rep, span });
+        at
     }
 
     fn fallback(&mut self, spec: &ValueSpec) -> NodeIdx {
@@ -199,7 +244,15 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
         self.push(Op::Fallback(spec.clone()), spec)
     }
 
+    /// The node of an expression, its value boxed.
     fn expr(&mut self, spec: &ValueSpec, statement: bool) -> NodeIdx {
+        let idx = self.expr_in_rep(spec, statement);
+        self.in_rep(idx, Rep::Value)
+    }
+
+    /// The node of an expression, its value in the representation the
+    /// node holds it in.
+    fn expr_in_rep(&mut self, spec: &ValueSpec, statement: bool) -> NodeIdx {
         let op = match &*spec.kind {
             ExprKind::IntegerLiteral(n) => Op::Const(Value::Integer(*n)),
             ExprKind::FloatLiteral(n) => Op::Const(Value::Float(*n)),
@@ -285,7 +338,8 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
                         }
                     };
                     let value = self.expr(&args[1], false);
-                    let slot = self.bind(name, SlotKind::Let);
+                    let rep = rep_of(args[1].type_info.as_deref());
+                    let slot = self.bind(name, SlotKind::Let, rep);
                     Op::Let {
                         slot,
                         value,
@@ -293,7 +347,7 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
                     }
                 }
                 ArgMode::Control(Control::If) if args.len() == 3 => {
-                    let cond = self.thunk(&args[0]);
+                    let cond = self.condition(&args[0]);
                     let then = self.thunk(&args[1]);
                     let els = self.thunk(&args[2]);
                     Op::If {
@@ -304,8 +358,8 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
                     }
                 }
                 ArgMode::Control(Control::And) if args.len() == 2 => {
-                    let lhs = self.expr(&args[0], false);
-                    let rhs = self.expr(&args[1], false);
+                    let lhs = self.expr_in_rep(&args[0], false);
+                    let rhs = self.expr_in_rep(&args[1], false);
                     Op::And {
                         lhs,
                         rhs,
@@ -313,8 +367,8 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
                     }
                 }
                 ArgMode::Control(Control::Or) if args.len() == 2 => {
-                    let lhs = self.expr(&args[0], false);
-                    let rhs = self.expr(&args[1], false);
+                    let lhs = self.expr_in_rep(&args[0], false);
+                    let rhs = self.expr_in_rep(&args[1], false);
                     Op::Or {
                         lhs,
                         rhs,
@@ -322,7 +376,42 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
                     }
                 }
                 ArgMode::Eager(arity) if arity.accepts(args.len()) => {
-                    let nodes = args.iter().map(|a| self.expr(a, false)).collect();
+                    let nodes: Vec<NodeIdx> =
+                        args.iter().map(|a| self.expr_in_rep(a, false)).collect();
+                    let selected = self
+                        .ev
+                        .natives
+                        .at(position)
+                        .intrinsic()
+                        .and_then(|declared| {
+                            let reps: Vec<Rep> = args
+                                .iter()
+                                .map(|a| rep_of(a.type_info.as_deref()))
+                                .collect();
+                            IntrinsicOp::select(declared, &reps)
+                        });
+                    if let Some(op) = selected {
+                        let operands = nodes
+                            .iter()
+                            .enumerate()
+                            .map(|(i, &node)| self.in_rep(node, op.operand_rep(i)))
+                            .collect();
+                        self.body.intrinsics += 1;
+                        return self.push_rep(
+                            Op::Intrinsic {
+                                op,
+                                native: position,
+                                call: key,
+                                args: operands,
+                            },
+                            spec,
+                            op.result_rep(),
+                        );
+                    }
+                    let nodes = nodes
+                        .into_iter()
+                        .map(|node| self.in_rep(node, Rep::Value))
+                        .collect();
                     Op::CallNative {
                         native: position,
                         call: key,
@@ -363,6 +452,15 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
             crate::eval::push_flattened(&mut values, value.clone());
         }
         Some(crate::eval::collection_value(values))
+    }
+
+    /// The condition of an `if`: as [`thunk`](Self::thunk), its value in
+    /// the representation its node holds it in.
+    fn condition(&mut self, spec: &ValueSpec) -> Thunk {
+        if matches!(&*spec.kind, ExprKind::Lambda { parameters, .. } if parameters.is_empty()) {
+            return self.thunk(spec);
+        }
+        Thunk::Value(self.expr_in_rep(spec, false))
     }
 
     /// An argument forced through `force_thunk`: a lambda without
@@ -435,4 +533,15 @@ fn visit_outside_lambdas(spec: &ValueSpec, visit: &mut dyn FnMut(&ValueSpec)) {
         | ExprKind::ColSpecArrayLiteral { .. }
         | ExprKind::ColSpecLiteral { .. } => {}
     }
+}
+
+/// Whether a value is held in `rep` unboxed.
+fn holds(value: &Value, rep: Rep) -> bool {
+    matches!(
+        (value, rep),
+        (Value::Integer(_), Rep::I64)
+            | (Value::Float(_), Rep::F64)
+            | (Value::Boolean(_), Rep::Bool)
+            | (Value::String(_), Rep::Str)
+    )
 }

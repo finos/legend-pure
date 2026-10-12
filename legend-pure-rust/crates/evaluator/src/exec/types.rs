@@ -48,16 +48,21 @@ pub enum Rep {
 /// the expression carried it, never inferred.
 #[must_use]
 pub fn rep_of(ty: Option<&ResolvedType>) -> Rep {
-    let Some(ty) = ty else {
-        return Rep::Value;
-    };
+    ty.map_or(Rep::Value, |ty| {
+        rep_of_type(&ty.type_expr, &ty.multiplicity)
+    })
+}
+
+/// [`rep_of`] for a type and multiplicity held apart, as a parameter
+/// declares them.
+pub(crate) fn rep_of_type(type_expr: &TypeExpr, multiplicity: &Multiplicity) -> Rep {
     let TypeExpr::Named {
         element,
         type_arguments,
         multiplicity_arguments,
         value_arguments,
         ..
-    } = &ty.type_expr
+    } = type_expr
     else {
         return Rep::Value;
     };
@@ -67,7 +72,7 @@ pub fn rep_of(ty: Option<&ResolvedType>) -> Rep {
     {
         return Rep::Value;
     }
-    let optional = match ty.multiplicity {
+    let optional = match multiplicity {
         Multiplicity::PureOne
         | Multiplicity::Range {
             lower: 1,

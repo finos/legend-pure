@@ -602,6 +602,9 @@ fn ops(body: &Body) -> Vec<&'static str> {
             Op::Property { .. } => "Property",
             Op::Lambda(_) => "Lambda",
             Op::Collection(_) => "Collection",
+            Op::Intrinsic { .. } => "Intrinsic",
+            Op::Box(_) => "Box",
+            Op::Unbox(_) => "Unbox",
             Op::Fallback(_) => "Fallback",
         })
         .collect()
@@ -648,13 +651,16 @@ fn eager_natives_take_forced_arguments_and_lazy_ones_their_expressions() {
             "CallNative",
             "Lambda",
             "CallNative",
-            "CallNative"
-        ]
+            "Intrinsic",
+            "Box"
+        ],
+        "size counts any value: an intrinsic whatever its argument's type"
     );
     let predicate = lambdas(&body);
     assert_eq!(
         ops(predicate[0]),
-        ["Local", "Const", "CallNative", "Const", "CallNative"]
+        ["Local", "Const", "CallNative", "Const", "CallNative"],
+        "an untyped equal stays on its native"
     );
 
     let (model, ids) = model_with(&[("sum", vec![int("a")])], |_| {
@@ -779,5 +785,211 @@ fn coverage_counts_every_expression_lambda_bodies_included() {
             typed: 4,
             unboxed: 3
         }
+    );
+}
+
+fn one_int(spec: ValueSpec) -> ValueSpec {
+    expr::typed(spec, named(INTEGER_ID), Multiplicity::PureOne)
+}
+
+fn one_bool(spec: ValueSpec) -> ValueSpec {
+    expr::typed(
+        spec,
+        named(legend_pure_metamodel::bootstrap::BOOLEAN_ID),
+        Multiplicity::PureOne,
+    )
+}
+
+#[test]
+fn a_typed_call_of_a_declaring_native_runs_as_an_intrinsic_between_unbox_and_box() {
+    use legend_pure_evaluator::exec::{IntrinsicOp, Num, Rep};
+    const NOT: &str = "not_Boolean_1__Boolean_1_";
+    const LESS_THAN: &str = "lessThan_Number_1__Number_1__Boolean_1_";
+    let below = |n| {
+        one_bool(expr::call(
+            LESS_THAN,
+            vec![one_int(expr::var("x")), one_int(expr::int(n))],
+        ))
+    };
+    let (model, ids) = model_with(
+        &[
+            ("even", vec![int("x")]),
+            ("size", vec![int("x")]),
+            ("between", vec![int("x")]),
+        ],
+        |_| {
+            vec![
+                vec![one_bool(expr::call(
+                    EQUAL,
+                    vec![
+                        one_int(expr::call(
+                            MOD,
+                            vec![one_int(expr::var("x")), one_int(expr::int(2))],
+                        )),
+                        one_int(expr::int(0)),
+                    ],
+                ))],
+                vec![expr::call(
+                    IF,
+                    vec![
+                        one_bool(expr::call(NOT, vec![below(3)])),
+                        thunk(expr::string("big")),
+                        thunk(expr::string("small")),
+                    ],
+                )],
+                vec![expr::call(
+                    AND,
+                    vec![
+                        one_bool(expr::call(NOT, vec![below(3)])),
+                        one_bool(expr::call(OR, vec![below(7), below(-1)])),
+                    ],
+                )],
+            ]
+        },
+    );
+    let registry = registry();
+    for (id, x, expected) in [
+        (ids[0], 4, Value::Boolean(true)),
+        (ids[0], 7, Value::Boolean(false)),
+        (ids[1], 1, Value::String("small".into())),
+        (ids[1], 5, Value::String("big".into())),
+        (ids[2], 5, Value::Boolean(true)),
+        (ids[2], 9, Value::Boolean(false)),
+    ] {
+        let (outcome, _) = same_on_both(&model, &registry, |ev| {
+            ev.call_user_function_by_id_with_args(id, &[Value::Integer(x)])
+        });
+        assert_eq!(outcome, Ok(expected));
+    }
+    let (_, ev) = same_on_both(&model, &registry, |ev| {
+        for &id in &ids {
+            ev.call_user_function_by_id_with_args(id, &[Value::Integer(1)])?;
+        }
+        Ok(Value::Unit)
+    });
+
+    let even = built(&ev, ids[0]);
+    assert_eq!(even.slots()[0].rep, Rep::I64, "x: Integer[1]");
+    assert_eq!(
+        ops(&even),
+        [
+            "Local",
+            "Const",
+            "CallNative",
+            "Const",
+            "Unbox",
+            "Intrinsic",
+            "Box"
+        ],
+        "mod can fail and stays a native; equal reads its result unboxed"
+    );
+    let reps: Vec<Rep> = even.nodes().iter().map(|n| n.rep).collect();
+    assert_eq!(
+        reps,
+        [
+            Rep::Value,
+            Rep::Value,
+            Rep::Value,
+            Rep::I64,
+            Rep::I64,
+            Rep::Bool,
+            Rep::Value
+        ],
+        "the constant an intrinsic reads is held unboxed"
+    );
+    assert!(matches!(
+        even.nodes()[5].op,
+        Op::Intrinsic {
+            op: IntrinsicOp::Equal(Rep::I64),
+            ..
+        }
+    ));
+
+    let size = built(&ev, ids[1]);
+    assert_eq!(
+        ops(&size),
+        [
+            "Local",
+            "Const",
+            "Unbox",
+            "Intrinsic",
+            "Intrinsic",
+            "Lambda",
+            "Lambda",
+            "If"
+        ],
+        "an intrinsic reads another's result unboxed, and so does if"
+    );
+    assert!(matches!(
+        size.nodes()[3].op,
+        Op::Intrinsic {
+            op: IntrinsicOp::LessThan(Num::I64, Num::I64),
+            ..
+        }
+    ));
+    assert_eq!(size.intrinsics(), 2);
+
+    let between = built(&ev, ids[2]);
+    assert_eq!(between.intrinsics(), 4);
+    assert!(
+        !ops(&between).contains(&"Box"),
+        "and and or read their operands unboxed: {:?}",
+        ops(&between)
+    );
+}
+
+#[test]
+fn an_untyped_call_stays_on_its_native() {
+    const NOT: &str = "not_Boolean_1__Boolean_1_";
+    let (model, ids) = model_with(&[("untyped", vec![int("x")])], |_| {
+        vec![vec![expr::call(
+            NOT,
+            vec![expr::call(EQUAL, vec![expr::var("x"), expr::int(1)])],
+        )]]
+    });
+    let registry = registry();
+    let (outcome, ev) = same_on_both(&model, &registry, |ev| {
+        ev.call_user_function_by_id_with_args(ids[0], &[Value::Integer(1)])
+    });
+    assert_eq!(outcome, Ok(Value::Boolean(false)));
+    let body = built(&ev, ids[0]);
+    assert_eq!(body.intrinsics(), 0);
+    assert_eq!(ops(&body), ["Local", "Const", "CallNative", "CallNative"]);
+}
+
+#[test]
+fn an_operand_that_is_not_what_its_type_promised_goes_to_the_native() {
+    const LESS_THAN: &str = "lessThan_Number_1__Number_1__Boolean_1_";
+    let (model, ids) = model_with(&[("lying", vec![int("x")])], |_| {
+        vec![vec![
+            let_("y", one_int(expr::var("x"))),
+            one_bool(expr::call(
+                LESS_THAN,
+                vec![one_int(expr::var("y")), one_int(expr::int(3))],
+            )),
+        ]]
+    });
+    let registry = registry();
+    for (x, expected) in [
+        (Value::Float(2.5), Ok(Value::Boolean(true))),
+        (Value::Integer(4), Ok(Value::Boolean(false))),
+    ] {
+        let (outcome, _) = same_on_both(&model, &registry, |ev| {
+            ev.call_user_function_by_id_with_args(ids[0], std::slice::from_ref(&x))
+        });
+        assert_eq!(outcome, expected);
+    }
+    let (outcome, ev) = same_on_both(&model, &registry, |ev| {
+        ev.call_user_function_by_id_with_args(ids[0], &[Value::String("2".into())])
+    });
+    let err = outcome.expect_err("a string does not compare with an integer");
+    assert!(err.contains("Cannot compare String and Integer"), "{err}");
+    assert!(err.contains(LESS_THAN), "the native's frame: {err}");
+    let body = built(&ev, ids[0]);
+    assert_eq!(body.intrinsics(), 1);
+    assert_eq!(
+        body.slots()[1].rep,
+        legend_pure_evaluator::exec::Rep::I64,
+        "the let's value is typed Integer[1]"
     );
 }

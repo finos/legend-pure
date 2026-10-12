@@ -262,6 +262,14 @@ pub trait NativeFunction: fmt::Debug {
         ArgMode::Lazy
     }
 
+    /// The total operation this native computes, when it is one the body
+    /// executor ([`crate::exec`]) may run inline for the representations
+    /// of a call's arguments; `None` unless the native declares it. Only
+    /// an eager native declares one.
+    fn intrinsic(&self) -> Option<Intrinsic> {
+        None
+    }
+
     /// Execute the native against its raw `ValueSpec` arguments.
     ///
     /// The native is responsible for calling `ctx.evaluate(&arg)` on every
@@ -469,6 +477,34 @@ pub enum Control {
     /// Two arguments: forces the first as a `Boolean`; `true` without
     /// forcing the second, else the second as a `Boolean`.
     Or,
+}
+
+/// The total operations a native can declare ([`NativeFunction::intrinsic`]).
+/// Each states what the declaring native's `execute_values` returns for
+/// the argument values it names; for any other values the native alone
+/// decides, and the body executor hands them to it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Intrinsic {
+    /// Two arguments: for two `Integer`s, two `Float`s, two `Boolean`s
+    /// or two `String`s, whether they are equal as [`Value`]'s `==`
+    /// compares them (a `NaN` equals a `NaN`, `-0.0` equals `0.0`).
+    Equal,
+    /// Two arguments: for two numbers, each an `Integer` or a `Float`,
+    /// whether the first orders before the second as
+    /// [`compare_values`](comparison::compare_values) orders them (an
+    /// `Integer` against a `Float` as an `f64`, `Float`s by `f64::total_cmp`).
+    LessThan,
+    /// As [`LessThan`](Self::LessThan): whether the first does not order
+    /// after the second.
+    LessThanEqual,
+    /// One argument: for a `Boolean`, its negation.
+    Not,
+    /// One argument, any value: how many values it holds (none for
+    /// `Unit`, a collection's length, one for anything else).
+    Size,
+    /// One argument, any value: whether it holds none (`Unit` or an
+    /// empty collection).
+    IsEmpty,
 }
 
 /// Registry of native functions, keyed by mangled function FQN.

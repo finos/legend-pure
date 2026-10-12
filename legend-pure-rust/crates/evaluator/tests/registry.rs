@@ -237,3 +237,44 @@ fn registry_keys_by_argument_mode() {
     }
     assert_eq!((eager, control, lazy), (69, 4, 84), "eager, control, lazy");
 }
+
+/// The keys whose native declares an intrinsic, and which. A native's
+/// call runs inline only by its declaring one, and only an eager native
+/// declares one.
+#[test]
+fn registry_keys_declaring_an_intrinsic() {
+    use legend_pure_evaluator::native::{ArgMode, Intrinsic};
+    let registry = NativeRegistry::standard();
+    let mut declared: Vec<(&str, Intrinsic)> = registry
+        .keys()
+        .filter_map(|key| {
+            let native = registry.get(key).expect("registered");
+            native.intrinsic().map(|intrinsic| {
+                assert!(
+                    matches!(native.arg_mode(), ArgMode::Eager(_)),
+                    "{key} declares an intrinsic and is not eager"
+                );
+                (key.as_str(), intrinsic)
+            })
+        })
+        .collect();
+    declared.sort_unstable_by_key(|(key, _)| *key);
+    assert_eq!(
+        declared,
+        [
+            ("eq_Any_1__Any_1__Boolean_1_", Intrinsic::Equal),
+            ("equal_Any_MANY__Any_MANY__Boolean_1_", Intrinsic::Equal),
+            ("isEmpty_Any_MANY__Boolean_1_", Intrinsic::IsEmpty),
+            (
+                "lessThanEqual_Number_1__Number_1__Boolean_1_",
+                Intrinsic::LessThanEqual
+            ),
+            (
+                "lessThan_Number_1__Number_1__Boolean_1_",
+                Intrinsic::LessThan
+            ),
+            ("not_Boolean_1__Boolean_1_", Intrinsic::Not),
+            ("size_Any_MANY__Integer_1_", Intrinsic::Size),
+        ]
+    );
+}

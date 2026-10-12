@@ -27,7 +27,7 @@ use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
 
 use crate::error::{PureException, PureRuntimeError};
-use crate::native::{ArgMode, Arity, force_then_values, values2};
+use crate::native::{ArgMode, Arity, Intrinsic, force_then_values, values2};
 use crate::native::{EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args};
 use crate::value::Value;
 
@@ -67,6 +67,10 @@ impl NativeFunction for Eq {
         ArgMode::Eager(Arity::Exactly(2))
     }
 
+    fn intrinsic(&self) -> Option<Intrinsic> {
+        Some(Intrinsic::Equal)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
@@ -100,6 +104,10 @@ impl NativeFunction for Equal {
         ArgMode::Eager(Arity::Any)
     }
 
+    fn intrinsic(&self) -> Option<Intrinsic> {
+        Some(Intrinsic::Equal)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
@@ -129,6 +137,10 @@ impl NativeFunction for LessThan {
         ArgMode::Eager(Arity::Exactly(2))
     }
 
+    fn intrinsic(&self) -> Option<Intrinsic> {
+        Some(Intrinsic::LessThan)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
@@ -154,6 +166,10 @@ pub struct LessThanEqual;
 impl NativeFunction for LessThanEqual {
     fn arg_mode(&self) -> ArgMode {
         ArgMode::Eager(Arity::Exactly(2))
+    }
+
+    fn intrinsic(&self) -> Option<Intrinsic> {
+        Some(Intrinsic::LessThanEqual)
     }
 
     fn execute(

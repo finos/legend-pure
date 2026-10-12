@@ -36,20 +36,40 @@
 //! `let` anywhere but as a statement, or under a computed name) is not
 //! built; it runs on the tree walker whole.
 //!
+//! # Representations
+//!
+//! Every node holds its value in a [`Rep`]: a [`Value`] unless the node
+//! is an intrinsic, a constant an intrinsic reads unboxed, or an
+//! [`Op::Unbox`]. [`rep_of`] chooses a representation from the static
+//! type an expression carried, and nowhere else. A call to a native that
+//! declares an [`Intrinsic`](crate::native::Intrinsic) becomes an
+//! [`Op::Intrinsic`] when the representations of its arguments' static
+//! types select one ([`IntrinsicOp::select`]); its operands are unboxed
+//! ([`Op::Unbox`]) and its result is boxed ([`Op::Box`]) where the
+//! representation changes. Calls to Pure functions and to every other
+//! native take their arguments boxed. A slot records the representation
+//! of its binder's type ([`SlotInfo::rep`]); its storage is its binding in
+//! the variable context, where an `Integer`, `Float` or `Boolean` is held
+//! inline, and an unboxing read of it reads the binding in place.
+//!
 //! # Behaviour
 //!
 //! Same results, errors, messages, source information and stack frames
 //! as the tree walker: a node either runs exactly what the tree walker
 //! runs for its expression, or is an [`Op::Fallback`] that hands the
-//! expression to the tree walker. Evaluators whose hooks observe every
-//! expression ([`EvalHooks::OBSERVES_EXPRESSIONS`](crate::hooks::EvalHooks::OBSERVES_EXPRESSIONS))
+//! expression to the tree walker. An intrinsic runs its native whenever
+//! an operand does not hold the representation its static type promised.
+//! Evaluators whose hooks observe every expression
+//! ([`EvalHooks::OBSERVES_EXPRESSIONS`](crate::hooks::EvalHooks::OBSERVES_EXPRESSIONS))
 //! never use it.
 
 mod build;
+mod intrinsic;
 mod lazy;
 mod run;
 mod types;
 
+pub use intrinsic::{IntrinsicOp, Num};
 pub use types::{Coverage, Rep, rep_of};
 
 use std::cell::{Cell, OnceCell};
@@ -132,6 +152,10 @@ pub struct SlotInfo {
     pub name: SmolStr,
     /// What binds it.
     pub kind: SlotKind,
+    /// The representation of its binder's type: a parameter's declared
+    /// type, a `let`'s value as the expression carried it, [`Rep::Value`]
+    /// for a capture.
+    pub rep: Rep,
 }
 
 /// What a body was built from, which decides what its invocation binds
@@ -160,6 +184,7 @@ pub struct Body {
     statements: Vec<NodeIdx>,
     spans: Vec<SourceInfo>,
     fallbacks: usize,
+    intrinsics: usize,
 }
 
 impl Body {
@@ -220,6 +245,12 @@ impl Body {
         self.fallbacks
     }
 
+    /// The number of [`Op::Intrinsic`] nodes.
+    #[must_use]
+    pub fn intrinsics(&self) -> usize {
+        self.intrinsics
+    }
+
     fn node(&self, idx: NodeIdx) -> &Node {
         &self.nodes[idx as usize]
     }
@@ -229,14 +260,16 @@ impl Body {
     }
 }
 
-/// One node: an operation, the static type the expression carried, and
-/// its source information.
+/// One node: an operation, the static type the expression carried, the
+/// representation its value is held in, and its source information.
 #[derive(Debug)]
 pub struct Node {
     /// What the node does.
     pub op: Op,
     /// The type and multiplicity the expression carried, copied as is.
     pub ty: Option<Box<ResolvedType>>,
+    /// The representation the node's value is held in.
+    pub rep: Rep,
     span: u32,
 }
 
@@ -336,6 +369,26 @@ pub enum Op {
     Lambda(Box<LambdaOp>),
     /// A collection literal, flattened as the tree walker flattens it.
     Collection(Vec<NodeIdx>),
+    /// A call to a native that declares an intrinsic, run inline on its
+    /// operands in the representations [`IntrinsicOp::operand_rep`]
+    /// names; the native runs instead, on every operand boxed, when one
+    /// does not hold its representation.
+    Intrinsic {
+        /// The intrinsic, as the call site selected it.
+        op: IntrinsicOp,
+        /// The native that declares it.
+        native: NativePos,
+        /// The native's frame name.
+        call: SmolStr,
+        /// The operands.
+        args: Vec<NodeIdx>,
+    },
+    /// The child's value, held in its representation, as a [`Value`].
+    Box(NodeIdx),
+    /// The child's [`Value`] in this node's representation, read in place
+    /// from a slot; the value itself when it does not hold that
+    /// representation.
+    Unbox(NodeIdx),
     /// The expression, run on the tree walker.
     Fallback(ValueSpec),
 }

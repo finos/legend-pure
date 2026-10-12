@@ -25,7 +25,7 @@ use smol_str::SmolStr;
 
 use crate::error::{PureException, PureRuntimeError};
 use crate::heap::ObjectHandle;
-use crate::native::{ArgMode, Arity, force_then_values, value1, values2, values3};
+use crate::native::{ArgMode, Arity, Intrinsic, force_then_values, value1, values2, values3};
 use crate::native::{
     EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args, force_all, force1,
     force2, force3,
@@ -412,6 +412,10 @@ pub struct Size;
 impl NativeFunction for Size {
     fn arg_mode(&self) -> ArgMode {
         ArgMode::Eager(Arity::Exactly(1))
+    }
+
+    fn intrinsic(&self) -> Option<Intrinsic> {
+        Some(Intrinsic::Size)
     }
 
     fn execute(
@@ -1373,6 +1377,10 @@ pub struct IsEmpty;
 impl NativeFunction for IsEmpty {
     fn arg_mode(&self) -> ArgMode {
         ArgMode::Eager(Arity::Exactly(1))
+    }
+
+    fn intrinsic(&self) -> Option<Intrinsic> {
+        Some(Intrinsic::IsEmpty)
     }
 
     fn execute(
