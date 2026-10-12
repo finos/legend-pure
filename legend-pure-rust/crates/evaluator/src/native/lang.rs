@@ -34,6 +34,7 @@ use crate::native::{
     ArgMode, Control, EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args,
     force_all, force1, force2, force3,
 };
+use crate::native::{Arity, force_then_values};
 use crate::value::Value;
 
 /// Pure `letFunction(String[1], T[m]): T[m]`
@@ -97,9 +98,21 @@ impl NativeFunction for If {
 pub struct Eval;
 
 impl NativeFunction for Eval {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Any)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        force_then_values(self, "eval", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
         if args.is_empty() {
@@ -108,7 +121,7 @@ impl NativeFunction for Eval {
             )
             .into());
         }
-        let values = force_all(args, ctx)?;
+        let values = args;
         let func = &values[0];
         let params = &values[1..];
         Ok(Evaluated::new(ctx.call_function(func, params)?))

@@ -219,3 +219,21 @@ fn registering_a_name_again_replaces_it_at_the_same_position() {
     assert_eq!(format!("{:?}", registry.at(position)), "Constant(3)");
     assert!(registry.position("c").is_none());
 }
+
+/// How many registry keys take their arguments each way: eager (the body
+/// executor forces the arguments and calls `execute_values`), a control
+/// form, or lazy. A native moves to eager only by declaring it.
+#[test]
+fn registry_keys_by_argument_mode() {
+    use legend_pure_evaluator::native::ArgMode;
+    let registry = NativeRegistry::standard();
+    let (mut eager, mut control, mut lazy) = (0, 0, 0);
+    for key in registry.keys() {
+        match registry.get(key).expect("registered").arg_mode() {
+            ArgMode::Eager(_) => eager += 1,
+            ArgMode::Control(_) => control += 1,
+            ArgMode::Lazy => lazy += 1,
+        }
+    }
+    assert_eq!((eager, control, lazy), (69, 4, 84), "eager, control, lazy");
+}

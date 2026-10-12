@@ -548,3 +548,126 @@ fn a_property_read_carries_the_owner_the_call_recorded() {
         .collect();
     assert_eq!(owners, [Some(person)]);
 }
+
+/// The operation names of a body's nodes, in node order.
+fn ops(body: &Body) -> Vec<&'static str> {
+    body.nodes()
+        .iter()
+        .map(|n| match &n.op {
+            Op::Const(_) => "Const",
+            Op::Local(_) => "Local",
+            Op::Captured(_) => "Captured",
+            Op::Let { .. } => "Let",
+            Op::If { .. } => "If",
+            Op::And { .. } => "And",
+            Op::Or { .. } => "Or",
+            Op::CallPure { .. } => "CallPure",
+            Op::CallNative { .. } => "CallNative",
+            Op::CallLazyNative { .. } => "CallLazyNative",
+            Op::Property { .. } => "Property",
+            Op::Lambda(_) => "Lambda",
+            Op::Collection(_) => "Collection",
+            Op::Fallback(_) => "Fallback",
+        })
+        .collect()
+}
+
+#[test]
+fn eager_natives_take_forced_arguments_and_lazy_ones_their_expressions() {
+    const SIZE: &str = "size_Any_MANY__Integer_1_";
+    const FILTER: &str = "filter_T_MANY__Function_1__T_MANY_";
+    const RANGE: &str = "range_Integer_1__Integer_1__Integer_1__Integer_MANY_";
+    let (model, ids) = model_with(&[("evens", vec![int("n")])], |_| {
+        vec![vec![expr::call(
+            SIZE,
+            vec![expr::call(
+                FILTER,
+                vec![
+                    expr::call(RANGE, vec![expr::int(0), expr::var("n"), expr::int(1)]),
+                    expr::lambda(
+                        vec![int("x")],
+                        vec![expr::call(
+                            EQUAL,
+                            vec![
+                                expr::call(MOD, vec![expr::var("x"), expr::int(2)]),
+                                expr::int(0),
+                            ],
+                        )],
+                    ),
+                ],
+            )],
+        )]]
+    });
+    let registry = registry();
+    let (outcome, ev) = same_on_both(&model, &registry, |ev| {
+        ev.call_user_function_by_id_with_args(ids[0], &[Value::Integer(100)])
+    });
+    assert_eq!(outcome, Ok(Value::Integer(50)));
+    let body = built(&ev, ids[0]);
+    assert_eq!(
+        ops(&body),
+        [
+            "Const",
+            "Local",
+            "Const",
+            "CallNative",
+            "Lambda",
+            "CallNative",
+            "CallNative"
+        ]
+    );
+    let predicate = lambdas(&body);
+    assert_eq!(
+        ops(predicate[0]),
+        ["Local", "Const", "CallNative", "Const", "CallNative"]
+    );
+
+    let (model, ids) = model_with(&[("sum", vec![int("a")])], |_| {
+        vec![vec![arith(PLUS, expr::var("a"), expr::int(1))]]
+    });
+    let (outcome, ev) = same_on_both(&model, &registry, |ev| {
+        ev.call_user_function_by_id_with_args(ids[0], &[Value::Integer(1)])
+    });
+    assert_eq!(outcome, Ok(Value::Integer(2)));
+    assert_eq!(
+        ops(&built(&ev, ids[0])),
+        ["Local", "Const", "Collection", "CallLazyNative"],
+        "plus folds its operands as it forces them: lazy"
+    );
+}
+
+#[test]
+fn an_eager_call_of_another_arity_stays_lazy_and_fails_as_before() {
+    let (model, ids) = model_with(&[("bad", vec![int("a")])], |_| {
+        vec![vec![expr::call(
+            MOD,
+            vec![expr::var("a"), expr::int(2), expr::int(3)],
+        )]]
+    });
+    let registry = registry();
+    let (outcome, ev) = same_on_both(&model, &registry, |ev| {
+        ev.call_user_function_by_id_with_args(ids[0], &[Value::Integer(1)])
+    });
+    let err = outcome.expect_err("arity");
+    assert!(err.contains("mod: expected 2 argument(s), got 3"), "{err}");
+    assert!(ops(&built(&ev, ids[0])).contains(&"CallLazyNative"));
+}
+
+#[test]
+fn an_error_forcing_an_eager_argument_carries_both_natives_frames() {
+    const SIZE: &str = "size_Any_MANY__Integer_1_";
+    let model = ModelBuilder::new().finish();
+    let registry = registry();
+    let (outcome, _) = same_on_both(&model, &registry, |ev| {
+        ev.eval(&expr::call(
+            SIZE,
+            vec![expr::call(MOD, vec![expr::int(1), expr::int(0)])],
+        ))
+    });
+    let err = outcome.expect_err("mod by zero");
+    let size = err.find("size_Any_MANY__Integer_1_").expect("size's frame");
+    let modulo = err
+        .find("mod_Integer_1__Integer_1__Integer_1_")
+        .expect("mod's frame");
+    assert!(size < modulo, "outermost first: {err}");
+}

@@ -20,9 +20,9 @@ use std::collections::HashMap;
 use smol_str::SmolStr;
 
 use super::lazy::LazyArgs;
-use super::{Body, LambdaOp, NodeIdx, Op, Thunk};
+use super::{Body, LambdaOp, NativePos, NodeIdx, Op, Thunk};
 use crate::error::{PureException, StackFrame};
-use crate::eval::Evaluator;
+use crate::eval::{EvalContext, Evaluator};
 use crate::hooks::EvalHooks;
 use crate::native::Evaluated;
 use crate::value::{FunctionValue, LambdaClosure, PVector, Value};
@@ -37,51 +37,70 @@ impl<H: EvalHooks> Evaluator<'_, H> {
 
     /// Run a body's statements over the invocation whose first binding is
     /// at `base`; the value is the last statement's, `Unit` for none.
+    #[inline]
     pub(crate) fn run_statements(
         &mut self,
         body: &Body,
         base: usize,
     ) -> Result<Value, PureException> {
-        let mut result = Value::Unit;
-        for &statement in &body.statements {
-            result = self.run_node(body, base, statement)?;
+        let Some((&last, init)) = body.statements.split_last() else {
+            return Ok(Value::Unit);
+        };
+        for &statement in init {
+            self.run_node(body, base, statement)?;
         }
-        Ok(result)
+        self.run_node(body, base, last)
     }
 
     /// Whether a closure's application can run `body`: every capture
     /// the body reads, and nothing else, was captured, and every
     /// parameter has an argument.
+    #[inline]
     pub(crate) fn lambda_runs(body: &Body, closure: &LambdaClosure, args: &[Value]) -> bool {
         args.len() >= body.parameters.len()
             && closure.captures.len() == body.captures.len()
-            && body
-                .captures
-                .iter()
-                .all(|&slot| closure.captures.contains_key(body.slot_name(slot)))
+            && closure.captures.keys().all(|name| {
+                body.captures
+                    .iter()
+                    .any(|&slot| body.slot_name(slot) == name)
+            })
     }
 
-    /// Apply a lambda body in a scope of its own: its captures, then its
-    /// parameters, then its statements. The caller checked
-    /// [`lambda_runs`](Self::lambda_runs).
+    /// Apply a lambda body in a scope of its own: the closure's captures,
+    /// in its order, then the parameters, then the statements. The caller
+    /// checked [`lambda_runs`](Self::lambda_runs).
+    #[inline]
     pub(crate) fn run_lambda(
         &mut self,
         body: &Body,
-        captures: &HashMap<SmolStr, Value>,
+        closure: &LambdaClosure,
         args: &[Value],
     ) -> Result<Value, PureException> {
         self.context.push_scope();
         let base = self.context.binding_count();
-        for &slot in &body.captures {
-            let name = body.slot_name(slot);
-            self.context.set(name.clone(), captures[name].clone());
+        for (name, value) in &closure.captures {
+            self.context.set(name.clone(), value.clone());
         }
-        for (&slot, arg) in body.parameters.iter().zip(args) {
-            self.context.set(body.slot_name(slot).clone(), arg.clone());
+        for (param, arg) in closure.parameters.iter().zip(args) {
+            self.context.set(param.name.clone(), arg.clone());
         }
         let result = self.run_statements(body, base);
         self.context.pop_scope();
         result
+    }
+
+    /// The value of a slot of the invocation at `base`: a parameter or
+    /// `let` by position, a capture by name among the captures.
+    #[inline]
+    fn slot_value(&self, body: &Body, base: usize, slot: super::Slot) -> &Value {
+        if (slot as usize) >= body.captures.len() {
+            return self.context.value_at(base + slot as usize);
+        }
+        let name = body.slot_name(slot);
+        (base..base + body.captures.len())
+            .map(|position| self.context.binding_at(position))
+            .find(|(bound, _)| *bound == name)
+            .map_or_else(|| unreachable!("a capture is bound"), |(_, value)| value)
     }
 
     /// Bind a function body's parameters in the scope the caller pushed
@@ -99,16 +118,30 @@ impl<H: EvalHooks> Evaluator<'_, H> {
         self.run_statements(body, base)
     }
 
+    /// Run one node: a constant or a slot read here, everything else in
+    /// [`run_op`](Self::run_op).
+    #[inline]
     pub(crate) fn run_node(
         &mut self,
         body: &Body,
         base: usize,
         idx: NodeIdx,
     ) -> Result<Value, PureException> {
+        match &body.node(idx).op {
+            Op::Const(value) => Ok(value.clone()),
+            Op::Local(slot) => Ok(self.context.value_at(base + *slot as usize).clone()),
+            Op::Captured(slot) => Ok(self.slot_value(body, base, *slot).clone()),
+            _ => self.run_op(body, base, idx),
+        }
+    }
+
+    #[inline(never)]
+    fn run_op(&mut self, body: &Body, base: usize, idx: NodeIdx) -> Result<Value, PureException> {
         let node = body.node(idx);
         match &node.op {
             Op::Const(value) => Ok(value.clone()),
             Op::Local(slot) => Ok(self.context.value_at(base + *slot as usize).clone()),
+            Op::Captured(slot) => Ok(self.slot_value(body, base, *slot).clone()),
             Op::Let { slot, value, call } => {
                 let value = self
                     .run_node(body, base, *value)
@@ -133,52 +166,119 @@ impl<H: EvalHooks> Evaluator<'_, H> {
                 .run_and_or(body, base, *lhs, *rhs, true)
                 .map_err(|e| e.with_frame(frame(body, idx, call))),
             Op::CallPure { target, name, args } => {
-                let mut values = Vec::with_capacity(args.len());
-                for &arg in args {
-                    values.push(self.run_node(body, base, arg)?);
-                }
-                let value =
-                    self.call_user_function(*target, &values, name, Some(body.span(idx)))?;
-                self.back_fill_call_type_arguments(&value, node.ty.as_deref())?;
-                Ok(value)
+                self.run_pure(body, base, idx, *target, name, args)
             }
+            Op::CallNative { native, call, args } => self
+                .run_eager(body, base, *native, args)
+                .map_err(|e| e.with_frame(frame(body, idx, call))),
             Op::CallLazyNative {
                 native,
                 call,
                 specs,
                 args,
-            } => {
-                let native = self.natives.at(*native);
-                let result = {
-                    let mut lazy = LazyArgs::new(self, body, base, specs, args);
-                    native.execute(specs, &mut lazy)
-                };
-                result
-                    .map(Evaluated::into_value)
-                    .map_err(|e| e.with_frame(frame(body, idx, call)))
-            }
+            } => self
+                .run_lazy(body, base, *native, specs, args)
+                .map_err(|e| e.with_frame(frame(body, idx, call))),
             Op::Property { receiver, name, .. } => {
                 let target = self.run_node(body, base, *receiver)?;
                 self.property_of(target, name)
             }
             Op::Lambda(lambda) => Ok(Value::Function(Box::new(FunctionValue::Lambda(
-                self.closure_of(lambda, base),
+                self.closure_of(body, base, lambda),
             )))),
-            Op::Collection(elements) => {
-                if elements.is_empty() {
-                    return Ok(Value::Unit);
-                }
-                let mut values = PVector::new();
-                for &element in elements {
-                    let value = self.run_node(body, base, element)?;
-                    crate::eval::push_flattened(&mut values, value);
-                }
-                Ok(crate::eval::collection_value(values))
-            }
+            Op::Collection(elements) => self.run_collection(body, base, elements),
             Op::Fallback(spec) => self.walk(spec),
         }
     }
 
+    #[inline(never)]
+    fn run_pure(
+        &mut self,
+        body: &Body,
+        base: usize,
+        idx: NodeIdx,
+        target: legend_pure_metamodel::ids::ElementId,
+        name: &str,
+        args: &[NodeIdx],
+    ) -> Result<Value, PureException> {
+        let mut values = Vec::with_capacity(args.len());
+        for &arg in args {
+            values.push(self.run_node(body, base, arg)?);
+        }
+        let value = self.call_user_function(target, &values, name, Some(body.span(idx)))?;
+        self.back_fill_call_type_arguments(&value, body.node(idx).ty.as_deref())?;
+        Ok(value)
+    }
+
+    #[inline(never)]
+    fn run_lazy(
+        &mut self,
+        body: &Body,
+        base: usize,
+        native: NativePos,
+        specs: &[legend_pure_metamodel::types::ValueSpec],
+        args: &[NodeIdx],
+    ) -> Result<Value, PureException> {
+        let native = self.natives.at(native);
+        let mut lazy = LazyArgs::new(self, body, base, specs, args);
+        native.execute(specs, &mut lazy).map(Evaluated::into_value)
+    }
+
+    fn run_collection(
+        &mut self,
+        body: &Body,
+        base: usize,
+        elements: &[NodeIdx],
+    ) -> Result<Value, PureException> {
+        if elements.is_empty() {
+            return Ok(Value::Unit);
+        }
+        let mut values = PVector::new();
+        for &element in elements {
+            let value = self.run_node(body, base, element)?;
+            crate::eval::push_flattened(&mut values, value);
+        }
+        Ok(crate::eval::collection_value(values))
+    }
+
+    /// Force an eager native's arguments in order and run it on them.
+    #[inline(never)]
+    fn run_eager(
+        &mut self,
+        body: &Body,
+        base: usize,
+        native: NativePos,
+        args: &[NodeIdx],
+    ) -> Result<Value, PureException> {
+        let native = self.natives.at(native);
+        let result = match *args {
+            [a] => {
+                let a = self.run_node(body, base, a)?;
+                native.execute_values(std::slice::from_ref(&a), &mut EvalContext::new(self))
+            }
+            [a, b] => {
+                let a = self.run_node(body, base, a)?;
+                let b = self.run_node(body, base, b)?;
+                native.execute_values(&[a, b], &mut EvalContext::new(self))
+            }
+            [a, b, c] => {
+                let a = self.run_node(body, base, a)?;
+                let b = self.run_node(body, base, b)?;
+                let c = self.run_node(body, base, c)?;
+                native.execute_values(&[a, b, c], &mut EvalContext::new(self))
+            }
+            _ => {
+                let mut values = Vec::with_capacity(args.len());
+                for &arg in args {
+                    values.push(self.run_node(body, base, arg)?);
+                }
+                native.execute_values(&values, &mut EvalContext::new(self))
+            }
+        };
+        result.map(Evaluated::into_value)
+    }
+
+    #[inline(never)]
     fn run_if(
         &mut self,
         body: &Body,
@@ -220,7 +320,7 @@ impl<H: EvalHooks> Evaluator<'_, H> {
                 let Op::Lambda(lambda) = &body.node(idx).op else {
                     return self.run_node(body, base, idx);
                 };
-                let closure = self.closure_of(lambda, base);
+                let closure = self.closure_of(body, base, lambda);
                 self.eval_lambda_value(&closure, &[])
             }
         }
@@ -228,11 +328,11 @@ impl<H: EvalHooks> Evaluator<'_, H> {
 
     /// The closure a lambda expression makes: each variable it lists,
     /// where bound, from the enclosing body's slot or by name.
-    fn closure_of(&self, lambda: &LambdaOp, base: usize) -> LambdaClosure {
+    fn closure_of(&self, body: &Body, base: usize, lambda: &LambdaOp) -> LambdaClosure {
         let mut captures = HashMap::with_capacity(lambda.free.len());
         for (name, source) in lambda.free.iter().zip(&lambda.sources) {
             let value = match source {
-                Some(slot) => Some(self.context.value_at(base + *slot as usize)),
+                Some(slot) => Some(self.slot_value(body, base, *slot)),
                 None => self.context.get(name),
             };
             if let Some(value) = value {

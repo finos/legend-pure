@@ -25,6 +25,7 @@ use smol_str::SmolStr;
 
 use crate::error::{PureException, PureRuntimeError};
 use crate::heap::ObjectHandle;
+use crate::native::{ArgMode, Arity, force_then_values, value1, values2, values3};
 use crate::native::{
     EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args, force_all, force1,
     force2, force3,
@@ -38,18 +39,30 @@ use crate::value::{MapState, Value, ValueKey};
 pub struct Fold;
 
 impl NativeFunction for Fold {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(3))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
+        force_then_values(self, "fold", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
         expect_args("fold", args, 3)?;
-        let source = ctx.evaluate(&args[0])?.into_value().to_collection();
-        let lambda_val = ctx.evaluate(&args[1])?.into_value();
-        let mut accumulator = ctx.evaluate(&args[2])?.into_value();
+        let source = args[0].to_collection();
+        let lambda_val = &args[1];
+        let mut accumulator = args[2].clone();
 
         for item in &source {
-            accumulator = ctx.call_function(&lambda_val, &[item.clone(), accumulator])?;
+            accumulator = ctx.call_function(lambda_val, &[item.clone(), accumulator])?;
         }
 
         Ok(Evaluated::new(accumulator))
@@ -61,12 +74,24 @@ impl NativeFunction for Fold {
 pub struct Take;
 
 impl NativeFunction for Take {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1) = force2("take", args, ctx)?;
+        force_then_values(self, "take", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1) = values2("take", args)?;
         let coll = a0.to_collection();
         #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
         let n = a1.as_integer()?.max(0) as usize;
@@ -80,12 +105,24 @@ impl NativeFunction for Take {
 pub struct Drop;
 
 impl NativeFunction for Drop {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1) = force2("drop", args, ctx)?;
+        force_then_values(self, "drop", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1) = values2("drop", args)?;
         let coll = a0.to_collection();
         #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
         let n = a1.as_integer()?.max(0) as usize;
@@ -104,14 +141,26 @@ impl NativeFunction for Drop {
 pub struct Zip;
 
 impl NativeFunction for Zip {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1) = force2("zip", args, ctx)?;
-        let xs = collection_as_vec(&a0);
-        let ys = collection_as_vec(&a1);
+        force_then_values(self, "zip", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1) = values2("zip", args)?;
+        let xs = collection_as_vec(a0);
+        let ys = collection_as_vec(a1);
         let n = xs.len().min(ys.len());
         let mut out: Vec<Value> = Vec::with_capacity(n);
         for i in 0..n {
@@ -140,13 +189,25 @@ fn collection_as_vec(v: &Value) -> Vec<Value> {
 pub struct First;
 
 impl NativeFunction for First {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(1))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let a0 = force1("first", args, ctx)?;
-        let result = match &a0 {
+        force_then_values(self, "first", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let a0 = value1("first", args)?;
+        let result = match a0 {
             Value::Collection(v) => v.front().cloned().unwrap_or(Value::Unit),
             Value::Unit => Value::Unit,
             other => other.clone(),
@@ -167,12 +228,24 @@ impl NativeFunction for First {
 pub struct RemoveDuplicates;
 
 impl NativeFunction for RemoveDuplicates {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Any)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
+        force_then_values(self, "removeDuplicates", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = args;
         if values.is_empty() || values.len() == 2 || values.len() > 3 {
             return Err(PureRuntimeError::EvaluationError(format!(
                 "removeDuplicates: expected 1 or 3 argument(s), got {}",
@@ -252,15 +325,27 @@ fn cmp_values(a: &Value, b: &Value) -> std::cmp::Ordering {
 pub struct Sort;
 
 impl NativeFunction for Sort {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(3))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1, a2) = force3("sort", args, ctx)?;
+        force_then_values(self, "sort", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1, a2) = values3("sort", args)?;
         let source = a0.to_collection();
-        let key_fn = lambda_or_none(&a1);
-        let comp_fn = lambda_or_none(&a2);
+        let key_fn = lambda_or_none(a1);
+        let comp_fn = lambda_or_none(a2);
 
         let mut items: Vec<Value> = source.iter().cloned().collect();
         if key_fn.is_none() && comp_fn.is_none() {
@@ -325,12 +410,24 @@ fn lambda_or_none(v: &Value) -> Option<&Value> {
 pub struct Size;
 
 impl NativeFunction for Size {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(1))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let a0 = force1("size", args, ctx)?;
+        force_then_values(self, "size", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let a0 = value1("size", args)?;
         let coll = a0.to_collection();
         #[allow(clippy::cast_possible_wrap)]
         Ok(Evaluated::new(Value::Integer(coll.len() as i64)))
@@ -348,12 +445,24 @@ impl NativeFunction for Size {
 pub struct Range;
 
 impl NativeFunction for Range {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Any)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
+        force_then_values(self, "range", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = args;
         let (start, end_exclusive, increment) = match values.len() {
             1 => (0i64, values[0].as_integer()?, 1i64),
             2 => (values[0].as_integer()?, values[1].as_integer()?, 1i64),
@@ -401,18 +510,30 @@ impl NativeFunction for Range {
 pub struct Map;
 
 impl NativeFunction for Map {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
+        force_then_values(self, "map", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
         expect_args("map", args, 2)?;
-        let source = ctx.evaluate(&args[0])?.into_value().to_collection();
-        let lambda_val = ctx.evaluate(&args[1])?.into_value();
+        let source = args[0].to_collection();
+        let lambda_val = &args[1];
 
         let mut results: Vec<Value> = Vec::with_capacity(source.len());
         for item in &source {
-            let called = ctx.call_function(&lambda_val, std::slice::from_ref(item))?;
+            let called = ctx.call_function(lambda_val, std::slice::from_ref(item))?;
             match &called {
                 Value::Collection(inner) => {
                     for v in inner.iter() {
@@ -438,12 +559,24 @@ impl NativeFunction for Map {
 pub struct Slice;
 
 impl NativeFunction for Slice {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(3))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1, a2) = force3("slice", args, ctx)?;
+        force_then_values(self, "slice", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1, a2) = values3("slice", args)?;
         let source = a0.to_collection();
         let start = a1.as_integer()?;
         let end = a2.as_integer()?;
@@ -484,17 +617,29 @@ impl NativeFunction for Slice {
 pub struct Find;
 
 impl NativeFunction for Find {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
+        force_then_values(self, "find", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
         expect_args("find", args, 2)?;
-        let source = ctx.evaluate(&args[0])?.into_value().to_collection();
-        let lambda_val = ctx.evaluate(&args[1])?.into_value();
+        let source = args[0].to_collection();
+        let lambda_val = &args[1];
 
         for item in &source {
-            let pred = ctx.call_function(&lambda_val, std::slice::from_ref(item))?;
+            let pred = ctx.call_function(lambda_val, std::slice::from_ref(item))?;
             if pred.as_boolean()? {
                 return Ok(Evaluated::new(item.clone()));
             }
@@ -511,12 +656,24 @@ impl NativeFunction for Find {
 pub struct At;
 
 impl NativeFunction for At {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1) = force2("at", args, ctx)?;
+        force_then_values(self, "at", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1) = values2("at", args)?;
         let coll = a0.to_collection();
         let idx = a1.as_integer()?;
         if idx < 0 {
@@ -545,17 +702,29 @@ impl NativeFunction for At {
 pub struct Exists;
 
 impl NativeFunction for Exists {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
+        force_then_values(self, "exists", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
         expect_args("exists", args, 2)?;
-        let source = ctx.evaluate(&args[0])?.into_value().to_collection();
-        let lambda_val = ctx.evaluate(&args[1])?.into_value();
+        let source = args[0].to_collection();
+        let lambda_val = &args[1];
 
         for item in &source {
-            let pred = ctx.call_function(&lambda_val, std::slice::from_ref(item))?;
+            let pred = ctx.call_function(lambda_val, std::slice::from_ref(item))?;
             if pred.as_boolean()? {
                 return Ok(Evaluated::new(Value::Boolean(true)));
             }
@@ -573,13 +742,25 @@ impl NativeFunction for Exists {
 pub struct IndexOf;
 
 impl NativeFunction for IndexOf {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Any)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("indexOf", &values, 2)?;
+        force_then_values(self, "indexOf", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = args;
+        expect_args("indexOf", values, 2)?;
         let haystack = values[0].to_collection();
         let needle = &values[1];
         let ctx_ref: &dyn EvalContextTrait = ctx;
@@ -603,12 +784,24 @@ impl NativeFunction for IndexOf {
 pub struct Tail;
 
 impl NativeFunction for Tail {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(1))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let a0 = force1("tail", args, ctx)?;
+        force_then_values(self, "tail", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let a0 = value1("tail", args)?;
         let result = match &a0 {
             Value::Collection(v) => {
                 if v.is_empty() {
@@ -635,12 +828,24 @@ impl NativeFunction for Tail {
 pub struct ToOne;
 
 impl NativeFunction for ToOne {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Any)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
+        force_then_values(self, "toOne", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = args;
         if values.is_empty() || values.len() > 2 {
             return Err(PureRuntimeError::EvaluationError(format!(
                 "toOne: expected 1 or 2 argument(s), got {}",
@@ -659,18 +864,30 @@ impl NativeFunction for ToOne {
 pub struct Filter;
 
 impl NativeFunction for Filter {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
+        force_then_values(self, "filter", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
         expect_args("filter", args, 2)?;
-        let source = ctx.evaluate(&args[0])?.into_value().to_collection();
-        let lambda_val = ctx.evaluate(&args[1])?.into_value();
+        let source = args[0].to_collection();
+        let lambda_val = &args[1];
 
         let mut results = Vec::with_capacity(source.len());
         for item in &source {
-            let pred = ctx.call_function(&lambda_val, std::slice::from_ref(item))?;
+            let pred = ctx.call_function(lambda_val, std::slice::from_ref(item))?;
             if pred.as_boolean()? {
                 results.push(item.clone());
             }
@@ -685,12 +902,24 @@ impl NativeFunction for Filter {
 pub struct Concatenate;
 
 impl NativeFunction for Concatenate {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1) = force2("concatenate", args, ctx)?;
+        force_then_values(self, "concatenate", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1) = values2("concatenate", args)?;
         let mut a = a0.to_collection();
         let b = a1.to_collection();
         a.append(b);
@@ -706,17 +935,29 @@ impl NativeFunction for Concatenate {
 pub struct ForAll;
 
 impl NativeFunction for ForAll {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
+        force_then_values(self, "forAll", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
         expect_args("forAll", args, 2)?;
-        let source = ctx.evaluate(&args[0])?.into_value().to_collection();
-        let lambda_val = ctx.evaluate(&args[1])?.into_value();
+        let source = args[0].to_collection();
+        let lambda_val = &args[1];
 
         for item in &source {
-            let pred = ctx.call_function(&lambda_val, std::slice::from_ref(item))?;
+            let pred = ctx.call_function(lambda_val, std::slice::from_ref(item))?;
             if !pred.as_boolean()? {
                 return Ok(Evaluated::new(Value::Boolean(false)));
             }
@@ -736,12 +977,24 @@ impl NativeFunction for ForAll {
 pub struct Init;
 
 impl NativeFunction for Init {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(1))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let a0 = force1("init", args, ctx)?;
+        force_then_values(self, "init", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let a0 = value1("init", args)?;
         let result = match &a0 {
             Value::Collection(v) => {
                 if v.is_empty() {
@@ -764,13 +1017,25 @@ impl NativeFunction for Init {
 pub struct Last;
 
 impl NativeFunction for Last {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(1))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let a0 = force1("last", args, ctx)?;
-        let result = match &a0 {
+        force_then_values(self, "last", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let a0 = value1("last", args)?;
+        let result = match a0 {
             Value::Collection(v) => v.back().cloned().unwrap_or(Value::Unit),
             Value::Unit => Value::Unit,
             other => other.clone(),
@@ -1106,12 +1371,24 @@ fn pair_first_second(
 pub struct IsEmpty;
 
 impl NativeFunction for IsEmpty {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(1))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let a0 = force1("isEmpty", args, ctx)?;
+        force_then_values(self, "isEmpty", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let a0 = value1("isEmpty", args)?;
         Ok(Evaluated::new(Value::Boolean(a0.is_empty())))
     }
 }
@@ -1126,12 +1403,24 @@ impl NativeFunction for IsEmpty {
 pub struct Add;
 
 impl NativeFunction for Add {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Any)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
+        force_then_values(self, "add", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = args;
         match values.len() {
             2 => {
                 let mut coll = values[0].to_collection();
@@ -1166,12 +1455,24 @@ impl NativeFunction for Add {
 pub struct Reverse;
 
 impl NativeFunction for Reverse {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(1))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let a0 = force1("reverse", args, ctx)?;
+        force_then_values(self, "reverse", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let a0 = value1("reverse", args)?;
         let source = a0.to_collection();
         let reversed: Vec<Value> = source.iter().rev().cloned().collect();
         Ok(Evaluated::new(Value::from_vec(reversed)))

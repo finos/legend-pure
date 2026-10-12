@@ -27,13 +27,14 @@
 //! A body invocation binds its captures, then its parameters, in the
 //! [`VariableContext`](crate::context::VariableContext), as the tree
 //! walker does, and each statement-level `let` binds when it runs. A
-//! slot is the position of its binding relative to the invocation's first
-//! one, so a read is an index, while every name stays visible to what
-//! looks variables up by name: the tree walker running a
-//! [`Op::Fallback`], a lazy native, `getAll`. A body in which a binding
-//! could land at a position the builder cannot know (a `let` anywhere but
-//! as a statement, or under a computed name) is not built; it runs on the
-//! tree walker whole.
+//! parameter or `let` slot is the position of its binding relative to
+//! the invocation's first one, so its read is an index; the captures,
+//! bound in the closure's own order, are read by name among themselves.
+//! Every name stays visible to what looks variables up by name: the tree
+//! walker running a [`Op::Fallback`], a lazy native, `getAll`. A body in
+//! which a binding could land at a position the builder cannot know (a
+//! `let` anywhere but as a statement, or under a computed name) is not
+//! built; it runs on the tree walker whole.
 //!
 //! # Behaviour
 //!
@@ -171,7 +172,8 @@ impl Body {
         &self.slots
     }
 
-    /// The capture slots, in the order an invocation binds them.
+    /// The capture slots, sorted by name; an invocation binds them first,
+    /// in the closure's order.
     #[must_use]
     pub fn captures(&self) -> &[Slot] {
         &self.captures
@@ -243,8 +245,10 @@ pub type NativePos = usize;
 pub enum Op {
     /// A literal, an enumeration value, a type or an element reference.
     Const(Value),
-    /// The value bound in a slot.
+    /// The value bound in a parameter or `let` slot.
     Local(Slot),
+    /// The value a lambda captured under the slot's name.
+    Captured(Slot),
     /// A statement-level `let`: forces the value, binds it in the slot
     /// and returns it.
     Let {
@@ -291,6 +295,16 @@ pub enum Op {
         target: ElementId,
         /// The name the call carries, for its frame.
         name: SmolStr,
+        /// The arguments.
+        args: Vec<NodeIdx>,
+    },
+    /// An eager native: its arguments forced in order, then
+    /// [`execute_values`](crate::native::NativeFunction::execute_values).
+    CallNative {
+        /// The native.
+        native: NativePos,
+        /// The native's frame name.
+        call: SmolStr,
         /// The arguments.
         args: Vec<NodeIdx>,
     },

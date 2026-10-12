@@ -27,9 +27,8 @@ use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
 
 use crate::error::{PureException, PureRuntimeError};
-use crate::native::{
-    EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args, force_all, force2,
-};
+use crate::native::{ArgMode, Arity, force_then_values, values2};
+use crate::native::{EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args};
 use crate::value::Value;
 
 /// Compare two values for the ordering natives (`lessThan`, `lessThanEqual`,
@@ -64,12 +63,24 @@ fn numeric_cmp(a: &Value, b: &Value) -> Result<std::cmp::Ordering, PureRuntimeEr
 pub struct Eq;
 
 impl NativeFunction for Eq {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1) = force2("eq", args, ctx)?;
+        force_then_values(self, "eq", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1) = values2("eq", args)?;
         Ok(Evaluated::new(Value::Boolean(a0 == a1)))
     }
 }
@@ -85,13 +96,25 @@ impl NativeFunction for Eq {
 pub struct Equal;
 
 impl NativeFunction for Equal {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Any)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("equal", &values, 2)?;
+        force_then_values(self, "equal", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = args;
+        expect_args("equal", values, 2)?;
         let result = crate::native::equality::values_equal(ctx, &values[0], &values[1]);
         Ok(Evaluated::new(Value::Boolean(result)))
     }
@@ -102,15 +125,25 @@ impl NativeFunction for Equal {
 pub struct LessThan;
 
 impl NativeFunction for LessThan {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1) = force2("lessThan", args, ctx)?;
-        Ok(Evaluated::new(Value::Boolean(
-            numeric_cmp(&a0, &a1)?.is_lt(),
-        )))
+        force_then_values(self, "lessThan", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1) = values2("lessThan", args)?;
+        Ok(Evaluated::new(Value::Boolean(numeric_cmp(a0, a1)?.is_lt())))
     }
 }
 
@@ -119,14 +152,26 @@ impl NativeFunction for LessThan {
 pub struct LessThanEqual;
 
 impl NativeFunction for LessThanEqual {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1) = force2("lessThanEqual", args, ctx)?;
+        force_then_values(self, "lessThanEqual", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1) = values2("lessThanEqual", args)?;
         Ok(Evaluated::new(Value::Boolean(
-            !numeric_cmp(&a0, &a1)?.is_gt(),
+            !numeric_cmp(a0, a1)?.is_gt(),
         )))
     }
 }
@@ -225,13 +270,25 @@ fn type_ordinal(v: &Value) -> u8 {
 pub struct Compare;
 
 impl NativeFunction for Compare {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Any)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("compare", &values, 2)?;
+        force_then_values(self, "compare", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = args;
+        expect_args("compare", values, 2)?;
         Ok(Evaluated::new(Value::Integer(compare_values(
             &values[0], &values[1],
         ))))

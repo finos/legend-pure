@@ -29,6 +29,7 @@ use smol_str::SmolStr;
 use crate::date::DatePrecision;
 use crate::error::{PureException, PureRuntimeError};
 use crate::heap::RuntimeHeap;
+use crate::native::{ArgMode, Arity, force_then_values};
 use crate::native::{
     EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, NotYet, expect_args, force_all,
 };
@@ -184,12 +185,24 @@ impl NativeFunction for GenericTypeOf {
 pub struct Match;
 
 impl NativeFunction for Match {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Any)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
+        force_then_values(self, "match", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = args;
         let (subject, functions, extra) = match values.len() {
             2 => (values[0].clone(), values[1].to_collection(), None),
             3 => (

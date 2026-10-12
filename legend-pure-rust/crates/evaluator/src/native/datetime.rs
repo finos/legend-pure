@@ -26,6 +26,7 @@ use legend_pure_metamodel::types::ValueSpec;
 
 use crate::date::{DatePrecision, PureDate, TimePrecision};
 use crate::error::{PureException, PureRuntimeError};
+use crate::native::{ArgMode, Arity, force_then_values};
 use crate::native::{
     EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args, force_all,
 };
@@ -315,13 +316,25 @@ fn sunday_boundaries_between(a: jiff::civil::Date, b: jiff::civil::Date, days: i
 pub struct DateDiff;
 
 impl NativeFunction for DateDiff {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Any)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("dateDiff", &values, 3)?;
+        force_then_values(self, "dateDiff", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = args;
+        expect_args("dateDiff", values, 3)?;
         let d1 = values[0].as_date()?;
         let d2 = values[1].as_date()?;
         let unit = duration_unit(&values[2])?;
@@ -399,13 +412,25 @@ impl NativeFunction for DateDiff {
 pub struct Adjust;
 
 impl NativeFunction for Adjust {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Any)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
-        expect_args("adjust", &values, 3)?;
+        force_then_values(self, "adjust", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = args;
+        expect_args("adjust", values, 3)?;
         let d = values[0].as_date()?;
         let n = values[1].as_integer()?;
         let unit = duration_unit(&values[2])?;

@@ -24,8 +24,9 @@ use smol_str::SmolStr;
 use std::fmt::Write as _;
 
 use crate::error::{PureException, PureRuntimeError};
+use crate::native::{ArgMode, Arity, force_then_values, value1, values2, values3};
 use crate::native::{
-    EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, force_all, force1, force2, force3,
+    EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, force_all, force1, force3,
 };
 use crate::value::Value;
 
@@ -44,13 +45,25 @@ use crate::value::Value;
 pub struct ToString;
 
 impl NativeFunction for ToString {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(1))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let a0 = force1("toString", args, ctx)?;
-        let s = pure_to_string(&a0, ctx)?;
+        force_then_values(self, "toString", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let a0 = value1("toString", args)?;
+        let s = pure_to_string(a0, ctx)?;
         Ok(Evaluated::new(Value::String(SmolStr::new(s))))
     }
 }
@@ -226,13 +239,25 @@ fn repr_value(v: &Value) -> String {
 pub struct Format;
 
 impl NativeFunction for Format {
-    #[allow(clippy::many_single_char_names, clippy::too_many_lines)]
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1) = force2("format", args, ctx)?;
+        force_then_values(self, "format", args, ctx)
+    }
+
+    #[allow(clippy::many_single_char_names, clippy::too_many_lines)]
+    fn execute_values(
+        &self,
+        args: &[Value],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1) = values2("format", args)?;
         let template: &str = a0.as_string()?;
         let subs = a1.to_collection();
 
@@ -530,12 +555,24 @@ fn format_date_pattern(d: &crate::date::PureDate, pat: &str) -> String {
 pub struct JoinStrings;
 
 impl NativeFunction for JoinStrings {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Any)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
+        force_then_values(self, "joinStrings", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = args;
         let (separator, prefix, suffix) = match values.len() {
             2 => (values[1].as_string()?.clone(), None, None),
             4 => (
@@ -671,12 +708,24 @@ impl NativeFunction for LastIndexOf {
 pub struct StartsWith;
 
 impl NativeFunction for StartsWith {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1) = force2("startsWith", args, ctx)?;
+        force_then_values(self, "startsWith", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1) = values2("startsWith", args)?;
         let s = a0.as_string()?;
         let prefix = a1.as_string()?;
         Ok(Evaluated::new(Value::Boolean(
@@ -756,12 +805,24 @@ impl NativeFunction for ParseDecimal {
 pub struct Contains;
 
 impl NativeFunction for Contains {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1) = force2("contains", args, ctx)?;
+        force_then_values(self, "contains", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1) = values2("contains", args)?;
         let s = a0.as_string()?;
         let sub = a1.as_string()?;
         Ok(Evaluated::new(Value::Boolean(s.contains(sub.as_str()))))
@@ -773,12 +834,24 @@ impl NativeFunction for Contains {
 pub struct EndsWith;
 
 impl NativeFunction for EndsWith {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1) = force2("endsWith", args, ctx)?;
+        force_then_values(self, "endsWith", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1) = values2("endsWith", args)?;
         let s = a0.as_string()?;
         let suffix = a1.as_string()?;
         Ok(Evaluated::new(Value::Boolean(s.ends_with(suffix.as_str()))))
@@ -790,12 +863,24 @@ impl NativeFunction for EndsWith {
 pub struct Length;
 
 impl NativeFunction for Length {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(1))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let a0 = force1("length", args, ctx)?;
+        force_then_values(self, "length", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let a0 = value1("length", args)?;
         let s = a0.as_string()?;
         Ok(Evaluated::new(Value::Integer(
             i64::try_from(utf16_len(s)).unwrap_or(i64::MAX),
@@ -813,12 +898,24 @@ impl NativeFunction for Length {
 pub struct Split;
 
 impl NativeFunction for Split {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1) = force2("split", args, ctx)?;
+        force_then_values(self, "split", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1) = values2("split", args)?;
         let s = a0.as_string()?;
         let token = a1.as_string()?;
         let parts: Vec<Value> = s
@@ -836,12 +933,24 @@ impl NativeFunction for Split {
 pub struct Substring;
 
 impl NativeFunction for Substring {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Any)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
+        force_then_values(self, "substring", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = args;
         let s = values[0].as_string()?;
         let (start_i, end_i) = match values.len() {
             2 => {
@@ -873,12 +982,24 @@ impl NativeFunction for Substring {
 pub struct Replace;
 
 impl NativeFunction for Replace {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(3))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1, a2) = force3("replace", args, ctx)?;
+        force_then_values(self, "replace", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1, a2) = values3("replace", args)?;
         let source = a0.as_string()?;
         let target = a1.as_string()?;
         let replacement = a2.as_string()?;
@@ -913,12 +1034,24 @@ impl NativeFunction for ReverseString {
 pub struct ToLower;
 
 impl NativeFunction for ToLower {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(1))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let a0 = force1("toLower", args, ctx)?;
+        force_then_values(self, "toLower", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let a0 = value1("toLower", args)?;
         let s = a0.as_string()?;
         Ok(Evaluated::new(Value::String(SmolStr::new(
             s.to_lowercase(),
@@ -931,12 +1064,24 @@ impl NativeFunction for ToLower {
 pub struct ToUpper;
 
 impl NativeFunction for ToUpper {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(1))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let a0 = force1("toUpper", args, ctx)?;
+        force_then_values(self, "toUpper", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let a0 = value1("toUpper", args)?;
         let s = a0.as_string()?;
         Ok(Evaluated::new(Value::String(SmolStr::new(
             s.to_uppercase(),
@@ -981,12 +1126,24 @@ impl NativeFunction for Rtrim {
 pub struct Trim;
 
 impl NativeFunction for Trim {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(1))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let a0 = force1("trim", args, ctx)?;
+        force_then_values(self, "trim", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let a0 = value1("trim", args)?;
         let s = a0.as_string()?;
         Ok(Evaluated::new(Value::String(SmolStr::new(s.trim()))))
     }

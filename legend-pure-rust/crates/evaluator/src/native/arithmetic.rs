@@ -20,9 +20,8 @@ use rust_decimal::Decimal;
 use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 
 use crate::error::{PureException, PureRuntimeError};
-use crate::native::{
-    EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, force_all, force1, force2,
-};
+use crate::native::{ArgMode, Arity, force_then_values, value1, values2};
+use crate::native::{EvalContextTrait, Evaluated, NativeFunction, NativeRegistry};
 use crate::value::Value;
 
 /// Promote two numeric values to the wider common type.
@@ -257,13 +256,25 @@ fn times_pair(a: &Value, b: &Value) -> Result<Value, PureRuntimeError> {
 pub struct Divide;
 
 impl NativeFunction for Divide {
-    #[allow(clippy::cast_precision_loss)]
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Any)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let values = force_all(args, ctx)?;
+        force_then_values(self, "divide", args, ctx)
+    }
+
+    #[allow(clippy::cast_precision_loss)]
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let values = args;
         match values.len() {
             2 => {
                 let promoted = promote_pair(&values[0], &values[1]).ok_or_else(|| {
@@ -331,12 +342,24 @@ impl NativeFunction for Divide {
 pub struct Abs;
 
 impl NativeFunction for Abs {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(1))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let a0 = force1("abs", args, ctx)?;
+        force_then_values(self, "abs", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let a0 = value1("abs", args)?;
         let v = match &a0 {
             Value::Integer(i) => i
                 .checked_abs()
@@ -355,12 +378,24 @@ impl NativeFunction for Abs {
 pub struct Mod;
 
 impl NativeFunction for Mod {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1) = force2("mod", args, ctx)?;
+        force_then_values(self, "mod", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1) = values2("mod", args)?;
         let a = a0.as_integer()?;
         let b = a1.as_integer()?;
         if b == 0 {
@@ -376,20 +411,32 @@ impl NativeFunction for Mod {
 pub struct Rem;
 
 impl NativeFunction for Rem {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(2))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
-        let (a0, a1) = force2("rem", args, ctx)?;
-        let promoted = promote_pair(&a0, &a1).ok_or_else(|| {
+        force_then_values(self, "rem", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        let (a0, a1) = values2("rem", args)?;
+        let promoted = promote_pair(a0, a1).ok_or_else(|| {
             PureRuntimeError::EvaluationError(format!(
                 "rem: unsupported types {} and {}",
                 a0.type_name(),
                 a1.type_name()
             ))
         })?;
-        let dividend_str = crate::native::math::java_number_string(&a0);
+        let dividend_str = crate::native::math::java_number_string(a0);
         let div_zero_err = || -> PureException {
             PureRuntimeError::EvaluationError(format!("Cannot divide {dividend_str} by zero"))
                 .into()

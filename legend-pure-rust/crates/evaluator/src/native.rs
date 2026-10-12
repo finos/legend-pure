@@ -46,7 +46,6 @@
 use std::fmt;
 
 use legend_pure_metamodel::model::PureModel;
-#[cfg(test)]
 use legend_pure_metamodel::source_info::SourceInfo;
 use legend_pure_metamodel::types::{ExprKind, ValueSpec};
 use rust_decimal::Decimal;
@@ -277,6 +276,138 @@ pub trait NativeFunction: fmt::Debug {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException>;
+
+    /// Execute the native against its arguments already forced, in
+    /// order. An eager native ([`ArgMode::Eager`]) defines itself here and
+    /// its [`execute`](Self::execute) is [`force_then_values`]; for any
+    /// other native this hands the values to `execute` as variables bound
+    /// in a scope of their own ([`through_specs`]).
+    ///
+    /// # Errors
+    /// As [`execute`](Self::execute) over expressions with these values.
+    fn execute_values(
+        &self,
+        args: &[Value],
+        ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
+        through_specs(self, args, ctx)
+    }
+}
+
+/// Run a native over already forced values through its expression
+/// entry: each value is bound to a fresh variable in a scope of its own
+/// and the native receives the variables.
+///
+/// # Errors
+/// Whatever the native raises.
+pub fn through_specs<N: NativeFunction + ?Sized>(
+    native: &N,
+    args: &[Value],
+    ctx: &mut dyn EvalContextTrait,
+) -> Result<Evaluated, PureException> {
+    ctx.context_mut().push_scope();
+    let mut specs = Vec::with_capacity(args.len());
+    let placeholder_source = SourceInfo::new("<dispatch>", 0, 0, 0, 0);
+    for (i, v) in args.iter().enumerate() {
+        let name: SmolStr = format!("__native_arg_{i}").into();
+        ctx.context_mut().set(name.clone(), v.clone());
+        specs.push(ValueSpec {
+            kind: Box::new(ExprKind::Variable { name }),
+            source_info: placeholder_source.clone(),
+            type_info: None,
+        });
+    }
+    let result = native.execute(&specs, ctx);
+    ctx.context_mut().pop_scope();
+    result
+}
+
+/// The [`execute`](NativeFunction::execute) of an eager native: checks the
+/// arity it declares before forcing anything (`Exactly`), forces every
+/// argument in order, then runs [`execute_values`](NativeFunction::execute_values).
+/// `func_name` names the native in the arity error.
+///
+/// # Errors
+/// The arity is wrong, an argument fails to evaluate, or the native fails.
+pub fn force_then_values<N: NativeFunction + ?Sized>(
+    native: &N,
+    func_name: &str,
+    args: &[ValueSpec],
+    ctx: &mut dyn EvalContextTrait,
+) -> Result<Evaluated, PureException> {
+    if let ArgMode::Eager(Arity::Exactly(expected)) = native.arg_mode() {
+        arity(func_name, args, expected)?;
+    }
+    match args {
+        [a] => {
+            let a = ctx.evaluate(a)?.into_value();
+            native.execute_values(std::slice::from_ref(&a), ctx)
+        }
+        [a, b] => {
+            let a = ctx.evaluate(a)?.into_value();
+            let b = ctx.evaluate(b)?.into_value();
+            native.execute_values(&[a, b], ctx)
+        }
+        [a, b, c] => {
+            let a = ctx.evaluate(a)?.into_value();
+            let b = ctx.evaluate(b)?.into_value();
+            let c = ctx.evaluate(c)?.into_value();
+            native.execute_values(&[a, b, c], ctx)
+        }
+        _ => {
+            let values = force_all(args, ctx)?;
+            native.execute_values(&values, ctx)
+        }
+    }
+}
+
+/// The one value of a one-argument eager native, with the arity error
+/// its forcing reports.
+///
+/// # Errors
+/// There is not exactly one value.
+pub fn value1<'v>(func_name: &str, args: &'v [Value]) -> Result<&'v Value, PureException> {
+    match args {
+        [a] => Ok(a),
+        _ => Err(arity_error(func_name, 1, args.len())),
+    }
+}
+
+/// The two values of a two-argument eager native, with the arity error
+/// its forcing reports.
+///
+/// # Errors
+/// There are not exactly two values.
+pub fn values2<'v>(
+    func_name: &str,
+    args: &'v [Value],
+) -> Result<(&'v Value, &'v Value), PureException> {
+    match args {
+        [a, b] => Ok((a, b)),
+        _ => Err(arity_error(func_name, 2, args.len())),
+    }
+}
+
+/// The three values of a three-argument eager native, with the arity
+/// error its forcing reports.
+///
+/// # Errors
+/// There are not exactly three values.
+pub fn values3<'v>(
+    func_name: &str,
+    args: &'v [Value],
+) -> Result<(&'v Value, &'v Value, &'v Value), PureException> {
+    match args {
+        [a, b, c] => Ok((a, b, c)),
+        _ => Err(arity_error(func_name, 3, args.len())),
+    }
+}
+
+fn arity_error(func_name: &str, expected: usize, got: usize) -> PureException {
+    PureRuntimeError::EvaluationError(format!(
+        "{func_name}: expected {expected} argument(s), got {got}"
+    ))
+    .into()
 }
 
 /// How a native takes its arguments, as the native declares it
@@ -286,11 +417,37 @@ pub enum ArgMode {
     /// The native receives its argument expressions and forces them
     /// itself, through [`NativeFunction::execute`].
     Lazy,
+    /// The native forces every argument, in order, before anything else
+    /// and never looks at the expressions: its definition is
+    /// [`NativeFunction::execute_values`]. The body executor forces the
+    /// arguments of a call whose count the arity accepts and calls that.
+    Eager(Arity),
     /// A control form of fixed shape. The body executor runs it as its
     /// own operation instead of calling [`NativeFunction::execute`], so a
     /// native declares one only when its `execute` is exactly what the
     /// form documents.
     Control(Control),
+}
+
+/// The argument counts an eager native takes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Arity {
+    /// Exactly this many; another count is an error raised before any
+    /// argument is forced.
+    Exactly(usize),
+    /// Any count; every argument is forced first.
+    Any,
+}
+
+impl Arity {
+    /// Whether a call with `count` arguments forces them all.
+    #[must_use]
+    pub fn accepts(self, count: usize) -> bool {
+        match self {
+            Self::Exactly(expected) => count == expected,
+            Self::Any => true,
+        }
+    }
 }
 
 /// The control forms the body executor runs as operations. Each states
@@ -454,11 +611,7 @@ pub fn expect_args<T>(func_name: &str, args: &[T], expected: usize) -> Result<()
 
 fn arity(func_name: &str, args: &[ValueSpec], expected: usize) -> Result<(), PureException> {
     if args.len() != expected {
-        return Err(PureRuntimeError::EvaluationError(format!(
-            "{func_name}: expected {expected} argument(s), got {}",
-            args.len()
-        ))
-        .into());
+        return Err(arity_error(func_name, expected, args.len()));
     }
     Ok(())
 }

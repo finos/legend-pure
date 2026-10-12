@@ -162,6 +162,17 @@ impl VariableContext {
         &self.bindings[position].1
     }
 
+    /// The name and value bound at a position below
+    /// [`binding_count`](Self::binding_count).
+    ///
+    /// # Panics
+    /// The position is not below [`binding_count`](Self::binding_count).
+    #[must_use]
+    pub fn binding_at(&self, position: usize) -> (&SmolStr, &Value) {
+        let (name, value) = &self.bindings[position];
+        (name, value)
+    }
+
     /// Iterate every currently visible binding's value.
     pub fn iter_values(&self) -> impl Iterator<Item = &Value> + '_ {
         self.iter_bindings().map(|(_, value)| value)

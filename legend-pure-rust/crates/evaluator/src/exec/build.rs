@@ -218,6 +218,7 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
                 Err(_) => return self.fallback(spec),
             },
             ExprKind::Variable { name } => match self.resolve(name) {
+                Some(slot) if (slot as usize) < self.body.captures.len() => Op::Captured(slot),
                 Some(slot) => Op::Local(slot),
                 None => return self.fallback(spec),
             },
@@ -249,8 +250,16 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
                 compiled: std::rc::Rc::new(LambdaBody::new()),
             })),
             ExprKind::Collection { elements } => {
-                let nodes = elements.iter().map(|e| self.expr(e, false)).collect();
-                Op::Collection(nodes)
+                let mark = self.body.nodes.len();
+                let nodes: Vec<NodeIdx> = elements.iter().map(|e| self.expr(e, false)).collect();
+                match self.constant_collection(&nodes) {
+                    Some(value) => {
+                        self.body.nodes.truncate(mark);
+                        self.body.spans.truncate(mark);
+                        Op::Const(value)
+                    }
+                    None => Op::Collection(nodes),
+                }
             }
             ExprKind::TypeReference { type_expr } => match type_expr {
                 TypeExpr::Named { element, .. } => Op::Const(Value::Element(*element)),
@@ -319,7 +328,15 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
                         call: key,
                     }
                 }
-                ArgMode::Lazy | ArgMode::Control(_) => {
+                ArgMode::Eager(arity) if arity.accepts(args.len()) => {
+                    let nodes = args.iter().map(|a| self.expr(a, false)).collect();
+                    Op::CallNative {
+                        native: position,
+                        call: key,
+                        args: nodes,
+                    }
+                }
+                ArgMode::Lazy | ArgMode::Eager(_) | ArgMode::Control(_) => {
                     let nodes = args.iter().map(|a| self.expr(a, false)).collect();
                     Op::CallLazyNative {
                         native: position,
@@ -340,6 +357,19 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
             Target::Unresolved => return self.fallback(spec),
         };
         self.push(op, spec)
+    }
+
+    /// The value of a collection literal whose elements are all
+    /// constants, flattened as the tree walker flattens it.
+    fn constant_collection(&self, elements: &[NodeIdx]) -> Option<Value> {
+        let mut values = crate::value::PVector::new();
+        for &element in elements {
+            let Op::Const(value) = &self.body.nodes[element as usize].op else {
+                return None;
+            };
+            crate::eval::push_flattened(&mut values, value.clone());
+        }
+        Some(crate::eval::collection_value(values))
     }
 
     /// An argument forced through `force_thunk`: a lambda without

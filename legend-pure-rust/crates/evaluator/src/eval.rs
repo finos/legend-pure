@@ -1729,13 +1729,13 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
         lambda: &LambdaClosure,
         args: &[Value],
     ) -> Result<Value, PureException> {
-        if self.exec_enabled()
-            && let Some(definition) = &lambda.exec
+        if let Some(definition) = &lambda.exec
+            && self.exec_enabled()
             && let Some(body) =
                 definition.get_or_build(|| self.build_lambda_body(&lambda.parameters, &lambda.body))
             && Self::lambda_runs(body, lambda, args)
         {
-            return self.run_lambda(body, &lambda.captures, args);
+            return self.run_lambda(body, lambda, args);
         }
         self.context.push_scope();
 
@@ -2047,25 +2047,8 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
         native: &dyn NativeFunction,
         args: &[Value],
     ) -> Result<Value, PureException> {
-        self.context.push_scope();
-        let mut specs = Vec::with_capacity(args.len());
-        let placeholder_source =
-            legend_pure_metamodel::source_info::SourceInfo::new("<dispatch>", 0, 0, 0, 0);
-        for (i, v) in args.iter().enumerate() {
-            let name: SmolStr = format!("__native_arg_{i}").into();
-            self.context.set(name.clone(), v.clone());
-            specs.push(ValueSpec {
-                kind: Box::new(ExprKind::Variable { name }),
-                source_info: placeholder_source.clone(),
-                type_info: None,
-            });
-        }
-        let result = {
-            let mut ctx = EvalContext { evaluator: self };
-            native.execute(&specs, &mut ctx)
-        };
-        self.context.pop_scope();
-        result.map(Evaluated::into_value)
+        crate::native::through_specs(native, args, &mut EvalContext { evaluator: self })
+            .map(Evaluated::into_value)
     }
 }
 

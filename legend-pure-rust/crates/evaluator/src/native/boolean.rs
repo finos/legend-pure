@@ -25,6 +25,7 @@ use crate::error::PureException;
 use crate::native::{
     ArgMode, Control, EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args,
 };
+use crate::native::{Arity, force_then_values};
 use crate::value::Value;
 
 /// Pure `and(Boolean[1], Boolean[1]): Boolean[1]` — short-circuit.
@@ -84,13 +85,25 @@ impl NativeFunction for Or {
 pub struct Not;
 
 impl NativeFunction for Not {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Eager(Arity::Exactly(1))
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException> {
+        force_then_values(self, "not", args, ctx)
+    }
+
+    fn execute_values(
+        &self,
+        args: &[Value],
+        _ctx: &mut dyn EvalContextTrait,
+    ) -> Result<Evaluated, PureException> {
         expect_args("not", args, 1)?;
-        let a = ctx.evaluate(&args[0])?.as_boolean()?;
+        let a = args[0].as_boolean()?;
         Ok(Evaluated::new(Value::Boolean(!a)))
     }
 }
