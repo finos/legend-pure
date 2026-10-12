@@ -48,8 +48,9 @@ import java.nio.charset.StandardCharsets;
  * {@link RustHeap} the proxies of its Rust objects read through.
  *
  * <p>A transport supplies one native context per evaluator through the
- * protected methods below, each called with the evaluator's lock held, on an
- * evaluator that is bound and not closed ({@link #free} last, once). A typed
+ * protected methods below, each called with the evaluator's lock held:
+ * {@link #open} once, on an unbound evaluator; every other on a bound one
+ * that is not closed, {@link #free} last and once. A typed
  * failure of the Rust side is a {@link PureRustEvaluationException}; anything
  * else it raises, a panic included, is a {@link PureRustException} and leaves
  * the context unusable.
