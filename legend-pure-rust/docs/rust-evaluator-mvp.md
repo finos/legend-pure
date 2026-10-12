@@ -9,10 +9,11 @@
 > where the corpus is 346 and 137 tests: 339 / 346 and 133 / 137,
 > compiled 340 / 346 and 133 / 137). Step 2c, one C ABI for every host,
 > phases 1 and 2 done 2026-10-11: `Rust_FFM` on JDK 25 at the same four
-> numbers beside `Rust_JNI`, a PCT test 51 µs against 58 over JNI on the
-> interpreted engine and 86 against 188 on the compiled one. Next: Step
-> 3, read PELT, with the `Directory` trait of Step 4 (Appendix C item 6).
-> Archive tag
+> numbers beside `Rust_JNI`; after the fixes the five-way benchmark
+> prompted, a PCT test on the interpreted engine takes 42 µs over FFM and
+> 50 over JNI against 42 for the engine's own adapter. Next: Step 2d, a
+> typed IR per body (decided 2026-10-11), then Step 3, read PELT, with the
+> `Directory` trait of Step 4 (Appendix C item 6). Archive tag
 > `archive/pre-evaluator-extract-2026-10`.**
 > This document is
 > self-contained. It assumes the reader knows Legend Pure and legend-engine as
@@ -91,7 +92,12 @@ with its gate:
    JDK 25 with the `Rust_FFM` adapter measured beside `Rust_JNI`. Phase 3,
    the deletion of JNI, waits for legend-engine's floor; Python follows
    Step 3.
-1. **Step 3 and Step 4** (next) — read PELT, the `Directory` trait, the
+1. **Step 2d** (next; decided 2026-10-11) — a typed IR per body: Part R
+   (slots and an executor behind a switch, resolved properties, eager
+   natives; no behaviour change), then T0's type coverage decides Part T
+   (unboxed representations, fast paths for total operations). The number
+   to move is e06's ~100 ns per element.
+2. **Step 3 and Step 4** — read PELT, the `Directory` trait, the
    static graph: the per-call lowering disappears for everything static,
    and the `Rust_Native` run (Step 2, the paragraph of that name) resolves
    the surveyor instead of stopping at `MetadataNotFound`.
@@ -100,7 +106,7 @@ with its gate:
    the Step 2c split) compile with release 17,
    and the bridge stays on JNI until the JDK floor reaches 22 (Step 2,
    "JNI or the Foreign Function & Memory API"; Appendix C item 7).
-2. **Steps 5–7** as written.
+3. **Steps 5–7** as written.
 
 Done phases and their closing paragraphs: Step 2b (its own section, the
 final table), natives round 2 and the bridge's cost (Step 2, after
@@ -1381,6 +1387,209 @@ checkstyle configurations, and legend-engine seeing a release-17 shared
 module plus two optional transports. No CI job runs the Java suites with
 a built cdylib today (`rust.yml` never runs Maven, `build.yml` never runs
 cargo); with two transports to compare, that gap starts to matter.
+
+### Step 2d — A typed IR per body (decided 2026-10-11, next; before Step 3)
+
+The author's decision, taken in the design session of 2026-10-11: before
+PELT, give the evaluator a per-body IR between today's `ValueSpec` tree and
+execution, built once per function (by `ElementId`) or per cached lambda
+definition (the bridge's definition key). Two parts, R (resolution, no
+behaviour change) and T (types: representations and fast paths), named so as
+not to clash with the lowering's own Phase A and Phase B. Part R stands on
+its own; Part T's value depends on T0's coverage number, which Steps 3 and 4
+would raise (PELT bodies carry inferred types on every expression).
+`Rust_Native` cannot run the corpus until Step 3, so measurement is through
+the JNI and FFM hosts and the Rust examples. Commits at each green gate.
+
+#### Why
+
+`benchmarks-2026-10-11.md`: the evaluator is within 0.21x–1.95x of the compiled
+engine's generated method under C1, and 2.3x–17x behind it under C2 on real
+expressions. Cranelift-style native code would not close that gap by itself:
+C2 wins by speculation (inlining, escape analysis, unboxing), and a code
+generator fed boxed `Value`s lands near C1, where the evaluator already is.
+Pure can get statically what C2 gets by speculation: every M3 expression
+carries its inferred `genericType` and `multiplicity`, and every call its
+resolved `func`. The IR below records that once per body so an executor (the
+tree walker now, a code generator later) can use it.
+
+The number to move: e06's lambda `x | $x->mod(2) == 0`, about **100 ns per
+element** today (`hot_path.rs`: `filter(x | true)` costs ~22 ns per element; the
+rest is two native dispatches that re-enter the evaluator per argument, scope
+work, `Value` clones).
+
+#### The shape
+
+Built once per function body or lambda definition, from today's `ValueSpec`
+tree. Not a new crate (rule 2): a module inside `evaluator` (e.g. `exec/`).
+
+```rust
+struct Body {
+    params: Vec<Slot>,
+    slots: Vec<SlotInfo>,               // rep per slot
+    names: Vec<(SmolStr, Slot)>,        // kept: reactivate/evaluate/letFunction see names
+    captures: Vec<(SmolStr, Slot)>,     // filled from the closure's captures at instantiation
+    nodes: Vec<Node>,
+    spans: Vec<SourceInfo>,             // side table, for errors
+}
+
+struct Node { op: Op, ty: Option<ResolvedType>, rep: Rep, span: SpanIdx }
+
+enum Rep { I64, F64, Bool, Str, OptI64, OptF64, OptBool, OptStr, Value }
+
+enum Op {
+    Const(ConstIdx), Local(Slot), Let(Slot, NodeIdx), Block(Vec<NodeIdx>),
+    If { cond: NodeIdx, then: NodeIdx, els: NodeIdx }, And(NodeIdx, NodeIdx), Or(NodeIdx, NodeIdx),
+    Intrinsic { op: IntrinsicOp, args: Vec<NodeIdx> },       // Part T
+    CallPure { target: ElementId, args: Vec<NodeIdx> },
+    CallNative { native: NativePos, args: Vec<NodeIdx> },    // eager Values
+    CallLazyNative { native: NativePos, args: Vec<ValueSpec> }, // today's protocol
+    CallValue { callee: NodeIdx, args: Vec<NodeIdx> },       // evaluate, lambda values
+    Property { receiver: NodeIdx, property: ElementId, name: SmolStr },
+    Box(NodeIdx), Unbox(NodeIdx, Rep),                       // Part T
+    Fallback(ValueSpec),                                     // run on the tree walker
+}
+```
+
+#### Invariants (hold in every phase)
+
+1. **Copy types, never infer them.** `Node.ty` is exactly the `ResolvedType`
+   the lowering recorded (`lower/types.rs:186`, `resolved_type`).
+   `rep_of(type, multiplicity)` is the only place a representation is chosen;
+   anything parametric, `Any`, `Number`, `Nil`, `Date` supertypes, or
+   `ty == None` is `Rep::Value`.
+2. **Every node can fall back.** `Op::Fallback(ValueSpec)` hands a subtree to
+   today's evaluator unchanged. The builder never fails a body; it falls back
+   per node. Bodies with nothing resolvable stay entirely on the tree walker.
+3. **Names stay observable.** `reactivate(vs, Map<String, List<Any>>)`,
+   `openVariableValues`, `deactivate`, `evaluate` and `letFunction` reach
+   variables by name. Each `Body` keeps its name→slot table; anything that
+   asks for "the variables in scope" is answered from it.
+4. **No behavior change in Part R.** Same results, same errors, same messages,
+   same source info, same stack frames as the tree walker. Part T adds fast
+   paths only where they are provably identical to the registered native.
+5. **No pointer-address cache keys.** A `Body` is cached by `ElementId`
+   (functions) or by the host's lambda definition key (lambdas, see
+   integration points). Lambdas without a definition key run on the tree
+   walker.
+
+#### Integration points (verified 2026-10-11)
+
+- **Function bodies run in** `call_user_function` (`eval.rs:759`): push scope,
+  bind params by name, `eval_body` (`eval.rs:420`), pop scope, add a stack
+  frame on error. The `Body` executor plugs in here: look up or build the
+  `Body` for the `ElementId`, run it, keep the same hooks
+  (`enter_function`/`leave_function`) and the same frame decoration.
+- **Lambda definitions are cached in the bridge** by an `i64` definition key
+  (`bridge/context.rs:124`, `CachedLowering`; `CachedClosure` holds
+  `parameters`, `body`, `open_variables`). The interpreted host names
+  definitions; the compiled host does not (`CompiledHost` re-lowers each
+  lambda per call, 77.7 µs JNI / 33.4 µs FFM, ~40% of a corpus test). So:
+  attach the `Body` to `CachedClosure` (built on first use of the definition),
+  and leave lambdas with no definition key on the tree walker. This keeps the
+  build cost off the compiled host's per-call path until Step 3.
+- **Natives** implement `NativeFunction::execute(&[ValueSpec], ctx)`
+  (`native.rs:258`); they are always lazy today, and some inspect argument
+  *shape*, not just values (`native/lang.rs:999`, the
+  `^LambdaFunction(expressionSequence = …)` detection). Dispatch finds the
+  registry entry per element through `native_for` (`eval.rs:633`, cached in
+  `native_by_element`), before any Pure body (`eval.rs:600`).
+  `execute_native_with_values` (`eval.rs:1909`) is the reverse adapter, used
+  when a native *function value* is applied (e.g. `->map(toOne_T_MANY__T_1_)`):
+  it binds values to synthetic variables and builds `ValueSpec`s.
+- **Variables** are looked up by name, scanning bindings from the top
+  (`context.rs:125`).
+- **Lambda captures** are already computed once per `Lambda` node
+  (`ExprKind::Lambda { free }`, `metamodel/src/types.rs:385`).
+- **Property calls** are lowered by `lower_property_call`
+  (`lower/body.rs:279`), which has the M3 Property node and keeps only its
+  name (`function: None`).
+- **Test builders** always set `type_info: None` (`builders.rs:372`), and
+  `examples/{expressions,hot_path}.rs` are built with them.
+
+#### Part R: resolution (behavior-preserving)
+
+**R0. Baseline.** Before any change, record: `cargo test --workspace`; the PCT
+corpus on both hosts through `Rust_JNI` and `Rust_FFM` (plan §0 numbers:
+interpreted 339/346 and 133/137, compiled 340/346 and 133/137); `hot_path.rs`
+and `expressions.rs` (three release runs each); `BenchmarkPctExpressions`
+(defaults setting). Commands: `benchmarks-2026-10-11.md`, "Reproduce", and
+the PCT commands in `legend-pure-rust/CLAUDE.md` (JDK 17 for `-jni`, JDK 25
+with `-ffm`).
+
+**R1. `Body` + slots + executor.**
+- Builder: `ValueSpec` body → `Body`. Assign slots to parameters, `let`s
+  (`letFunction` with a literal name), lambda parameters and captures; keep
+  the name table. Lazy control-flow natives with a fixed shape become ops
+  (`if`, `and`, `or`); everything else is `CallPure`, `CallLazyNative`,
+  `CallValue`, `Property` or `Fallback`.
+- Executor: a frame of `Value` slots per body invocation; `Fallback` and
+  `CallLazyNative` run against a `VariableContext` view built from the name
+  table, so the tree walker and lazy natives see the same names they see today.
+- Wire it into `call_user_function` and into lambda application for cached
+  definitions, behind a switch (env var or `Evaluator` option) defaulting
+  **off** until the gate passes, then on.
+- Tests: for every existing evaluator test, same result with the switch on
+  and off (a test helper that runs both); targeted tests for shadowing,
+  `let` in sequences, captures, recursion, `reactivate`/`evaluate` reading
+  names.
+
+**R2. Resolved properties.** `lower_property_call` records the Property's
+`ElementId` alongside the name (lossless; extend `FunctionCallData` or the
+`PropertyCall` variant). The executor uses it where it saves a lookup; field
+*offsets* need per-class object layouts and are out of scope.
+
+**R3. Eager natives.** Add a declaration to `NativeFunction`, default lazy
+(e.g. `fn arity_mode(&self) -> ArgMode { ArgMode::Lazy }`) and an eager entry
+(`fn execute_values(&self, args: &[Value], ctx) -> Result<Evaluated, _>`,
+default: today's adapter). Mark natives eager one at a time, only where the
+native forces every argument in order and never inspects shape. The builder
+emits `CallNative` (eager) for those. Report the count: eager vs lazy entries.
+
+**Gate R.** All Rust tests green with the switch on, and the workspace checks of
+`legend-pure-rust/CLAUDE.md` (clippy `-D warnings`, fmt, doc, copyright, the
+dependency and grep checks: no new dependency); the PCT corpus unchanged
+on both hosts and both transports; `hot_path.rs`/`expressions.rs` and the
+corpus benchmark no slower than R0 on any line (beyond the measured spread),
+with the gain on e05/e06 and the lambda hot-path lines reported. Then the
+switch defaults on.
+
+#### Part T: types (representations and fast paths)
+
+**T0. Coverage, then decide.** Count, over the lowered bodies the corpus runs
+(both hosts), the share of nodes with `type_info` set, and the share whose
+`rep_of` is not `Value`. Report it. If coverage is low, the first T task is
+making `resolved_type` (`lower/types.rs:186`) complete for the cases it drops,
+not adding fast paths. Add a typed form to the builders (e.g.
+`expr::typed(spec, type, multiplicity)`) and type the hot-path and expression
+examples, or Part T will not show in the Rust-native benchmarks.
+
+**T1. Representations.** `rep_of`, `Box`/`Unbox` at representation changes,
+slots holding unboxed values where the slot's rep is not `Value`. Calls into
+Pure functions and natives box their arguments (no calling-convention change
+yet).
+
+**T2. Fast paths (intrinsics), total operations only.** Integer/Float
+comparisons and equality, Boolean `not`/`and`/`or`, `size`/`isEmpty`, string
+concatenation. Selection keys on the *argument* reps at the call site, not
+the declared signature (`equal` is declared `Any[*], Any[*]`; with two `I64`
+arguments it becomes `IEq`). Integer arithmetic that can fail (overflow, `/`,
+`mod` by zero) stays on the native until differential tests exist. Every
+intrinsic gets a differential test against its registered native (same
+result, same error, same message) over generated inputs. Intrinsics are not a
+second native file (rule 4): the native stays the definition.
+
+**Gate T.** As gate R, plus the coverage report, plus e06's per-element cost
+measured through the transports and in the typed examples.
+
+#### Out of scope for this entry
+
+Collection fusion (`map`/`filter`/`fold` without materializing),
+monomorphization of generic functions (the per-call-site handle is
+`resolvedTypeParameters` / `resolvedMultiplicityParameters` on M3
+`FunctionExpression`; the lowering does not read them yet), per-class object
+layouts and field offsets, a stable `Value` layout, and any code generator
+(Cranelift reads `Body` later).
 
 ### Step 3 — Read PELT
 
