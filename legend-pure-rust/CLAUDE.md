@@ -52,11 +52,11 @@ cargo build --workspace                                   # the cdylib the Java 
 cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   mvn -pl legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni clean verify
 #   -> Rust_JNI essential: 339 / 346, Rust_JNI grammar: 133 / 137 (interpreted engine)
-#      Rust_JNI essential (compiled): 340 / 346, grammar (compiled): 133 / 137 (plus 22 boundary tests)
+#      Rust_JNI essential (compiled): 340 / 346, grammar (compiled): 133 / 137 (plus 27 boundary tests)
 # the C ABI client and the benchmarks, JDK 25 only (-ffm and -bench join the reactor on JDK 25+):
 JAVA_HOME=$(/usr/libexec/java_home -v 25) \
   mvn -pl legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni,legend-pure-rust/java/legend-pure-rust-ffm,legend-pure-rust/java/legend-pure-rust-bench clean verify
-#   -> Rust_FFM at the same four numbers (plus 25 boundary tests)
+#   -> Rust_FFM at the same four numbers (plus 27 boundary tests; 26 on both transports, from -api)
 # after a change that moves tests: regenerate the manifests, review the diff, verify again
 JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   mvn test -pl legend-pure-rust/java/legend-pure-rust-jni \
@@ -77,9 +77,10 @@ the root `pom.xml`'s one `<module>` line for this directory:
 `FunctionExecution` a transport supplies nine native calls to,
 `RustEvaluators`, the evaluators its natives keep, the bodies of those natives
 on both engines, the hosts,
-`NodeBridge`, `RustCoreInstance` over `RustHeap`, the exception kinds; the PCT
+`NodeBridge`, `RustCoreInstance` over `RustHeap`, the exception kinds; the
+boundary cases every transport runs, `RustEvaluatorBoundaryCases`, the PCT
 suite builder, manifest rebase, benchmark harness and `RustPlatformGraph` are
-test code, in its test-jar, under `src/test/java/.../pct/`), and
+test code, in its test-jar), and
 `legend-pure-rust-jni`, the JNI transport (`PureRustEvaluator`,
 `RustNodeBridge`, `evalRust`, the `Rust_JNI` suites and manifests), which
 depends on it; and `legend-pure-rust-ffm` (release 25),

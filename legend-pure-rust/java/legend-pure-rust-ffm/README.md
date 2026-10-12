@@ -88,7 +88,9 @@ cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 25) \
   mvn -pl legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni,legend-pure-rust/java/legend-pure-rust-ffm clean verify
 ```
 
-`verify` runs the 25 boundary tests and the four `Rust_FFM` suites, checkstyle (10.21.4 for
+`verify` runs the 27 boundary tests of `TestRustFfmEvaluatorBoundary` (the 26 every transport runs,
+`-api`'s `RustEvaluatorBoundaryCases`, and native access granted to the module) and the four
+`Rust_FFM` suites, checkstyle (10.21.4 for
 this module, the root `checkstyle.xml`) and dependency analysis.
 
 The module compiles with release 25 and joins the reactor only through the profile

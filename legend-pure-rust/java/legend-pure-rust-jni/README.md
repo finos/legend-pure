@@ -84,7 +84,9 @@ cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   mvn -pl legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni clean verify
 ```
 
-`verify` runs the 22 boundary tests and the four `Rust_JNI` suites (346 + 137 per engine), checkstyle
+`verify` runs the 27 boundary tests of `TestRustEvaluatorBoundary` (the 26 every transport runs,
+`-api`'s `RustEvaluatorBoundaryCases`, and a Java failure raised inside a JNI call to the bridge)
+and the four `Rust_JNI` suites (346 + 137 per engine), checkstyle
 and dependency analysis on both modules.
 
 The module compiles with release 17 (the rest of the build stays at release 8) and needs JDK 17: it
