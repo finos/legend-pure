@@ -362,7 +362,13 @@ impl BridgeContext {
                 .bridge_chunk
                 .unwrap_or_else(|| u16::try_from(model.chunks.len()).expect("chunk ids are u16"));
             let mut lowering = CachedLowering {
-                lowering: Lowering::with_ids(model, self.m3_ids, chunk, model.chunk_len(chunk)),
+                lowering: Lowering::with_ids(
+                    model,
+                    &self.registry,
+                    self.m3_ids,
+                    chunk,
+                    model.chunk_len(chunk),
+                ),
                 model,
                 kinds: &self.kinds,
                 cache: &self.closures,

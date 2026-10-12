@@ -21,7 +21,9 @@
 //! Two families live here:
 //!
 //! - [`expr`] — expression builders, one per `ExprKind` arm the evaluator
-//!   executes. Every one synthesises a `<test>` source span.
+//!   executes. Every one synthesises a `<test>` source span. A call built
+//!   by key names a registry key; whether it binds a name is what the
+//!   standard registry declares under that key.
 //! - [`ModelBuilder`] — starts from the bootstrap, allocates elements into
 //!   chunk 1, registers them in their package and rebuilds the derived
 //!   indexes. It honours the one hidden contract between the model and
@@ -503,10 +505,19 @@ pub mod expr {
         }))
     }
 
-    /// `Lambda` (`{params | body}`).
+    /// `Lambda` (`{params | body}`). A call in the body that names no
+    /// element binds a name when the standard registry's native under its
+    /// key declares it ([`NativeRegistry::binds`](crate::native::NativeRegistry::binds)).
     #[must_use]
     pub fn lambda(parameters: Vec<Parameter>, body: Vec<ValueSpec>) -> ValueSpec {
-        let free = crate::eval::free_variable_names(&body, &parameters);
+        thread_local! {
+            static STANDARD: crate::native::NativeRegistry = crate::native::NativeRegistry::standard();
+        }
+        let free = STANDARD.with(|natives| {
+            crate::eval::free_variable_names(&body, &parameters, &|call| {
+                call.function.is_none() && natives.binds(&call.function_name)
+            })
+        });
         spec(ExprKind::Lambda {
             parameters: parameters.into(),
             body: body.into(),

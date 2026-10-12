@@ -138,6 +138,12 @@ impl ModelExtension {
         self.slot(id).and_then(|i| self.pending[i].element.as_ref())
     }
 
+    /// The node name reserved for a pending element.
+    #[must_use]
+    pub fn pending_name(&self, id: ElementId) -> Option<&SmolStr> {
+        self.slot(id).map(|i| &self.pending[i].name)
+    }
+
     /// Reserved elements whose payload has not arrived yet.
     #[must_use]
     pub fn unfilled(&self) -> usize {

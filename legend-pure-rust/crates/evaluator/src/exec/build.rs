@@ -20,8 +20,6 @@
 //! order, to the latest binder of their name in the body, or to a lookup
 //! by name when the body binds none.
 
-use std::collections::HashSet;
-
 use legend_pure_metamodel::model::Element;
 use legend_pure_metamodel::types::{ExprKind, FunctionCallData, Parameter, TypeExpr, ValueSpec};
 use smol_str::SmolStr;
@@ -67,8 +65,9 @@ impl<H: EvalHooks> Evaluator<'_, H> {
         statements: &[ValueSpec],
     ) -> Option<Body> {
         let mut builder = Builder::new(self, BodyKind::Lambda);
-        for name in builder.free_names(parameters, statements) {
-            let slot = builder.bind(name, SlotKind::Capture);
+        let free = crate::eval::free_variable_names(statements, parameters, &|d| self.is_let(d));
+        for name in free.iter() {
+            let slot = builder.bind(name.clone(), SlotKind::Capture);
             builder.body.captures.push(slot);
         }
         for p in parameters {
@@ -109,13 +108,7 @@ impl<H: EvalHooks> Evaluator<'_, H> {
 
     /// The name a call binds when it is a `let` of a literal name.
     fn let_binding<'s>(&self, data: &'s FunctionCallData) -> Option<&'s SmolStr> {
-        if !self.is_let(data) || data.arguments.len() != 2 {
-            return None;
-        }
-        match &*data.arguments[0].kind {
-            ExprKind::StringLiteral(name) => Some(name),
-            _ => None,
-        }
+        crate::eval::let_binding(data, &|d| self.is_let(d))
     }
 
     /// Whether a call is to a native that declares [`Control::Let`].
@@ -398,88 +391,6 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
             }
         });
         found
-    }
-
-    /// The variables a lambda body reads and binds neither as a
-    /// parameter nor by a `let` before the read, sorted.
-    fn free_names(&self, parameters: &[Parameter], statements: &[ValueSpec]) -> Vec<SmolStr> {
-        let mut binders: HashSet<SmolStr> = parameters.iter().map(|p| p.name.clone()).collect();
-        let mut free: HashSet<SmolStr> = HashSet::new();
-        for statement in statements {
-            self.walk_free(statement, &mut binders, &mut free);
-        }
-        let mut names: Vec<SmolStr> = free.into_iter().collect();
-        names.sort_unstable();
-        names
-    }
-
-    fn walk_free(
-        &self,
-        spec: &ValueSpec,
-        binders: &mut HashSet<SmolStr>,
-        free: &mut HashSet<SmolStr>,
-    ) {
-        match &*spec.kind {
-            ExprKind::Variable { name } => {
-                if !binders.contains(name) {
-                    free.insert(name.clone());
-                }
-            }
-            ExprKind::FunctionCall(data) => {
-                if let Some(name) = self.ev.let_binding(data) {
-                    self.walk_free(&data.arguments[1], binders, free);
-                    binders.insert(name.clone());
-                    return;
-                }
-                for arg in &data.arguments {
-                    self.walk_free(arg, binders, free);
-                }
-            }
-            ExprKind::Lambda {
-                parameters, body, ..
-            } => {
-                let mut inner = binders.clone();
-                for p in parameters.iter() {
-                    inner.insert(p.name.clone());
-                }
-                for statement in body.iter() {
-                    self.walk_free(statement, &mut inner, free);
-                }
-            }
-            ExprKind::PropertyCall(data) | ExprKind::QualifiedPropertyCall(data) => {
-                for arg in &data.arguments {
-                    self.walk_free(arg, binders, free);
-                }
-            }
-            ExprKind::KeyExpression { expression, .. } => {
-                self.walk_free(expression, binders, free);
-            }
-            ExprKind::Collection { elements } => {
-                for e in elements {
-                    self.walk_free(e, binders, free);
-                }
-            }
-            ExprKind::PathLiteral { steps, .. } => {
-                for step in steps {
-                    for p in &step.parameters {
-                        self.walk_free(p, binders, free);
-                    }
-                }
-            }
-            ExprKind::IntegerLiteral(_)
-            | ExprKind::FloatLiteral(_)
-            | ExprKind::DecimalLiteral(_)
-            | ExprKind::StringLiteral(_)
-            | ExprKind::BooleanLiteral(_)
-            | ExprKind::DateLiteral(_)
-            | ExprKind::EnumValue { .. }
-            | ExprKind::TypeReference { .. }
-            | ExprKind::MultiplicityReference { .. }
-            | ExprKind::PackageableElementRef { .. }
-            | ExprKind::RelationLiteral { .. }
-            | ExprKind::ColSpecArrayLiteral { .. }
-            | ExprKind::ColSpecLiteral { .. } => {}
-        }
     }
 }
 

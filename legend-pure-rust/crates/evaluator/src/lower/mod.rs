@@ -49,6 +49,7 @@ use smol_str::SmolStr;
 
 use crate::error::{PureException, PureRuntimeError};
 use crate::m3_paths;
+use crate::native::NativeRegistry;
 use crate::value::{LambdaClosure, Value};
 
 pub use extension::ModelExtension;
@@ -130,6 +131,9 @@ impl M3Ids {
 /// [`ModelExtension`] returned by [`into_extension`](Self::into_extension).
 pub struct Lowering<'m> {
     model: &'m PureModel,
+    /// The registry the lowered code runs against: whether a call binds
+    /// a name is what its native declares.
+    natives: &'m NativeRegistry,
     ids: M3Ids,
     ext: ModelExtension,
     /// Specs already built for a node, so a node reached twice (a lambda
@@ -142,19 +146,32 @@ pub struct Lowering<'m> {
 
 impl<'m> Lowering<'m> {
     /// A lowering whose new elements go to `chunk_id` starting at
-    /// `base_idx` (the chunk's current length).
+    /// `base_idx` (the chunk's current length), for code that runs
+    /// against `natives`.
     #[must_use]
-    pub fn new(model: &'m PureModel, chunk_id: u16, base_idx: u32) -> Self {
-        Self::with_ids(model, M3Ids::resolve(model), chunk_id, base_idx)
+    pub fn new(
+        model: &'m PureModel,
+        natives: &'m NativeRegistry,
+        chunk_id: u16,
+        base_idx: u32,
+    ) -> Self {
+        Self::with_ids(model, natives, M3Ids::resolve(model), chunk_id, base_idx)
     }
 
     /// As [`new`](Self::new), over M3 ids already resolved in `model`:
     /// a bridge context resolves them once and again only when its model
     /// grows, instead of on every call.
     #[must_use]
-    pub(crate) fn with_ids(model: &'m PureModel, ids: M3Ids, chunk_id: u16, base_idx: u32) -> Self {
+    pub(crate) fn with_ids(
+        model: &'m PureModel,
+        natives: &'m NativeRegistry,
+        ids: M3Ids,
+        chunk_id: u16,
+        base_idx: u32,
+    ) -> Self {
         Self {
             model,
+            natives,
             ids,
             ext: ModelExtension::new(chunk_id, base_idx),
             specs: HashMap::new(),
@@ -296,6 +313,31 @@ impl<'m> Lowering<'m> {
             }
             _ => false,
         }
+    }
+
+    /// Whether a lowered call binds a name where it runs: its element is
+    /// a native function (in the model or pending here) whose registry
+    /// entry declares the binding.
+    pub(crate) fn binds(&self, call: &legend_pure_metamodel::types::FunctionCallData) -> bool {
+        use legend_pure_metamodel::model::Element;
+        let Some(id) = call.function else {
+            return false;
+        };
+        let (element, key) = match self.ext.pending_element(id) {
+            Some(element) => (element, self.ext.pending_name(id)),
+            None => match id {
+                ElementId::InstanceId {
+                    chunk_id,
+                    local_idx,
+                } if local_idx < self.model.chunk_len(chunk_id) => (
+                    self.model.get_element(id),
+                    Some(&self.model.get_node(id).name),
+                ),
+                _ => return false,
+            },
+        };
+        matches!(element, Element::Function(f) if f.is_native)
+            && key.is_some_and(|key| self.natives.binds(key))
     }
 
     /// Types are advisory: a type that cannot be lowered is dropped, not

@@ -256,6 +256,41 @@ fn a_closure_keeps_what_it_captured_when_it_was_made() {
 }
 
 #[test]
+fn a_lambda_does_not_capture_what_its_own_let_binds() {
+    let inner = || {
+        expr::lambda(
+            vec![int("x")],
+            vec![let_("z", expr::var("x")), expr::var("z")],
+        )
+    };
+    let ExprKind::Lambda { free, .. } = &*inner().kind else {
+        unreachable!("a lambda")
+    };
+    assert!(free.is_empty(), "the let binds z: {free:?}");
+    let (model, ids) = model_with(&[("maker", vec![int("a")])], |_| {
+        vec![vec![let_("z", expr::var("a")), inner()]]
+    });
+    let registry = registry();
+    let (outcome, ev) = same_on_both(&model, &registry, |ev| {
+        let made = ev.call_user_function_by_id_with_args(ids[0], &[Value::Integer(1)])?;
+        let Value::Function(f) = &made else {
+            panic!("a function value")
+        };
+        let FunctionValue::Lambda(closure) = &**f else {
+            panic!("a lambda")
+        };
+        assert!(closure.captures.is_empty(), "{:?}", closure.captures);
+        ev.apply_callable(&made, &[Value::Integer(5)])
+    });
+    assert_eq!(outcome, Ok(Value::Integer(5)));
+    let body = built(&ev, ids[0]);
+    assert_eq!(body.fallbacks(), 0);
+    let made = lambdas(&body);
+    assert_eq!(made.len(), 1);
+    assert!(made[0].captures().is_empty());
+}
+
+#[test]
 fn recursion_through_if_runs_on_built_bodies() {
     let (model, ids) = model_with(&[("fact", vec![int("n")])], |ids| {
         let fact = ids[0];

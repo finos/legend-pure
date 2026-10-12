@@ -84,7 +84,8 @@ fn root(body: Vec<Value>) -> Value {
 /// Lower a root lambda over `model`, apply what it added, run it.
 fn lower_and_run(model: &mut PureModel, root: &Value) -> Result<Value, LowerError> {
     let chunk = u16::try_from(model.chunks.len()).unwrap();
-    let mut lowering = Lowering::new(model, chunk, model.chunk_len(chunk));
+    let natives = NativeRegistry::standard();
+    let mut lowering = Lowering::new(model, &natives, chunk, model.chunk_len(chunk));
     let closure = lowering.lower_root_lambda(root)?;
     lowering.into_extension().apply(model).expect("apply");
     Ok(run(model, closure))
@@ -109,7 +110,8 @@ fn a_native_call_lowers_to_an_element_named_by_its_mangled_signature() {
         let lambda = root(vec![plus(vec![int(1), int(2)])]);
 
         let chunk = u16::try_from(before).unwrap();
-        let mut lowering = Lowering::new(&model, chunk, 0);
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, chunk, 0);
         let closure = lowering.lower_root_lambda(&lambda).unwrap();
         assert!(closure.parameters.is_empty());
         assert_eq!(closure.body.len(), 1);
@@ -166,7 +168,8 @@ fn the_bridge_chunk_is_whatever_comes_after_the_model_s_chunks() {
         );
         let body = vec![m3::sfe(eq, "eq", vec![plus(vec![int(1), int(1)]), int(2)])];
         let chunk = 2;
-        let mut lowering = Lowering::new(&model, chunk, model.chunk_len(chunk));
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, chunk, model.chunk_len(chunk));
         let closure = lowering.lower_root_lambda(&root(body)).unwrap();
         let extension = lowering.into_extension();
         assert_eq!(extension.len(), 1);
@@ -223,7 +226,8 @@ fn nested_lambdas_lower_bare_so_if_takes_a_branch() {
         );
         let lambda = root(vec![call]);
         let chunk = u16::try_from(model.chunks.len()).unwrap();
-        let mut lowering = Lowering::new(&model, chunk, 0);
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, chunk, 0);
         let closure = lowering.lower_root_lambda(&lambda).unwrap();
         let ExprKind::FunctionCall(call) = &*closure.body[0].kind else {
             panic!("expected a call");
@@ -237,7 +241,7 @@ fn nested_lambdas_lower_bare_so_if_takes_a_branch() {
 }
 
 #[test]
-fn let_keeps_its_simple_name_for_the_free_variable_walk() {
+fn a_let_lowers_to_a_call_of_its_element_and_binds() {
     on_both_paths(|| {
         let mut model = PureModel::bootstrapped();
         let let_fn = m3::native_function(
@@ -255,7 +259,8 @@ fn let_keeps_its_simple_name_for_the_free_variable_walk() {
         ];
         let lambda = root(body);
         let chunk = u16::try_from(model.chunks.len()).unwrap();
-        let mut lowering = Lowering::new(&model, chunk, 0);
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, chunk, 0);
         let closure = lowering.lower_root_lambda(&lambda).unwrap();
         assert!(
             matches!(&*closure.body[0].kind, ExprKind::FunctionCall(c) if c.function_name == "letFunction")
@@ -263,6 +268,57 @@ fn let_keeps_its_simple_name_for_the_free_variable_walk() {
         assert!(matches!(&*closure.body[1].kind, ExprKind::Variable { name } if name == "x"));
         lowering.into_extension().apply(&mut model).expect("apply");
         assert_eq!(run(&model, closure), Value::Integer(7));
+    });
+}
+
+#[test]
+fn a_nested_lambda_does_not_capture_what_its_own_let_binds() {
+    on_both_paths(|| {
+        let mut model = PureModel::bootstrapped();
+        let let_fn = m3::native_function(
+            LET,
+            "letFunction",
+            m3::function_type(Vec::new(), m3::type_parameter("T"), many()),
+        );
+        let nested = m3::lambda(
+            Vec::new(),
+            vec![
+                m3::sfe(let_fn, "letFunction", vec![str_lit("x"), int(7)]),
+                m3::var("x"),
+            ],
+            integer(),
+            one(),
+        )
+        .build();
+        let lambda = root(vec![m3::iv(vec![nested], None, None)]);
+        let chunk = u16::try_from(model.chunks.len()).unwrap();
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, chunk, 0);
+        let closure = lowering.lower_root_lambda(&lambda).unwrap();
+        let ExprKind::Lambda { free, .. } = &*closure.body[0].kind else {
+            panic!("a lambda, got {:?}", closure.body[0].kind);
+        };
+        assert!(free.is_empty(), "the let binds x: {free:?}");
+        lowering.into_extension().apply(&mut model).expect("apply");
+
+        let registry = NativeRegistry::standard();
+        let mut eval = Evaluator::new(&model, &registry);
+        eval.context_mut().push_scope();
+        eval.context_mut().set("x", Value::Integer(1));
+        let made = eval
+            .apply_callable(
+                &Value::Function(Box::new(FunctionValue::Lambda(closure))),
+                &[],
+            )
+            .unwrap();
+        let Value::Function(f) = &made else {
+            panic!("a function, got {made:?}");
+        };
+        let FunctionValue::Lambda(nested) = &**f else {
+            panic!("a lambda");
+        };
+        assert!(nested.captures.is_empty(), "{:?}", nested.captures);
+        assert_eq!(eval.apply_callable(&made, &[]).unwrap(), Value::Integer(7));
     });
 }
 
@@ -302,7 +358,8 @@ fn an_unknown_node_kind_is_unsupported_and_adds_nothing() {
         let odd = TestNode::new("meta::x::Y").build();
         let lambda = root(vec![plus(vec![int(1), odd])]);
         let chunk = u16::try_from(model.chunks.len()).unwrap();
-        let mut lowering = Lowering::new(&model, chunk, 0);
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, chunk, 0);
         let err = lowering.lower_root_lambda(&lambda).unwrap_err();
         assert_eq!(
             err,
@@ -320,7 +377,8 @@ fn a_lambda_with_open_variables_but_no_context_is_unsupported() {
         let lambda = m3::lambda(Vec::new(), vec![m3::var("k")], integer(), one())
             .prop("openVariables", vec![Value::String("k".into())])
             .build();
-        let mut lowering = Lowering::new(&model, 1, 0);
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, 1, 0);
         let err = lowering.lower_root_lambda(&lambda).unwrap_err();
         assert!(
             matches!(err, LowerError::Unsupported(m) if m.starts_with("lowering captured variables"))
@@ -337,7 +395,8 @@ fn specs_carry_the_node_s_span() {
             .at("f.pure", 3, 9)
             .build();
         let lambda = root(vec![lit]);
-        let mut lowering = Lowering::new(&model, 1, 0);
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, 1, 0);
         let closure = lowering.lower_root_lambda(&lambda).unwrap();
         let span = &closure.body[0].source_info;
         assert_eq!(
@@ -485,7 +544,8 @@ fn mutually_recursive_functions_lower_once_each() {
             .unwrap();
         let lambda = root(vec![m3::sfe(is_even, "isEven", vec![int(6)])]);
         let chunk = u16::try_from(model.chunks.len()).unwrap();
-        let mut lowering = Lowering::new(&model, chunk, 0);
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, chunk, 0);
         let closure = lowering.lower_root_lambda(&lambda).unwrap();
         let extension = lowering.into_extension();
         assert_eq!(extension.len(), 5);
@@ -508,7 +568,8 @@ fn a_function_referenced_as_a_value_becomes_an_element_reference() {
             ),
         );
         let lambda = root(vec![m3::iv(vec![plus_fn], None, Some(one()))]);
-        let mut lowering = Lowering::new(&model, 1, 0);
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, 1, 0);
         let closure = lowering.lower_root_lambda(&lambda).unwrap();
         assert!(matches!(
             &*closure.body[0].kind,
@@ -533,7 +594,8 @@ fn captured_variables_become_the_closure_s_captures() {
         .captured("k", vec![Value::Integer(41)])
         .build();
         let chunk = u16::try_from(model.chunks.len()).unwrap();
-        let mut lowering = Lowering::new(&model, chunk, 0);
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, chunk, 0);
         let closure = lowering.lower_root_lambda(&lambda).unwrap();
         assert_eq!(closure.captures.get("k"), Some(&Value::Integer(41)));
         lowering.into_extension().apply(&mut model).expect("apply");
@@ -556,7 +618,8 @@ fn a_captured_lambda_is_lowered_into_a_closure() {
             .captured("g", vec![g])
             .build();
         let (f, extension) = {
-            let mut lowering = Lowering::new(&model, 1, 0);
+            let natives = NativeRegistry::standard();
+            let mut lowering = Lowering::new(&model, &natives, 1, 0);
             let closure = lowering.lower_root_lambda(&lambda).unwrap();
             let Some(Value::Function(f)) = closure.captures.get("g") else {
                 panic!(
@@ -654,7 +717,8 @@ fn a_node_freed_mid_lowering_never_lends_its_cached_spec_to_its_successor() {
                             g_len,
                         },
                     )))));
-                    let mut lowering = Lowering::new(&model, 1, 0);
+                    let natives = NativeRegistry::standard();
+                    let mut lowering = Lowering::new(&model, &natives, 1, 0);
                     let closure = lowering.lower_root_lambda(&root).unwrap();
                     let Some(Value::Function(g)) = closure.captures.get("g") else {
                         panic!("g was not captured as a function");
@@ -794,7 +858,8 @@ fn a_property_call_records_the_element_that_declares_the_property() {
         ];
         let lambda = root(body);
         let chunk = u16::try_from(model.chunks.len()).unwrap();
-        let mut lowering = Lowering::new(&model, chunk, 0);
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, chunk, 0);
         let closure = lowering.lower_root_lambda(&lambda).unwrap();
         lowering.into_extension().apply(&mut model).expect("apply");
         let person_id = model
@@ -831,7 +896,8 @@ fn a_class_construction_lowers_the_class_and_builds_through_the_platform_new() {
         ];
         let lambda = root(body);
         let chunk = u16::try_from(model.chunks.len()).unwrap();
-        let mut lowering = Lowering::new(&model, chunk, 0);
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, chunk, 0);
         let closure = lowering.lower_root_lambda(&lambda).unwrap();
         assert!(
             matches!(&*closure.body[1].kind, ExprKind::PropertyCall(c) if c.function_name == "firstName" && c.arguments.len() == 1)
@@ -888,7 +954,8 @@ fn an_enum_value_lowers_its_enumeration_first() {
             Some(one()),
         )]);
         let chunk = u16::try_from(model.chunks.len()).unwrap();
-        let mut lowering = Lowering::new(&model, chunk, 0);
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, chunk, 0);
         let closure = lowering.lower_root_lambda(&lambda).unwrap();
         let ExprKind::EnumValue {
             enum_element,
@@ -925,7 +992,8 @@ fn a_type_literal_lowers_to_a_type_reference() {
             Some(one()),
         )]);
         let chunk = u16::try_from(model.chunks.len()).unwrap();
-        let mut lowering = Lowering::new(&model, chunk, 0);
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, chunk, 0);
         let closure = lowering.lower_root_lambda(&lambda).unwrap();
         assert!(matches!(
             &*closure.body[0].kind,
@@ -947,7 +1015,8 @@ fn a_type_that_cannot_lower_is_dropped_unless_an_element_is_half_built() {
             Some(odd_type.clone()),
             Some(one()),
         )]);
-        let mut lowering = Lowering::new(&model, 1, 0);
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, 1, 0);
         let closure = lowering.lower_root_lambda(&lambda).unwrap();
         assert!(closure.body[0].type_info.is_none());
         let bad_class = m3::class(
@@ -960,7 +1029,8 @@ fn a_type_that_cannot_lower_is_dropped_unless_an_element_is_half_built() {
             Some(m3::generic(Some(bad_class), Vec::new())),
             Some(one()),
         )]);
-        let mut lowering = Lowering::new(&model, 1, 0);
+        let natives = NativeRegistry::standard();
+        let mut lowering = Lowering::new(&model, &natives, 1, 0);
         let err = lowering.lower_root_lambda(&lambda).unwrap_err();
         assert!(
             matches!(&err, LowerError::Unsupported(m) if m.contains("meta::x::Y")),

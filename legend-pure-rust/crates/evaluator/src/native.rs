@@ -536,6 +536,14 @@ impl NativeRegistry {
         self.entries[position].as_ref()
     }
 
+    /// Whether a call to the native under `key` binds a name in the scope
+    /// it runs in: the native declares [`Control::Let`].
+    #[must_use]
+    pub fn binds(&self, key: &str) -> bool {
+        self.get(key)
+            .is_some_and(|native| native.arg_mode() == ArgMode::Control(Control::Let))
+    }
+
     /// Look up a native function, returning a `FunctionNotFound` error if missing.
     ///
     /// # Errors

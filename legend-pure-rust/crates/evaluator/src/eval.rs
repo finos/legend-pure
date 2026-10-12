@@ -2326,38 +2326,49 @@ pub(crate) fn collection_value(mut values: PVector<Value>) -> Value {
 
 /// The free variables of a lambda body, in a stable order, as the node
 /// stores them: computed once when the node is built. A variable is free
-/// when no parameter, `let` or nested lambda along the walk binds it.
+/// when no parameter, `let` or nested lambda along the walk binds it; a
+/// call is a `let` when `binds` says its target declares
+/// [`Control::Let`](crate::native::Control::Let) and it names its binding
+/// with a literal.
 #[must_use]
 pub fn free_variable_names(
     body: &[ValueSpec],
     parameters: &[legend_pure_metamodel::types::Parameter],
+    binds: &dyn Fn(&FunctionCallData) -> bool,
 ) -> std::sync::Arc<[SmolStr]> {
-    let mut names: Vec<SmolStr> = collect_free_variables(body, parameters)
-        .into_iter()
-        .collect();
-    names.sort_unstable();
-    names.into()
-}
-
-pub(crate) fn collect_free_variables(
-    body: &[ValueSpec],
-    parameters: &[legend_pure_metamodel::types::Parameter],
-) -> std::collections::HashSet<SmolStr> {
     let mut binders: std::collections::HashSet<SmolStr> =
         parameters.iter().map(|p| p.name.clone()).collect();
     let mut free: std::collections::HashSet<SmolStr> = std::collections::HashSet::new();
     for spec in body {
-        walk_free_variables(spec, &mut binders, &mut free);
+        walk_free_variables(spec, &mut binders, &mut free, binds);
     }
-    free
+    let mut names: Vec<SmolStr> = free.into_iter().collect();
+    names.sort_unstable();
+    names.into()
+}
+
+/// The name a call binds: a `let` (as `binds` declares it) of a literal
+/// name.
+pub(crate) fn let_binding<'s>(
+    data: &'s FunctionCallData,
+    binds: &dyn Fn(&FunctionCallData) -> bool,
+) -> Option<&'s SmolStr> {
+    if data.arguments.len() != 2 || !binds(data) {
+        return None;
+    }
+    match &*data.arguments[0].kind {
+        ExprKind::StringLiteral(name) => Some(name),
+        _ => None,
+    }
 }
 
 /// Walk a single `ValueSpec`, accumulating free variables into `free` and
-/// respecting `let`-desugared bindings in the caller's `binders` set.
+/// the names a `let` binds into `binders`.
 fn walk_free_variables(
     spec: &ValueSpec,
     binders: &mut std::collections::HashSet<SmolStr>,
     free: &mut std::collections::HashSet<SmolStr>,
+    binds: &dyn Fn(&FunctionCallData) -> bool,
 ) {
     match &*spec.kind {
         ExprKind::Variable { name } => {
@@ -2365,21 +2376,14 @@ fn walk_free_variables(
                 free.insert(name.clone());
             }
         }
-        ExprKind::FunctionCall(FunctionCallData {
-            function_name,
-            arguments,
-            ..
-        }) => {
-            if function_name.as_str() == "letFunction"
-                && arguments.len() == 2
-                && let ExprKind::StringLiteral(binding_name) = &*arguments[0].kind
-            {
-                walk_free_variables(&arguments[1], binders, free);
-                binders.insert(binding_name.clone());
+        ExprKind::FunctionCall(data) => {
+            if let Some(name) = let_binding(data, binds) {
+                walk_free_variables(&data.arguments[1], binders, free, binds);
+                binders.insert(name.clone());
                 return;
             }
-            for arg in arguments {
-                walk_free_variables(arg, binders, free);
+            for arg in &data.arguments {
+                walk_free_variables(arg, binders, free, binds);
             }
         }
         ExprKind::Lambda {
@@ -2392,26 +2396,26 @@ fn walk_free_variables(
                 inner_binders.insert(p.name.clone());
             }
             for inner in inner_body.iter() {
-                walk_free_variables(inner, &mut inner_binders, free);
+                walk_free_variables(inner, &mut inner_binders, free, binds);
             }
         }
         ExprKind::PropertyCall(data) | ExprKind::QualifiedPropertyCall(data) => {
             for arg in &data.arguments {
-                walk_free_variables(arg, binders, free);
+                walk_free_variables(arg, binders, free, binds);
             }
         }
         ExprKind::KeyExpression { expression, .. } => {
-            walk_free_variables(expression, binders, free);
+            walk_free_variables(expression, binders, free, binds);
         }
         ExprKind::Collection { elements } => {
             for e in elements {
-                walk_free_variables(e, binders, free);
+                walk_free_variables(e, binders, free, binds);
             }
         }
         ExprKind::PathLiteral { steps, .. } => {
             for step in steps {
                 for param in &step.parameters {
-                    walk_free_variables(param, binders, free);
+                    walk_free_variables(param, binders, free, binds);
                 }
             }
         }
