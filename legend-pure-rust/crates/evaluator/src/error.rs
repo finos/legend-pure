@@ -140,7 +140,7 @@ impl PureRuntimeError {
 ///
 /// Each frame represents a function call expression being evaluated,
 /// mirroring Java's `functionExpressionCallStack` entries.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StackFrame {
     /// Human-readable function identifier.
     ///

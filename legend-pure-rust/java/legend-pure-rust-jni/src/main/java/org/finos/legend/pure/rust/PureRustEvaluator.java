@@ -162,8 +162,7 @@ public final class PureRustEvaluator implements FunctionExecution, RustHeap, Clo
         }
         catch (PureRustEvaluationException e)
         {
-            SourceInformation source = sourceInformationOf(e.getSourceInfo());
-            e.initCause(pureCause(e, source));
+            e.initCause(pureCause(e, e.getSourceInformation()));
             throw e;
         }
     }
@@ -341,30 +340,6 @@ public final class PureRustEvaluator implements FunctionExecution, RustHeap, Clo
             return argument.getValueForMetaPropertyToMany(M3Properties.values).toArray(new CoreInstance[0]);
         }
         return new CoreInstance[]{argument};
-    }
-
-    private static SourceInformation sourceInformationOf(String text)
-    {
-        if (text == null)
-        {
-            return null;
-        }
-        int lastColon = text.lastIndexOf(':');
-        int middleColon = (lastColon < 0) ? -1 : text.lastIndexOf(':', lastColon - 1);
-        if (middleColon < 0)
-        {
-            return new SourceInformation(text, 0, 0, 0, 0);
-        }
-        try
-        {
-            int line = Integer.parseInt(text.substring(middleColon + 1, lastColon));
-            int column = Integer.parseInt(text.substring(lastColon + 1));
-            return new SourceInformation(text.substring(0, middleColon), line, column, line, column);
-        }
-        catch (NumberFormatException e)
-        {
-            return new SourceInformation(text, 0, 0, 0, 0);
-        }
     }
 
     private static final class RustConsole extends AbstractConsole

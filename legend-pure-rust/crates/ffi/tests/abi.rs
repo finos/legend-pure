@@ -761,7 +761,16 @@ fn a_failure_the_host_reports_keeps_its_kind() {
         // SAFETY: as in `last_message`.
         let failure = unsafe { *pure_last_failure() };
         assert_eq!(text_of(failure.info), Some(expected_info));
-        assert_eq!(text_of(failure.source).as_deref(), Some("<ffi>:0:0"));
+        assert_eq!(text_of(failure.source.source).as_deref(), Some("<ffi>"));
+        assert_eq!(
+            [
+                failure.source.start_line,
+                failure.source.start_column,
+                failure.source.end_line,
+                failure.source.end_column
+            ],
+            [0; 4]
+        );
         assert_eq!(failure.call_stack_len, 0);
         assert!(text_of(failure.constraint_id).is_none());
         // SAFETY: the context is live and passed to nothing after this.
@@ -792,4 +801,55 @@ fn freeing_a_context_releases_an_unreleased_object_over_a_host_node() {
         vec![2],
         "the node died with the context and its host was told"
     );
+}
+
+/// A failure raised while a located node is read carries the node's whole
+/// span, start and end, as a `pure_span`.
+#[test]
+fn a_failure_at_a_located_node_carries_its_whole_span() {
+    let failing = Box::new(Failing {
+        kind: failure_kind::EXECUTION_ERROR,
+        text: "boom",
+    });
+    let host = PureHostTable {
+        host: std::ptr::from_ref::<Failing>(&failing)
+            .cast_mut()
+            .cast::<c_void>(),
+        property_values: Some(failing_property_values),
+        captured_values: Some(table_captured_values),
+        keys: Some(failing_keys),
+        forget: None,
+    };
+    let mut ctx = std::ptr::null_mut();
+    // SAFETY: both pointers are to live locals.
+    let created = unsafe { pure_context_new(&raw const host, &raw mut ctx) };
+    assert_eq!(created, status::OK);
+    let located = Description {
+        source_id: Some("/a/b.pure".to_owned()),
+        line: 3,
+        column: 5,
+        end_line: 4,
+        end_column: 9,
+        ..lambda(1, 100)
+    };
+    let function = flat(&located);
+    let mut out = std::ptr::null_mut();
+    // SAFETY: the context is live; the other pointers are live locals.
+    let status = unsafe { pure_start(ctx, &raw const function, std::ptr::null(), 0, &raw mut out) };
+    assert_eq!(status, status::FAILED);
+    assert_eq!(last_kind(), failure_kind::EXECUTION_ERROR);
+    // SAFETY: as in `last_message`.
+    let failure = unsafe { *pure_last_failure() };
+    assert_eq!(text_of(failure.source.source).as_deref(), Some("/a/b.pure"));
+    assert_eq!(
+        [
+            failure.source.start_line,
+            failure.source.start_column,
+            failure.source.end_line,
+            failure.source.end_column
+        ],
+        [3, 5, 4, 9]
+    );
+    // SAFETY: the context is live and passed to nothing after this.
+    assert_eq!(unsafe { pure_context_free(ctx) }, status::OK);
 }

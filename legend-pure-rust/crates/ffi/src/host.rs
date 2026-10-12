@@ -19,16 +19,17 @@
 use std::ffi::c_void;
 
 use legend_pure_evaluator::bridge::description::Description;
-use legend_pure_evaluator::bridge::failure::{boundary_error, typed};
+use legend_pure_evaluator::bridge::failure::{FailureKind, boundary_error, typed};
 use legend_pure_evaluator::bridge::host::Host;
 use legend_pure_evaluator::error::{PureException, PureRuntimeError};
 use smol_str::SmolStr;
 
 use crate::abi::{
     ForgetFn, KeysFn, PropertyValuesFn, PureDescription, PureHostTable, PureReply, PureString,
-    failure_kind, status,
+    status,
 };
 use crate::decode;
+use crate::failure::kind_of_code;
 
 /// What a callback answers with: descriptions, names, or why it failed.
 /// The callback's status decides which is read; a recorded failure wins
@@ -139,15 +140,23 @@ impl Reply {
     /// `FUNCTION_NOT_FOUND`, `UNSUPPORTED` and `NOT_IMPLEMENTED` keep
     /// their kind; anything else is an execution error naming the read.
     pub fn fail(&mut self, kind: i32, message: &str) {
-        let failure = match kind {
-            failure_kind::UNSUPPORTED => typed(PureRuntimeError::Unsupported(message.to_owned())),
-            failure_kind::NOT_IMPLEMENTED => {
+        let failure = match kind_of_code(kind) {
+            Some(FailureKind::Unsupported) => {
+                typed(PureRuntimeError::Unsupported(message.to_owned()))
+            }
+            Some(FailureKind::NotImplemented) => {
                 typed(PureRuntimeError::NotImplemented(SmolStr::new(message)))
             }
-            failure_kind::FUNCTION_NOT_FOUND => {
+            Some(FailureKind::FunctionNotFound) => {
                 typed(PureRuntimeError::FunctionNotFound(SmolStr::new(message)))
             }
-            _ => boundary_error(format!("{}: {message}", self.what)),
+            Some(
+                FailureKind::ExecutionError
+                | FailureKind::AssertionFailed
+                | FailureKind::ConstraintViolation
+                | FailureKind::Panic,
+            )
+            | None => boundary_error(format!("{}: {message}", self.what)),
         };
         self.note(failure);
     }

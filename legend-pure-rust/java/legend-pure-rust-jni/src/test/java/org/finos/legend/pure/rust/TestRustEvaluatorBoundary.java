@@ -31,6 +31,7 @@ import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.exception.PureException;
@@ -389,25 +390,39 @@ public class TestRustEvaluatorBoundary
 
     /**
      * A failure raised inside a lowered lambda is anchored at the Java
-     * source span of the call that raised it, and that anchor is what the
-     * Pure cause reports; the cause's info is the bare Pure text, which is
-     * what {@code assertError} compares.
+     * source span of the call that raised it, start and end, and that span
+     * is what the Pure cause reports; the cause's info is the bare Pure
+     * text, which is what {@code assertError} compares.
      */
     @Test
     public void failuresInsideALoweredLambdaCarryTheJavaSpan()
     {
         CoreInstance lambda = findLambda(pctTest(PlatformCodeRepositoryProvider.essentialFunctions, "testAtError"));
+        SourceInformation call = lambda.getValueForMetaPropertyToMany(M3Properties.expressionSequence).getFirst().getSourceInformation();
+        Assert.assertTrue(call.getMessage(), call.getEndColumn() > call.getColumn());
         PureRustEvaluationException e = Assert.assertThrows(PureRustEvaluationException.class,
                 () -> evaluator.start(lambda, Lists.immutable.empty()));
         Assert.assertEquals(PureRustEvaluationException.Kind.EXECUTION_ERROR, e.getKind());
         Assert.assertEquals("ExecutionError: The system is trying to get an element at offset 2 where the collection is of size 2", e.getMessage());
+        assertSpan(call, e.getSourceInformation());
         PureException cause = PureException.findPureException(e);
         Assert.assertNotNull(cause);
         Assert.assertEquals("The system is trying to get an element at offset 2 where the collection is of size 2", cause.getInfo());
-        Assert.assertNotNull(cause.getSourceInformation());
         Assert.assertEquals("/platform/pure/essential/collection/index/at.pure", cause.getSourceInformation().getSourceId());
-        Assert.assertEquals(lambda.getSourceInformation().getLine(), cause.getSourceInformation().getLine());
-        Assert.assertTrue(cause.getSourceInformation().getColumn() > 0);
+        assertSpan(call, cause.getSourceInformation());
+    }
+
+    /**
+     * The anchor and the end of a span, as the Java node had them.
+     */
+    private static void assertSpan(SourceInformation expected, SourceInformation actual)
+    {
+        Assert.assertNotNull(actual);
+        Assert.assertEquals(expected.getSourceId(), actual.getSourceId());
+        Assert.assertEquals(expected.getLine(), actual.getLine());
+        Assert.assertEquals(expected.getColumn(), actual.getColumn());
+        Assert.assertEquals(expected.getEndLine(), actual.getEndLine());
+        Assert.assertEquals(expected.getEndColumn(), actual.getEndColumn());
     }
 
     /**

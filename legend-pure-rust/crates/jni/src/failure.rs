@@ -20,17 +20,48 @@
 //! pending throwable, clears it, and only then asks the bridge what it was:
 //! a `PureRustEvaluationException` the bridge raised on purpose keeps its
 //! kind (`UNSUPPORTED`, `NOT_IMPLEMENTED`, `FUNCTION_NOT_FOUND`), anything
-//! else becomes an execution error carrying the throwable's text.
+//! else becomes an execution error carrying the throwable's text. The
+//! Java spelling of a [`FailureKind`] lives here, in both directions.
 
 use jni::JNIEnv;
 use jni::objects::{JObjectArray, JString, JThrowable, JValue};
 use jni::signature::ReturnType;
+use legend_pure_evaluator::bridge::failure::FailureKind;
 use legend_pure_evaluator::error::{PureException, PureRuntimeError};
 use smol_str::SmolStr;
 
 pub(crate) use legend_pure_evaluator::bridge::failure::{boundary_error, typed};
 
 use crate::host::JniHost;
+
+/// The name of the `PureRustEvaluationException.Kind` constant a kind
+/// becomes; `None` for a panic, which Java receives as the untyped
+/// `PureRustException`.
+pub(crate) const fn java_kind(kind: FailureKind) -> Option<&'static str> {
+    match kind {
+        FailureKind::ExecutionError => Some("EXECUTION_ERROR"),
+        FailureKind::AssertionFailed => Some("ASSERTION_FAILED"),
+        FailureKind::ConstraintViolation => Some("CONSTRAINT_VIOLATION"),
+        FailureKind::FunctionNotFound => Some("FUNCTION_NOT_FOUND"),
+        FailureKind::Unsupported => Some("UNSUPPORTED"),
+        FailureKind::NotImplemented => Some("NOT_IMPLEMENTED"),
+        FailureKind::Panic => None,
+    }
+}
+
+/// The kind a `PureRustEvaluationException.Kind` constant's name stands
+/// for; `None` for a name that is none of them.
+fn kind_of_java_name(name: &str) -> Option<FailureKind> {
+    match name {
+        "EXECUTION_ERROR" => Some(FailureKind::ExecutionError),
+        "ASSERTION_FAILED" => Some(FailureKind::AssertionFailed),
+        "CONSTRAINT_VIOLATION" => Some(FailureKind::ConstraintViolation),
+        "FUNCTION_NOT_FOUND" => Some(FailureKind::FunctionNotFound),
+        "UNSUPPORTED" => Some(FailureKind::Unsupported),
+        "NOT_IMPLEMENTED" => Some(FailureKind::NotImplemented),
+        _ => None,
+    }
+}
 
 /// Take and clear the pending Java exception, if there is one. Nothing
 /// else may be called on `env` while an exception is pending.
@@ -75,11 +106,21 @@ fn from_throwable(
     throwable: &JThrowable,
 ) -> PureException {
     match describe_throwable(env, host, throwable) {
-        Ok((kind, text)) => match kind.as_str() {
-            "UNSUPPORTED" => typed(PureRuntimeError::Unsupported(text)),
-            "NOT_IMPLEMENTED" => typed(PureRuntimeError::NotImplemented(SmolStr::new(text))),
-            "FUNCTION_NOT_FOUND" => typed(PureRuntimeError::FunctionNotFound(SmolStr::new(text))),
-            _ => boundary_error(format!("{what}: {text}")),
+        Ok((kind, text)) => match kind_of_java_name(&kind) {
+            Some(FailureKind::Unsupported) => typed(PureRuntimeError::Unsupported(text)),
+            Some(FailureKind::NotImplemented) => {
+                typed(PureRuntimeError::NotImplemented(SmolStr::new(text)))
+            }
+            Some(FailureKind::FunctionNotFound) => {
+                typed(PureRuntimeError::FunctionNotFound(SmolStr::new(text)))
+            }
+            Some(
+                FailureKind::ExecutionError
+                | FailureKind::AssertionFailed
+                | FailureKind::ConstraintViolation
+                | FailureKind::Panic,
+            )
+            | None => boundary_error(format!("{what}: {text}")),
         },
         Err(_) => {
             let _ = take_pending(env);

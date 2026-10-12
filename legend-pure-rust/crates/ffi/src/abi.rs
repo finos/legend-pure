@@ -260,16 +260,54 @@ pub struct PureResult {
     pub count: usize,
 }
 
+/// `pure_span`: a span of the host's sources; an absent `source` is no
+/// span, every position then 0.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct PureSpan {
+    /// The source id.
+    pub source: PureString,
+    /// Start line, the anchor's.
+    pub start_line: i32,
+    /// Start column, the anchor's.
+    pub start_column: i32,
+    /// End line.
+    pub end_line: i32,
+    /// End column.
+    pub end_column: i32,
+}
+
+impl PureSpan {
+    /// No span.
+    pub const ABSENT: Self = Self {
+        source: PureString::ABSENT,
+        start_line: 0,
+        start_column: 0,
+        end_line: 0,
+        end_column: 0,
+    };
+}
+
+/// `pure_frame`: one frame of a call stack.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct PureFrame {
+    /// The called function's name.
+    pub function: PureString,
+    /// The span of the call.
+    pub span: PureSpan,
+}
+
 /// `pure_failure`: what `pure_last_failure` describes.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct PureFailure {
-    /// The text with its kind prefix.
+    /// The human-readable line: the kind's name, then the text.
     pub message: PureString,
     /// The text alone.
     pub info: PureString,
-    /// `file:line:column`, or absent.
-    pub source: PureString,
+    /// Where the failure happened; absent when it has no span.
+    pub source: PureSpan,
     /// Constraint id, for a constraint violation.
     pub constraint_id: PureString,
     /// `CLASS`, `PRE` or `POST`, for a constraint violation.
@@ -277,7 +315,7 @@ pub struct PureFailure {
     /// The constraint owner's path, for a constraint violation.
     pub owner: PureString,
     /// Frames, innermost first.
-    pub call_stack: *const PureString,
+    pub call_stack: *const PureFrame,
     /// How many frames.
     pub call_stack_len: usize,
     /// One of the failure kind constants.
@@ -346,7 +384,9 @@ const _: () = {
     assert!(size_of::<PureProperty>() == 32);
     assert!(size_of::<PureLeaf>() == 96);
     assert!(size_of::<PureResult>() == 16);
-    assert!(size_of::<PureFailure>() == 120);
+    assert!(size_of::<PureSpan>() == 32);
+    assert!(size_of::<PureFrame>() == 48);
+    assert!(size_of::<PureFailure>() == 136);
     assert!(size_of::<PureTimings>() == 32);
     assert!(size_of::<PureHostTable>() == 40);
 };

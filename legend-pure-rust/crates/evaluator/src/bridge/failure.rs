@@ -17,7 +17,9 @@
 
 use legend_pure_metamodel::source_info::SourceInfo;
 
-use crate::error::{ConstraintKind, PureException, PureExceptionKind, PureRuntimeError};
+use crate::error::{
+    ConstraintKind, PureException, PureExceptionKind, PureRuntimeError, StackFrame,
+};
 
 /// The source id of a failure raised by the boundary itself.
 pub const BOUNDARY_SOURCE: &str = "<ffi>";
@@ -54,29 +56,67 @@ pub fn is_unanchored(failure: &PureException) -> bool {
         .is_none_or(|s| s.source == BOUNDARY_SOURCE)
 }
 
-/// A failure as plain data for a host's exception type. Every field is
-/// text (or a list of texts) so a transport only builds strings.
+/// The kind of a failure a host receives. A transport turns it into its
+/// host's own spelling or code with an exhaustive match: a kind added
+/// here is a compile error in every transport until it says what the
+/// kind becomes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FailureKind {
+    /// A runtime error of the evaluator or of the boundary.
+    ExecutionError,
+    /// `assert` or `fail`.
+    AssertionFailed,
+    /// A class invariant or a function's pre- or post-condition.
+    ConstraintViolation,
+    /// A function path or native key the evaluator does not know.
+    FunctionNotFound,
+    /// A language feature or value shape the evaluator cannot carry yet.
+    Unsupported,
+    /// A native registered under its key whose body is not there yet.
+    NotImplemented,
+    /// A panic unwound through a call. Raised by a transport's guard,
+    /// never by [`payload_of`]: the context it happened on is poisoned.
+    Panic,
+}
+
+impl FailureKind {
+    /// The kind's name, which opens a payload's message.
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::ExecutionError => "ExecutionError",
+            Self::AssertionFailed => "AssertionFailed",
+            Self::ConstraintViolation => "ConstraintViolation",
+            Self::FunctionNotFound => "FunctionNotFound",
+            Self::Unsupported => "Unsupported",
+            Self::NotImplemented => "NotImplemented",
+            Self::Panic => "Panic",
+        }
+    }
+}
+
+/// A failure as plain data for a host: its kind, its texts, where it
+/// happened and the calls it happened in, each structured; a transport
+/// renders what its host needs and parses nothing back.
 ///
 /// An `Option` is a host `null`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExceptionPayload {
-    /// The failure text with its kind prefix (`FunctionNotFound: …`,
-    /// `AssertionFailed: …`), the one the PCT manifests match.
+    /// The human-readable line: the kind's [name](FailureKind::name),
+    /// `": "`, then [`info`](Self::info).
     pub message: String,
-    /// The failure text alone, without the kind prefix: what Pure's
+    /// The failure text alone, without the kind's name: what Pure's
     /// `PureException.getInfo()` reports for the same failure.
     pub info: String,
-    /// Top-level kind, as a host's kind enumeration spells it:
-    /// `EXECUTION_ERROR`, `ASSERTION_FAILED`, `CONSTRAINT_VIOLATION`,
-    /// `FUNCTION_NOT_FOUND`, `UNSUPPORTED`, `NOT_IMPLEMENTED`.
-    pub kind: &'static str,
-    /// Rendered source location (`file:line:col`), `None` when the
-    /// exception has no anchor.
-    pub source_info: Option<String>,
-    /// Each frame rendered as `<function-name> <- file:line:col`,
-    /// innermost first. Empty when no frames were captured.
-    pub call_stack: Vec<String>,
-    /// Constraint name (for `CONSTRAINT_VIOLATION`). `None` otherwise.
+    /// What went wrong.
+    pub kind: FailureKind,
+    /// Where it happened, start and end; `None` when the failure has no
+    /// anchor.
+    pub source: Option<SourceInfo>,
+    /// The calls it happened in, innermost first. Empty when no frames
+    /// were captured.
+    pub call_stack: Vec<StackFrame>,
+    /// Constraint name (for `ConstraintViolation`). `None` otherwise.
     pub constraint_id: Option<String>,
     /// Constraint axis: `CLASS` / `PRE` / `POST`.
     pub constraint_kind: Option<&'static str>,
@@ -88,22 +128,18 @@ pub struct ExceptionPayload {
 /// The payload of a [`PureException`].
 #[must_use]
 pub fn payload_of(exc: &PureException) -> ExceptionPayload {
-    let (prefix, info, kind) = match &exc.kind {
+    let (kind, info) = match &exc.kind {
         PureExceptionKind::ExecutionError(PureRuntimeError::FunctionNotFound(name)) => {
-            ("FunctionNotFound", name.to_string(), "FUNCTION_NOT_FOUND")
+            (FailureKind::FunctionNotFound, name.to_string())
         }
         PureExceptionKind::ExecutionError(PureRuntimeError::Unsupported(what)) => {
-            ("Unsupported", what.clone(), "UNSUPPORTED")
+            (FailureKind::Unsupported, what.clone())
         }
         PureExceptionKind::ExecutionError(PureRuntimeError::NotImplemented(key)) => {
-            ("NotImplemented", key.to_string(), "NOT_IMPLEMENTED")
+            (FailureKind::NotImplemented, key.to_string())
         }
-        PureExceptionKind::ExecutionError(err) => {
-            ("ExecutionError", err.to_string(), "EXECUTION_ERROR")
-        }
-        PureExceptionKind::AssertionFailed(msg) => {
-            ("AssertionFailed", msg.clone(), "ASSERTION_FAILED")
-        }
+        PureExceptionKind::ExecutionError(err) => (FailureKind::ExecutionError, err.to_string()),
+        PureExceptionKind::AssertionFailed(msg) => (FailureKind::AssertionFailed, msg.clone()),
         PureExceptionKind::ConstraintViolation {
             constraint_id,
             owner,
@@ -116,30 +152,10 @@ pub fn payload_of(exc: &PureException) -> ExceptionPayload {
                 composed.push_str(", Message: ");
                 composed.push_str(m);
             }
-            ("ConstraintViolation", composed, "CONSTRAINT_VIOLATION")
+            (FailureKind::ConstraintViolation, composed)
         }
     };
-    let message = format!("{prefix}: {info}");
-
-    let source_info = exc
-        .source
-        .as_ref()
-        .map(|s| format!("{}:{}:{}", s.source, s.start_line, s.start_column));
-
-    let call_stack: Vec<String> = exc
-        .call_stack
-        .iter()
-        .rev()
-        .map(|frame| {
-            format!(
-                "{} <- {}:{}:{}",
-                frame.function_name,
-                frame.source.source,
-                frame.source.start_line,
-                frame.source.start_column,
-            )
-        })
-        .collect();
+    let message = format!("{}: {info}", kind.name());
 
     let (constraint_id, constraint_kind, owner_fqn) = match &exc.kind {
         PureExceptionKind::ConstraintViolation {
@@ -159,8 +175,8 @@ pub fn payload_of(exc: &PureException) -> ExceptionPayload {
         message,
         info,
         kind,
-        source_info,
-        call_stack,
+        source: exc.source.clone(),
+        call_stack: exc.call_stack.iter().rev().cloned().collect(),
         constraint_id,
         constraint_kind,
         owner_fqn,
@@ -193,16 +209,17 @@ mod tests {
     }
 
     #[test]
-    fn execution_error_payload_carries_kind_and_source() {
+    fn execution_error_payload_carries_kind_and_the_whole_span() {
+        let span = SourceInfo::new("a.pure", 10, 4, 12, 9);
         let exc = PureException::execution(
             PureRuntimeError::EvaluationError("divide by zero".to_string()),
-            dummy_source("a.pure", 10, 4),
+            span.clone(),
             vec![],
         );
         let p = payload_of(&exc);
-        assert_eq!(p.kind, "EXECUTION_ERROR");
-        assert!(p.message.contains("divide by zero"));
-        assert_eq!(p.source_info.as_deref(), Some("a.pure:10:4"));
+        assert_eq!(p.kind, FailureKind::ExecutionError);
+        assert_eq!(p.message, "ExecutionError: divide by zero");
+        assert_eq!(p.source, Some(span));
         assert!(p.call_stack.is_empty());
         assert!(p.constraint_id.is_none());
         assert!(p.constraint_kind.is_none());
@@ -219,7 +236,7 @@ mod tests {
             vec![],
         );
         let p = payload_of(&exc);
-        assert_eq!(p.kind, "NOT_IMPLEMENTED");
+        assert_eq!(p.kind, FailureKind::NotImplemented);
         assert_eq!(
             p.message,
             "NotImplemented: deactivate_Any_MANY__ValueSpecification_1_"
@@ -235,10 +252,10 @@ mod tests {
             vec![],
         );
         let p = payload_of(&exc);
-        assert_eq!(p.kind, "ASSERTION_FAILED");
+        assert_eq!(p.kind, FailureKind::AssertionFailed);
         assert_eq!(p.message, "AssertionFailed: expected 5 got 6");
         assert_eq!(p.info, "expected 5 got 6");
-        assert_eq!(p.source_info.as_deref(), Some("assert.pure:3:1"));
+        assert_eq!(p.source, Some(dummy_source("assert.pure", 3, 1)));
     }
 
     #[test]
@@ -252,7 +269,7 @@ mod tests {
             vec![],
         );
         let p = payload_of(&exc);
-        assert_eq!(p.kind, "CONSTRAINT_VIOLATION");
+        assert_eq!(p.kind, FailureKind::ConstraintViolation);
         assert_eq!(p.constraint_id.as_deref(), Some("ageNonNeg"));
         assert_eq!(p.constraint_kind, Some("CLASS"));
         assert_eq!(p.owner_fqn.as_deref(), Some("LA_ParentWithAgeConstraint"));
@@ -262,7 +279,7 @@ mod tests {
     }
 
     #[test]
-    fn call_stack_renders_innermost_first() {
+    fn call_stack_is_innermost_first_with_each_frames_span() {
         let exc = PureException::new(
             PureExceptionKind::ExecutionError(PureRuntimeError::EvaluationError(
                 "oops".to_string(),
@@ -281,8 +298,9 @@ mod tests {
         );
         let p = payload_of(&exc);
         assert_eq!(p.call_stack.len(), 2);
-        assert!(p.call_stack[0].starts_with("inner <- "));
-        assert!(p.call_stack[1].starts_with("outer <- "));
+        assert_eq!(p.call_stack[0].function_name, "inner");
+        assert_eq!(p.call_stack[0].source, dummy_source("a.pure", 5, 2));
+        assert_eq!(p.call_stack[1].function_name, "outer");
     }
 
     #[test]

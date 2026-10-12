@@ -117,10 +117,21 @@ final class PureAbi
             ValueLayout.ADDRESS.withName("leaves"),
             ValueLayout.JAVA_LONG.withName("count"));
 
+    static final StructLayout SPAN = MemoryLayout.structLayout(
+            STRING.withName("source"),
+            ValueLayout.JAVA_INT.withName("start_line"),
+            ValueLayout.JAVA_INT.withName("start_column"),
+            ValueLayout.JAVA_INT.withName("end_line"),
+            ValueLayout.JAVA_INT.withName("end_column"));
+
+    static final StructLayout FRAME = MemoryLayout.structLayout(
+            STRING.withName("function"),
+            SPAN.withName("span"));
+
     static final StructLayout FAILURE = MemoryLayout.structLayout(
             STRING.withName("message"),
             STRING.withName("info"),
-            STRING.withName("source"),
+            SPAN.withName("source"),
             STRING.withName("constraint_id"),
             STRING.withName("constraint_kind"),
             STRING.withName("owner"),
@@ -190,6 +201,15 @@ final class PureAbi
     static final long RESULT_LEAVES = offset(RESULT, "leaves");
     static final long RESULT_COUNT = offset(RESULT, "count");
 
+    static final long SPAN_SOURCE = offset(SPAN, "source");
+    static final long SPAN_START_LINE = offset(SPAN, "start_line");
+    static final long SPAN_START_COLUMN = offset(SPAN, "start_column");
+    static final long SPAN_END_LINE = offset(SPAN, "end_line");
+    static final long SPAN_END_COLUMN = offset(SPAN, "end_column");
+
+    static final long FRAME_FUNCTION = offset(FRAME, "function");
+    static final long FRAME_SPAN = offset(FRAME, "span");
+
     static final long FAILURE_MESSAGE = offset(FAILURE, "message");
     static final long FAILURE_INFO = offset(FAILURE, "info");
     static final long FAILURE_SOURCE = offset(FAILURE, "source");
@@ -257,7 +277,9 @@ final class PureAbi
         assertSize(PROPERTY, 32);
         assertSize(LEAF, 96);
         assertSize(RESULT, 16);
-        assertSize(FAILURE, 120);
+        assertSize(SPAN, 32);
+        assertSize(FRAME, 48);
+        assertSize(FAILURE, 136);
         assertSize(TIMINGS, 32);
         assertSize(HOST_TABLE, 40);
 

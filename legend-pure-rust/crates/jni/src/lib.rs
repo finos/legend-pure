@@ -41,7 +41,7 @@ use legend_pure_evaluator::bridge::failure::{ExceptionPayload, payload_of};
 use legend_pure_evaluator::bridge::host::{Crossing, crossing_of, description_to_value};
 use legend_pure_evaluator::bridge::session::Session;
 use legend_pure_evaluator::bridge::{outbound, timings};
-use legend_pure_evaluator::error::PureException;
+use legend_pure_evaluator::error::{PureException, StackFrame};
 use legend_pure_evaluator::heap::ObjectHandle;
 use legend_pure_evaluator::native::NativeRegistry;
 use legend_pure_evaluator::value::Value;
@@ -65,9 +65,10 @@ const PURE_RUST_EXC: &str = "org/finos/legend/pure/rust/PureRustException";
 const PURE_RUST_EVAL_EXC: &str = "org/finos/legend/pure/rust/PureRustEvaluationException";
 
 /// The constructor of `PureRustEvaluationException` that takes every
-/// field of an [`ExceptionPayload`]:
-/// `(message, info, kind, sourceInfo, callStack, constraintId, constraintKind, ownerFqn)`.
-const RICH_CTOR_SIG: &str = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
+/// field of an [`ExceptionPayload`], the source span as its parts:
+/// `(message, info, kind, sourceId, startLine, startColumn, endLine,
+/// endColumn, callStack, constraintId, constraintKind, ownerFqn)`.
+const RICH_CTOR_SIG: &str = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIII[Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
 
 /// Build the Java `PureRustEvaluationException` from a structured
 /// `PureException` and throw it via JNI.
@@ -75,31 +76,66 @@ const RICH_CTOR_SIG: &str = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Str
 /// Best-effort: if any JNI call fails (e.g. the rich constructor isn't
 /// found because the Java side is older than this binary), falls back
 /// to `env.throw_new(PURE_RUST_EVAL_EXC, message)` which targets the
-/// pre-existing message-only constructor.
+/// pre-existing message-only constructor. A panic is no typed failure
+/// on the Java side: it is thrown as `PureRustException`.
 pub(crate) fn throw_pure_exception(env: &mut JNIEnv, exc: &PureException) {
     let _ = failure::take_pending(env);
     let payload = payload_of(exc);
-    if try_throw_rich(env, &payload).is_err() {
+    let Some(kind) = failure::java_kind(payload.kind) else {
+        let _ = env.throw_new(PURE_RUST_EXC, &payload.message);
+        return;
+    };
+    if try_throw_rich(env, &payload, kind).is_err() {
         let _ = failure::take_pending(env);
         let _ = env.throw_new(PURE_RUST_EVAL_EXC, &payload.message);
     }
 }
 
+/// A line or column as a Java `int`.
+fn position(v: u32) -> i32 {
+    i32::try_from(v).unwrap_or(i32::MAX)
+}
+
+/// A frame as `PureRustEvaluationException.getCallStack()` holds it:
+/// `<function> <- <source>:<line>:<column>`.
+fn frame_text(frame: &StackFrame) -> String {
+    format!(
+        "{} <- {}:{}:{}",
+        frame.function_name,
+        frame.source.source,
+        frame.source.start_line,
+        frame.source.start_column
+    )
+}
+
 #[allow(clippy::too_many_lines)]
-fn try_throw_rich(env: &mut JNIEnv, payload: &ExceptionPayload) -> jni::errors::Result<()> {
+fn try_throw_rich(
+    env: &mut JNIEnv,
+    payload: &ExceptionPayload,
+    kind: &str,
+) -> jni::errors::Result<()> {
     let message = env.new_string(&payload.message)?;
     let info = env.new_string(&payload.info)?;
-    let kind = env.new_string(payload.kind)?;
-    let source_info: JObject<'_> = match &payload.source_info {
-        Some(s) => env.new_string(s)?.into(),
-        None => JObject::null(),
-    };
+    let kind = env.new_string(kind)?;
+    let (source_id, [start_line, start_column, end_line, end_column]): (JObject<'_>, [i32; 4]) =
+        match &payload.source {
+            Some(s) => (
+                env.new_string(&s.source)?.into(),
+                [
+                    position(s.start_line),
+                    position(s.start_column),
+                    position(s.end_line),
+                    position(s.end_column),
+                ],
+            ),
+            None => (JObject::null(), [0; 4]),
+        };
     let stack_class = env.find_class("java/lang/String")?;
     let empty_string = env.new_string("")?;
     let call_stack_arr =
         env.new_object_array(payload.call_stack.len() as i32, &stack_class, &empty_string)?;
     for (i, frame) in payload.call_stack.iter().enumerate() {
-        let frame_str = env.new_string(frame)?;
+        let frame_str = env.new_string(frame_text(frame))?;
         env.set_object_array_element(&call_stack_arr, i as i32, &frame_str)?;
     }
     let constraint_id: JObject<'_> = match &payload.constraint_id {
@@ -122,7 +158,11 @@ fn try_throw_rich(env: &mut JNIEnv, payload: &ExceptionPayload) -> jni::errors::
             JValue::Object(&message.into()),
             JValue::Object(&info.into()),
             JValue::Object(&kind.into()),
-            JValue::Object(&source_info),
+            JValue::Object(&source_id),
+            JValue::Int(start_line),
+            JValue::Int(start_column),
+            JValue::Int(end_line),
+            JValue::Int(end_column),
             JValue::Object(&call_stack_arr.into()),
             JValue::Object(&constraint_id),
             JValue::Object(&constraint_kind),

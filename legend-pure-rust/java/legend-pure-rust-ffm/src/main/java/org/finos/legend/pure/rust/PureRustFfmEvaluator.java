@@ -206,7 +206,7 @@ public final class PureRustFfmEvaluator implements FunctionExecution, RustHeap, 
         }
         catch (PureRustEvaluationException e)
         {
-            e.initCause(pureCause(e, sourceInformationOf(e.getSourceInfo())));
+            e.initCause(pureCause(e, e.getSourceInformation()));
             throw e;
         }
     }
@@ -457,17 +457,27 @@ public final class PureRustFfmEvaluator implements FunctionExecution, RustHeap, 
         String[] callStack = new String[Math.toIntExact(frames)];
         if (frames > 0)
         {
-            MemorySegment stack = failure.get(ValueLayout.ADDRESS, PureAbi.FAILURE_CALL_STACK).reinterpret(frames * PureAbi.STRING.byteSize());
+            MemorySegment stack = failure.get(ValueLayout.ADDRESS, PureAbi.FAILURE_CALL_STACK).reinterpret(frames * PureAbi.FRAME.byteSize());
             for (int i = 0; i < callStack.length; i++)
             {
-                callStack[i] = PureAbi.readString(stack, i * PureAbi.STRING.byteSize());
+                long frame = i * PureAbi.FRAME.byteSize();
+                long span = frame + PureAbi.FRAME_SPAN;
+                callStack[i] = PureAbi.readString(stack, frame + PureAbi.FRAME_FUNCTION)
+                        + " <- " + PureAbi.readString(stack, span + PureAbi.SPAN_SOURCE)
+                        + ":" + stack.get(ValueLayout.JAVA_INT, span + PureAbi.SPAN_START_LINE)
+                        + ":" + stack.get(ValueLayout.JAVA_INT, span + PureAbi.SPAN_START_COLUMN);
             }
         }
+        long source = PureAbi.FAILURE_SOURCE;
         return new PureRustEvaluationException(
                 message,
                 PureAbi.readString(failure, PureAbi.FAILURE_INFO),
                 kindName(kind),
-                PureAbi.readString(failure, PureAbi.FAILURE_SOURCE),
+                PureAbi.readString(failure, source + PureAbi.SPAN_SOURCE),
+                failure.get(ValueLayout.JAVA_INT, source + PureAbi.SPAN_START_LINE),
+                failure.get(ValueLayout.JAVA_INT, source + PureAbi.SPAN_START_COLUMN),
+                failure.get(ValueLayout.JAVA_INT, source + PureAbi.SPAN_END_LINE),
+                failure.get(ValueLayout.JAVA_INT, source + PureAbi.SPAN_END_COLUMN),
                 callStack,
                 PureAbi.readString(failure, PureAbi.FAILURE_CONSTRAINT_ID),
                 PureAbi.readString(failure, PureAbi.FAILURE_CONSTRAINT_KIND),
@@ -511,30 +521,6 @@ public final class PureRustFfmEvaluator implements FunctionExecution, RustHeap, 
             return argument.getValueForMetaPropertyToMany(M3Properties.values).toArray(new CoreInstance[0]);
         }
         return new CoreInstance[]{argument};
-    }
-
-    private static SourceInformation sourceInformationOf(String text)
-    {
-        if (text == null)
-        {
-            return null;
-        }
-        int lastColon = text.lastIndexOf(':');
-        int middleColon = (lastColon < 0) ? -1 : text.lastIndexOf(':', lastColon - 1);
-        if (middleColon < 0)
-        {
-            return new SourceInformation(text, 0, 0, 0, 0);
-        }
-        try
-        {
-            int line = Integer.parseInt(text.substring(middleColon + 1, lastColon));
-            int column = Integer.parseInt(text.substring(lastColon + 1));
-            return new SourceInformation(text.substring(0, middleColon), line, column, line, column);
-        }
-        catch (NumberFormatException e)
-        {
-            return new SourceInformation(text, 0, 0, 0, 0);
-        }
     }
 
     private static final class RustConsole extends AbstractConsole

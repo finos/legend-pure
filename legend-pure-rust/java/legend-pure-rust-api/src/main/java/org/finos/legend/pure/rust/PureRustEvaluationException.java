@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.rust;
 
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -53,7 +55,7 @@ public class PureRustEvaluationException extends PureRustException
 
     private final Kind kind;
     private final String info;
-    private final String sourceInfo;
+    private final SourceInformation sourceInformation;
     private final List<String> callStack;
     private final String constraintId;
     private final ConstraintKind constraintKind;
@@ -64,7 +66,7 @@ public class PureRustEvaluationException extends PureRustException
         super(message);
         this.kind = Kind.EXECUTION_ERROR;
         this.info = message;
-        this.sourceInfo = null;
+        this.sourceInformation = null;
         this.callStack = Collections.emptyList();
         this.constraintId = null;
         this.constraintKind = null;
@@ -72,17 +74,24 @@ public class PureRustEvaluationException extends PureRustException
     }
 
     /**
-     * Rich constructor invoked from the Rust JNI side.
+     * A failure as the Rust evaluator reports it, through whichever transport
+     * carried it: every field of the boundary's failure payload, the source
+     * span as its parts.
      *
      * <p>All string params except {@code message} and {@code kind} may
      * be {@code null}; {@code callStack} may be {@code null} or empty.
-     * Unknown {@code kind} / {@code constraintKindStr} strings fall
-     * back to {@link Kind#EXECUTION_ERROR} / {@code null} respectively.
+     * A {@code null} {@code sourceId} is no span, and the four positions are
+     * then ignored. Unknown {@code kind} / {@code constraintKindStr} strings
+     * fall back to {@link Kind#EXECUTION_ERROR} / {@code null} respectively.
      */
     public PureRustEvaluationException(String message,
                                        String info,
                                        String kindStr,
-                                       String sourceInfo,
+                                       String sourceId,
+                                       int startLine,
+                                       int startColumn,
+                                       int endLine,
+                                       int endColumn,
                                        String[] callStack,
                                        String constraintId,
                                        String constraintKindStr,
@@ -91,7 +100,7 @@ public class PureRustEvaluationException extends PureRustException
         super(message);
         this.kind = parseKind(kindStr);
         this.info = (info == null) ? message : info;
-        this.sourceInfo = sourceInfo;
+        this.sourceInformation = (sourceId == null) ? null : new SourceInformation(sourceId, startLine, startColumn, endLine, endColumn);
         this.callStack = callStack == null
                 ? Collections.emptyList()
                 : Collections.unmodifiableList(java.util.Arrays.asList(callStack));
@@ -108,7 +117,7 @@ public class PureRustEvaluationException extends PureRustException
      */
     public static PureRustEvaluationException unsupported(String what)
     {
-        return new PureRustEvaluationException("Unsupported: " + what, what, Kind.UNSUPPORTED.name(), null, null, null, null, null);
+        return new PureRustEvaluationException("Unsupported: " + what, what, Kind.UNSUPPORTED.name(), null, 0, 0, 0, 0, null, null, null, null);
     }
 
     /**
@@ -127,13 +136,12 @@ public class PureRustEvaluationException extends PureRustException
     }
 
     /**
-     * @return rendered source location as {@code file:line:column}, or
-     *         {@code null} when no source anchor is available
-     *         (FFI-boundary errors, panics).
+     * @return where the failure happened, start (the anchor) and end, or
+     *         {@code null} when it has no span
      */
-    public String getSourceInfo()
+    public SourceInformation getSourceInformation()
     {
-        return this.sourceInfo;
+        return this.sourceInformation;
     }
 
     /**

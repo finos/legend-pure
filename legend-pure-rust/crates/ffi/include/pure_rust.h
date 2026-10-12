@@ -283,22 +283,41 @@ typedef struct pure_result {
     size_t count;
 } pure_result;
 
-/* A failure, as pure_last_failure describes it. `message` is the text
- * with its kind prefix ("FunctionNotFound: ...", "AssertionFailed: ..."),
- * the one test manifests match; `info` is the text alone. `source` is
- * "file:line:column" or absent. `call_stack` holds `call_stack_len`
- * frames, innermost first, each "<function> <- file:line:column".
+/* A span of the host's sources: the source id and the start and end
+ * positions, in the host's own numbering, of the description the span
+ * came from (its line and column are the start). An absent `source`
+ * (NULL) is no span; every position is then 0. */
+typedef struct pure_span {
+    pure_string source;
+    int32_t start_line;
+    int32_t start_column;
+    int32_t end_line;
+    int32_t end_column;
+} pure_span;
+
+/* One frame of a call stack: the called function's name and the span of
+ * the call. */
+typedef struct pure_frame {
+    pure_string function;
+    pure_span span;
+} pure_frame;
+
+/* A failure, as pure_last_failure describes it. `message` is the
+ * human-readable line: the kind's name, ": ", then the text
+ * ("FunctionNotFound: a::b", "AssertionFailed: ..."); `info` is the text
+ * alone. `source` is where the failure happened, absent when it has no
+ * span. `call_stack` holds `call_stack_len` frames, innermost first.
  * The three constraint fields are set for CONSTRAINT_VIOLATION only:
  * the constraint's id, its axis ("CLASS", "PRE", "POST") and the
  * `::`-joined path of the owning class or function. */
 typedef struct pure_failure {
     pure_string message;
     pure_string info;
-    pure_string source;
+    pure_span source;
     pure_string constraint_id;
     pure_string constraint_kind;
     pure_string owner;
-    const pure_string *call_stack;
+    const pure_frame *call_stack;
     size_t call_stack_len;
     int32_t kind;            /* PURE_FAILURE_*                       */
 } pure_failure;
@@ -483,7 +502,9 @@ _Static_assert(sizeof(pure_slot) == 16, "pure_slot layout");
 _Static_assert(sizeof(pure_property) == 32, "pure_property layout");
 _Static_assert(sizeof(pure_leaf) == 96, "pure_leaf layout");
 _Static_assert(sizeof(pure_result) == 16, "pure_result layout");
-_Static_assert(sizeof(pure_failure) == 120, "pure_failure layout");
+_Static_assert(sizeof(pure_span) == 32, "pure_span layout");
+_Static_assert(sizeof(pure_frame) == 48, "pure_frame layout");
+_Static_assert(sizeof(pure_failure) == 136, "pure_failure layout");
 _Static_assert(sizeof(pure_timings) == 32, "pure_timings layout");
 _Static_assert(sizeof(pure_host_table) == 40, "pure_host_table layout");
 #endif
