@@ -11,9 +11,10 @@
 > phases 1 and 2 done 2026-10-11: `Rust_FFM` on JDK 25 at the same four
 > numbers beside `Rust_JNI`; after the fixes the five-way benchmark
 > prompted, a PCT test on the interpreted engine takes 42 µs over FFM and
-> 50 over JNI against 42 for the engine's own adapter. Next: Step 2d, a
-> typed IR per body (decided 2026-10-11), then Step 3, read PELT, with the
-> `Directory` trait of Step 4 (Appendix C item 6). Archive tag
+> 50 over JNI against 42 for the engine's own adapter. Step 2d, a typed IR
+> per body: Part R and T0 done 2026-10-11 (the executor on by default).
+> Next: Step 2d Part T, then Step 3, read PELT, with the `Directory` trait
+> of Step 4 (Appendix C item 6). Archive tag
 > `archive/pre-evaluator-extract-2026-10`.**
 > This document is
 > self-contained. It assumes the reader knows Legend Pure and legend-engine as
@@ -92,11 +93,12 @@ with its gate:
    JDK 25 with the `Rust_FFM` adapter measured beside `Rust_JNI`. Phase 3,
    the deletion of JNI, waits for legend-engine's floor; Python follows
    Step 3.
-1. **Step 2d** (next; decided 2026-10-11) — a typed IR per body: Part R
-   (slots and an executor behind a switch, resolved properties, eager
-   natives; no behaviour change), then T0's type coverage decides Part T
-   (unboxed representations, fast paths for total operations). The number
-   to move is e06's ~100 ns per element.
+1. **Step 2d** (decided 2026-10-11; Part R and T0 done) — a typed IR per
+   body: Part R shipped with the executor on by default (e06's lambda
+   104 → 43 ns per element, the corpus unchanged), and T0 found 90% of the
+   corpus's nodes typed and 55% with a representation other than `Value`,
+   so Part T (unboxed representations, fast paths for total operations)
+   is next.
 2. **Step 3 and Step 4** — read PELT, the `Directory` trait, the
    static graph: the per-call lowering disappears for everything static,
    and the `Rust_Native` run (Step 2, the paragraph of that name) resolves
