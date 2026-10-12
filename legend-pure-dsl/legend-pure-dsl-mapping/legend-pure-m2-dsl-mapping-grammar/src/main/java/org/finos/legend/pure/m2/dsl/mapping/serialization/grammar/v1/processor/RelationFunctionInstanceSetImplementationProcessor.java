@@ -14,6 +14,9 @@
 
 package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingProperties;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.validator.RelationFunctionInstanceSetImplementationValidator;
@@ -26,21 +29,27 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMappingsI
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.EmbeddedRelationFunctionSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionPropertyMapping;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.tools.GrammarInfoStub;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 
 public class RelationFunctionInstanceSetImplementationProcessor extends Processor<RelationFunctionInstanceSetImplementation>
@@ -70,8 +79,42 @@ public class RelationFunctionInstanceSetImplementationProcessor extends Processo
             throw new org.finos.legend.pure.m4.exception.PureCompilationException(instance.getSourceInformation(), "Relation function's last expression has no Relation type argument; cannot bind property mapping `$row` parameter.");
         }
         GenericType rowType = typeArgs.getFirst();
+        resolvePrimaryKey(instance, relationFunction, rowType, processorSupport);
 
         processPropertyMappings(instance._propertyMappings(), instance, rowType, matcher, state, processorSupport);
+    }
+
+    private static void resolvePrimaryKey(RelationFunctionInstanceSetImplementation instance, CoreInstance relationFunction, GenericType rowType, ProcessorSupport processorSupport)
+    {
+        if (instance._primaryKey().isEmpty())
+        {
+            return;
+        }
+        CoreInstance rawType = ImportStub.withImportStubByPass(rowType._rawTypeCoreInstance(), processorSupport);
+        if (!(rawType instanceof RelationType))
+        {
+            String functionName = relationFunction instanceof ConcreteFunctionDefinition ? ((ConcreteFunctionDefinition<?>) relationFunction)._functionName() : "~src";
+            throw new PureCompilationException(instance.getSourceInformation(), "Cannot resolve primary key columns: relation function '" + functionName + "' does not return a concrete RelationType. Ensure the function body produces a typed relation (e.g., #>{db.table}#).");
+        }
+        RichIterable<? extends Column<?, ?>> relationColumns = ((RelationType<?>) rawType)._columns();
+        MutableList<Column<?, ?>> resolved = Lists.mutable.empty();
+        for (Column<?, ?> placeholder : instance._primaryKey())
+        {
+            Column<?, ?> column = relationColumns.detect(c -> placeholder._name().equals(c._name()));
+            if (column == null)
+            {
+                String mappingPath = PackageableElement.getUserPathForPackageableElement(ImportStub.withImportStubByPass(instance._parentCoreInstance(), processorSupport));
+                throw new PureCompilationException(placeholder.getSourceInformation(), "Primary key column '" + placeholder._name() + "' declared in class mapping '" + instance._id() + "' (mapping '" + mappingPath + "') is not part of the columns returned by the relation function."
+                        + " Available columns: [" + relationColumns.collect(Column::_name).makeString(", ") + "]."
+                        + " Use `~primaryKey: [col1, col2, ...]` referencing only columns from the relation function's output.");
+            }
+            GenericType columnType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(_Column.getColumnType(column), processorSupport);
+            Column<?, ?> primaryKeyColumn = _Column.getColumnInstance(column._name(), false, columnType, _Column.getColumnMultiplicity(column), placeholder.getSourceInformation(), processorSupport);
+            GenericType anySource = (GenericType) processorSupport.newAnonymousCoreInstance(placeholder.getSourceInformation(), M3Paths.GenericType);
+            anySource._rawTypeCoreInstance(processorSupport.package_getByUserPath(M3Paths.Any));
+            resolved.add(_Column.updateSource(primaryKeyColumn, anySource));
+        }
+        instance._primaryKey(resolved);
     }
 
     private void processPropertyMappings(Iterable<? extends PropertyMapping> propertyMappings, RelationFunctionInstanceSetImplementation owner, GenericType rowType, Matcher matcher, ProcessorState state, ProcessorSupport processorSupport)

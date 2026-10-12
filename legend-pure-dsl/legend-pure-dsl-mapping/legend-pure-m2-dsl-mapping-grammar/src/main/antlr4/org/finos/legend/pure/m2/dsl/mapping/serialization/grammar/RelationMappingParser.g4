@@ -8,6 +8,7 @@ options
 }
 
 mapping:                                    relationSource
+                                            primaryKey?
                                             (singlePropertyMapping (COMMA singlePropertyMapping)*)?
                                             EOF
 ;
@@ -18,6 +19,9 @@ mapping:                                    relationSource
 // the pipeline can treat both forms uniformly.
 relationSource:                             RELATION_FUNCTION (functionDescriptor | qualifiedName)
                                             | MAPPING_SRC      combinedExpression
+;
+
+primaryKey:                                 RELATION_PRIMARY_KEY COLON (columnName | BRACKET_OPEN columnName (COMMA columnName)* BRACKET_CLOSE)
 ;
 
 singlePropertyMapping:                      singleLocalPropertyMapping | singleNonLocalPropertyMapping
