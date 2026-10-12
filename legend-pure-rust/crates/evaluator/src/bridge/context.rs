@@ -31,7 +31,7 @@ use crate::bridge::timings::{self, Timings};
 use crate::error::{PureException, PureRuntimeError};
 use crate::eval::{Evaluator, EvaluatorState};
 use crate::heap::{HeapEntry, ObjectHandle, TypedObject};
-use crate::lower::{LowerError, Lowering, ModelExtension, Node};
+use crate::lower::{LowerError, Lowering, M3Ids, ModelExtension, Node};
 use crate::m3_paths;
 use crate::native::NativeRegistry;
 use crate::value::{FunctionValue, LambdaClosure, PVector, Value};
@@ -226,6 +226,10 @@ pub struct BridgeContext {
     bridge_chunk: Option<u16>,
     /// The function classifiers, by id.
     kinds: FunctionKinds,
+    /// The M3 classifiers every lowering dispatches on, by id: resolved
+    /// when the context starts and again whenever the model grows, the
+    /// only time an id could change, rather than once per call.
+    m3_ids: M3Ids,
     /// Lowered lambdas by definition ([`HostNode::definition`]), for the
     /// context's lifetime: the elements their bodies refer to live in the
     /// model as long.
@@ -239,6 +243,7 @@ impl BridgeContext {
     #[must_use]
     pub fn new(model: PureModel, registry: NativeRegistry, host: impl Host) -> Self {
         let kinds = FunctionKinds::resolve(&model);
+        let m3_ids = M3Ids::resolve(&model);
         let state = EvaluatorState::new(&model);
         let model = Rc::new(RefCell::new(model));
         let shared = Rc::new(HostShared::new(host, Rc::clone(&model)));
@@ -249,6 +254,7 @@ impl BridgeContext {
             shared,
             bridge_chunk: None,
             kinds,
+            m3_ids,
             closures: HashMap::new(),
         }
     }
@@ -266,6 +272,7 @@ impl BridgeContext {
         let chunk_id = extension.chunk_id();
         let applied = extension.apply(&mut self.model.borrow_mut());
         self.state = EvaluatorState::new(&self.model.borrow());
+        self.m3_ids = M3Ids::resolve(&self.model.borrow());
         applied?;
         self.bridge_chunk = Some(chunk_id);
         Ok(())
@@ -335,7 +342,7 @@ impl BridgeContext {
                 .bridge_chunk
                 .unwrap_or_else(|| u16::try_from(model.chunks.len()).expect("chunk ids are u16"));
             let mut lowering = CachedLowering {
-                lowering: Lowering::new(model, chunk, model.chunk_len(chunk)),
+                lowering: Lowering::with_ids(model, self.m3_ids, chunk, model.chunk_len(chunk)),
                 model,
                 kinds: &self.kinds,
                 cache: &self.closures,

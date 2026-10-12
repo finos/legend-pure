@@ -102,7 +102,8 @@ pub(crate) struct M3Ids {
 }
 
 impl M3Ids {
-    fn resolve(model: &PureModel) -> Self {
+    /// The ids in `model` as it stands.
+    pub(crate) fn resolve(model: &PureModel) -> Self {
         let r = |p| m3_paths::resolve(model, p);
         Self {
             class: r(m3_paths::CLASS),
@@ -144,9 +145,17 @@ impl<'m> Lowering<'m> {
     /// `base_idx` (the chunk's current length).
     #[must_use]
     pub fn new(model: &'m PureModel, chunk_id: u16, base_idx: u32) -> Self {
+        Self::with_ids(model, M3Ids::resolve(model), chunk_id, base_idx)
+    }
+
+    /// As [`new`](Self::new), over M3 ids already resolved in `model`:
+    /// a bridge context resolves them once and again only when its model
+    /// grows, instead of on every call.
+    #[must_use]
+    pub(crate) fn with_ids(model: &'m PureModel, ids: M3Ids, chunk_id: u16, base_idx: u32) -> Self {
         Self {
             model,
-            ids: M3Ids::resolve(model),
+            ids,
             ext: ModelExtension::new(chunk_id, base_idx),
             specs: HashMap::new(),
             pinned: Vec::new(),
