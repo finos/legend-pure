@@ -106,6 +106,10 @@ pub struct PureDescription {
     pub id: i64,
     /// The lambda definition a per-evaluation lambda stands for; -1 when none.
     pub definition: i64,
+    /// The value of an `INTEGER` that fits 64 bits.
+    pub integer: i64,
+    /// The value of a `FLOAT`.
+    pub real: f64,
     /// Classifier user path.
     pub classifier: PureString,
     /// The node's own name.
@@ -150,6 +154,8 @@ impl Default for PureDescription {
         Self {
             id: 0,
             definition: -1,
+            integer: 0,
+            real: 0.0,
             classifier: PureString::ABSENT,
             name: PureString::ABSENT,
             user_path: PureString::ABSENT,
@@ -379,7 +385,7 @@ pub struct PureHostTable {
 const _: () = {
     use std::mem::size_of;
     assert!(size_of::<PureString>() == 16);
-    assert!(size_of::<PureDescription>() == 160);
+    assert!(size_of::<PureDescription>() == 176);
     assert!(size_of::<PureSlot>() == 16);
     assert!(size_of::<PureProperty>() == 32);
     assert!(size_of::<PureLeaf>() == 96);

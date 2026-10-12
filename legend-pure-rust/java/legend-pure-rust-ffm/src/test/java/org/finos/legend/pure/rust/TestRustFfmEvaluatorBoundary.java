@@ -46,6 +46,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 public class TestRustFfmEvaluatorBoundary
 {
@@ -168,6 +169,23 @@ public class TestRustFfmEvaluatorBoundary
         CoreInstance out = roundTrip(in);
         Assert.assertEquals(expectedClassifier, out.getClassifier().getName());
         Assert.assertEquals(expectedName, out.getName());
+    }
+
+    /**
+     * Integers and floats cross in typed, an Integer at either end of the
+     * 64-bit range included; one beyond it crosses as its digits, which the
+     * Rust side cannot hold and reports unsupported.
+     */
+    @Test
+    public void numbersCrossInTypedAndAnIntegerBeyond64BitsIsUnsupported()
+    {
+        Assert.assertEquals(String.valueOf(Long.MAX_VALUE), roundTrip(repository.newIntegerCoreInstance(Long.MAX_VALUE)).getName());
+        Assert.assertEquals(String.valueOf(Long.MIN_VALUE), roundTrip(repository.newIntegerCoreInstance(BigInteger.valueOf(Long.MIN_VALUE))).getName());
+        Assert.assertEquals("-0.125", roundTrip(repository.newFloatCoreInstance(new BigDecimal("-0.125"))).getName());
+        PureRustEvaluationException e = Assert.assertThrows(PureRustEvaluationException.class,
+                () -> roundTrip(repository.newIntegerCoreInstance(BigInteger.ONE.shiftLeft(64))));
+        Assert.assertEquals(e.getMessage(), PureRustEvaluationException.Kind.UNSUPPORTED, e.getKind());
+        Assert.assertEquals("Unsupported: an Integer outside the 64-bit range", e.getMessage());
     }
 
     /**

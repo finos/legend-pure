@@ -76,10 +76,21 @@
  *    version this header describes; pure_abi_version() is the version the
  *    loaded library implements. A client checks they are equal at load
  *    time, before any other call, and refuses to proceed otherwise.
+ *    Version 1 is not stable until the library's first release: until
+ *    then this header may change without its number moving. From the
+ *    first release on, any change to it bumps PURE_ABI_VERSION.
  *
  * 8. Per-thread state. pure_last_failure and pure_last_timings describe
  *    the last call made on the calling thread. They are read on that
  *    thread, right after the call they describe.
+ *
+ * TEST SUPPORT
+ *
+ * The section of that name at the end of this header (pure_property, the
+ * PURE_CROSSING_* constants, pure_test_object_new, pure_test_crossing) is
+ * outside the contract: it serves the boundary tests of the library's own
+ * clients, follows the rules above, and may change or go in any version.
+ * A host never builds on it.
  *
  * LAYOUT
  *
@@ -127,8 +138,8 @@ enum {
  * are the bridge's own and are shared with every host. */
 enum {
     PURE_KIND_BOOLEAN = 0,          /* payload "true" / "false"          */
-    PURE_KIND_INTEGER = 1,          /* payload: decimal text, 64-bit     */
-    PURE_KIND_FLOAT = 2,            /* payload: plain decimal text       */
+    PURE_KIND_INTEGER = 1,          /* integer (payload: beyond 64 bits) */
+    PURE_KIND_FLOAT = 2,            /* real                              */
     PURE_KIND_DECIMAL = 3,          /* payload: plain decimal text       */
     PURE_KIND_STRING = 4,           /* payload: the string               */
     PURE_KIND_DATE = 5,             /* year..second, precision, subsecond*/
@@ -168,15 +179,6 @@ enum {
     PURE_FAILURE_PANIC = 6
 };
 
-/* What a described node became on the Rust side (pure_crossing). */
-enum {
-    PURE_CROSSING_ELEMENT = 0,     /* unified with a model element      */
-    PURE_CROSSING_ENUM_VALUE = 1,  /* a value of a known enumeration    */
-    PURE_CROSSING_HOST_NODE = 2,   /* a host node read on demand        */
-    PURE_CROSSING_RUST_OBJECT = 3, /* a Rust object the host holds      */
-    PURE_CROSSING_PRIMITIVE = 4    /* decoded to a primitive            */
-};
-
 /* ---------------------------------------------------------------------
  * Flat data.
  * ------------------------------------------------------------------ */
@@ -187,14 +189,17 @@ typedef struct pure_string {
     size_t len;
 } pure_string;
 
-/* One node of the host's graph, described by the host. Twenty fields.
+/* One node of the host's graph, described by the host. Twenty-two fields.
  *
  * A zero-filled struct reads as a Boolean with definition 0: set `kind`
  * and `definition` on every description (definition is -1 when the node
  * stands for no lambda definition). Which fields matter depends on the
- * kind: primitives use `payload` (dates and times their components
- * instead); ENUM_VALUE uses `classifier` and `name`; PACKAGEABLE_ELEMENT
- * uses `user_path` (and `classifier`, `name`); NODE uses `id`,
+ * kind: INTEGER uses `integer`, or, for a value that does not fit 64
+ * bits, `payload` holding its decimal digits (which Rust cannot hold yet
+ * and reports unsupported); FLOAT uses `real`; the other primitives use
+ * `payload` (dates and times their components instead); ENUM_VALUE uses
+ * `classifier` and `name`; PACKAGEABLE_ELEMENT uses `user_path` (and
+ * `classifier`, `name`); NODE uses `id`,
  * `classifier`, `name` and, for a lambda evaluated in a scope,
  * `definition`, the id of the lambda definition it is one evaluation of
  * (the closure cache is keyed by it); RUST_OBJECT uses `id` as the handle
@@ -203,6 +208,8 @@ typedef struct pure_string {
 typedef struct pure_description {
     int64_t id;
     int64_t definition;
+    int64_t integer;         /* INTEGER                              */
+    double real;             /* FLOAT                                */
     pure_string classifier;
     pure_string name;
     pure_string user_path;
@@ -230,12 +237,6 @@ typedef struct pure_slot {
     const pure_description *items;
     size_t count;
 } pure_slot;
-
-/* One property of an object the host allocates (pure_object_new). */
-typedef struct pure_property {
-    pure_string name;
-    pure_slot values;
-} pure_property;
 
 /* One value on its way out: a result flattens into leaves, one per
  * value, collections flattened and the empty value dropped.
@@ -391,9 +392,10 @@ typedef struct pure_host_table {
  * `ctx` is a context from pure_context_new that pure_context_free has not
  * released; NULL is refused with a failure, never dereferenced. Out
  * pointers are written only on PURE_STATUS_OK. Running calls (pure_start,
- * the pure_object_* reads, pure_object_new, pure_crossing) are refused on
- * a poisoned context; housekeeping calls (pure_live_handle_count,
- * pure_object_release, pure_context_free) still work on one.
+ * the pure_object_* reads, and the two of the test support section) are
+ * refused on a poisoned context; housekeeping calls
+ * (pure_live_handle_count, pure_object_release, pure_context_free) still
+ * work on one.
  * ------------------------------------------------------------------ */
 
 /* The ABI version the loaded library implements (rule 7). */
@@ -440,13 +442,6 @@ int32_t pure_object_property_names(pure_context *ctx, int64_t handle,
 int32_t pure_object_classifier(pure_context *ctx, int64_t handle,
                                pure_result **out);
 
-/* Allocate a Rust object of the classifier named by `classifier`, with
- * `count` properties, and hand the host its handle; the host releases it
- * with pure_object_release. */
-int32_t pure_object_new(pure_context *ctx, const char *classifier,
-                        size_t classifier_len, const pure_property *properties,
-                        size_t count, int64_t *out_handle);
-
 /* Drop the reference the host held for `handle`. Idempotent; a handle
  * never issued is ignored. */
 void pure_object_release(pure_context *ctx, int64_t handle);
@@ -455,11 +450,6 @@ void pure_object_release(pure_context *ctx, int64_t handle);
  * a host asserts this returns to zero. -1 while a call on the context is
  * running. */
 int64_t pure_live_handle_count(pure_context *ctx);
-
-/* Which Rust shape `node` becomes once described (PURE_CROSSING_*); a
- * test hook that crosses the node in and discards it. */
-int32_t pure_crossing(pure_context *ctx, const pure_description *node,
-                      int32_t *out);
 
 /* Where the last pure_start on this thread spent its time. */
 void pure_last_timings(pure_timings *out);
@@ -491,13 +481,47 @@ int32_t pure_reply_fail(pure_reply *reply, int32_t kind, const char *message,
                         size_t message_len);
 
 /* ---------------------------------------------------------------------
+ * Test support: outside the contract (see TEST SUPPORT above).
+ * ------------------------------------------------------------------ */
+
+/* One property of an object pure_test_object_new allocates. */
+typedef struct pure_property {
+    pure_string name;
+    pure_slot values;
+} pure_property;
+
+/* What a described node became on the Rust side (pure_test_crossing). */
+enum {
+    PURE_CROSSING_ELEMENT = 0,     /* unified with a model element      */
+    PURE_CROSSING_ENUM_VALUE = 1,  /* a value of a known enumeration    */
+    PURE_CROSSING_HOST_NODE = 2,   /* a host node read on demand        */
+    PURE_CROSSING_RUST_OBJECT = 3, /* a Rust object the host holds      */
+    PURE_CROSSING_PRIMITIVE = 4    /* decoded to a primitive            */
+};
+
+/* Allocate a Rust object of the classifier named by `classifier`, with
+ * `count` properties, and hand the host its handle; the host releases it
+ * with pure_object_release. This is not Pure's `new`: the classifier is
+ * not checked against the model, and no default is applied and no
+ * constraint run. */
+int32_t pure_test_object_new(pure_context *ctx, const char *classifier,
+                             size_t classifier_len,
+                             const pure_property *properties, size_t count,
+                             int64_t *out_handle);
+
+/* Which Rust shape `node` becomes once described (PURE_CROSSING_*): the
+ * node is crossed in and discarded. */
+int32_t pure_test_crossing(pure_context *ctx, const pure_description *node,
+                           int32_t *out);
+
+/* ---------------------------------------------------------------------
  * Layout checks (64-bit targets). The Rust crate asserts the same sizes.
  * ------------------------------------------------------------------ */
 
 #if defined(UINTPTR_MAX) && (UINTPTR_MAX == 0xFFFFFFFFFFFFFFFFu) && \
     defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
 _Static_assert(sizeof(pure_string) == 16, "pure_string layout");
-_Static_assert(sizeof(pure_description) == 160, "pure_description layout");
+_Static_assert(sizeof(pure_description) == 176, "pure_description layout");
 _Static_assert(sizeof(pure_slot) == 16, "pure_slot layout");
 _Static_assert(sizeof(pure_property) == 32, "pure_property layout");
 _Static_assert(sizeof(pure_leaf) == 96, "pure_leaf layout");

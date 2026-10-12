@@ -84,6 +84,8 @@ pub unsafe fn description(d: &PureDescription) -> Result<Description, PureExcept
         classifier: string(d.classifier, "classifier")?.map(SmolStr::new),
         name: string(d.name, "name")?.map(SmolStr::new),
         user_path: string(d.user_path, "user_path")?.map(SmolStr::new),
+        integer: d.integer,
+        real: d.real,
         payload: string(d.payload, "payload")?,
         year: d.year,
         month: d.month,

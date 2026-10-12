@@ -70,6 +70,8 @@ final class PureAbi
     static final StructLayout DESCRIPTION = MemoryLayout.structLayout(
             ValueLayout.JAVA_LONG.withName("id"),
             ValueLayout.JAVA_LONG.withName("definition"),
+            ValueLayout.JAVA_LONG.withName("integer"),
+            ValueLayout.JAVA_DOUBLE.withName("real"),
             STRING.withName("classifier"),
             STRING.withName("name"),
             STRING.withName("user_path"),
@@ -158,6 +160,8 @@ final class PureAbi
 
     static final long DESCRIPTION_ID = offset(DESCRIPTION, "id");
     static final long DESCRIPTION_DEFINITION = offset(DESCRIPTION, "definition");
+    static final long DESCRIPTION_INTEGER = offset(DESCRIPTION, "integer");
+    static final long DESCRIPTION_REAL = offset(DESCRIPTION, "real");
     static final long DESCRIPTION_CLASSIFIER = offset(DESCRIPTION, "classifier");
     static final long DESCRIPTION_NAME = offset(DESCRIPTION, "name");
     static final long DESCRIPTION_USER_PATH = offset(DESCRIPTION, "user_path");
@@ -259,10 +263,10 @@ final class PureAbi
     private static final MethodHandle OBJECT_PROPERTY_VALUES;
     private static final MethodHandle OBJECT_PROPERTY_NAMES;
     private static final MethodHandle OBJECT_CLASSIFIER;
-    private static final MethodHandle OBJECT_NEW;
+    private static final MethodHandle TEST_OBJECT_NEW;
     private static final MethodHandle OBJECT_RELEASE;
     private static final MethodHandle LIVE_HANDLE_COUNT;
-    private static final MethodHandle CROSSING;
+    private static final MethodHandle TEST_CROSSING;
     private static final MethodHandle LAST_TIMINGS;
     private static final MethodHandle LAST_FAILURE;
     private static final MethodHandle REPLY_DESCRIPTIONS;
@@ -272,7 +276,7 @@ final class PureAbi
     static
     {
         assertSize(STRING, 16);
-        assertSize(DESCRIPTION, 160);
+        assertSize(DESCRIPTION, 176);
         assertSize(SLOT, 16);
         assertSize(PROPERTY, 32);
         assertSize(LEAF, 96);
@@ -302,10 +306,10 @@ final class PureAbi
         OBJECT_PROPERTY_VALUES = downcall(lookup, "pure_object_property_values", FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.ADDRESS));
         OBJECT_PROPERTY_NAMES = downcall(lookup, "pure_object_property_names", FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.ADDRESS));
         OBJECT_CLASSIFIER = downcall(lookup, "pure_object_classifier", FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.ADDRESS));
-        OBJECT_NEW = downcall(lookup, "pure_object_new", FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.ADDRESS));
+        TEST_OBJECT_NEW = downcall(lookup, "pure_test_object_new", FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.ADDRESS));
         OBJECT_RELEASE = downcall(lookup, "pure_object_release", FunctionDescriptor.ofVoid(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG));
         LIVE_HANDLE_COUNT = downcall(lookup, "pure_live_handle_count", FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS));
-        CROSSING = downcall(lookup, "pure_crossing", FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS));
+        TEST_CROSSING = downcall(lookup, "pure_test_crossing", FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS));
         LAST_TIMINGS = downcall(lookup, "pure_last_timings", FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
         LAST_FAILURE = downcall(lookup, "pure_last_failure", FunctionDescriptor.of(ValueLayout.ADDRESS));
         REPLY_DESCRIPTIONS = downcall(lookup, "pure_reply_descriptions", FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG));
@@ -443,15 +447,18 @@ final class PureAbi
         }
     }
 
-    static int objectNew(MemorySegment context, MemorySegment classifier, long classifierLen, MemorySegment properties, long count, MemorySegment outHandle)
+    /**
+     * {@code pure_test_object_new}: test support, outside the ABI's contract.
+     */
+    static int testObjectNew(MemorySegment context, MemorySegment classifier, long classifierLen, MemorySegment properties, long count, MemorySegment outHandle)
     {
         try
         {
-            return (int) OBJECT_NEW.invokeExact(context, classifier, classifierLen, properties, count, outHandle);
+            return (int) TEST_OBJECT_NEW.invokeExact(context, classifier, classifierLen, properties, count, outHandle);
         }
         catch (Throwable t)
         {
-            throw linkage("pure_object_new", t);
+            throw linkage("pure_test_object_new", t);
         }
     }
 
@@ -479,15 +486,18 @@ final class PureAbi
         }
     }
 
-    static int crossing(MemorySegment context, MemorySegment node, MemorySegment out)
+    /**
+     * {@code pure_test_crossing}: test support, outside the ABI's contract.
+     */
+    static int testCrossing(MemorySegment context, MemorySegment node, MemorySegment out)
     {
         try
         {
-            return (int) CROSSING.invokeExact(context, node, out);
+            return (int) TEST_CROSSING.invokeExact(context, node, out);
         }
         catch (Throwable t)
         {
-            throw linkage("pure_crossing", t);
+            throw linkage("pure_test_crossing", t);
         }
     }
 

@@ -31,6 +31,7 @@ import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime
 import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.StrictTimeFunctions;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -208,12 +209,19 @@ public class NodeBridge
         else if (M3Paths.Integer.equals(type))
         {
             d.kind = NodeDescription.INTEGER;
-            d.payload = value.toString();
+            if ((value instanceof BigInteger) && (((BigInteger) value).bitLength() > 63))
+            {
+                d.payload = value.toString();
+            }
+            else
+            {
+                d.integer = ((Number) value).longValue();
+            }
         }
         else if (M3Paths.Float.equals(type))
         {
             d.kind = NodeDescription.FLOAT;
-            d.payload = (value instanceof BigDecimal) ? ((BigDecimal) value).toPlainString() : value.toString();
+            d.real = ((Number) value).doubleValue();
         }
         else if (M3Paths.Decimal.equals(type))
         {

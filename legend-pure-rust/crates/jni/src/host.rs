@@ -289,6 +289,10 @@ pub fn read_description(
         env.get_field_unchecked(obj, field, ReturnType::Primitive(Primitive::Long))?
             .j()
     };
+    let double = |env: &mut JNIEnv, field: JFieldID| -> jni::errors::Result<f64> {
+        env.get_field_unchecked(obj, field, ReturnType::Primitive(Primitive::Double))?
+            .d()
+    };
     Ok(Description {
         kind: int(env, fields.kind)?,
         id: long(env, fields.id)?,
@@ -296,6 +300,8 @@ pub fn read_description(
         classifier: string_field(env, obj, fields.classifier)?.map(SmolStr::new),
         name: string_field(env, obj, fields.name)?.map(SmolStr::new),
         user_path: string_field(env, obj, fields.user_path)?.map(SmolStr::new),
+        integer: long(env, fields.integer)?,
+        real: double(env, fields.real)?,
         payload: string_field(env, obj, fields.payload)?,
         year: int(env, fields.year)?,
         month: int(env, fields.month)?,

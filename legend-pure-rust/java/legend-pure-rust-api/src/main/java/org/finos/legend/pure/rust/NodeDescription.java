@@ -40,6 +40,19 @@ public final class NodeDescription
     public String classifier;
     public String name;
     public String userPath;
+    /**
+     * The value of an {@link #INTEGER} that fits 64 bits.
+     */
+    public long integer;
+    /**
+     * The value of a {@link #FLOAT}.
+     */
+    public double real;
+    /**
+     * A primitive's text: a Boolean's {@code true} or {@code false}, a Decimal's
+     * plain digits, a String, and the decimal digits of an Integer that does
+     * not fit 64 bits (in place of {@link #integer}).
+     */
     public String payload;
     public int year;
     public int month;

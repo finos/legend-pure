@@ -262,7 +262,8 @@ public final class PureRustFfmEvaluator implements FunctionExecution, RustHeap, 
 
     /**
      * Allocate a Rust heap object and return it as a {@link CoreInstance}.
-     * Each value slot holds the values of one property.
+     * Each value slot holds the values of one property. Test support: it goes
+     * through {@code pure_test_object_new}, which is not Pure's {@code new}.
      *
      * @param classifierPath the class path as the Rust side spells it
      * @param propertyNames  property names, parallel to {@code propertyValues}
@@ -278,7 +279,7 @@ public final class PureRustFfmEvaluator implements FunctionExecution, RustHeap, 
             PureAbi.Text classifier = PureAbi.Text.of(classifierPath, call);
             MemorySegment properties = this.bridge.properties(propertyNames, propertyValues, call);
             MemorySegment outHandle = call.allocate(ValueLayout.JAVA_LONG);
-            if (PureAbi.objectNew(this.context, classifier.ptr(), classifier.len(), properties, propertyNames.length, outHandle) != PureAbi.STATUS_OK)
+            if (PureAbi.testObjectNew(this.context, classifier.ptr(), classifier.len(), properties, propertyNames.length, outHandle) != PureAbi.STATUS_OK)
             {
                 throw lastFailure();
             }
@@ -338,7 +339,7 @@ public final class PureRustFfmEvaluator implements FunctionExecution, RustHeap, 
         {
             MemorySegment described = this.bridge.describeInto(node, call);
             MemorySegment out = call.allocate(ValueLayout.JAVA_INT);
-            if (PureAbi.crossing(this.context, described, out) != PureAbi.STATUS_OK)
+            if (PureAbi.testCrossing(this.context, described, out) != PureAbi.STATUS_OK)
             {
                 throw lastFailure();
             }

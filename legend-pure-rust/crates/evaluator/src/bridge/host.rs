@@ -352,14 +352,14 @@ pub fn description_to_value(
     let payload = |d: &Description| d.payload.clone().unwrap_or_default();
     match d.kind {
         kind::BOOLEAN => Ok(Value::Boolean(payload(&d) == "true")),
-        kind::INTEGER => payload(&d)
-            .parse::<i64>()
-            .map(Value::Integer)
-            .map_err(|_| unsupported("an Integer outside the 64-bit range")),
-        kind::FLOAT => payload(&d)
-            .parse::<f64>()
-            .map(Value::Float)
-            .map_err(|_| boundary_error(format!("bad Float `{}`", payload(&d)))),
+        kind::INTEGER => match &d.payload {
+            None => Ok(Value::Integer(d.integer)),
+            Some(digits) => digits
+                .parse::<i64>()
+                .map(Value::Integer)
+                .map_err(|_| unsupported("an Integer outside the 64-bit range")),
+        },
+        kind::FLOAT => Ok(Value::Float(d.real)),
         kind::DECIMAL => rust_decimal::Decimal::from_str(&payload(&d))
             .map(Value::Decimal)
             .map_err(|_| boundary_error(format!("bad Decimal `{}`", payload(&d)))),

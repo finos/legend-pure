@@ -212,6 +212,8 @@ final class FfmNodeBridge extends NodeBridge
     {
         target.set(ValueLayout.JAVA_LONG, PureAbi.DESCRIPTION_ID, d.id);
         target.set(ValueLayout.JAVA_LONG, PureAbi.DESCRIPTION_DEFINITION, d.definition);
+        target.set(ValueLayout.JAVA_LONG, PureAbi.DESCRIPTION_INTEGER, d.integer);
+        target.set(ValueLayout.JAVA_DOUBLE, PureAbi.DESCRIPTION_REAL, d.real);
         PureAbi.writeString(target, PureAbi.DESCRIPTION_CLASSIFIER, d.classifier, allocator);
         PureAbi.writeString(target, PureAbi.DESCRIPTION_NAME, d.name, allocator);
         PureAbi.writeString(target, PureAbi.DESCRIPTION_USER_PATH, d.userPath, allocator);

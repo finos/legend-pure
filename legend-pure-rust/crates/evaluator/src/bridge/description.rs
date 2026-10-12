@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! How a host describes one of its nodes: twenty fields a transport
+//! How a host describes one of its nodes: twenty-two fields a transport
 //! fills, by name, from whatever its host hands over (an object's fields,
 //! a flat record).
 
@@ -24,9 +24,11 @@ use smol_str::SmolStr;
 pub mod kind {
     /// `Boolean` primitive.
     pub const BOOLEAN: i32 = 0;
-    /// `Integer` primitive (decimal text payload).
+    /// `Integer` primitive: [`integer`](super::Description::integer);
+    /// the decimal digits in `payload` instead when it does not fit 64
+    /// bits.
     pub const INTEGER: i32 = 1;
-    /// `Float` primitive (plain decimal text payload).
+    /// `Float` primitive: [`real`](super::Description::real).
     pub const FLOAT: i32 = 2;
     /// `Decimal` primitive (plain decimal text payload).
     pub const DECIMAL: i32 = 3;
@@ -52,7 +54,7 @@ pub mod kind {
 
 /// One node of the host's graph, described. [`Default`] is a description
 /// with no definition (`-1`), no strings and every number zero.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Description {
     /// One of the [`kind`] constants.
     pub kind: i32,
@@ -68,7 +70,13 @@ pub struct Description {
     pub name: Option<SmolStr>,
     /// User path of a packageable element.
     pub user_path: Option<SmolStr>,
-    /// Text payload of a primitive.
+    /// The value of an `Integer` that fits 64 bits.
+    pub integer: i64,
+    /// The value of a `Float`.
+    pub real: f64,
+    /// Text payload of a primitive: a `Boolean`'s `true` or `false`, a
+    /// `Decimal`'s plain digits, a `String`, and the decimal digits of an
+    /// `Integer` that does not fit 64 bits.
     pub payload: Option<String>,
     /// Year of a date.
     pub year: i32,
@@ -107,6 +115,8 @@ impl Default for Description {
             classifier: None,
             name: None,
             user_path: None,
+            integer: 0,
+            real: 0.0,
             payload: None,
             year: 0,
             month: 0,

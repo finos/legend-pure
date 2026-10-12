@@ -68,10 +68,10 @@ pub const EXPORTS: &[&str] = &[
     "pure_object_property_values",
     "pure_object_property_names",
     "pure_object_classifier",
-    "pure_object_new",
+    "pure_test_object_new",
     "pure_object_release",
     "pure_live_handle_count",
-    "pure_crossing",
+    "pure_test_crossing",
     "pure_last_timings",
     "pure_last_failure",
     "pure_reply_descriptions",
@@ -432,8 +432,10 @@ pub unsafe extern "C" fn pure_object_classifier(
     status_of(outcome)
 }
 
-/// Allocate a Rust object from a classifier path and property slots,
-/// and hand the host its handle.
+/// Test support, outside the stable contract: allocate a Rust object
+/// from a classifier path and property slots, without `new`'s semantics
+/// (no classifier check, defaults or constraints), and hand the host its
+/// handle.
 ///
 /// # Safety
 /// `ctx` is NULL or a live context from `pure_context_new`; `classifier` is NULL or
@@ -441,7 +443,7 @@ pub unsafe extern "C" fn pure_object_classifier(
 /// `count` readable properties whose strings and slots are readable for
 /// the call; `out_handle` is NULL or points to writable storage.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn pure_object_new(
+pub unsafe extern "C" fn pure_test_object_new(
     ctx: *mut PureContext,
     classifier: *const u8,
     classifier_len: usize,
@@ -523,14 +525,15 @@ pub unsafe extern "C" fn pure_live_handle_count(ctx: *mut PureContext) -> i64 {
     .unwrap_or(-1)
 }
 
-/// Which Rust shape a described node becomes.
+/// Test support, outside the stable contract: which Rust shape a
+/// described node becomes.
 ///
 /// # Safety
 /// `ctx` is NULL or a live context from `pure_context_new`; `node` is NULL or points to a
 /// readable description whose strings are readable for the call; `out`
 /// is NULL or points to writable storage.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn pure_crossing(
+pub unsafe extern "C" fn pure_test_crossing(
     ctx: *mut PureContext,
     node: *const PureDescription,
     out: *mut i32,

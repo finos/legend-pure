@@ -60,7 +60,7 @@ fn element(id: i64, classifier: &str, path: &str, name: &str) -> Description {
 fn integer(i: i64) -> Description {
     Description {
         kind: kind::INTEGER,
-        payload: Some(i.to_string()),
+        integer: i,
         ..Default::default()
     }
 }
@@ -420,6 +420,42 @@ fn freeing_a_context_frees_its_host_though_the_host_still_holds_a_rust_object_ov
             forgotten.borrow().contains(&6) && forgotten.borrow().contains(&7),
             "the host is told which nodes died with the context: {:?}",
             forgotten.borrow()
+        );
+    });
+}
+
+#[test]
+fn numbers_are_read_from_their_typed_fields_and_digits_only_beyond_64_bits() {
+    on_both_paths(|| {
+        let context = context(graph());
+        let shared = context.shared();
+        assert_eq!(
+            description_to_value(shared, integer(-7)).unwrap(),
+            Value::Integer(-7)
+        );
+        let float = Description {
+            kind: kind::FLOAT,
+            real: 0.1,
+            ..Default::default()
+        };
+        assert_eq!(
+            description_to_value(shared, float).unwrap(),
+            Value::Float(0.1)
+        );
+        let digits = |text: &str| Description {
+            payload: Some(text.to_owned()),
+            ..integer(0)
+        };
+        assert_eq!(
+            description_to_value(shared, digits("42")).unwrap(),
+            Value::Integer(42)
+        );
+        let failure = description_to_value(shared, digits("92233720368547758070")).unwrap_err();
+        assert!(
+            failure
+                .to_string()
+                .contains("an Integer outside the 64-bit range"),
+            "{failure}"
         );
     });
 }

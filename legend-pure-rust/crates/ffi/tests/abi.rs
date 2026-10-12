@@ -29,10 +29,10 @@ use pure_rust_ffi::abi::{
     PureSlot, PureString, PureTimings, crossing, failure_kind, status,
 };
 use pure_rust_ffi::{
-    pure_abi_version, pure_context_free, pure_context_new, pure_crossing, pure_last_failure,
-    pure_last_timings, pure_live_handle_count, pure_object_classifier, pure_object_new,
-    pure_object_property_names, pure_object_property_values, pure_object_release,
-    pure_reply_descriptions, pure_reply_fail, pure_reply_names, pure_result_free, pure_start,
+    pure_abi_version, pure_context_free, pure_context_new, pure_last_failure, pure_last_timings,
+    pure_live_handle_count, pure_object_classifier, pure_object_property_names,
+    pure_object_property_values, pure_object_release, pure_reply_descriptions, pure_reply_fail,
+    pure_reply_names, pure_result_free, pure_start, pure_test_crossing, pure_test_object_new,
 };
 use smol_str::SmolStr;
 
@@ -41,6 +41,8 @@ const PLUS_KEY: &str = "plus_Integer_MANY__Integer_1_";
 const DATE: &str =
     "meta::pure::functions::date::date_Integer_1__Integer_1__Integer_1__StrictDate_1_";
 const DATE_KEY: &str = "date_Integer_1__Integer_1__Integer_1__StrictDate_1_";
+const LET: &str = "meta::pure::functions::lang::letFunction_String_1__T_m__T_m_";
+const LET_KEY: &str = "letFunction_String_1__T_m__T_m_";
 
 // ---------------------------------------------------------------------
 // The host side: descriptions as the bridge test builds them, flattened
@@ -70,7 +72,15 @@ fn element(id: i64, classifier: &str, path: &str, name: &str) -> Description {
 fn integer(i: i64) -> Description {
     Description {
         kind: kind::INTEGER,
-        payload: Some(i.to_string()),
+        integer: i,
+        ..Default::default()
+    }
+}
+
+fn float(f: f64) -> Description {
+    Description {
+        kind: kind::FLOAT,
+        real: f,
         ..Default::default()
     }
 }
@@ -105,6 +115,8 @@ fn flat(d: &Description) -> PureDescription {
     PureDescription {
         id: d.id,
         definition: d.definition,
+        integer: d.integer,
+        real: d.real,
         classifier: s(d.classifier.as_deref()),
         name: s(d.name.as_deref()),
         user_path: s(d.user_path.as_deref()),
@@ -410,7 +422,7 @@ impl Driver {
         let mut handle = 0;
         // SAFETY: the context is live; every pointer is to a live local.
         let status = unsafe {
-            pure_object_new(
+            pure_test_object_new(
                 self.ctx,
                 classifier.as_ptr(),
                 classifier.len(),
@@ -427,7 +439,7 @@ impl Driver {
         let d = flat(d);
         let mut out = -1;
         // SAFETY: the context is live; both pointers are to live locals.
-        let status = unsafe { pure_crossing(self.ctx, &raw const d, &raw mut out) };
+        let status = unsafe { pure_test_crossing(self.ctx, &raw const d, &raw mut out) };
         assert_eq!(status, status::OK, "{}", last_message());
         out
     }
@@ -852,4 +864,35 @@ fn a_failure_at_a_located_node_carries_its_whole_span() {
     );
     // SAFETY: the context is live and passed to nothing after this.
     assert_eq!(unsafe { pure_context_free(ctx) }, status::OK);
+}
+
+/// Numbers cross in typed: an `INTEGER` as `integer` and a `FLOAT` as
+/// `real`, and only an integer beyond 64 bits as its digits in `payload`,
+/// which the evaluator cannot hold.
+#[test]
+fn numbers_cross_in_typed_and_an_integer_beyond_64_bits_is_unsupported() {
+    let driver = Driver::new(graph());
+    let plus = element(3, m3_paths::NATIVE_FUNCTION, PLUS, PLUS_KEY);
+    assert_eq!(
+        driver
+            .start(&plus, &[vec![integer(i64::MAX - 1), integer(1)]])
+            .unwrap(),
+        vec![integer_leaf(i64::MAX)]
+    );
+    let leaves = driver
+        .start(
+            &element(41, m3_paths::NATIVE_FUNCTION, LET, LET_KEY),
+            &[vec![string("x")], vec![float(2.5)]],
+        )
+        .unwrap();
+    assert_eq!((leaves[0].kind, leaves[0].real), (kind::FLOAT, 2.5));
+
+    let beyond = Description {
+        payload: Some("92233720368547758070".to_owned()),
+        ..integer(0)
+    };
+    let failure = driver.start(&plus, &[vec![beyond]]).unwrap_err();
+    assert_eq!(failure, "Unsupported: an Integer outside the 64-bit range");
+    assert_eq!(last_kind(), failure_kind::UNSUPPORTED);
+    driver.free();
 }
