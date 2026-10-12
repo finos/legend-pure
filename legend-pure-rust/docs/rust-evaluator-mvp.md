@@ -1794,6 +1794,20 @@ nothing, which is e06's case (a scratch benchmark of single lambda
 applications: the application itself about 15 ns, `mod` about 14,
 `equal` about 10, neither of the first two in this entry's scope).
 
+**Gate T, decided (2026-10-11).** One line missed the gate's letter: e05
+through JNI on the compiled host, 4,376 → 4,594 ns. It is accepted as code
+layout, not logic: T1/T2 adds nothing to the tree walker's path (the
+compiled host's lambdas run there), only an `intrinsic()` declaration the
+executor reads; two builds of identical semantics gave that line both 917
+and 1,125 ns of Rust run; and the tree walker measured on its own across the
+four Part T commits, run alternately (executor off, seven rounds), is flat
+through the `let` fix and moves 1 to 2 % at T1/T2 on e05 (1,117 → 1,135 ns)
+and `map(x | $x * 2)` (8,152 → 8,324 ns), within what a relinked binary
+moves. So a gate's spread must include the variance between builds, not only
+between runs: from here on a gate compares against the baseline rebuilt
+beside the candidate, and a line that moves by less than two rebuilds of the
+same tree differ is within the spread.
+
 #### Out of scope for this entry
 
 Collection fusion (`map`/`filter`/`fold` without materializing),
