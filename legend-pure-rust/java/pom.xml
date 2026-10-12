@@ -65,6 +65,23 @@
         </dependencies>
     </dependencyManagement>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- These modules' bytecode targets 17 or 25, above the release the rest of the
+                         reactor targets. Their tests fork the JVM Maven runs on, which the profiles
+                         below already hold at or above each module's floor, and never a lower one
+                         passed as -Djvm (the shared CI points every module's tests at each matrix
+                         JDK, 8 included). -->
+                    <jvm>${java.home}/bin/java</jvm>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
     <!-- legend-pure-rust-api, -jni, -ffm and -bench are added by the profiles below; on JDK 11 this aggregator holds nothing. -->
     <profiles>
         <profile>
