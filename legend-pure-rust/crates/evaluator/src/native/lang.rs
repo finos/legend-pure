@@ -31,8 +31,8 @@ use smol_str::SmolStr;
 use crate::error::{PureException, PureRuntimeError};
 use crate::heap::{ObjectHandle, RuntimeHeap};
 use crate::native::{
-    EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args, force_all, force1,
-    force2, force3,
+    ArgMode, Control, EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args,
+    force_all, force1, force2, force3,
 };
 use crate::value::Value;
 
@@ -45,6 +45,10 @@ use crate::value::Value;
 pub struct LetFunction;
 
 impl NativeFunction for LetFunction {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Control(Control::Let)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
@@ -68,6 +72,10 @@ impl NativeFunction for LetFunction {
 pub struct If;
 
 impl NativeFunction for If {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Control(Control::If)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],

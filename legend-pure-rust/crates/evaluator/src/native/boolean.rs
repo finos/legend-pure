@@ -22,7 +22,9 @@
 use legend_pure_metamodel::types::ValueSpec;
 
 use crate::error::PureException;
-use crate::native::{EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args};
+use crate::native::{
+    ArgMode, Control, EvalContextTrait, Evaluated, NativeFunction, NativeRegistry, expect_args,
+};
 use crate::value::Value;
 
 /// Pure `and(Boolean[1], Boolean[1]): Boolean[1]` — short-circuit.
@@ -32,6 +34,10 @@ use crate::value::Value;
 pub struct And;
 
 impl NativeFunction for And {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Control(Control::And)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],
@@ -54,6 +60,10 @@ impl NativeFunction for And {
 pub struct Or;
 
 impl NativeFunction for Or {
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Control(Control::Or)
+    }
+
     fn execute(
         &self,
         args: &[ValueSpec],

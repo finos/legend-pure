@@ -428,6 +428,11 @@ pub struct LambdaClosure {
     pub body: std::sync::Arc<[legend_pure_metamodel::types::ValueSpec]>,
     /// Captured variable bindings from the enclosing scope.
     pub captures: HashMap<SmolStr, Value>,
+    /// The body executor's form of this lambda's definition, shared by
+    /// every closure of that definition: set only where a definition is
+    /// named (a lambda node inside a built body, a host's lambda
+    /// definition), `None` for a closure that runs on the tree walker.
+    pub exec: Option<Rc<crate::exec::LambdaBody>>,
 }
 
 /// A hashable key for `Map` entries.

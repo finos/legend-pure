@@ -16,6 +16,7 @@
 //! at all: what a transport implements, exercised end to end through a
 //! call whose lowering grows the model.
 
+use legend_pure_evaluator::builders::on_both_paths;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -185,183 +186,197 @@ fn context(host: TableHost) -> BridgeContext {
 
 #[test]
 fn a_lambda_described_by_the_host_runs_and_its_lowering_grows_the_model_once() {
-    let host = graph();
-    let forgotten = Rc::clone(&host.forgotten);
-    let mut context = context(host);
-    let chunks_before = context.shared().model().chunks.len();
+    on_both_paths(|| {
+        let host = graph();
+        let forgotten = Rc::clone(&host.forgotten);
+        let mut context = context(host);
+        let chunks_before = context.shared().model().chunks.len();
 
-    let function = description_to_value(context.shared(), lambda(1, 100)).unwrap();
-    assert_eq!(crossing_of(&function), Crossing::HostNode);
-    assert_eq!(context.start(&function, &[]).unwrap(), Value::Integer(3));
-    assert_eq!(context.shared().model().chunks.len(), chunks_before + 1);
-    assert!(timings::last().lower_host_reads > 0);
-    assert_eq!(timings::last().run_host_reads, 0);
-    assert!(
-        forgotten.borrow().contains(&2),
-        "the expression node is held by nothing once the call ends: {:?}",
-        forgotten.borrow()
-    );
-    assert!(!forgotten.borrow().contains(&1), "the lambda is still held");
+        let function = description_to_value(context.shared(), lambda(1, 100)).unwrap();
+        assert_eq!(crossing_of(&function), Crossing::HostNode);
+        assert_eq!(context.start(&function, &[]).unwrap(), Value::Integer(3));
+        assert_eq!(context.shared().model().chunks.len(), chunks_before + 1);
+        assert!(timings::last().lower_host_reads > 0);
+        assert_eq!(timings::last().run_host_reads, 0);
+        assert!(
+            forgotten.borrow().contains(&2),
+            "the expression node is held by nothing once the call ends: {:?}",
+            forgotten.borrow()
+        );
+        assert!(!forgotten.borrow().contains(&1), "the lambda is still held");
 
-    let again = description_to_value(context.shared(), lambda(30, 100)).unwrap();
-    assert_eq!(context.start(&again, &[]).unwrap(), Value::Integer(3));
-    assert_eq!(context.shared().model().chunks.len(), chunks_before + 1);
-    assert_eq!(
-        timings::last().lower_host_reads,
-        0,
-        "the closure cache answers for the same definition"
-    );
-    assert_eq!(context.live_handle_count(), 2);
-    drop((function, again));
-    assert_eq!(context.live_handle_count(), 0);
+        let again = description_to_value(context.shared(), lambda(30, 100)).unwrap();
+        assert_eq!(context.start(&again, &[]).unwrap(), Value::Integer(3));
+        assert_eq!(context.shared().model().chunks.len(), chunks_before + 1);
+        assert_eq!(
+            timings::last().lower_host_reads,
+            0,
+            "the closure cache answers for the same definition"
+        );
+        assert_eq!(context.live_handle_count(), 2);
+        drop((function, again));
+        assert_eq!(context.live_handle_count(), 0);
+    });
 }
 
 #[test]
 fn a_native_function_node_runs_through_the_registry() {
-    let mut context = context(graph());
-    let plus = description_to_value(
-        context.shared(),
-        element(3, m3_paths::NATIVE_FUNCTION, PLUS, PLUS_KEY),
-    )
-    .unwrap();
-    assert_eq!(crossing_of(&plus), Crossing::HostNode);
-    let args = [Value::from_vec(vec![
-        Value::Integer(20),
-        Value::Integer(22),
-    ])];
-    assert_eq!(context.start(&plus, &args).unwrap(), Value::Integer(42));
+    on_both_paths(|| {
+        let mut context = context(graph());
+        let plus = description_to_value(
+            context.shared(),
+            element(3, m3_paths::NATIVE_FUNCTION, PLUS, PLUS_KEY),
+        )
+        .unwrap();
+        assert_eq!(crossing_of(&plus), Crossing::HostNode);
+        let args = [Value::from_vec(vec![
+            Value::Integer(20),
+            Value::Integer(22),
+        ])];
+        assert_eq!(context.start(&plus, &args).unwrap(), Value::Integer(42));
+    });
 }
 
 #[test]
 fn descriptions_the_model_knows_never_become_nodes() {
-    let context = context(graph());
-    let shared = context.shared();
-    let integer_type = description_to_value(
-        shared,
-        element(9, m3_paths::PRIMITIVE_TYPE, "Integer", "Integer"),
-    )
-    .unwrap();
-    assert_eq!(integer_type, Value::Element(INTEGER_ID));
-    assert_eq!(
-        description_to_value(shared, integer(7)).unwrap(),
-        Value::Integer(7)
-    );
-    assert_eq!(crossing_of(&Value::Integer(7)), Crossing::Primitive);
-    let stale = description_to_value(
-        shared,
-        Description {
-            kind: kind::RUST_OBJECT,
-            id: 999,
-            ..Default::default()
-        },
-    )
-    .unwrap_err();
-    assert!(
-        stale.to_string().contains("Stale or unknown handle: 999"),
-        "{stale}"
-    );
+    on_both_paths(|| {
+        let context = context(graph());
+        let shared = context.shared();
+        let integer_type = description_to_value(
+            shared,
+            element(9, m3_paths::PRIMITIVE_TYPE, "Integer", "Integer"),
+        )
+        .unwrap();
+        assert_eq!(integer_type, Value::Element(INTEGER_ID));
+        assert_eq!(
+            description_to_value(shared, integer(7)).unwrap(),
+            Value::Integer(7)
+        );
+        assert_eq!(crossing_of(&Value::Integer(7)), Crossing::Primitive);
+        let stale = description_to_value(
+            shared,
+            Description {
+                kind: kind::RUST_OBJECT,
+                id: 999,
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
+        assert!(
+            stale.to_string().contains("Stale or unknown handle: 999"),
+            "{stale}"
+        );
+    });
 }
 
 #[test]
 fn a_rust_object_handed_to_the_host_comes_back_as_itself() {
-    let mut context = context(graph());
-    let handle = context
-        .new_object(
-            "my::Thing",
-            &[("name".to_string(), vec![Value::String("x".into())])],
+    on_both_paths(|| {
+        let mut context = context(graph());
+        let handle = context
+            .new_object(
+                "my::Thing",
+                &[("name".to_string(), vec![Value::String("x".into())])],
+            )
+            .unwrap();
+        assert_eq!(context.live_handle_count(), 1);
+        let object = context.resolve_handle(handle).expect("live");
+        assert_eq!(context.classifier(&object).unwrap(), "my::Thing");
+        assert_eq!(
+            context.property_values(&object, "name").unwrap().get(0),
+            Some(&Value::String("x".into()))
+        );
+        let back = description_to_value(
+            context.shared(),
+            Description {
+                kind: kind::RUST_OBJECT,
+                id: handle,
+                ..Default::default()
+            },
         )
         .unwrap();
-    assert_eq!(context.live_handle_count(), 1);
-    let object = context.resolve_handle(handle).expect("live");
-    assert_eq!(context.classifier(&object).unwrap(), "my::Thing");
-    assert_eq!(
-        context.property_values(&object, "name").unwrap().get(0),
-        Some(&Value::String("x".into()))
-    );
-    let back = description_to_value(
-        context.shared(),
-        Description {
-            kind: kind::RUST_OBJECT,
-            id: handle,
-            ..Default::default()
-        },
-    )
-    .unwrap();
-    assert_eq!(crossing_of(&back), Crossing::RustObject);
-    context.release(handle);
-    assert!(context.resolve_handle(handle).is_none());
-    assert_eq!(context.live_handle_count(), 0);
+        assert_eq!(crossing_of(&back), Crossing::RustObject);
+        context.release(handle);
+        assert!(context.resolve_handle(handle).is_none());
+        assert_eq!(context.live_handle_count(), 0);
+    });
 }
 
 #[test]
 fn a_session_hands_out_one_view_at_a_time() {
-    let session = Session::new(context(graph()));
-    let first = session.enter().unwrap();
-    assert!(session.enter().is_err());
-    drop(first);
-    assert!(session.enter().is_ok());
+    on_both_paths(|| {
+        let session = Session::new(context(graph()));
+        let first = session.enter().unwrap();
+        assert!(session.enter().is_err());
+        drop(first);
+        assert!(session.enter().is_ok());
+    });
 }
 
 #[test]
 fn a_call_ends_over_the_nodes_it_read_and_the_nodes_that_died() {
-    let host = graph();
-    let forgotten = Rc::clone(&host.forgotten);
-    let mut context = context(host);
-    let function = description_to_value(context.shared(), lambda(1, 100)).unwrap();
+    on_both_paths(|| {
+        let host = graph();
+        let forgotten = Rc::clone(&host.forgotten);
+        let mut context = context(host);
+        let function = description_to_value(context.shared(), lambda(1, 100)).unwrap();
 
-    // Host node 6, read once, then held only by a Rust object the host keeps.
-    let held = description_to_value(context.shared(), node(6, m3_paths::MULTIPLICITY)).unwrap();
-    let Value::Object(node_six) = &held else {
-        panic!("a host node: {held:?}")
-    };
-    assert_eq!(
-        context
-            .property_values(node_six, "lowerBound")
+        // Host node 6, read once, then held only by a Rust object the host keeps.
+        let held = description_to_value(context.shared(), node(6, m3_paths::MULTIPLICITY)).unwrap();
+        let Value::Object(node_six) = &held else {
+            panic!("a host node: {held:?}")
+        };
+        assert_eq!(
+            context
+                .property_values(node_six, "lowerBound")
+                .unwrap()
+                .len(),
+            1
+        );
+        let handle = context
+            .new_object("my::Holder", &[("node".to_string(), vec![held.clone()])])
+            .unwrap();
+        drop(held);
+        context.start(&function, &[]).unwrap();
+        let holder = context.resolve_handle(handle).expect("live");
+        let Some(Value::Object(node_six)) = context
+            .property_values(&holder, "node")
             .unwrap()
-            .len(),
-        1
-    );
-    let handle = context
-        .new_object("my::Holder", &[("node".to_string(), vec![held.clone()])])
-        .unwrap();
-    drop(held);
-    context.start(&function, &[]).unwrap();
-    let holder = context.resolve_handle(handle).expect("live");
-    let Some(Value::Object(node_six)) = context
-        .property_values(&holder, "node")
-        .unwrap()
-        .get(0)
-        .cloned()
-    else {
-        panic!("the holder keeps node 6")
-    };
-    let reads = context.shared().reads();
-    context.property_values(&node_six, "lowerBound").unwrap();
-    assert_eq!(
-        context.shared().reads(),
-        reads + 1,
-        "the call's end dropped the cache of a node read before it"
-    );
-    drop((holder, node_six));
-    assert!(!forgotten.borrow().contains(&6));
-    context.release(handle);
-    context.start(&function, &[]).unwrap();
-    assert!(
-        forgotten.borrow().contains(&6),
-        "a node dies with the Rust object that held it: {:?}",
-        forgotten.borrow()
-    );
+            .get(0)
+            .cloned()
+        else {
+            panic!("the holder keeps node 6")
+        };
+        let reads = context.shared().reads();
+        context.property_values(&node_six, "lowerBound").unwrap();
+        assert_eq!(
+            context.shared().reads(),
+            reads + 1,
+            "the call's end dropped the cache of a node read before it"
+        );
+        drop((holder, node_six));
+        assert!(!forgotten.borrow().contains(&6));
+        context.release(handle);
+        context.start(&function, &[]).unwrap();
+        assert!(
+            forgotten.borrow().contains(&6),
+            "a node dies with the Rust object that held it: {:?}",
+            forgotten.borrow()
+        );
 
-    // An id described again after its node died, before any call ended.
-    let first = description_to_value(context.shared(), node(40, m3_paths::MULTIPLICITY)).unwrap();
-    drop(first);
-    let second = description_to_value(context.shared(), node(40, m3_paths::MULTIPLICITY)).unwrap();
-    context.start(&function, &[]).unwrap();
-    assert!(
-        !forgotten.borrow().contains(&40),
-        "the id is held again, by the second node"
-    );
-    drop(second);
-    context.start(&function, &[]).unwrap();
-    assert!(forgotten.borrow().contains(&40));
+        // An id described again after its node died, before any call ended.
+        let first =
+            description_to_value(context.shared(), node(40, m3_paths::MULTIPLICITY)).unwrap();
+        drop(first);
+        let second =
+            description_to_value(context.shared(), node(40, m3_paths::MULTIPLICITY)).unwrap();
+        context.start(&function, &[]).unwrap();
+        assert!(
+            !forgotten.borrow().contains(&40),
+            "the id is held again, by the second node"
+        );
+        drop(second);
+        context.start(&function, &[]).unwrap();
+        assert!(forgotten.borrow().contains(&40));
+    });
 }

@@ -30,6 +30,7 @@ pub mod context;
 pub mod date;
 pub mod error;
 pub mod eval;
+pub mod exec;
 pub mod heap;
 pub mod hooks;
 pub mod lower;

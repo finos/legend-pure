@@ -39,6 +39,12 @@ use crate::value::Value;
 /// [`NoOpHooks`] provides `#[inline(always)]` implementations that the
 /// compiler eliminates entirely after monomorphization.
 pub trait EvalHooks {
+    /// Whether the hooks observe each expression ([`before_eval`](Self::before_eval),
+    /// [`after_eval`](Self::after_eval)). An evaluator whose hooks do runs
+    /// every body on the tree walker, which calls them per expression; the
+    /// body executor ([`crate::exec`]) does not.
+    const OBSERVES_EXPRESSIONS: bool = true;
+
     /// Called before evaluating an expression.
     ///
     /// Debug implementations check breakpoints here and may suspend
@@ -105,6 +111,8 @@ pub trait EvalHooks {
 pub struct NoOpHooks;
 
 impl EvalHooks for NoOpHooks {
+    const OBSERVES_EXPRESSIONS: bool = false;
+
     #[inline(always)]
     #[allow(clippy::inline_always)]
     fn before_eval(

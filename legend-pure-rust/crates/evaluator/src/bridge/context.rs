@@ -30,6 +30,7 @@ use crate::bridge::host::{Host, HostNode, HostShared};
 use crate::bridge::timings::{self, Timings};
 use crate::error::{PureException, PureRuntimeError};
 use crate::eval::{Evaluator, EvaluatorState};
+use crate::exec::LambdaBody;
 use crate::heap::{HeapEntry, ObjectHandle, TypedObject};
 use crate::lower::{LowerError, Lowering, M3Ids, ModelExtension, Node};
 use crate::m3_paths;
@@ -98,12 +99,14 @@ impl FunctionKinds {
 }
 
 /// A lambda as lowered once: its parameters and body, which depend on its
-/// definition only, and the names of the variables it captures, whose
-/// values are read again on every call.
+/// definition only, the names of the variables it captures, whose
+/// values are read again on every call, and the definition's body for
+/// the body executor, built on its first application.
 struct CachedClosure {
     parameters: std::sync::Arc<[Parameter]>,
     body: std::sync::Arc<[ValueSpec]>,
     open_variables: Vec<SmolStr>,
+    exec: Rc<LambdaBody>,
 }
 
 impl CachedClosure {
@@ -112,6 +115,7 @@ impl CachedClosure {
             parameters: closure.parameters.clone(),
             body: closure.body.clone(),
             open_variables: closure.captures.keys().cloned().collect(),
+            exec: Rc::new(LambdaBody::new()),
         }
     }
 }
@@ -172,6 +176,7 @@ impl CachedLowering<'_, '_> {
             let parameters = cached.parameters.clone();
             let body = cached.body.clone();
             let open_variables = cached.open_variables.clone();
+            let exec = cached.exec.clone();
             let node = Node::new(handle.clone());
             let mut captures = HashMap::with_capacity(open_variables.len());
             for name in open_variables {
@@ -188,11 +193,14 @@ impl CachedLowering<'_, '_> {
                 parameters,
                 body,
                 captures,
+                exec: Some(exec),
             });
         }
-        let closure = self.lowering.lower_root_lambda(value)?;
+        let mut closure = self.lowering.lower_root_lambda(value)?;
         if let Some(key) = definition {
-            self.added.push((key, CachedClosure::of(&closure)));
+            let cached = CachedClosure::of(&closure);
+            closure.exec = Some(cached.exec.clone());
+            self.added.push((key, cached));
         }
         Ok(closure)
     }
@@ -234,6 +242,9 @@ pub struct BridgeContext {
     /// context's lifetime: the elements their bodies refer to live in the
     /// model as long.
     closures: HashMap<i64, CachedClosure>,
+    /// Whether the evaluator runs built bodies ([`crate::exec`]), fixed
+    /// when the context starts.
+    exec: bool,
 }
 
 impl BridgeContext {
@@ -245,6 +256,7 @@ impl BridgeContext {
         let kinds = FunctionKinds::resolve(&model);
         let m3_ids = M3Ids::resolve(&model);
         let state = EvaluatorState::new(&model);
+        let exec = state.exec();
         let model = Rc::new(RefCell::new(model));
         let shared = Rc::new(HostShared::new(host, Rc::clone(&model)));
         Self {
@@ -256,7 +268,14 @@ impl BridgeContext {
             kinds,
             m3_ids,
             closures: HashMap::new(),
+            exec,
         }
+    }
+
+    /// Switch the body executor ([`crate::exec`]) for every later call.
+    pub fn set_exec(&mut self, enabled: bool) {
+        self.exec = enabled;
+        self.state.set_exec(enabled);
     }
 
     /// The state shared with every host node.
@@ -272,6 +291,7 @@ impl BridgeContext {
         let chunk_id = extension.chunk_id();
         let applied = extension.apply(&mut self.model.borrow_mut());
         self.state = EvaluatorState::new(&self.model.borrow());
+        self.state.set_exec(self.exec);
         self.m3_ids = M3Ids::resolve(&self.model.borrow());
         applied?;
         self.bridge_chunk = Some(chunk_id);

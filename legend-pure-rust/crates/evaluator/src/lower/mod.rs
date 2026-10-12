@@ -225,6 +225,7 @@ impl<'m> Lowering<'m> {
             parameters: parameters.into(),
             body: body.into(),
             captures,
+            exec: None,
         })
     }
 

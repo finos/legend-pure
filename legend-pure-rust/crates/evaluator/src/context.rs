@@ -145,6 +145,23 @@ impl VariableContext {
         self.frames.len()
     }
 
+    /// The number of bindings across every open scope: the position the
+    /// next [`set`](Self::set) takes.
+    #[must_use]
+    pub fn binding_count(&self) -> usize {
+        self.bindings.len()
+    }
+
+    /// The value bound at a position below [`binding_count`](Self::binding_count),
+    /// whether or not a later binding of the same name shadows it.
+    ///
+    /// # Panics
+    /// The position is not below [`binding_count`](Self::binding_count).
+    #[must_use]
+    pub fn value_at(&self, position: usize) -> &Value {
+        &self.bindings[position].1
+    }
+
     /// Iterate every currently visible binding's value.
     pub fn iter_values(&self) -> impl Iterator<Item = &Value> + '_ {
         self.iter_bindings().map(|(_, value)| value)

@@ -256,6 +256,13 @@ pub trait EvalContextTrait {
 /// force the lambda spec to a `Value::Function`, then invoke it per-element
 /// via [`EvalContextTrait::call_function`].
 pub trait NativeFunction: fmt::Debug {
+    /// How the native takes its arguments. [`ArgMode::Lazy`] unless the
+    /// native declares otherwise; the body executor ([`crate::exec`])
+    /// reads it once per call site, when it builds a body.
+    fn arg_mode(&self) -> ArgMode {
+        ArgMode::Lazy
+    }
+
     /// Execute the native against its raw `ValueSpec` arguments.
     ///
     /// The native is responsible for calling `ctx.evaluate(&arg)` on every
@@ -270,6 +277,41 @@ pub trait NativeFunction: fmt::Debug {
         args: &[ValueSpec],
         ctx: &mut dyn EvalContextTrait,
     ) -> Result<Evaluated, PureException>;
+}
+
+/// How a native takes its arguments, as the native declares it
+/// ([`NativeFunction::arg_mode`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ArgMode {
+    /// The native receives its argument expressions and forces them
+    /// itself, through [`NativeFunction::execute`].
+    Lazy,
+    /// A control form of fixed shape. The body executor runs it as its
+    /// own operation instead of calling [`NativeFunction::execute`], so a
+    /// native declares one only when its `execute` is exactly what the
+    /// form documents.
+    Control(Control),
+}
+
+/// The control forms the body executor runs as operations. Each states
+/// the contract the declaring native's `execute` fulfils, with its own
+/// stack frame added to any error, as dispatch adds it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Control {
+    /// Two arguments, a name and a value: forces both in order, binds
+    /// the value under the name (a `String`) in the current scope and
+    /// returns it.
+    Let,
+    /// Three arguments: forces the first through [`force_thunk`] as a
+    /// `Boolean`, then the second when it is `true`, else the third,
+    /// through [`force_thunk`], and returns that.
+    If,
+    /// Two arguments: forces the first as a `Boolean`; `false` without
+    /// forcing the second, else the second as a `Boolean`.
+    And,
+    /// Two arguments: forces the first as a `Boolean`; `true` without
+    /// forcing the second, else the second as a `Boolean`.
+    Or,
 }
 
 /// Registry of native functions, keyed by mangled function FQN.

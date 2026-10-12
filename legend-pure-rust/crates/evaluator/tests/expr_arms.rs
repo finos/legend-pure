@@ -16,6 +16,7 @@
 //! literals, and the four arms the extracted evaluator stubs as
 //! `Unsupported` until their runtime is fished.
 
+use legend_pure_evaluator::builders::on_both_paths;
 use legend_pure_evaluator::builders::{ModelBuilder, expr, named};
 use legend_pure_evaluator::error::{PureException, PureExceptionKind, PureRuntimeError};
 use legend_pure_evaluator::eval::Evaluator;
@@ -35,77 +36,83 @@ fn unsupported(err: &PureException) -> Option<&str> {
 
 #[test]
 fn decimal_literal() {
-    let model = ModelBuilder::new().finish();
-    let registry = NativeRegistry::standard();
-    let mut eval = Evaluator::new(&model, &registry);
-    let d = rust_decimal::Decimal::new(150, 2);
-    assert_eq!(eval.eval(&expr::decimal(d)).unwrap(), Value::Decimal(d));
+    on_both_paths(|| {
+        let model = ModelBuilder::new().finish();
+        let registry = NativeRegistry::standard();
+        let mut eval = Evaluator::new(&model, &registry);
+        let d = rust_decimal::Decimal::new(150, 2);
+        assert_eq!(eval.eval(&expr::decimal(d)).unwrap(), Value::Decimal(d));
+    });
 }
 
 #[test]
 fn date_literal() {
-    let model = ModelBuilder::new().finish();
-    let registry = NativeRegistry::standard();
-    let mut eval = Evaluator::new(&model, &registry);
-    let value = eval
-        .eval(&expr::date(DateValue::StrictDate {
-            year: 2024,
-            month: Some(2),
-            day: Some(29),
-        }))
-        .unwrap();
-    assert!(matches!(value, Value::Date(_)), "{value:?}");
-    assert!(matches!(
-        eval.eval(&expr::date(DateValue::Latest)).unwrap(),
-        Value::Latest
-    ));
+    on_both_paths(|| {
+        let model = ModelBuilder::new().finish();
+        let registry = NativeRegistry::standard();
+        let mut eval = Evaluator::new(&model, &registry);
+        let value = eval
+            .eval(&expr::date(DateValue::StrictDate {
+                year: 2024,
+                month: Some(2),
+                day: Some(29),
+            }))
+            .unwrap();
+        assert!(matches!(value, Value::Date(_)), "{value:?}");
+        assert!(matches!(
+            eval.eval(&expr::date(DateValue::Latest)).unwrap(),
+            Value::Latest
+        ));
+    });
 }
 
 #[test]
 fn stubbed_arms_report_unsupported() {
-    let model = ModelBuilder::new().finish();
-    let registry = NativeRegistry::standard();
-    let mut eval = Evaluator::new(&model, &registry);
-    let column = || RelationColumnLowered {
-        name: "c".into(),
-        type_element: STRING_ID,
-        multiplicity: Multiplicity::PureOne,
-        init_lambda: None,
-        reduce_lambda: None,
-    };
-    let cases = [
-        (
-            ExprKind::RelationLiteral {
-                columns: vec![column()],
-            },
-            "relation literal",
-        ),
-        (
-            ExprKind::ColSpecArrayLiteral {
-                columns: vec![column()],
-                kind: ColSpecLiteralKind::Plain,
-            },
-            "column spec array literal",
-        ),
-        (
-            ExprKind::ColSpecLiteral {
-                column: column(),
-                kind: ColSpecLiteralKind::Plain,
-            },
-            "column spec literal",
-        ),
-        (
-            ExprKind::PathLiteral {
-                start_type: named(STRING_ID),
-                steps: Vec::new(),
-                name: None,
-            },
-            "path literal",
-        ),
-    ];
-    for (kind, expected) in cases {
-        let err = eval.eval(&expr::spec(kind)).unwrap_err();
-        let what = unsupported(&err).expect("an Unsupported error");
-        assert!(what.starts_with(expected), "{what} vs {expected}");
-    }
+    on_both_paths(|| {
+        let model = ModelBuilder::new().finish();
+        let registry = NativeRegistry::standard();
+        let mut eval = Evaluator::new(&model, &registry);
+        let column = || RelationColumnLowered {
+            name: "c".into(),
+            type_element: STRING_ID,
+            multiplicity: Multiplicity::PureOne,
+            init_lambda: None,
+            reduce_lambda: None,
+        };
+        let cases = [
+            (
+                ExprKind::RelationLiteral {
+                    columns: vec![column()],
+                },
+                "relation literal",
+            ),
+            (
+                ExprKind::ColSpecArrayLiteral {
+                    columns: vec![column()],
+                    kind: ColSpecLiteralKind::Plain,
+                },
+                "column spec array literal",
+            ),
+            (
+                ExprKind::ColSpecLiteral {
+                    column: column(),
+                    kind: ColSpecLiteralKind::Plain,
+                },
+                "column spec literal",
+            ),
+            (
+                ExprKind::PathLiteral {
+                    start_type: named(STRING_ID),
+                    steps: Vec::new(),
+                    name: None,
+                },
+                "path literal",
+            ),
+        ];
+        for (kind, expected) in cases {
+            let err = eval.eval(&expr::spec(kind)).unwrap_err();
+            let what = unsupported(&err).expect("an Unsupported error");
+            assert!(what.starts_with(expected), "{what} vs {expected}");
+        }
+    });
 }

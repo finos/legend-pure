@@ -49,6 +49,15 @@ pub const TEST_CHUNK_ID: u16 = 1;
 /// The source identifier every builder-synthesised span carries.
 pub const TEST_SOURCE: &str = "<test>";
 
+/// Run `f` twice on this thread: with every evaluator created inside it
+/// on the tree walker, then with the body executor on
+/// ([`crate::exec::with_default`]). A test wrapped in it holds on both
+/// paths.
+pub fn on_both_paths(f: impl Fn()) {
+    crate::exec::with_default(false, &f);
+    crate::exec::with_default(true, &f);
+}
+
 /// A synthetic source span for hand-built nodes.
 #[must_use]
 pub fn source() -> SourceInfo {

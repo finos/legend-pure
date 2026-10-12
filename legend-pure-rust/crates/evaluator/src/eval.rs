@@ -67,6 +67,10 @@ use crate::value::{FunctionValue, LambdaClosure, Value};
 /// position (or its absence) for that element.
 type NativeByElement = Vec<Vec<Option<Option<usize>>>>;
 
+/// Per chunk, per local index: not built yet, or the function's built
+/// body (or `None` when it runs on the tree walker).
+type BodyByElement = Vec<Vec<Option<Option<std::rc::Rc<crate::exec::Body>>>>>;
+
 /// What an evaluator holds besides its borrows of the model and the
 /// registry: the heap, the variable context and the caches. It has no
 /// lifetime, so an owner of the model can keep it across calls, build an
@@ -80,7 +84,9 @@ pub struct EvaluatorState {
     heap: RuntimeHeap,
     context: VariableContext,
     native_by_element: std::cell::RefCell<NativeByElement>,
+    body_by_element: std::cell::RefCell<BodyByElement>,
     member_wrapper_cache: HashMap<(ElementId, &'static str), Value>,
+    exec: bool,
 }
 
 impl EvaluatorState {
@@ -92,8 +98,21 @@ impl EvaluatorState {
         heap.bootstrap_metamodel(model);
         Self {
             heap,
+            exec: crate::exec::default_enabled(),
             ..Self::default()
         }
+    }
+
+    /// Whether an evaluator resumed from this state runs built bodies
+    /// ([`crate::exec`]).
+    #[must_use]
+    pub fn exec(&self) -> bool {
+        self.exec
+    }
+
+    /// Switch the body executor for evaluators resumed from this state.
+    pub fn set_exec(&mut self, enabled: bool) {
+        self.exec = enabled;
     }
 
     /// The object heap.
@@ -129,29 +148,37 @@ impl EvaluatorState {
 /// native registry, both of which are immutable during evaluation.
 pub struct Evaluator<'model, H: EvalHooks = NoOpHooks> {
     /// The compiled Pure model (IR).
-    model: &'model PureModel,
+    pub(crate) model: &'model PureModel,
 
     /// The object heap — mutable storage for runtime objects.
-    heap: RuntimeHeap,
+    pub(crate) heap: RuntimeHeap,
 
     /// Scoped variable bindings.
-    context: VariableContext,
+    pub(crate) context: VariableContext,
 
     /// Immutable registry of native functions.
-    natives: &'model NativeRegistry,
+    pub(crate) natives: &'model NativeRegistry,
 
     /// The registry position of each function element, found once:
     /// indexed by chunk and local index, `None` until looked up, then the
     /// position or its absence.
     native_by_element: std::cell::RefCell<NativeByElement>,
 
+    /// The built body of each function element, by chunk and local
+    /// index, built on the function's first call with the body executor
+    /// on.
+    body_by_element: std::cell::RefCell<BodyByElement>,
+
     /// Memoised per-class member wrappers (`.properties`,
     /// `.qualifiedProperties`, `.propertiesFromAssociations`). Keyed by
     /// `(class_element_id, member-kind)`.
     member_wrapper_cache: HashMap<(ElementId, &'static str), Value>,
 
+    /// Whether bodies run on the body executor ([`crate::exec`]).
+    pub(crate) exec: bool,
+
     /// Instrumentation hooks (zero-cost for `NoOpHooks`).
-    hooks: H,
+    pub(crate) hooks: H,
 
     /// Re-entry guard for the variable-snapshot renderer. While this
     /// is non-zero (the renderer is calling back into the evaluator
@@ -181,7 +208,9 @@ impl<'model> Evaluator<'model, NoOpHooks> {
             heap,
             context,
             native_by_element,
+            body_by_element,
             member_wrapper_cache,
+            exec,
         } = state;
         Self {
             model,
@@ -189,7 +218,9 @@ impl<'model> Evaluator<'model, NoOpHooks> {
             context,
             natives,
             native_by_element,
+            body_by_element,
             member_wrapper_cache,
+            exec,
             hooks: NoOpHooks,
             rendering_depth: 0,
         }
@@ -202,7 +233,9 @@ impl<'model> Evaluator<'model, NoOpHooks> {
             heap: self.heap,
             context: self.context,
             native_by_element: self.native_by_element,
+            body_by_element: self.body_by_element,
             member_wrapper_cache: self.member_wrapper_cache,
+            exec: self.exec,
         }
     }
 
@@ -229,7 +262,9 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
             context: VariableContext::new(),
             natives,
             native_by_element: std::cell::RefCell::new(Vec::new()),
+            body_by_element: std::cell::RefCell::new(Vec::new()),
             member_wrapper_cache: HashMap::new(),
+            exec: crate::exec::default_enabled(),
             hooks,
             rendering_depth: 0,
         }
@@ -269,22 +304,46 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
         self.natives
     }
 
+    /// Switch the body executor ([`crate::exec`]) on or off for this
+    /// evaluator; [`exec_enabled`](Self::exec_enabled) says whether it runs.
+    pub fn set_exec(&mut self, enabled: bool) {
+        self.exec = enabled;
+    }
+
     /// Consume the evaluator and return the hooks instance.
     #[must_use]
     pub fn into_hooks(self) -> H {
         self.hooks
     }
 
-    /// Evaluate a compiled expression, producing a runtime value.
-    ///
-    /// This is the core recursive evaluator. It dispatches on `ExprKind`
-    /// and produces `Value`s. Errors are wrapped with source location to
-    /// form `PureException`s with lazy call stacks.
+    /// Evaluate an expression in the current scope, producing a runtime
+    /// value. With the body executor on ([`exec_enabled`](Self::exec_enabled)),
+    /// the expression is built as one statement and run; otherwise, and
+    /// when it cannot be built, the tree walker evaluates it. A `let`
+    /// stays bound in the current scope either way.
     ///
     /// # Errors
     /// Returns `PureException` on evaluation failure (type mismatch,
     /// variable not found, function not found, etc.).
     pub fn eval(&mut self, expr: &ValueSpec) -> Result<Value, PureException> {
+        if self.exec_enabled()
+            && let Some(body) = self.build_statements(std::slice::from_ref(expr))
+        {
+            let base = self.context.binding_count();
+            return self.run_statements(&body, base);
+        }
+        self.walk(expr)
+    }
+
+    /// The tree walker: evaluate an expression by walking it. It
+    /// dispatches on `ExprKind` and produces `Value`s. Errors are wrapped
+    /// with source location to form `PureException`s with lazy call
+    /// stacks.
+    ///
+    /// # Errors
+    /// Returns `PureException` on evaluation failure (type mismatch,
+    /// variable not found, function not found, etc.).
+    pub(crate) fn walk(&mut self, expr: &ValueSpec) -> Result<Value, PureException> {
         if self.rendering_depth == 0 {
             let want_snapshot = self.hooks.before_eval(&expr.source_info, &self.context);
             if want_snapshot {
@@ -377,7 +436,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
                 add,
             } => {
                 let values: Vec<Value> =
-                    self.eval(expression)?.to_collection().into_iter().collect();
+                    self.walk(expression)?.to_collection().into_iter().collect();
                 let handle = self.heap.alloc_dynamic(crate::m3_paths::KEY_EXPRESSION);
                 self.heap
                     .mutate_set(&handle, "key", &[Value::String(key.clone())])?;
@@ -420,7 +479,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     pub fn eval_body(&mut self, body: &[ValueSpec]) -> Result<Value, PureException> {
         let mut result = Value::Unit;
         for expr in body {
-            result = self.eval(expr)?;
+            result = self.walk(expr)?;
         }
         Ok(result)
     }
@@ -486,7 +545,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     }
 
     #[allow(clippy::unused_self)]
-    fn eval_date_literal(&self, dv: &DateValue) -> Result<Value, PureException> {
+    pub(crate) fn eval_date_literal(&self, dv: &DateValue) -> Result<Value, PureException> {
         match dv {
             DateValue::StrictDate { year, month, day } => {
                 let date = match (month, day) {
@@ -611,7 +670,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
         if !is_native && let Some(element_id) = function {
             let mut args = Vec::with_capacity(arguments.len());
             for arg in arguments {
-                args.push(self.eval(arg)?);
+                args.push(self.walk(arg)?);
             }
             let value =
                 self.call_user_function(element_id, &args, function_name, Some(source_info))?;
@@ -631,6 +690,13 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     /// never per call. A Pure-bodied function, a package or a native the
     /// registry lacks has none.
     fn native_for(&self, id: ElementId) -> Option<&'model dyn NativeFunction> {
+        self.native_position(id)
+            .map(|position| self.natives.at(position))
+    }
+
+    /// The registry position of a native function element, found once per
+    /// element (see [`native_for`](Self::native_for)).
+    pub(crate) fn native_position(&self, id: ElementId) -> Option<usize> {
         let ElementId::InstanceId {
             chunk_id,
             local_idx,
@@ -648,7 +714,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
             slots.resize(index + 1, None);
         }
         if let Some(known) = slots[index] {
-            return known.map(|position| self.natives.at(position));
+            return known;
         }
         let found = match self.model.get_element(id) {
             Element::Function(f) if f.is_native => {
@@ -657,7 +723,66 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
             _ => None,
         };
         slots[index] = Some(found);
-        found.map(|position| self.natives.at(position))
+        found
+    }
+
+    /// The body a call to the function element has built, `None` before
+    /// its first call with the body executor on or when it runs on the
+    /// tree walker.
+    #[must_use]
+    pub fn built_function_body(&self, id: ElementId) -> Option<std::rc::Rc<crate::exec::Body>> {
+        let ElementId::InstanceId {
+            chunk_id,
+            local_idx,
+        } = id
+        else {
+            return None;
+        };
+        self.body_by_element
+            .borrow()
+            .get(usize::from(chunk_id))
+            .and_then(|slots| slots.get(local_idx as usize))
+            .cloned()
+            .flatten()
+            .flatten()
+    }
+
+    /// The built body of a function element, built on first use and kept
+    /// for the state's life; `None` when it runs on the tree walker.
+    fn function_body(
+        &self,
+        id: ElementId,
+        func: &legend_pure_metamodel::nodes::function::Function,
+    ) -> Option<std::rc::Rc<crate::exec::Body>> {
+        let ElementId::InstanceId {
+            chunk_id,
+            local_idx,
+        } = id
+        else {
+            return None;
+        };
+        let (chunk, index) = (usize::from(chunk_id), local_idx as usize);
+        if let Some(Some(known)) = self
+            .body_by_element
+            .borrow()
+            .get(chunk)
+            .and_then(|slots| slots.get(index))
+        {
+            return known.clone();
+        }
+        let built = self
+            .build_function_body(&func.parameters, &func.body)
+            .map(std::rc::Rc::new);
+        let mut cache = self.body_by_element.borrow_mut();
+        if cache.len() <= chunk {
+            cache.resize_with(chunk + 1, Vec::new);
+        }
+        let slots = &mut cache[chunk];
+        if slots.len() <= index {
+            slots.resize(index + 1, None);
+        }
+        slots[index] = Some(built.clone());
+        built
     }
 
     /// Dispatch a native function using the expression-activator model.
@@ -694,7 +819,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     /// - Every `type_arguments[i]` is `TypeExpr::Named { .. }`.
     /// - The slot is empty.
     /// - The object's classifier matches the return type's outer class.
-    fn back_fill_call_type_arguments(
+    pub(crate) fn back_fill_call_type_arguments(
         &mut self,
         value: &Value,
         return_type_info: Option<&legend_pure_metamodel::types::ResolvedType>,
@@ -756,7 +881,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     }
 
     /// Evaluate a user-defined function from the compiled model.
-    fn call_user_function(
+    pub(crate) fn call_user_function(
         &mut self,
         element_id: ElementId,
         args: &[Value],
@@ -771,19 +896,26 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
             )));
         };
 
-        let params = func.parameters.clone();
-        let body = func.body.clone();
+        let built = if self.exec_enabled() {
+            self.function_body(element_id, func)
+                .filter(|body| args.len() >= body.parameters().len())
+        } else {
+            None
+        };
 
         self.hooks
             .enter_function(function_name, &self.model.get_node(element_id).source_info);
 
         self.context.push_scope();
 
-        for (param, arg) in params.iter().zip(args.iter()) {
-            self.context.set(param.name.clone(), arg.clone());
-        }
-
-        let result = self.eval_body(&body);
+        let result = if let Some(built) = built {
+            self.run_function(&built, args)
+        } else {
+            for (param, arg) in func.parameters.iter().zip(args.iter()) {
+                self.context.set(param.name.clone(), arg.clone());
+            }
+            self.eval_body(&func.body)
+        };
 
         self.context.pop_scope();
 
@@ -806,7 +938,16 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
         target: &ValueSpec,
         property: &str,
     ) -> Result<Value, PureException> {
-        let target_val = self.eval(target)?;
+        let target_val = self.walk(target)?;
+        self.property_of(target_val, property)
+    }
+
+    /// Read `property` off a receiver's value, as a property call does.
+    pub(crate) fn property_of(
+        &mut self,
+        target_val: Value,
+        property: &str,
+    ) -> Result<Value, PureException> {
         match &target_val {
             Value::Object(id) => {
                 let values = self
@@ -1478,7 +1619,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
         property: &str,
         arguments: &[ValueSpec],
     ) -> Result<Value, PureException> {
-        let target_val = self.eval(target)?;
+        let target_val = self.walk(target)?;
 
         if let Value::Object(obj_id) = &target_val {
             let obj_id = obj_id.clone();
@@ -1511,7 +1652,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
                 };
                 let mut args_v: Vec<Value> = Vec::with_capacity(arguments.len());
                 for arg in arguments {
-                    args_v.push(self.eval(arg)?);
+                    args_v.push(self.walk(arg)?);
                 }
                 if is_generated_milestoning_qp(self.model, qp) {
                     return Err(PureException::from(PureRuntimeError::Unsupported(
@@ -1561,6 +1702,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
             parameters: std::sync::Arc::clone(parameters),
             body: std::sync::Arc::clone(body),
             captures,
+            exec: None,
         })))
     }
 
@@ -1571,25 +1713,10 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
 
         let mut values = PVector::new();
         for elem in elements {
-            let val = self.eval(elem)?;
-            match &val {
-                Value::Collection(inner) => {
-                    for v in inner.iter() {
-                        values.push_back(v.clone());
-                    }
-                }
-                Value::Unit => {}
-                _ => values.push_back(val),
-            }
+            let val = self.walk(elem)?;
+            push_flattened(&mut values, val);
         }
-
-        if values.is_empty() {
-            Ok(Value::Unit)
-        } else if values.len() == 1 {
-            Ok(values.pop_front().unwrap_or(Value::Unit))
-        } else {
-            Ok(Value::Collection(Box::new(values)))
-        }
+        Ok(collection_value(values))
     }
 
     /// Evaluate a lambda closure with the given arguments.
@@ -1601,6 +1728,14 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
         lambda: &LambdaClosure,
         args: &[Value],
     ) -> Result<Value, PureException> {
+        if self.exec_enabled()
+            && let Some(definition) = &lambda.exec
+            && let Some(body) =
+                definition.get_or_build(|| self.build_lambda_body(&lambda.parameters, &lambda.body))
+            && Self::lambda_runs(body, lambda, args)
+        {
+            return self.run_lambda(body, &lambda.captures, args);
+        }
         self.context.push_scope();
 
         for (name, value) in &lambda.captures {
@@ -1863,7 +1998,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
                 } else {
                     let mut param_values: Vec<Value> = Vec::with_capacity(step.parameters.len());
                     for p in &step.parameters {
-                        param_values.push(self.eval(p)?);
+                        param_values.push(self.walk(p)?);
                     }
                     let mut ctx = EvalContext { evaluator: self };
                     let invoked = ctx.invoke_qualified_property(
@@ -1943,7 +2078,12 @@ pub struct EvalContext<'a, 'model: 'a, H: EvalHooks = NoOpHooks> {
     evaluator: &'a mut Evaluator<'model, H>,
 }
 
-impl<'model, H: EvalHooks> EvalContext<'_, 'model, H> {
+impl<'a, 'model, H: EvalHooks> EvalContext<'a, 'model, H> {
+    /// The context natives receive from `evaluator`.
+    pub(crate) fn new(evaluator: &'a mut Evaluator<'model, H>) -> Self {
+        Self { evaluator }
+    }
+
     /// Access the compiled model.
     #[must_use]
     pub fn model(&self) -> &'model PureModel {
@@ -1953,7 +2093,7 @@ impl<'model, H: EvalHooks> EvalContext<'_, 'model, H> {
 
 impl<H: EvalHooks> crate::native::EvalContextTrait for EvalContext<'_, '_, H> {
     fn evaluate(&mut self, spec: &ValueSpec) -> Result<Evaluated, PureException> {
-        self.evaluator.eval(spec).map(Evaluated::new)
+        self.evaluator.walk(spec).map(Evaluated::new)
     }
 
     fn for_each_value(
@@ -1966,7 +2106,7 @@ impl<H: EvalHooks> crate::native::EvalContextTrait for EvalContext<'_, '_, H> {
             _ => std::slice::from_ref(spec),
         };
         for element in elements {
-            match self.evaluator.eval(element)? {
+            match self.evaluator.walk(element)? {
                 Value::Collection(items) => {
                     for item in items.iter() {
                         each(item.clone())?;
@@ -2171,6 +2311,32 @@ fn multiplicity_constant_bounds(
         "ZeroMany" => Some((0, None)),
         "OneMany" => Some((1, None)),
         _ => None,
+    }
+}
+
+/// Append a collection element's value as a collection literal does:
+/// a collection's items one by one, nothing for `Unit`.
+pub(crate) fn push_flattened(values: &mut PVector<Value>, value: Value) {
+    match value {
+        Value::Collection(inner) => {
+            for v in inner.iter() {
+                values.push_back(v.clone());
+            }
+        }
+        Value::Unit => {}
+        single => values.push_back(single),
+    }
+}
+
+/// A collection literal's value from its flattened items: `Unit` for
+/// none, the item for one, the collection otherwise.
+pub(crate) fn collection_value(mut values: PVector<Value>) -> Value {
+    if values.is_empty() {
+        Value::Unit
+    } else if values.len() == 1 {
+        values.pop_front().unwrap_or(Value::Unit)
+    } else {
+        Value::Collection(Box::new(values))
     }
 }
 
