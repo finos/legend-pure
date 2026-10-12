@@ -24,7 +24,21 @@ permissions: {}
 jobs:
   test-results:
     name: Publish Test Results
-    if: github.event.workflow_run.conclusion != 'skipped'
+    # PRs and master builds only. The check and the comment are for
+    # reviewers, and a PR from a fork can't post them itself, because its
+    # token is read-only, which is the one reason this is a separate
+    # workflow. Master gets the check alone: it is what a PR's comment
+    # compares against to show what the PR changes. Every run, these
+    # included, also gets a summary from its test jobs. A cancelled run was
+    # superseded by a newer push to the PR, so publishing its partial results
+    # would only race the newer run's comment.
+    if: >-
+      (github.event.workflow_run.event == 'pull_request'
+        || (github.event.workflow_run.event == 'push'
+          && github.event.workflow_run.head_branch == 'master'
+          && github.repository == 'finos/legend-pure'))
+      && github.event.workflow_run.conclusion != 'skipped'
+      && github.event.workflow_run.conclusion != 'cancelled'
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -38,17 +52,22 @@ jobs:
         run: |
           mkdir -p artifacts && cd artifacts
           artifacts_url=${{ github.event.workflow_run.artifacts_url }}
-          gh api "$artifacts_url" -q '.artifacts[] | [.name, .archive_download_url] | @tsv' | while read artifact
+          # Only the reports and the event payload: the run's other artifact
+          # is the whole build output, hundreds of MB this never reads.
+          gh api "$artifacts_url" -q '.artifacts[] | select(.name == "event-file" or (.name | startswith("test-results-"))) | [.name, .archive_download_url] | @tsv' | while read artifact
           do
             IFS=$'\t' read name url <<< "$artifact"
             gh api $url > "$name.zip"
             unzip -d "$name" "$name.zip"
           done
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action/composite@v1.35
+        uses: EnricoMi/publish-unit-test-result-action/composite@7622c5bf3d112a72ab4fa3951c2aa5723d8ab92d # v2.25.0
         with:
           commit: ${{ github.event.workflow_run.head_sha }}
           check_name: Test Results
           event_file: artifacts/event-file/event.json
           event_name: ${{ github.event.workflow_run.event }}
           files: "artifacts/**/*.xml"
+          # Master gets the check alone, not a comment on the PR that merged
+          # the commit.
+          comment_mode: ${{ github.event.workflow_run.event == 'pull_request' && 'always' || 'off' }}
