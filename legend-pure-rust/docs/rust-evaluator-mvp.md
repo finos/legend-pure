@@ -12,8 +12,10 @@
 > numbers beside `Rust_JNI`; after the fixes the five-way benchmark
 > prompted, a PCT test on the interpreted engine takes 42 µs over FFM and
 > 50 over JNI against 42 for the engine's own adapter. Step 2d, a typed IR
-> per body: Part R and T0 done 2026-10-11 (the executor on by default).
-> Next: Step 2d Part T, then Step 3, read PELT, with the `Directory` trait
+> per body: done 2026-10-11 (Part R, the executor on by default; Part T,
+> representations and intrinsics for total operations, 11% of the
+> corpus's calls; the eight PCT numbers unchanged).
+> Next: Step 3, read PELT, with the `Directory` trait
 > of Step 4 (Appendix C item 6). Archive tag
 > `archive/pre-evaluator-extract-2026-10`.**
 > This document is
@@ -93,12 +95,15 @@ with its gate:
    JDK 25 with the `Rust_FFM` adapter measured beside `Rust_JNI`. Phase 3,
    the deletion of JNI, waits for legend-engine's floor; Python follows
    Step 3.
-1. **Step 2d** (decided 2026-10-11; Part R and T0 done) — a typed IR per
+1. **Step 2d** (decided 2026-10-11; done 2026-10-11) — a typed IR per
    body: Part R shipped with the executor on by default (e06's lambda
-   104 → 43 ns per element, the corpus unchanged), and T0 found 90% of the
+   104 → 43 ns per element, the corpus unchanged), T0 found 90% of the
    corpus's nodes typed and 55% with a representation other than `Value`,
-   so Part T (unboxed representations, fast paths for total operations)
-   is next.
+   and Part T shipped representations per node and intrinsics for seven
+   declaring natives (11% of the corpus's calls; e04 49 → 36 ns, e06's
+   lambda about 1 ns per element less, the PCT numbers unchanged). Its
+   finding: a representation pays only through the native dispatch an
+   intrinsic skips, since a `Value` already holds its scalar inline.
 2. **Step 3 and Step 4** — read PELT, the `Directory` trait, the
    static graph: the per-call lowering disappears for everything static,
    and the `Rust_Native` run (Step 2, the paragraph of that name) resolves
@@ -1390,7 +1395,7 @@ module plus two optional transports. No CI job runs the Java suites with
 a built cdylib today (`rust.yml` never runs Maven, `build.yml` never runs
 cargo); with two transports to compare, that gap starts to matter.
 
-### Step 2d — A typed IR per body (decided 2026-10-11, next; before Step 3)
+### Step 2d — A typed IR per body (decided 2026-10-11, done 2026-10-11; before Step 3)
 
 The author's decision, taken in the design session of 2026-10-11: before
 PELT, give the evaluator a per-body IR between today's `ValueSpec` tree and
@@ -1670,6 +1675,124 @@ second native file (rule 4): the native stays the definition.
 
 **Gate T.** As gate R, plus the coverage report, plus e06's per-element cost
 measured through the transports and in the typed examples.
+
+**Part T, as shipped (2026-10-11).** First a defect Part R left: the
+free variables a `Lambda` node stores (what its closures capture) were
+found by taking a call for a `let` when its `function_name` was spelled
+`letFunction`; builder-made code names the registry key there, so a
+name a lambda bound with its own `let` counted as captured and the
+closure was refused onto the tree walker. One walk now serves every
+producer, `eval::free_variable_names(body, parameters, binds)`, where
+`binds` says whether the call's target declares `Control::Let`
+(`NativeRegistry::binds`); the list stays on the node, found once (Step
+2b's choice). The lowering asks through the call's element (a native
+function in the model or pending in the lowering, whose registry entry
+declares it; `Lowering::new` takes the registry), `expr::lambda`
+through the key a builder call names, as the standard registry declares
+it, and the executor through its own resolution (its duplicate walk is
+gone). T1: every node records the representation its value is held in
+(`Node::rep`), and `rep_of` (with `rep_of_type` for a parameter's
+declared type) is the only place one is chosen. A node holds a `Value`
+unless it is an intrinsic, a constant an intrinsic reads unboxed, or an
+`Op::Unbox`; the builder puts `Op::Unbox` where an intrinsic reads an
+operand held as a `Value` and `Op::Box` where a consumer of `Value`s (a
+statement, an argument, a `let`) reads an intrinsic's result; `if`,
+`and` and `or` read an intrinsic condition unboxed. Calls to Pure
+functions and to every other native take their arguments boxed. Where
+it differs from the text above: slots are not unboxed storage. A slot
+is its binding in the variable context (Part R), and an `Integer`,
+`Float` or `Boolean` binding already holds its payload inline, so a side
+frame of unboxed slots would duplicate every bind for no read it saves;
+`SlotInfo::rep` records each slot's representation and an unboxing read
+of a slot reads the binding in place. T2: a native declares the total
+operation it computes (`NativeFunction::intrinsic`, `native::Intrinsic`),
+seven keys in all (`eq` and `equal` as `Equal`, `lessThan`,
+`lessThanEqual`, `not`, `size`, `isEmpty`, every one eager; pinned in
+`tests/registry.rs`), and the builder selects an `exec::IntrinsicOp` from
+that declaration and the representations of the arguments' static
+types: `Equal` on two `I64`, `F64`, `Bool` or `Str`; the orderings on two
+numbers, each `I64` or `F64` (as `compare_values` orders them:
+`total_cmp`, an `Integer` against a `Float` as an `f64`); `Not` on a
+`Bool`; `Size` and `IsEmpty` on any value. When an operand does not hold
+the representation its static type promised, every operand goes to the
+native, boxed, so the result or error and its frames are the native's.
+`and` and `or` were already operations (R1); `plus`, `minus`, `times`,
+`divide`, `mod` and `rem` stay on their natives; string concatenation has
+no intrinsic because no native for it is registered
+(`plus_String_MANY__String_1_` is not fished, and the native is the
+definition). `tests/intrinsics.rs` runs each declaring native as a typed
+call on the tree walker (the native) and on the executor (the
+intrinsic) over generated inputs (64-bit edges and random bits; `NaN`,
+`±0.0`, `±∞`, subnormals and random bits; strings across the inline
+limit; every `Integer`/`Float` pairing of the orderings; and values that
+are not what the static type promised: `Unit`, one- and two-element
+collections, a `Decimal`, the other primitives) and requires the same
+value or the same error, kind, message, source and frames; a mutation of
+the `Float` equality or ordering fails it. `cargo test --workspace` went
+from 657 to 669 passing, both ways. The eight PCT numbers were unchanged
+on both hosts and transports (339/346, 133/137, compiled 340/346,
+133/137, also `Rust_JNI` on JDK 17), and both manifest rebases left the
+manifests byte-identical. Counted by a temporary probe, as T0 was, over
+the 3,608 bodies the executor built while the corpus ran on both hosts
+and transports (444 distinct): 562 of the 4,940 calls are intrinsics
+(11.4 %: `Not` 194, `Equal(I64)` 130, `LessThan(I64, I64)` 70,
+`Equal(Str)` 56, `Size` 34, `LessThanEqual(I64, I64)` 26, `Equal(Bool)`
+24, `Equal(F64)` 18, `IsEmpty` 10), with 400 `Box` and 314 `Unbox`
+nodes. Measured as the Gate R tree (`c5feae870c3`) and Part T built side
+by side and run alternately, the first of each pair alternating (release;
+the Rust lines eight runs each, median [range], ns; the twelve
+expressions through the transports and the corpus four runs each, the
+corpus as the median of per-test medians in µs [range] with the Rust run
+summed over the corpus):
+
+| Line | Gate R | Part T |
+|---|---|---|
+| `literal 1` / `1 + 2` | 11 [11–11] / 58 [57–61] | 11 [11–11] / 58 [57–62] |
+| `range(0,100,1)->size()` | 680 [664–700] | 676 [667–690] |
+| `range->filter(x \| true)->size()` | 2,723 [2,688–2,837] | 2,724 [2,705–2,757] |
+| `range->filter(x \| $x->mod(2) == 0)->size()` | 5,091 [5,031–5,114] | 4,998 [4,919–5,070] |
+| `range->map(x \| $x)->size()` | 2,598 [2,562–2,638] | 2,592 [2,574–2,696] |
+| `range->map(x \| $x * 2)->size()` | 6,780 [6,703–6,852] | 6,820 [6,779–6,850] |
+| `[100 literals]->size()` | 33 [27–35] | 14 [14–15] |
+| e01 / e02 / e03 | 57 / 145 / 66 | 57 / 144 / 65 |
+| e04 `if(1 < 2, …)` | 49 [48–50] | 36 [36–37] |
+| e05 `map` then `fold` | 816 [798–828] | 804 [794–815] |
+| e06 `range`, `filter`, `size` | 5,098 [5,028–5,130] | 5,011 [4,951–5,059] |
+| e07 / e08 / e09 / e10 / e11 / e12 | 128 / 119 / 53 / 222 / 204 / 112 | 132 / 109 / 54 / 218 / 206 / 112 |
+| e06 through FFM, interpreted host | 6,026 [5,994–6,069]; run 5,166 | 5,944 [5,916–5,990]; run 5,062 |
+| e06 through JNI, interpreted host | 8,650 [8,541–8,677]; run 5,208 | 8,492 [8,462–8,588]; run 5,104 |
+| e06 through FFM / JNI, compiled host | 6,130 / 8,708 | 6,090 / 8,586 |
+| e05 through JNI, compiled host | 4,376 [4,306–4,395]; run 896 | 4,594 [4,535–4,619]; run 1,125 |
+| corpus, interpreted `Rust_JNI` | 52.1 [51.5–53.3]; run 0.444 ms | 52.0 [51.0–52.3]; run 0.449 ms |
+| corpus, interpreted `Rust_FFM` | 44.2 [43.3–45.1]; run 0.356 ms | 44.1 [43.3–44.2]; run 0.355 ms |
+| corpus, compiled `Rust_JNI` | 190.6 [190.2–194.4] | 195.6 [191.7–196.7] |
+| corpus, compiled `Rust_FFM` | 84.7 [83.2–86.3] | 85.7 [82.1–86.1] |
+
+e06's lambda costs about 43.4 ns per element against 44.2 (e06 less
+`range->size()`, over 100, the Gate R paragraph's measure); through FFM
+the Rust run of e06 falls from 5,166 to 5,062 ns a call, about 1 ns per
+element. Every other line of the twelve expressions through both
+transports and both hosts is within the spread of the two trees but one:
+e05 through JNI on the compiled host, 4,376 [4,306–4,395] against 4,594
+[4,535–4,619], its Rust run 896 against 1,125 ns. That line runs no code
+Part T added: the probe shows e05's body as the same IR on all four modes
+(`Const, Lambda, CallNative(map), Lambda, Const, CallNative(fold)`, no
+`Box`, `Unbox` or intrinsic), the same library runs it through JNI on the
+interpreted host unchanged (917 against 917) and natively faster (816
+against 804), and a build differing only in where `Op::Box` is
+dispatched gave that one line both values, 917 and 1,125, in two runs;
+the 229 ns is a per-process effect this entry could not attribute. The compiled `Rust_JNI` corpus
+line is within the spread; of its 5 µs median shift, 0.8 µs is the
+compiled host's per-call lowering (76.4 against 77.2 µs; over FFM 31.4
+against 31.6) and the rest lies outside the Rust lowering and run. What proved
+wrong in the text above: boxing here is a tag write, not an allocation
+(`Value::Integer` is an inline `i64`), so a representation pays only
+through the native dispatch an intrinsic skips: a typed comparison of a
+local and a constant costs about 8 ns inside a lambda against 13 to 14
+for its native, but one whose operand is a native's result saves almost
+nothing, which is e06's case (a scratch benchmark of single lambda
+applications: the application itself about 15 ns, `mod` about 14,
+`equal` about 10, neither of the first two in this entry's scope).
 
 #### Out of scope for this entry
 

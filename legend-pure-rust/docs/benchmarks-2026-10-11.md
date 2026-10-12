@@ -379,6 +379,14 @@ run per column:
 `Rust_FFM` is at parity with the interpreted engine's own adapter. On the twelve expressions the
 median per call falls from 2,056 to 996 ns over FFM and from 4,557 to 3,555 ns over JNI.
 
+**After Step 2d (later the same day).** The body executor (plan Step 2d, Part R) and its
+representations and intrinsics (Part T) change the Rust lines of e06 and the hot path above; the
+plan's Step 2d section holds the current figures, taken with this report's commands. e06 natively takes
+about 5.0 µs a call instead of 10.9, through FFM about 5.9 µs and through JNI about 8.5 µs on the
+interpreted host (Rust run about 5.1 µs on both), and the lambda `$x->mod(2) == 0` over
+`range(0, 100)` costs about 43 ns per element instead of about 100. The corpus lines are
+unchanged.
+
 ## Reproduce
 
 From the repository root, with JDK 25 for every Java run and no Maven run during a cargo build.
