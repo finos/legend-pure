@@ -27,6 +27,7 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.ResultLazyIterable;
 import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.RelationalNativeImplementation;
+import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.ResultSetValueHandlers.ResultSetValueHandler;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.ConnectionWithDataSourceInfo;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.IConnectionManagerHandler;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.PureConnectionUtils;
@@ -39,7 +40,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Calendar;
 import java.util.function.Function;
 
 /**
@@ -98,12 +98,24 @@ public class ResultSetRowIterableProvider
                         columns.add(column);
                     }
 
-                    ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(metaData);
+                    ListIterable<ResultSetValueHandler> handlers;
+                    try
+                    {
+                        handlers = ResultSetValueHandlers.getHandlers(metaData, tz, TimeZoneResolutionOption.getTimeZoneResolution(executionSupport.getRuntimeOptions()));
+                    }
+                    catch (RuntimeException e)
+                    {
+                        // A zone that does not resolve, or a column type there is no handler for:
+                        // nothing will read the result set, so release the connection now
+                        SQLExceptionHandler.closeAndCleanUp(rs, statement, connection);
+                        throw e;
+                    }
+
                     RichIterable<CoreInstance> theResults;
 
                     if (CanStreamState.canStream())
                     {
-                        CacheNextReadOnceForwardOnlyResultSet resultSet = CacheNextReadOnceForwardOnlyResultSet.create(connection, rs, statement, processRowFunction, sqlNull, tz, handlers, executionSupport, dataSourceInfo, sql);
+                        CacheNextReadOnceForwardOnlyResultSet resultSet = CacheNextReadOnceForwardOnlyResultSet.create(connection, rs, statement, processRowFunction, sqlNull, handlers, executionSupport, dataSourceInfo, sql);
                         theResults = new ResultLazyIterable(resultSet);
                     }
                     else
@@ -113,12 +125,11 @@ public class ResultSetRowIterableProvider
 
                         try
                         {
-                            Calendar calendar = TimeZoneResolutionOption.getTimeZoneResolution(executionSupport.getRuntimeOptions()).newCalendar(tz);
                             boolean showCheckMaxRows = shouldThrowIfMaxRowsExceeded && maxRows > 0;
                             while (rs.next())
                             {
                                 rowCount++;
-                                CoreInstance row = processRowFunction.apply(RelationalNativeImplementation.processRow(rs, handlers, sqlNull, calendar));
+                                CoreInstance row = processRowFunction.apply(RelationalNativeImplementation.processRow(rs, handlers, sqlNull));
                                 results.add(row);
 
                                 if (showCheckMaxRows && rowCount > maxRows)

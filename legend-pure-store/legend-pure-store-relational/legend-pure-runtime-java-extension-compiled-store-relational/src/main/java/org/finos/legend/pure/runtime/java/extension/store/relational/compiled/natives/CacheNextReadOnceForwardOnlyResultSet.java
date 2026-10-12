@@ -29,13 +29,11 @@ import org.finos.legend.pure.runtime.java.extension.store.relational.shared.SQLE
 import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionEndListener;
 import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionEndListenerState;
 import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionListeners;
-import org.finos.legend.pure.runtime.java.shared.time.TimeZoneResolutionOption;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Calendar;
 import java.util.function.Function;
 
 class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceForwardOnly implements ExecutionEndListener
@@ -45,7 +43,6 @@ class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceFor
     private Statement statement;
     private final Function<RichIterable<Object>, ? extends CoreInstance> processRowFunction;
     private final CoreInstance sqlNull;
-    private final Calendar calendar;
     private final ListIterable<ResultSetValueHandler> handlers;
 
     private static final int CACHE_MAX_SIZE = 1000;
@@ -57,7 +54,7 @@ class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceFor
 
     private CacheNextReadOnceForwardOnlyResultSet(Connection connection, ResultSet resultSet, Statement statement,
                                                   Function<RichIterable<Object>, ? extends CoreInstance> processRowFunction,
-                                                  CoreInstance sqlNull, String tz,
+                                                  CoreInstance sqlNull,
                                                   ListIterable<ResultSetValueHandler> handlers, CompiledExecutionSupport executionSupport,
                                                   ConnectionWithDataSourceInfo dataSourceInfo, String executedSQL)
     {
@@ -67,7 +64,6 @@ class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceFor
         this.processRowFunction = processRowFunction;
         this.sqlNull = sqlNull;
         this.handlers = handlers;
-        this.calendar = TimeZoneResolutionOption.getTimeZoneResolution(executionSupport.getRuntimeOptions()).newCalendar(tz);
         this.executionListeners = executionSupport.getExecutionListeners();
         this.dataSourceInfo = dataSourceInfo;
         this.executionActivityListener = executionSupport.getExecutionActivityListener();
@@ -90,7 +86,7 @@ class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceFor
 
             if (this.resultSet.next())
             {
-                RichIterable<Object> values = RelationalNativeImplementation.processRow(this.resultSet, this.handlers, this.sqlNull, this.calendar);
+                RichIterable<Object> values = RelationalNativeImplementation.processRow(this.resultSet, this.handlers, this.sqlNull);
                 this.next = this.processRowFunction.apply(values);
 
                 if (this.currentIndex < CACHE_MAX_SIZE)
@@ -163,12 +159,12 @@ class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceFor
 
     static CacheNextReadOnceForwardOnlyResultSet create(Connection connection, ResultSet resultSet, Statement statement,
                                                         Function<RichIterable<Object>, ? extends CoreInstance> processRowFunction,
-                                                        CoreInstance sqlNull, String tz,
+                                                        CoreInstance sqlNull,
                                                         ListIterable<ResultSetValueHandler> handlers, CompiledExecutionSupport executionSupport,
                                                         ConnectionWithDataSourceInfo dataSourceInfo,
                                                         String executedSQL)
     {
-        CacheNextReadOnceForwardOnlyResultSet result = new CacheNextReadOnceForwardOnlyResultSet(connection, resultSet, statement, processRowFunction, sqlNull, tz, handlers, executionSupport, dataSourceInfo, executedSQL);
+        CacheNextReadOnceForwardOnlyResultSet result = new CacheNextReadOnceForwardOnlyResultSet(connection, resultSet, statement, processRowFunction, sqlNull, handlers, executionSupport, dataSourceInfo, executedSQL);
         //Force it to initialize the first element and fully run the query. Some drivers do not run the DB query until you call next.
 
         result.readNext();

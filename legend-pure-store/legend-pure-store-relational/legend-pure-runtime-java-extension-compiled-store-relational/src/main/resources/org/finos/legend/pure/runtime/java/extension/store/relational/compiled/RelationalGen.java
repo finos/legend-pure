@@ -53,7 +53,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.Calendar;
 
 public class RelationalGen
 {
@@ -141,12 +140,11 @@ public class RelationalGen
 
             int rowCount = 0;
             MutableList<Root_meta_relational_metamodel_execute_Row> rows = Lists.mutable.of();
-            ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSetMetaData);
-            Calendar calendar = TimeZoneResolutionOption.getTimeZoneResolution(((CompiledExecutionSupport) es).getRuntimeOptions()).newCalendar(tz);
+            ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSetMetaData, tz, TimeZoneResolutionOption.getTimeZoneResolution(((CompiledExecutionSupport) es).getRuntimeOptions()));
             while (rs.next())
             {
                 rowCount++;
-                MutableList<Object> rowValues = RelationalNativeImplementation.processRow(rs, handlers, sqlNull, calendar);
+                MutableList<Object> rowValues = RelationalNativeImplementation.processRow(rs, handlers, sqlNull);
                 for (Function<ListIterable<Object>, String> function : extraValueFunctions)
                 {
                     rowValues.add(function.valueOf(rowValues));
