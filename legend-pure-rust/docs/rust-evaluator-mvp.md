@@ -90,7 +90,7 @@ with its gate:
 
 0. **Step 2c** (phases 1 and 2 done 2026-10-11) — one C ABI for every
    host: the seam (the host-agnostic bridge core in the evaluator crate
-   behind the `Host` trait; three Java modules, `-api`, `-jni`, `-ffm`),
+   behind the `Host` trait; Java modules `-api`, `-jni`, `-ffm`, and the test-only `-bench`),
    the `ffi` crate with its hand-written header, and the Java client on
    JDK 25 with the `Rust_FFM` adapter measured beside `Rust_JNI`. Phase 3,
    the deletion of JNI, waits for legend-engine's floor; Python follows
@@ -1177,8 +1177,9 @@ the Java side, `legend-pure-rust-api` (release 17):
 `RustEngineHost`, both hosts, `NodeBridge` (the host-side describe logic,
 the node id table, `failureOf`), `RustCoreInstance` over the four-method
 `RustHeap` any evaluator satisfies, `NodeDescription`, `CompiledObjects`,
-`CompiledValue`, the exception kinds, `RustPlatformGraph`, and the shared
-tooling parametrised by adapter (`PctSuites`, `PctManifestRebase`,
+`CompiledValue`, the exception kinds, and, as test code published in its
+test-jar (since the review of 2026-10-11), `RustPlatformGraph` and the
+shared tooling parametrised by adapter (`PctSuites`, `PctManifestRebase`,
 `PctExpressionsBenchmark` with one `Mode` per engine and transport);
 `legend-pure-rust-jni` (the module renamed):
 `PureRustEvaluator`, `RustNodeBridge extends NodeBridge` with the
@@ -1290,7 +1291,7 @@ and turns `pure_leaf`s into host objects through the engine's factories.
 `ffm.compiled.CompiledEvalRustFfm`), the `Rust_FFM` suites, manifests
 (equal to the `Rust_JNI` ones byte for byte but for the adapter name;
 the rebase reproduces them) and reports, 25 boundary tests, and
-`BenchmarkPctExpressions` with both transports. Numbers: `Rust_FFM
+`BenchmarkPctExpressions` with both transports (since the review of 2026-10-11 in the test-only `legend-pure-rust-bench`, with `BenchmarkTransportExpressions`, so `-ffm` depends on `-api` only). Numbers: `Rust_FFM
 essential: 339 / 346`, `grammar: 133 / 137`, compiled `340 / 346` and
 `133 / 137`, the `Rust_JNI` four unchanged; JDK 17 and 11 reactors
 without the module. The benchmark (release cdylibs, JDK 25, median of
@@ -1351,10 +1352,12 @@ engine's own adapter, flat at any call count (`docs/benchmarks-2026-10-11.md`).
 
 **Phase 3 — deletion.** When legend-engine's floor reaches 25: delete
 `crates/jni`, the JNI module, `evalRust` and the `Rust_JNI` adapter with
-its manifests and reports; the shared module and the FFM module remain,
-and every sentence of this plan that names `Rust_JNI` as the measure of
-the bridge passes to `Rust_FFM`. With the seam in place this is a
-deletion, not a rewrite.
+its manifests and reports, and the JNI modes of the test-only
+`legend-pure-rust-bench` (the one module that sees both transports, so
+that no surviving module depends on JNI); the shared module and the FFM
+module remain, and every sentence of this plan that names `Rust_JNI` as
+the measure of the bridge passes to `Rust_FFM`. With the seam in place
+this is a deletion, not a rewrite.
 
 **The second client, Python (after Step 3; outside the MVP, listed under
 "Later").** A package over the same header through `cffi`: start a
@@ -1374,7 +1377,9 @@ Java modules from the start: `legend-pure-rust-api`
 the PCT and benchmark tooling), `legend-pure-rust-jni`
 (release 17, the current module renamed, since nothing has depended on
 its artifact id yet) and `legend-pure-rust-ffm`
-(release 25). Phase 2's client is Java only; Python comes after Step 3.
+(release 25). (Since the review of 2026-10-11, a fourth, test-only module,
+`legend-pure-rust-bench`, holds the benchmarks that compare transports,
+and the PCT and benchmark tooling is `-api`'s test code, not its jar.) Phase 2's client is Java only; Python comes after Step 3.
 Phase 1 comes first in any order: Step 3's `Directory` needs the same
 seam, and the C header of phase 2 can be written against the phase 1
 trait before any client exists.
