@@ -4,8 +4,8 @@ The JNI transport of the Java boundary to the Rust Pure evaluator in `legend-pur
 (Step 2 of `legend-pure-rust/docs/rust-evaluator-mvp.md`; the module split is Step 2c,
 phase 1). Everything transport-free (the hosts, the node bridge's host side, the proxies,
 the exception kinds, the PCT and benchmark tooling) is in
-`legend-pure-rust-api`, which this module depends on and whose README
-describes the shared surface; this module adds the evaluator that crosses over JNI.
+`legend-pure-rust-api`, which this module depends on (the tooling through its test-jar, at
+test scope) and whose README describes the shared surface; this module adds the evaluator that crosses over JNI.
 
 ## Surface
 

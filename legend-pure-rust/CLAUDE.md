@@ -74,8 +74,9 @@ surveyor's own definition; `tests/pct_native.rs` pins that.
 Three Java modules under `java/` (Step 2c), aggregated by `java/pom.xml`,
 the root `pom.xml`'s one `<module>` line for this directory:
 `legend-pure-rust-api`, the transport-free side (the hosts,
-`NodeBridge`, `RustCoreInstance` over `RustHeap`, the exception kinds, the PCT
-suite builder, manifest rebase and benchmark harness), and
+`NodeBridge`, `RustCoreInstance` over `RustHeap`, the exception kinds; the PCT
+suite builder, manifest rebase, benchmark harness and `RustPlatformGraph` are
+test code, in its test-jar, under `src/test/java/.../pct/`), and
 `legend-pure-rust-jni`, the JNI transport (`PureRustEvaluator`,
 `RustNodeBridge`, `evalRust`, the `Rust_JNI` suites and manifests), which
 depends on it; and `legend-pure-rust-ffm` (release 25),

@@ -6,7 +6,7 @@ of `libpure_rust_ffi`, written from its header `legend-pure-rust/crates/ffi/incl
 alone, calling it through the Foreign Function and Memory API of JDK 25. Everything
 transport-free (the hosts, the node bridge's host side, the proxies, the exception kinds, the
 PCT and benchmark tooling) is in `legend-pure-rust-api`, which this module
-depends on; `legend-pure-rust-jni` is the other transport, over JNI on
+depends on (the tooling through its test-jar, at test scope); `legend-pure-rust-jni` is the other transport, over JNI on
 JDK 17, with which this one is measured side by side.
 
 ## The header's rules, as this client keeps them

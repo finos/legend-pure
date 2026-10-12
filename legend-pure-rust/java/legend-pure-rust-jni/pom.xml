@@ -117,6 +117,12 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-rust-api</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
