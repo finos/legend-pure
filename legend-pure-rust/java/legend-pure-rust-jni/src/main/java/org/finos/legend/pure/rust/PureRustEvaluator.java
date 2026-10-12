@@ -155,6 +155,7 @@ public final class PureRustEvaluator implements FunctionExecution, RustHeap, Clo
     public synchronized CoreInstance[] evaluate(CoreInstance function, CoreInstance[][] arguments)
     {
         checkOpen();
+        this.bridge.releaseCollectedProxies();
         try
         {
             return nativeStart(this.contextPointer, function, arguments);
@@ -228,6 +229,7 @@ public final class PureRustEvaluator implements FunctionExecution, RustHeap, Clo
     public synchronized CoreInstance create(String classifierPath, String[] propertyNames, CoreInstance[][] propertyValues)
     {
         checkOpen();
+        this.bridge.releaseCollectedProxies();
         long handle = nativeNew(this.contextPointer, classifierPath, propertyNames, propertyValues);
         return this.bridge.rustObject(handle, classifierPath);
     }

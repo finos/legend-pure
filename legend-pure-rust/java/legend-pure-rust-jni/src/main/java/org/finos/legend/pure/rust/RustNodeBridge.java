@@ -14,10 +14,7 @@
 
 package org.finos.legend.pure.rust;
 
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 /**
@@ -26,17 +23,16 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
  * to it per context. The shared reads and descriptions are inherited from
  * {@link NodeBridge}; this class adds what the JNI crate also calls, the
  * host's primitive factories and the proxies for Rust objects, one per
- * handle.
+ * handle while Java reaches it ({@link RustProxies}).
  */
 final class RustNodeBridge extends NodeBridge
 {
-    private final RustHeap owner;
-    private final MutableMap<Long, RustCoreInstance> proxies = Maps.mutable.empty();
+    private final RustProxies proxies;
 
     RustNodeBridge(RustEngineHost host, RustHeap owner)
     {
         super(host);
-        this.owner = owner;
+        this.proxies = new RustProxies(owner);
     }
 
     @Override
@@ -48,12 +44,17 @@ final class RustNodeBridge extends NodeBridge
 
     MutableList<Long> proxyHandles()
     {
-        return Lists.mutable.withAll(this.proxies.keysView());
+        return this.proxies.handles();
     }
 
     void forgetProxy(long handle)
     {
-        this.proxies.remove(handle);
+        this.proxies.forget(handle);
+    }
+
+    void releaseCollectedProxies()
+    {
+        this.proxies.releaseCollected();
     }
 
     CoreInstance newBoolean(boolean value)
@@ -93,12 +94,6 @@ final class RustNodeBridge extends NodeBridge
 
     CoreInstance rustObject(long handle, String classifierPath)
     {
-        RustCoreInstance proxy = this.proxies.get(handle);
-        if (proxy == null)
-        {
-            proxy = new RustCoreInstance(this.owner, handle, classifierPath);
-            this.proxies.put(handle, proxy);
-        }
-        return proxy;
+        return this.proxies.proxy(handle, classifierPath);
     }
 }

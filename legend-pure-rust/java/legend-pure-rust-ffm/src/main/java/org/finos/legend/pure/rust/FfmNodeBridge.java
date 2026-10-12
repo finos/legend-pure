@@ -14,10 +14,7 @@
 
 package org.finos.legend.pure.rust;
 
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
@@ -34,20 +31,20 @@ import java.math.BigDecimal;
  * transport adds. Inbound, a {@link NodeDescription} is written into a
  * {@code pure_description} segment the Rust side reads in place; outbound, the
  * {@code pure_leaf}s of a result are read into host objects through the engine's
- * factories, Rust objects as one {@link RustCoreInstance} per handle. The four
+ * factories, Rust objects as one {@link RustCoreInstance} per handle while
+ * Java reaches it ({@link RustProxies}). The four
  * callbacks of the {@code pure_host_table} are upcall stubs bound to this
  * instance: each answers through {@code pure_reply_*} and returns a status, and
  * nothing thrown inside one ever reaches the native frame.
  */
 final class FfmNodeBridge extends NodeBridge
 {
-    private final RustHeap owner;
-    private final MutableMap<Long, RustCoreInstance> proxies = Maps.mutable.empty();
+    private final RustProxies proxies;
 
     FfmNodeBridge(RustEngineHost host, RustHeap owner)
     {
         super(host);
-        this.owner = owner;
+        this.proxies = new RustProxies(owner);
     }
 
     @Override
@@ -59,17 +56,22 @@ final class FfmNodeBridge extends NodeBridge
 
     MutableList<Long> proxyHandles()
     {
-        return Lists.mutable.withAll(this.proxies.keysView());
+        return this.proxies.handles();
     }
 
     void forgetProxy(long handle)
     {
-        this.proxies.remove(handle);
+        this.proxies.forget(handle);
+    }
+
+    void releaseCollectedProxies()
+    {
+        this.proxies.releaseCollected();
     }
 
     CoreInstance rustObject(long handle, String classifierPath)
     {
-        return this.proxies.getIfAbsentPutWithKey(handle, h -> new RustCoreInstance(this.owner, h, classifierPath));
+        return this.proxies.proxy(handle, classifierPath);
     }
 
     /**

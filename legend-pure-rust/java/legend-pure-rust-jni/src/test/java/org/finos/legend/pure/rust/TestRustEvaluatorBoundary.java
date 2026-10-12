@@ -203,6 +203,25 @@ public class TestRustEvaluatorBoundary
     }
 
     /**
+     * A proxy Java no longer reaches is released on the evaluator's next
+     * call: the interpreted engine reads a result through its proxy and
+     * never closes it, and the Rust object must not outlive it.
+     */
+    @Test
+    public void aProxyJavaNoLongerReachesIsReleasedOnTheNextCall() throws InterruptedException
+    {
+        evaluator.create("meta::pure::functions::collection::Pair", new String[]{"first", "second"}, new CoreInstance[][]{{repository.newIntegerCoreInstance(1L)}, {repository.newStringCoreInstance("a")}});
+        Assert.assertEquals(1L, evaluator.liveHandleCount());
+        for (int i = 0; (i < 100) && (evaluator.liveHandleCount() > 0); i++)
+        {
+            System.gc();
+            Thread.sleep(10);
+            evaluator.start(node(LET_FUNCTION), Lists.mutable.with(wrap(repository.newStringCoreInstance("x")), wrap(repository.newIntegerCoreInstance(1L))));
+        }
+        Assert.assertEquals(0L, evaluator.liveHandleCount());
+    }
+
+    /**
      * A Rust object that is not a model element has a name as a Java
      * instance does: anonymous in the repository's form, and its own.
      * Pure's {@code id()} (and with it {@code toRepresentation}, which

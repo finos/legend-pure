@@ -192,6 +192,7 @@ public final class PureRustFfmEvaluator implements FunctionExecution, RustHeap, 
     public synchronized CoreInstance[] evaluate(CoreInstance function, CoreInstance[][] arguments)
     {
         checkOpen();
+        this.bridge.releaseCollectedProxies();
         try (Arena call = Arena.ofConfined())
         {
             MemorySegment described = this.bridge.describeInto(function, call);
@@ -271,6 +272,7 @@ public final class PureRustFfmEvaluator implements FunctionExecution, RustHeap, 
     public synchronized CoreInstance create(String classifierPath, String[] propertyNames, CoreInstance[][] propertyValues)
     {
         checkOpen();
+        this.bridge.releaseCollectedProxies();
         try (Arena call = Arena.ofConfined())
         {
             PureAbi.Text classifier = PureAbi.Text.of(classifierPath, call);
