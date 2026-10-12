@@ -40,10 +40,32 @@
                 <version>${project.version}</version>
                 <type>test-jar</type>
             </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-rust-jni</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-rust-jni</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-rust-ffm</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-rust-ffm</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
-    <!-- legend-pure-rust-api, -jni and -ffm are added by the profiles below; on JDK 11 this aggregator holds nothing. -->
+    <!-- legend-pure-rust-api, -jni, -ffm and -bench are added by the profiles below; on JDK 11 this aggregator holds nothing. -->
     <profiles>
         <profile>
             <id>rust-evaluator-jdk17</id>
@@ -62,6 +84,7 @@
             </activation>
             <modules>
                 <module>legend-pure-rust-ffm</module>
+                <module>legend-pure-rust-bench</module>
             </modules>
         </profile>
     </profiles>

@@ -68,9 +68,9 @@ import java.util.function.Supplier;
  * host reads during each; each timed sample covers a batch of calls). The
  * timed unit is one call of the zero-argument function, result delivered as a
  * value. The compiled engine is measured through its {@code start} entry and
- * by invoking the generated static method directly. A transport module
- * extends this class and adds its modes through {@link #transportModes}, so
- * every mode runs in one JVM.
+ * by invoking the generated static method directly. A module with the
+ * transports ({@code legend-pure-rust-bench}) extends this class and adds
+ * their modes through {@link #transportModes}, so every mode runs in one JVM.
  */
 public class BenchmarkNativeExpressions extends AbstractPureTestWithCoreCompiled
 {
@@ -160,7 +160,7 @@ public class BenchmarkNativeExpressions extends AbstractPureTestWithCoreCompiled
     }
 
     /**
-     * Where a transport module adds its modes, each through {@link #measure}:
+     * Where a module with the transports adds their modes, each through {@link #measure}:
      * called once with the interpreted engine's runtime set up and the
      * expressions compiled into it, once with the compiled engine's.
      *

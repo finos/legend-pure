@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.rust.ffm.pct;
+package org.finos.legend.pure.rust.bench;
 
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.rust.PureRustEvaluator;
@@ -39,7 +39,7 @@ import org.junit.Assert;
  * {@code rust-ffm/compiled-host} over the compiled engine's. Needs both
  * cdylibs in {@code legend.rust.libdir}; not in the default run:
  * <pre>
- * mvn test -pl legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni,legend-pure-rust/java/legend-pure-rust-ffm \
+ * mvn test -pl legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni,legend-pure-rust/java/legend-pure-rust-ffm,legend-pure-rust/java/legend-pure-rust-bench \
  *   -Dtest=BenchmarkTransportExpressions -Dsurefire.failIfNoSpecifiedTests=false -Dlegend.rust.libdir=.../legend-pure-rust/target/release
  * </pre>
  * Results: {@code target/benchmarks/expressions-java.csv} of this module.

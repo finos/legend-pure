@@ -395,7 +395,7 @@ From the repository root, with JDK 25 for every Java run and no Maven run during
 # the machine
 sysctl -n machdep.cpu.brand_string; sysctl -n hw.memsize; sw_vers; rustc -Vv; uptime
 
-# the libraries (debug as well: the -jni/-ffm skip profiles key on target/debug)
+# the libraries (debug as well: the -jni/-ffm/-bench skip profiles key on target/debug)
 cd legend-pure-rust && cargo build --workspace && cargo build --release --workspace
 mkdir -p /tmp/bench
 
@@ -410,12 +410,12 @@ cargo run -q --release -p legend-pure-evaluator --example pct_native
 cd ..
 
 # the twelve expressions under every Java mode and both transports, one JVM per run, three runs
-M=legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni,legend-pure-rust/java/legend-pure-rust-ffm
+M=legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni,legend-pure-rust/java/legend-pure-rust-ffm,legend-pure-rust/java/legend-pure-rust-bench
 for i in 1 2 3; do
   JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn -q -pl $M test -Dtest=BenchmarkTransportExpressions \
     -Dsurefire.failIfNoSpecifiedTests=false -DfailIfNoTests=false \
     -Dlegend.rust.libdir=$PWD/legend-pure-rust/target/release
-  cp legend-pure-rust/java/legend-pure-rust-ffm/target/benchmarks/expressions-java.csv /tmp/bench/expressions-java-$i.csv
+  cp legend-pure-rust/java/legend-pure-rust-bench/target/benchmarks/expressions-java.csv /tmp/bench/expressions-java-$i.csv
 done
 
 # median of the three runs and the range, per expression and mode; c=3 median_ns, 4 p90_ns, 5 min_ns,
@@ -434,11 +434,11 @@ JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn -q -pl legend-pure-rust/java/legen
 # the PCT corpus, six modes; the summary is target/benchmarks/pct-expressions.md, per test the .csv
 for i in 1 2 3; do
   JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn -q -pl $M test \
-    -Dtest=org.finos.legend.pure.rust.ffm.pct.BenchmarkPctExpressions \
+    -Dtest=org.finos.legend.pure.rust.bench.BenchmarkPctExpressions \
     -Dsurefire.failIfNoSpecifiedTests=false -DfailIfNoTests=false \
     -Dlegend.rust.libdir=$PWD/legend-pure-rust/target/release
-  cp legend-pure-rust/java/legend-pure-rust-ffm/target/benchmarks/pct-expressions.md /tmp/bench/pct-defaults-$i.md
-  cp legend-pure-rust/java/legend-pure-rust-ffm/target/benchmarks/pct-expressions.csv /tmp/bench/pct-defaults-$i.csv
+  cp legend-pure-rust/java/legend-pure-rust-bench/target/benchmarks/pct-expressions.md /tmp/bench/pct-defaults-$i.md
+  cp legend-pure-rust/java/legend-pure-rust-bench/target/benchmarks/pct-expressions.csv /tmp/bench/pct-defaults-$i.csv
 done
 # 221 calls per test: add -Dlegend.bench.warmup=20 -Dlegend.bench.runs=50 -Dlegend.bench.batch=4
 # 451 calls per test: add -Dlegend.bench.warmup=50 -Dlegend.bench.runs=100 -Dlegend.bench.batch=4

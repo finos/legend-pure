@@ -53,9 +53,9 @@ cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   mvn -pl legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni clean verify
 #   -> Rust_JNI essential: 339 / 346, Rust_JNI grammar: 133 / 137 (interpreted engine)
 #      Rust_JNI essential (compiled): 340 / 346, grammar (compiled): 133 / 137 (plus 22 boundary tests)
-# the C ABI client, JDK 25 only (the -ffm module joins the reactor on JDK 25+):
+# the C ABI client and the benchmarks, JDK 25 only (-ffm and -bench join the reactor on JDK 25+):
 JAVA_HOME=$(/usr/libexec/java_home -v 25) \
-  mvn -pl legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni,legend-pure-rust/java/legend-pure-rust-ffm clean verify
+  mvn -pl legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni,legend-pure-rust/java/legend-pure-rust-ffm,legend-pure-rust/java/legend-pure-rust-bench clean verify
 #   -> Rust_FFM at the same four numbers (plus 25 boundary tests)
 # after a change that moves tests: regenerate the manifests, review the diff, verify again
 JAVA_HOME=$(/usr/libexec/java_home -v 17) \
@@ -63,7 +63,7 @@ JAVA_HOME=$(/usr/libexec/java_home -v 17) \
   -Dtest=RebaseRustJniManifests -DfailIfNoTests=false
 ```
 
-Benchmarks of all five modes (Rust native, JNI, FFM, both Java engines): `docs/benchmarks-2026-10-11.md`, whose last section holds every command; the twelve expressions under every Java mode and both transports in one JVM is the `-ffm` test `BenchmarkTransportExpressions` (`-Dtest=BenchmarkTransportExpressions` on the three modules, JDK 25, `-Dlegend.rust.libdir=$PWD/legend-pure-rust/target/release`).
+Benchmarks of all five modes (Rust native, JNI, FFM, both Java engines): `docs/benchmarks-2026-10-11.md`, whose last section holds every command; the twelve expressions under every Java mode and both transports in one JVM is the `-bench` test `BenchmarkTransportExpressions` (`-Dtest=BenchmarkTransportExpressions` on the four modules, JDK 25, `-Dlegend.rust.libdir=$PWD/legend-pure-rust/target/release`).
 
 The corpus also runs with no host engine at all, the `Rust_Native` adapter:
 `cargo run -p legend-pure-evaluator --example pct_native` calls the surveyor by
@@ -71,7 +71,7 @@ path on the evaluator alone (`src/pct.rs`, manifests under `crates/evaluator/pct
 and, until Step 3 loads the platform, reports `MetadataNotFound` for the
 surveyor's own definition; `tests/pct_native.rs` pins that.
 
-Three Java modules under `java/` (Step 2c), aggregated by `java/pom.xml`,
+Four Java modules under `java/` (Step 2c), aggregated by `java/pom.xml`,
 the root `pom.xml`'s one `<module>` line for this directory:
 `legend-pure-rust-api`, the transport-free side (the hosts,
 `NodeBridge`, `RustCoreInstance` over `RustHeap`, the exception kinds; the PCT
@@ -82,7 +82,10 @@ test code, in its test-jar, under `src/test/java/.../pct/`), and
 depends on it; and `legend-pure-rust-ffm` (release 25),
 the client of the C ABI (`PureAbi`, `PureRustFfmEvaluator`, `FfmNodeBridge`,
 `evalRustFfm`, the `Rust_FFM` suites and manifests), which depends on `-api`
-and joins the reactor only on JDK 25+. Each ships a Pure repository of its
+and joins the reactor only on JDK 25+; and `legend-pure-rust-bench` (release 25,
+test code only), the benchmarks that run both transports side by side
+(`BenchmarkPctExpressions`, `BenchmarkTransportExpressions`), the one module that
+depends on `-jni` and `-ffm` (and their test-jars). Each ships a Pure repository of its
 own under `src/main/resources/`, nothing Rust being in the core Pure modules:
 `platform_rust` (`-api`: the `Rust_Native` adapter,
 `meta::pure::rust::standalone::testAdapterForRustNativeExecution`),

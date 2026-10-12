@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.rust.ffm.pct;
+package org.finos.legend.pure.rust.bench;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.PlatformCodeRepositoryProvider;
 import org.finos.legend.pure.rust.PureRustEvaluator;
 import org.finos.legend.pure.rust.PureRustFfmEvaluator;
+import org.finos.legend.pure.rust.ffm.pct.RustFfmCodeRepositoryProvider;
 import org.finos.legend.pure.rust.jni.pct.RustJniCodeRepositoryProvider;
 import org.finos.legend.pure.rust.pct.PctExpressionsBenchmark;
 import org.finos.legend.pure.rust.pct.PctExpressionsBenchmark.Engine;

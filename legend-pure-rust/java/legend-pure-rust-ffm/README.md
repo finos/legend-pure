@@ -7,7 +7,8 @@ alone, calling it through the Foreign Function and Memory API of JDK 25. Everyth
 transport-free (the hosts, the node bridge's host side, the proxies, the exception kinds, the
 PCT and benchmark tooling) is in `legend-pure-rust-api`, which this module
 depends on (the tooling through its test-jar, at test scope); `legend-pure-rust-jni` is the other transport, over JNI on
-JDK 17, with which this one is measured side by side.
+JDK 17, with which this one is measured side by side in `legend-pure-rust-bench`. This module
+does not depend on `-jni`.
 
 ## The header's rules, as this client keeps them
 
@@ -62,8 +63,6 @@ runs the platform corpus through each, beside `Rust_JNI`.
 | `ffm.pct.Test_RustFfm_{Essential,Grammar}Functions_PCT` | The interpreted engine's suites with the `Rust_FFM` adapter; each prints `Rust_FFM <scope>: <passes> / <total>`. |
 | `ffm.pct.Test_RustFfmCompiled_{Essential,Grammar}Functions_PCT` | The same corpus through the compiled engine; prints `Rust_FFM <scope> (compiled): <passes> / <total>`. |
 | `ffm.pct.RebaseRustFfmManifests` | Regenerates the four manifests (`PctManifestRebase`); not in the default surefire run. |
-| `ffm.pct.BenchmarkPctExpressions` | `PctExpressionsBenchmark` under six modes: each engine with its own adapter, with `Rust_JNI` and with `Rust_FFM`, so one run reports both transports with the Rust side's split per call. Needs `-jni` on the test class path (a test-scoped dependency) and both cdylibs in `legend.rust.libdir`. Not in the default run. |
-| `ffm.pct.BenchmarkTransportExpressions` | The twelve expressions of `-api`'s `BenchmarkNativeExpressions` (from its test-jar) under every Java mode and both transports in one JVM: the interpreted engine, the compiled engine through `start` and through the generated method, then each expression's function node through `PureRustEvaluator.evaluate` and `PureRustFfmEvaluator.evaluate` over the interpreted engine's graph (`rust-jni`, `rust-ffm`) and over the compiled engine's (`…/compiled-host`), batched, result checked, with the Rust split per call. Writes `target/benchmarks/expressions-java.csv`. Not in the default run. |
 | `ffm.pct.Core_RustFfm_PCTReportProvider` | Publishes `pct-reports/ADAPTER_{essential,grammar}_{interpreted,compiled}_Rust_FFM.json`, written at `process-test-classes` by each engine's `PCTReportGenerator` from the manifests alone (no library loaded, no native-access flag needed there). |
 
 Manifests: `src/test/resources/platform/pure/essential/pct_essential_{interpreted,compiled}_rust_ffm.json`
@@ -100,18 +99,7 @@ when the library is absent the module's tests are skipped (profile `rust-cdylib-
 so `mvn install` stays green on hosts and CI without a Rust toolchain. Override with
 `-DskipTests=false` to force a run.
 
-The benchmarks, with an optimised Rust side (the three modules in one reactor, so the
-`-api` tooling and test-jar of this checkout are the ones used):
-
-```bash
-cd legend-pure-rust && cargo build --release --workspace
-cd .. && JAVA_HOME=$(/usr/libexec/java_home -v 25) \
-  mvn test -pl legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni,legend-pure-rust/java/legend-pure-rust-ffm \
-  -Dtest=org.finos.legend.pure.rust.ffm.pct.BenchmarkPctExpressions \
-  -Dsurefire.failIfNoSpecifiedTests=false -DfailIfNoTests=false \
-  -Dlegend.rust.libdir=$PWD/legend-pure-rust/target/release
-# the twelve expressions under every mode: -Dtest=BenchmarkTransportExpressions
-```
-
-The class name is qualified because `-jni` has a `BenchmarkPctExpressions` of its own (four
-modes), which a bare name would also run.
+The benchmarks that run this transport beside `Rust_JNI` (`BenchmarkPctExpressions` under six
+modes, `BenchmarkTransportExpressions`) are in `legend-pure-rust-bench`, whose README has the
+commands. The module publishes a test-jar for them: it carries the Java generated for
+`platform_rust_ffm`, which the compiled engine's `Rust_FFM` mode loads.
