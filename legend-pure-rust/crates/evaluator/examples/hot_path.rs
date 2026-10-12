@@ -30,7 +30,7 @@ use legend_pure_evaluator::builders::{ModelBuilder, expr, named, param};
 use legend_pure_evaluator::eval::Evaluator;
 use legend_pure_evaluator::native::NativeRegistry;
 use legend_pure_evaluator::value::Value;
-use legend_pure_metamodel::bootstrap::INTEGER_ID;
+use legend_pure_metamodel::bootstrap::{BOOLEAN_ID, INTEGER_ID};
 use legend_pure_metamodel::types::{Multiplicity, Parameter, ValueSpec};
 
 const PLUS: &str = "plus_Integer_MANY__Integer_1_";
@@ -52,16 +52,42 @@ fn int_param(name: &str) -> Parameter {
     param(name, named(INTEGER_ID), Multiplicity::PureOne)
 }
 
+/// `spec` typed `Integer[1]`, as the compiler types it.
+fn one_int(spec: ValueSpec) -> ValueSpec {
+    expr::typed(spec, named(INTEGER_ID), Multiplicity::PureOne)
+}
+
+/// `spec` typed `Integer[*]`.
+fn many_ints(spec: ValueSpec) -> ValueSpec {
+    expr::typed(spec, named(INTEGER_ID), Multiplicity::ZeroOrMany)
+}
+
+/// `spec` typed `Boolean[1]`.
+fn one_bool(spec: ValueSpec) -> ValueSpec {
+    expr::typed(spec, named(BOOLEAN_ID), Multiplicity::PureOne)
+}
+
+fn int(n: i64) -> ValueSpec {
+    one_int(expr::int(n))
+}
+
+fn var(name: &str) -> ValueSpec {
+    one_int(expr::var(name))
+}
+
 fn range_100() -> ValueSpec {
-    expr::call(RANGE, vec![expr::int(0), expr::int(100), expr::int(1)])
+    many_ints(expr::call(RANGE, vec![int(0), int(100), int(1)]))
 }
 
 fn size_of(spec: ValueSpec) -> ValueSpec {
-    expr::call(SIZE, vec![spec])
+    one_int(expr::call(SIZE, vec![spec]))
 }
 
 fn arith(key: &str, a: ValueSpec, b: ValueSpec) -> ValueSpec {
-    expr::call(key, vec![expr::collection(vec![a, b])])
+    one_int(expr::call(
+        key,
+        vec![many_ints(expr::collection(vec![a, b]))],
+    ))
 }
 
 /// Median, p90 and minimum nanoseconds of applying `spec` as a
@@ -114,12 +140,8 @@ fn main() {
     let registry = NativeRegistry::standard();
     let mut evaluator = Evaluator::new(&model, &registry);
 
-    time_spec("literal 1", &mut evaluator, expr::int(1));
-    time_spec(
-        "1 + 2",
-        &mut evaluator,
-        arith(PLUS, expr::int(1), expr::int(2)),
-    );
+    time_spec("literal 1", &mut evaluator, int(1));
+    time_spec("1 + 2", &mut evaluator, arith(PLUS, int(1), int(2)));
     time_spec(
         "range(0,100,1)->size()",
         &mut evaluator,
@@ -128,63 +150,57 @@ fn main() {
     time_spec(
         "range->filter(x | true)->size()",
         &mut evaluator,
-        size_of(expr::call(
+        size_of(many_ints(expr::call(
             FILTER,
             vec![
                 range_100(),
-                expr::lambda(vec![int_param("x")], vec![expr::boolean(true)]),
+                expr::lambda(vec![int_param("x")], vec![one_bool(expr::boolean(true))]),
             ],
-        )),
+        ))),
     );
     time_spec(
         "range->filter(x | $x->mod(2) == 0)->size()",
         &mut evaluator,
-        size_of(expr::call(
+        size_of(many_ints(expr::call(
             FILTER,
             vec![
                 range_100(),
                 expr::lambda(
                     vec![int_param("x")],
-                    vec![expr::call(
+                    vec![one_bool(expr::call(
                         EQUAL,
-                        vec![
-                            expr::call(MOD, vec![expr::var("x"), expr::int(2)]),
-                            expr::int(0),
-                        ],
-                    )],
+                        vec![one_int(expr::call(MOD, vec![var("x"), int(2)])), int(0)],
+                    ))],
                 ),
             ],
-        )),
+        ))),
     );
     time_spec(
         "range->map(x | $x)->size()",
         &mut evaluator,
-        size_of(expr::call(
+        size_of(many_ints(expr::call(
             MAP,
             vec![
                 range_100(),
-                expr::lambda(vec![int_param("x")], vec![expr::var("x")]),
+                expr::lambda(vec![int_param("x")], vec![var("x")]),
             ],
-        )),
+        ))),
     );
     time_spec(
         "range->map(x | $x * 2)->size()",
         &mut evaluator,
-        size_of(expr::call(
+        size_of(many_ints(expr::call(
             MAP,
             vec![
                 range_100(),
-                expr::lambda(
-                    vec![int_param("x")],
-                    vec![arith(TIMES, expr::var("x"), expr::int(2))],
-                ),
+                expr::lambda(vec![int_param("x")], vec![arith(TIMES, var("x"), int(2))]),
             ],
-        )),
+        ))),
     );
     time_spec(
         "[100 literals]->size()",
         &mut evaluator,
-        size_of(expr::collection((0..100).map(expr::int).collect())),
+        size_of(many_ints(expr::collection((0..100).map(int).collect()))),
     );
 
     let integer = Value::Integer(1);

@@ -1628,6 +1628,29 @@ not adding fast paths. Add a typed form to the builders (e.g.
 `expr::typed(spec, type, multiplicity)`) and type the hot-path and expression
 examples, or Part T will not show in the Rust-native benchmarks.
 
+**T0, measured (2026-10-11).** `exec::rep_of` and `exec::Coverage` (kept;
+`rep_of` is `Integer`/`Float`/`Boolean`/`String` at `[1]` or `[0..1]` with
+no type arguments, `Value` for everything else) and `expr::typed`; both
+examples now carry the compiler's types on every value node. Counted by a
+temporary probe in the bridge over every body lowered while the PCT corpus
+ran, through both transports (the root lambda of each call, and each
+function the call added to the model):
+
+| Bodies | Nodes | With `type_info` | `rep_of` not `Value` |
+|---|---:|---:|---:|
+| interpreted host (keyed lambdas, functions) | 14,320 | 12,932 (90.3 %) | 7,940 (55.4 %) |
+| compiled host (keyless lambdas, functions) | 14,264 | 12,894 (90.4 %) | 7,914 (55.5 %) |
+| of which function bodies, both hosts | 1,188 | 1,176 (99.0 %) | 732 (61.6 %) |
+
+The untyped tenth is not `resolved_type` dropping anything: it is the
+elements of multi-valued `InstanceValue`s (2,172 literals and 306 lambdas,
+which `lower_instance_value` lowers with no type, since the M3 node types
+only the collection) and the 280 `KeyExpression`s (which carry none). Every
+property call in those bodies (184) recorded its owner. So coverage does
+not block Part T: half the nodes already have an unboxed representation,
+and T1/T2 can start from `rep_of` as it stands; typing collection elements
+would need a type the graph does not hold per element.
+
 **T1. Representations.** `rep_of`, `Box`/`Unbox` at representation changes,
 slots holding unboxed values where the slot's rep is not `Value`. Calls into
 Pure functions and natives box their arguments (no calling-convention change

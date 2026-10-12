@@ -671,3 +671,78 @@ fn an_error_forcing_an_eager_argument_carries_both_natives_frames() {
         .expect("mod's frame");
     assert!(size < modulo, "outermost first: {err}");
 }
+
+#[test]
+fn a_representation_comes_from_the_static_type_alone() {
+    use legend_pure_evaluator::exec::{Rep, rep_of};
+    use legend_pure_metamodel::bootstrap::{BOOLEAN_ID, DATE_ID, FLOAT_ID, NUMBER_ID};
+    use legend_pure_metamodel::types::{ResolvedType, TypeExpr};
+    let of = |type_expr: TypeExpr, multiplicity: Multiplicity| {
+        rep_of(Some(&ResolvedType {
+            type_expr,
+            multiplicity,
+        }))
+    };
+    assert_eq!(rep_of(None), Rep::Value);
+    assert_eq!(of(named(INTEGER_ID), Multiplicity::PureOne), Rep::I64);
+    assert_eq!(of(named(FLOAT_ID), Multiplicity::PureOne), Rep::F64);
+    assert_eq!(of(named(BOOLEAN_ID), Multiplicity::PureOne), Rep::Bool);
+    assert_eq!(of(named(STRING_ID), Multiplicity::PureOne), Rep::Str);
+    assert_eq!(of(named(INTEGER_ID), Multiplicity::ZeroOrOne), Rep::OptI64);
+    assert_eq!(of(named(STRING_ID), Multiplicity::ZeroOrOne), Rep::OptStr);
+    assert_eq!(
+        of(
+            named(INTEGER_ID),
+            Multiplicity::Range {
+                lower: 1,
+                upper: Some(1)
+            }
+        ),
+        Rep::I64
+    );
+    assert_eq!(of(named(INTEGER_ID), Multiplicity::ZeroOrMany), Rep::Value);
+    assert_eq!(
+        of(named(INTEGER_ID), Multiplicity::Variable("m".into())),
+        Rep::Value
+    );
+    for wide in [ANY_ID, NUMBER_ID, DATE_ID] {
+        assert_eq!(of(named(wide), Multiplicity::PureOne), Rep::Value);
+    }
+    assert_eq!(
+        of(TypeExpr::Generic("T".into()), Multiplicity::PureOne),
+        Rep::Value
+    );
+    let mut list_of_int = named(ANY_ID);
+    if let TypeExpr::Named { type_arguments, .. } = &mut list_of_int {
+        type_arguments.push(named(INTEGER_ID));
+    }
+    assert_eq!(of(list_of_int, Multiplicity::PureOne), Rep::Value);
+}
+
+#[test]
+fn coverage_counts_every_expression_lambda_bodies_included() {
+    use legend_pure_evaluator::exec::Coverage;
+    let one_int = |spec| expr::typed(spec, named(INTEGER_ID), Multiplicity::PureOne);
+    let body = vec![expr::call(
+        MAP,
+        vec![
+            expr::typed(
+                expr::collection(vec![one_int(expr::int(1)), expr::int(2)]),
+                named(INTEGER_ID),
+                Multiplicity::ZeroOrMany,
+            ),
+            expr::lambda(
+                vec![int("x")],
+                vec![one_int(arith(PLUS, one_int(expr::var("x")), expr::int(1)))],
+            ),
+        ],
+    )];
+    assert_eq!(
+        Coverage::of(&body),
+        Coverage {
+            nodes: 9,
+            typed: 4,
+            unboxed: 3
+        }
+    );
+}

@@ -48,6 +48,9 @@
 mod build;
 mod lazy;
 mod run;
+mod types;
+
+pub use types::{Coverage, Rep, rep_of};
 
 use std::cell::{Cell, OnceCell};
 use std::sync::Arc;

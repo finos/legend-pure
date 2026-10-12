@@ -37,7 +37,9 @@ use legend_pure_evaluator::builders::{ModelBuilder, expr, named, param};
 use legend_pure_evaluator::eval::Evaluator;
 use legend_pure_evaluator::native::NativeRegistry;
 use legend_pure_evaluator::value::Value;
-use legend_pure_metamodel::bootstrap::{INTEGER_ID, STRING_ID};
+use legend_pure_metamodel::bootstrap::{
+    ANY_ID, BOOLEAN_ID, DATE_ID, INTEGER_ID, STRICT_DATE_ID, STRING_ID,
+};
 use legend_pure_metamodel::ids::ElementId;
 use legend_pure_metamodel::types::{DateValue, Multiplicity, ValueSpec};
 
@@ -62,12 +64,45 @@ const MATCH: &str = "match_Any_MANY__Function_$1_MANY$__T_m_";
 const REMOVE_DUPLICATES: &str = "removeDuplicates_T_MANY__Function_$0_1$__Function_$0_1$__T_MANY_";
 const JOIN_STRINGS: &str = "joinStrings_String_MANY__String_1__String_1__String_1__String_1_";
 
+/// `spec` with the static type the compiler records on it.
+fn typed(spec: ValueSpec, element: ElementId, multiplicity: Multiplicity) -> ValueSpec {
+    expr::typed(spec, named(element), multiplicity)
+}
+
+fn one_int(spec: ValueSpec) -> ValueSpec {
+    typed(spec, INTEGER_ID, Multiplicity::PureOne)
+}
+
+fn many_ints(spec: ValueSpec) -> ValueSpec {
+    typed(spec, INTEGER_ID, Multiplicity::ZeroOrMany)
+}
+
+fn one_string(spec: ValueSpec) -> ValueSpec {
+    typed(spec, STRING_ID, Multiplicity::PureOne)
+}
+
+fn int(n: i64) -> ValueSpec {
+    one_int(expr::int(n))
+}
+
+fn var(name: &str) -> ValueSpec {
+    one_int(expr::var(name))
+}
+
+fn string(s: &str) -> ValueSpec {
+    one_string(expr::string(s))
+}
+
 fn ints(items: &[i64]) -> ValueSpec {
-    expr::collection(items.iter().map(|&i| expr::int(i)).collect())
+    many_ints(expr::collection(items.iter().map(|&i| int(i)).collect()))
 }
 
 fn strings(items: &[&str]) -> ValueSpec {
-    expr::collection(items.iter().map(|s| expr::string(s)).collect())
+    typed(
+        expr::collection(items.iter().map(|s| string(s)).collect()),
+        STRING_ID,
+        Multiplicity::ZeroOrMany,
+    )
 }
 
 fn int_param(name: &str) -> legend_pure_metamodel::types::Parameter {
@@ -76,136 +111,161 @@ fn int_param(name: &str) -> legend_pure_metamodel::types::Parameter {
 
 /// `(a op b)` for the arithmetic natives, which take one collection.
 fn arith(key: &str, a: ValueSpec, b: ValueSpec) -> ValueSpec {
-    expr::call(key, vec![expr::collection(vec![a, b])])
+    one_int(expr::call(
+        key,
+        vec![many_ints(expr::collection(vec![a, b]))],
+    ))
 }
 
 /// The expressions, in the order of `expressions.pure`, each as the body of
-/// a zero-argument lambda, with the expected result.
+/// a zero-argument lambda, with the expected result. Every value node
+/// carries the static type the compiler records on it.
 fn expressions(duration_unit: ElementId) -> Vec<(&'static str, Vec<ValueSpec>, Value)> {
     vec![
         (
             "e01_plus",
-            vec![arith(PLUS, expr::int(1), expr::int(2))],
+            vec![arith(PLUS, int(1), int(2))],
             Value::Integer(3),
         ),
         (
             "e02_arithmetic",
             vec![arith(
                 PLUS,
-                arith(TIMES, expr::int(3), expr::int(4)),
-                arith(MINUS, expr::int(10), expr::int(2)),
+                arith(TIMES, int(3), int(4)),
+                arith(MINUS, int(10), int(2)),
             )],
             Value::Integer(20),
         ),
         (
             "e03_let",
             vec![
-                expr::call(LET, vec![expr::string("x"), expr::int(5)]),
-                arith(TIMES, expr::var("x"), expr::var("x")),
+                one_int(expr::call(LET, vec![string("x"), int(5)])),
+                arith(TIMES, var("x"), var("x")),
             ],
             Value::Integer(25),
         ),
         (
             "e04_if",
-            vec![expr::call(
+            vec![one_string(expr::call(
                 IF,
                 vec![
-                    expr::call(LESS_THAN, vec![expr::int(1), expr::int(2)]),
-                    expr::lambda(Vec::new(), vec![expr::string("yes")]),
-                    expr::lambda(Vec::new(), vec![expr::string("no")]),
+                    typed(
+                        expr::call(LESS_THAN, vec![int(1), int(2)]),
+                        BOOLEAN_ID,
+                        Multiplicity::PureOne,
+                    ),
+                    expr::lambda(Vec::new(), vec![string("yes")]),
+                    expr::lambda(Vec::new(), vec![string("no")]),
                 ],
-            )],
+            ))],
             Value::String("yes".into()),
         ),
         (
             "e05_map_fold",
-            vec![expr::call(
+            vec![one_int(expr::call(
                 FOLD,
                 vec![
-                    expr::call(
+                    many_ints(expr::call(
                         MAP,
                         vec![
                             ints(&[1, 2, 3, 4, 5]),
                             expr::lambda(
                                 vec![int_param("x")],
-                                vec![arith(TIMES, expr::var("x"), expr::int(2))],
+                                vec![arith(TIMES, var("x"), int(2))],
                             ),
                         ],
-                    ),
+                    )),
                     expr::lambda(
                         vec![int_param("a"), int_param("b")],
-                        vec![arith(PLUS, expr::var("a"), expr::var("b"))],
+                        vec![arith(PLUS, var("a"), var("b"))],
                     ),
-                    expr::int(0),
+                    int(0),
                 ],
-            )],
+            ))],
             Value::Integer(30),
         ),
         (
             "e06_range_filter",
-            vec![expr::call(
+            vec![one_int(expr::call(
                 SIZE,
-                vec![expr::call(
+                vec![many_ints(expr::call(
                     FILTER,
                     vec![
-                        expr::call(RANGE, vec![expr::int(0), expr::int(100), expr::int(1)]),
+                        many_ints(expr::call(RANGE, vec![int(0), int(100), int(1)])),
                         expr::lambda(
                             vec![int_param("x")],
-                            vec![expr::call(
-                                EQUAL,
-                                vec![
-                                    expr::call(MOD, vec![expr::var("x"), expr::int(2)]),
-                                    expr::int(0),
-                                ],
+                            vec![typed(
+                                expr::call(
+                                    EQUAL,
+                                    vec![one_int(expr::call(MOD, vec![var("x"), int(2)])), int(0)],
+                                ),
+                                BOOLEAN_ID,
+                                Multiplicity::PureOne,
                             )],
                         ),
                     ],
-                )],
-            )],
+                ))],
+            ))],
             Value::Integer(50),
         ),
         (
             "e07_sort_at",
-            vec![expr::call(
+            vec![one_int(expr::call(
                 AT,
                 vec![
-                    expr::call(
+                    many_ints(expr::call(
                         SORT,
                         vec![
                             ints(&[5, 3, 9, 1, 7]),
                             expr::collection(Vec::new()),
                             expr::collection(Vec::new()),
                         ],
-                    ),
-                    expr::int(0),
+                    )),
+                    int(0),
                 ],
-            )],
+            ))],
             Value::Integer(1),
         ),
         (
             "e08_format",
-            vec![expr::call(
+            vec![one_string(expr::call(
                 FORMAT,
                 vec![
-                    expr::string("hello %s, %s"),
-                    expr::collection(vec![expr::string("world"), expr::int(42)]),
+                    string("hello %s, %s"),
+                    typed(
+                        expr::collection(vec![string("world"), int(42)]),
+                        ANY_ID,
+                        Multiplicity::ZeroOrMany,
+                    ),
                 ],
-            )],
+            ))],
             Value::String("hello world, 42".into()),
         ),
         (
             "e09_date",
-            vec![expr::call(
-                ADJUST,
-                vec![
-                    expr::date(DateValue::StrictDate {
-                        year: 2020,
-                        month: Some(1),
-                        day: Some(31),
-                    }),
-                    expr::int(3),
-                    expr::enum_value(duration_unit, "MONTHS"),
-                ],
+            vec![typed(
+                expr::call(
+                    ADJUST,
+                    vec![
+                        typed(
+                            expr::date(DateValue::StrictDate {
+                                year: 2020,
+                                month: Some(1),
+                                day: Some(31),
+                            }),
+                            STRICT_DATE_ID,
+                            Multiplicity::PureOne,
+                        ),
+                        int(3),
+                        typed(
+                            expr::enum_value(duration_unit, "MONTHS"),
+                            duration_unit,
+                            Multiplicity::PureOne,
+                        ),
+                    ],
+                ),
+                DATE_ID,
+                Multiplicity::PureOne,
             )],
             Value::Date(
                 legend_pure_evaluator::date::PureDate::strict_date(2020, 4, 30)
@@ -214,50 +274,51 @@ fn expressions(duration_unit: ElementId) -> Vec<(&'static str, Vec<ValueSpec>, V
         ),
         (
             "e10_match",
-            vec![expr::call(
+            vec![one_int(expr::call(
                 MATCH,
                 vec![
-                    expr::int(5),
+                    int(5),
                     expr::collection(vec![
-                        expr::lambda(
-                            vec![int_param("i")],
-                            vec![arith(PLUS, expr::var("i"), expr::int(1))],
-                        ),
+                        expr::lambda(vec![int_param("i")], vec![arith(PLUS, var("i"), int(1))]),
                         expr::lambda(
                             vec![param("s", named(STRING_ID), Multiplicity::PureOne)],
-                            vec![expr::int(0)],
+                            vec![int(0)],
                         ),
                     ]),
                 ],
-            )],
+            ))],
             Value::Integer(6),
         ),
         (
             "e11_remove_duplicates",
-            vec![expr::call(
+            vec![one_int(expr::call(
                 SIZE,
-                vec![expr::call(
-                    REMOVE_DUPLICATES,
-                    vec![
-                        strings(&["a", "b", "a", "c", "b"]),
-                        expr::collection(Vec::new()),
-                        expr::collection(Vec::new()),
-                    ],
+                vec![typed(
+                    expr::call(
+                        REMOVE_DUPLICATES,
+                        vec![
+                            strings(&["a", "b", "a", "c", "b"]),
+                            expr::collection(Vec::new()),
+                            expr::collection(Vec::new()),
+                        ],
+                    ),
+                    STRING_ID,
+                    Multiplicity::ZeroOrMany,
                 )],
-            )],
+            ))],
             Value::Integer(3),
         ),
         (
             "e12_join_strings",
-            vec![expr::call(
+            vec![one_string(expr::call(
                 JOIN_STRINGS,
                 vec![
                     strings(&["a", "b", "c"]),
-                    expr::string("<"),
-                    expr::string(", "),
-                    expr::string(">"),
+                    string("<"),
+                    string(", "),
+                    string(">"),
                 ],
-            )],
+            ))],
             Value::String("<a, b, c>".into()),
         ),
     ]

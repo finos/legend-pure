@@ -369,7 +369,8 @@ impl ModelBuilder {
 pub mod expr {
     use legend_pure_metamodel::ids::ElementId;
     use legend_pure_metamodel::types::{
-        DateValue, ExprKind, FunctionCallData, Multiplicity, Parameter, TypeExpr, ValueSpec,
+        DateValue, ExprKind, FunctionCallData, Multiplicity, Parameter, ResolvedType, TypeExpr,
+        ValueSpec,
     };
     use smol_str::SmolStr;
 
@@ -384,6 +385,21 @@ pub mod expr {
             source_info: source(),
             type_info: None,
         }
+    }
+
+    /// `spec` carrying the static type and multiplicity a compiler
+    /// records on the expression.
+    #[must_use]
+    pub fn typed(
+        mut spec: ValueSpec,
+        type_expr: TypeExpr,
+        multiplicity: Multiplicity,
+    ) -> ValueSpec {
+        spec.type_info = Some(Box::new(ResolvedType {
+            type_expr,
+            multiplicity,
+        }));
+        spec
     }
 
     /// `IntegerLiteral`.
