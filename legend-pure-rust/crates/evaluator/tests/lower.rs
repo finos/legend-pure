@@ -772,6 +772,45 @@ fn person_class() -> Value {
 }
 
 #[test]
+fn a_property_call_records_the_element_that_declares_the_property() {
+    on_both_paths(|| {
+        let mut model = PureModel::bootstrapped();
+        let person = person_class();
+        let let_fn = m3::native_function(
+            LET,
+            "letFunction",
+            m3::function_type(Vec::new(), m3::type_parameter("T"), many()),
+        );
+        let owned = m3::property_of(person.clone(), "firstName", string_type(), one());
+        let unowned = m3::property("firstName", string_type(), one());
+        let body = vec![
+            m3::sfe(
+                let_fn,
+                "letFunction",
+                vec![str_lit("p"), new_person(&model, &person, "John")],
+            ),
+            m3::sfe(owned, "firstName", vec![m3::var("p")]),
+            m3::sfe(unowned, "firstName", vec![m3::var("p")]),
+        ];
+        let lambda = root(body);
+        let chunk = u16::try_from(model.chunks.len()).unwrap();
+        let mut lowering = Lowering::new(&model, chunk, 0);
+        let closure = lowering.lower_root_lambda(&lambda).unwrap();
+        lowering.into_extension().apply(&mut model).expect("apply");
+        let person_id = model
+            .resolve_fqn_str("my::model::Person")
+            .expect("class lowered");
+        let owner = |i: usize| match &*closure.body[i].kind {
+            ExprKind::PropertyCall(call) => call.owner,
+            other => panic!("a property call, got {other:?}"),
+        };
+        assert_eq!(owner(1), Some(person_id));
+        assert_eq!(owner(2), None, "no owner on the node, none recorded");
+        assert_eq!(run(&model, closure), Value::String("John".into()));
+    });
+}
+
+#[test]
 fn a_class_construction_lowers_the_class_and_builds_through_the_platform_new() {
     on_both_paths(|| {
         let mut model = PureModel::bootstrapped();

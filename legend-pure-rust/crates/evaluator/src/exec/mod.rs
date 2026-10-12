@@ -312,6 +312,8 @@ pub enum Op {
         receiver: NodeIdx,
         /// The property's name.
         name: SmolStr,
+        /// The element declaring the property, as the call recorded it.
+        owner: Option<ElementId>,
     },
     /// A lambda expression: a closure over the variables it reads.
     Lambda(Box<LambdaOp>),

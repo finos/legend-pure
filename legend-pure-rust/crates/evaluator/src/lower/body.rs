@@ -267,6 +267,7 @@ impl Lowering<'_> {
                 function: Some(function),
                 function_name,
                 arguments,
+                owner: None,
             }),
             node.span(),
             type_info,
@@ -275,7 +276,10 @@ impl Lowering<'_> {
 
     /// `$x.prop` / `$x.qp(args)`: the receiver is the first argument. The
     /// owning class is reached through the receiver's type, so its
-    /// (qualified) properties are in the model when the call runs.
+    /// (qualified) properties are in the model when the call runs. A
+    /// property call records the property's owner when that element is
+    /// already known (in the model or lowered here); nothing is lowered
+    /// for it.
     fn lower_property_call(
         &mut self,
         node: &Node,
@@ -290,10 +294,18 @@ impl Lowering<'_> {
             arguments.push(self.lower_expr(&arg)?);
         }
         let type_info = self.resolved_type(node)?;
+        let owner = if qualified {
+            None
+        } else {
+            property
+                .one("owner")
+                .and_then(|owner| self.known_element(&owner))
+        };
         let data = FunctionCallData {
             function: None,
             function_name,
             arguments,
+            owner,
         };
         let kind = if qualified {
             ExprKind::QualifiedPropertyCall(data)

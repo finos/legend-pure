@@ -1095,6 +1095,7 @@ fn hydrate_element_to_heap(
                     function: None,
                     function_name: prop.clone(),
                     arguments: vec![target_spec],
+                    owner: None,
                 },
             )),
             source_info: SourceInfo::new("<copy-hydrate>", 0, 0, 0, 0),

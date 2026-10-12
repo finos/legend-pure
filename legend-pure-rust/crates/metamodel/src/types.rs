@@ -318,6 +318,11 @@ pub struct FunctionCallData {
     /// receiver and `arguments[1..]` are the QP arguments. For
     /// [`ExprKind::FunctionCall`], all entries are positional args.
     pub arguments: Vec<ValueSpec>,
+    /// For [`ExprKind::PropertyCall`]: the element that declares the
+    /// property (a class, or an association for a property it adds), as
+    /// the call's producer resolved it; `None` when it did not, and for
+    /// every other call.
+    pub owner: Option<ElementId>,
 }
 
 /// Expression variant — the type-specific payload of a [`ValueSpec`].

@@ -157,7 +157,7 @@ impl<H: EvalHooks> Evaluator<'_, H> {
                     .map(Evaluated::into_value)
                     .map_err(|e| e.with_frame(frame(body, idx, call)))
             }
-            Op::Property { receiver, name } => {
+            Op::Property { receiver, name, .. } => {
                 let target = self.run_node(body, base, *receiver)?;
                 self.property_of(target, name)
             }

@@ -19,18 +19,20 @@
 
 use std::rc::Rc;
 
-use legend_pure_evaluator::builders::{ModelBuilder, expr, function, named, param};
+use legend_pure_evaluator::builders::{
+    ModelBuilder, class, expr, function, named, param, property,
+};
 use legend_pure_evaluator::error::PureException;
 use legend_pure_evaluator::eval::Evaluator;
 use legend_pure_evaluator::exec::{Body, BodyKind, Op, SlotKind};
 use legend_pure_evaluator::hooks::EvalHooks;
 use legend_pure_evaluator::native::{EvalContextTrait, Evaluated, NativeFunction, NativeRegistry};
 use legend_pure_evaluator::value::{FunctionValue, Value};
-use legend_pure_metamodel::bootstrap::{ANY_ID, INTEGER_ID};
+use legend_pure_metamodel::bootstrap::{ANY_ID, INTEGER_ID, STRING_ID};
 use legend_pure_metamodel::ids::ElementId;
 use legend_pure_metamodel::model::{Element, PureModel};
 use legend_pure_metamodel::source_info::SourceInfo;
-use legend_pure_metamodel::types::{Multiplicity, Parameter, ValueSpec};
+use legend_pure_metamodel::types::{ExprKind, Multiplicity, Parameter, ValueSpec};
 
 const PLUS: &str = "plus_Number_MANY__Number_1_";
 const MINUS: &str = "minus_Number_MANY__Number_1_";
@@ -488,4 +490,61 @@ fn hooks_that_observe_expressions_keep_the_tree_walker() {
     let mut ev = Evaluator::with_hooks(&model, &registry, Observing);
     ev.set_exec(true);
     assert!(!ev.exec_enabled());
+}
+
+#[test]
+fn a_property_read_carries_the_owner_the_call_recorded() {
+    const NEW: &str = "new_Class_1__String_1__Any_MANY__T_1_";
+    let mut builder = ModelBuilder::new();
+    let person = builder.class(
+        "my::Person",
+        class(
+            Vec::new(),
+            vec![property("name", named(STRING_ID), Multiplicity::PureOne)],
+        ),
+    );
+    let mut read = expr::prop(expr::var("p"), "name");
+    if let ExprKind::PropertyCall(call) = &mut *read.kind {
+        call.owner = Some(person);
+    }
+    let name_of = builder.function(
+        "test::nameOf",
+        function(
+            "nameOf",
+            vec![param("p", named(ANY_ID), Multiplicity::PureOne)],
+            named(STRING_ID),
+            Multiplicity::PureOne,
+            vec![read],
+        ),
+    );
+    let model = builder.finish();
+    let mut registry = registry();
+    registry.register(NEW, legend_pure_evaluator::native::lang::New);
+    let (outcome, ev) = same_on_both(&model, &registry, |ev| {
+        let john = ev.eval(&expr::call(
+            NEW,
+            vec![
+                expr::type_ref(named(person)),
+                expr::string("p"),
+                expr::collection(Vec::new()),
+                expr::collection(Vec::new()),
+                expr::string("name"),
+                expr::string("John"),
+                expr::boolean(false),
+            ],
+        ))?;
+        ev.call_user_function_by_id_with_args(name_of, &[john])
+    });
+    assert_eq!(outcome, Ok(Value::String("John".into())));
+    let body = built(&ev, name_of);
+    assert_eq!(body.fallbacks(), 0);
+    let owners: Vec<Option<ElementId>> = body
+        .nodes()
+        .iter()
+        .filter_map(|n| match &n.op {
+            Op::Property { owner, .. } => Some(*owner),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(owners, [Some(person)]);
 }

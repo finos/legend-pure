@@ -227,6 +227,7 @@ impl<'b, 'm, H: EvalHooks> Builder<'b, 'm, H> {
                 Op::Property {
                     receiver,
                     name: data.function_name.clone(),
+                    owner: data.owner,
                 }
             }
             ExprKind::EnumValue {

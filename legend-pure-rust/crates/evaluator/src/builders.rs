@@ -445,6 +445,7 @@ pub mod expr {
             function: None,
             function_name: SmolStr::new(name),
             arguments,
+            owner: None,
         }))
     }
 
@@ -456,6 +457,7 @@ pub mod expr {
             function: Some(target),
             function_name: SmolStr::new(name),
             arguments,
+            owner: None,
         }))
     }
 
@@ -466,6 +468,7 @@ pub mod expr {
             function: None,
             function_name: SmolStr::new(name),
             arguments: vec![receiver],
+            owner: None,
         }))
     }
 
@@ -480,6 +483,7 @@ pub mod expr {
             function: None,
             function_name: SmolStr::new(name),
             arguments: all,
+            owner: None,
         }))
     }
 

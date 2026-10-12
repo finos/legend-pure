@@ -122,6 +122,7 @@ fn eval_native_function_call() {
         let expr = make_expr(ExprKind::FunctionCall(FunctionCallData {
             function: None,
             function_name: "plus_Number_MANY__Number_1_".into(),
+            owner: None,
             arguments: vec![make_expr(ExprKind::Collection {
                 elements: vec![
                     make_expr(ExprKind::IntegerLiteral(2)),
@@ -142,12 +143,14 @@ fn eval_nested_function_calls() {
         let expr = make_expr(ExprKind::FunctionCall(FunctionCallData {
             function: None,
             function_name: "plus_Number_MANY__Number_1_".into(),
+            owner: None,
             arguments: vec![make_expr(ExprKind::Collection {
                 elements: vec![
                     make_expr(ExprKind::IntegerLiteral(2)),
                     make_expr(ExprKind::FunctionCall(FunctionCallData {
                         function: None,
                         function_name: "times_Number_MANY__Number_1_".into(),
+                        owner: None,
                         arguments: vec![make_expr(ExprKind::Collection {
                             elements: vec![
                                 make_expr(ExprKind::IntegerLiteral(3)),
@@ -235,6 +238,7 @@ fn eval_function_not_found() {
         let expr = make_expr(ExprKind::FunctionCall(FunctionCallData {
             function: None,
             function_name: "nonexistent".into(),
+            owner: None,
             arguments: vec![],
         }));
         assert!(eval.eval(&expr).is_err());

@@ -343,6 +343,24 @@ pub mod m3 {
             .build()
     }
 
+    /// A `Property` node declared by `owner` (a class node), as the Java
+    /// graph links it.
+    #[must_use]
+    pub fn property_of(
+        owner: Value,
+        name: &str,
+        generic_type: Value,
+        multiplicity: Value,
+    ) -> Value {
+        TestNode::new(m3_paths::PROPERTY)
+            .name(name)
+            .one("name", Value::String(name.into()))
+            .one("genericType", generic_type)
+            .one("multiplicity", multiplicity)
+            .one("owner", owner)
+            .build()
+    }
+
     /// A `QualifiedProperty` node: its function type's first parameter is
     /// `this`, as the Java compiler writes it.
     #[must_use]

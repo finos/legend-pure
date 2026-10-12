@@ -370,6 +370,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
                 function,
                 function_name,
                 arguments,
+                ..
             }) => self.eval_function_call(
                 *function,
                 function_name,

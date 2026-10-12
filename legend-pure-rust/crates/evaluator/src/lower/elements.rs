@@ -81,6 +81,23 @@ impl Lowering<'_> {
         Err(Self::unsupported(&node, &format!("`{path}` as an element")))
     }
 
+    /// The element a value stands for when it is one already: an
+    /// element, or a node whose user path the model or this lowering's
+    /// pending elements resolve. Lowers nothing.
+    pub(crate) fn known_element(&self, value: &Value) -> Option<ElementId> {
+        let node = match value {
+            Value::Element(id) => return Some(*id),
+            Value::Object(h) => Node::new(h.clone()),
+            _ => return None,
+        };
+        let path = node.user_path()?;
+        let segments: Vec<SmolStr> = path.split("::").map(SmolStr::new).collect();
+        self.model
+            .resolve_by_fqn(&segments)
+            .or_else(|| self.ext.lookup(&path))
+            .or_else(|| self.ext.lookup_node(node.key()))
+    }
+
     /// A `NativeFunction` or `ConcreteFunctionDefinition` node into a
     /// [`Function`] element whose node name is the Java mangled name,
     /// verbatim: dispatch reads it as the registry key. A Pure body is
