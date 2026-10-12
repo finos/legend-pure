@@ -91,6 +91,13 @@ pub trait Host: 'static {
 /// **Rule:** never hold `nodes` or `handles` borrowed across a host
 /// call. A host only reads its own graph during one, but a re-entrant
 /// call into the evaluator would deadlock the borrow.
+///
+/// The end of an execution costs what the execution did, not what stays
+/// alive: it visits the nodes whose property cache the execution filled
+/// (`touched`) and the nodes that were dropped since the last end
+/// (`dropped`), never the whole `nodes` table. Values a host keeps
+/// across calls (a Rust result it holds by handle) keep their host nodes
+/// alive, and every later call would otherwise pay for each of them.
 pub struct HostShared {
     host: Box<dyn Host>,
     model: Rc<RefCell<PureModel>>,
@@ -107,6 +114,12 @@ pub struct HostShared {
     /// Ids of host nodes that died since the host was last told, so its
     /// id tables shrink with Rust's.
     released: RefCell<Vec<i64>>,
+    /// Ids of host nodes whose property cache was filled since the last
+    /// end of execution, each once.
+    touched: RefCell<Vec<i64>>,
+    /// Ids of host nodes dropped since their entries in `nodes` were last
+    /// reaped (see [`HostNode`]'s `Drop`).
+    dropped: RefCell<Vec<i64>>,
 }
 
 impl HostShared {
@@ -121,6 +134,8 @@ impl HostShared {
             last_error: RefCell::new(None),
             reads: Cell::new(0),
             released: RefCell::new(Vec::new()),
+            touched: RefCell::new(Vec::new()),
+            dropped: RefCell::new(Vec::new()),
         }
     }
 
@@ -193,16 +208,20 @@ impl HostShared {
         self.nodes.borrow().len() + self.handles.borrow().live_count()
     }
 
-    /// End of one execution: drop every host node's property cache (see
-    /// [`HostNode::clear_cache`]), forget the nodes nothing holds any
-    /// more, and tell the host which ids died.
+    /// End of one execution: drop the property cache of every host node
+    /// that filled one (see [`HostNode::clear_cache`]), forget the nodes
+    /// nothing holds any more, and tell the host which ids died. Only
+    /// nodes that filled a cache hold one, so every live node's cache is
+    /// empty afterwards.
     pub fn end_execution(&self) {
-        let nodes: Vec<ObjectHandle> = self
-            .nodes
-            .borrow()
-            .values()
-            .filter_map(Weak::upgrade)
-            .collect();
+        let touched = std::mem::take(&mut *self.touched.borrow_mut());
+        let nodes: Vec<ObjectHandle> = {
+            let nodes = self.nodes.borrow();
+            touched
+                .iter()
+                .filter_map(|id| nodes.get(id).and_then(Weak::upgrade))
+                .collect()
+        };
         for handle in &nodes {
             if let HeapEntry::Typed(obj) = &*handle.borrow()
                 && let Some(node) = obj.as_any().downcast_ref::<HostNode>()
@@ -218,17 +237,26 @@ impl HostShared {
         }
     }
 
-    /// Drop the identity entries of nodes nothing holds any more and keep
-    /// their ids for the host to forget.
+    /// Drop the identity entries of the nodes dropped since the last call
+    /// and keep their ids for the host to forget. An id the host
+    /// described again in between (a new node under the same id, since
+    /// the host keeps an id until told to forget it) stays.
     fn forget_dead_nodes(&self) {
+        let dropped = std::mem::take(&mut *self.dropped.borrow_mut());
+        let mut nodes = self.nodes.borrow_mut();
         let mut released = self.released.borrow_mut();
-        self.nodes.borrow_mut().retain(|id, weak| {
-            let alive = weak.strong_count() > 0;
-            if !alive {
-                released.push(*id);
+        for id in dropped {
+            if nodes.get(&id).is_some_and(|weak| weak.strong_count() == 0) {
+                nodes.remove(&id);
+                released.push(id);
             }
-            alive
-        });
+        }
+    }
+
+    /// A node's cache is about to hold values: its end of execution must
+    /// clear it.
+    fn touch(&self, id: i64) {
+        self.touched.borrow_mut().push(id);
     }
 
     /// The one heap entry for a host node id, allocating it on first
@@ -498,9 +526,11 @@ impl TypedObject for HostNode {
         }
         match self.fetch(name) {
             Ok(values) => {
-                self.cache
-                    .borrow_mut()
-                    .insert(SmolStr::new(name), values.clone());
+                let mut cache = self.cache.borrow_mut();
+                if cache.is_empty() {
+                    self.shared.touch(self.id);
+                }
+                cache.insert(SmolStr::new(name), values.clone());
                 values
             }
             Err(failure) => {
@@ -582,6 +612,14 @@ impl TypedObject for HostNode {
 
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
         self
+    }
+}
+
+impl Drop for HostNode {
+    /// The id goes to the shared state, whose next end of execution
+    /// forgets it (unless the host described it again meanwhile).
+    fn drop(&mut self) {
+        self.shared.dropped.borrow_mut().push(self.id);
     }
 }
 

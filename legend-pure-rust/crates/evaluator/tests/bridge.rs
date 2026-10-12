@@ -301,3 +301,67 @@ fn a_session_hands_out_one_view_at_a_time() {
     drop(first);
     assert!(session.enter().is_ok());
 }
+
+#[test]
+fn a_call_ends_over_the_nodes_it_read_and_the_nodes_that_died() {
+    let host = graph();
+    let forgotten = Rc::clone(&host.forgotten);
+    let mut context = context(host);
+    let function = description_to_value(context.shared(), lambda(1, 100)).unwrap();
+
+    // Host node 6, read once, then held only by a Rust object the host keeps.
+    let held = description_to_value(context.shared(), node(6, m3_paths::MULTIPLICITY)).unwrap();
+    let Value::Object(node_six) = &held else {
+        panic!("a host node: {held:?}")
+    };
+    assert_eq!(
+        context
+            .property_values(node_six, "lowerBound")
+            .unwrap()
+            .len(),
+        1
+    );
+    let handle = context
+        .new_object("my::Holder", &[("node".to_string(), vec![held.clone()])])
+        .unwrap();
+    drop(held);
+    context.start(&function, &[]).unwrap();
+    let holder = context.resolve_handle(handle).expect("live");
+    let Some(Value::Object(node_six)) = context
+        .property_values(&holder, "node")
+        .unwrap()
+        .get(0)
+        .cloned()
+    else {
+        panic!("the holder keeps node 6")
+    };
+    let reads = context.shared().reads();
+    context.property_values(&node_six, "lowerBound").unwrap();
+    assert_eq!(
+        context.shared().reads(),
+        reads + 1,
+        "the call's end dropped the cache of a node read before it"
+    );
+    drop((holder, node_six));
+    assert!(!forgotten.borrow().contains(&6));
+    context.release(handle);
+    context.start(&function, &[]).unwrap();
+    assert!(
+        forgotten.borrow().contains(&6),
+        "a node dies with the Rust object that held it: {:?}",
+        forgotten.borrow()
+    );
+
+    // An id described again after its node died, before any call ended.
+    let first = description_to_value(context.shared(), node(40, m3_paths::MULTIPLICITY)).unwrap();
+    drop(first);
+    let second = description_to_value(context.shared(), node(40, m3_paths::MULTIPLICITY)).unwrap();
+    context.start(&function, &[]).unwrap();
+    assert!(
+        !forgotten.borrow().contains(&40),
+        "the id is held again, by the second node"
+    );
+    drop(second);
+    context.start(&function, &[]).unwrap();
+    assert!(forgotten.borrow().contains(&40));
+}
