@@ -873,8 +873,9 @@ the `Rust_JNI` adapter, which a 25 floor does not change.
 Java 25 for the module's sources, assessed the same day, ranked: worth
 doing and not a 25 gain, a `Cleaner` for `RustCoreInstance` proxies and
 a weak or cleaned map of evaluators per execution support
-(`CompiledEvalRust.evaluators` grows for the JVM's life; the cleanup
-action must take the evaluator's monitor); worth doing with FFM, `Arena`
+(`CompiledEvalRust.evaluators` grew for the JVM's life; done after the
+review of 2026-10-11 as `RustEvaluators` in `-api`, weak keys per
+execution support, a reclaimed one's evaluator closed on the next call); worth doing with FFM, `Arena`
 lifetimes; worth checking, compact object headers
 (`-XX:+UseCompactObjectHeaders`, a product flag in 25, off by default) for
 the many small description objects; cosmetic once checkstyle allows,
@@ -1184,7 +1185,13 @@ shared tooling parametrised by adapter (`PctSuites`, `PctManifestRebase`,
 `legend-pure-rust-jni` (the module renamed):
 `PureRustEvaluator`, `RustNodeBridge extends NodeBridge` with the
 JNI-called surface, `evalRust` on both engines, the `Rust_JNI` suites,
-manifests and reports. Gate met: the four `Rust_JNI` numbers unchanged
+manifests and reports. (After the review of 2026-10-11 the shared half of
+both transports moved into `-api`: `RustEvaluator`, the abstract evaluator
+a transport completes with nine boundary calls; `RustEvaluators`, the one
+evaluator-lifecycle holder of all four natives; the shared native bodies;
+`NodeBridge` with the proxy table and the primitive factories; and the
+shared boundary cases in the test-jar, so each transport keeps only its
+boundary.) Gate met: the four `Rust_JNI` numbers unchanged
 (339 / 346, 133 / 137, compiled 340 / 346, 133 / 137), the manifests
 byte for byte, the benchmark median 93 µs against 94 before, no `jni`
 under `crates/evaluator`, both modules checkstyle and dependency-analyze
@@ -1274,7 +1281,8 @@ asserted once at class init (`pure_string` 16, `pure_description` 160,
 `pure_failure` 120, `pure_timings` 32, `pure_host_table` 40), the
 seventeen downcall handles resolved once, the four callback descriptors,
 `pure_abi_version` checked against `PURE_ABI_VERSION` at load.
-`PureRustFfmEvaluator` is the `FunctionExecution` and the `RustHeap`:
+`PureRustFfmEvaluator` (since the review, a `RustEvaluator` that `-api`
+makes the `FunctionExecution` and the `RustHeap`):
 one shared arena per evaluator for the upcall stubs and the host table,
 closed in `close()` after `pure_context_free`; a confined arena per call
 for descriptions, slots, strings and out-pointers; a confined arena per
@@ -1290,7 +1298,8 @@ and turns `pure_leaf`s into host objects through the engine's factories.
 `evalRustFfm` on both engines (`ffm.interpreted.EvalRustFfm`,
 `ffm.compiled.CompiledEvalRustFfm`), the `Rust_FFM` suites, manifests
 (equal to the `Rust_JNI` ones byte for byte but for the adapter name;
-the rebase reproduces them) and reports, 25 boundary tests, and
+the rebase reproduces them) and reports, 25 boundary tests (27 after the
+review, 26 of them shared with JNI in `-api`'s test-jar), and
 `BenchmarkPctExpressions` with both transports (since the review of 2026-10-11 in the test-only `legend-pure-rust-bench`, with `BenchmarkTransportExpressions`, so `-ffm` depends on `-api` only). Numbers: `Rust_FFM
 essential: 339 / 346`, `grammar: 133 / 137`, compiled `340 / 346` and
 `133 / 137`, the `Rust_JNI` four unchanged; JDK 17 and 11 reactors
@@ -2086,10 +2095,11 @@ legend-engine, with no Rust compiler.
 - Lowering of engine-built lambdas (`LambdaFunction_Impl` trees) through the
   same body lowering, cached per Java object.
 - Read-only in the first increment: no writes back into Java objects.
-- Before this step, an evaluator's lifetime: `CompiledEvalRust` keeps one
-  per `CompiledExecutionSupport` for the JVM's life and the interpreted
-  `EvalRust` closes its own only when the runtime changes; an engine that
-  compiles many models needs an explicit close or weak keys.
+- An evaluator's lifetime (done 2026-10-11): `RustEvaluators` in `-api`
+  holds one per interpreted runtime and one per compiled execution support
+  under weak keys, closes the evaluator of a reclaimed support on the next
+  call, and closes the held one when the runtime changes; an engine that
+  compiles many models no longer accumulates native contexts.
 
 **Integrates with.** `PureModel` in legend-engine: pass its objects straight
 into `evaluate`. Whole-model queries (`Class.all()`) use a bulk call into the

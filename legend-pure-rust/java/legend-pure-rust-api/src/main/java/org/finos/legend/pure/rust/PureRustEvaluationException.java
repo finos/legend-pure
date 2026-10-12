@@ -81,8 +81,10 @@ public class PureRustEvaluationException extends PureRustException
      * <p>All string params except {@code message} and {@code kind} may
      * be {@code null}; {@code callStack} may be {@code null} or empty.
      * A {@code null} {@code sourceId} is no span, and the four positions are
-     * then ignored. Unknown {@code kind} / {@code constraintKindStr} strings
-     * fall back to {@link Kind#EXECUTION_ERROR} / {@code null} respectively.
+     * then ignored. {@code kind} must name a {@link Kind} and a non-null
+     * {@code constraintKindStr} a {@link ConstraintKind}; anything else is a
+     * protocol error between the library and this class, raised as an
+     * {@link IllegalArgumentException}.
      */
     public PureRustEvaluationException(String message,
                                        String info,
@@ -186,31 +188,13 @@ public class PureRustEvaluationException extends PureRustException
     {
         if (s == null)
         {
-            return Kind.EXECUTION_ERROR;
+            throw new IllegalArgumentException("a failure without a kind");
         }
-        try
-        {
-            return Kind.valueOf(s);
-        }
-        catch (IllegalArgumentException ignored)
-        {
-            return Kind.EXECUTION_ERROR;
-        }
+        return Kind.valueOf(s);
     }
 
     private static ConstraintKind parseConstraintKind(String s)
     {
-        if (s == null)
-        {
-            return null;
-        }
-        try
-        {
-            return ConstraintKind.valueOf(s);
-        }
-        catch (IllegalArgumentException ignored)
-        {
-            return null;
-        }
+        return (s == null) ? null : ConstraintKind.valueOf(s);
     }
 }
