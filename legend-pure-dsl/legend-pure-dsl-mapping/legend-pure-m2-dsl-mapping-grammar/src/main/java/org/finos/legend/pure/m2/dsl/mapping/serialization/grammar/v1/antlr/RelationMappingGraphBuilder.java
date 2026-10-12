@@ -33,6 +33,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
+import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisitor<String>
@@ -65,6 +66,7 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
         try
         {
             String relationFunctionM4 = visitRelationSource(srcCtx, id, classPath);
+            String primaryKey = ctx.primaryKey() == null ? "" : ListIterate.collect(ctx.primaryKey().columnName(), this::visitPrimaryKeyColumn).makeString(",");
             String propertyMappings = ctx.singlePropertyMapping() == null ? "" : ListIterate.collect(ctx.singlePropertyMapping(), c -> visitPropertyMapping(c, id)).makeString(",");
 
             return "^meta::pure::mapping::relation::RelationFunctionInstanceSetImplementation" + setSourceInfo + "(" +
@@ -74,6 +76,7 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
                     "class = ^meta::pure::metamodel::import::ImportStub " + classSourceInfo + " (importGroup=system::imports::" + importId + ", idOrPath='" + classPath + "')," +
                     "parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + importId + ", idOrPath='" + mappingPath + "')," +
                     "relationFunction = " + relationFunctionM4 + "," +
+                    "primaryKey = [" + primaryKey + "]," +
                     "propertyMappings=[" + propertyMappings + "]" +
                     ")";
         }
@@ -103,6 +106,15 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
         // mappings exactly as if it had come from an explicit Pure function.
         String srcLambdaText = "{| " + extractText(ctx.combinedExpression()) + "}";
         return parseLambdaTextToM4(srcLambdaText, lambdaContextId(id, classPath, "src"));
+    }
+
+    // Name-only placeholder; RelationFunctionInstanceSetImplementationProcessor swaps in the typed column once the
+    // relation function's row type is known.
+    private String visitPrimaryKeyColumn(RelationMappingParser.ColumnNameContext ctx)
+    {
+        String text = ctx.getText();
+        String name = ctx.STRING() != null ? StringEscape.unescape(text.substring(1, text.length() - 1)) : text;
+        return "^meta::pure::metamodel::relation::Column " + this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()).toM4String() + " (name = '" + StringEscape.escape(name) + "')";
     }
 
     private String visitPropertyMapping(RelationMappingParser.SinglePropertyMappingContext ctx, String id)

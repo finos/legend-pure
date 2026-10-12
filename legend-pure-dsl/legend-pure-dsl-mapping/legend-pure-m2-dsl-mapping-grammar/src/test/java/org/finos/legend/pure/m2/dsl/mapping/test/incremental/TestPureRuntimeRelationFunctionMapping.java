@@ -18,7 +18,11 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m2.dsl.mapping.test.AbstractPureMappingTestWithCoreCompiled;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionInstanceSetImplementation;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.exception.PureUnresolvedIdentifierException;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
@@ -1094,4 +1098,161 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                 "3.pure", mappingSource),
                 "###Pure\n function test():Boolean[1]{assert(my::testMapping.classMappings->filter(c | $c.id == 'person')->size() == 1, |'');}");
     }
+
+    private static final String PRIMARY_KEY_MAPPING_SOURCE = "###Mapping\n" +
+            "Mapping my::testMapping\n" +
+            "(\n" +
+            "  *my::Person[person]: Relation\n" +
+            "  {\n" +
+            "    ~func my::personFunction__Relation_1_\n" +
+            "    ~primaryKey: [FIRSTNAME, AGE]\n" +
+            "    firstName: FIRSTNAME,\n" +
+            "    age: AGE\n" +
+            "  }\n" +
+            "  *my::Firm[firm]: Relation\n" +
+            "  {\n" +
+            "    ~func my::firmFunction():Relation<Any>[1]\n" +
+            "    ~primaryKey: ID\n" +
+            "    id: ID,\n" +
+            "    legalName: LEGALNAME\n" +
+            "  }\n" +
+            ")\n";
+
+    private static final String PRIMARY_KEY_TEST_FUNCTION_SOURCE = "###Pure\n" +
+            "function test():Boolean[1]\n" +
+            "{\n" +
+            "  let sets = my::testMapping.classMappings->cast(@meta::pure::mapping::relation::RelationFunctionInstanceSetImplementation);\n" +
+            "  assert(['FIRSTNAME', 'AGE'] == $sets->filter(s | $s.id == 'person').primaryKey.name, |'');\n" +
+            "  assert(['ID'] == $sets->filter(s | $s.id == 'firm').primaryKey.name, |'');\n" +
+            "}\n";
+
+    private void assertPrimaryKeyNames(String setId, String... names)
+    {
+        RelationFunctionInstanceSetImplementation set = (RelationFunctionInstanceSetImplementation) ((Mapping) runtime.getCoreInstance("my::testMapping"))._classMappings().detect(s -> setId.equals(s._id()));
+        Assert.assertEquals(Lists.fixedSize.of(names), set._primaryKey().collect(Column::_name).toList());
+    }
+
+    @Test
+    public void testDeleteAndReloadEachSourceWithPrimaryKey()
+    {
+        ImmutableMap<String, String> sources = Maps.immutable.of(
+                "1.pure", RELATION_MAPPING_CLASS_SOURCE,
+                "2.pure", RELATION_MAPPING_FUNCTION_SOURCE,
+                "3.pure", PRIMARY_KEY_MAPPING_SOURCE);
+        this.testDeleteAndReloadEachSource(sources, PRIMARY_KEY_TEST_FUNCTION_SOURCE);
+
+        new RuntimeTestScriptBuilder().createInMemorySources(sources).compile().run(runtime, functionExecution);
+        assertPrimaryKeyNames("person", "FIRSTNAME", "AGE");
+        assertPrimaryKeyNames("firm", "ID");
+    }
+
+    @Test
+    public void testDeleteAndReloadEachSourceWithQuotedPrimaryKeyColumn()
+    {
+        String functionSource = "###Pure\n" +
+                "import meta::pure::metamodel::relation::*;\n" +
+                "function my::firmFunction(): Relation<Any>[1]\n" +
+                "{\n" +
+                "  relationWithQuotedColumn();\n" +
+                "}\n" +
+                "native function relationWithQuotedColumn():Relation<('LEGAL NAME':String[1], ID:Integer[1])>[1];\n";
+
+        String mappingSource = "###Mapping\n" +
+                "Mapping my::testMapping\n" +
+                "(\n" +
+                "  *my::Firm[firm]: Relation\n" +
+                "  {\n" +
+                "    ~func my::firmFunction__Relation_1_\n" +
+                "    ~primaryKey: ['LEGAL NAME']\n" +
+                "    legalName: 'LEGAL NAME'\n" +
+                "  }\n" +
+                ")\n";
+
+        ImmutableMap<String, String> sources = Maps.immutable.of(
+                "1.pure", RELATION_MAPPING_CLASS_SOURCE,
+                "2.pure", functionSource,
+                "3.pure", mappingSource);
+        this.testDeleteAndReloadEachSource(sources,
+                "###Pure\n function test():Boolean[1]{assert(['LEGAL NAME'] == my::testMapping.classMappings->cast(@meta::pure::mapping::relation::RelationFunctionInstanceSetImplementation).primaryKey.name, |'');}");
+
+        new RuntimeTestScriptBuilder().createInMemorySources(sources).compile().run(runtime, functionExecution);
+        assertPrimaryKeyNames("firm", "LEGAL NAME");
+    }
+
+    @Test
+    public void testChangingPrimaryKeyAndChangingItBackIsStable()
+    {
+        String changedMappingSource = PRIMARY_KEY_MAPPING_SOURCE
+                .replace("~primaryKey: [FIRSTNAME, AGE]", "~primaryKey: FIRMID")
+                .replace("~primaryKey: ID\n", "");
+
+        RuntimeVerifier.verifyOperationIsStable(
+                new RuntimeTestScriptBuilder().createInMemorySources(Maps.immutable.of(
+                        "1.pure", RELATION_MAPPING_CLASS_SOURCE,
+                        "2.pure", RELATION_MAPPING_FUNCTION_SOURCE,
+                        "3.pure", PRIMARY_KEY_MAPPING_SOURCE))
+                        .createInMemorySource("functionSourceId.pure", PRIMARY_KEY_TEST_FUNCTION_SOURCE)
+                        .compile(),
+                new RuntimeTestScriptBuilder()
+                        .updateSource("3.pure", changedMappingSource)
+                        .compile()
+                        .updateSource("3.pure", PRIMARY_KEY_MAPPING_SOURCE)
+                        .compile(),
+                runtime, functionExecution, this.getAdditionalVerifiers());
+
+        assertPrimaryKeyNames("person", "FIRSTNAME", "AGE");
+        assertPrimaryKeyNames("firm", "ID");
+    }
+
+    @Test
+    public void testReplacingPrimaryKeyWithUnknownColumnAndRestoringIsStable()
+    {
+        new RuntimeTestScriptBuilder().createInMemorySources(Maps.immutable.of(
+                "1.pure", RELATION_MAPPING_CLASS_SOURCE,
+                "2.pure", RELATION_MAPPING_FUNCTION_SOURCE,
+                "3.pure", PRIMARY_KEY_MAPPING_SOURCE))
+                .compile().run(runtime, functionExecution);
+
+        RuntimeVerifier.replaceWithCompileErrorCompileAndReloadMultipleTimesIsStable(runtime,
+                Lists.fixedSize.of(Tuples.pair("3.pure", PRIMARY_KEY_MAPPING_SOURCE.replace("~primaryKey: [FIRSTNAME, AGE]", "~primaryKey: [FIRSTNAME, FOO]"))),
+                "Primary key column 'FOO' declared in class mapping 'person' (mapping 'my::testMapping') is not part of the columns returned by the relation function."
+                        + " Available columns: [FIRSTNAME, AGE, FIRMID, CITY]."
+                        + " Use `~primaryKey: [col1, col2, ...]` referencing only columns from the relation function's output.",
+                "3.pure", 7, 30);
+
+        assertPrimaryKeyNames("person", "FIRSTNAME", "AGE");
+    }
+
+    @Test
+    public void testDeleteAndReloadMappingWithInlineSrcAndPrimaryKey()
+    {
+        String mappingSource = "###Mapping\n" +
+                "Mapping my::testMapping\n" +
+                "(\n" +
+                "  *my::Person[person]: Relation\n" +
+                "  {\n" +
+                "    ~src my::personFunctionTyped()\n" +
+                "    ~primaryKey: [FIRSTNAME, AGE]\n" +
+                "    firstName: FIRSTNAME,\n" +
+                "    age: AGE\n" +
+                "  }\n" +
+                ")\n";
+
+        new RuntimeTestScriptBuilder().createInMemorySources(Maps.immutable.of(
+                "1.pure", RELATION_MAPPING_CLASS_SOURCE,
+                "2.pure", RELATION_MAPPING_FUNCTION_SOURCE,
+                "3.pure", mappingSource))
+                .compile().run(runtime, functionExecution);
+
+        for (int i = 0; i < 3; i++)
+        {
+            runtime.delete("3.pure");
+            runtime.compile();
+            runtime.createInMemorySource("3.pure", mappingSource);
+            runtime.compile();
+        }
+
+        assertPrimaryKeyNames("person", "FIRSTNAME", "AGE");
+    }
 }
+

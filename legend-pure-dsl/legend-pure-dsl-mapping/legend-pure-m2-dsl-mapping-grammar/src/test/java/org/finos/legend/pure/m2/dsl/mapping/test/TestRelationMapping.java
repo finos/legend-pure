@@ -27,9 +27,11 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.Relation
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -804,4 +806,150 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
         RelationFunctionPropertyMapping pm = (RelationFunctionPropertyMapping) relSet._propertyMappings().getOnly();
         Assert.assertEquals("String", pm._valueFn()._expressionSequence().getOnly()._genericType()._rawType()._name());
     }
+
+    @Test
+    public void testRelationMappingWithCompositePrimaryKey()
+    {
+        String mappingSource = "###Mapping\n" +
+                "Mapping my::testMapping\n" +
+                "(\n" +
+                "  *my::Person[person]: Relation\n" +
+                "  {\n" +
+                "    ~func my::personFunction__Relation_1_\n" +
+                "    ~primaryKey: [FIRSTNAME, AGE]\n" +
+                "    firstName: FIRSTNAME,\n" +
+                "    age: AGE\n" +
+                "  }\n" +
+                ")\n";
+
+        compileTestSource("class.pure", RELATION_MAPPING_CLASS_SOURCE);
+        compileTestSource("func.pure", RELATION_MAPPING_FUNCTION_SOURCE);
+        compileTestSource("mapping.pure", mappingSource);
+        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(
+                runtime, functionExecution, Lists.fixedSize.of(
+                        Tuples.pair("class.pure", RELATION_MAPPING_CLASS_SOURCE),
+                        Tuples.pair("func.pure", RELATION_MAPPING_FUNCTION_SOURCE)
+                ), this.getAdditionalVerifiers()
+        );
+
+        RelationFunctionInstanceSetImplementation relSet = (RelationFunctionInstanceSetImplementation)
+                ((Mapping) runtime.getCoreInstance("my::testMapping"))._classMappings().getOnly();
+        Assert.assertEquals(Lists.fixedSize.of("FIRSTNAME", "AGE"), relSet._primaryKey().collect(Column::_name).toList());
+        Assert.assertEquals(Lists.fixedSize.of("String", "Integer"), relSet._primaryKey().collect(c -> _Column.getColumnType(c)._rawType()._name()).toList());
+    }
+
+    @Test
+    public void testRelationMappingWithSinglePrimaryKey()
+    {
+        String mappingSource = "###Mapping\n" +
+                "Mapping my::testMapping\n" +
+                "(\n" +
+                "  *my::Person[person]: Relation\n" +
+                "  {\n" +
+                "    ~func my::personFunction__Relation_1_\n" +
+                "    ~primaryKey: FIRMID\n" +
+                "    firstName: FIRSTNAME\n" +
+                "  }\n" +
+                ")\n";
+
+        compileTestSource("class.pure", RELATION_MAPPING_CLASS_SOURCE);
+        compileTestSource("func.pure", RELATION_MAPPING_FUNCTION_SOURCE);
+        compileTestSource("mapping.pure", mappingSource);
+
+        RelationFunctionInstanceSetImplementation relSet = (RelationFunctionInstanceSetImplementation)
+                ((Mapping) runtime.getCoreInstance("my::testMapping"))._classMappings().getOnly();
+        Assert.assertEquals(Lists.fixedSize.of("FIRMID"), relSet._primaryKey().collect(Column::_name).toList());
+    }
+
+    @Test
+    public void testRelationMappingWithoutPrimaryKeyLeavesItEmpty()
+    {
+        String mappingSource = "###Mapping\n" +
+                "Mapping my::testMapping\n" +
+                "(\n" +
+                "  *my::Person[person]: Relation\n" +
+                "  {\n" +
+                "    ~func my::personFunction__Relation_1_\n" +
+                "    firstName: FIRSTNAME\n" +
+                "  }\n" +
+                ")\n";
+
+        compileTestSource("class.pure", RELATION_MAPPING_CLASS_SOURCE);
+        compileTestSource("func.pure", RELATION_MAPPING_FUNCTION_SOURCE);
+        compileTestSource("mapping.pure", mappingSource);
+
+        RelationFunctionInstanceSetImplementation relSet = (RelationFunctionInstanceSetImplementation)
+                ((Mapping) runtime.getCoreInstance("my::testMapping"))._classMappings().getOnly();
+        Assert.assertTrue(relSet._primaryKey().isEmpty());
+    }
+
+    @Test
+    public void testRelationMappingWithQuotedPrimaryKeyColumn()
+    {
+        String mappingSource = "###Mapping\n" +
+                "Mapping my::testMapping\n" +
+                "(\n" +
+                "  *my::Person[person]: Relation\n" +
+                "  {\n" +
+                "    ~func my::personFunctionQuoted__Relation_1_\n" +
+                "    ~primaryKey: ['FIRST NAME', AGE]\n" +
+                "    firstName: 'FIRST NAME'\n" +
+                "  }\n" +
+                ")\n";
+
+        compileTestSource("class.pure", RELATION_MAPPING_CLASS_SOURCE);
+        compileTestSource("func.pure", RELATION_FUNCTION_QUOTED_COLUMN_SOURCE);
+        compileTestSource("mapping.pure", mappingSource);
+
+        RelationFunctionInstanceSetImplementation relSet = (RelationFunctionInstanceSetImplementation)
+                ((Mapping) runtime.getCoreInstance("my::testMapping"))._classMappings().getOnly();
+        Assert.assertEquals(Lists.fixedSize.of("FIRST NAME", "AGE"), relSet._primaryKey().collect(Column::_name).toList());
+    }
+
+    @Test
+    public void testRelationMappingInlineSrcWithPrimaryKey()
+    {
+        String mappingSource = "###Mapping\n" +
+                "Mapping my::testMapping\n" +
+                "(\n" +
+                "  *my::Person[person]: Relation\n" +
+                "  {\n" +
+                "    ~src my::personFunctionTyped()\n" +
+                "    ~primaryKey: [FIRSTNAME]\n" +
+                "    firstName: FIRSTNAME\n" +
+                "  }\n" +
+                ")\n";
+
+        compileTestSource("class.pure", RELATION_MAPPING_CLASS_SOURCE);
+        compileTestSource("func.pure", RELATION_MAPPING_FUNCTION_SOURCE);
+        compileTestSource("mapping.pure", mappingSource);
+
+        RelationFunctionInstanceSetImplementation relSet = (RelationFunctionInstanceSetImplementation)
+                ((Mapping) runtime.getCoreInstance("my::testMapping"))._classMappings().getOnly();
+        Assert.assertEquals(Lists.fixedSize.of("FIRSTNAME"), relSet._primaryKey().collect(Column::_name).toList());
+    }
+
+    @Test
+    public void testRelationMappingWithUnknownPrimaryKeyColumn()
+    {
+        String mappingSource = "###Mapping\n" +
+                "Mapping my::testMapping\n" +
+                "(\n" +
+                "  *my::Person[person]: Relation\n" +
+                "  {\n" +
+                "    ~func my::personFunction__Relation_1_\n" +
+                "    ~primaryKey: [FOO]\n" +
+                "    firstName: FIRSTNAME\n" +
+                "  }\n" +
+                ")\n";
+
+        compileTestSource("class.pure", RELATION_MAPPING_CLASS_SOURCE);
+        compileTestSource("func.pure", RELATION_MAPPING_FUNCTION_SOURCE);
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("mapping.pure", mappingSource));
+        Assert.assertEquals("Primary key column 'FOO' declared in class mapping 'person' (mapping 'my::testMapping') is not part of the columns returned by the relation function."
+                + " Available columns: [FIRSTNAME, AGE, FIRMID, CITY]."
+                + " Use `~primaryKey: [col1, col2, ...]` referencing only columns from the relation function's output.", e.getInfo());
+        Assert.assertEquals(7, e.getSourceInformation().getLine());
+    }
 }
+

@@ -22,6 +22,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.Embedded
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionPropertyMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.tools.GrammarInfoStub;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -57,7 +58,17 @@ public class RelationFunctionInstanceSetImplementationUnbind implements MatchRun
                 cleanLambda((LambdaFunction<?>) relationFunction, matcher, state, ps);
             }
         }
+        if (instance._primaryKey().notEmpty())
+        {
+            instance._primaryKey(instance._primaryKey().collect(c -> primaryKeyPlaceholder(c, ps)).toList());
+        }
         cleanPropertyMappings(instance._propertyMappings(), matcher, state);
+    }
+
+    private static Column<?, ?> primaryKeyPlaceholder(Column<?, ?> column, ProcessorSupport ps)
+    {
+        Column<?, ?> placeholder = (Column<?, ?>) ps.newAnonymousCoreInstance(column.getSourceInformation(), M3Paths.Column);
+        return placeholder._name(column._name());
     }
 
     private static void cleanPropertyMappings(Iterable<? extends PropertyMapping> propertyMappings, Matcher matcher, MatcherState state) throws PureCompilationException
