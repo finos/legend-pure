@@ -507,7 +507,7 @@ impl<'model, H: EvalHooks> Evaluator<'model, H> {
     /// evaluated arguments (`plus_Number_MANY__Number_1_`). No model
     /// lookup and no prefix fallback: a miss is `FunctionNotFound(key)`.
     /// This is the entry point for callers outside the expression tree,
-    /// such as the JNI boundary.
+    /// such as the bridge behind a host.
     ///
     /// # Errors
     /// Returns `PureException` if the key is not registered or the native fails.

@@ -23,6 +23,7 @@ use std::collections::HashMap;
 use std::ffi::c_void;
 
 use legend_pure_evaluator::bridge::description::{Description, kind};
+use legend_pure_evaluator::bridge::failure::BOUNDARY_SOURCE;
 use legend_pure_evaluator::m3_paths;
 use pure_rust_ffi::abi::{
     ABI_VERSION, PureContext, PureDescription, PureHostTable, PureProperty, PureReply, PureResult,
@@ -773,7 +774,10 @@ fn a_failure_the_host_reports_keeps_its_kind() {
         // SAFETY: as in `last_message`.
         let failure = unsafe { *pure_last_failure() };
         assert_eq!(text_of(failure.info), Some(expected_info));
-        assert_eq!(text_of(failure.source.source).as_deref(), Some("<ffi>"));
+        assert_eq!(
+            text_of(failure.source.source).as_deref(),
+            Some(BOUNDARY_SOURCE)
+        );
         assert_eq!(
             [
                 failure.source.start_line,

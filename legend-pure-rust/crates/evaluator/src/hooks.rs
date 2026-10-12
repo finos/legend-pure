@@ -18,7 +18,8 @@
 //! instrumentation via Rust's monomorphization:
 //!
 //! - [`NoOpHooks`] — production. Every method is `#[inline(always)]` and
-//!   compiles to nothing. Used by CLI, JNI, and batch execution.
+//!   compiles to nothing. Used by every caller that does not instrument
+//!   a run: the bridge behind any host, and batch execution.
 
 use legend_pure_metamodel::source_info::SourceInfo;
 

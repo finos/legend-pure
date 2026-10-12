@@ -21,8 +21,9 @@ use crate::error::{
     ConstraintKind, PureException, PureExceptionKind, PureRuntimeError, StackFrame,
 };
 
-/// The source id of a failure raised by the boundary itself.
-pub const BOUNDARY_SOURCE: &str = "<ffi>";
+/// The source id of a failure raised by the boundary itself, whichever
+/// transport carries it.
+pub const BOUNDARY_SOURCE: &str = "<boundary>";
 
 /// The anchor of a failure raised by the boundary itself.
 fn boundary_source() -> SourceInfo {

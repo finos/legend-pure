@@ -14,8 +14,9 @@
 
 //! Lowering: M3 nodes of another graph into the evaluator's own shapes.
 //!
-//! The nodes come from a Java graph through the JNI bridge today and from
-//! PELT files later; both reach this module as heap objects
+//! The nodes come from a host's graph through the bridge today, whichever
+//! transport carries it, and from PELT files later; both reach this
+//! module as heap objects
 //! ([`TypedObject`](crate::heap::TypedObject)). A lowering turns expression nodes
 //! (`SimpleFunctionExpression`, `InstanceValue`, `VariableExpression`,
 //! `LambdaFunction`, `KeyExpression`) into [`ValueSpec`]s and the elements
