@@ -41,11 +41,6 @@ final class PureAbi
      */
     static final int ABI_VERSION = 1;
 
-    /**
-     * System property naming the directory that holds the cdylib; set by surefire.
-     */
-    static final String LIBDIR_PROPERTY = "legend.pure.rust.libdir";
-
     static final int STATUS_OK = 0;
     static final int STATUS_FAILED = 1;
     static final int STATUS_ABSENT = 2;
@@ -62,6 +57,12 @@ final class PureAbi
     static final int FAILURE_UNSUPPORTED = 4;
     static final int FAILURE_NOT_IMPLEMENTED = 5;
     static final int FAILURE_PANIC = 6;
+
+    static final int CROSSING_ELEMENT = 0;
+    static final int CROSSING_ENUM_VALUE = 1;
+    static final int CROSSING_HOST_NODE = 2;
+    static final int CROSSING_RUST_OBJECT = 3;
+    static final int CROSSING_PRIMITIVE = 4;
 
     static final StructLayout STRING = MemoryLayout.structLayout(
             ValueLayout.ADDRESS.withName("ptr"),
@@ -287,7 +288,7 @@ final class PureAbi
         assertSize(TIMINGS, 32);
         assertSize(HOST_TABLE, 40);
 
-        String dir = System.getProperty(LIBDIR_PROPERTY);
+        String dir = System.getProperty(RustEvaluator.LIBDIR_PROPERTY);
         if ((dir == null) || dir.isEmpty())
         {
             System.loadLibrary("pure_rust_ffi");

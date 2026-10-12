@@ -1,11 +1,12 @@
 # legend-pure-rust-api
 
 The Java side of the Rust Pure evaluator in `legend-pure-rust/` that no transport owns
-(Step 2c of `legend-pure-rust/docs/rust-evaluator-mvp.md`): what a Java engine gives the
-bridge, what a Rust object looks like from Java, how a graph node is described for the
-Rust side, the typed failures, and the tooling the PCT suites and benchmarks of every
-transport are built from. A transport module (`legend-pure-rust-jni`
-today, `-ffm` in phase 2) depends on this one and adds the evaluator that crosses.
+(Step 2c of `legend-pure-rust/docs/rust-evaluator-mvp.md`): the evaluator as a
+`FunctionExecution`, what a Java engine gives the bridge, what a Rust object looks like from
+Java, how a graph node is described for the Rust side, the typed failures, and the tooling the
+PCT suites and benchmarks of every transport are built from. A transport module
+(`legend-pure-rust-jni`, `legend-pure-rust-ffm`) depends on this one and supplies the native
+calls of `RustEvaluator`, nothing else.
 
 ## Surface
 
@@ -14,12 +15,13 @@ in both directions.
 
 | Class | Role |
 |---|---|
+| `RustEvaluator` | The evaluator, whichever transport carries the calls: a `FunctionExecution` bound to the interpreted engine's `PureRuntime` by `init(runtime, message)` or to any engine's `RustEngineHost` by `attach(host)` (a transport's static `over(host)`); `evaluate(function, arguments)` runs a graph node and returns the raw results as the host engine represents them, a typed failure carrying the Pure exception the engine rethrows as its cause (`PureAssertFailException` for `ASSERTION_FAILED`, else a `PureExecutionException` whose info is the bare Pure text for the Pure-level kinds and the kind-prefixed message for the Rust-side diagnostics); `start(function, arguments)` is the interpreted engine's form (arguments unwrapped from their `InstanceValue`s, result wrapped in one); `create(classifierPath, names, values)` allocates a Rust object (test support); `liveHandleCount()`; `close()` releases every proxy and frees the native context, once, every later call refused. It is the `RustHeap` of its proxies, every method `synchronized`. A transport implements nine protected methods, each one native call: `open` (the bridge and the context), `run`, `allocate`, `objectPropertyValues`, `objectPropertyNames`, `releaseHandle`, `liveHandles`, `crossingOf` (test support: which `Crossing` a node becomes) and `free`. |
 | `RustEngineHost` | What the bridge needs from the engine it serves: the `ProcessorSupport`, a node's property names, a lambda's captured values, the definition a lambda value stands for (the closure cache's key), and the engine's own representation of each primitive and of a map. `interpreted.InterpretedHost` (keys from the node, captures from `LambdaWithContext`, a lambda's repository synthetic id, primitives from the `ModelRepository`, maps as `MapCoreInstance`) and `compiled.CompiledHost` (keys from the class's properties, captures from the generated lambda's open variables, no lambda definition, primitives as `ValCoreInstance`, maps as a `PureMap` carried in a `CompiledValue`). |
-| `NodeBridge` | The host side of the node bridge: the Java graph nodes the Rust side holds by id (ids never reused; `forget` drops the ones Rust released), their description in one `NodeDescription` (kind, classifier path, primitive payload, a date's or strict time's components, a lambda's definition id, the source span), their reads on demand (property values, keys, captured values), the elements and enum values Rust names by path, dates and strict times built from components through the host, and `failureOf`, how a Java failure is reported to Rust (its kind and text). A transport's bridge class extends it with what its crate calls. |
-| `NodeDescription` | The record `NodeBridge.describe` fills; its kind constants are mirrored in `crates/jni/src/java_node.rs`. |
-| `RustHeap` | One evaluator's Rust heap as the proxies read it: property values and names by handle, the graph the classifier paths resolve in, release. Each transport's evaluator implements it. |
+| `NodeBridge` | The host side of the node bridge: the Java graph nodes the Rust side holds by id (ids never reused; `forget` drops the ones Rust released), their description in one `NodeDescription` (kind, classifier path, primitive payload, a date's or strict time's components, a lambda's definition id, the source span), their reads on demand (property values, keys, captured values), the elements and enum values Rust names by path, the host's primitives, maps, dates and strict times (built from components), the proxy of a Rust object (`rustObject`, one per handle, `RustProxies`), and `failureOf`, how a Java failure is reported to Rust (its kind and text). A transport's bridge class extends it: the JNI one only for the class name its crate resolves method ids on, the FFM one with the encoding of the C ABI. |
+| `NodeDescription` | The record `NodeBridge.describe` fills; its kind constants are mirrored in `crates/evaluator/src/bridge/description.rs`. |
+| `RustHeap` | One evaluator's Rust heap as the proxies read it: property values and names by handle, the graph the classifier paths resolve in, release. `RustEvaluator` implements it. |
 | `RustCoreInstance` | A Rust heap object seen from Java as a read-only `CoreInstance` over a `RustHeap`; its classifier is the Java graph node for the Rust classifier path, its name the `name` of a model element or else an anonymous one, as a Java instance's. One proxy per Rust handle; `close()` releases it. |
-| `RustProxies` | A transport bridge's proxy table: one `RustCoreInstance` per handle while Java reaches it, held weakly; the handle of a proxy the garbage collector reclaimed is released at the evaluator's next call, on its own thread (the interpreted engine never closes the results it reads). |
+| `RustProxies` | The bridge's proxy table: one `RustCoreInstance` per handle while Java reaches it, held weakly; the handle of a proxy the garbage collector reclaimed is released at the evaluator's next call, on its own thread (the interpreted engine never closes the results it reads). |
 | `compiled.CompiledObjects` | Rust objects as the compiled engine's generated code holds them: copies into the generated `_Impl` class of their classifier, keeping identity and cycles, releasing the proxies read; `CompiledValue` carries a compiled value that is not a `CoreInstance` (a `PureMap`) across the boundary. |
 | `PureRustEvaluationException` | Typed failure: `getKind()` is one of `EXECUTION_ERROR`, `ASSERTION_FAILED`, `CONSTRAINT_VIOLATION`, `FUNCTION_NOT_FOUND`, `UNSUPPORTED`, `NOT_IMPLEMENTED` (a native wired under its key whose implementation is not fished yet); `getMessage()` starts with the kind's display name (`FunctionNotFound: …`), `getInfo()` is the bare text. An `ASSERTION_FAILED` carries a `PureAssertFailException` as its cause. `PureRustException` is the untyped failure (a panic, a wiring error). |
 

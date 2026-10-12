@@ -15,6 +15,7 @@
 package org.finos.legend.pure.rust;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
@@ -40,26 +41,34 @@ import java.util.Map;
  * The host side of the node bridge, shared by every transport: the Java
  * graph nodes the Rust side holds by id, their description in one record,
  * their reads (property values, keys, a lambda's captured values), the
- * elements and enum values Rust names by path, the dates and times it hands
- * back as components, and how a Java failure is reported to it. Node ids are
- * never reused: a node Rust no longer holds is forgotten and gets a fresh id
- * if it is described again. Every method only reads the Java graph; none
+ * elements and enum values Rust names by path, the primitives, dates and
+ * times it hands back, the proxies of the Rust objects Java holds (one
+ * {@link RustCoreInstance} per handle while Java reaches it,
+ * {@link RustProxies}), and how a Java failure is reported to it. Node ids
+ * are never reused: a node Rust no longer holds is forgotten and gets a fresh
+ * id if it is described again. Every method only reads the Java graph; none
  * re-enters Rust.
  */
 public class NodeBridge
 {
     private final RustEngineHost host;
     private final ProcessorSupport processorSupport;
+    private final RustProxies proxies;
     private final IdentityHashMap<CoreInstance, Long> ids = new IdentityHashMap<>();
     private final Map<Long, CoreInstance> nodes = new HashMap<>();
     private final Map<Object, Long> definitions = new HashMap<>();
     private long nextId;
     private CoreInstance lambdaClass;
 
-    public NodeBridge(RustEngineHost host)
+    /**
+     * @param host  the engine the bridge serves
+     * @param owner the evaluator whose Rust objects the proxies read and release
+     */
+    public NodeBridge(RustEngineHost host, RustHeap owner)
     {
         this.host = host;
         this.processorSupport = host.processorSupport();
+        this.proxies = new RustProxies(owner);
     }
 
     /**
@@ -73,13 +82,97 @@ public class NodeBridge
     }
 
     /**
-     * Forget every node and definition.
+     * Forget every node, definition and proxy, once the owner released every handle.
      */
     public void clear()
     {
         this.ids.clear();
         this.nodes.clear();
         this.definitions.clear();
+        this.proxies.clear();
+    }
+
+    /**
+     * The proxy of a Rust object: the one Java still reaches, or a new one.
+     *
+     * @param handle         the Rust object's handle
+     * @param classifierPath its classifier path as the Rust side spells it
+     * @return the proxy
+     */
+    public CoreInstance rustObject(long handle, String classifierPath)
+    {
+        return this.proxies.proxy(handle, classifierPath);
+    }
+
+    /**
+     * Every handle not released yet, its proxy collected or not.
+     *
+     * @return the handles
+     */
+    public MutableList<Long> proxyHandles()
+    {
+        return this.proxies.handles();
+    }
+
+    /**
+     * Forget the proxy of a handle the owner released.
+     *
+     * @param handle the handle
+     */
+    public void forgetProxy(long handle)
+    {
+        this.proxies.forget(handle);
+    }
+
+    /**
+     * Release, through the owner, the handle of every proxy the garbage
+     * collector reclaimed since the last call.
+     */
+    public void releaseCollectedProxies()
+    {
+        this.proxies.releaseCollected();
+    }
+
+    public CoreInstance newBoolean(boolean value)
+    {
+        return this.host.newBoolean(value);
+    }
+
+    public CoreInstance newInteger(long value)
+    {
+        return this.host.newInteger(value);
+    }
+
+    public CoreInstance newFloat(String text)
+    {
+        return this.host.newFloat(text);
+    }
+
+    public CoreInstance newDecimal(String text)
+    {
+        return this.host.newDecimal(text);
+    }
+
+    public CoreInstance newString(String value)
+    {
+        return this.host.newString(value);
+    }
+
+    public CoreInstance newLatestDate()
+    {
+        return this.host.newLatestDate();
+    }
+
+    /**
+     * The engine's own map over materialised entries.
+     *
+     * @param keys   the keys, parallel to {@code values}
+     * @param values one value per key
+     * @return the map as a graph value of the host engine
+     */
+    public CoreInstance newMap(CoreInstance[] keys, CoreInstance[] values)
+    {
+        return this.host.newMap(keys, values);
     }
 
     private long idOf(CoreInstance node)

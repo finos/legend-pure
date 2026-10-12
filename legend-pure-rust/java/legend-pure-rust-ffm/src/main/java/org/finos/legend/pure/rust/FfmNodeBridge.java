@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.rust;
 
-import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
@@ -31,47 +30,16 @@ import java.math.BigDecimal;
  * transport adds. Inbound, a {@link NodeDescription} is written into a
  * {@code pure_description} segment the Rust side reads in place; outbound, the
  * {@code pure_leaf}s of a result are read into host objects through the engine's
- * factories, Rust objects as one {@link RustCoreInstance} per handle while
- * Java reaches it ({@link RustProxies}). The four
+ * factories, Rust objects through their proxies. The four
  * callbacks of the {@code pure_host_table} are upcall stubs bound to this
  * instance: each answers through {@code pure_reply_*} and returns a status, and
  * nothing thrown inside one ever reaches the native frame.
  */
 final class FfmNodeBridge extends NodeBridge
 {
-    private final RustProxies proxies;
-
     FfmNodeBridge(RustEngineHost host, RustHeap owner)
     {
-        super(host);
-        this.proxies = new RustProxies(owner);
-    }
-
-    @Override
-    public void clear()
-    {
-        super.clear();
-        this.proxies.clear();
-    }
-
-    MutableList<Long> proxyHandles()
-    {
-        return this.proxies.handles();
-    }
-
-    void forgetProxy(long handle)
-    {
-        this.proxies.forget(handle);
-    }
-
-    void releaseCollectedProxies()
-    {
-        this.proxies.releaseCollected();
-    }
-
-    CoreInstance rustObject(long handle, String classifierPath)
-    {
-        return this.proxies.proxy(handle, classifierPath);
+        super(host, owner);
     }
 
     /**
@@ -322,12 +290,12 @@ final class FfmNodeBridge extends NodeBridge
     {
         return switch (leaf.kind())
         {
-            case NodeDescription.BOOLEAN -> host().newBoolean(leaf.integer() != 0);
-            case NodeDescription.INTEGER -> host().newInteger(leaf.integer());
-            case NodeDescription.FLOAT -> host().newFloat(floatText(leaf.real()));
-            case NodeDescription.DECIMAL -> host().newDecimal(leaf.text());
-            case NodeDescription.STRING -> host().newString(leaf.text());
-            case NodeDescription.LATEST_DATE -> host().newLatestDate();
+            case NodeDescription.BOOLEAN -> newBoolean(leaf.integer() != 0);
+            case NodeDescription.INTEGER -> newInteger(leaf.integer());
+            case NodeDescription.FLOAT -> newFloat(floatText(leaf.real()));
+            case NodeDescription.DECIMAL -> newDecimal(leaf.text());
+            case NodeDescription.STRING -> newString(leaf.text());
+            case NodeDescription.LATEST_DATE -> newLatestDate();
             case NodeDescription.DATE -> newDate(leaf.year(), leaf.month(), leaf.day(), leaf.hour(), leaf.minute(), leaf.second(), leaf.text(), leaf.precision());
             case NodeDescription.STRICT_TIME -> newStrictTime(leaf.hour(), leaf.minute(), leaf.second(), leaf.text(), leaf.precision());
             case NodeDescription.PACKAGEABLE_ELEMENT -> elementOf(leaf.text());
@@ -387,7 +355,7 @@ final class FfmNodeBridge extends NodeBridge
             keys[i] = toHost(entries[2 * i]);
             values[i] = toHost(entries[2 * i + 1]);
         }
-        return host().newMap(keys, values);
+        return newMap(keys, values);
     }
 
     int answerPropertyValues(MemorySegment host, long id, MemorySegment name, long nameLen, MemorySegment reply)

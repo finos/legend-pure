@@ -14,48 +14,17 @@
 
 package org.finos.legend.pure.rust;
 
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m3.exception.PureAssertFailException;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.execution.AbstractConsole;
-import org.finos.legend.pure.m3.execution.Console;
-import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m3.execution.OutputWriter;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
-import org.finos.legend.pure.m3.serialization.runtime.Message;
-import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.m4.exception.PureException;
-import org.finos.legend.pure.rust.interpreted.InterpretedHost;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 
 /**
- * The Rust evaluator as a {@link FunctionExecution}: created empty, bound to
- * a {@link PureRuntime} by {@link #init}, and driven with
- * {@link #start(CoreInstance, ListIterable)} exactly like the interpreted
- * engine. The only value currency across the boundary is {@link CoreInstance}.
- * The JNI transport: the native methods below are the exported symbols of
- * {@code libpure_rust_jni}, and the Rust objects it returns are read back
- * through it as the {@link RustHeap} of their proxies.
+ * The JNI transport of {@link RustEvaluator}: the native methods below are
+ * the exported symbols of {@code libpure_rust_jni}, over one context pointer
+ * per evaluator and a {@link RustNodeBridge} the Rust side calls back into.
  */
-public final class PureRustEvaluator implements FunctionExecution, RustHeap, Closeable
+public final class PureRustEvaluator extends RustEvaluator
 {
-    /**
-     * System property naming the directory that holds the cdylib; set by surefire.
-     */
-    public static final String LIBDIR_PROPERTY = "legend.pure.rust.libdir";
-
     static
     {
         String dir = System.getProperty(LIBDIR_PROPERTY);
@@ -69,168 +38,20 @@ public final class PureRustEvaluator implements FunctionExecution, RustHeap, Clo
         }
     }
 
-    private final Console console = new RustConsole();
-    private PureRuntime runtime;
-    private ProcessorSupport processorSupport;
-    private RustNodeBridge bridge;
     private long contextPointer;
-    private boolean closed;
-
-    @Override
-    public synchronized void init(PureRuntime pureRuntime, Message message)
-    {
-        this.runtime = pureRuntime;
-        attach(new InterpretedHost(pureRuntime.getModelRepository(), pureRuntime.getProcessorSupport()));
-    }
 
     /**
      * An evaluator over any engine's graph, for engines that are not a
-     * {@link PureRuntime}: the compiled engine reaches it through
-     * {@code evalRust}'s entry, {@code CompiledEvalRust}.
+     * {@code PureRuntime}.
      *
      * @param host the engine's side of the bridge
-     * @return an initialised evaluator; {@link #start} is for the interpreted engine, {@link #evaluate} for any
+     * @return a bound evaluator; {@link #start} is for the interpreted engine, {@link #evaluate} for any
      */
     public static PureRustEvaluator over(RustEngineHost host)
     {
         PureRustEvaluator evaluator = new PureRustEvaluator();
         evaluator.attach(host);
         return evaluator;
-    }
-
-    private synchronized void attach(RustEngineHost host)
-    {
-        if (this.contextPointer != 0)
-        {
-            throw new IllegalStateException("Evaluator is already initialised");
-        }
-        this.processorSupport = host.processorSupport();
-        this.bridge = new RustNodeBridge(host, this);
-        this.contextPointer = nativeInitContext(this.bridge);
-    }
-
-    /**
-     * The Pure exception the interpreted engine rethrows for a Rust failure.
-     *
-     * @param e      the failure as the boundary reports it
-     * @param source the Rust anchor, or null
-     * @return an assertion failure for {@code ASSERTION_FAILED}; otherwise an execution error whose info is the
-     * bare Pure text for the Pure-level kinds and the kind-prefixed message for the Rust-side diagnostics
-     */
-    private static PureException pureCause(PureRustEvaluationException e, SourceInformation source)
-    {
-        switch (e.getKind())
-        {
-            case ASSERTION_FAILED:
-                return new PureAssertFailException(source, e.getInfo());
-            case EXECUTION_ERROR:
-            case CONSTRAINT_VIOLATION:
-                return new PureExecutionException(source, e.getInfo());
-            default:
-                return new PureExecutionException(source, e.getMessage());
-        }
-    }
-
-    @Override
-    public synchronized CoreInstance start(CoreInstance function, ListIterable<? extends CoreInstance> arguments)
-    {
-        CoreInstance[][] slots = new CoreInstance[arguments.size()][];
-        for (int i = 0; i < slots.length; i++)
-        {
-            slots[i] = unwrap(arguments.get(i));
-        }
-        CoreInstance[] results = evaluate(function, slots);
-        return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.with(results), true, this.processorSupport);
-    }
-
-    /**
-     * Run a function node with its arguments and return the raw results, each
-     * as the host engine represents it.
-     *
-     * @param function  the function node: a lambda, a function element or a native
-     * @param arguments one slot of values per parameter
-     * @return the result values
-     * @throws PureRustEvaluationException a typed failure, carrying the Pure exception as its cause
-     */
-    public synchronized CoreInstance[] evaluate(CoreInstance function, CoreInstance[][] arguments)
-    {
-        checkOpen();
-        this.bridge.releaseCollectedProxies();
-        try
-        {
-            return nativeStart(this.contextPointer, function, arguments);
-        }
-        catch (PureRustEvaluationException e)
-        {
-            e.initCause(pureCause(e, e.getSourceInformation()));
-            throw e;
-        }
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public void start(CoreInstance func, ListIterable<? extends CoreInstance> arguments, OutputStream outputStream, OutputWriter writer)
-    {
-        try
-        {
-            writer.write(start(func, arguments), outputStream);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public Console getConsole()
-    {
-        return this.console;
-    }
-
-    @Override
-    public boolean isFullyInitializedForExecution()
-    {
-        return (this.contextPointer != 0) && !this.closed;
-    }
-
-    @Override
-    public void resetEventHandlers()
-    {
-    }
-
-    @Override
-    public ProcessorSupport getProcessorSupport()
-    {
-        return this.processorSupport;
-    }
-
-    @Override
-    public PureRuntime getRuntime()
-    {
-        return this.runtime;
-    }
-
-    @Override
-    public OutputWriter<CoreInstance> newOutputWriter()
-    {
-        return (result, outputStream) -> outputStream.write(String.valueOf(result).getBytes(StandardCharsets.UTF_8));
-    }
-
-    /**
-     * Allocate a Rust heap object and return it as a {@link CoreInstance}.
-     * Each value slot holds the values of one property.
-     *
-     * @param classifierPath the class path as the Rust side spells it
-     * @param propertyNames  property names, parallel to {@code propertyValues}
-     * @param propertyValues values per property
-     * @return the Java view of the new object
-     */
-    public synchronized CoreInstance create(String classifierPath, String[] propertyNames, CoreInstance[][] propertyValues)
-    {
-        checkOpen();
-        this.bridge.releaseCollectedProxies();
-        long handle = nativeNew(this.contextPointer, classifierPath, propertyNames, propertyValues);
-        return this.bridge.rustObject(handle, classifierPath);
     }
 
     /**
@@ -248,107 +69,76 @@ public final class PureRustEvaluator implements FunctionExecution, RustHeap, Clo
         return nativeLastTimings();
     }
 
-    /**
-     * Heap objects the Rust side keeps alive for this evaluator in either
-     * direction; zero once every proxy is closed and every call returned.
-     *
-     * @return the live handle count
-     */
-    public synchronized long liveHandleCount()
+    @Override
+    protected NodeBridge open(RustEngineHost host)
     {
-        return this.closed ? 0 : nativeLiveHandleCount(this.contextPointer);
-    }
-
-    /**
-     * Java graph nodes the bridge keeps an id for because the Rust side may
-     * still read them; nodes Rust has let go of are forgotten when a call ends.
-     */
-    synchronized int knownNodeCount()
-    {
-        return this.closed ? 0 : this.bridge.knownNodeCount();
-    }
-
-    synchronized String crossingKind(CoreInstance node)
-    {
-        checkOpen();
-        return nativeCrossingKind(this.contextPointer, node);
+        RustNodeBridge bridge = new RustNodeBridge(host, this);
+        this.contextPointer = nativeInitContext(bridge);
+        return bridge;
     }
 
     @Override
-    public synchronized ListIterable<? extends CoreInstance> propertyValues(long handle, String key)
+    protected CoreInstance[] run(CoreInstance function, CoreInstance[][] arguments)
     {
-        checkOpen();
-        return Lists.immutable.with(nativeGetProperty(this.contextPointer, handle, key));
+        return nativeStart(this.contextPointer, function, arguments);
     }
 
     @Override
-    public synchronized ListIterable<String> propertyNames(long handle)
+    protected CoreInstance allocate(String classifierPath, String[] propertyNames, CoreInstance[][] propertyValues)
     {
-        checkOpen();
-        return Lists.immutable.with(nativePropertyNames(this.contextPointer, handle));
+        long handle = nativeNew(this.contextPointer, classifierPath, propertyNames, propertyValues);
+        return bridge().rustObject(handle, classifierPath);
     }
 
     @Override
-    public synchronized void release(long handle)
+    protected CoreInstance[] objectPropertyValues(long handle, String key)
     {
-        if (!this.closed)
+        return nativeGetProperty(this.contextPointer, handle, key);
+    }
+
+    @Override
+    protected String[] objectPropertyNames(long handle)
+    {
+        return nativePropertyNames(this.contextPointer, handle);
+    }
+
+    @Override
+    protected void releaseHandle(long handle)
+    {
+        nativeFreeInstance(this.contextPointer, handle);
+    }
+
+    @Override
+    protected long liveHandles()
+    {
+        return nativeLiveHandleCount(this.contextPointer);
+    }
+
+    @Override
+    protected Crossing crossingOf(CoreInstance node)
+    {
+        String kind = nativeCrossingKind(this.contextPointer, node);
+        switch (kind)
         {
-            nativeFreeInstance(this.contextPointer, handle);
-            this.bridge.forgetProxy(handle);
+            case "element":
+                return Crossing.ELEMENT;
+            case "enum":
+                return Crossing.ENUM_VALUE;
+            case "javaNode":
+                return Crossing.HOST_NODE;
+            case "rustObject":
+                return Crossing.RUST_OBJECT;
+            case "primitive":
+                return Crossing.PRIMITIVE;
+            default:
+                throw new PureRustException("libpure_rust_jni reported the crossing " + kind + ", which this class does not know");
         }
     }
 
     @Override
-    public synchronized void close()
+    protected void free()
     {
-        if (this.closed)
-        {
-            return;
-        }
-        if (this.contextPointer != 0)
-        {
-            for (long handle : this.bridge.proxyHandles())
-            {
-                nativeFreeInstance(this.contextPointer, handle);
-            }
-            this.bridge.clear();
-            nativeFreeContext(this.contextPointer);
-        }
-        this.closed = true;
-    }
-
-    private void checkOpen()
-    {
-        if (this.closed)
-        {
-            throw new PureRustEvaluationException("Evaluator has been closed");
-        }
-        if (this.contextPointer == 0)
-        {
-            throw new PureRustEvaluationException("Evaluator has not been initialised: call init(runtime, message) first");
-        }
-    }
-
-    private CoreInstance[] unwrap(CoreInstance argument)
-    {
-        if (argument == null)
-        {
-            return new CoreInstance[0];
-        }
-        if (Instance.instanceOf(argument, M3Paths.InstanceValue, this.processorSupport))
-        {
-            return argument.getValueForMetaPropertyToMany(M3Properties.values).toArray(new CoreInstance[0]);
-        }
-        return new CoreInstance[]{argument};
-    }
-
-    private static final class RustConsole extends AbstractConsole
-    {
-        @Override
-        protected String getContentString(Object content)
-        {
-            return String.valueOf(content);
-        }
+        nativeFreeContext(this.contextPointer);
     }
 
     private static native long nativeInitContext(RustNodeBridge bridge);

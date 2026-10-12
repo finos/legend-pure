@@ -189,11 +189,11 @@ public class TestRustEvaluatorBoundary
     public void elementsUnifyAndNodesKeepTheirIdentity()
     {
         CoreInstance classNode = node(CLASS);
-        Assert.assertEquals("element", evaluator.crossingKind(classNode));
+        Assert.assertEquals(RustEvaluator.Crossing.ELEMENT, evaluator.crossing(classNode));
         Assert.assertSame(classNode, roundTrip(classNode));
 
         CoreInstance expression = anExpressionNode();
-        Assert.assertEquals("javaNode", evaluator.crossingKind(expression));
+        Assert.assertEquals(RustEvaluator.Crossing.HOST_NODE, evaluator.crossing(expression));
         Assert.assertSame(expression, roundTrip(expression));
     }
 
@@ -568,7 +568,7 @@ public class TestRustEvaluatorBoundary
     @Test
     public void aJavaFailureInsideTheBridgeArrivesTypedAndLeavesTheEvaluatorUsable()
     {
-        PureRustEvaluationException e = Assert.assertThrows(PureRustEvaluationException.class, () -> evaluator.crossingKind(null));
+        PureRustEvaluationException e = Assert.assertThrows(PureRustEvaluationException.class, () -> evaluator.crossing(null));
         Assert.assertEquals(PureRustEvaluationException.Kind.EXECUTION_ERROR, e.getKind());
         Assert.assertTrue(e.getMessage(), e.getMessage().startsWith("ExecutionError: describe: java.lang.NullPointerException"));
         Assert.assertEquals("42", roundTrip(repository.newIntegerCoreInstance(42L)).getName());
