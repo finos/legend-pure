@@ -2353,11 +2353,11 @@ pub(crate) fn let_binding<'s>(
     data: &'s FunctionCallData,
     binds: &dyn Fn(&FunctionCallData) -> bool,
 ) -> Option<&'s SmolStr> {
-    if data.arguments.len() != 2 || !binds(data) {
+    let [name, _] = data.arguments.as_slice() else {
         return None;
-    }
-    match &*data.arguments[0].kind {
-        ExprKind::StringLiteral(name) => Some(name),
+    };
+    match &*name.kind {
+        ExprKind::StringLiteral(name) if binds(data) => Some(name),
         _ => None,
     }
 }
