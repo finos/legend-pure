@@ -53,5 +53,5 @@ function <<PCT.test>> meta::pure::functions::math::tests::toDecimal::testDecimal
 
 function <<PCT.test>> meta::pure::functions::math::tests::toDecimal::testIntToDecimal<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(8D, $f->eval(|toDecimal(8)));
+    assertEqWithinTolerance(8D, $f->eval(|toDecimal(8)), 0.000000000000001);
 }

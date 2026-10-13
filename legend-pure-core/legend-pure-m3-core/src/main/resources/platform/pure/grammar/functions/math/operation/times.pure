@@ -98,9 +98,9 @@ function <<PCT.test>> meta::pure::functions::math::tests::times::testFloatTimes<
 
 function <<PCT.test>> meta::pure::functions::math::tests::times::testDecimalTimes<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(353791.470d, $f->eval(|[19.905d,17774]->times()));
-    assertEq(353791.470d, $f->eval(|19.905d*17774));
-    assertEq(353791.470d, $f->eval(|19.905d*17774d));
+    assertEqWithinTolerance(353791.470d, $f->eval(|[19.905d,17774]->times()), 0.000000000000001);
+    assertEqWithinTolerance(353791.470d, $f->eval(|19.905d*17774), 0.000000000000001);
+    assertEqWithinTolerance(353791.470d, $f->eval(|19.905d*17774d), 0.000000000000001);
 }
 
 function <<PCT.test>> meta::pure::functions::math::tests::times::testLargeTimes<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

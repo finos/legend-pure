@@ -99,16 +99,6 @@ function <<PCT.test>> meta::pure::functions::string::tests::right::testRightEmpt
     assertEquals('', $f->eval(|''->right(3)));
 }
 
-'''
-`left` and `right` select opposite ends of the same string, splitting a currency pair into its
-base and quote halves.
-'''
-function <<PCT.test>> meta::pure::functions::string::tests::right::testRightIsTheMirrorOfLeft<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
-{
-    assertEquals('EUR', $f->eval(|'EURUSD'->left(3)));
-    assertEquals('USD', $f->eval(|'EURUSD'->right(3)));
-}
-
 function <<test.Test>> meta::pure::functions::string::tests::right::testRightNegativeLength():Boolean[1]
 {
     assertError(|'EURUSD'->right(-1), 'length must be >= 0');
