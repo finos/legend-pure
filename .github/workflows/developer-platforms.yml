@@ -19,12 +19,12 @@
 name: Developer Platforms
 
 on:
+  # PRs, not pushes: a push to a PR's branch would otherwise be built twice,
+  # and a contributor who wants a result before opening a PR can run this by
+  # hand on a fork's branch. Drafts are skipped below, so marking one ready
+  # for review has to start a run too.
   pull_request:
-  push:
-    # Branch pushes only; see build.yml for why this names branches rather
-    # than ignoring tags. The job below skips pushes to the canonical repo.
-    branches:
-      - '**'
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 permissions:
@@ -39,12 +39,10 @@ concurrency:
 jobs:
   build-and-test:
     name: Build and Test (${{ matrix.name }})
-    # Pushes run only in forks: that is where contributors develop, and it
-    # gives them a result before they open a PR. In the canonical repo a push
-    # is a merge or a release-branch commit, which the PR has already covered.
-    if: >-
-      (github.event_name != 'push' || github.repository != 'finos/legend-pure')
-      && !startsWith(github.event.head_commit.message, 'Bump version to')
+    # A draft is still being worked on, and this check matters once the PR is
+    # up for review; skipping drafts saves a Windows and a macOS run on every
+    # push while it is.
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ${{ matrix.os }}
     timeout-minutes: 180
     strategy:
@@ -117,6 +115,16 @@ jobs:
           -DforkCount=${{ matrix.test-forks }} -DreuseForks=true
           -DargLine=-XX:MaxRAMPercentage=${{ matrix.test-fork-ram-percentage }}
           "-Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports"
+
+      - name: Summarize test results
+        # Puts the results on the run's summary page. Reporting only, so a
+        # problem here never fails the job. Windows runners provide Python as
+        # `python` rather than `python3`.
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: >-
+          ${{ runner.os == 'Windows' && 'python' || 'python3' }}
+          .github/scripts/test-summary.py --title "${{ matrix.name }}" surefire-reports
 
       - name: Test VS Code extension
         # Independent of the Maven build, so it runs even when that fails.

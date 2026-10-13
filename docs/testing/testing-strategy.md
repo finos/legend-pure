@@ -209,10 +209,12 @@ Key test-related CI behaviours:
 - **Parallel forks:** CI runs with `-DforkCount=3 -DreuseForks=true` to parallelize
   test execution across 3 JVM forks per module.
 - **Surefire report aggregation:** All modules write their Surefire XML to
-  `${GITHUB_WORKSPACE}/surefire-reports-aggregate/` for the `test-result.yml`
-  workflow to process.
-- **Test results artifact:** Uploaded as `test-results` artifact on every run
-  (including failures), enabling post-run inspection.
+  `${GITHUB_WORKSPACE}/surefire-reports-aggregate-jdk<N>/`. Each test job
+  summarizes it on the run's summary page; for pull requests, the
+  `test-result.yml` workflow also publishes it as a check and a PR comment,
+  and for `master`, as the check that PR comments compare against.
+- **Test results artifact:** Uploaded as a `test-results-jdk<N>` artifact on
+  every run (including failures), enabling post-run inspection.
 - **No flaky test tolerance:** Intermittently failing tests must be fixed or
   annotated with `@Ignore` with a linked issue; they must not be left to flap.
 

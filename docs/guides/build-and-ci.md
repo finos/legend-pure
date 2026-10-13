@@ -133,9 +133,12 @@ The pipeline is defined in [`.github/workflows/build.yml`](../../.github/workflo
 
 ### Trigger
 
-Runs on every branch `push` and `pull_request` event. Tag pushes are ignored,
-and the post-release version-bump commit (message starting `Bump version to`)
-is skipped.
+Runs on pull requests, and on pushes to any branch of `finos/legend-pure`.
+Pushes to forks are not built: a fork's topic branch is built as its pull
+request (or on demand, with `workflow_dispatch`), and a fork's `master` only
+ever syncs commits that were already built here. Tag pushes are ignored, and
+the post-release version-bump commit (message starting `Bump version to`) is
+skipped. A newer push to a pull request cancels the run for the older one.
 
 ### Environment
 
@@ -155,30 +158,38 @@ is skipped.
 | Build + Test (non-master) | `mvn -B -e install -DforkCount=3 -DreuseForks=true ...` |
 | Build + Test + Sonar (master only) | `mvn -B -e install -Psonar ...` |
 | Upload test results | Uploads `surefire-reports-aggregate/*.xml` as artifact |
-| Upload CI event | Uploads `github.event_path` for `test-result.yml` |
+| Upload CI event | Uploads `github.event_path` for `test-result.yml` (pull requests and `master` only) |
 
 ### Surefire Report Aggregation
 
 All modules are configured with:
 
 ```text
--Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports-aggregate
+-Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports-aggregate-jdk<N>
 ```
 
-This aggregates every module's test XML into a single directory, which is then
-uploaded as a build artifact for the `test-result.yml` workflow to process.
+This aggregates every module's test XML into a single directory per JDK. Each
+test job summarizes it on the run's summary page with
+[`.github/scripts/test-summary.py`](../../.github/scripts/test-summary.py) and
+uploads it as a build artifact. For pull requests, the `test-result.yml`
+workflow also publishes the results as a `Test Results` check and a PR comment.
+That has to be a separate workflow because a pull request from a fork gets a
+read-only token. Builds of `master` get the check without a comment, since a
+PR's comment compares its results against the check on its base commit.
 
 ### Developer Platforms (Windows and macOS)
 
 [`.github/workflows/developer-platforms.yml`](../../.github/workflows/developer-platforms.yml)
 checks that a developer can build and test on Windows and macOS. What ships is
 built and tested on Linux, so these jobs are not part of the release pipeline
-and publish nothing. The workflow runs on pull requests, on branch pushes in
-forks (not in `finos/legend-pure`, where a push is a merge or release commit
-that a PR has already covered), and on demand.
+and publish nothing. The workflow runs on pull requests that are not drafts
+(marking a draft ready for review starts a run) and on demand, which is how to
+get a result on a fork's branch before opening a pull request.
 
 Each platform is a single JDK 25 job: `mvn install -DskipTests`, then
-`mvn surefire:test`, then the VS Code extension's unit tests. The Windows job
+`mvn surefire:test`, then the VS Code extension's unit tests. Like the Linux
+test jobs, each one summarizes its test results on the run's summary page.
+The Windows job
 keeps the runner's default `core.autocrlf=true`, so it builds from CRLF
 sources, as a Windows developer with Git's default settings does.
 

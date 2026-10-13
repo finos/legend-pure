@@ -15,29 +15,43 @@
 name: Build CI
 
 on:
+  # Pushes build every branch of the canonical repo; the job below holds them
+  # to that repo, which a trigger filter cannot express. A fork's topic
+  # branch is built as its PR instead, rather than once in the fork and again
+  # for the PR, and a fork's master is only ever a sync of commits already
+  # built here.
+  # `branches` rather than `tags-ignore`, on purpose: a push filter that names
+  # only tags stops the workflow running for branch pushes as well, because
+  # branches are then the undefined ref, whereas naming every branch leaves
+  # tags undefined instead, which is what actually skips them. A release tag
+  # lands on a commit this workflow already built when it went onto the
+  # branch.
   push:
-    # Branch pushes only -- and `branches` rather than `tags-ignore` on
-    # purpose. A push filter that names only tags stops the workflow running
-    # for branch pushes as well, because branches are then the undefined ref;
-    # naming every branch here leaves *tags* undefined instead, which is what
-    # actually skips them.
-    # A release tag lands on a commit this workflow already built when it went
-    # onto the branch, so building it again on the tag push spends a second
-    # full matrix on it and hands `Publish Test Results` a duplicate set of
-    # results for the same commit.
     branches:
       - '**'
   pull_request:
+  # On demand, for a result on a fork's branch before opening a PR.
+  workflow_dispatch:
+
+concurrency:
+  # A newer push to a PR supersedes the run for the older one. Every other
+  # run gets a group of its own, so nothing ever cancels or holds back a
+  # branch build.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   verify:
     # The pipeline itself lives in build-and-test.yml, which the release
     # workflow calls too, so a release is tested the same way CI tests.
-    # `Publish Test Results` watches this workflow by name and needs the
-    # event payload uploaded alongside the surefire reports.
-    if: "!startsWith(github.event.head_commit.message, 'Bump version to')"
+    # `Publish Test Results` watches this workflow by name and, for a PR or a
+    # master build, needs the event payload uploaded alongside the surefire
+    # reports.
+    if: >-
+      (github.event_name != 'push' || github.repository == 'finos/legend-pure')
+      && !startsWith(github.event.head_commit.message, 'Bump version to')
     uses: ./.github/workflows/build-and-test.yml
     with:
       sonar: true
-      upload-event-file: true
+      upload-event-file: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master') }}
     secrets: inherit
