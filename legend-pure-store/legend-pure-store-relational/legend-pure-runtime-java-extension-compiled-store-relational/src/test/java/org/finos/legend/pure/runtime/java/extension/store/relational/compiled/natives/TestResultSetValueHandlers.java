@@ -18,7 +18,9 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.finos.legend.pure.m4.tools.time.TimeZones;
+import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.tools.time.TimeZoneResolution;
 import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.RelationalNativeImplementation;
 import org.h2.util.DateTimeUtils;
 import org.junit.Assert;
@@ -33,7 +35,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -120,11 +122,10 @@ public class TestResultSetValueHandlers
             MutableList<String> read = Lists.mutable.ofInitialCapacity(days.size());
             try (ResultSet resultSet = statement.executeQuery("SELECT recorded_on FROM dates ORDER BY recorded_on"))
             {
-                ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSet.getMetaData());
-                Calendar calendar = TimeZones.newCalendar("America/New_York");
+                ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSet.getMetaData(), "America/New_York", TimeZoneResolution.STRICT);
                 while (resultSet.next())
                 {
-                    read.add(RelationalNativeImplementation.processRow(resultSet, handlers, null, calendar).get(0).toString());
+                    read.add(RelationalNativeImplementation.processRow(resultSet, handlers, null).get(0).toString());
                 }
             }
             return read;
@@ -153,9 +154,7 @@ public class TestResultSetValueHandlers
                 setDefaultTimeZone(defaultZoneId);
                 for (String connectionZoneId : connectionZoneIds)
                 {
-                    MutableList<String> want = stored.collect(s -> LocalDateTime.parse(s.replace(' ', 'T'))
-                            .atZone(ZoneId.of(connectionZoneId)).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime()
-                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.000000000+0000"))).toList();
+                    MutableList<String> want = shiftedToUtc(stored, connectionZoneId);
                     String where = ", default " + defaultZoneId + ", connection " + connectionZoneId;
                     Assert.assertEquals("H2" + where, want, readMoments(H2, connectionZoneId, stored));
                     Assert.assertEquals("DuckDB" + where, want, readMoments(DUCK_DB, connectionZoneId, stored));
@@ -166,6 +165,16 @@ public class TestResultSetValueHandlers
         {
             setDefaultTimeZone(defaultTimeZone.getID());
         }
+    }
+
+    /**
+     * The Pure dates stored wall clocks read as, kept in the given zone: those moments in UTC.
+     */
+    private static MutableList<String> shiftedToUtc(ListIterable<String> stored, String zoneId)
+    {
+        return stored.collect(s -> LocalDateTime.parse(s.replace(' ', 'T'))
+                .atZone(ZoneId.of(zoneId)).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime()
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.000000000+0000"))).toList();
     }
 
     private static MutableList<String> readMoments(String database, String connectionZoneId, ListIterable<String> stored) throws SQLException
@@ -182,14 +191,98 @@ public class TestResultSetValueHandlers
             MutableList<String> read = Lists.mutable.ofInitialCapacity(stored.size());
             try (ResultSet resultSet = statement.executeQuery("SELECT recorded_at FROM moments ORDER BY recorded_at"))
             {
-                ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSet.getMetaData());
-                Calendar calendar = TimeZones.newCalendar(connectionZoneId);
+                ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSet.getMetaData(), connectionZoneId, TimeZoneResolution.STRICT);
                 while (resultSet.next())
                 {
-                    read.add(RelationalNativeImplementation.processRow(resultSet, handlers, null, calendar).get(0).toString());
+                    read.add(RelationalNativeImplementation.processRow(resultSet, handlers, null).get(0).toString());
                 }
             }
             return read;
+        }
+    }
+
+    /**
+     * The deprecated way of reading a result set, which legend-engine's SQL dialect tests use with
+     * a UTC calendar, gets handlers naming no zone and hands each row a calendar. It has to go on
+     * reading a timestamp column as kept in the zone of the calendar, whatever zone the JVM is
+     * running in. The handlers read in GMT when no calendar is handed them, so only a calendar in
+     * another zone shows that it is used.
+     */
+    @Test
+    public void testDeprecatedReadingReadsTimestampsInTheCalendarZone() throws SQLException
+    {
+        ImmutableList<String> stored = Lists.immutable.with("1753-12-31 00:00:00", "2014-03-10 13:07:44");
+        TimeZone defaultTimeZone = TimeZone.getDefault();
+        try
+        {
+            setDefaultTimeZone("Asia/Tokyo");
+            for (String calendarZoneId : Lists.immutable.with("UTC", "America/New_York"))
+            {
+                MutableList<String> want = shiftedToUtc(stored, calendarZoneId);
+                Assert.assertEquals("H2, calendar " + calendarZoneId, want, readMomentsTheDeprecatedWay(H2, calendarZoneId, stored));
+                Assert.assertEquals("DuckDB, calendar " + calendarZoneId, want, readMomentsTheDeprecatedWay(DUCK_DB, calendarZoneId, stored));
+            }
+        }
+        finally
+        {
+            setDefaultTimeZone(defaultTimeZone.getID());
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static MutableList<String> readMomentsTheDeprecatedWay(String database, String calendarZoneId, ListIterable<String> stored) throws SQLException
+    {
+        try (Connection connection = connect(database);
+             Statement statement = connection.createStatement())
+        {
+            statement.execute("CREATE TABLE moments (recorded_at TIMESTAMP)");
+            for (String moment : stored)
+            {
+                statement.execute("INSERT INTO moments VALUES (TIMESTAMP '" + moment + "')");
+            }
+
+            MutableList<String> read = Lists.mutable.ofInitialCapacity(stored.size());
+            try (ResultSet resultSet = statement.executeQuery("SELECT recorded_at FROM moments ORDER BY recorded_at"))
+            {
+                ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSet.getMetaData());
+                while (resultSet.next())
+                {
+                    read.add(RelationalNativeImplementation.processRow(resultSet, handlers, null, new GregorianCalendar(TimeZone.getTimeZone(calendarZoneId))).get(0).toString());
+                }
+            }
+            return read;
+        }
+    }
+
+    /**
+     * A handler answers a null column with null, and the row reads it as the null instance it is
+     * given, whatever the type of the column.
+     */
+    @Test
+    public void testNullColumnIsReadAsTheNullInstance() throws SQLException
+    {
+        CoreInstance sqlNull = new ModelRepository().newStringCoreInstance("SQLNull");
+        ImmutableList<String> columnTypes = Lists.immutable.with("VARCHAR(10)", "BOOLEAN", "INTEGER", "BIGINT", "DOUBLE", "DECIMAL(10, 2)", "DATE", "TIMESTAMP", "TIMESTAMP WITH TIME ZONE");
+        // DuckDB reports a binary column as a BLOB, which no handler reads
+        assertNullsRead(H2, columnTypes.newWith("VARBINARY(10)"), sqlNull);
+        assertNullsRead(DUCK_DB, columnTypes, sqlNull);
+    }
+
+    private static void assertNullsRead(String database, ListIterable<String> columnTypes, CoreInstance sqlNull) throws SQLException
+    {
+        try (Connection connection = connect(database);
+             Statement statement = connection.createStatement())
+        {
+            statement.execute(columnTypes.collectWithIndex((type, i) -> "c" + i + " " + type).makeString("CREATE TABLE nulls (", ", ", ")"));
+            statement.execute(columnTypes.collect(type -> "NULL").makeString("INSERT INTO nulls VALUES (", ", ", ")"));
+            try (ResultSet resultSet = statement.executeQuery("SELECT * FROM nulls"))
+            {
+                ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSet.getMetaData(), "America/New_York", TimeZoneResolution.STRICT);
+                Assert.assertTrue(database, resultSet.next());
+                ListIterable<Object> row = RelationalNativeImplementation.processRow(resultSet, handlers, sqlNull);
+                Assert.assertEquals(database, columnTypes.size(), row.size());
+                columnTypes.forEachWithIndex((type, i) -> Assert.assertSame(database + ", " + type, sqlNull, row.get(i)));
+            }
         }
     }
 

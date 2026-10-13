@@ -23,9 +23,9 @@ import org.eclipse.collections.api.map.primitive.ImmutableIntObjectMap;
 import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.tools.BinaryUtils;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
+import org.finos.legend.pure.m4.tools.time.TimeZoneResolution;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -37,46 +37,43 @@ import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Calendar;
 
 public final class ResultSetValueHandlers
 {
-    private static final ResultSetValueHandler NULL = (rs, i, nullSqlInstance, calendar) -> nullSqlInstance;
+    private static final ResultSetValueHandler NULL = (rs, i) -> null;
 
-    private static final ResultSetValueHandler STRING = (rs, i, nullSqlInstance, calendar) ->
-    {
-        String str = rs.getString(i);
-        return str == null ? nullSqlInstance : str;
-    };
+    private static final ResultSetValueHandler STRING = ResultSet::getString;
 
-    private static final ResultSetValueHandler BOOLEAN = (rs, i, nullSqlInstance, calendar) ->
+    private static final ResultSetValueHandler BOOLEAN = (rs, i) ->
     {
         boolean bool = rs.getBoolean(i);
-        return rs.wasNull() ? nullSqlInstance : bool;
+        return rs.wasNull() ? null : bool;
     };
 
-    private static final ResultSetValueHandler LONG = (rs, i, nullSqlInstance, calendar) ->
+    private static final ResultSetValueHandler LONG = (rs, i) ->
     {
         long val = rs.getLong(i);
-        return rs.wasNull() ? nullSqlInstance : val;
+        return rs.wasNull() ? null : val;
     };
 
-    private static final ResultSetValueHandler DOUBLE = (rs, i, nullSqlInstance, calendar) ->
+    private static final ResultSetValueHandler DOUBLE = (rs, i) ->
     {
         double d = rs.getDouble(i);
-        return rs.wasNull() ? nullSqlInstance : d;
+        return rs.wasNull() ? null : d;
     };
 
-    private static final ResultSetValueHandler DECIMAL = (rs, i, nullSqlInstance, calendar) ->
+    private static final ResultSetValueHandler DECIMAL = (rs, i) ->
     {
         BigDecimal bd = rs.getBigDecimal(i);
-        return bd == null ? nullSqlInstance : bd.doubleValue();
+        return bd == null ? null : bd.doubleValue();
     };
 
-    private static final ResultSetValueHandler BINARY = (rs, i, nullSqlInstance, calendar) ->
+    private static final ResultSetValueHandler BINARY = (rs, i) ->
     {
         byte[] bytes = rs.getBytes(i);
-        return bytes == null ? nullSqlInstance : BinaryUtils.encodeHex(bytes);
+        return bytes == null ? null : BinaryUtils.encodeHex(bytes);
     };
 
     private static final ImmutableIntObjectMap<ResultSetValueHandler> HANDLERS = IntObjectMaps.mutable.<ResultSetValueHandler>empty()
@@ -111,11 +108,56 @@ public final class ResultSetValueHandlers
 
     public interface ResultSetValueHandler
     {
-        Object value(ResultSet rs, int i, CoreInstance nullSqlInstance, Calendar calendar) throws SQLException;
+        /**
+         * Read the value of a column in the current row of a result set.
+         *
+         * @param rs result set, positioned on a row
+         * @param i  column index, counting from 1
+         * @return the value, or null if the column is null in this row
+         * @throws SQLException if the driver cannot read the column
+         */
+        Object value(ResultSet rs, int i) throws SQLException;
+
+        /**
+         * Read the value of a column in the current row of a result set, reading a timestamp
+         * column as a wall clock kept in the zone of the calendar, whatever zone the handler was
+         * got for. Only a timestamp column has a use for the calendar, so by default it is
+         * ignored.
+         *
+         * @param rs       result set, positioned on a row
+         * @param i        column index, counting from 1
+         * @param calendar calendar in the zone the connection names
+         * @return the value, or null if the column is null in this row
+         * @throws SQLException if the driver cannot read the column
+         * @deprecated Use {@link #value(ResultSet, int)}, with a handler got for the zone the
+         * connection names. Retained temporarily, for the deprecated
+         * {@code RelationalNativeImplementation.processRow} that takes a calendar.
+         */
+        @Deprecated
+        default Object value(ResultSet rs, int i, Calendar calendar) throws SQLException
+        {
+            return value(rs, i);
+        }
     }
 
-    public static ListIterable<ResultSetValueHandler> getHandlers(ResultSetMetaData metaData) throws SQLException
+    /**
+     * Get a handler for each column of a result set. A timestamp column is read as a wall clock
+     * the database keeps in the zone the connection names.
+     *
+     * <p>The handlers for a date or timestamp column remember what the driver can answer, so they
+     * serve one result set, read on one thread.
+     *
+     * @param metaData   result set metadata
+     * @param timeZone   name of the zone the connection names
+     * @param resolution how to resolve the name
+     * @return a handler for each column, in column order
+     * @throws SQLException             if the driver cannot describe the columns
+     * @throws IllegalArgumentException if the name is null, or if the resolution rejects names
+     *                                  that stand for no zone and this is one
+     */
+    public static ListIterable<ResultSetValueHandler> getHandlers(ResultSetMetaData metaData, String timeZone, TimeZoneResolution resolution) throws SQLException
     {
+        ConnectionTimeZone connectionTimeZone = new ConnectionTimeZone(timeZone, resolution);
         int count = metaData.getColumnCount();
         MutableList<ResultSetValueHandler> handlers = Lists.mutable.ofInitialCapacity(count);
         ResultSetValueHandler dateHandler = null;
@@ -135,12 +177,12 @@ public final class ResultSetValueHandlers
                 }
                 case Types.TIMESTAMP:
                 {
-                    handler = (timestampHandler == null) ? timestampHandler = newTimestampHandler() : timestampHandler;
+                    handler = (timestampHandler == null) ? timestampHandler = newTimestampHandler(connectionTimeZone) : timestampHandler;
                     break;
                 }
                 case Types.TIMESTAMP_WITH_TIMEZONE:
                 {
-                    handler = (zonedTimestampHandler == null) ? zonedTimestampHandler = newZonedTimestampHandler() : zonedTimestampHandler;
+                    handler = (zonedTimestampHandler == null) ? zonedTimestampHandler = newZonedTimestampHandler(connectionTimeZone) : zonedTimestampHandler;
                     break;
                 }
                 default:
@@ -155,6 +197,24 @@ public final class ResultSetValueHandlers
             handlers.add(handler);
         }
         return handlers;
+    }
+
+    /**
+     * Get a handler for each column of a result set. A timestamp column is read as a wall clock
+     * kept in GMT, the zone a connection naming no zone is read in, unless a calendar in another
+     * zone is handed to {@link ResultSetValueHandler#value(ResultSet, int, Calendar)}.
+     *
+     * @param metaData result set metadata
+     * @return a handler for each column, in column order
+     * @throws SQLException if the driver cannot describe the columns
+     * @deprecated Use {@link #getHandlers(ResultSetMetaData, String, TimeZoneResolution)}, naming
+     * the zone the connection names. Retained temporarily, for callers of the deprecated
+     * {@code RelationalNativeImplementation.processRow} that takes a calendar.
+     */
+    @Deprecated
+    public static ListIterable<ResultSetValueHandler> getHandlers(ResultSetMetaData metaData) throws SQLException
+    {
+        return getHandlers(metaData, "GMT", TimeZoneResolution.STRICT);
     }
 
     /**
@@ -182,14 +242,14 @@ public final class ResultSetValueHandlers
             private boolean readsLocalDate = true;
 
             @Override
-            public Object value(ResultSet rs, int i, CoreInstance nullSqlInstance, Calendar calendar) throws SQLException
+            public Object value(ResultSet rs, int i) throws SQLException
             {
                 if (this.readsLocalDate)
                 {
                     try
                     {
                         LocalDate localDate = rs.getObject(i, LocalDate.class);
-                        return (localDate == null) ? nullSqlInstance : DateFunctions.fromLocalDate(localDate);
+                        return (localDate == null) ? null : DateFunctions.fromLocalDate(localDate);
                     }
                     catch (SQLException | UnsupportedOperationException | AbstractMethodError unsupported)
                     {
@@ -197,7 +257,7 @@ public final class ResultSetValueHandlers
                     }
                 }
                 Date date = rs.getDate(i);
-                return (date == null) ? nullSqlInstance : StrictDate.fromSQLDate(date);
+                return (date == null) ? null : StrictDate.fromSQLDate(date);
             }
         };
     }
@@ -212,25 +272,44 @@ public final class ResultSetValueHandlers
      * to shift does not: DuckDB 1.0.0 ignores the calendar and answers as though the connection
      * named UTC, so a connection naming any other zone reads its timestamps off by that zone.
      *
+     * @param timeZone zone the connection names
      * @return handler for a timestamp column carrying no zone
      */
-    private static ResultSetValueHandler newTimestampHandler()
+    private static ResultSetValueHandler newTimestampHandler(ConnectionTimeZone timeZone)
     {
         return new ResultSetValueHandler()
         {
             private boolean readsLocalDateTime = true;
 
             @Override
-            public Object value(ResultSet rs, int i, CoreInstance nullSqlInstance, Calendar calendar) throws SQLException
+            public Object value(ResultSet rs, int i) throws SQLException
             {
                 if (this.readsLocalDateTime)
                 {
                     try
                     {
-                        LocalDateTime wallClock = rs.getObject(i, LocalDateTime.class);
-                        return (wallClock == null) ?
-                               nullSqlInstance :
-                               DateFunctions.fromInstant(wallClock.atZone(calendar.getTimeZone().toZoneId()).toInstant(), 9);
+                        LocalDateTime dateTime = rs.getObject(i, LocalDateTime.class);
+                        return (dateTime == null) ? null : DateFunctions.fromInstant(dateTime.atZone(timeZone.getZoneId()).toInstant(), 9);
+                    }
+                    catch (SQLException | UnsupportedOperationException | AbstractMethodError unsupported)
+                    {
+                        this.readsLocalDateTime = false;
+                    }
+                }
+                Timestamp timestamp = rs.getTimestamp(i, timeZone.getCalendar());
+                return (timestamp == null) ? null : DateFunctions.fromSQLTimestamp(timestamp);
+            }
+
+            @Deprecated
+            @Override
+            public Object value(ResultSet rs, int i, Calendar calendar) throws SQLException
+            {
+                if (this.readsLocalDateTime)
+                {
+                    try
+                    {
+                        LocalDateTime dateTime = rs.getObject(i, LocalDateTime.class);
+                        return (dateTime == null) ? null : DateFunctions.fromInstant(dateTime.atZone(calendar.getTimeZone().toZoneId()).toInstant(), 9);
                     }
                     catch (SQLException | UnsupportedOperationException | AbstractMethodError unsupported)
                     {
@@ -238,7 +317,7 @@ public final class ResultSetValueHandlers
                     }
                 }
                 Timestamp timestamp = rs.getTimestamp(i, calendar);
-                return (timestamp == null) ? nullSqlInstance : DateFunctions.fromSQLTimestamp(timestamp);
+                return (timestamp == null) ? null : DateFunctions.fromSQLTimestamp(timestamp);
             }
         };
     }
@@ -249,23 +328,45 @@ public final class ResultSetValueHandlers
      * <p>The column holds a moment already, so the zone the connection names has nothing to say
      * about it and nothing is shifted: only the moment is wanted, read in UTC.
      *
+     * @param timeZone zone the connection names, for a driver that will not give an
+     *                 {@link OffsetDateTime}
      * @return handler for a timestamp column carrying a zone
      */
-    private static ResultSetValueHandler newZonedTimestampHandler()
+    private static ResultSetValueHandler newZonedTimestampHandler(ConnectionTimeZone timeZone)
     {
         return new ResultSetValueHandler()
         {
             private boolean readsOffsetDateTime = true;
 
             @Override
-            public Object value(ResultSet rs, int i, CoreInstance nullSqlInstance, Calendar calendar) throws SQLException
+            public Object value(ResultSet rs, int i) throws SQLException
             {
                 if (this.readsOffsetDateTime)
                 {
                     try
                     {
-                        OffsetDateTime moment = rs.getObject(i, OffsetDateTime.class);
-                        return (moment == null) ? nullSqlInstance : DateFunctions.fromInstant(moment.toInstant(), 9);
+                        OffsetDateTime dateTime = rs.getObject(i, OffsetDateTime.class);
+                        return (dateTime == null) ? null : DateFunctions.fromInstant(dateTime.toInstant(), 9);
+                    }
+                    catch (SQLException | UnsupportedOperationException | AbstractMethodError unsupported)
+                    {
+                        this.readsOffsetDateTime = false;
+                    }
+                }
+                Timestamp timestamp = rs.getTimestamp(i, timeZone.getCalendar());
+                return (timestamp == null) ? null : DateFunctions.fromSQLTimestamp(timestamp);
+            }
+
+            @Deprecated
+            @Override
+            public Object value(ResultSet rs, int i, Calendar calendar) throws SQLException
+            {
+                if (this.readsOffsetDateTime)
+                {
+                    try
+                    {
+                        OffsetDateTime dateTime = rs.getObject(i, OffsetDateTime.class);
+                        return (dateTime == null) ? null : DateFunctions.fromInstant(dateTime.toInstant(), 9);
                     }
                     catch (SQLException | UnsupportedOperationException | AbstractMethodError unsupported)
                     {
@@ -273,8 +374,45 @@ public final class ResultSetValueHandlers
                     }
                 }
                 Timestamp timestamp = rs.getTimestamp(i, calendar);
-                return (timestamp == null) ? nullSqlInstance : DateFunctions.fromSQLTimestamp(timestamp);
+                return (timestamp == null) ? null : DateFunctions.fromSQLTimestamp(timestamp);
             }
         };
+    }
+
+    /**
+     * The zone a connection names, which the database keeps the wall clock of a timestamp column in.
+     *
+     * <p>The zone is resolved up front, since every timestamp read as a wall clock is shifted out of
+     * it. A calendar in that zone is wanted only for a driver that will not give a wall clock, so it
+     * is created the first time one is asked for. The handlers for one result set share one
+     * instance, and with it one calendar, which is not safe to share between threads.
+     */
+    private static final class ConnectionTimeZone
+    {
+        private final String timeZone;
+        private final TimeZoneResolution resolution;
+        private final ZoneId zoneId;
+        private Calendar calendar;
+
+        private ConnectionTimeZone(String timeZone, TimeZoneResolution resolution)
+        {
+            this.timeZone = timeZone;
+            this.resolution = resolution;
+            this.zoneId = resolution.parse(timeZone);
+        }
+
+        ZoneId getZoneId()
+        {
+            return this.zoneId;
+        }
+
+        Calendar getCalendar()
+        {
+            if (this.calendar == null)
+            {
+                this.calendar = this.resolution.newCalendar(this.timeZone);
+            }
+            return this.calendar;
+        }
     }
 }
