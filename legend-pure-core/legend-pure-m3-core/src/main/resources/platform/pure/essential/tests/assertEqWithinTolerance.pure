@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::pure::functions::asserts::*;
+import meta::pure::functions::date::*;
 
 function meta::pure::functions::asserts::assertEqWithinTolerance(expected:Number[1], actual:Number[1], delta:Number[1]):Boolean[1]
 {
@@ -32,6 +33,26 @@ function meta::pure::functions::asserts::assertEqWithinTolerance(expected:Number
 function meta::pure::functions::asserts::assertEqWithinTolerance(expected:Number[1], actual:Number[1], delta:Number[1], message:Function<{->String[1]}>[1]):Boolean[1]
 {
     assert(abs($expected - $actual) <= abs($delta), $message);
+}
+
+function meta::pure::functions::asserts::assertEqWithinTolerance(expected:Date[1], actual:Date[1], unit:DurationUnit[1]):Boolean[1]
+{
+    assertEqWithinTolerance($expected, $actual, $unit, '\nexpected: %r\nactual:   %r', [$expected, $actual]);
+}
+
+function meta::pure::functions::asserts::assertEqWithinTolerance(expected:Date[1], actual:Date[1], unit:DurationUnit[1], message:String[1]):Boolean[1]
+{
+    assert($expected->dateDiff($actual, $unit) == 0, $message);
+}
+
+function meta::pure::functions::asserts::assertEqWithinTolerance(expected:Date[1], actual:Date[1], unit:DurationUnit[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]
+{
+    assert($expected->dateDiff($actual, $unit) == 0, $formatString, $formatArgs);
+}
+
+function meta::pure::functions::asserts::assertEqWithinTolerance(expected:Date[1], actual:Date[1], unit:DurationUnit[1], message:Function<{->String[1]}>[1]):Boolean[1]
+{
+    assert($expected->dateDiff($actual, $unit) == 0, $message);
 }
 
 
@@ -74,4 +95,23 @@ function <<test.Test>> meta::pure::functions::asserts::tests::testFailureAssertE
     assertError(|assertEqWithinTolerance(1, 0, 0), '\nexpected: 1\nactual:   0');
     assertError(|assertEqWithinTolerance(2.718271828459045, 2.718281828459045, 0.000000001), '\nexpected: 2.718271828459045\nactual:   2.718281828459045');
     assertError(|assertEqWithinTolerance(2.718281828459045, 2.7182818284590455, 0.0000000000000001), '\nexpected: 2.718281828459045\nactual:   2.7182818284590455');
+}
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertWithToleranceDates():Boolean[1]
+{
+    assertEqWithinTolerance(%2025-02-10T20:10:20, %2025-02-10T20:10:20.000000000, DurationUnit.SECONDS);
+    assertEqWithinTolerance(%2025-02-10T20:10:20.000000000, %2025-02-10T20:10:20, DurationUnit.SECONDS);
+    assertEqWithinTolerance(%1973-11-13T23:09:11.0, %1973-11-13T23:09:11.000000000, DurationUnit.MILLISECONDS);
+    assertEqWithinTolerance(%2021-06-21T09:37:37.4990000, %2021-06-21T09:37:37.499, DurationUnit.MICROSECONDS);
+    assertEqWithinTolerance(%2021-06-21T09:37:37.499123, %2021-06-21T09:37:37.499123000, DurationUnit.NANOSECONDS);
+    assertEqWithinTolerance(%2025-04-09, %2025-04-09T00:00:00.000000000, DurationUnit.DAYS);
+    assertEqWithinTolerance(%2025-04-09, %2025-04-09T23:59:59, DurationUnit.DAYS);
+    assertEqWithinTolerance(%2025-02-10T20:10:20, %2025-02-10T20:10:20.999, DurationUnit.SECONDS);
+}
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testFailureAssertEqWithinToleranceDates():Boolean[1]
+{
+    assertError(|assertEqWithinTolerance(%2025-02-10T20:10:20, %2025-02-10T20:10:21, DurationUnit.SECONDS), '\nexpected: %2025-02-10T20:10:20+0000\nactual:   %2025-02-10T20:10:21+0000');
+    assertError(|assertEqWithinTolerance(%2021-06-21T09:37:37.499, %2021-06-21T09:37:37.498, DurationUnit.MILLISECONDS), '\nexpected: %2021-06-21T09:37:37.499+0000\nactual:   %2021-06-21T09:37:37.498+0000');
+    assertError(|assertEqWithinTolerance(%2025-04-09, %2025-04-10, DurationUnit.DAYS), '\nexpected: %2025-04-09\nactual:   %2025-04-10');
 }
