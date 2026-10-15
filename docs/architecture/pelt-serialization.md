@@ -16,38 +16,57 @@ unless stated otherwise.
 
 > **Status (October 2026).** PELT was introduced in September 2025 (#1084) and has
 > since gained per-file compression (#1217), a back-reference index (#1237), atomic
-> write-if-modified output (#1235), replaced the compiled engine's distributed
-> metadata (#1260, removed in #1311), and is the production metadata path of
+> write-if-modified output (#1235), replaced every earlier compiled-mode metadata
+> format (#1260, #1298; removed in #1311), and is the production metadata path of
 > `legend-engine` (`PureModel.METADATA_LAZY` is a `MetadataPelt`, engine #4699).
-> It coexists with the older PAR archive format during migration.
+> It is intended to replace the PAR archive format as well, but that migration is
+> not complete.
 
 ---
 
 ## 1. Why PELT exists
 
-Legend Pure has had two earlier binary representations:
+Legend Pure has several other binary representations of a compiled graph. They
+differ in the layer they serialize, whether they are monolithic or modular, whether
+they load eagerly or lazily, and how they treat back references:
 
-| Format | Where | Granularity | Consumer |
-|---|---|---|---|
-| **PAR** (`.par`, M4 `BinaryRepositorySerializer`) | `legend-pure-m4` / `legend-pure-maven-generation-par` | one archive per repository, whole graph, node ids are counters | interpreted runtime graph cache (`PureRepositoryJar`, `GraphLoader`) |
-| **Distributed metadata** (removed on `master` in #1311) | compiled runtime | per-repository binary metadata behind the old `MetadataLazy` | compiled engine, replaced by `MetadataPelt` (#1260); `MetadataLazy` survives only as a deprecated shim |
-| **PELT** | `m3-core` `serialization/compiler` | one file per packageable element + per-module metadata, string reference ids | both engines |
+| Format | Layer | Granularity | Loading | Back references | Status |
+|---|---|---|---|---|---|
+| **M4 binary** (`BinaryRepositorySerializer`, `legend-pure-m4`) | M4 | monolithic: the entire compiled `ModelRepository` in one stream, including anonymous instance names and synthetic ids | eager: the whole graph is loaded from that stream | written like any other property value | rarely used (`SimpleFSPureGraphCache`, `FSZipPureGraphCache`, `MemoryPureGraphCache`); its future is unclear |
+| **PAR** (`.par`; `PureJarSerializer` → `BinaryModelRepositorySerializer`, `m3-core`; goal `build-pure-jar`) | M3 | modular: one archive per repository, one entry per source file; no anonymous instance names or synthetic ids | eager: everything in scope is loaded up front (`PureRepositoryJar`, `GraphLoader`) | recomputed at load time (`GraphLoader.populateBackReferences`) | in use by the interpreted runtime; PELT is intended to replace it |
+| **PELT** (`m3-core` `serialization/compiler`) | M3 | modular: one file per packageable element, plus per-module metadata | lazy: the scope is set up front and only minimal metadata is loaded; instances are loaded as needed | serialized at build time and loaded with the element (§7.4) | both engines |
 
-Both older formats force the consumer to deserialize large blobs whose internal ids are
-only meaningful relative to that blob. PELT was designed around four requirements:
+The compiled engine also had three metadata formats of its own. PELT has replaced
+all three, and all three have been removed from the code base:
+
+1. An unnamed first format which, like the M4 format, was monolithic and eagerly
+   loaded.
+2. The original **distributed metadata**: monolithic but lazily loaded, at the cost of
+   large in-memory indexes to manage the lazy loading. Replaced by PELT in #1298.
+3. A **modular distributed metadata**: modular and lazily loaded, also with large
+   in-memory indexes. It did not handle back references properly — some were
+   serialized and some were not — so some reflective operations misbehaved. Replaced
+   by `MetadataPelt` in #1260; `MetadataLazy` survives only as a deprecated shim that
+   delegates to it.
+
+PELT was designed around four requirements:
 
 1. **Element granularity.** The unit of (de)serialization is a single packageable
    element (`Class`, `ConcreteFunctionDefinition`, `Enumeration`, `Profile`, `Mapping`,
    `Database`, …). A runtime that needs `meta::pure::functions::collection::map` reads
    one small file.
 2. **Stable, build-independent identity.** Cross-element links are strings derived
-   from the element path plus a navigation path inside the element (§6), not arena
-   indexes or counters. Two independent builds of the same source produce the same ids.
+   from the element path plus a navigation path inside the element (§6). Synthetic
+   ids and anonymous instance names are never written. Two independent builds of the
+   same source produce the same ids.
 3. **Lazy loading that is sound.** The bidirectional links that the M3 graph
    maintains (`specializations`, `applications`, `referenceUsages`,
    `propertiesFromAssociations`, …) would otherwise force every element to pull in the
-   whole graph. PELT strips them from the element and precomputes them into
-   per-module side tables, so loading one element never requires loading its users.
+   whole graph. PAR avoids the problem by loading eagerly and recomputing them, and
+   the modular distributed metadata showed what happens when only some are
+   serialized. PELT strips them all from the element and precomputes them into
+   per-module side tables, so loading one element never requires loading its users
+   and every back reference is still available once the element is loaded.
 4. **Schema-agnostic.** The serializer never special-cases `Class` or
    `FunctionExpression`. It walks `class_getSimplePropertiesByName(classifier)` and
    writes `(property name → values)`. Any M3 class — including DSL metamodels defined
@@ -510,11 +529,11 @@ dispatch works before any function body has been loaded.
 flowchart TD
     RT[PureRuntime with compiled graph] --> PCS[PureCompilerSerializer]
     PCS -->|for each top-level / packaged element in module| CES[ConcreteElementSerializer]
-    CES --> RIP[ReferenceIdProvider v1\nContainingElementIndex + ReferenceIdGenerator]
+    CES --> RIP["ReferenceIdProvider v1<br/>ContainingElementIndex + ReferenceIdGenerator"]
     CES --> SI[StringIndexer v3]
     CES --> FS[FileSerializer]
     PCS --> MMG[ModuleMetadataGenerator]
-    MMG --> CEMG[ConcreteElementMetadataGenerator\nmanifest entries, external refs, back refs, functions by name]
+    MMG --> CEMG["ConcreteElementMetadataGenerator<br/>manifest entries, external refs, back refs, functions by name"]
     MMG --> SMG[SourceMetadataGenerator]
     MMG --> MMS[ModuleMetadataSerializer v3]
     MMS --> FS
@@ -548,16 +567,16 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    MF[.pmf of requested modules\n+ transitive dependencies] --> MI[MetadataIndex]
-    BRI[.pbr index per module] --> MI
-    MI --> EL[ElementLoader\nConcurrentMap path → AtomicReference]
-    EL -->|loadElement path| EB[ElementBuilder]
-    EB -->|concrete element| LCE[generated lazy class\nvolatile Init, initialize on first access]
-    LCE -->|first property access| FD[FileDeserializer → ConcreteElementDeserializer]
-    FD --> DCE[DeserializedConcreteElement\nInstanceData[0..n]]
-    DCE --> IIR[InternalIdResolver\neager < 100 nodes, lazy array otherwise]
-    DCE --> RIR[ReferenceIdResolver\nexternal id → loadElement + GraphPath walk]
-    LCE -->|back refs| PBR[.pbr files for this element]
+    MF[".pmf of requested modules<br/>+ transitive dependencies"] --> MI[MetadataIndex]
+    BRI[".pbr index per module"] --> MI
+    MI --> EL["ElementLoader<br/>ConcurrentMap: path → AtomicReference"]
+    EL -->|"loadElement(path)"| EB[ElementBuilder]
+    EB -->|"concrete element"| LCE["generated lazy class<br/>volatile Init, initialize on first access"]
+    LCE -->|"first property access"| FD["FileDeserializer → ConcreteElementDeserializer"]
+    FD --> DCE["DeserializedConcreteElement<br/>array of InstanceData"]
+    DCE --> IIR["InternalIdResolver<br/>eager below 100 nodes, lazy array otherwise"]
+    DCE --> RIR["ReferenceIdResolver<br/>external id → loadElement + GraphPath walk"]
+    LCE -->|"back refs"| PBR[".pbr files for this element"]
 ```
 
 - **`MetadataIndex`** is built from the manifests of the requested modules; `MetadataPelt`
