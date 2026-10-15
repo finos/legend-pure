@@ -36,7 +36,14 @@ RUSTDOCFLAGS=-Dwarnings cargo doc --workspace --no-deps
 ```
 
 CI (`.github/workflows/rust.yml` at the repository root) runs these plus
-`cargo build --workspace` and a separate doctest pass.
+`cargo build --workspace` and a separate doctest pass, then a second job,
+`PCT (Rust_JNI, Rust_FFM)`: it takes that job's two debug cdylibs, builds the
+modules the Java side depends on (`-am`), and runs `clean verify` on `-api`,
+`-jni` and `-ffm` on JDK 25, failing if a library is missing or any of the
+eight PCT suites and two boundary suites did not run. Any manifest mismatch
+fails it, so a change that moves a test lands with its regenerated manifests.
+The workflow also runs on changes to `legend-pure-core`, `legend-pure-runtime`,
+`legend-pure-maven` and the root `pom.xml`, which those modules build on.
 
 Function and lambda bodies run on the body executor (`crates/evaluator/src/exec/`, plan Step 2d), on by default; `LEGEND_PURE_RUST_EXEC=off` (read once per process, also by the cdylibs under Maven) puts every body back on the tree walker, and every evaluator integration test runs both ways through `builders::on_both_paths`.
 

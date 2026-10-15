@@ -98,4 +98,5 @@ Surefire passes the library directory to the tests as the system property
 `legend.pure.rust.libdir`; without it `PureRustEvaluator` falls back to
 `System.loadLibrary("pure_rust_jni")`. When the library is absent the module's
 tests are skipped (profile `rust-cdylib-missing-*`), so `mvn install` stays green on
-hosts and CI without a Rust toolchain. Override with `-DskipTests=false` to force a run.
+hosts and CI jobs without a Rust toolchain; the `pct` job of `.github/workflows/rust.yml`
+builds the library first and fails if any suite was skipped. Override with `-DskipTests=false` to force a run.

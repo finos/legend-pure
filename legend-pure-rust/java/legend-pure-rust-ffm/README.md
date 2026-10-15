@@ -98,7 +98,8 @@ The module compiles with release 25 and joins the reactor only through the profi
 or 11 build neither builds nor installs it and `-pl` cannot select it there. Surefire passes
 the library directory as `legend.pure.rust.libdir` and `--enable-native-access=ALL-UNNAMED`;
 when the library is absent the module's tests are skipped (profile `rust-cdylib-missing-*`),
-so `mvn install` stays green on hosts and CI without a Rust toolchain. Override with
+so `mvn install` stays green on hosts and CI jobs without a Rust toolchain; the `pct` job of `.github/workflows/rust.yml`
+builds the library first and fails if any suite was skipped. Override with
 `-DskipTests=false` to force a run.
 
 The benchmarks that run this transport beside `Rust_JNI` (`BenchmarkPctExpressions` under six

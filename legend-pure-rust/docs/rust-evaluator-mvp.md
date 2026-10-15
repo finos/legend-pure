@@ -1405,9 +1405,12 @@ native-access flag must be on every JVM that loads the module (surefire,
 the engine's launchers, IDE runners), a cost JNI's `System.load` shares
 since JDK 24. Two modules at two floors in one reactor: two profiles, two
 checkstyle configurations, and legend-engine seeing a release-17 shared
-module plus two optional transports. No CI job runs the Java suites with
-a built cdylib today (`rust.yml` never runs Maven, `build.yml` never runs
-cargo); with two transports to compare, that gap starts to matter.
+module plus two optional transports. No CI job ran the Java suites with
+a built cdylib (`rust.yml` never ran Maven, `build.yml` never runs
+cargo); with two transports to compare, that gap started to matter, and
+since 2026-10-14 `rust.yml`'s `pct` job closes it (the `Rust_JNI` and
+`Rust_FFM` suites on both engines, JDK 25, on every change to the Rust
+workspace or the core modules it builds on).
 
 ### Step 2d — A typed IR per body (decided 2026-10-11, done 2026-10-11; before Step 3)
 
