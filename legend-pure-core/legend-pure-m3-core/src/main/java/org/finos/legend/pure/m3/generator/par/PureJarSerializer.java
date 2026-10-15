@@ -33,10 +33,9 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m3.serialization.runtime.binary.BinaryModelRepositorySerializer;
 import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJarLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.binary.SimplePureRepositoryJarLibrary;
+import org.finos.legend.pure.m4.tools.FileWriteTools;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -118,10 +117,7 @@ public class PureJarSerializer
         {
             Path outputFile = outputDirectory.resolve("pure-" + repositoryName + "." + ARCHIVE_FILE_EXTENSION);
             log.debug("      Writing " + outputFile);
-            try (OutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(outputFile)))
-            {
-                BinaryModelRepositorySerializer.serialize(outputStream, platformVersion, modelVersion, repositoryName, runtime);
-            }
+            FileWriteTools.writeIfModified(outputFile, outputStream -> BinaryModelRepositorySerializer.serialize(outputStream, platformVersion, modelVersion, repositoryName, runtime));
         }
     }
 

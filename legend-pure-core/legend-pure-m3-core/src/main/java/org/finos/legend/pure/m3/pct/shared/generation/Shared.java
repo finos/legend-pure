@@ -14,12 +14,12 @@
 
 package org.finos.legend.pure.m3.pct.shared.generation;
 
+import org.finos.legend.pure.m4.tools.FileWriteTools;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 
 public class Shared
 {
@@ -27,7 +27,6 @@ public class Shared
     {
         Path targetPath = Paths.get(target, name);
         byte[] bytes = reportStr.getBytes(StandardCharsets.UTF_8);
-        Files.createDirectories(targetPath.getParent());
-        Files.write(targetPath, bytes, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        FileWriteTools.writeIfModified(targetPath, bytes);
     }
 }

@@ -67,6 +67,45 @@ public class TestPureJarGenerator
         Assert.assertTrue("pure-platform.par should be non-empty", parFile.length() > 0);
     }
 
+    /**
+     * Re-generating the same PAR into the same output directory with unchanged input must not touch the
+     * archive — {@link PureJarSerializer#writePureRepositoryJars} used to rewrite the {@code .par} file
+     * unconditionally, which bumped its mtime on every build and defeated incremental-build caching.
+     */
+    @Test
+    public void testGeneratePar_rerunWithUnchangedInput_preservesTimestamp() throws Exception
+    {
+        File outputDir = TMP.newFolder("par-rerun");
+        PureJarGenerator.doGeneratePAR(
+                Sets.mutable.with(PLATFORM),
+                Sets.mutable.empty(),
+                Sets.mutable.empty(),
+                null, null, null,
+                outputDir,
+                Thread.currentThread().getContextClassLoader(),
+                new LogToSystemOut());
+
+        File parFile = new File(outputDir, "pure-platform.par");
+        Assert.assertTrue(parFile.exists());
+        long before = parFile.lastModified();
+
+        Thread.sleep(1000);
+
+        PureJarGenerator.doGeneratePAR(
+                Sets.mutable.with(PLATFORM),
+                Sets.mutable.empty(),
+                Sets.mutable.empty(),
+                null, null, null,
+                outputDir,
+                Thread.currentThread().getContextClassLoader(),
+                new LogToSystemOut());
+
+        Assert.assertEquals(
+                "Re-generating the PAR with unchanged input must not touch " + parFile,
+                before,
+                parFile.lastModified());
+    }
+
     @Test
     public void testGeneratePar_parStructure() throws Exception
     {

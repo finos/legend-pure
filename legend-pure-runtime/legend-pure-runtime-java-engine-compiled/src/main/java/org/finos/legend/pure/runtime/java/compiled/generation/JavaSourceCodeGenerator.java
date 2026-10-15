@@ -48,6 +48,7 @@ import org.finos.legend.pure.m3.tools.JavaTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.exception.PureException;
+import org.finos.legend.pure.m4.tools.FileWriteTools;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
@@ -405,8 +406,7 @@ public final class JavaSourceCodeGenerator
             {
                 //String fileUri = "file://" + source.toUri().getPath();
                 Path file = Paths.get(this.directoryToWriteFilesTo + source.toUri().getPath());
-                Files.createDirectories(file.getParent());
-                Files.write(file, source.getCode().getBytes(StandardCharsets.UTF_8));
+                FileWriteTools.writeIfModified(file, source.getCode().getBytes(StandardCharsets.UTF_8));
             }
         }
         catch (IOException e)
