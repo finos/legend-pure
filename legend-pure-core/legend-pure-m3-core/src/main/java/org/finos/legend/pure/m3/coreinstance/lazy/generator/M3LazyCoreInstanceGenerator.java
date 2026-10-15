@@ -89,6 +89,7 @@ import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
+import org.finos.legend.pure.m4.tools.FileWriteTools;
 import org.finos.legend.pure.m4.tools.TextTools;
 import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 
@@ -97,7 +98,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
@@ -2325,8 +2325,7 @@ public class M3LazyCoreInstanceGenerator
         Path filePath = directory.resolve(relativeFilePath);
         try
         {
-            Files.createDirectories(filePath.getParent());
-            Files.write(filePath, code.getBytes(StandardCharsets.UTF_8));
+            FileWriteTools.writeIfModified(filePath, code.getBytes(StandardCharsets.UTF_8));
         }
         catch (IOException e)
         {

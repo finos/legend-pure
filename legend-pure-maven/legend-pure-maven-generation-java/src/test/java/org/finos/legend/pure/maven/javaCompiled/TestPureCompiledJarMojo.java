@@ -125,6 +125,41 @@ public class TestPureCompiledJarMojo
         }
     }
 
+    /**
+     * Re-running generation into the same output directory with unchanged input must not touch files whose
+     * content didn't change — {@link JavaSourceCodeGenerator} used to rewrite every generated {@code .java}
+     * file unconditionally, which bumped mtimes on every build and defeated incremental-build caching.
+     */
+    @Test
+    public void testExecute_rerunWithUnchangedInput_preservesTimestamps() throws Exception
+    {
+        File targetDir  = TMP.newFolder("exec-rerun-target");
+        File classesDir = new File(targetDir, "classes");
+        classesDir.mkdir();
+
+        PureCompiledJarMojo mojo = buildMojo(targetDir, classesDir, setOf("platform"));
+        setField(mojo, "generateSources", true);
+        mojo.execute();
+
+        Path generatedSources = targetDir.toPath().resolve("generated-sources");
+        Path sampleFile;
+        try (Stream<Path> stream = Files.walk(generatedSources))
+        {
+            sampleFile = stream.filter(Files::isRegularFile).findFirst()
+                    .orElseThrow(() -> new AssertionError("Expected at least one generated source file"));
+        }
+
+        java.nio.file.attribute.FileTime before = Files.getLastModifiedTime(sampleFile);
+        Thread.sleep(50);
+
+        mojo.execute();
+
+        Assert.assertEquals(
+                "Re-running generation with unchanged input must not touch " + sampleFile,
+                before,
+                Files.getLastModifiedTime(sampleFile));
+    }
+
     @Test
     public void testExecute_modularGeneration_producesOutput() throws Exception
     {

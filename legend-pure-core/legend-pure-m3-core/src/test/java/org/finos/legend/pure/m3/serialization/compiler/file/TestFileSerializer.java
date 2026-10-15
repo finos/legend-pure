@@ -226,6 +226,32 @@ public class TestFileSerializer extends AbstractPureTestWithCoreCompiled
         return elementDeserializer.deserialize(new ByteArrayInputStream(byteStream.toByteArray()));
     }
 
+    /**
+     * {@code serializeModuleBackReferenceIndex} used to bypass the write-if-modified helper and write directly
+     * with {@code Files.newOutputStream}, so re-serializing identical content would always bump the file's
+     * last-modified timestamp. This guards against that regression.
+     */
+    @Test
+    public void testWriteIfModified_backReferenceIndex_identicalContentPreservesTimestamp() throws IOException, InterruptedException
+    {
+        Path directory = TMP.newFolder().toPath();
+        ModuleMetadata moduleMetadata = ModuleMetadataGenerator.fromPureRuntime(runtime).generateAllModuleMetadata().getFirst();
+
+        Path filePath = filePathProvider.getModuleBackReferenceIndexFilePath(directory, moduleMetadata.getName());
+        fileSerializer.serializeModuleBackReferenceMetadata(directory, moduleMetadata.getBackReferenceMetadata());
+        Assert.assertTrue("Back reference index file should exist after first write", Files.exists(filePath));
+
+        FileTime timestampAfterFirstWrite = Files.getLastModifiedTime(filePath);
+        Thread.sleep(50);
+
+        fileSerializer.serializeModuleBackReferenceMetadata(directory, moduleMetadata.getBackReferenceMetadata());
+
+        Assert.assertEquals(
+                "Re-serialising an identical back reference index must not change its last-modified timestamp",
+                timestampAfterFirstWrite,
+                Files.getLastModifiedTime(filePath));
+    }
+
     @Test
     public void testAllModulesInDirectory() throws IOException
     {

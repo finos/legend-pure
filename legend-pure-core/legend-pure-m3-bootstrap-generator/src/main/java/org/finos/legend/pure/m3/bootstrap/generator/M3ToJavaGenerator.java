@@ -32,12 +32,12 @@ import org.eclipse.collections.impl.utility.StringIterate;
 import org.finos.legend.pure.m3.tools.JavaTools;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.tools.FileWriteTools;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -218,12 +218,11 @@ public class M3ToJavaGenerator
         Path wrapperPath = fileOutputDir.resolve(getWrapperName(instance) + ".java");
         try
         {
-            Files.createDirectories(fileOutputDir);
-            Files.write(interfacePath, interfaceText.getBytes(StandardCharsets.UTF_8));
-            Files.write(accessorInterfacePath, immutableInterfaceText.getBytes(StandardCharsets.UTF_8));
-            //Files.write(builderInterfacePath, mutableInterfaceText.getBytes(StandardCharsets.UTF_8));
-            Files.write(classPath, classText.getBytes(StandardCharsets.UTF_8));
-            Files.write(wrapperPath, wrapperClassText.getBytes(StandardCharsets.UTF_8));
+            FileWriteTools.writeIfModified(interfacePath, interfaceText.getBytes(StandardCharsets.UTF_8));
+            FileWriteTools.writeIfModified(accessorInterfacePath, immutableInterfaceText.getBytes(StandardCharsets.UTF_8));
+            //FileWriteTools.writeIfModified(builderInterfacePath, mutableInterfaceText.getBytes(StandardCharsets.UTF_8));
+            FileWriteTools.writeIfModified(classPath, classText.getBytes(StandardCharsets.UTF_8));
+            FileWriteTools.writeIfModified(wrapperPath, wrapperClassText.getBytes(StandardCharsets.UTF_8));
         }
         catch (IOException e)
         {
@@ -2255,8 +2254,7 @@ public class M3ToJavaGenerator
         try
         {
             Path p = Paths.get(this.outputDir + ROOT_PACKAGE.replace(".", "/") + "/" + factoryName + ".java");
-            Files.createDirectories(p.getParent());
-            Files.write(p, result.getBytes(StandardCharsets.UTF_8));
+            FileWriteTools.writeIfModified(p, result.getBytes(StandardCharsets.UTF_8));
         }
         catch (IOException e)
         {

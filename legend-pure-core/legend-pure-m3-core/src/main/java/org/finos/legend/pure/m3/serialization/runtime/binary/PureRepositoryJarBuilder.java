@@ -31,18 +31,37 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 
 class PureRepositoryJarBuilder implements Closeable
 {
+    /**
+     * Fixed timestamp applied to every zip entry so that two archives serialized from identical content are
+     * byte-for-byte identical. {@link JarEntry#setTime} silently clamps dates before 1980-01-01 (the earliest
+     * representable DOS date) up to that floor, so {@code 0L} (1970-01-01) is a conventional, readable choice.
+     */
+    private static final long FIXED_ENTRY_TIME = 0L;
+
     private final String repositoryName;
     private final JarOutputStream jarStream;
 
     private PureRepositoryJarBuilder(OutputStream stream, String platformVersion, String modelVersion, String repositoryName, Iterable<? extends SourceSerializationResult> serializationResults) throws IOException
     {
         this.repositoryName = repositoryName;
-        this.jarStream = new JarOutputStream(stream, PureManifest.create(platformVersion, modelVersion, (this.repositoryName == null) ? "root" : this.repositoryName));
+        this.jarStream = new JarOutputStream(stream);
+        writeManifest(PureManifest.create(platformVersion, modelVersion, (this.repositoryName == null) ? "root" : this.repositoryName));
         writeIndexes(serializationResults);
+    }
+
+    private void writeManifest(Manifest manifest) throws IOException
+    {
+        JarEntry entry = new JarEntry(JarFile.MANIFEST_NAME);
+        entry.setTime(FIXED_ENTRY_TIME);
+        this.jarStream.putNextEntry(entry);
+        manifest.write(this.jarStream);
+        this.jarStream.closeEntry();
     }
 
     void addFile(String path, byte[] bytes) throws IOException
@@ -56,7 +75,9 @@ class PureRepositoryJarBuilder implements Closeable
             throw new IllegalArgumentException("File bytes must be non-null");
         }
         validatePath(path);
-        this.jarStream.putNextEntry(new JarEntry(canonicalizePath(path)));
+        JarEntry entry = new JarEntry(canonicalizePath(path));
+        entry.setTime(FIXED_ENTRY_TIME);
+        this.jarStream.putNextEntry(entry);
         this.jarStream.write(bytes);
         this.jarStream.closeEntry();
     }
@@ -99,7 +120,9 @@ class PureRepositoryJarBuilder implements Closeable
 
     private void writeInstanceDefinitionIndex(MapIterable<String, String> instanceDefinitionIndex) throws IOException
     {
-        this.jarStream.putNextEntry(new JarEntry(PureRepositoryJarTools.DEFINITION_INDEX_NAME));
+        JarEntry entry = new JarEntry(PureRepositoryJarTools.DEFINITION_INDEX_NAME);
+        entry.setTime(FIXED_ENTRY_TIME);
+        this.jarStream.putNextEntry(entry);
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.jarStream), 256);
         writer.append("{\n");
         boolean first = true;
@@ -126,7 +149,9 @@ class PureRepositoryJarBuilder implements Closeable
 
     private void writeExternalReferenceIndex(ListIterable<String> paths, SetMultimap<String, String> externalReferenceIndex) throws IOException
     {
-        this.jarStream.putNextEntry(new JarEntry(PureRepositoryJarTools.REFERENCE_INDEX_NAME));
+        JarEntry entry = new JarEntry(PureRepositoryJarTools.REFERENCE_INDEX_NAME);
+        entry.setTime(FIXED_ENTRY_TIME);
+        this.jarStream.putNextEntry(entry);
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.jarStream));
         writer.append("{\n");
         boolean first = true;
