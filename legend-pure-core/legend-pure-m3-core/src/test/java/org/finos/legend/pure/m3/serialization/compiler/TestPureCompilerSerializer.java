@@ -25,11 +25,15 @@ import org.finos.legend.pure.m3.serialization.compiler.element.DeserializedConcr
 import org.finos.legend.pure.m3.serialization.compiler.file.FileDeserializer;
 import org.finos.legend.pure.m3.serialization.compiler.file.FilePathProvider;
 import org.finos.legend.pure.m3.serialization.compiler.file.FileSerializer;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleBackReferenceIndex;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataGenerator;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.reference.AbstractReferenceTest;
 import org.finos.legend.pure.m3.serialization.compiler.reference.BaseReferenceTest;
+import org.finos.legend.pure.m3.serialization.compiler.reference.PrefixedReferenceIdExtension;
+import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProviders;
+import org.finos.legend.pure.m3.serialization.compiler.reference.v1.ReferenceIdExtensionV1;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
@@ -162,6 +166,20 @@ public class TestPureCompilerSerializer extends BaseReferenceTest
         testSerializeModulesToJar("test_generic_repository", "other_test_generic_repository", "ref_test");
     }
 
+    @Test
+    public void testModuleReferenceIdVersionToDirectory() throws IOException
+    {
+        testModuleReferenceIdVersionToDirectory("ref_test", 1, PrefixedReferenceIdExtension.VERSION);
+        testModuleReferenceIdVersionToDirectory("ref_test", PrefixedReferenceIdExtension.VERSION, 1);
+    }
+
+    @Test
+    public void testModuleReferenceIdVersionToJar() throws IOException
+    {
+        testModuleReferenceIdVersionToJar("ref_test", 1, PrefixedReferenceIdExtension.VERSION);
+        testModuleReferenceIdVersionToJar("ref_test", PrefixedReferenceIdExtension.VERSION, 1);
+    }
+
     private void testSerializeModuleToDirectory(String moduleName) throws IOException
     {
         Path directory = TMP.newFolder().toPath();
@@ -226,6 +244,58 @@ public class TestPureCompilerSerializer extends BaseReferenceTest
                 moduleInfo.elements.forEachKeyValue((path, element) -> assertElementSerialized(classLoader, path, element));
             });
         }
+    }
+
+    private void testModuleReferenceIdVersionToDirectory(String moduleName, int moduleVersion, int elementSerializerDefaultVersion) throws IOException
+    {
+        Path directory = TMP.newFolder().toPath();
+
+        newPureCompilerSerializer(moduleVersion, elementSerializerDefaultVersion).serializeModule(directory, moduleName);
+
+        Assert.assertEquals(moduleName, moduleVersion, fileDeserializer.deserializeModuleExternalReferenceMetadata(directory, moduleName).getReferenceIdVersion());
+        ModuleBackReferenceIndex backRefIndex = fileDeserializer.deserializeModuleBackReferenceIndexIfPresent(directory, moduleName);
+        Assert.assertNotNull(moduleName, backRefIndex);
+        backRefIndex.getElementPaths().forEach(path -> Assert.assertEquals(path, moduleVersion, fileDeserializer.deserializeModuleElementBackReferenceMetadata(directory, moduleName, path).getReferenceIdVersion()));
+        getModuleInfo(moduleName).elements.forEachKey(path -> Assert.assertEquals(path, moduleVersion, fileDeserializer.deserializeElement(directory, path).getReferenceIdVersion()));
+    }
+
+    private void testModuleReferenceIdVersionToJar(String moduleName, int moduleVersion, int elementSerializerDefaultVersion) throws IOException
+    {
+        Path directory = TMP.newFolder().toPath();
+        Path jarPath = directory.resolve(moduleName + ".jar");
+
+        try (JarOutputStream jarStream = new JarOutputStream(new BufferedOutputStream(Files.newOutputStream(jarPath))))
+        {
+            newPureCompilerSerializer(moduleVersion, elementSerializerDefaultVersion).serializeModule(jarStream, moduleName);
+        }
+
+        try (URLClassLoader classLoader = new URLClassLoader(new URL[]{jarPath.toUri().toURL()}, null))
+        {
+            Assert.assertEquals(moduleName, moduleVersion, fileDeserializer.deserializeModuleExternalReferenceMetadata(classLoader, moduleName).getReferenceIdVersion());
+            ModuleBackReferenceIndex backRefIndex = fileDeserializer.deserializeModuleBackReferenceIndexIfPresent(classLoader, moduleName);
+            Assert.assertNotNull(moduleName, backRefIndex);
+            backRefIndex.getElementPaths().forEach(path -> Assert.assertEquals(path, moduleVersion, fileDeserializer.deserializeModuleElementBackReferenceMetadata(classLoader, moduleName, path).getReferenceIdVersion()));
+            getModuleInfo(moduleName).elements.forEachKey(path -> Assert.assertEquals(path, moduleVersion, fileDeserializer.deserializeElement(classLoader, path).getReferenceIdVersion()));
+        }
+    }
+
+    private static PureCompilerSerializer newPureCompilerSerializer(int moduleVersion, int elementSerializerDefaultVersion)
+    {
+        ReferenceIdProviders referenceIds = ReferenceIdProviders.builder()
+                .withProcessorSupport(processorSupport)
+                .withExtension(new ReferenceIdExtensionV1())
+                .withExtension(new PrefixedReferenceIdExtension())
+                .withDefaultVersion(elementSerializerDefaultVersion)
+                .build();
+        FileSerializer fileSerializer = FileSerializer.builder()
+                .withFilePathProvider(FilePathProvider.builder().withLoadedExtensions().build())
+                .withSerializers(ConcreteElementSerializer.builder(processorSupport).withLoadedExtensions().withReferenceIdProviders(referenceIds).build(), ModuleMetadataSerializer.builder().withLoadedExtensions().build())
+                .build();
+        return PureCompilerSerializer.builder()
+                .withFileSerializer(fileSerializer)
+                .withModuleMetadataGenerator(ModuleMetadataGenerator.builder().withPureRuntime(runtime).withReferenceIdProvider(referenceIds.provider(moduleVersion)).build())
+                .withProcessorSupport(processorSupport)
+                .build();
     }
 
     private void assertElementSerialized(Path directory, String path, CoreInstance element)
