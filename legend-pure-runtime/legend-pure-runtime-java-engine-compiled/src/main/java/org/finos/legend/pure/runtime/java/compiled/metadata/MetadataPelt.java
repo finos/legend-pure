@@ -54,6 +54,9 @@ public class MetadataPelt implements Metadata
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(MetadataPelt.class);
 
+    // Generated code refers to instances by their version 1 reference ids (see IdBuilder)
+    private static final int GENERATED_CODE_REFERENCE_ID_VERSION = 1;
+
     private final MetadataIndex metadataIndex;
     private final ElementLoader elementLoader;
     private final ReferenceIdResolver refIdResolver;
@@ -63,7 +66,7 @@ public class MetadataPelt implements Metadata
     {
         this.metadataIndex = metadataIndex;
         this.elementLoader = elementLoader;
-        this.refIdResolver = elementLoader.getReferenceIdResolvers().resolver();
+        this.refIdResolver = elementLoader.getReferenceIdResolvers().resolver(GENERATED_CODE_REFERENCE_ID_VERSION);
     }
 
     @Override
@@ -263,8 +266,7 @@ public class MetadataPelt implements Metadata
                         .withMetadataIndex(metadataIndex)
                         .withFileDeserializer(fileDeserializer)
                         .withElementBuilder(CompiledElementBuilder.newElementBuilder(this.classLoader))
-                        .withAvailableReferenceIdExtensions(this.classLoader)
-                        .withDefaultReferenceIdVersion(1);
+                        .withAvailableReferenceIdExtensions(this.classLoader);
                 if (this.directory == null)
                 {
                     elementLoaderBuilder.withClassLoader(this.classLoader);

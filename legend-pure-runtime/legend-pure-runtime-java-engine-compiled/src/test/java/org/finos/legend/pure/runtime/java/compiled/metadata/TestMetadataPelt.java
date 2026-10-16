@@ -17,9 +17,11 @@ package org.finos.legend.pure.runtime.java.compiled.metadata;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.compiler.PureCompilerSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.element.ConcreteElementSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.file.FilePathProvider;
@@ -28,8 +30,10 @@ import org.finos.legend.pure.m3.serialization.compiler.file.ModuleMetadataNotFou
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataGenerator;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.reference.AbstractReferenceTest;
+import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdExtension;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProvider;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProviders;
+import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolver;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
 import org.finos.legend.pure.m3.tools.GraphTools;
@@ -48,7 +52,12 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.ServiceLoader;
+import java.util.function.Function;
 
 public class TestMetadataPelt extends AbstractReferenceTest
 {
@@ -116,6 +125,24 @@ public class TestMetadataPelt extends AbstractReferenceTest
     {
         testMetadataFromClassLoader(Lists.immutable.with("ref_test"), Sets.immutable.with("ref_test", "platform"));
         testMetadataFromClassLoader(Lists.immutable.with("platform"), Sets.immutable.with("platform"));
+    }
+
+    @Test
+    public void testMetadataWithLaterReferenceIdVersionAvailable() throws IOException
+    {
+        // Generated code refers to instances by version 1 ids, even when a later version is available
+        Path servicesDir = TMP.newFolder().toPath();
+        Path servicesFile = servicesDir.resolve("META-INF/services/" + ReferenceIdExtension.class.getName());
+        Files.createDirectories(servicesFile.getParent());
+        Files.write(servicesFile, Collections.singletonList(LaterReferenceIdExtension.class.getName()), StandardCharsets.UTF_8);
+        try (URLClassLoader classLoader = new URLClassLoader(new URL[]{serializationDir.toUri().toURL(), servicesDir.toUri().toURL()}))
+        {
+            Assert.assertTrue(Iterate.anySatisfy(ServiceLoader.load(ReferenceIdExtension.class, classLoader), ext -> ext instanceof LaterReferenceIdExtension));
+            testMetadata(MetadataPelt.builder()
+                    .withClassLoader(classLoader)
+                    .withRepositories(repositories)
+                    .build(), null);
+        }
     }
 
     private void testMetadataFromClassLoader(Iterable<String> specifiedRepos, SetIterable<String> allExpectedRepos)
@@ -190,5 +217,31 @@ public class TestMetadataPelt extends AbstractReferenceTest
         return (instance instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) ?
                JavaPackageAndImportBuilder.buildLazyConcreteElementClassReferenceFromUserPath(classifierPath) :
                JavaPackageAndImportBuilder.buildLazyComponentInstanceClassReferenceFromUserPath(classifierPath);
+    }
+
+    /**
+     * A reference id version later than any real one, so that a loader that finds it as a service makes it the
+     * default version. Nothing may use it, so it has neither a provider nor a resolver. It is public only so that
+     * {@link ServiceLoader} can create it.
+     */
+    public static class LaterReferenceIdExtension implements ReferenceIdExtension
+    {
+        @Override
+        public int version()
+        {
+            return Integer.MAX_VALUE;
+        }
+
+        @Override
+        public ReferenceIdProvider newProvider(ProcessorSupport processorSupport)
+        {
+            throw new UnsupportedOperationException("Reference id version " + version() + " is only for tests");
+        }
+
+        @Override
+        public ReferenceIdResolver newResolver(Function<? super String, ? extends CoreInstance> packagePathResolver)
+        {
+            throw new UnsupportedOperationException("Reference id version " + version() + " is only for tests");
+        }
     }
 }
