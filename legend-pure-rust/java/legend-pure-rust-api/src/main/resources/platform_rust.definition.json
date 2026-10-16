@@ -1,0 +1,7 @@
+{
+  "name": "platform_rust",
+  "pattern": "(meta::pure::rust::standalone)(::.*)?",
+  "dependencies": [
+    "platform"
+  ]
+}

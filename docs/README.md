@@ -153,6 +153,7 @@ paths are always equivalent from a user's perspective.
 | [Mapping Grammar Reference](reference/mapping-grammar-reference.md) | `###Mapping` — class mappings, enumeration mappings, association mappings, set IDs, embedded/inline/otherwise, XStore, aggregation-aware, local properties |
 | [Relational Grammar Reference](reference/relational-grammar-reference.md) | `###Relational` — tables, columns, joins, views, filters, database includes |
 | [Maven Plugins Reference](reference/maven-plugins-reference.md) | All five custom Maven plugins — purpose, goals, parameters, and POM examples |
+| [Rust evaluator plan](../legend-pure-rust/docs/rust-evaluator-mvp.md) | The Rust evaluator: steps, gates, extraction map, open questions |
 | [Getting Started Guide](guides/getting-started.md) | Prerequisites, clone → build → run, profiles, and troubleshooting |
 | [Build & CI Guide](guides/build-and-ci.md) | Full build lifecycle, Maven plugins, profiles, and the GitHub Actions pipeline |
 | [Contributor Workflow Guide](guides/contributor-workflow.md) | How to add a new DSL extension, native function, or store connector |

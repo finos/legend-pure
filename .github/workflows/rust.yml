@@ -1,0 +1,182 @@
+name: Rust CI
+
+# The PCT job below runs the platform corpus through the Rust evaluator on
+# both Java engines, so a change to anything it builds can break it: the
+# Rust workspace, and the core modules, engines and Maven plugins the Rust
+# Java modules depend on (not the DSLs or stores, which they do not use).
+on:
+  push:
+    paths:
+      - 'legend-pure-rust/**'
+      - 'legend-pure-core/**'
+      - 'legend-pure-runtime/**'
+      - 'legend-pure-maven/**'
+      - 'pom.xml'
+      - '.github/workflows/rust.yml'
+  pull_request:
+    paths:
+      - 'legend-pure-rust/**'
+      - 'legend-pure-core/**'
+      - 'legend-pure-runtime/**'
+      - 'legend-pure-maven/**'
+      - 'pom.xml'
+      - '.github/workflows/rust.yml'
+
+jobs:
+  build_and_test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: legend-pure-rust
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+
+      - name: Install lld (faster linker)
+        run: sudo apt-get update && sudo apt-get install -y lld
+
+      - name: Enable lld for Rust compilation
+        run: echo "RUSTFLAGS=-C link-arg=-fuse-ld=lld" >> $GITHUB_ENV
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            legend-pure-rust/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('legend-pure-rust/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Check Formatting (cargo fmt)
+        run: cargo fmt --check
+
+      - name: Lint (cargo clippy)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Build
+        run: cargo build --workspace
+
+      - name: Test
+        run: cargo test --workspace
+
+      - name: Doctests
+        run: cargo test --workspace --doc
+
+      - name: Check Copyright Headers
+        run: ./scripts/check-copyright.sh
+
+      - name: Documentation (no warnings)
+        run: RUSTDOCFLAGS=-Dwarnings cargo doc --workspace --no-deps
+
+      - name: Upload the libraries the Java modules load
+        # Paths of `uses:` steps are relative to the workspace, not to the
+        # default working directory above.
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-cdylibs
+          path: |
+            legend-pure-rust/target/debug/libpure_rust_jni.so
+            legend-pure-rust/target/debug/libpure_rust_ffi.so
+          if-no-files-found: error
+          retention-days: 1
+
+  pct:
+    name: PCT (Rust_JNI, Rust_FFM)
+    needs: build_and_test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Download the libraries
+        uses: actions/download-artifact@v4
+        with:
+          name: rust-cdylibs
+          path: legend-pure-rust/target/debug
+
+      - name: Check the libraries are where the modules look
+        # Each module skips its tests when its library is missing at this
+        # path, which would leave this job green having tested nothing.
+        run: |
+          test -f legend-pure-rust/target/debug/libpure_rust_jni.so
+          test -f legend-pure-rust/target/debug/libpure_rust_ffi.so
+
+      - name: Cache Maven dependencies
+        # Build CI's key, so this job restores the cache that workflow saves.
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/finos/legend/pure
+          key: ${{ runner.os }}-build-cache-mvn-deps-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-cache-mvn-deps-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - name: Set up JDK 25
+        # 25 brings -ffm into the reactor beside -api and -jni (release 17).
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 25
+
+      - name: Build the modules the Rust modules depend on
+        env:
+          MAVEN_OPTS: -XX:MaxRAMPercentage=80.0
+        run: >-
+          mvn -B -e -T 4 install -DskipTests -Dcheckstyle.skip=true -am
+          -pl legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni,legend-pure-rust/java/legend-pure-rust-ffm
+
+      - name: Run the Rust modules' tests (PCT on both engines, boundary cases)
+        # A suite fails when a test listed in its manifest as an expected
+        # failure passes, or when a test outside the manifest fails: any
+        # regression or progress needs the manifests regenerated.
+        env:
+          MAVEN_OPTS: -XX:MaxRAMPercentage=50.0
+        run: |
+          set -o pipefail
+          mvn -B -e clean verify \
+            -pl legend-pure-rust/java/legend-pure-rust-api,legend-pure-rust/java/legend-pure-rust-jni,legend-pure-rust/java/legend-pure-rust-ffm \
+            2>&1 | tee maven.log
+
+      - name: Check every suite ran
+        run: |
+          set -euo pipefail
+          pct=$(ls legend-pure-rust/java/legend-pure-rust-{jni,ffm}/target/surefire-reports/TEST-*_PCT.xml | wc -l)
+          echo "PCT suite reports: ${pct}"
+          test "${pct}" -eq 8
+          test -f legend-pure-rust/java/legend-pure-rust-jni/target/surefire-reports/TEST-org.finos.legend.pure.rust.TestRustEvaluatorBoundary.xml
+          test -f legend-pure-rust/java/legend-pure-rust-ffm/target/surefire-reports/TEST-org.finos.legend.pure.rust.TestRustFfmEvaluatorBoundary.xml
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Rust PCT"
+            echo
+            echo "Passing tests per suite, as the committed manifests expect them (the run fails on any difference):"
+            echo
+            grep -oE 'Rust_(JNI|FFM) [a-z]+( \(compiled\))?: [0-9]+ / [0-9]+' maven.log | sort -u | sed 's/^/- /' || echo "- no suite reached"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-pct-surefire-reports
+          path: legend-pure-rust/java/*/target/surefire-reports/
+          retention-days: 7
