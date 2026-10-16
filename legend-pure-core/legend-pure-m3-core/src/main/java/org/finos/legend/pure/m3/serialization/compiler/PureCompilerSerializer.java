@@ -117,12 +117,12 @@ public class PureCompilerSerializer
 
     private Serializer newSerializer(Path directory)
     {
-        return new DirectorySerializer(this.fileSerializer, directory);
+        return new DirectorySerializer(this.fileSerializer, directory, this.moduleMetadataGenerator.getReferenceIdVersion());
     }
 
     private Serializer newSerializer(ZipOutputStream stream)
     {
-        return new ZipStreamSerializer(this.fileSerializer, stream);
+        return new ZipStreamSerializer(this.fileSerializer, stream, this.moduleMetadataGenerator.getReferenceIdVersion());
     }
 
     private void serializeAll(Serializer serializer, boolean includeRootModule)
@@ -393,17 +393,19 @@ public class PureCompilerSerializer
     {
         private final FileSerializer fileSerializer;
         private final Path directory;
+        private final int referenceIdVersion;
 
-        private DirectorySerializer(FileSerializer fileSerializer, Path directory)
+        private DirectorySerializer(FileSerializer fileSerializer, Path directory, int referenceIdVersion)
         {
             this.fileSerializer = fileSerializer;
             this.directory = directory;
+            this.referenceIdVersion = referenceIdVersion;
         }
 
         @Override
         public void serializeElement(CoreInstance element)
         {
-            this.fileSerializer.serializeElement(this.directory, element);
+            this.fileSerializer.serializeElement(this.directory, element, this.referenceIdVersion);
         }
 
         @Override
@@ -421,17 +423,19 @@ public class PureCompilerSerializer
     {
         private final FileSerializer fileSerializer;
         private final ZipOutputStream stream;
+        private final int referenceIdVersion;
 
-        private ZipStreamSerializer(FileSerializer fileSerializer, ZipOutputStream stream)
+        private ZipStreamSerializer(FileSerializer fileSerializer, ZipOutputStream stream, int referenceIdVersion)
         {
             this.fileSerializer = fileSerializer;
             this.stream = stream;
+            this.referenceIdVersion = referenceIdVersion;
         }
 
         @Override
         public void serializeElement(CoreInstance element)
         {
-            this.fileSerializer.serializeElement(this.stream, element);
+            this.fileSerializer.serializeElement(this.stream, element, this.referenceIdVersion);
         }
 
         @Override

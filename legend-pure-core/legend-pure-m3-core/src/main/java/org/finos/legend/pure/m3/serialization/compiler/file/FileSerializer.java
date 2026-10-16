@@ -56,7 +56,12 @@ public class FileSerializer
 
     public Path serializeElement(Path directory, CoreInstance element)
     {
-        return serializeElement(directory, element, this.filePathProvider.getDefaultVersion(), this.elementSerializer.getDefaultVersion(), this.elementSerializer.getReferenceIdProviders().getDefaultVersion());
+        return serializeElement(directory, element, this.elementSerializer.getReferenceIdProviders().getDefaultVersion());
+    }
+
+    public Path serializeElement(Path directory, CoreInstance element, int referenceIdVersion)
+    {
+        return serializeElement(directory, element, this.filePathProvider.getDefaultVersion(), this.elementSerializer.getDefaultVersion(), referenceIdVersion);
     }
 
     public Path serializeElement(Path directory, CoreInstance element, int filePathVersion, int serializerVersion, int referenceIdVersion)
@@ -101,7 +106,12 @@ public class FileSerializer
 
     public String serializeElement(ZipOutputStream zipStream, CoreInstance element)
     {
-        return serializeElement(zipStream, element, this.filePathProvider.getDefaultVersion(), this.elementSerializer.getDefaultVersion(), this.elementSerializer.getReferenceIdProviders().getDefaultVersion());
+        return serializeElement(zipStream, element, this.elementSerializer.getReferenceIdProviders().getDefaultVersion());
+    }
+
+    public String serializeElement(ZipOutputStream zipStream, CoreInstance element, int referenceIdVersion)
+    {
+        return serializeElement(zipStream, element, this.filePathProvider.getDefaultVersion(), this.elementSerializer.getDefaultVersion(), referenceIdVersion);
     }
 
     public String serializeElement(ZipOutputStream zipStream, CoreInstance element, int filePathVersion, int serializerVersion, int referenceIdVersion)

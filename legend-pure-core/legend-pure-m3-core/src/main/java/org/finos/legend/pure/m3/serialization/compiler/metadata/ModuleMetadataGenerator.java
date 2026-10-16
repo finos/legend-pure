@@ -144,7 +144,7 @@ public class ModuleMetadataGenerator
         return generateModuleMetadata(includeRootModule ? repos : repos.select(ModuleHelper::isNonRootModule));
     }
 
-    int getReferenceIdVersion()
+    public int getReferenceIdVersion()
     {
         return this.referenceIdVersion;
     }
