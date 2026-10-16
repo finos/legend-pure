@@ -289,7 +289,7 @@ public abstract class ReferenceIds
             }
 
             int minId;
-            if (this.extensions.size() == (this.extensions.keySet().max() - (minId = this.extensions.keySet().min())))
+            if (this.extensions.size() == (this.extensions.keySet().max() - (minId = this.extensions.keySet().min()) + 1))
             {
                 ReferenceIdExtension[] extArray = new ReferenceIdExtension[this.extensions.size()];
                 this.extensions.forEachKeyValue((id, ext) -> extArray[id - minId] = ext);
