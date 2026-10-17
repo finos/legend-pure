@@ -16,22 +16,26 @@ import meta::pure::functions::asserts::*;
 
 function meta::pure::functions::asserts::fail():Nil[1]
 {
-    assert(false)->cast(@Nil);
+    assert(false);
+    []->toOne();
 }
 
 function meta::pure::functions::asserts::fail(message:String[1]):Nil[1]
 {
-    assert(false, $message)->cast(@Nil);
+    assert(false, $message);
+    []->toOne();
 }
 
 function meta::pure::functions::asserts::fail(formatString:String[1], formatArgs:Any[*]):Nil[1]
 {
-    assert(false, $formatString, $formatArgs)->cast(@Nil);
+    assert(false, $formatString, $formatArgs);
+    []->toOne();
 }
 
 function meta::pure::functions::asserts::fail(message:Function<{->String[1]}>[1]):Nil[1]
 {
-    assert(false, $message)->cast(@Nil);
+    assert(false, $message);
+    []->toOne();
 }
 
 function <<test.Test>> meta::pure::functions::asserts::tests::testFail():Boolean[1]

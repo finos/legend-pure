@@ -125,7 +125,7 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
                         "\n" +
                         "   Full Stack:\n" +
                         "       nest():Boolean[1]     <-     resource:fromString.pure line:4 column:5\n" +
-                        "       fail():Boolean[1]     <-     resource:fromString.pure line:10 column:4\n" +
+                        "       fail():Nil[1]     <-     resource:fromString.pure line:10 column:4\n" +
                         "       assert(Boolean[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/fail.pure line:19 column:5\n" +
                         "       assert(Boolean[1], String[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:31 column:5\n" +
                         "       assert(Boolean[1], Function<{->String[1]}>[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:26 column:5",
@@ -156,7 +156,7 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
                         "\n" +
                         "   Full Stack:\n" +
                         "       nest():Boolean[1]     <-     resource:fromString.pure line:4 column:5\n" +
-                        "       fail():Boolean[1]     <-     resource:fromString.pure line:11 column:4\n" +
+                        "       fail():Nil[1]     <-     resource:fromString.pure line:11 column:4\n" +
                         "       assert(Boolean[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/fail.pure line:19 column:5\n" +
                         "       assert(Boolean[1], String[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:31 column:5\n" +
                         "       assert(Boolean[1], Function<{->String[1]}>[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:26 column:5",
