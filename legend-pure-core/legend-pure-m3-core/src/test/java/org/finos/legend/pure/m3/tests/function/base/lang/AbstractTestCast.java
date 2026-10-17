@@ -325,6 +325,19 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
         checkException(e, "Cast exception: String cannot be cast to Month", "fromString.pure", 3, 17);
     }
 
+    @Test
+    public void testPrimitiveToAnyCastInDynamicEvaluation()
+    {
+        compileTestSource("fromString.pure",
+                "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   let fn = {|'the cat sat on the mat'->cast(@Any)};\n" +
+                        "   let lambda = ^LambdaFunction<{->Any[*]}>(expressionSequence = $fn.expressionSequence);\n" +
+                        "   assertEquals('the cat sat on the mat', $lambda->evaluate([]));\n" +
+                        "}\n");
+        execute("test():Boolean[1]");
+    }
+
     protected void checkException(Throwable t, String expectedInfo, String expectedSource, int expectedLine, int expectedCol)
     {
         assertPureException(PureExecutionException.class, expectedInfo, expectedSource, expectedLine, expectedCol, (Exception) t);
