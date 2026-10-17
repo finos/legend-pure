@@ -135,6 +135,7 @@ public class TestCastValidation extends AbstractPureTestWithCoreCompiled
                 "    $t->cast(@String);\n" +
                 "    [1, 'a']->cast(@String);\n" +
                 "    (5 test::CastLength~Metre)->cast(@test::CastLength);\n" +
+                "    fail('unreachable')->cast(@CastA);\n" +
                 "}\n");
     }
 
