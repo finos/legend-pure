@@ -20,6 +20,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
+import org.finos.legend.pure.m3.compiler.validation.functionExpression.CastValidator;
 import org.finos.legend.pure.m3.compiler.validation.functionExpression.CopyValidator;
 import org.finos.legend.pure.m3.compiler.validation.functionExpression.EnumValidator;
 import org.finos.legend.pure.m3.compiler.validation.functionExpression.FormatValidator;
@@ -95,6 +96,10 @@ public class FunctionExpressionValidator implements MatchRunner<FunctionExpressi
         if ("subType_Any_m__T_1__T_m_".equals(function.getName()) || "whenSubType_Any_1__T_1__T_$0_1$_".equals(function.getName()) || "whenSubType_Any_$0_1$__T_1__T_$0_1$_".equals(function.getName()) || "whenSubType_Any_MANY__T_1__T_MANY_".equals(function.getName()))
         {
             SubTypeValidator.validateSubType(instance, processorSupport);
+        }
+        if ("cast_Any_m__T_1__T_m_".equals(function.getName()))
+        {
+            CastValidator.validateCast(instance, processorSupport);
         }
         if (function.getName().startsWith("getAll_Class_1__"))
         {

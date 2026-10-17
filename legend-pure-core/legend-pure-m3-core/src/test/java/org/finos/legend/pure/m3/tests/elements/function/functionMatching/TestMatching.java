@@ -428,7 +428,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
                 "native function meta::pure::functions::relation::map<T,V>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];\n" +
                         "function func(a:Any[*]):Nil[0]\n" +
                         "{\n" +
-                        "   [2]->cast(@meta::pure::metamodel::relation::Relation<(ok:Integer)>)->map(x|$x.ok);\n" +
+                        "   $a->toOne()->cast(@meta::pure::metamodel::relation::Relation<(ok:Integer)>)->map(x|$x.ok);\n" +
                         "   [];" +
                         "}");
         runtime.compile();
