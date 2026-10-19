@@ -219,7 +219,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
         compileTestSource("fromString.pure",
                 "function myFunc():Boolean[1]\n" +
                         "{\n" +
-                        "    fail('Failed');\n" +
+                        "    fail('Failed')->toMultiplicity(@[1]);\n" +
                         "}\n" +
                         "function test():Nil[0]\n" +
                         "{\n" +
