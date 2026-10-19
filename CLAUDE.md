@@ -28,17 +28,12 @@ mvn test -pl legend-pure-core/legend-pure-m3-core \
     -Dtest=TestM3Compiler -DfailIfNoTests=false
 mvn test -pl legend-pure-core/legend-pure-m3-core \
     -Dtest="TestM3Compiler#testSimpleClass" -DfailIfNoTests=false
-# With -DfailIfNoTests=false set, a typo'd/nonexistent class name in -Dtest matches zero tests and
-# still exits 0 with no warning. When running a named test set (e.g. a documented sanity list),
-# verify the surefire-report count matches the expected class count — don't trust the exit code alone.
 
 # PCT tests only (pattern-matched)
 mvn test -Dtest="*_PCT" -DfailIfNoTests=false
 
-# Checkstyle without tests — use this, not the standalone goal below
+# Checkstyle without tests
 mvn verify -DskipTests
-# NOT equivalent to the above: the standalone goal doesn't pick up this repo's suppressions and
-# reports 50k+ pre-existing, unrelated violations across the codebase. Don't use it as a signal.
 mvn checkstyle:check
 # Skip checkstyle in a hurry
 mvn clean install -Dcheckstyle.skip=true
@@ -48,8 +43,6 @@ mvn clean install -pl legend-pure-store/legend-pure-store-relational -am
 ```
 
 If you see `cannot find symbol: class CoreInstance...`, you ran `mvn test` without prior code generation. Run `mvn generate-sources` or `mvn install -DskipTests` first — ANTLR4 parsers and `CoreInstance` accessors live in `target/generated-sources/` and must exist before `maven-compiler-plugin` runs.
-
-Editing `core/M3CoreParser.g4`/`core/M3CoreLexer.g4` specifically (imported by the top-level `M3Parser.g4`/`M3Lexer.g4`, but where the actual grammar rules usually live) can silently fail to regenerate: the antlr4-maven-plugin's staleness check doesn't reliably follow ANTLR `import`s, only the top-level file's own timestamp. A normal `mvn install -DskipTests` after editing only the imported `core/*.g4` files may run against the stale parser with no error, just confusing "expected X found Y" failures on grammar that should now be valid. If a grammar edit doesn't seem to take effect, delete `target/generated-sources` and `target/antlr` and rebuild.
 
 Heap: the compiler builds large graphs. For local builds, `export MAVEN_OPTS="-Xmx4g"`.
 
