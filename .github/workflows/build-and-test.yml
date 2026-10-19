@@ -119,11 +119,6 @@ jobs:
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
 
-      - name: Collect Workflow Telemetry
-        uses: runforesight/workflow-telemetry-action@v1
-        with:
-          theme: dark
-
       - name: Build
         env:
           MAVEN_OPTS: -XX:MaxRAMPercentage=80.0

@@ -240,11 +240,6 @@ jobs:
           gpg-private-key: ${{ secrets.CI_GPG_PRIVATE_KEY }}
           gpg-passphrase: CI_GPG_PASSPHRASE
 
-      - name: Collect Workflow Telemetry
-        uses: runforesight/workflow-telemetry-action@v1
-        with:
-          theme: dark
-
       - name: Set up Maven
         # Pinned below 3.10, whatever the runner image ships. Maven 3.10 moved
         # to Resolver 2, and central-publishing-maven-plugin (0.7.0 through
