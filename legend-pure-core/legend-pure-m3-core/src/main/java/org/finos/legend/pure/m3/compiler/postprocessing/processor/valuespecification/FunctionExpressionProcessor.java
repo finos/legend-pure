@@ -716,7 +716,16 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
 
             GenericType instanceGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(instance._genericType(), processorSupport);
             GenericType typeToAnalyze = _typeToAnalyze;
-            ((RelationType<?>) instanceGenericType._rawType())._columns().forEach(currentColumn ->
+            // When a ColSpecArray selects more than one column, a shared single-column type-parameter template
+            // (e.g. the `K` in `ColSpecArray<Z=(?:K)⊆T>`) must be bound to the common type of ALL selected columns,
+            // not registered once per column against the whole multi-column relation - registering the whole
+            // relation repeatedly causes TypeInferenceContext.register's structural RelationType alignment to
+            // silently keep only the first column's type (see docs/decisions/ADR-008-colspecarray-equal-widening.md).
+            // So for N>1 columns, collect each column's resolved type here and merge once, after the loop, instead.
+            boolean mergeSharedColumnTypeParameter = ((RelationType<?>) instanceGenericType._rawType())._columns().size() > 1;
+            MutableList<CoreInstance> sharedColumnTypeParameterValues = Lists.mutable.empty();
+            GenericType sharedColumnTypeParameterTemplate = null;
+            for (Column<?, ?> currentColumn : ((RelationType<?>) instanceGenericType._rawType())._columns())
             {
                 String colName = currentColumn._name();
                 GenericType potentialEmptyType = _Column.getColumnType(currentColumn);
@@ -760,11 +769,53 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                                 throw new RuntimeException(org.finos.legend.pure.m3.navigation.generictype.GenericType.print(left, processorSupport) + " is not compatible with " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(instanceGenericType, processorSupport));
                             }
                             state.getTypeInferenceContext().replace(actualTemplateToInferColumnType, instanceGenericType);
-                            foundParentToUpdate.register((GenericType) left, instanceGenericType, foundParentToUpdate, observer);
+                            if (mergeSharedColumnTypeParameter && (left instanceof GenericType) && _RelationType.isRelationType(((GenericType) left)._rawType(), processorSupport))
+                            {
+                                sharedColumnTypeParameterTemplate = (GenericType) left;
+                                sharedColumnTypeParameterValues.add(org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(_Column.getColumnType(currentColumn), processorSupport));
+                            }
+                            else
+                            {
+                                foundParentToUpdate.register((GenericType) left, instanceGenericType, foundParentToUpdate, observer);
+                            }
                         }
                     }
                 }
-            });
+            }
+
+            if (sharedColumnTypeParameterValues.notEmpty())
+            {
+                GenericType sharedColumnTypeParameter = _Column.getColumnType(((RelationType<?>) sharedColumnTypeParameterTemplate._rawType())._columns().getOnly());
+                if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(sharedColumnTypeParameter))
+                {
+                    // The shared slot is already a concrete, hardcoded type (e.g. ColSpecArray<Z=(?:Integer)⊆T>),
+                    // not a type parameter to infer - there is nothing to widen or register. Each selected column
+                    // must independently be compatible with the declared type; merging them and only rejecting an
+                    // Any/Nil result (as below) would wrongly accept e.g. a Float column against a declared
+                    // Integer pin, since Integer+Float merge to Number, which isn't Any/Nil.
+                    sharedColumnTypeParameterValues.forEach(columnType ->
+                    {
+                        if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(columnType, sharedColumnTypeParameter, processorSupport))
+                        {
+                            throw new PureCompilationException(sourceInformation, "The columns selected by this ColSpecArray are not all compatible with the declared type " +
+                                    org.finos.legend.pure.m3.navigation.generictype.GenericType.print(sharedColumnTypeParameter, processorSupport) + ": found " +
+                                    org.finos.legend.pure.m3.navigation.generictype.GenericType.print(columnType, processorSupport));
+                        }
+                    });
+                }
+                else
+                {
+                    CoreInstance mergedColumnType = org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(sharedColumnTypeParameterValues, true, false, sourceInformation, processorSupport);
+                    CoreInstance mergedRawType = Instance.getValueForMetaPropertyToOneResolved(mergedColumnType, M3Properties.rawType, processorSupport);
+                    if (org.finos.legend.pure.m3.navigation.type.Type.isTopType(mergedRawType, processorSupport) || org.finos.legend.pure.m3.navigation.type.Type.isBottomType(mergedRawType, processorSupport))
+                    {
+                        throw new PureCompilationException(sourceInformation, "The columns selected by this ColSpecArray don't share a common type more specific than " +
+                                PackageableElement.getUserPathForPackageableElement(mergedRawType) + ": " +
+                                sharedColumnTypeParameterValues.collect(t -> org.finos.legend.pure.m3.navigation.generictype.GenericType.print(t, processorSupport)).makeString(", "));
+                    }
+                    foundParentToUpdate.register(sharedColumnTypeParameter, (GenericType) mergedColumnType, foundParentToUpdate, observer);
+                }
+            }
 
             // Set the type parameter of the missing Column Type to the found type
             if (equalLeft != null)

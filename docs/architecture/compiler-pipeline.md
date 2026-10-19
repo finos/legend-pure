@@ -475,6 +475,29 @@ resolved by the same two-pass mechanism. `TypeInference.mapSpecToInstanceSub`
 matches declared parameter multiplicities against actual argument multiplicities
 and registers the mapping in `TypeInferenceContext`.
 
+### `ColSpec`/`ColSpecArray` column type resolution
+
+Functions over `Relation` that select columns by name without declaring their type —
+e.g. `rename<T,Z,K,V>(r:Relation<T>[1], old:ColSpec<Z=(?:K)⊆T>[1], new:ColSpec<V=(?:K)>[1]):Relation<T-Z+V>[1]`
+called as `$t->rename(~name, ~na)` — resolve those column types via a dedicated path,
+`FunctionExpressionProcessor.processEmptyColumnType`, separate from the general two-pass
+algorithm above:
+
+- For each column in the literal argument (`~name`, `~[a,b]`, ...) whose type is still
+  unresolved (`?`), the reference relation named by `⊆` (e.g. `T`) is searched by column name
+  and the found type is filled in on the literal's own `RelationType` columns.
+- A declared `(?:K)` binds `K` to that resolved type so it can be reused elsewhere in the same
+  signature (e.g. `new:ColSpec<V=(?:K)>` picks up whatever `K` resolved to for `old`).
+- For a **single**-column `ColSpec`, this binding is registered via `TypeInferenceContext.register`
+  and happens to work correctly by construction — there is only one column, so nothing is lost.
+- For a **multi**-column `ColSpecArray` selecting more than one column with a shared `(?:K)`
+  binding, the resolved type of every selected column is collected as the literal is processed and
+  merged once, after all columns are resolved, via `GenericType.findBestCommonGenericType`
+  (rejecting a merge that only reaches `Any`/`Nil` with a compile error) — see
+  [ADR-008](../decisions/ADR-008-colspecarray-equal-widening.md) for why this collect-then-merge-once
+  step exists as a special case rather than reusing `TypeInferenceContext.register`'s generic
+  `RelationType` structural-matching path unchanged.
+
 ### `GenericType` vs `RawType`
 
 In the `CoreInstance` graph:
