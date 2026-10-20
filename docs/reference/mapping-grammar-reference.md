@@ -1459,6 +1459,9 @@ Database my::mainDb
 
 - Schema lookup traverses the database and its transitively `include`d
   databases.
+- A double-quoted schema or table name may contain dots, e.g.
+  `#>{my::mainDb."my.schema"."person.table"}#`. Keep the quotes, as in the
+  `Database` definition.
 - Errors are surfaced explicitly:
   - Unknown schema: `The schema 'X' can't be found in the database 'db'`.
   - Unknown table in schema: `The table 'X' can't be found in the schema 'S' in the database 'db'`.
