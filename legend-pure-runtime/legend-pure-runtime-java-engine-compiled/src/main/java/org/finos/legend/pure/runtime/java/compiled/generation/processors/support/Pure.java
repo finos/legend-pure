@@ -931,6 +931,11 @@ public class Pure
         return pureTypeToJavaClass(_class, false, es);
     }
 
+    public static Class<?> pureTypeToJavaClassForExecution(Type _class, ExecutionSupport es)
+    {
+        return pureTypeToJavaClassForExecution(_class, false, es);
+    }
+
     private static Class<?> pureTypeToJavaClassForExecution(Type _class, boolean useJavaPrimitives, ExecutionSupport es)
     {
         Class<?> clazz = pureTypeToJavaClass(_class, useJavaPrimitives, es);

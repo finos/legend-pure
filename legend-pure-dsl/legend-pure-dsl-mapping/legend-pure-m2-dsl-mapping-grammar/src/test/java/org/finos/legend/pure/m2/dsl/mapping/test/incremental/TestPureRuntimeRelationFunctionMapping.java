@@ -341,7 +341,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                 "import meta::pure::metamodel::relation::*;\n" +
                 "function my::optionalColumnFunction(): Relation<Any>[1]\n" +
                 "{\n" +
-                "  1->cast(@Relation<(LEGALNAME:String[0..1])>);\n" +
+                "  []->cast(@Relation<(LEGALNAME:String[0..1])>)->toOne();\n" +
                 "}\n";
         String mappingSource = "###Mapping\n" +
                 "Mapping my::testMapping\n" +
@@ -370,7 +370,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                 "import meta::pure::metamodel::relation::*;\n" +
                 "function my::optionalColumnFunction(): Relation<Any>[1]\n" +
                 "{\n" +
-                "  1->cast(@Relation<(LEGALNAME:String[0..1])>);\n" +
+                "  []->cast(@Relation<(LEGALNAME:String[0..1])>)->toOne();\n" +
                 "}\n";
         String mappingSource = "###Mapping\n" +
                 "Mapping my::testMapping\n" +
@@ -525,7 +525,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                 "import meta::pure::metamodel::relation::*;\n" +
                 "function my::numericColumnFunction(): Relation<Any>[1]\n" +
                 "{\n" +
-                "  1->cast(@Relation<(VAL:Number[1])>);\n" +
+                "  []->cast(@Relation<(VAL:Number[1])>)->toOne();\n" +
                 "}\n";
         String mappingSource = "###Mapping\n" +
                 "Mapping my::testMapping\n" +
@@ -562,7 +562,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                 "import meta::pure::metamodel::relation::*;\n" +
                 "function my::booleanColumnFunction(): Relation<Any>[1]\n" +
                 "{\n" +
-                "  1->cast(@Relation<(FLAG:Boolean[1])>);\n" +
+                "  []->cast(@Relation<(FLAG:Boolean[1])>)->toOne();\n" +
                 "}\n";
         String mappingSource = "###Mapping\n" +
                 "Mapping my::testMapping\n" +
@@ -715,7 +715,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                     "import meta::pure::metamodel::relation::*;\n" +
                     "function my::personFunctionWithArg(i:Integer[1]): Relation<Any>[1]\n" +
                     "{\n" +
-                    "  $i->cast(@Relation<(FIRSTNAME:String, AGE:Integer, FIRMID:Integer, CITY:String)>);\n" +
+                    "  []->cast(@Relation<(FIRSTNAME:String, AGE:Integer, FIRMID:Integer, CITY:String)>)->toOne();\n" +
                     "}\n" +
                     "###Mapping\n" +
                     "Mapping my::testMapping\n" +
@@ -1051,7 +1051,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                 "import meta::pure::metamodel::relation::*;\n" +
                 "function my::firmFunctionQuoted(): Relation<Any>[1]\n" +
                 "{\n" +
-                "  1->cast(@Relation<('LEGAL NAME':String[1], ID:Integer[1])>);\n" +
+                "  []->cast(@Relation<('LEGAL NAME':String[1], ID:Integer[1])>)->toOne();\n" +
                 "}\n";
         String mappingSource = "###Mapping\n" +
                 "Mapping my::testMapping\n" +

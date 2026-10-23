@@ -142,10 +142,4 @@ public class TestCast extends AbstractTestCast
     {
         checkException(findRootException(e), "Cast exception: X cannot be cast to Y", "/test/cast.pure", 61, 12);
     }
-
-    @Override
-    protected void checkStringToEnumCastTopLevelException(PureExecutionException e)
-    {
-        checkException(e, "Cast exception: String cannot be cast to Enum", "fromString.pure", 3, 17);
-    }
 }
