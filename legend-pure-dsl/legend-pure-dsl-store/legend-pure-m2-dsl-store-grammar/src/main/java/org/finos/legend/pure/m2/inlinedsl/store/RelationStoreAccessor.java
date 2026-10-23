@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
 public class RelationStoreAccessor implements InlineDSL
 {
     private static final VisibilityValidator VISIBILITY_VALIDATOR = new RelationStoreAccessorValidation();
+    private static final Pattern PATH_SEPARATOR_OUTSIDE_QUOTES = Pattern.compile("\\.(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
 
     @Override
     public String getName()
@@ -68,7 +69,7 @@ public class RelationStoreAccessor implements InlineDSL
         }
         info = info.substring(1, info.length() - 1);
 
-        String[] path = info.split("\\.");
+        String[] path = PATH_SEPARATOR_OUTSIDE_QUOTES.split(info);
 
         return ((org.finos.legend.pure.m3.coreinstance.meta.pure.store.RelationStoreAccessor<?>) processorSupport.newAnonymousCoreInstance(src, M2StorePaths.RelationStoreAccessor))
                 ._path(Lists.mutable.with(path));
