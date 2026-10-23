@@ -199,7 +199,17 @@ public class _RelationType
         return columns1.zip(columns2).injectInto(true, (a, b) -> a &&
                 (b.getOne()._nameWildCard() || b.getTwo()._nameWildCard() || b.getOne()._name().equals(b.getTwo()._name())) &&
                 (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(_Column.getColumnType(b.getOne()), _Column.getColumnType(b.getTwo()), processorSupport)
-                        || org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(_Column.getColumnType(b.getTwo()), _Column.getColumnType(b.getOne()), processorSupport)));
+                        || org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(_Column.getColumnType(b.getTwo()), _Column.getColumnType(b.getOne()), processorSupport)
+                        || hasMeaningfulCommonType(_Column.getColumnType(b.getOne()), _Column.getColumnType(b.getTwo()), processorSupport)));
+    }
+
+    // Columns whose types are not on the same subtype chain (e.g. Integer/Double, Varchar(10)/Varchar(50))
+    // can still be set-operated when a non-Any common supertype exists; merge() infers it via the same call.
+    private static boolean hasMeaningfulCommonType(GenericType a, GenericType b, ProcessorSupport processorSupport)
+    {
+        CoreInstance common = org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.<CoreInstance>with(a, b), true, false, processorSupport);
+        CoreInstance commonRawType = Instance.getValueForMetaPropertyToOneResolved(common, M3Properties.rawType, processorSupport);
+        return commonRawType != null && !org.finos.legend.pure.m3.navigation.type.Type.isTopType(commonRawType, processorSupport);
     }
 
     public static GenericType merge(GenericType existingGenericType, GenericType genericTypeCopy, boolean isCovariant, ProcessorSupport processorSupport)

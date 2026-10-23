@@ -166,6 +166,140 @@ public class TestRelationType extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
+    public void testConcatenateSiblingPrimitivesPickBestCommonType()
+    {
+        compileTestSource("fromString.pure",
+                "function funcInt():meta::pure::metamodel::relation::Relation<(val:Integer[1])>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}\n" +
+                        "function funcFloat():meta::pure::metamodel::relation::Relation<(val:Float[1])>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}");
+        FunctionType fTypeInt = (FunctionType) Function.computeFunctionType(runtime.getFunction("funcInt__Relation_$0_1$_"), runtime.getProcessorSupport());
+        FunctionType fTypeFloat = (FunctionType) Function.computeFunctionType(runtime.getFunction("funcFloat__Relation_$0_1$_"), runtime.getProcessorSupport());
+        Assert.assertTrue(
+                "Integer[1] and Float[1] columns share Number and should be concatenatable",
+                _RelationType.canConcatenate(
+                        fTypeInt._returnType()._typeArguments().getFirst(),
+                        fTypeFloat._returnType()._typeArguments().getFirst(),
+                        runtime.getProcessorSupport()));
+        Assert.assertEquals(
+                "Integer[1] merged with Float[1] should coerce to Number",
+                "(val:Number[1])",
+                GenericType.print(_RelationType.merge(fTypeInt._returnType()._typeArguments().getFirst(), fTypeFloat._returnType()._typeArguments().getFirst(), true, runtime.getProcessorSupport()), processorSupport));
+    }
+
+    @Test
+    public void testConcatenateDifferentMultiplicities()
+    {
+        compileTestSource("fromString.pure",
+                "function funcReq():meta::pure::metamodel::relation::Relation<(val:Integer[1])>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}\n" +
+                        "function funcOpt():meta::pure::metamodel::relation::Relation<(val:Integer[0..1])>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}");
+        FunctionType fTypeReq = (FunctionType) Function.computeFunctionType(runtime.getFunction("funcReq__Relation_$0_1$_"), runtime.getProcessorSupport());
+        FunctionType fTypeOpt = (FunctionType) Function.computeFunctionType(runtime.getFunction("funcOpt__Relation_$0_1$_"), runtime.getProcessorSupport());
+        Assert.assertTrue(
+                "Integer[1] and Integer[0..1] columns should be concatenatable",
+                _RelationType.canConcatenate(
+                        fTypeReq._returnType()._typeArguments().getFirst(),
+                        fTypeOpt._returnType()._typeArguments().getFirst(),
+                        runtime.getProcessorSupport()));
+        Assert.assertEquals(
+                "Integer[1] merged with Integer[0..1] should widen to the min-subsuming multiplicity Integer[0..1]",
+                "(val:Integer)",
+                GenericType.print(_RelationType.merge(fTypeReq._returnType()._typeArguments().getFirst(), fTypeOpt._returnType()._typeArguments().getFirst(), true, runtime.getProcessorSupport()), processorSupport));
+    }
+
+    @Test
+    public void testConcatenateDifferentVarcharSizes()
+    {
+        compileTestSource("fromString.pure",
+                "Primitive Varchar(x:Integer[1]) extends String\n" +
+                        "[\n" +
+                        "  $this->length() <= $x\n" +
+                        "]\n" +
+                        "function funcV10():meta::pure::metamodel::relation::Relation<(name:Varchar(10)[1])>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}\n" +
+                        "function funcV50():meta::pure::metamodel::relation::Relation<(name:Varchar(50)[1])>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}");
+        FunctionType fTypeV10 = (FunctionType) Function.computeFunctionType(runtime.getFunction("funcV10__Relation_$0_1$_"), runtime.getProcessorSupport());
+        FunctionType fTypeV50 = (FunctionType) Function.computeFunctionType(runtime.getFunction("funcV50__Relation_$0_1$_"), runtime.getProcessorSupport());
+        Assert.assertTrue(
+                "Varchar(10)[1] and Varchar(50)[1] columns should be concatenatable",
+                _RelationType.canConcatenate(
+                        fTypeV10._returnType()._typeArguments().getFirst(),
+                        fTypeV50._returnType()._typeArguments().getFirst(),
+                        runtime.getProcessorSupport()));
+        Assert.assertEquals(
+                "Varchar(10)[1] merged with Varchar(50)[1] keeps the common raw type Varchar but drops the differing length",
+                "(name:Varchar[1])",
+                GenericType.print(_RelationType.merge(fTypeV10._returnType()._typeArguments().getFirst(), fTypeV50._returnType()._typeArguments().getFirst(), true, runtime.getProcessorSupport()), processorSupport));
+        Assert.assertEquals(
+                "merge should be symmetric for Varchar(10)[1] and Varchar(50)[1]",
+                "(name:Varchar[1])",
+                GenericType.print(_RelationType.merge(fTypeV50._returnType()._typeArguments().getFirst(), fTypeV10._returnType()._typeArguments().getFirst(), true, runtime.getProcessorSupport()), processorSupport));
+    }
+
+    @Test
+    public void testConcatenateWidensTypeAndMultiplicityTogether()
+    {
+        compileTestSource("fromString.pure",
+                "function funcIntReq():meta::pure::metamodel::relation::Relation<(val:Integer[1])>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}\n" +
+                        "function funcFloatOpt():meta::pure::metamodel::relation::Relation<(val:Float[0..1])>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}");
+        FunctionType fTypeIntReq = (FunctionType) Function.computeFunctionType(runtime.getFunction("funcIntReq__Relation_$0_1$_"), runtime.getProcessorSupport());
+        FunctionType fTypeFloatOpt = (FunctionType) Function.computeFunctionType(runtime.getFunction("funcFloatOpt__Relation_$0_1$_"), runtime.getProcessorSupport());
+        Assert.assertTrue(
+                "Integer[1] and Float[0..1] columns should be concatenatable",
+                _RelationType.canConcatenate(
+                        fTypeIntReq._returnType()._typeArguments().getFirst(),
+                        fTypeFloatOpt._returnType()._typeArguments().getFirst(),
+                        runtime.getProcessorSupport()));
+        Assert.assertEquals(
+                "Integer[1] merged with Float[0..1] should widen both the type (Number) and the multiplicity ([0..1])",
+                "(val:Number)",
+                GenericType.print(_RelationType.merge(fTypeIntReq._returnType()._typeArguments().getFirst(), fTypeFloatOpt._returnType()._typeArguments().getFirst(), true, runtime.getProcessorSupport()), processorSupport));
+    }
+
+    @Test
+    public void testConcatenateUnrelatedTypesStillFails()
+    {
+        compileTestSource("fromString.pure",
+                "function funcInt():meta::pure::metamodel::relation::Relation<(val:Integer[1])>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}\n" +
+                        "function funcStr():meta::pure::metamodel::relation::Relation<(val:String[1])>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}");
+        FunctionType fTypeInt = (FunctionType) Function.computeFunctionType(runtime.getFunction("funcInt__Relation_$0_1$_"), runtime.getProcessorSupport());
+        FunctionType fTypeStr = (FunctionType) Function.computeFunctionType(runtime.getFunction("funcStr__Relation_$0_1$_"), runtime.getProcessorSupport());
+        Assert.assertFalse(
+                "Integer[1] and String[1] columns have only Any in common and must not be concatenatable",
+                _RelationType.canConcatenate(
+                        fTypeInt._returnType()._typeArguments().getFirst(),
+                        fTypeStr._returnType()._typeArguments().getFirst(),
+                        runtime.getProcessorSupport()));
+    }
+
+    @Test
     public void testNonExistentColumnTypeInParameter()
     {
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
