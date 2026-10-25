@@ -58,7 +58,7 @@ public class CastValidator
         }
         if (Type.isDataType(sourceRawType, processorSupport) || Type.isDataType(targetRawType, processorSupport))
         {
-            throw new PureCompilationException(instance.getSourceInformation(), "Cast exception: " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(sourceGenericType, processorSupport) + " cannot be cast to " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(targetGenericType, processorSupport));
+            throw new PureCompilationException(instance.getSourceInformation(), "Cast exception: " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(sourceGenericType, true, processorSupport) + " cannot be cast to " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(targetGenericType, true, processorSupport));
         }
     }
 }

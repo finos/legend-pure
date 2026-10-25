@@ -90,30 +90,30 @@ public class TestCastValidation extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPrimitiveToUnrelatedExtendedPrimitive()
     {
-        assertCastRejected("10->cast(@CastStringP)", "Integer", "CastStringP");
+        assertCastRejected("10->cast(@CastStringP)", "Integer", "test::CastStringP");
     }
 
     @Test
     public void testEnumToUnrelatedType()
     {
-        assertCastRejected("CastColor.RED->cast(@String)", "CastColor", "String");
-        assertCastRejected("'RED'->cast(@CastColor)", "String", "CastColor");
-        assertCastRejected("CastColor.RED->cast(@CastShape)", "CastColor", "CastShape");
+        assertCastRejected("CastColor.RED->cast(@String)", "test::CastColor", "String");
+        assertCastRejected("'RED'->cast(@CastColor)", "String", "test::CastColor");
+        assertCastRejected("CastColor.RED->cast(@CastShape)", "test::CastColor", "test::CastShape");
     }
 
     @Test
     public void testClassToDataType()
     {
-        assertCastRejected("^CastA()->cast(@String)", "CastA", "String");
-        assertCastRejected("'a'->cast(@CastA)", "String", "CastA");
-        assertCastRejected("^CastA()->cast(@CastColor)", "CastA", "CastColor");
-        assertCastRejected("1->cast(@meta::pure::metamodel::relation::Relation<(a:Integer)>)", "Integer", "Relation<(a:Integer)>");
+        assertCastRejected("^CastA()->cast(@String)", "test::CastA", "String");
+        assertCastRejected("'a'->cast(@CastA)", "String", "test::CastA");
+        assertCastRejected("^CastA()->cast(@CastColor)", "test::CastA", "test::CastColor");
+        assertCastRejected("1->cast(@meta::pure::metamodel::relation::Relation<(a:Integer)>)", "Integer", "meta::pure::metamodel::relation::Relation<(a:Integer)>");
     }
 
     @Test
     public void testUnitToOtherUnit()
     {
-        assertCastRejected("(5 test::CastLength~Metre)->cast(@test::CastLength~Foot)", "CastLength~Metre", "CastLength~Foot");
+        assertCastRejected("(5 test::CastLength~Metre)->cast(@test::CastLength~Foot)", "test::CastLength~Metre", "test::CastLength~Foot");
     }
 
     @Test
