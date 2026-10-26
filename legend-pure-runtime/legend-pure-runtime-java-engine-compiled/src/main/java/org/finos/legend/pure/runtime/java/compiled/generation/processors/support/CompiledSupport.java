@@ -1480,7 +1480,7 @@ public class CompiledSupport
 
     public static Double divide(Number left, Number right, SourceInformation sourceInformation)
     {
-        if (right.doubleValue() == 0)
+        if ((right instanceof BigDecimal) ? (((BigDecimal) right).compareTo(BigDecimal.ZERO) == 0) : (right.doubleValue() == 0))
         {
             throw new PureExecutionException(sourceInformation, "Cannot divide " + right + " by zero");
         }
@@ -1495,6 +1495,15 @@ public class CompiledSupport
 
     public static BigDecimal divideDecimal(BigDecimal left, BigDecimal right, long scale)
     {
+        return divideDecimal(left, right, scale, SourceInformation.UNKNOWN_SOURCE_INFORMATION);
+    }
+
+    public static BigDecimal divideDecimal(BigDecimal left, BigDecimal right, long scale, SourceInformation sourceInformation)
+    {
+        if (right.compareTo(BigDecimal.ZERO) == 0)
+        {
+            throw new PureExecutionException(sourceInformation, "Cannot divide " + right + " by zero");
+        }
         return left.divide(right, (int) scale, RoundingMode.HALF_UP);
     }
 

@@ -51,6 +51,11 @@ public class DivideDecimal extends NativeFunction
         BigDecimal right = (BigDecimal)NumericUtilities.toJavaNumber(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport), processorSupport);
         int scale = NumericUtilities.toJavaNumber(Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport), processorSupport).intValue();
 
+        if (right.compareTo(BigDecimal.ZERO) == 0)
+        {
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Cannot divide " + right + " by zero", functionExpressionCallStack);
+        }
+
         BigDecimal result = left.divide(right, scale, RoundingMode.HALF_UP);
 
         return NumericUtilities.toPureNumberValueExpression(result, true, this.repository, processorSupport);
