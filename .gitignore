@@ -20,3 +20,6 @@
 **/.DS_Store
 **/pure-duckDB-test-Db*
 **/pure-duckdb-test-db*
+
+#Temp local files
+.local/**
