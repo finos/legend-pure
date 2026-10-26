@@ -291,8 +291,8 @@ public class ExecuteInDb extends NativeFunction
             ZoneId zone = timeZoneResolution.parse(tz);
             Calendar calendar = null;
             // A date column carries a day and no zone, so ask the driver for the day itself; a
-            // driver that will not give one is asked once rather than once a row. The date
-            // handler in ResultSetValueHandlers says why at greater length.
+            // driver that will not give one, or fails giving one, is asked once rather than once
+            // a row. The date handler in ResultSetValueHandlers says why at greater length.
             boolean readsLocalDate = true;
             boolean readsLocalDateTime = true;
             boolean readsOffsetDateTime = true;
@@ -312,17 +312,18 @@ public class ExecuteInDb extends NativeFunction
                             StrictDate day = null;
                             if (readsLocalDate)
                             {
+                                LocalDate localDate = null;
                                 try
                                 {
-                                    LocalDate localDate = rs.getObject(i, LocalDate.class);
-                                    if (localDate != null)
-                                    {
-                                        day = DateFunctions.fromLocalDate(localDate);
-                                    }
+                                    localDate = rs.getObject(i, LocalDate.class);
                                 }
-                                catch (SQLException | UnsupportedOperationException | AbstractMethodError unsupported)
+                                catch (Exception | AbstractMethodError unreliable)
                                 {
                                     readsLocalDate = false;
+                                }
+                                if (localDate != null)
+                                {
+                                    day = DateFunctions.fromLocalDate(localDate);
                                 }
                             }
                             if (!readsLocalDate)
@@ -347,17 +348,18 @@ public class ExecuteInDb extends NativeFunction
                             PureDate moment = null;
                             if (readsLocalDateTime)
                             {
+                                LocalDateTime wallClock = null;
                                 try
                                 {
-                                    LocalDateTime wallClock = rs.getObject(i, LocalDateTime.class);
-                                    if (wallClock != null)
-                                    {
-                                        moment = DateFunctions.fromInstant(wallClock.atZone(zone).toInstant(), SUBSECOND_DIGITS);
-                                    }
+                                    wallClock = rs.getObject(i, LocalDateTime.class);
                                 }
-                                catch (SQLException | UnsupportedOperationException | AbstractMethodError unsupported)
+                                catch (Exception | AbstractMethodError unreliable)
                                 {
                                     readsLocalDateTime = false;
+                                }
+                                if (wallClock != null)
+                                {
+                                    moment = DateFunctions.fromInstant(wallClock.atZone(zone).toInstant(), SUBSECOND_DIGITS);
                                 }
                             }
                             if (!readsLocalDateTime)
@@ -384,17 +386,18 @@ public class ExecuteInDb extends NativeFunction
                             PureDate moment = null;
                             if (readsOffsetDateTime)
                             {
+                                OffsetDateTime zoned = null;
                                 try
                                 {
-                                    OffsetDateTime zoned = rs.getObject(i, OffsetDateTime.class);
-                                    if (zoned != null)
-                                    {
-                                        moment = DateFunctions.fromInstant(zoned.toInstant(), SUBSECOND_DIGITS);
-                                    }
+                                    zoned = rs.getObject(i, OffsetDateTime.class);
                                 }
-                                catch (SQLException | UnsupportedOperationException | AbstractMethodError unsupported)
+                                catch (Exception | AbstractMethodError unreliable)
                                 {
                                     readsOffsetDateTime = false;
+                                }
+                                if (zoned != null)
+                                {
+                                    moment = DateFunctions.fromInstant(zoned.toInstant(), SUBSECOND_DIGITS);
                                 }
                             }
                             if (!readsOffsetDateTime)
