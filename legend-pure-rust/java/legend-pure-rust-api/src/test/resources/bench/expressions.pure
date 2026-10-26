@@ -1,0 +1,77 @@
+// Copyright 2026 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// The expressions `crates/evaluator/examples/expressions.rs` builds with the
+// evaluator's builders, one function each; every call names the native directly.
+
+function bench::e01_plus():Integer[1]
+{
+    1 + 2
+}
+
+function bench::e02_arithmetic():Integer[1]
+{
+    (3 * 4) + (10 - 2)
+}
+
+function bench::e03_let():Integer[1]
+{
+    let x = 5;
+    $x * $x;
+}
+
+function bench::e04_if():String[1]
+{
+    if(1 < 2, |'yes', |'no')
+}
+
+function bench::e05_map_fold():Integer[1]
+{
+    [1, 2, 3, 4, 5]->map(x | $x * 2)->fold({a, b | $a + $b}, 0)
+}
+
+function bench::e06_range_filter():Integer[1]
+{
+    range(0, 100, 1)->filter(x | $x->mod(2) == 0)->size()
+}
+
+function bench::e07_sort_at():Integer[1]
+{
+    [5, 3, 9, 1, 7]->sort([], [])->at(0)
+}
+
+function bench::e08_format():String[1]
+{
+    'hello %s, %s'->format(['world', 42])
+}
+
+function bench::e09_date():Date[1]
+{
+    %2020-01-31->adjust(3, DurationUnit.MONTHS)
+}
+
+function bench::e10_match():Integer[1]
+{
+    5->match([i:Integer[1] | $i + 1, s:String[1] | 0])
+}
+
+function bench::e11_remove_duplicates():Integer[1]
+{
+    ['a', 'b', 'a', 'c', 'b']->removeDuplicates([], [])->size()
+}
+
+function bench::e12_join_strings():String[1]
+{
+    ['a', 'b', 'c']->joinStrings('<', ', ', '>')
+}

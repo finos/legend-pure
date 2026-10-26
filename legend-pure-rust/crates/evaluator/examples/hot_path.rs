@@ -1,0 +1,223 @@
+// Copyright 2026 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//! The Rust half of the apples-to-apples benchmark: the expressions of the
+
+//! The evaluator's hot path in isolation, the measurement behind plan
+//! Step 2b: a literal, one native over a two-element collection, a range,
+//! lambda applications with bodies of growing cost, and the raw cost of a
+//! `Value` clone, a two-element `PVector`, and a scope with one binding.
+//! No JNI, no bridge.
+//!
+//! ```bash
+//! cargo run --release -p legend-pure-evaluator --example hot_path
+//! ```
+
+use std::time::Instant;
+
+use im_rc::Vector as PVector;
+use legend_pure_evaluator::builders::{ModelBuilder, expr, named, param};
+use legend_pure_evaluator::eval::Evaluator;
+use legend_pure_evaluator::native::NativeRegistry;
+use legend_pure_evaluator::value::Value;
+use legend_pure_metamodel::bootstrap::{BOOLEAN_ID, INTEGER_ID};
+use legend_pure_metamodel::types::{Multiplicity, Parameter, ValueSpec};
+
+const PLUS: &str = "plus_Integer_MANY__Integer_1_";
+const TIMES: &str = "times_Integer_MANY__Integer_1_";
+const RANGE: &str = "range_Integer_1__Integer_1__Integer_1__Integer_MANY_";
+const FILTER: &str = "filter_T_MANY__Function_1__T_MANY_";
+const MAP: &str = "map_T_MANY__Function_1__V_MANY_";
+const MOD: &str = "mod_Integer_1__Integer_1__Integer_1_";
+const EQUAL: &str = "equal_Any_MANY__Any_MANY__Boolean_1_";
+const SIZE: &str = "size_Any_MANY__Integer_1_";
+
+const WARMUP: usize = 300;
+const RUNS: usize = 1000;
+/// Calls per timed sample: the clock ticks every 41.7 ns on Apple
+/// Silicon, so one call would be quantised to that.
+const BATCH: usize = 32;
+
+fn int_param(name: &str) -> Parameter {
+    param(name, named(INTEGER_ID), Multiplicity::PureOne)
+}
+
+/// `spec` typed `Integer[1]`, as the compiler types it.
+fn one_int(spec: ValueSpec) -> ValueSpec {
+    expr::typed(spec, named(INTEGER_ID), Multiplicity::PureOne)
+}
+
+/// `spec` typed `Integer[*]`.
+fn many_ints(spec: ValueSpec) -> ValueSpec {
+    expr::typed(spec, named(INTEGER_ID), Multiplicity::ZeroOrMany)
+}
+
+/// `spec` typed `Boolean[1]`.
+fn one_bool(spec: ValueSpec) -> ValueSpec {
+    expr::typed(spec, named(BOOLEAN_ID), Multiplicity::PureOne)
+}
+
+fn int(n: i64) -> ValueSpec {
+    one_int(expr::int(n))
+}
+
+fn var(name: &str) -> ValueSpec {
+    one_int(expr::var(name))
+}
+
+fn range_100() -> ValueSpec {
+    many_ints(expr::call(RANGE, vec![int(0), int(100), int(1)]))
+}
+
+fn size_of(spec: ValueSpec) -> ValueSpec {
+    one_int(expr::call(SIZE, vec![spec]))
+}
+
+fn arith(key: &str, a: ValueSpec, b: ValueSpec) -> ValueSpec {
+    one_int(expr::call(
+        key,
+        vec![many_ints(expr::collection(vec![a, b]))],
+    ))
+}
+
+/// Median, p90 and minimum nanoseconds of applying `spec` as a
+/// zero-argument lambda, each sample a batch of calls.
+fn time_spec(name: &str, evaluator: &mut Evaluator<'_>, spec: ValueSpec) {
+    let callable = evaluator
+        .eval(&expr::lambda(Vec::new(), vec![spec]))
+        .unwrap_or_else(|e| panic!("{name}: {e}"));
+    let run = |evaluator: &mut Evaluator<'_>| {
+        evaluator.context_mut().push_scope();
+        let result = evaluator.apply_callable(&callable, &[]);
+        evaluator.context_mut().pop_scope();
+        result.unwrap_or_else(|e| panic!("{name}: {e}"))
+    };
+    for _ in 0..WARMUP {
+        run(evaluator);
+    }
+    let mut times: Vec<u128> = Vec::with_capacity(RUNS);
+    for _ in 0..RUNS {
+        let start = Instant::now();
+        for _ in 0..BATCH {
+            let value = run(evaluator);
+            std::hint::black_box(value);
+        }
+        times.push(start.elapsed().as_nanos() / BATCH as u128);
+    }
+    times.sort_unstable();
+    println!(
+        "{name:<48} {:>9} ns  (p90 {}, min {})",
+        times[times.len() / 2],
+        times[times.len() * 9 / 10],
+        times[0]
+    );
+}
+
+/// Average nanoseconds of one iteration of `body` over `iterations`.
+fn time_raw(name: &str, iterations: u128, mut body: impl FnMut()) {
+    let start = Instant::now();
+    for _ in 0..iterations {
+        body();
+    }
+    println!(
+        "{name:<48} {:>9} ns",
+        start.elapsed().as_nanos() / iterations
+    );
+}
+
+fn main() {
+    let model = ModelBuilder::new().finish();
+    let registry = NativeRegistry::standard();
+    let mut evaluator = Evaluator::new(&model, &registry);
+
+    time_spec("literal 1", &mut evaluator, int(1));
+    time_spec("1 + 2", &mut evaluator, arith(PLUS, int(1), int(2)));
+    time_spec(
+        "range(0,100,1)->size()",
+        &mut evaluator,
+        size_of(range_100()),
+    );
+    time_spec(
+        "range->filter(x | true)->size()",
+        &mut evaluator,
+        size_of(many_ints(expr::call(
+            FILTER,
+            vec![
+                range_100(),
+                expr::lambda(vec![int_param("x")], vec![one_bool(expr::boolean(true))]),
+            ],
+        ))),
+    );
+    time_spec(
+        "range->filter(x | $x->mod(2) == 0)->size()",
+        &mut evaluator,
+        size_of(many_ints(expr::call(
+            FILTER,
+            vec![
+                range_100(),
+                expr::lambda(
+                    vec![int_param("x")],
+                    vec![one_bool(expr::call(
+                        EQUAL,
+                        vec![one_int(expr::call(MOD, vec![var("x"), int(2)])), int(0)],
+                    ))],
+                ),
+            ],
+        ))),
+    );
+    time_spec(
+        "range->map(x | $x)->size()",
+        &mut evaluator,
+        size_of(many_ints(expr::call(
+            MAP,
+            vec![
+                range_100(),
+                expr::lambda(vec![int_param("x")], vec![var("x")]),
+            ],
+        ))),
+    );
+    time_spec(
+        "range->map(x | $x * 2)->size()",
+        &mut evaluator,
+        size_of(many_ints(expr::call(
+            MAP,
+            vec![
+                range_100(),
+                expr::lambda(vec![int_param("x")], vec![arith(TIMES, var("x"), int(2))]),
+            ],
+        ))),
+    );
+    time_spec(
+        "[100 literals]->size()",
+        &mut evaluator,
+        size_of(many_ints(expr::collection((0..100).map(int).collect()))),
+    );
+
+    let integer = Value::Integer(1);
+    time_raw("Value::Integer clone", 1_000_000, || {
+        std::hint::black_box(integer.clone());
+    });
+    let hundred = Value::Collection(Box::new((0..100).map(Value::Integer).collect()));
+    time_raw("Value::Collection(100) clone", 10_000, || {
+        std::hint::black_box(hundred.clone());
+    });
+    time_raw("PVector of 2 from an iterator", 100_000, || {
+        let two: PVector<Value> = (0..2).map(Value::Integer).collect();
+        std::hint::black_box(two);
+    });
+    time_raw("push_scope + set + pop_scope", 100_000, || {
+        evaluator.context_mut().push_scope();
+        evaluator.context_mut().set("x", Value::Integer(1));
+        evaluator.context_mut().pop_scope();
+    });
+}

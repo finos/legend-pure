@@ -7,7 +7,13 @@
 **/*.iml
 **/pom.xml.versionsBackup
 **/.develocity/**
+.vscode/**
 .mvn/**
+
+.claude/scheduled_tasks.lock
+.claude/*.local.*
+.claude/worktrees/
+
 
 # Build
 **/target
@@ -20,3 +26,6 @@
 **/.DS_Store
 **/pure-duckDB-test-Db*
 **/pure-duckdb-test-db*
+.claude/agents/
+.claude/agent-memory/
+.mcp.json

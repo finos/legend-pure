@@ -1,0 +1,29 @@
+{
+  "adapter": "meta::pure::rust::jni::testAdapterForRustExecution_Function_1__X_o_",
+  "exclusions": [
+    {
+      "test": "meta::pure::functions::date::tests::testAdjustByDaysBigNumber_Function_1__Boolean_1_",
+      "expectedError": "Execution error at (resource:/platform/pure/essential/date/operation/adjust.pure line:131 column:58), \"Date overflow: parameter 'days' is not in the required range of -7304484..=7304484\""
+    },
+    {
+      "test": "meta::pure::functions::date::tests::testAdjustByHoursBigNumber_Function_1__Boolean_1_",
+      "expectedError": "Execution error at (resource:/platform/pure/essential/date/operation/adjust.pure line:149 column:75), \"Date overflow: parameter 'hours' is not in the required range of -175307616..=175307616\""
+    },
+    {
+      "test": "meta::pure::functions::date::tests::testAdjustByMinutesBigNumber_Function_1__Boolean_1_",
+      "expectedError": "Execution error at (resource:/platform/pure/essential/date/operation/adjust.pure line:167 column:73), \"Date overflow: parameter 'minutes' is not in the required range of -10518456960..=10518456960\""
+    },
+    {
+      "test": "meta::pure::functions::date::tests::testAdjustByMonthsBigNumber_Function_1__Boolean_1_",
+      "expectedError": "Execution error at (resource:/platform/pure/essential/date/operation/adjust.pure line:92 column:59), \"Date overflow: parameter 'months' is not in the required range of -239976..=239976\""
+    },
+    {
+      "test": "meta::pure::functions::date::tests::testAdjustByWeeksBigNumber_Function_1__Boolean_1_",
+      "expectedError": "Execution error at (resource:/platform/pure/essential/date/operation/adjust.pure line:110 column:59), \"Date overflow: parameter 'days' is not in the required range of -7304484..=7304484\""
+    },
+    {
+      "test": "meta::pure::functions::lang::tests::match::testMatchWithMixedReturnType_Function_1__Boolean_1_",
+      "expectedError": "Execution error at (resource:/platform/pure/essential/lang/flow/match.pure line:230 column:172), \"NotImplemented: deactivate_Any_MANY__ValueSpecification_1_\""
+    }
+  ]
+}

@@ -108,3 +108,6 @@ Authoritative developer docs live in `/docs` and are maintained alongside code. 
 - `docs/testing/testing-strategy.md` — PCT, coverage, how to run things.
 - `docs/standards/coding-standards.md` — full Checkstyle rule list.
 - `docs/decisions/` — ADRs (JUnit 4, Eclipse Collections, no mocks).
+
+Rust evaluator (`legend-pure-rust/`): see `legend-pure-rust/CLAUDE.md` and the plan
+`legend-pure-rust/docs/rust-evaluator-mvp.md`.

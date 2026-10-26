@@ -37,6 +37,7 @@
         <module>legend-pure-store</module>
         <module>legend-pure-lsp</module>
         <module>legend-pure-docs</module>
+        <module>legend-pure-rust/java</module>
     </modules>
 
     <properties>
