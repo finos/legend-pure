@@ -853,6 +853,211 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testColSpecArrayEqualWidenSameTypeColumns()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(a:Integer, b:Integer)>[1]):Integer[1]\n" +
+                        "{\n" +
+                        "    $t->widenCols(~[a,b]);\n" +
+                        "}\n" +
+                        "native function meta::pure::functions::relation::widenCols<T,Z,K>(r:Relation<T>[1], cols:ColSpecArray<Z=(?:K)⊆T>[1]):K[1];");
+    }
+
+    @Test
+    public void testColSpecArrayEqualWidenUnifiableColumns()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(a:Integer, b:Float)>[1]):Number[1]\n" +
+                        "{\n" +
+                        "    $t->widenCols(~[a,b]);\n" +
+                        "}\n" +
+                        "native function meta::pure::functions::relation::widenCols<T,Z,K>(r:Relation<T>[1], cols:ColSpecArray<Z=(?:K)⊆T>[1]):K[1];");
+    }
+
+    @Test
+    public void testColSpecArrayEqualWidenThreeUnifiableColumns()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(a:Integer, b:Integer, c:Float)>[1]):Number[1]\n" +
+                        "{\n" +
+                        "    $t->widenCols(~[a,b,c]);\n" +
+                        "}\n" +
+                        "native function meta::pure::functions::relation::widenCols<T,Z,K>(r:Relation<T>[1], cols:ColSpecArray<Z=(?:K)⊆T>[1]):K[1];");
+    }
+
+    @Test
+    public void testColSpecArrayEqualWidenIncompatibleColumnsError()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(a:Integer, b:String)>[1]):Any[1]\n" +
+                        "{\n" +
+                        "    $t->widenCols(~[a,b]);\n" +
+                        "}\n" +
+                        "native function meta::pure::functions::relation::widenCols<T,Z,K>(r:Relation<T>[1], cols:ColSpecArray<Z=(?:K)⊆T>[1]):K[1];"));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:4 column:19), \"The columns selected by this ColSpecArray don't share a common type more specific than meta::pure::metamodel::type::Any: Integer, String\"", e.getMessage());
+    }
+
+    @Test
+    public void testColSpecArrayEqualWidenIncompatibleColumnsErrorIsColumnOrderIndependent()
+    {
+        PureCompilationException e1 = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(a:Integer, b:String)>[1]):Any[1]\n" +
+                        "{\n" +
+                        "    $t->widenCols(~[a,b]);\n" +
+                        "}\n" +
+                        "native function meta::pure::functions::relation::widenCols<T,Z,K>(r:Relation<T>[1], cols:ColSpecArray<Z=(?:K)⊆T>[1]):K[1];"));
+        deleteInferenceTest();
+        PureCompilationException e2 = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(a:Integer, b:String)>[1]):Any[1]\n" +
+                        "{\n" +
+                        "    $t->widenCols(~[b,a]);\n" +
+                        "}\n" +
+                        "native function meta::pure::functions::relation::widenCols<T,Z,K>(r:Relation<T>[1], cols:ColSpecArray<Z=(?:K)⊆T>[1]):K[1];"));
+        Assert.assertTrue(e1.getMessage(), e1.getMessage().contains("don't share a common type more specific than"));
+        Assert.assertTrue(e2.getMessage(), e2.getMessage().contains("don't share a common type more specific than"));
+    }
+
+    @Test
+    public void testColSpecArrayEqualHardcodedConcreteTypeValidColumns()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(a:String, b:String)>[1]):Relation<(a:String,b:String)>[1]\n" +
+                        "{\n" +
+                        "    $t->widenColsHardcoded(~[a,b]);\n" +
+                        "}\n" +
+                        "native function meta::pure::functions::relation::widenColsHardcoded<T,Z>(r:Relation<T>[1], cols:ColSpecArray<Z=(?:String)⊆T>[1]):Relation<Z>[1];");
+    }
+
+    @Test
+    public void testColSpecArrayEqualHardcodedConcreteSupertypeAcceptsCompatibleSubtypeColumns()
+    {
+        // A hardcoded declared type doesn't require an exact match per column - Integer and Float
+        // are different types, but both are compatible with (subtypes of) a declared Number pin.
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(a:Integer, b:Float)>[1]):Relation<(a:Integer,b:Float)>[1]\n" +
+                        "{\n" +
+                        "    $t->widenColsHardcodedNumber(~[a,b]);\n" +
+                        "}\n" +
+                        "native function meta::pure::functions::relation::widenColsHardcodedNumber<T,Z>(r:Relation<T>[1], cols:ColSpecArray<Z=(?:Number)⊆T>[1]):Relation<Z>[1];");
+    }
+
+    @Test
+    public void testColSpecArrayEqualHardcodedConcreteTypeRejectsLaterIncompatibleColumn()
+    {
+        // The pre-existing per-column compatibility check only ever examines the first selected
+        // column (same positional-only limitation as the original ADR-008 bug), so `a:String`
+        // alone would pass it - this must be caught by the per-column declared-type compatibility
+        // check instead (a hardcoded, already-concrete `(?:String)` slot is validated per column,
+        // not merged/widened - see testColSpecArrayEqualHardcodedConcreteTypeRejectsLooselyRelatedColumn
+        // for why a widen-and-reject-only-Any/Nil check would be wrong here).
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(a:String, b:Integer)>[1]):Relation<(a:String,b:Integer)>[1]\n" +
+                        "{\n" +
+                        "    $t->widenColsHardcoded(~[a,b]);\n" +
+                        "}\n" +
+                        "native function meta::pure::functions::relation::widenColsHardcoded<T,Z>(r:Relation<T>[1], cols:ColSpecArray<Z=(?:String)⊆T>[1]):Relation<Z>[1];"));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:4 column:28), \"The columns selected by this ColSpecArray are not all compatible with the declared type String: found Integer\"", e.getMessage());
+    }
+
+    @Test
+    public void testColSpecArrayEqualHardcodedConcreteTypeRejectsLooselyRelatedColumn()
+    {
+        // Integer and Float are both incompatible with a declared Integer pin, but they merge to
+        // Number (not Any/Nil) - a widen-then-reject-only-Any/Nil check would wrongly let this
+        // through. Each column must be checked against the declared type directly.
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(a:Integer, b:Float)>[1]):Relation<(a:Integer,b:Float)>[1]\n" +
+                        "{\n" +
+                        "    $t->widenColsHardcodedInt(~[a,b]);\n" +
+                        "}\n" +
+                        "native function meta::pure::functions::relation::widenColsHardcodedInt<T,Z>(r:Relation<T>[1], cols:ColSpecArray<Z=(?:Integer)⊆T>[1]):Relation<Z>[1];"));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:4 column:31), \"The columns selected by this ColSpecArray are not all compatible with the declared type Integer: found Float\"", e.getMessage());
+    }
+
+    @Test
+    public void testColSpecArrayEqualWidenReusedByFollowingColSpec()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(a:Integer, b:Float)>[1]):Relation<(total:Number)>[1]\n" +
+                        "{\n" +
+                        "    $t->widenColsWithValue(~[a,b], ~total);\n" +
+                        "}\n" +
+                        "native function meta::pure::functions::relation::widenColsWithValue<T,Z,K,V>(r:Relation<T>[1], cols:ColSpecArray<Z=(?:K)⊆T>[1], out:ColSpec<V=(?:K)>[1]):Relation<V>[1];");
+    }
+
+    @Test
+    public void testColSpecArrayAnonymousWildcardAllowsIndependentColumnTypes()
+    {
+        // An anonymous (?:?) slot (e.g. a partition/grouping key list) expresses no shared type.
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(id:Integer, fromDate:Date)>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    $t->groupKeys(~[id, fromDate]);\n" +
+                        "}\n" +
+                        "native function meta::pure::functions::relation::groupKeys<T>(r:Relation<T>[1], cols:ColSpecArray<(?:?)⊆T>[1]):Boolean[1];");
+    }
+
+    @Test
+    public void testColSpecArrayEqualPartiallyConcreteSlotBindsInnerTypeParameter()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(a:List<Integer>, b:List<Integer>)>[1]):Integer[1]\n" +
+                        "{\n" +
+                        "    $t->listElem(~[a,b]);\n" +
+                        "}\n" +
+                        "native function meta::pure::functions::relation::listElem<T,Z,K>(r:Relation<T>[1], cols:ColSpecArray<Z=(?:List<K>)⊆T>[1]):K[1];");
+    }
+
+    @Test
+    public void testColSpecArraySelectParameterizedColumnTypes()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(a:List<Integer>, b:List<Integer>)>[1]):Relation<Any>[1]\n" +
+                        "{\n" +
+                        "    $t->sel(~[a,b]);\n" +
+                        "}\n" +
+                        "native function sel<T,Z>(r:Relation<T>[1], cols:ColSpecArray<Z⊆T>[1]):Relation<Z>[1];");
+    }
+
+    @Test
+    public void testColSpecEqualPartiallyConcreteSlotBindsInnerTypeParameter()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(a:List<Integer>, b:List<Integer>)>[1]):Integer[1]\n" +
+                        "{\n" +
+                        "    $t->one(~a);\n" +
+                        "}\n" +
+                        "native function one<T,Z,K>(r:Relation<T>[1], col:ColSpec<Z=(?:List<K>)⊆T>[1]):K[1];");
+    }
+
+    @Test
+    public void testColSpecArrayMultiColumnSubsetTemplateIsNotTreatedAsSharedSlot()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(a:Integer, b:String, c:Float)>[1]):Relation<(a:Integer, b:String)>[1]\n" +
+                        "{\n" +
+                        "    $t->pickTwo(~[a, b]);\n" +
+                        "}\n" +
+                        "native function meta::pure::functions::relation::pickTwo<T,Z>(r:Relation<T>[1], cols:ColSpecArray<Z=(a:Integer, b:String)⊆T>[1]):Relation<Z>[1];");
+    }
+
+    @Test
     public void testFunctionExpressionInferredTypes()
     {
         compileInferenceTest(
