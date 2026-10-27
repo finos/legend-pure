@@ -168,10 +168,14 @@ public final class ResultSetValueHandlers
      * zone whatever calendar it is given. No one choice reads both correctly, so the day is
      * asked for instead.
      *
-     * <p>A driver need not answer that, and DuckDB 1.0.0 does not. The way back is the reading
-     * that stood before: take the {@link java.sql.Date} and read it as java.util built it,
-     * which is what a driver of that vintage did. A driver is asked once rather than once a
-     * row, so a result set costs at most the one exception.
+     * <p>A driver need not answer that, and DuckDB 1.0.0 does not. Nor is a driver that answers
+     * sure to answer soundly: the DB2 driver reads a null column by throwing a
+     * {@link NullPointerException}. Any exception a driver throws, and the
+     * {@link AbstractMethodError} of a driver older than JDBC 4.1, turn back to the reading that
+     * stood before: take the {@link java.sql.Date} and read it as java.util built it, which is
+     * what a driver of that vintage did. A driver is asked once rather than once a row, so a
+     * result set costs at most the one exception. Only the asking is guarded, so a failure
+     * converting the day a driver gave is not taken for the driver's.
      *
      * @return handler for a date column
      */
@@ -186,14 +190,18 @@ public final class ResultSetValueHandlers
             {
                 if (this.readsLocalDate)
                 {
+                    LocalDate localDate = null;
                     try
                     {
-                        LocalDate localDate = rs.getObject(i, LocalDate.class);
-                        return (localDate == null) ? nullSqlInstance : DateFunctions.fromLocalDate(localDate);
+                        localDate = rs.getObject(i, LocalDate.class);
                     }
-                    catch (SQLException | UnsupportedOperationException | AbstractMethodError unsupported)
+                    catch (Exception | AbstractMethodError unreliable)
                     {
                         this.readsLocalDate = false;
+                    }
+                    if (this.readsLocalDate)
+                    {
+                        return (localDate == null) ? nullSqlInstance : DateFunctions.fromLocalDate(localDate);
                     }
                 }
                 Date date = rs.getDate(i);
@@ -225,16 +233,20 @@ public final class ResultSetValueHandlers
             {
                 if (this.readsLocalDateTime)
                 {
+                    LocalDateTime wallClock = null;
                     try
                     {
-                        LocalDateTime wallClock = rs.getObject(i, LocalDateTime.class);
+                        wallClock = rs.getObject(i, LocalDateTime.class);
+                    }
+                    catch (Exception | AbstractMethodError unreliable)
+                    {
+                        this.readsLocalDateTime = false;
+                    }
+                    if (this.readsLocalDateTime)
+                    {
                         return (wallClock == null) ?
                                nullSqlInstance :
                                DateFunctions.fromInstant(wallClock.atZone(calendar.getTimeZone().toZoneId()).toInstant(), 9);
-                    }
-                    catch (SQLException | UnsupportedOperationException | AbstractMethodError unsupported)
-                    {
-                        this.readsLocalDateTime = false;
                     }
                 }
                 Timestamp timestamp = rs.getTimestamp(i, calendar);
@@ -262,14 +274,18 @@ public final class ResultSetValueHandlers
             {
                 if (this.readsOffsetDateTime)
                 {
+                    OffsetDateTime moment = null;
                     try
                     {
-                        OffsetDateTime moment = rs.getObject(i, OffsetDateTime.class);
-                        return (moment == null) ? nullSqlInstance : DateFunctions.fromInstant(moment.toInstant(), 9);
+                        moment = rs.getObject(i, OffsetDateTime.class);
                     }
-                    catch (SQLException | UnsupportedOperationException | AbstractMethodError unsupported)
+                    catch (Exception | AbstractMethodError unreliable)
                     {
                         this.readsOffsetDateTime = false;
+                    }
+                    if (this.readsOffsetDateTime)
+                    {
+                        return (moment == null) ? nullSqlInstance : DateFunctions.fromInstant(moment.toInstant(), 9);
                     }
                 }
                 Timestamp timestamp = rs.getTimestamp(i, calendar);

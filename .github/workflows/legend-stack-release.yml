@@ -83,11 +83,6 @@ jobs:
         with:
           node-version: 14.x
 
-      - name: Collect Workflow Telemetry
-        uses: runforesight/workflow-telemetry-action@v1
-        with:
-          theme: dark
-
       - name: Build and deploy release
         env:
           RELEASE_VERSION: ${{ github.event.client_payload.releaseVersion }}

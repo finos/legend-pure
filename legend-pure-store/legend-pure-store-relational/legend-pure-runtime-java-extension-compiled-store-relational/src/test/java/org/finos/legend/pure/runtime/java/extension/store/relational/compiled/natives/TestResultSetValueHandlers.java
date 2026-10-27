@@ -18,12 +18,16 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.time.TimeZones;
 import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.RelationalNativeImplementation;
 import org.h2.util.DateTimeUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -191,6 +195,87 @@ public class TestResultSetValueHandlers
             }
             return read;
         }
+    }
+
+    /**
+     * A driver can answer {@link ResultSet#getObject(int, Class)} for a java.time class and still
+     * not answer it soundly: the DB2 driver reads a null column by throwing a
+     * {@link NullPointerException}. A driver that fails is read as one that will not answer, the
+     * way columns were read before, and is not asked again, so a result set costs one exception
+     * for each column here whether its first null comes before any value or after one.
+     */
+    @Test
+    public void testDriverThatFailsOnANullIsReadAsBefore() throws SQLException
+    {
+        ImmutableList<ImmutableList<String>> stored = Lists.immutable.with(
+                Lists.immutable.with("DATE '2014-03-10'", "TIMESTAMP '2014-03-10 13:07:44'", "TIMESTAMP WITH TIME ZONE '2014-03-10 13:07:44+05:00'"),
+                Lists.immutable.with("NULL", "NULL", "NULL"),
+                Lists.immutable.with("DATE '2015-07-21'", "TIMESTAMP '2015-07-21 09:30:00'", "TIMESTAMP WITH TIME ZONE '2015-07-21 09:30:00-04:00'"),
+                Lists.immutable.with("NULL", "NULL", "NULL"));
+        ImmutableList<String> nulls = Lists.immutable.with(null, null, null);
+        // the timestamps without a zone are kept in Tokyo, nine hours ahead of UTC
+        ImmutableList<ImmutableList<String>> want = Lists.immutable.with(
+                Lists.immutable.with("2014-03-10", "2014-03-10T04:07:44.000000000+0000", "2014-03-10T08:07:44.000000000+0000"),
+                nulls,
+                Lists.immutable.with("2015-07-21", "2015-07-21T00:30:00.000000000+0000", "2015-07-21T13:30:00.000000000+0000"),
+                nulls);
+        assertReadThroughDriverFailingOnNull("value first", stored, "ASC", want);
+        assertReadThroughDriverFailingOnNull("null first", stored, "DESC", want.toReversed());
+    }
+
+    private static void assertReadThroughDriverFailingOnNull(String description, ListIterable<? extends ListIterable<String>> stored, String order, ListIterable<? extends ListIterable<String>> want) throws SQLException
+    {
+        CoreInstance sqlNull = new ModelRepository().newStringCoreInstance("SQLNull");
+        try (Connection connection = connect(H2);
+             Statement statement = connection.createStatement())
+        {
+            statement.execute("CREATE TABLE moments (id INTEGER, recorded_on DATE, recorded_at TIMESTAMP, recorded_at_zoned TIMESTAMP WITH TIME ZONE)");
+            for (int id = 0; id < stored.size(); id++)
+            {
+                statement.execute(stored.get(id).makeString("INSERT INTO moments VALUES (" + id + ", ", ", ", ")"));
+            }
+
+            AtomicInteger failures = new AtomicInteger();
+            MutableList<ListIterable<String>> read = Lists.mutable.ofInitialCapacity(stored.size());
+            try (ResultSet resultSet = failingOnNull(statement.executeQuery("SELECT recorded_on, recorded_at, recorded_at_zoned FROM moments ORDER BY id " + order), failures))
+            {
+                ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSet.getMetaData());
+                Calendar calendar = TimeZones.newCalendar("Asia/Tokyo");
+                while (resultSet.next())
+                {
+                    ListIterable<Object> row = RelationalNativeImplementation.processRow(resultSet, handlers, sqlNull, calendar);
+                    read.add(row.collect(value -> (value == sqlNull) ? null : value.toString()));
+                }
+            }
+            Assert.assertEquals(description, want, read);
+            Assert.assertEquals(description + ", exceptions", 3, failures.get());
+        }
+    }
+
+    /**
+     * Wrap a result set so that it reads a null column the way the DB2 driver does when asked for a
+     * java.time class, by throwing a {@link NullPointerException}, and counts the times it does.
+     */
+    private static ResultSet failingOnNull(ResultSet resultSet, AtomicInteger failures)
+    {
+        return (ResultSet) Proxy.newProxyInstance(TestResultSetValueHandlers.class.getClassLoader(), new Class<?>[]{ResultSet.class}, (proxy, method, args) ->
+        {
+            Object value;
+            try
+            {
+                value = method.invoke(resultSet, args);
+            }
+            catch (InvocationTargetException e)
+            {
+                throw e.getCause();
+            }
+            if ((value == null) && "getObject".equals(method.getName()) && (args.length == 2) && (args[1] instanceof Class))
+            {
+                failures.incrementAndGet();
+                throw new NullPointerException();
+            }
+            return value;
+        });
     }
 
     private static Connection connect(String database) throws SQLException
