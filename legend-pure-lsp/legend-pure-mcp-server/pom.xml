@@ -154,14 +154,6 @@
             <groupId>org.eclipse.lsp4j</groupId>
             <artifactId>org.eclipse.lsp4j</artifactId>
             <version>${lsp4j.version}</version>
-            <exclusions>
-                <!-- lsp4j declares gson as a version range; exclude it so the
-                     explicit gson dependency below is the only version in the tree. -->
-                <exclusion>
-                    <groupId>com.google.code.gson</groupId>
-                    <artifactId>gson</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
