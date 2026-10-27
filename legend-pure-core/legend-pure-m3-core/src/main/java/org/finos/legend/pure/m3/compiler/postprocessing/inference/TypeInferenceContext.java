@@ -349,10 +349,21 @@ public class TypeInferenceContext
             observer.unShiftTab();
         }
 
+        // When the value is itself a caller's ColSpec type operation, the template's left must bind to the caller's
+        // column-set parameter (B in B=(?:C)⊆A or B⊆A), never to the whole operation, which can't be substituted.
         if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual(templateGenType))
         {
+            GenericTypeOperation templateEqual = (GenericTypeOperation) templateGenType;
             observer.shiftTab();
-            register(((GenericTypeOperation) templateGenType)._left(), genericTypeCopy, targetGenericsContext, merge, observer);
+            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationSubset(genericTypeCopy))
+            {
+                register(templateEqual._left(), ((GenericTypeOperation) genericTypeCopy)._left(), targetGenericsContext, merge, observer);
+                register(templateEqual._right(), genericTypeCopy, targetGenericsContext, merge, observer);
+            }
+            else if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual(genericTypeCopy))
+            {
+                register(templateEqual._left(), genericTypeCopy, targetGenericsContext, merge, observer);
+            }
             observer.unShiftTab();
         }
 
