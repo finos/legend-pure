@@ -98,7 +98,7 @@ public class ReportGeneration
         {
             try
             {
-                String reportStr = JsonMapper.builder().build().setSerializationInclusion(JsonInclude.Include.NON_NULL).writerWithDefaultPrettyPrinter().writeValueAsString(x);
+                String reportStr = JsonMapper.builder().serializationInclusion(JsonInclude.Include.NON_NULL).build().writerWithDefaultPrettyPrinter().writeValueAsString(x);
                 Shared.writeStringToTarget(targetDir, ReportGeneration.getReportName(x) + ".json", reportStr);
             }
             catch (IOException e)
