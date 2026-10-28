@@ -245,6 +245,15 @@ public class CoreHelper
 
     public static long monthNumber(PureDate date)
     {
+        return monthNumber(date, SourceInformation.UNKNOWN_SOURCE_INFORMATION);
+    }
+
+    public static long monthNumber(PureDate date, SourceInformation sourceInformation)
+    {
+        if (!date.hasMonth())
+        {
+            throw new PureExecutionException(sourceInformation, "Cannot get month for " + date, Stacks.mutable.empty());
+        }
         return date.getMonth();
     }
 
