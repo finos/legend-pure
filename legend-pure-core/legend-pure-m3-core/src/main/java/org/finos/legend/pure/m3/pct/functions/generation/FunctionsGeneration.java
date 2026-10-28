@@ -65,7 +65,7 @@ public class FunctionsGeneration
         Functions functions = generateFunctions(scopeProviderMethod);
         try
         {
-            String reportStr = JsonMapper.builder().build().setSerializationInclusion(JsonInclude.Include.NON_NULL).writerWithDefaultPrettyPrinter().writeValueAsString(functions);
+            String reportStr = JsonMapper.builder().serializationInclusion(JsonInclude.Include.NON_NULL).build().writerWithDefaultPrettyPrinter().writeValueAsString(functions);
             Shared.writeStringToTarget(targetDir, "FUNCTIONS_" + functions.reportScope.module + ".json", reportStr);
         }
         catch (Exception e)
