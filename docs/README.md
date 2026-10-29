@@ -146,6 +146,7 @@ paths are always equivalent from a user's perspective.
 | [Architecture Overview](architecture/overview.md) | What Legend Pure is, the module tree, and component relationships |
 | [Module Reference](architecture/modules.md) | Every module, its purpose, and its inter-module dependencies |
 | [Compiler Pipeline](architecture/compiler-pipeline.md) | Parse → post-process → validate → serialize → code-gen, compiled vs interpreted engines |
+| [PELT Serialization](architecture/pelt-serialization.md) | The per-element binary format (`.pelt` + module metadata): file layout, byte-level format, reference ids, lazy loading, producers and consumers |
 | [Dependency & Technology Stack](architecture/tech-stack.md) | Third-party libraries, version management, and technology rationale |
 | [Domain & Key Concepts](architecture/domain-concepts.md) | Core domain model, glossary, and design patterns |
 | [Pure Language Reference](reference/pure-language-reference.md) | Syntax, types, multiplicity, collections, comments and documentation, milestoning, standard library |
