@@ -718,7 +718,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
             "import meta::pure::metamodel::relation::*;\n" +
             "function my::personFunctionQuoted(): Relation<('FIRST NAME':String[1], AGE:Integer[1])>[1]\n" +
             "{\n" +
-            "  1->cast(@Relation<('FIRST NAME':String[1], AGE:Integer[1])>);\n" +
+            "  []->cast(@Relation<('FIRST NAME':String[1], AGE:Integer[1])>)->toOne();\n" +
             "}\n";
 
     @Test

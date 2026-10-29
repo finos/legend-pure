@@ -109,7 +109,7 @@ without modifying the graph:
 |-----------|--------|
 | `GenericTypeValidator` | Type argument counts match type parameter counts; type bounds respected |
 | `VisibilityValidation` | Package visibility rules; elements do not reference private/inaccessible elements |
-| `FunctionExpressionValidator` | Function call argument types and multiplicities match the function signature |
+| `FunctionExpressionValidator` | Function call argument types and multiplicities match the function signature; per-function checks for `new`, `copy`, `extractEnumValue`, `format`, `subType`, `getAll*`, and `cast` (`CastValidator` rejects casts that can never succeed: one side a primitive, enumeration, measure or unit, and neither a subtype of the other) |
 | `ClassValidator` | Property type consistency; constraint expression types are `Boolean[1]` |
 | `AssociationValidator` | Association property types refer to valid classes |
 | `MultiplicityValidator` | No impossible multiplicities (e.g. `[3..1]`) |

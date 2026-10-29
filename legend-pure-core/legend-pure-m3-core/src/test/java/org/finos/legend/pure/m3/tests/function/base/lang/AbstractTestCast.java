@@ -308,21 +308,16 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
-    public void testStringToEnumCast()
+    public void testPrimitiveToAnyCastInDynamicEvaluation()
     {
         compileTestSource("fromString.pure",
-                "function test():Nil[0]\n" +
+                "function test():Boolean[1]\n" +
                         "{\n" +
-                        "   'January' -> cast(@Month) -> print(1);\n" +
-                        "}");
-        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("test():Nil[0]"));
-        checkStringToEnumCastTopLevelException(e);
-        Assert.assertSame(e, findRootException(e));
-    }
-
-    protected void checkStringToEnumCastTopLevelException(PureExecutionException e)
-    {
-        checkException(e, "Cast exception: String cannot be cast to Month", "fromString.pure", 3, 17);
+                        "   let fn = {|'the cat sat on the mat'->cast(@Any)};\n" +
+                        "   let lambda = ^LambdaFunction<{->Any[*]}>(expressionSequence = $fn.expressionSequence);\n" +
+                        "   assertEquals('the cat sat on the mat', $lambda->evaluate([]));\n" +
+                        "}\n");
+        execute("test():Boolean[1]");
     }
 
     protected void checkException(Throwable t, String expectedInfo, String expectedSource, int expectedLine, int expectedCol)

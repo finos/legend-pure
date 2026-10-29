@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Legend Pure is the language and compiler engine powering the FINOS Legend data-management platform. This repo ships the Pure language, its compiler, two execution engines (compiled + interpreted), DSL extensions, a relational store, and the Maven plugin suite that drives Pure compilation during normal Maven builds.
 
-Group ID: `org.finos.legend.pure`. Current version: `5.81.1-SNAPSHOT` (root `pom.xml`). Downstream consumer: `legend-engine` compiles against these JARs, so public Java API in `legend-pure-m4`, `legend-pure-m3-core`, and runtime engine modules is a **breaking-change surface for the whole Legend stack**.
+Group ID: `org.finos.legend.pure`. Current version: the `<revision>` property in the root `pom.xml` (bumped on every release, so don't copy the number elsewhere). Downstream consumer: `legend-engine` compiles against these JARs, so public Java API in `legend-pure-m4`, `legend-pure-m3-core`, and runtime engine modules is a **breaking-change surface for the whole Legend stack**.
 
 ## Build & test commands
 

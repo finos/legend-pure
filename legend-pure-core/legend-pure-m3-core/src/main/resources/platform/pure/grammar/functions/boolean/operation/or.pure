@@ -64,7 +64,7 @@ function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::or::t
 function <<test.Test>> meta::pure::functions::boolean::tests::conjunctions::or::testShortCircuit():Boolean[1]
 {
     let val1 = ^List<String>(values=['Claudius', 'Ptolemy']);
-    let val2 = 'Claudius Ptolemy';
+    let val2 = 'Claudius Ptolemy'->cast(@Any);
     assertFalse(!$val1->instanceOf(List) || ($val1->cast(@List<String>).values != ['Claudius', 'Ptolemy']));
     assert(!$val2->instanceOf(List) || ($val2->cast(@List<String>).values != ['Claudius', 'Ptolemy']));
 }
@@ -76,7 +76,7 @@ function <<test.Test>> meta::pure::functions::boolean::tests::conjunctions::or::
     let lambda1 = ^LambdaFunction<{->Boolean[1]}>(expressionSequence = $fn1.expressionSequence);
     assertEquals(false, $lambda1->evaluate([]));
 
-    let fn2 = {|let val2 = 'Claudius Ptolemy';
+    let fn2 = {|let val2 = 'Claudius Ptolemy'->cast(@Any);
                 !$val2->instanceOf(List) || ($val2->cast(@List<String>).values != ['Claudius', 'Ptolemy']);};
     let lambda2 = ^LambdaFunction<{->Boolean[1]}>(expressionSequence = $fn2.expressionSequence);
     assertEquals(true, $lambda2->evaluate([]));
