@@ -34,6 +34,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -147,6 +148,12 @@ public final class ResultSetValueHandlers
      * <p>The handlers for a date or timestamp column remember what the driver can answer, so they
      * serve one result set, read on one thread.
      *
+     * <p>The resolution is for a caller that resolves names as its runtime options ask, through
+     * {@code TimeZoneResolutionOption}, so that legend-engine can keep the
+     * {@link TimeZoneResolution#LEGACY legacy} resolution in the Pure it runs. Any other caller
+     * should use {@link #getHandlers(ResultSetMetaData, String)}, which resolves the name
+     * {@link TimeZoneResolution#STRICT strictly}.
+     *
      * @param metaData   result set metadata
      * @param timeZone   name of the zone the connection names
      * @param resolution how to resolve the name
@@ -154,6 +161,10 @@ public final class ResultSetValueHandlers
      * @throws SQLException             if the driver cannot describe the columns
      * @throws IllegalArgumentException if the name is null, or if the resolution rejects names
      *                                  that stand for no zone and this is one
+     * @throws DateTimeException        if the resolution reads the name as a zone java.time
+     *                                  cannot represent, as the
+     *                                  {@link TimeZoneResolution#LEGACY legacy} one reads a
+     *                                  {@code GMT} offset of more than 18 hours
      */
     public static ListIterable<ResultSetValueHandler> getHandlers(ResultSetMetaData metaData, String timeZone, TimeZoneResolution resolution) throws SQLException
     {
@@ -201,20 +212,39 @@ public final class ResultSetValueHandlers
 
     /**
      * Get a handler for each column of a result set. A timestamp column is read as a wall clock
+     * the database keeps in the zone the connection names, and the name of that zone is resolved
+     * {@link TimeZoneResolution#STRICT strictly}.
+     *
+     * <p>The handlers for a date or timestamp column remember what the driver can answer, so they
+     * serve one result set, read on one thread.
+     *
+     * @param metaData result set metadata
+     * @param timeZone name of the zone the connection names
+     * @return a handler for each column, in column order
+     * @throws SQLException             if the driver cannot describe the columns
+     * @throws IllegalArgumentException if the name is null or stands for no zone
+     */
+    public static ListIterable<ResultSetValueHandler> getHandlers(ResultSetMetaData metaData, String timeZone) throws SQLException
+    {
+        return getHandlers(metaData, timeZone, TimeZoneResolution.STRICT);
+    }
+
+    /**
+     * Get a handler for each column of a result set. A timestamp column is read as a wall clock
      * kept in GMT, the zone a connection naming no zone is read in, unless a calendar in another
      * zone is handed to {@link ResultSetValueHandler#value(ResultSet, int, Calendar)}.
      *
      * @param metaData result set metadata
      * @return a handler for each column, in column order
      * @throws SQLException if the driver cannot describe the columns
-     * @deprecated Use {@link #getHandlers(ResultSetMetaData, String, TimeZoneResolution)}, naming
-     * the zone the connection names. Retained temporarily, for callers of the deprecated
+     * @deprecated Use {@link #getHandlers(ResultSetMetaData, String)}, naming the zone the
+     * connection names. Retained temporarily, for callers of the deprecated
      * {@code RelationalNativeImplementation.processRow} that takes a calendar.
      */
     @Deprecated
     public static ListIterable<ResultSetValueHandler> getHandlers(ResultSetMetaData metaData) throws SQLException
     {
-        return getHandlers(metaData, "GMT", TimeZoneResolution.STRICT);
+        return getHandlers(metaData, "GMT");
     }
 
     /**

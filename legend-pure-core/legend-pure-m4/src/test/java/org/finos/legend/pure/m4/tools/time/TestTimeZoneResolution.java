@@ -18,6 +18,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.function.ThrowingRunnable;
 
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -90,6 +91,21 @@ public class TestTimeZoneResolution
         assertThrowsWithMessage("Unknown time zone: Europe/Lissabon", () -> TimeZoneResolution.STRICT.parse("Europe/Lissabon"));
         assertThrowsWithMessage("Unknown time zone: \"US/Arizona\"", () -> TimeZoneResolution.STRICT.parse("\"US/Arizona\""));
         assertThrowsWithMessage("Unknown time zone: ", () -> TimeZoneResolution.STRICT.parse(""));
+    }
+
+    /**
+     * java.util takes a {@code GMT} offset of more than 18 hours, which java.time cannot represent,
+     * so the legacy resolution reads such a name as a zone it can give as a {@link TimeZone} but not
+     * as a {@link ZoneId}. The strict resolution rejects the name as standing for no zone.
+     */
+    @Test
+    public void testLegacyCannotConvertAnOffsetJavaTimeCannotRepresent()
+    {
+        int twentyHours = 20 * 60 * 60 * 1000;
+        Assert.assertEquals(twentyHours, TimeZoneResolution.LEGACY.parseTimeZone("GMT+20:00").getRawOffset());
+        Assert.assertEquals(twentyHours, TimeZoneResolution.LEGACY.newCalendar("GMT+20:00").getTimeZone().getRawOffset());
+        Assert.assertThrows(DateTimeException.class, () -> TimeZoneResolution.LEGACY.parse("GMT+20:00"));
+        assertThrowsWithMessage("Unknown time zone: GMT+20:00", () -> TimeZoneResolution.STRICT.parse("GMT+20:00"));
     }
 
     /**
