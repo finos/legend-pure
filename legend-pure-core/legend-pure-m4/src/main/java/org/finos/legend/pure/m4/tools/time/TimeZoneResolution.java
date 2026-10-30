@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m4.tools.time;
 
+import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -90,6 +91,9 @@ public enum TimeZoneResolution
      * @return zone the name stands for
      * @throws IllegalArgumentException if the name is null, or if this resolution rejects names
      *                                  that stand for no zone and this is one
+     * @throws DateTimeException        if this resolution reads the name as a zone java.time
+     *                                  cannot represent, as {@link #LEGACY} reads a {@code GMT}
+     *                                  offset of more than 18 hours
      */
     public abstract ZoneId parse(String timeZone);
 

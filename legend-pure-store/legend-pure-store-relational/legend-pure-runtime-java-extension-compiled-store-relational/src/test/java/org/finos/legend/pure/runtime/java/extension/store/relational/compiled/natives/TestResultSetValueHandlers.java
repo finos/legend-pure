@@ -31,8 +31,11 @@ import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -51,6 +54,18 @@ public class TestResultSetValueHandlers
     private static final AtomicInteger DATABASE_COUNT = new AtomicInteger();
     private static final String H2 = "h2";
     private static final String DUCK_DB = "duckdb";
+
+    /**
+     * Handlers got as a caller is to get them, resolving the zone the connection names strictly.
+     */
+    private static final HandlersForZone STRICT = ResultSetValueHandlers::getHandlers;
+
+    /**
+     * Handlers got resolving the zone the connection names the legacy way, as legend-engine asks
+     * for in the Pure it runs.
+     */
+    @SuppressWarnings("deprecation")
+    private static final HandlersForZone LEGACY = (metaData, timeZone) -> ResultSetValueHandlers.getHandlers(metaData, timeZone, TimeZoneResolution.LEGACY);
 
     /**
      * A date column carries a day and no zone, and has to be read as that day whatever zone the
@@ -124,7 +139,7 @@ public class TestResultSetValueHandlers
             MutableList<String> read = Lists.mutable.ofInitialCapacity(days.size());
             try (ResultSet resultSet = statement.executeQuery("SELECT recorded_on FROM dates ORDER BY recorded_on"))
             {
-                ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSet.getMetaData(), "America/New_York", TimeZoneResolution.STRICT);
+                ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSet.getMetaData(), "America/New_York");
                 while (resultSet.next())
                 {
                     read.add(RelationalNativeImplementation.processRow(resultSet, handlers, null).get(0).toString());
@@ -156,7 +171,7 @@ public class TestResultSetValueHandlers
                 setDefaultTimeZone(defaultZoneId);
                 for (String connectionZoneId : connectionZoneIds)
                 {
-                    MutableList<String> want = shiftedToUtc(stored, connectionZoneId);
+                    MutableList<String> want = shiftedToUtc(stored, ZoneId.of(connectionZoneId));
                     String where = ", default " + defaultZoneId + ", connection " + connectionZoneId;
                     Assert.assertEquals("H2" + where, want, readMoments(H2, connectionZoneId, stored));
                     Assert.assertEquals("DuckDB" + where, want, readMoments(DUCK_DB, connectionZoneId, stored));
@@ -172,14 +187,24 @@ public class TestResultSetValueHandlers
     /**
      * The Pure dates stored wall clocks read as, kept in the given zone: those moments in UTC.
      */
-    private static MutableList<String> shiftedToUtc(ListIterable<String> stored, String zoneId)
+    private static MutableList<String> shiftedToUtc(ListIterable<String> stored, ZoneId zoneId)
     {
         return stored.collect(s -> LocalDateTime.parse(s.replace(' ', 'T'))
-                .atZone(ZoneId.of(zoneId)).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime()
+                .atZone(zoneId).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime()
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.000000000+0000"))).toList();
     }
 
     private static MutableList<String> readMoments(String database, String connectionZoneId, ListIterable<String> stored) throws SQLException
+    {
+        return readMoments(database, false, connectionZoneId, STRICT, stored);
+    }
+
+    /**
+     * Read the stored wall clocks back through handlers got for the zone the connection names, from
+     * the driver as it is or, if through a calendar, from the driver wrapped so that it will not
+     * give a wall clock and has to be handed a calendar instead.
+     */
+    private static MutableList<String> readMoments(String database, boolean throughCalendar, String timeZone, HandlersForZone handlersForZone, ListIterable<String> stored) throws SQLException
     {
         try (Connection connection = connect(database);
              Statement statement = connection.createStatement())
@@ -191,9 +216,10 @@ public class TestResultSetValueHandlers
             }
 
             MutableList<String> read = Lists.mutable.ofInitialCapacity(stored.size());
-            try (ResultSet resultSet = statement.executeQuery("SELECT recorded_at FROM moments ORDER BY recorded_at"))
+            try (ResultSet queried = statement.executeQuery("SELECT recorded_at FROM moments ORDER BY recorded_at"))
             {
-                ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSet.getMetaData(), connectionZoneId, TimeZoneResolution.STRICT);
+                ResultSet resultSet = throughCalendar ? refusingJavaTime(queried) : queried;
+                ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = handlersForZone.getHandlers(resultSet.getMetaData(), timeZone);
                 while (resultSet.next())
                 {
                     read.add(RelationalNativeImplementation.processRow(resultSet, handlers, null).get(0).toString());
@@ -201,6 +227,122 @@ public class TestResultSetValueHandlers
             }
             return read;
         }
+    }
+
+    /**
+     * Handlers got for the zone a connection names resolve the name strictly: a region, an
+     * abbreviation, and an offset in each of its forms are each read as the zone they stand for,
+     * whether the driver gives the wall clock or has to be handed a calendar. A name that stands for
+     * no zone is rejected rather than read as GMT, and so is no name at all.
+     */
+    @Test
+    public void testConnectionZoneIsResolvedStrictly() throws SQLException
+    {
+        ImmutableList<String> stored = Lists.immutable.with("2014-01-15 13:07:44", "2015-07-21 09:30:00");
+        TimeZone defaultTimeZone = TimeZone.getDefault();
+        try
+        {
+            // a zone none of the names stands for, so that reading in the default zone would show
+            setDefaultTimeZone("Asia/Tokyo");
+            assertMomentsReadIn(ZoneId.of("America/New_York"), "America/New_York", STRICT, stored);
+            assertMomentsReadIn(ZoneOffset.ofHours(-5), "EST", STRICT, stored);
+            assertMomentsReadIn(ZoneOffset.ofHoursMinutes(5, 30), "+0530", STRICT, stored);
+            assertMomentsReadIn(ZoneOffset.ofHoursMinutes(5, 30), "GMT+05:30", STRICT, stored);
+            assertMomentsReadIn(ZoneOffset.ofHours(10), "UTC+10:00", STRICT, stored);
+        }
+        finally
+        {
+            setDefaultTimeZone(defaultTimeZone.getID());
+        }
+        for (String timeZone : Lists.immutable.with("Europe/Lissabon", "'US/Arizona'", "", null))
+        {
+            assertRejected(timeZone, STRICT, stored);
+        }
+    }
+
+    /**
+     * Handlers got with the legacy resolution read a region or a {@code GMT} offset as the strict
+     * resolution does, whether the driver gives the wall clock or has to be handed a calendar.
+     */
+    @Test
+    public void testLegacyResolutionReadsRegionsAndGMTOffsetsAsStrictDoes() throws SQLException
+    {
+        ImmutableList<String> stored = Lists.immutable.with("2014-01-15 13:07:44", "2015-07-21 09:30:00");
+        TimeZone defaultTimeZone = TimeZone.getDefault();
+        try
+        {
+            // a zone none of the names stands for, so that reading in the default zone would show
+            setDefaultTimeZone("Asia/Tokyo");
+            assertMomentsReadIn(ZoneId.of("America/New_York"), "America/New_York", LEGACY, stored);
+            assertMomentsReadIn(ZoneId.of("Asia/Kolkata"), "Asia/Kolkata", LEGACY, stored);
+            assertMomentsReadIn(ZoneOffset.ofHoursMinutes(5, 30), "GMT+05:30", LEGACY, stored);
+            assertMomentsReadIn(ZoneOffset.ofHours(-10), "GMT-10:00", LEGACY, stored);
+        }
+        finally
+        {
+            setDefaultTimeZone(defaultTimeZone.getID());
+        }
+    }
+
+    /**
+     * Handlers got with the legacy resolution read every name java.util does not know as GMT, with
+     * nothing to say they did: a bare offset, an offset prefixed {@code UTC}, a misspelled region, a
+     * region still carrying the quotes the connection grammar puts around it, and an empty name. The
+     * calendar a driver is handed is in GMT too, so the two ways of reading agree. No name at all is
+     * a caller's mistake rather than a name to resolve, and is rejected as it is strictly.
+     */
+    @Test
+    public void testLegacyResolutionReadsWhatItDoesNotKnowAsGMT() throws SQLException
+    {
+        ImmutableList<String> stored = Lists.immutable.with("2014-01-15 13:07:44", "2015-07-21 09:30:00");
+        TimeZone defaultTimeZone = TimeZone.getDefault();
+        try
+        {
+            // not GMT, so that reading in the default zone rather than GMT would show
+            setDefaultTimeZone("Asia/Tokyo");
+            for (String timeZone : Lists.immutable.with("+0530", "UTC+10:00", "Europe/Lissabon", "'US/Arizona'", ""))
+            {
+                assertMomentsReadIn(ZoneOffset.UTC, timeZone, LEGACY, stored);
+            }
+        }
+        finally
+        {
+            setDefaultTimeZone(defaultTimeZone.getID());
+        }
+        assertRejected(null, LEGACY, stored);
+    }
+
+    /**
+     * java.util takes a {@code GMT} offset of more than 18 hours, which java.time cannot represent,
+     * so the legacy resolution reads such a name as a zone the handlers cannot be got for, and
+     * getting them fails with a {@link DateTimeException}. The strict resolution rejects the name
+     * as standing for no zone.
+     */
+    @Test
+    public void testLegacyResolutionFailsOnAnOffsetJavaTimeCannotRepresent()
+    {
+        ImmutableList<String> stored = Lists.immutable.with("2014-01-15 13:07:44", "2015-07-21 09:30:00");
+        Assert.assertThrows(DateTimeException.class, () -> readMoments(H2, false, "GMT+20:00", LEGACY, stored));
+        assertRejected("GMT+20:00", STRICT, stored);
+    }
+
+    /**
+     * Assert that handlers got for the named zone read the stored wall clocks as kept in the given
+     * zone: from H2 and DuckDB, which give the wall clock, and from H2 refusing to, which is handed
+     * a calendar instead. Only H2 is relied on to honor a calendar; DuckDB 1.0.0 ignored it.
+     */
+    private static void assertMomentsReadIn(ZoneId zone, String timeZone, HandlersForZone handlersForZone, ListIterable<String> stored) throws SQLException
+    {
+        MutableList<String> want = shiftedToUtc(stored, zone);
+        Assert.assertEquals("H2, " + timeZone, want, readMoments(H2, false, timeZone, handlersForZone, stored));
+        Assert.assertEquals("DuckDB, " + timeZone, want, readMoments(DUCK_DB, false, timeZone, handlersForZone, stored));
+        Assert.assertEquals("H2 through a calendar, " + timeZone, want, readMoments(H2, true, timeZone, handlersForZone, stored));
+    }
+
+    private static void assertRejected(String timeZone, HandlersForZone handlersForZone, ListIterable<String> stored)
+    {
+        IllegalArgumentException e = Assert.assertThrows(String.valueOf(timeZone), IllegalArgumentException.class, () -> readMoments(H2, false, timeZone, handlersForZone, stored));
+        Assert.assertEquals("Unknown time zone: " + timeZone, e.getMessage());
     }
 
     /**
@@ -220,7 +362,7 @@ public class TestResultSetValueHandlers
             setDefaultTimeZone("Asia/Tokyo");
             for (String calendarZoneId : Lists.immutable.with("UTC", "America/New_York"))
             {
-                MutableList<String> want = shiftedToUtc(stored, calendarZoneId);
+                MutableList<String> want = shiftedToUtc(stored, ZoneId.of(calendarZoneId));
                 Assert.assertEquals("H2, calendar " + calendarZoneId, want, readMomentsTheDeprecatedWay(H2, calendarZoneId, stored));
                 Assert.assertEquals("DuckDB, calendar " + calendarZoneId, want, readMomentsTheDeprecatedWay(DUCK_DB, calendarZoneId, stored));
             }
@@ -279,7 +421,7 @@ public class TestResultSetValueHandlers
             statement.execute(columnTypes.collect(type -> "NULL").makeString("INSERT INTO nulls VALUES (", ", ", ")"));
             try (ResultSet resultSet = statement.executeQuery("SELECT * FROM nulls"))
             {
-                ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSet.getMetaData(), "America/New_York", TimeZoneResolution.STRICT);
+                ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = ResultSetValueHandlers.getHandlers(resultSet.getMetaData(), "America/New_York");
                 Assert.assertTrue(database, resultSet.next());
                 ListIterable<Object> row = RelationalNativeImplementation.processRow(resultSet, handlers, sqlNull);
                 Assert.assertEquals(database, columnTypes.size(), row.size());
@@ -337,7 +479,7 @@ public class TestResultSetValueHandlers
             {
                 ListIterable<ResultSetValueHandlers.ResultSetValueHandler> handlers = deprecated ?
                         ResultSetValueHandlers.getHandlers(resultSet.getMetaData()) :
-                        ResultSetValueHandlers.getHandlers(resultSet.getMetaData(), connectionZoneId, TimeZoneResolution.STRICT);
+                        ResultSetValueHandlers.getHandlers(resultSet.getMetaData(), connectionZoneId);
                 GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone(connectionZoneId));
                 while (resultSet.next())
                 {
@@ -378,6 +520,30 @@ public class TestResultSetValueHandlers
         });
     }
 
+    /**
+     * Wrap a result set so that it reads like a driver that will not give a java.time class, by
+     * refusing {@link ResultSet#getObject(int, Class)}, so that a timestamp has to be read through a
+     * calendar.
+     */
+    private static ResultSet refusingJavaTime(ResultSet resultSet)
+    {
+        return (ResultSet) Proxy.newProxyInstance(TestResultSetValueHandlers.class.getClassLoader(), new Class<?>[]{ResultSet.class}, (proxy, method, args) ->
+        {
+            if ("getObject".equals(method.getName()) && (args.length == 2) && (args[1] instanceof Class))
+            {
+                throw new SQLFeatureNotSupportedException();
+            }
+            try
+            {
+                return method.invoke(resultSet, args);
+            }
+            catch (InvocationTargetException e)
+            {
+                throw e.getCause();
+            }
+        });
+    }
+
     private static Connection connect(String database) throws SQLException
     {
         if (H2.equals(database))
@@ -385,5 +551,13 @@ public class TestResultSetValueHandlers
             return DriverManager.getConnection("jdbc:h2:mem:testResultSetValueHandlers" + DATABASE_COUNT.incrementAndGet(), "sa", "");
         }
         return DriverManager.getConnection("jdbc:duckdb:");
+    }
+
+    /**
+     * A way of getting handlers for the zone a connection names.
+     */
+    private interface HandlersForZone
+    {
+        ListIterable<ResultSetValueHandlers.ResultSetValueHandler> getHandlers(ResultSetMetaData metaData, String timeZone) throws SQLException;
     }
 }
