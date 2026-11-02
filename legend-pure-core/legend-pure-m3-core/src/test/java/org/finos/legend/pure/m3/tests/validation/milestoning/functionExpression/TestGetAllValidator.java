@@ -34,6 +34,8 @@ public class TestGetAllValidator extends AbstractPureTestWithCoreCompiledPlatfor
     {
         runtime.delete("sourceId.pure");
         runtime.delete("domain.pure");
+        runtime.delete("a_query.pure");
+        runtime.delete("z_domain.pure");
     }
 
     @Test
@@ -230,6 +232,85 @@ public class TestGetAllValidator extends AbstractPureTestWithCoreCompiledPlatfor
 
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
         Assert.assertEquals("Compilation error at (resource:domain.pure line:7 column:52), \"The type Location is  [bitemporal], [processingDate,businessDate] should be supplied as a parameter to all()\"", e.getMessage());
+    }
+
+    @Test
+    public void testParameterValidationForBusinessTemporalTypeInAllWithCustomDateReturningFunctionExpression()
+    {
+        runtime.createInMemorySource("sourceId.pure",
+                "import meta::test::milestoning::domain::*;\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product\n" +
+                        "{\n" +
+                        "   id : Integer[1];\n" +
+                        "}\n" +
+                        "function myCustomDateFunction():Date[1]\n" +
+                        "{\n" +
+                        "   %2026-08-10\n" +
+                        "}\n" +
+                        "function go():Any[*]\n" +
+                        "{\n" +
+                        "   let f={|Product.all(myCustomDateFunction())};\n" +
+                        "}\n");
+
+        runtime.compile();
+    }
+
+    @Test
+    public void testParameterValidationForBusinessTemporalTypeInAllWithParseDateFunctionExpression()
+    {
+        runtime.createInMemorySource("sourceId.pure",
+                "import meta::test::milestoning::domain::*;\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product\n" +
+                        "{\n" +
+                        "   id : Integer[1];\n" +
+                        "}\n" +
+                        "function go():Any[*]\n" +
+                        "{\n" +
+                        "   let f={|Product.all(parseDate('2026-08-10'))};\n" +
+                        "}\n");
+
+        runtime.compile();
+    }
+
+    @Test
+    public void testParameterValidationForBusinessTemporalTypeInAllWithParseDateFunctionExpressionAcrossSeparateSourcesInSameCompileBatch()
+    {
+        runtime.createInMemorySource("a_query.pure",
+                "import meta::test::milestoning::domain::*;\n" +
+                        "function go():Any[*]\n" +
+                        "{\n" +
+                        "   let f={|Product.all(parseDate('2026-08-10'))};\n" +
+                        "}\n");
+
+        runtime.createInMemorySource("z_domain.pure",
+                "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product\n" +
+                        "{\n" +
+                        "   id : Integer[1];\n" +
+                        "}\n");
+
+        runtime.compile();
+    }
+
+
+    @Test
+    public void testParameterValidationForBusinessTemporalTypeInAllWithNonDateReturningFunctionExpression()
+    {
+        runtime.createInMemorySource("sourceId.pure",
+                "import meta::test::milestoning::domain::*;\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product\n" +
+                        "{\n" +
+                        "   id : Integer[1];\n" +
+                        "}\n" +
+                        "function badDateFunction():String[1]\n" +
+                        "{\n" +
+                        "   'not-a-date'\n" +
+                        "}\n" +
+                        "function go():Any[*]\n" +
+                        "{\n" +
+                        "   let f={|Product.all(badDateFunction())};\n" +
+                        "}\n");
+
+        Assert.assertThrows(PureCompilationException.class, runtime::compile);
     }
 }
 

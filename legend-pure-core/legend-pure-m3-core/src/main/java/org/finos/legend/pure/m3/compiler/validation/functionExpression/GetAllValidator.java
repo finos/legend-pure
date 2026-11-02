@@ -70,7 +70,9 @@ public class GetAllValidator
             @Override
             public boolean accept(ValueSpecification coreInstance)
             {
-                return isDateConstant(coreInstance) || isVariableExpressionReturningADate(coreInstance);
+                return isDateConstant(coreInstance)
+                        || isVariableExpressionReturningADate(coreInstance)
+                        || isFunctionExpressionReturningADate(coreInstance);
             }
 
             private boolean isDateConstant(ValueSpecification param)
@@ -83,12 +85,15 @@ public class GetAllValidator
                 return param instanceof VariableExpression && isDateType(param);
             }
 
-            private boolean isDateType(ValueSpecification param)
+            private boolean isFunctionExpressionReturningADate(ValueSpecification param)
             {
-                String rawTypeName = ImportStub.withImportStubByPass(param._genericType()._rawTypeCoreInstance(), processorSupport).getName();
-                return M3Paths.Date.equals(rawTypeName) || M3Paths.DateTime.equals(rawTypeName) || M3Paths.StrictDate.equals(rawTypeName) || M3Paths.LatestDate.equals(rawTypeName);
+                return param instanceof FunctionExpression && isDateType(param);
             }
 
+            private boolean isDateType(ValueSpecification param)
+            {
+                return org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification.instanceOf(param, M3Paths.Date, processorSupport);
+            }
         }).size();
     }
 }

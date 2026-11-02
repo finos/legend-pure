@@ -837,6 +837,14 @@ public class AntlrContextToM3CoreInstance
         }
         else
         {
+            if (shouldRewriteAllFunctionExpressionWithFunctionArgumentToGetAll(property, result, parameters))
+            {
+                return SimpleFunctionExpressionInstance
+                        .createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(property.getStart()), null, null, importId, null)
+                        ._functionName("getAll")
+                        ._parametersValues(Lists.mutable.<ValueSpecification>with((ValueSpecification) result).withAll(parameters));
+            }
+
             SimpleFunctionExpressionInstance sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(property.getStart()), null, null, importId, null);
             InstanceValue instanceValue = this.doWrap(property);
             //Going to become an auto-map lambda so set a name to be used for the lambda
@@ -852,6 +860,43 @@ public class AntlrContextToM3CoreInstance
         }
         return result;
     }
+
+    private boolean shouldRewriteAllFunctionExpressionWithFunctionArgumentToGetAll(PropertyNameContext property, CoreInstance source, MutableList<ValueSpecification> parameters)
+    {
+        return shouldRewriteAllFunctionExpressionWithFunctionArgumentToGetAll(property.identifier() == null ? null : property.identifier().getText(), source, parameters);
+    }
+
+    private boolean shouldRewriteAllFunctionExpressionWithFunctionArgumentToGetAll(QualifiedNameContext funcName, CoreInstance source, MutableList<ValueSpecification> parameters)
+    {
+        return shouldRewriteAllFunctionExpressionWithFunctionArgumentToGetAll(funcName.identifier() == null ? null : funcName.identifier().getText(), source, parameters);
+    }
+
+    private boolean shouldRewriteAllFunctionExpressionWithFunctionArgumentToGetAll(String functionName, CoreInstance source, MutableList<ValueSpecification> parameters)
+    {
+        if (!"all".equals(functionName))
+        {
+            return false;
+        }
+
+        if ((parameters.size() != 1) || !(parameters.getFirst() instanceof SimpleFunctionExpression))
+        {
+            return false;
+        }
+
+        if (!(source instanceof InstanceValue))
+        {
+            return false;
+        }
+
+        RichIterable<? extends CoreInstance> values = ((InstanceValue) source)._valuesCoreInstance();
+        if ((values.size() != 1) || !(values.getAny() instanceof ImportStub))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
 
     private SimpleFunctionExpression signedExpression(SignedExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, ImportGroup importId, boolean addLines)
     {
@@ -1533,6 +1578,12 @@ public class AntlrContextToM3CoreInstance
         }
 
         MutableList<ValueSpecification> parameters = this.functionExpressionParameters(ctx.functionExpressionParameters(), typeParametersNames, multiplicityParameterNames, importId, lambdaContext, addLines, space);
+        if (shouldRewriteAllFunctionExpressionWithFunctionArgumentToGetAll(funcName, params.getFirst(), parameters))
+        {
+            return SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(funcName.identifier().getStart()), null, null, importId, null)
+                    ._functionName("getAll")
+                    ._parametersValues(Lists.mutable.<ValueSpecification>withAll(params).withAll(parameters));
+        }
         return this.functionExpression(funcName, parameters, importId);
     }
 
