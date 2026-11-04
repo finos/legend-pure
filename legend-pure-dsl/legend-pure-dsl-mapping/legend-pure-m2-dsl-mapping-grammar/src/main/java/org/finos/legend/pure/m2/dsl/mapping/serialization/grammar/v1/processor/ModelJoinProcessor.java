@@ -26,10 +26,8 @@ import org.finos.legend.pure.m3.compiler.postprocessing.processor.Processor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.InstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.MappingInclude;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMappingValueSpecificationContext;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.modelJoin.ModelJoinAssociationImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.modelJoin.ModelJoinPropertyMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
@@ -161,8 +159,8 @@ public class ModelJoinProcessor extends Processor<ModelJoinAssociationImplementa
     // ------------------------------------------------------------------------------------------
     private MutableList<PropertyMapping> expandPropertyMappings(ModelJoinContext ctx, ProcessorSupport processorSupport)
     {
-        MutableList<InstanceSetImplementation> class1Sets = findAllSetsForClassOrSubtypes(ctx.class1, ctx.mapping, processorSupport);
-        MutableList<InstanceSetImplementation> class2Sets = findAllSetsForClassOrSubtypes(ctx.class2, ctx.mapping, processorSupport);
+        MutableList<InstanceSetImplementation> class1Sets = ModelJoinShared.findAllSetsForClassOrSubtypes(ctx.class1, ctx.mapping, processorSupport);
+        MutableList<InstanceSetImplementation> class2Sets = ModelJoinShared.findAllSetsForClassOrSubtypes(ctx.class2, ctx.mapping, processorSupport);
         requireNonEmpty(class1Sets, ctx.class1, ctx.instance);
         requireNonEmpty(class2Sets, ctx.class2, ctx.instance);
 
@@ -251,7 +249,7 @@ public class ModelJoinProcessor extends Processor<ModelJoinAssociationImplementa
 
                 // Deep-clone the original lambda for this pair — each PM gets independent nodes
                 LambdaFunction<?> freshLambda = deepCloneLambda(originalLambda, processorSupport);
-                replaceLambdaParams(freshLambda, srcParamName, tgtParamName, sourceSet, targetSet, processorSupport);
+                typeJoinConditionParams(freshLambda, srcParamName, tgtParamName, sourceSet, targetSet, processorSupport);
                 pm._joinCondition(freshLambda);
 
                 out.add(pm);
@@ -260,13 +258,13 @@ public class ModelJoinProcessor extends Processor<ModelJoinAssociationImplementa
     }
 
     /**
-     * Replaces the lambda's FunctionType params (named srcParamName/tgtParamName) with
-     * {@code _mj_src} / {@code _mj_tgt} and sets their types to the appropriate MappingClass
-     * (or raw class from the set implementation).
+     * Renames a join condition's two params to {@code _mj_src} / {@code _mj_tgt} and types them to the
+     * source/target set's MappingClass (or raw class). Shared with the inline {@code modelJoin} of a
+     * Relation class mapping, see {@code RelationFunctionInstanceSetImplementationProcessor}.
      */
-    private void replaceLambdaParams(LambdaFunction<?> lambda, String srcParamName, String tgtParamName,
-                                     InstanceSetImplementation sourceSet, InstanceSetImplementation targetSet,
-                                     ProcessorSupport processorSupport)
+    public static void typeJoinConditionParams(LambdaFunction<?> lambda, String srcParamName, String tgtParamName,
+                                               InstanceSetImplementation sourceSet, InstanceSetImplementation targetSet,
+                                               ProcessorSupport processorSupport)
     {
         Class<?> srcClass = getSetImplementationClass(sourceSet, processorSupport);
         Class<?> tgtClass = getSetImplementationClass(targetSet, processorSupport);
@@ -303,7 +301,7 @@ public class ModelJoinProcessor extends Processor<ModelJoinAssociationImplementa
         return clone;
     }
 
-    private Class<?> getSetImplementationClass(InstanceSetImplementation setImpl, ProcessorSupport processorSupport)
+    public static Class<?> getSetImplementationClass(InstanceSetImplementation setImpl, ProcessorSupport processorSupport)
     {
         org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.MappingClass<?> mappingClass = setImpl._mappingClass();
         if (mappingClass != null)
@@ -331,61 +329,29 @@ public class ModelJoinProcessor extends Processor<ModelJoinAssociationImplementa
         int i = 0;
         for (PropertyMapping pm : instance._propertyMappings())
         {
-            ModelJoinPropertyMapping mjPm = (ModelJoinPropertyMapping) pm;
-            try (VariableContextScope ignore = state.withNewVariableContext())
-            {
-                matcher.fullMatch(mjPm._joinCondition(), state);
-
-                ValueSpecification firstExpr = mjPm._joinCondition()._expressionSequence().toList().getFirst();
-                if (firstExpr != null)
-                {
-                    PropertyMappingValueSpecificationContext usageContext = (PropertyMappingValueSpecificationContext)
-                            processorSupport.newAnonymousCoreInstance(null, M2MappingPaths.PropertyMappingValueSpecificationContext);
-                    usageContext._offset(i);
-                    usageContext._propertyMapping(mjPm);
-                    firstExpr._usageContext(usageContext);
-                }
-            }
+            compileJoinCondition((ModelJoinPropertyMapping) pm, i, state, matcher, processorSupport);
             i++;
         }
     }
 
-    // ------------------------------------------------------------------------------------------
-    // Mapping traversal — find all class mappings whose mapped class equals or extends `clazz`.
-    // ------------------------------------------------------------------------------------------
-    private MutableList<InstanceSetImplementation> findAllSetsForClassOrSubtypes(CoreInstance clazz, Mapping mapping, ProcessorSupport processorSupport)
+    /**
+     * Compiles one (already renamed and typed) join condition and attaches a
+     * {@link PropertyMappingValueSpecificationContext} at {@code offset} within its owner's property mappings.
+     */
+    public static void compileJoinCondition(ModelJoinPropertyMapping mjPm, int offset, ProcessorState state, Matcher matcher, ProcessorSupport processorSupport)
     {
-        MutableList<InstanceSetImplementation> result = Lists.mutable.empty();
-        collectSetsForClassOrSubtypes(clazz, mapping, processorSupport, result, Lists.mutable.empty());
-        return result;
-    }
-
-    private void collectSetsForClassOrSubtypes(CoreInstance clazz, Mapping mapping, ProcessorSupport processorSupport, MutableList<InstanceSetImplementation> result, MutableList<Mapping> visited)
-    {
-        if (visited.contains(mapping))
+        try (VariableContextScope ignore = state.withNewVariableContext())
         {
-            return;
-        }
-        visited.add(mapping);
+            matcher.fullMatch(mjPm._joinCondition(), state);
 
-        for (SetImplementation si : mapping._classMappings())
-        {
-            if (si instanceof InstanceSetImplementation)
+            ValueSpecification firstExpr = mjPm._joinCondition()._expressionSequence().toList().getFirst();
+            if (firstExpr != null)
             {
-                CoreInstance mappedClass = ImportStub.withImportStubByPass(si._classCoreInstance(), processorSupport);
-                if (mappedClass.equals(clazz) || Type.subTypeOf(mappedClass, clazz, processorSupport))
-                {
-                    result.add((InstanceSetImplementation) si);
-                }
-            }
-        }
-
-        for (MappingInclude include : mapping._includes())
-        {
-            Mapping includedMapping = (Mapping) ImportStub.withImportStubByPass(include._includedCoreInstance(), processorSupport);
-            if (includedMapping != null)
-            {
-                collectSetsForClassOrSubtypes(clazz, includedMapping, processorSupport, result, visited);
+                PropertyMappingValueSpecificationContext usageContext = (PropertyMappingValueSpecificationContext)
+                        processorSupport.newAnonymousCoreInstance(null, M2MappingPaths.PropertyMappingValueSpecificationContext);
+                usageContext._offset(offset);
+                usageContext._propertyMapping(mjPm);
+                firstExpr._usageContext(usageContext);
             }
         }
     }

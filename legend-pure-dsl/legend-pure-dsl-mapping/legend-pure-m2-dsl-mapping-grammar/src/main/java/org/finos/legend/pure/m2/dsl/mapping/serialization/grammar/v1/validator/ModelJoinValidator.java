@@ -32,6 +32,7 @@ import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class ModelJoinValidator implements MatchRunner<ModelJoinAssociationImplementation>
@@ -46,7 +47,6 @@ public class ModelJoinValidator implements MatchRunner<ModelJoinAssociationImple
     public void run(ModelJoinAssociationImplementation instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
         ProcessorSupport processorSupport = state.getProcessorSupport();
-        CoreInstance booleanType = processorSupport.package_getByUserPath(M3Paths.Boolean);
 
         // The expanded property mapping list (after N*M subtype pairing) shares lambda references
         // across clones; we only need to validate each distinct lambda once.
@@ -58,11 +58,15 @@ public class ModelJoinValidator implements MatchRunner<ModelJoinAssociationImple
             {
                 continue;
             }
-            validateReturnsBoolean(joinCondition, instance, booleanType, processorSupport);
+            validateReturnsBoolean(joinCondition, instance.getSourceInformation(), processorSupport);
         }
     }
 
-    private static void validateReturnsBoolean(LambdaFunction<?> joinCondition, ModelJoinAssociationImplementation instance, CoreInstance booleanType, ProcessorSupport processorSupport)
+    /**
+     * Shared with the inline {@code modelJoin} of a Relation class mapping, see
+     * {@code RelationFunctionInstanceSetImplementationValidator}.
+     */
+    public static void validateReturnsBoolean(LambdaFunction<?> joinCondition, SourceInformation fallbackSourceInformation, ProcessorSupport processorSupport)
     {
         ValueSpecification lastExpression = lastConditionExpression(joinCondition);
         if (lastExpression == null)
@@ -70,12 +74,12 @@ public class ModelJoinValidator implements MatchRunner<ModelJoinAssociationImple
             return;
         }
         CoreInstance rawType = rawReturnType(lastExpression, processorSupport);
-        if (rawType == booleanType)
+        if (rawType == processorSupport.package_getByUserPath(M3Paths.Boolean))
         {
             return;
         }
         throw new PureCompilationException(
-                lastExpression.getSourceInformation() != null ? lastExpression.getSourceInformation() : instance.getSourceInformation(),
+                lastExpression.getSourceInformation() != null ? lastExpression.getSourceInformation() : fallbackSourceInformation,
                 "ModelJoin join condition must return Boolean[1], found: " + (rawType != null ? rawType.getName() : "unknown"));
     }
 
