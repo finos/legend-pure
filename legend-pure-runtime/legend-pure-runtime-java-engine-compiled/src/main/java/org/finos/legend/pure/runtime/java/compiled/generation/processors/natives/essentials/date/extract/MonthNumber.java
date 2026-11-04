@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.extract;
 
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 
@@ -21,6 +22,6 @@ public class MonthNumber extends AbstractNativeFunctionGeneric
 {
     public MonthNumber()
     {
-        super("CoreGen.monthNumber", new Class[]{PureDate.class}, "monthNumber_Date_1__Integer_1_");
+        super("CoreGen.monthNumber", new Class[]{PureDate.class, SourceInformation.class}, true, false, false, "monthNumber_Date_1__Integer_1_");
     }
 }

@@ -18,6 +18,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -31,6 +32,7 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NumericUtilities;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
+import java.math.BigDecimal;
 import java.util.Stack;
 
 public class Divide extends NativeFunction
@@ -50,7 +52,12 @@ public class Divide extends NativeFunction
         for (int i = 1, length = params.size(); i < length; i++)
         {
             CoreInstance nextNumber = Instance.getValueForMetaPropertyToOneResolved(params.get(i), M3Properties.values, processorSupport);
-            accumulator.divide(NumericUtilities.toJavaNumber(nextNumber, processorSupport));
+            Number divisor = NumericUtilities.toJavaNumber(nextNumber, processorSupport);
+            if ((divisor instanceof BigDecimal) ? (((BigDecimal) divisor).compareTo(BigDecimal.ZERO) == 0) : (divisor.doubleValue() == 0))
+            {
+                throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Cannot divide " + divisor + " by zero", functionExpressionCallStack);
+            }
+            accumulator.divide(divisor);
         }
 
         return ValueSpecificationBootstrap.wrapValueSpecification(repository.newCoreInstance(accumulator.getValue().toString(), processorSupport.package_getByUserPath("Float"), null), true, processorSupport);

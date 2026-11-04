@@ -19,7 +19,7 @@ The month of a date, as a number from 1 to 12.
 
 Pure dates carry **variable granularity** — `%2015`, `%2015-04`, `%2015-04-15`, `%2015-04-15T17` and
 so on are all valid `Date` values, each knowing only as much as was written. A date with no month — a bare `%2015` — has no month to return, so **this fails rather than
-returning empty**. Guard with `hasMonth(Date[1]):Boolean[1]` when the granularity is not known.
+returning empty**, with an error such as `Cannot get month for 2017`. Guard with `hasMonth(Date[1]):Boolean[1]` when the granularity is not known.
 
 January is `1`, not `0`.
 
@@ -32,6 +32,7 @@ January is `1`, not `0`.
 ```pure
 %2015-04->monthNumber()                    // 4
 %2015-04-15T17:09:21.398->monthNumber()    // 4
+%2017->monthNumber()                       // fails: Cannot get month for 2017
 ```
 
 **See also** `hasMonth(Date[1]):Boolean[1]`, `year(Date[1]):Integer[1]`,
@@ -60,4 +61,9 @@ function <<PCT.test>> meta::pure::functions::date::tests::testMonthNumber<Z|y>(f
     assertEquals(10, $f->eval(|%2015-10->monthNumber()));
     assertEquals(11, $f->eval(|%2015-11->monthNumber()));
     assertEquals(12, $f->eval(|%2015-12->monthNumber()));
+}
+
+function <<PCT.test>> meta::pure::functions::date::tests::testMonthNumberError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertError(| $f->eval(|%2017->monthNumber()), 'Cannot get month for 2017', 68, 36);
 }
