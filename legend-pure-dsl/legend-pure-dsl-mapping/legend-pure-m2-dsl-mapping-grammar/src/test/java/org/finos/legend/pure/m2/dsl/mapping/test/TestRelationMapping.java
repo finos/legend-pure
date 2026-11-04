@@ -291,7 +291,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
             "import meta::pure::metamodel::relation::*;\n" +
             "function my::firmFunctionTyped(): Relation<(ID:Integer[1], LEGALNAME:String[1])>[1]\n" +
             "{\n" +
-            "  1->cast(@Relation<(ID:Integer[1], LEGALNAME:String[1])>);\n" +
+            "  []->cast(@Relation<(ID:Integer[1], LEGALNAME:String[1])>)->toOne();\n" +
             "}\n";
 
     @Test
