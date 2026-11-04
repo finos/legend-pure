@@ -105,7 +105,7 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
         // last-expression generic type drives `$row` binding for property
         // mappings exactly as if it had come from an explicit Pure function.
         String srcLambdaText = "{| " + extractText(ctx.combinedExpression()) + "}";
-        return parseLambdaTextToM4(srcLambdaText, lambdaContextId(id, classPath, "src"));
+        return parseLambdaText(srcLambdaText, lambdaContextId(id, classPath, "src")).toM4();
     }
 
     // Name-only placeholder; RelationFunctionInstanceSetImplementationProcessor swaps in the typed column once the
@@ -122,7 +122,10 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
         if (ctx.singleLocalPropertyMapping() != null)
         {
             RelationMappingParser.SingleLocalPropertyMappingContext localCtx = ctx.singleLocalPropertyMapping();
-            String localPropertyType = localCtx.qualifiedName(1).getText();
+            // An ImportStub (as for Pure mappings), so a class-typed local property follows its class across reloads.
+            RelationMappingParser.QualifiedNameContext typeCtx = localCtx.qualifiedName(1);
+            String localPropertyType = "^meta::pure::metamodel::import::ImportStub " + sourceInformation.getPureSourceInformation(typeCtx.getStart(), typeCtx.getStart(), typeCtx.getStop()).toM4String()
+                    + " (importGroup=system::imports::" + this.importId + ", idOrPath='" + typeCtx.getText() + "')";
             String localPropertyMultiplicity = buildMultiplicity(localCtx.multiplicity().multiplicityArgument());
             String propertyName = localCtx.qualifiedName(0).getText();
             SourceInformation sourceInfo = sourceInformation.getPureSourceInformation(localCtx.qualifiedName(0).start);
@@ -162,18 +165,20 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
             // Expression form: wrap user expression in a zero-param lambda.
             lambdaText = "{| " + extractText(ctx.combinedExpression()) + "}";
         }
-        String lambdaM4 = parseLambdaTextToM4(lambdaText, lambdaContextId(classMappingId, propertyName, "valueFn"));
+        ParsedLambda parsed = parseLambdaText(lambdaText, lambdaContextId(classMappingId, propertyName, "valueFn"));
+
+        String localPropertyM4 = "        localMappingProperty = " + (localPropertyType != null) + "," +
+                (localPropertyType == null ? "" : "        localMappingPropertyType = " + localPropertyType + ",") +
+                (localPropertyMultiplicity == null ? "" : "localMappingPropertyMultiplicity = " + localPropertyMultiplicity + ",");
 
         String transformer = ctx.transformer() != null ? visitTransformerBlock(ctx.transformer()) : null;
 
         return "^meta::pure::mapping::relation::RelationFunctionPropertyMapping" + sourceInfo.toM4String() + "(" +
-            "        localMappingProperty = " + (localPropertyType != null) + "," +
-            (localPropertyType == null ? "" : "        localMappingPropertyType = " + localPropertyType + ",") +
-            (localPropertyMultiplicity == null ? "" : "localMappingPropertyMultiplicity = " + localPropertyMultiplicity + ",") +
+            localPropertyM4 +
             "        property = '" + propertyName + "'," +
             (classMappingId == null ? "" : "        sourceSetImplementationId = '" + classMappingId + "', ") +
             (transformer == null ? "" : "        transformer = " + transformer + ",") +
-            "        valueFn = " + lambdaM4 +
+            "        valueFn = " + parsed.toM4() +
             ")";
     }
 
@@ -226,20 +231,11 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
 
     /**
      * Re-enter the M3 parser to convert a Pure lambda literal text (e.g.
-     * {@code "{| $row.X + $row.Y}"}) into its M4 string form, suitable for
+     * {@code "{| $row.X + $row.Y}"}) into a parsed {@code LambdaFunction}, which
+     * {@link ParsedLambda#toM4()} turns into its M4 string form, suitable for
      * embedding back into the M4 string this graph builder is assembling.
-     * <p>
-     * We deliberately do NOT serialize the parsed {@code LambdaFunction} via
-     * {@code M3AntlrParser.process} — that walks resolved {@code Function}
-     * references inside the body and recurses indefinitely (e.g. for
-     * {@code 1->cast(...)}).  Instead we extract the lambda's
-     * {@code expressionSequence}, serialize just that, and hand-roll an empty
-     * {@code FunctionType} wrapper around it — same shape the existing
-     * {@code PureInstanceSetImplementation.parseMapping} produces.  The
-     * post-processor injects the {@code row} parameter and runs full type
-     * inference at processing time.
      */
-    private String parseLambdaTextToM4(String lambdaText, String lambdaContextSuffix)
+    private ParsedLambda parseLambdaText(String lambdaText, String lambdaContextSuffix)
     {
         AntlrContextToM3CoreInstance.LambdaContext lambdaContext =
                 new AntlrContextToM3CoreInstance.LambdaContext(lambdaContextSuffix + "_" + (++lambdaCounter));
@@ -256,35 +252,64 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
             throw new PureParserException(null, "Expected a lambda function literal, got: " + lambdaText);
         }
         CoreInstance lambda = wrapped.get(0);
-        ListIterable<? extends CoreInstance> bodyExpressions =
-                lambda.getValueForMetaPropertyToMany(M3Properties.expressionSequence).toList();
-        if (bodyExpressions.isEmpty())
+        if (lambda.getValueForMetaPropertyToMany(M3Properties.expressionSequence).isEmpty())
         {
             throw new PureParserException(null, "Lambda body is empty in: " + lambdaText);
         }
-        String lambdaSrcInfo = lambda.getSourceInformation() == null
-                ? ""
-                : (" " + lambda.getSourceInformation().toM4String());
-        StringBuilder bodyM4 = new StringBuilder();
-        bodyM4.append('[');
-        for (int i = 0; i < bodyExpressions.size(); i++)
+        return new ParsedLambda(lambda, lambdaContext.getLambdaFunctionUniqueName(), ps);
+    }
+
+    private static final class ParsedLambda
+    {
+        private final CoreInstance lambda;
+        private final String uniqueName;
+        private final ProcessorSupport processorSupport;
+
+        private ParsedLambda(CoreInstance lambda, String uniqueName, ProcessorSupport processorSupport)
         {
-            if (i > 0)
-            {
-                bodyM4.append(',');
-            }
-            bodyM4.append(M3AntlrParser.process(bodyExpressions.get(i), ps));
+            this.lambda = lambda;
+            this.uniqueName = uniqueName;
+            this.processorSupport = processorSupport;
         }
-        bodyM4.append(']');
-        return "^meta::pure::metamodel::function::LambdaFunction<{->Any[*]}> " + lambdaContext.getLambdaFunctionUniqueName() + lambdaSrcInfo + " (" +
-                "  classifierGenericType = ^meta::pure::metamodel::type::generics::GenericType" + lambdaSrcInfo + " (" +
-                "    rawType = meta::pure::metamodel::function::LambdaFunction," +
-                "    typeArguments = ^meta::pure::metamodel::type::generics::GenericType" + lambdaSrcInfo + " (" +
-                "      rawType = ^meta::pure::metamodel::type::FunctionType" + lambdaSrcInfo + " ()" +
-                "    )" +
-                "  )," +
-                "  expressionSequence = " + bodyM4 +
-                ")";
+
+        /**
+         * We deliberately do NOT serialize the parsed {@code LambdaFunction} via
+         * {@code M3AntlrParser.process} — that walks resolved {@code Function}
+         * references inside the body and recurses indefinitely (e.g. for
+         * {@code 1->cast(...)}).  Instead we extract the lambda's
+         * {@code expressionSequence}, serialize just that, and hand-roll an empty
+         * {@code FunctionType} wrapper around it — same shape the existing
+         * {@code PureInstanceSetImplementation.parseMapping} produces.  The
+         * post-processor injects the {@code row} parameter and runs full type
+         * inference at processing time.
+         */
+        private String toM4()
+        {
+            ListIterable<? extends CoreInstance> bodyExpressions = this.lambda.getValueForMetaPropertyToMany(M3Properties.expressionSequence).toList();
+            String lambdaSrcInfo = this.lambda.getSourceInformation() == null
+                    ? ""
+                    : (" " + this.lambda.getSourceInformation().toM4String());
+            StringBuilder bodyM4 = new StringBuilder();
+            bodyM4.append('[');
+            for (int i = 0; i < bodyExpressions.size(); i++)
+            {
+                if (i > 0)
+                {
+                    bodyM4.append(',');
+                }
+                bodyM4.append(M3AntlrParser.process(bodyExpressions.get(i), this.processorSupport));
+            }
+            bodyM4.append(']');
+            return "^meta::pure::metamodel::function::LambdaFunction<{->Any[*]}> " + this.uniqueName + lambdaSrcInfo + " (" +
+                    "  classifierGenericType = ^meta::pure::metamodel::type::generics::GenericType" + lambdaSrcInfo + " (" +
+                    "    rawType = meta::pure::metamodel::function::LambdaFunction," +
+                    "    typeArguments = ^meta::pure::metamodel::type::generics::GenericType" + lambdaSrcInfo + " (" +
+                    "      rawType = ^meta::pure::metamodel::type::FunctionType" + lambdaSrcInfo + " ()" +
+                    "    )" +
+                    "  )," +
+                    "  expressionSequence = " + bodyM4 +
+                    ")";
+        }
     }
 
     private static String extractText(ParserRuleContext ctx)

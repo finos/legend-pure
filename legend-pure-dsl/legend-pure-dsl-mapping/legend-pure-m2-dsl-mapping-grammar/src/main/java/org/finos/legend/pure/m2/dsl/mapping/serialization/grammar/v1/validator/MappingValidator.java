@@ -436,19 +436,23 @@ public class MappingValidator implements MatchRunner<Mapping>
         for (Pair<Class, RichIterable<SetImplementation>> val : directMappings.keyMultiValuePairsView())
         {
             RichIterable<SetImplementation> classMappings = val.getTwo();
-            if (classMappings.size() == 1)
+            RichIterable<SetImplementation> roots = getEffectiveRoots(classMappings);
+            if (roots.size() != 1)
             {
-                classMappings.toList().get(0)._root(true);
+                throw new PureCompilationException(mapping.getSourceInformation(), "The class '" + val.getOne().getName() + "' is mapped by " + classMappings.size() + " set implementations and has " + roots.size() + " roots. There should be exactly one root set implementation for the class, and it should be marked with a '*'.");
             }
-            else
-            {
-                int rootCount = classMappings.count(IS_ROOT);
-                if (rootCount != 1)
-                {
-                    throw new PureCompilationException(mapping.getSourceInformation(), "The class '" + val.getOne().getName() + "' is mapped by " + classMappings.size() + " set implementations and has " + rootCount + " roots. There should be exactly one root set implementation for the class, and it should be marked with a '*'.");
-                }
-            }
+            roots.getOnly()._root(true);
         }
+    }
+
+    /**
+     * The root(s) among one mapping's direct (non-embedded) class mappings for a single class, as
+     * {@link #validateStar} decides them: a sole class mapping is the root even without a '*';
+     * otherwise the roots are those marked with '*'. Usable before validateStar has run.
+     */
+    public static <T extends SetImplementation> RichIterable<T> getEffectiveRoots(RichIterable<T> directClassMappings)
+    {
+        return (directClassMappings.size() == 1) ? directClassMappings : directClassMappings.select(IS_ROOT);
     }
 
     private static void validateMappedEntitiesInIncludes(Mapping rootMapping, Mapping mapping, ProcessorSupport processorSupport, MutableListMultimap<Type, CoreInstance> setImplementationsByClass, ValidatorState state, Matcher matcher)

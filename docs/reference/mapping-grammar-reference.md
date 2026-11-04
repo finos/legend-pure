@@ -1243,13 +1243,13 @@ Mapping my::mappings::PersonMapping
   expression over the row variable `$row`** (§15.5). Both forms compile to the
   same underlying lambda shape (`valueFn: LambdaFunction<{Nil[1]->Any[*]}>[1]`),
   so bare-column is simply parser sugar for `$row.<column>`.
-- `$row` is bound only within the property-mapping `valueFn` and gives access to
-  the columns of the source relation's row type. It is unrelated to `~src`
-  (§15.3), which is the source-declaration keyword. `$src` itself is **not**
-  bound inside a `Relation` mapping's property expressions — a reference to it
-  fails with *"The variable 'src' is unknown!"*. `$src` is reserved for a
-  separate, relation-level access pattern (e.g. `$src->modelJoin(...)`) intended
-  for cross-relation joins
+- `$row` is bound only within the property-mapping `valueFn` (but not inside its
+  joins, §15.10) and gives access to the columns of the source relation's row
+  type. It is unrelated to `~src`
+  (§15.3), which is the source-declaration keyword. Inside property expressions
+  `$src` is bound to the **whole** source relation (`Relation<T>`, not a row),
+  solely as the source of `navigationJoin`/`filterJoin` (§15.10); `$src.<col>`
+  is rejected with a hint to use `$row.<col>`.
 
 ### 15.2 `~func` — reference a named Pure function
 
@@ -1500,7 +1500,118 @@ a `Relation` class mapping. The embedded block inherits the parent's
 }
 ```
 
-### 15.10 Difference from `Relational` mapping
+### 15.10 Joins — `navigationJoin`, `filterJoin`, `modelJoin`
+
+A `Relation` class mapping property can reach data outside its own relation in
+two ways.
+
+**Relation-level joins** — `navigationJoin` / `filterJoin` (in
+`meta::pure::functions::relation`) join the mapping's source relation `$src` to
+another zero-argument relation function, with a condition over **columns**:
+
+```pure
+*Person[person]: Relation
+{
+    ~func my::personRelation__Relation_1_
+    firmName       : $src->navigationJoin(my::firmRelation(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME,
+    firmNameInner  : $src->navigationJoin(my::firmRelation(), JoinKind.INNER, {p, f | $p.FIRMID == $f.ID}).LEGALNAME,
+    employedName   : $src->filterJoin(my::firmRelation(), {p, f | $p.FIRMID == $f.ID}).FIRSTNAME
+}
+```
+
+- `navigationJoin` yields the target's columns; `filterJoin` keeps the source's
+  columns (gated by the match). They chain:
+  `$src->filterJoin(...)->navigationJoin(...).COL`.
+- Their source must be `$src` or another `navigationJoin`/`filterJoin`, and that
+  is the only place `$src` may appear: any other use (e.g. `$src->size()`, or
+  `$src` inside a join condition) is a compile error.
+- `$row` (the mapped row) is not available to a join, which is over the whole
+  source relation: it can't be a join's source (`$row->navigationJoin(...)`), nor
+  appear in a join's condition or other arguments — whether the chain is the
+  whole value or followed by `.COL`. Write the condition over its own
+  parameters, e.g. `{p, f | $p.FIRMID == $f.ID}`. A nested lambda's own
+  parameter named `row` (e.g. `{p, f | [$f.ID, $f.PARENTID]->exists({row | $row == $p.FIRMID})}`)
+  is that parameter, so is allowed.
+- The join kind defaults to `JoinKind.LEFT` for `navigationJoin`, `JoinKind.INNER` for
+  `filterJoin` — and neither kind ever excludes the owning instance. For `navigationJoin`,
+  `LEFT` and `INNER` return the same rows (`INNER` only changes the generated SQL, not the
+  result). For `filterJoin`, `INNER` (the default) leaves this property empty for a source
+  row with no match; `LEFT` turns that gate off, so the property is just the source's own
+  value, repeated once per matching target row. `JoinKind.RIGHT`/`JoinKind.FULL` are
+  rejected at compile time.
+
+**Model-level joins** — `modelJoin` maps a property typed to a mapped class
+through a one-sided model join. Its condition is written over the **classes'
+properties**, exactly like an association `ModelJoin` (§5), not over columns, and
+it takes neither `$src` nor `$row`, as its source or in its condition:
+
+```pure
+*Person[person]: Relation
+{
+    ~func my::personRelation__Relation_1_
+    firmId  : FIRMID,
+    +firm   : my::Firm[1] : modelJoin({person, firm | $person.firmId == $firm.id})
+}
+*Firm[firm]: Relation
+{
+    ~func my::firmRelation__Relation_1_
+    id        : ID,
+    legalName : LEGALNAME
+}
+```
+
+- The condition's parameters are positional: the first is the owning class,
+  the second the property's class. Their types may be left to inference, or
+  declared as in an association `ModelJoin`, in which case they must match (or
+  be supertypes of) those classes. These two are equivalent:
+
+  ```pure
+  +firm : my::Firm[1] : modelJoin({person, firm | $person.firmId == $firm.id})
+  +firm : my::Firm[1] : modelJoin({person: my::Person[1], firm: my::Firm[1] | $person.firmId == $firm.id})
+  ```
+- Local mapping properties (`+x`) of either class mapping are visible to the
+  condition, as in an association `ModelJoin`.
+- The target is the single **root** class mapping of the property's class in
+  the mapping or its includes — of any store (`Relation`, `Relational`, `Pure`,
+  ...). Roots are decided as for `*`: within each mapping, a class's sole
+  class mapping is its root even without `*` (`Operation` mappings count
+  towards this), otherwise the one marked `*`. An `Operation` root is not
+  supported as a target; an unstarred instance class mapping beside it is
+  never picked instead.
+- `modelJoin(...)` must be the entire property value.
+
+`navigationJoin`, `filterJoin` and `modelJoin` may be called bare or fully
+qualified (`meta::pure::functions::relation::navigationJoin(...)`); the same
+checks apply either way. A bare call is treated as the join only if no
+same-named function of your own is visible (imported, or in the root package);
+otherwise it calls your function, as ordinary name resolution would. `modelJoin`
+is recognised when the mapping is parsed, so a same-named function that only
+becomes visible afterwards (e.g. one defined in the same compile batch as the
+mapping) makes a bare `modelJoin(...)` call fail as ambiguous instead; rename or
+stop importing that function, or call the platform one fully qualified
+(`meta::pure::functions::relation::modelJoin(...)`), which is never ambiguous.
+
+| Condition | Error |
+|-----------|-------|
+| `modelJoin` condition uses a column (`$p.FIRMID`) or unknown property | `Can't find the property 'FIRMID' in the class ...` |
+| `$src->modelJoin(...)` / `$row->modelJoin(...)` (relation-level form) | `modelJoin() takes only a join condition between the owning class and the property's class, ...; it does not take $src.` (or `$row.`) |
+| `$row`/`$src` inside a `modelJoin` condition | `modelJoin()'s join condition is over the two classes, not the relation's rows: $row is not available. ...` |
+| `modelJoin` nested in another expression | `modelJoin() must be the entire value of a property mapping; it cannot be used inside another expression.` |
+| `modelJoin` condition doesn't take exactly 2 params / returns non-Boolean | `modelJoin()'s join condition must take exactly 2 parameters ...` / `ModelJoin join condition must return Boolean[1], found: ...` |
+| Declared param type doesn't match | `modelJoin()'s join condition parameter 'p' is declared as '...', but the owning class is '...'.` |
+| Condition uses the property being mapped | `modelJoin()'s join condition cannot use the property 'x' that it maps.` |
+| Property type is not a class | `modelJoin() can only map a property whose type is a class; ...` |
+| No / several root class mappings for the target class | `modelJoin: expected exactly one root class mapping for type '...' in this mapping or its includes, found N...` |
+| Root class mapping for the target class is an `Operation` | `modelJoin: Operation mappings are not supported as the target of modelJoin; the root class mapping for type '...' ('id') is an Operation.` |
+| Unknown column in a `navigationJoin`/`filterJoin` condition or projection | `The system can't find the column FOO in the Relation (...)` |
+| `navigationJoin`/`filterJoin` source is not `$src` or another join (e.g. `$row->navigationJoin(...)`) | `The source of 'navigationJoin' must be $src or another navigationJoin/filterJoin call.` |
+| `$row` inside a `navigationJoin`/`filterJoin` condition | `navigationJoin()'s join condition is over the source and target rows: $row is not available. Use the condition's parameters, e.g. {p, f \| $p.FIRMID == $f.ID}.` |
+| `$row` in another argument of `navigationJoin`/`filterJoin` (e.g. the target) | `$row is not available in the arguments of navigationJoin(): the join is over the whole source relation, not the mapped row.` |
+| `$src` anywhere but the root of a join chain | `$src is the whole source relation and may only be used as the source of navigationJoin/filterJoin ...` |
+| A bare `modelJoin` while a same-named user function defined in the same compile batch is visible | `modelJoin() is ambiguous here: the function(s) my::pkg::modelJoin of the same name are also visible. ...` |
+| `JoinKind.RIGHT` / `JoinKind.FULL` | `JoinKind.RIGHT is not supported by navigationJoin(); use JoinKind.LEFT (the default) or JoinKind.INNER.` (for `filterJoin()`, the default named instead is `JoinKind.INNER`) |
+
+### 15.11 Difference from `Relational` mapping
 
 | | `Relational` | `Relation` |
 |---|---|---|

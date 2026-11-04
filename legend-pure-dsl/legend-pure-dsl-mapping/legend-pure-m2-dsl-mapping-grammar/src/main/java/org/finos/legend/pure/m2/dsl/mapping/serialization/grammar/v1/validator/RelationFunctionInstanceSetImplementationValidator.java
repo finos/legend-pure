@@ -18,6 +18,7 @@ import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.EnumerationMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMapping;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.modelJoin.ModelJoinPropertyMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.EmbeddedRelationFunctionSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionPropertyMapping;
@@ -54,6 +55,10 @@ public class RelationFunctionInstanceSetImplementationValidator implements Match
                 RelationFunctionPropertyMapping rpm = (RelationFunctionPropertyMapping) propertyMapping;
                 Property<?, ?> property = rpm._property();
                 validateValueFn(rpm, property, rpm._transformer() instanceof EnumerationMapping, propertyMapping.getSourceInformation(), processorSupport);
+            }
+            else if (propertyMapping instanceof ModelJoinPropertyMapping)
+            {
+                ModelJoinValidator.validateReturnsBoolean(((ModelJoinPropertyMapping) propertyMapping)._joinCondition(), propertyMapping.getSourceInformation(), processorSupport);
             }
             else if (propertyMapping instanceof EmbeddedRelationFunctionSetImplementation)
             {
