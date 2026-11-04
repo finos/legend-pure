@@ -127,7 +127,9 @@ public class ExecutePCTTest extends NativeFunction
         catch (PureAssertFailException e)
         {
             String errorMsg = e.getInfo();
-            if (expectedError != null && errorMsg != null && errorMsg.contains(expectedError))
+            // Manifests recorded from the compiled runner quote the info ("Assert failure at (...), \"<info>\""),
+            // so match the full message too, as the compiled runner does
+            if (expectedError != null && ((errorMsg != null && errorMsg.contains(expectedError)) || (e.getMessage() != null && e.getMessage().contains(expectedError))))
             {
                 // Expected failure with matching error
                 status = "PASS";
