@@ -145,7 +145,7 @@ public class ModelJoinUnbind implements MatchRunner<ModelJoinAssociationImplemen
     }
 
     /**
-     * Reverses {@code ModelJoinProcessor.replaceLambdaParams} symbolically:
+     * Reverses {@code ModelJoinProcessor.typeJoinConditionParams} symbolically:
      * renames {@code _mj_tgt} back to the user's original target-side param name (which
      * is the association property name corresponding to this PM) and {@code _mj_src}
      * back to the other association property's name. Generic types are cleared.

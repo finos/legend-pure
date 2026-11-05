@@ -1,0 +1,160 @@
+// Copyright 2026 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::metamodel::relation::*;
+import meta::pure::functions::relation::*;
+
+Enum meta::pure::functions::relation::JoinKind
+{
+  LEFT,
+  RIGHT,
+  FULL,
+  INNER
+}
+
+'''
+Navigates from a relation class mapping's source rows to the matching rows of `target`, keeping the
+target's columns.
+
+Only valid inside a Relation class mapping property, and only lowered to SQL: it cannot be executed
+in memory. A source row matching several target rows yields one value per match.
+
+A `.COLUMN` projection on the result only resolves when this call is the property's own value
+expression (or one property access above it, e.g. `$src->navigationJoin(...).LEGALNAME`) -- calling
+`navigationJoin` from inside a separate helper function and projecting a column there does not work.
+
+**Parameters**
+- `rel` — the source relation: `$src`, or another `navigationJoin`/`filterJoin`.
+- `target` — a call to a relation function with no parameters, e.g. `my::firmRel()`.
+- `cond` — the join condition, applied to a source row and a target row. Write it over its own
+  parameters: `$row` (the mapped row) is not available in it.
+
+**Returns** the matching target rows.
+
+**Examples**
+```pure
++firmName: String[1]: $src->navigationJoin(my::firmRel(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME
+```
+
+**See also** `filterJoin(Relation<L>[1], Relation<R>[1], Function<{L[1], R[1]->Boolean[1]}>[1]):Relation<L>[1]`
+'''
+function <<functionType.NotImplementedFunction>> meta::pure::functions::relation::navigationJoin<L,R>(rel:Relation<L>[1], target:Relation<R>[1], cond:Function<{L[1],R[1]->Boolean[1]}>[1]):Relation<R>[1]
+{
+   fail('navigationJoin is a mapping-only, SQL-pushdown-only operator and cannot be executed in memory. It is only valid inside a Relation-mapping property expression.');
+   $target;
+}
+
+'''
+Same as `navigationJoin(Relation<L>[1], Relation<R>[1], Function<{L[1], R[1]->Boolean[1]}>[1]):Relation<R>[1]`,
+with an explicit join kind instead of the default `JoinKind.LEFT`. Neither kind excludes the owning
+instance: a source row with no match keeps its row, empty on this property, under `LEFT` or `INNER`
+alike -- `JoinKind.INNER` changes the generated SQL but not the result. `JoinKind.RIGHT`/`JoinKind.FULL`
+are not supported.
+
+**Examples**
+```pure
++firmName: String[1]: $src->navigationJoin(my::firmRel(), JoinKind.INNER, {p, f | $p.FIRMID == $f.ID}).LEGALNAME
+```
+'''
+function <<functionType.NotImplementedFunction>> meta::pure::functions::relation::navigationJoin<L,R>(rel:Relation<L>[1], target:Relation<R>[1], kind:JoinKind[1], cond:Function<{L[1],R[1]->Boolean[1]}>[1]):Relation<R>[1]
+{
+   fail('navigationJoin is a mapping-only, SQL-pushdown-only operator and cannot be executed in memory. It is only valid inside a Relation-mapping property expression.');
+   $target;
+}
+
+'''
+Keeps a relation class mapping's source rows that match a row of `target`, with the source's columns.
+
+Only valid inside a Relation class mapping property, and only lowered to SQL: it cannot be executed
+in memory. This is not a semi-join: a source row matching several target rows is repeated.
+
+A `.COLUMN` projection on the result only resolves when this call is the property's own value
+expression (or one property access above it, e.g. `$src->filterJoin(...).NAME`) -- calling
+`filterJoin` from inside a separate helper function and projecting a column there does not work.
+
+**Parameters**
+- `rel` — the source relation: `$src`, or another `navigationJoin`/`filterJoin`.
+- `target` — a call to a relation function with no parameters, e.g. `my::firmRel()`.
+- `cond` — the join condition, applied to a source row and a target row. Write it over its own
+  parameters: `$row` (the mapped row) is not available in it.
+
+**Returns** the matching source rows.
+
+**Examples**
+```pure
++employedName: String[1]: $src->filterJoin(my::firmRel(), {p, f | $p.FIRMID == $f.ID}).NAME
+```
+
+**See also** `navigationJoin(Relation<L>[1], Relation<R>[1], Function<{L[1], R[1]->Boolean[1]}>[1]):Relation<R>[1]`
+'''
+function <<functionType.NotImplementedFunction>> meta::pure::functions::relation::filterJoin<L,R>(rel:Relation<L>[1], target:Relation<R>[1], cond:Function<{L[1],R[1]->Boolean[1]}>[1]):Relation<L>[1]
+{
+   fail('filterJoin is a mapping-only, SQL-pushdown-only operator and cannot be executed in memory. It is only valid inside a Relation-mapping property expression.');
+   $rel;
+}
+
+'''
+Same as `filterJoin(Relation<L>[1], Relation<R>[1], Function<{L[1], R[1]->Boolean[1]}>[1]):Relation<L>[1]`,
+with an explicit join kind instead of the default `JoinKind.INNER` (a source row with no match keeps
+its row, empty on this property; the owning instance itself is never excluded). `JoinKind.LEFT` turns
+the gate off entirely: every source row gets this property from its own columns regardless of a match,
+repeated once per matching target row if there is one. `JoinKind.RIGHT`/`JoinKind.FULL` are not
+supported.
+
+**Examples**
+```pure
++employedName: String[1]: $src->filterJoin(my::firmRel(), JoinKind.LEFT, {p, f | $p.FIRMID == $f.ID}).NAME
+```
+'''
+function <<functionType.NotImplementedFunction>> meta::pure::functions::relation::filterJoin<L,R>(rel:Relation<L>[1], target:Relation<R>[1], kind:JoinKind[1], cond:Function<{L[1],R[1]->Boolean[1]}>[1]):Relation<L>[1]
+{
+   fail('filterJoin is a mapping-only, SQL-pushdown-only operator and cannot be executed in memory. It is only valid inside a Relation-mapping property expression.');
+   $rel;
+}
+
+'''
+Maps a Relation class mapping property, typed to a mapped Class, through a one-sided model join: a join
+condition between an instance of the owning class and an instance of the property's class, written over
+their properties -- exactly like the join condition of an association ModelJoin, e.g.
+`{person, firm | $person.firmId == $firm.id}`.
+
+The parameters are positional -- the first is the owning class, the second the property's class -- and
+may optionally declare their types like an association ModelJoin's, e.g.
+`{person: my::Person[1], firm: my::Firm[1] | ...}`. Local mapping properties (`+firmId: Integer[1]: ...`)
+of either class mapping are visible to the condition. The target class mapping is the single root class
+mapping (of any store) of the property's class, in the owning mapping or its includes.
+
+Only valid as the entire value of a Relation class mapping property; the mapping compiler recognizes it
+structurally, so this declaration is never matched and the call cannot be executed in memory.
+
+**Parameters**
+- `cond` — the join condition, applied to an instance of the owning class and one of the property's class.
+
+**Returns** the associated instance of the property's class.
+
+**Examples**
+```pure
+// parameter classes inferred: the owning class, then the property's class
++firm: my::Firm[1]: modelJoin({person, firm | $person.firmId == $firm.id})
+// or declared explicitly, as in an association ModelJoin
++firm: my::Firm[1]: modelJoin({person: my::Person[1], firm: my::Firm[1] | $person.firmId == $firm.id})
+```
+
+**See also** `navigationJoin(Relation<L>[1], Relation<R>[1], Function<{L[1], R[1]->Boolean[1]}>[1]):Relation<R>[1]`
+'''
+function meta::pure::functions::relation::modelJoin<S,T>(cond:Function<{S[1],T[1]->Boolean[1]}>[1]):Any[1]
+{
+   fail('modelJoin is a mapping-only operator resolved at mapping-compile-time and cannot be executed in memory. It is only valid as the entire value of a Relation-mapping property typed to a mapped Class.');
+   1;
+}
