@@ -870,7 +870,11 @@ public class LegendPureSession
             String runId = blankToNull(params.getRunId()) != null
                     ? params.getRunId().trim()
                     : java.util.UUID.randomUUID().toString();
-            RunContext context = new RunContext(runtime, processorSupport, runId, adapter, adapterPath,
+            PCTManifestExclusions exclusions = adapter == null
+                    ? PCTManifestExclusions.NONE
+                    : PCTManifestExclusions.discover(runtime, root, adapter);
+            exclusions.getWarnings().forEach(warning -> LspLog.info("executeTests: " + warning));
+            RunContext context = new RunContext(runtime, processorSupport, runId, adapter, adapterPath, exclusions,
                     params.isParallel(), LegendPureLspServer.executionPool());
             int total = root.totalEntries();
             registerRun(context);
@@ -888,6 +892,7 @@ public class LegendPureSession
             }
 
             ExecuteTestsResult result = summarize(context.results, runId, scope, startedAt);
+            result.setWarnings(exclusions.getWarnings());
             if (context.isCancelled())
             {
                 result.setCancelled(true);
@@ -1328,13 +1333,43 @@ public class LegendPureSession
             return cancelledResult;
         }
 
-        TestResult result = new TestResult(path, name, node.getPackagePath(),
-                outcome.isSuccess() ? TestStatus.PASSED : TestStatus.FAILED, elapsed,
-                outcome.isSuccess() ? null : describeFailure(outcome, hookKind, path),
-                outcome.getOutput(), isPct ? context.adapterPath : null, hookKind != null, hookKind);
+        String expectedError = isPct ? context.exclusions.expectedError(path) : null;
+        TestResult result = expectedError == null
+                ? new TestResult(path, name, node.getPackagePath(),
+                        outcome.isSuccess() ? TestStatus.PASSED : TestStatus.FAILED, elapsed,
+                        outcome.isSuccess() ? null : describeFailure(outcome, hookKind, path),
+                        outcome.getOutput(), isPct ? context.adapterPath : null, hookKind != null, hookKind)
+                : expectedFailureResult(path, name, node, outcome, elapsed, expectedError, context.adapterPath);
         applyReturnValue(result, outcome.getReturnValue());
         finishEntry(context, invocation, result);
         return result;
+    }
+
+    /**
+     * Mirrors the surveyor's executePCTTest native: a PCT test with a manifest exclusion passes when
+     * it fails with the expected error, and fails when it passes, so the stale exclusion is removed.
+     */
+    private static TestResult expectedFailureResult(String path, String name, TestDiscovery.Node node, ExecuteResult outcome,
+                                                    long elapsed, String expectedError, String adapterPath)
+    {
+        TestStatus status;
+        String message;
+        if (outcome.isSuccess())
+        {
+            status = TestStatus.FAILED;
+            message = PCTTools.formatUnexpectedPass(path, expectedError);
+        }
+        else if (PCTManifestExclusions.isExpectedFailure(expectedError, outcome.getFailureInfo(), outcome.getFailureMessage()))
+        {
+            status = TestStatus.PASSED;
+            message = "Expected failure: " + outcome.getFailureInfo();
+        }
+        else
+        {
+            status = TestStatus.FAILED;
+            message = PCTTools.formatExpectedFailureMismatch(path, expectedError, outcome.getFailureInfo()) + "\n" + outcome.getError();
+        }
+        return new TestResult(path, name, node.getPackagePath(), status, elapsed, message, outcome.getOutput(), adapterPath, false, null);
     }
 
     /**
@@ -1440,7 +1475,8 @@ public class LegendPureSession
             {
                 LOGGER.debug("executeTests: {} failed", label, e);
                 String errorText = ExecutionFailureFormatter.format(e, baosToString(baos), this.functionExecution.getProcessorSupport());
-                return new ExecuteResult(false, errorText, errorText);
+                return new ExecuteResult(false, errorText, errorText, null, PCTManifestExclusions.failureInfo(e),
+                        PCTTools.getMessageFromError(PCTTools.unwrapExecutionError(e)));
             }
         }
         finally
@@ -1481,6 +1517,7 @@ public class LegendPureSession
         private final String runId;
         private final CoreInstance adapter;
         private final String adapterPath;
+        private final PCTManifestExclusions exclusions;
         private final boolean parallel;
         private final List<TestResult> results = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
         private final java.util.concurrent.ExecutorService pool;
@@ -1497,13 +1534,14 @@ public class LegendPureSession
         private final Set<TestDiscovery.Invocation> finished = Collections.newSetFromMap(ConcurrentHashMap.newMap());
 
         RunContext(PureRuntime runtime, ProcessorSupport processorSupport, String runId, CoreInstance adapter,
-                   String adapterPath, boolean parallel, java.util.concurrent.ExecutorService pool)
+                   String adapterPath, PCTManifestExclusions exclusions, boolean parallel, java.util.concurrent.ExecutorService pool)
         {
             this.runtime = runtime;
             this.processorSupport = processorSupport;
             this.runId = runId;
             this.adapter = adapter;
             this.adapterPath = adapterPath;
+            this.exclusions = exclusions;
             this.parallel = parallel;
             this.pool = pool;
         }
@@ -1987,6 +2025,8 @@ public class LegendPureSession
         private final String error;
         private final String output;
         private final PureValueExtractor.ExtractedValue returnValue;
+        private final String failureInfo;
+        private final String failureMessage;
 
         ExecuteResult(boolean success, String error, String output)
         {
@@ -1995,10 +2035,18 @@ public class LegendPureSession
 
         ExecuteResult(boolean success, String error, String output, PureValueExtractor.ExtractedValue returnValue)
         {
+            this(success, error, output, returnValue, null, null);
+        }
+
+        ExecuteResult(boolean success, String error, String output, PureValueExtractor.ExtractedValue returnValue,
+                      String failureInfo, String failureMessage)
+        {
             this.success = success;
             this.error = error;
             this.output = output;
             this.returnValue = returnValue;
+            this.failureInfo = failureInfo;
+            this.failureMessage = failureMessage;
         }
 
         public boolean isSuccess()
@@ -2024,6 +2072,24 @@ public class LegendPureSession
         public PureValueExtractor.ExtractedValue getReturnValue()
         {
             return this.returnValue;
+        }
+
+        /**
+         * The failure's own message, without the captured output and stack trace {@code error} wraps it
+         * in. Null unless a test run failed.
+         */
+        public String getFailureInfo()
+        {
+            return this.failureInfo;
+        }
+
+        /**
+         * The failure's full message, which for an assertion wraps its info in source information.
+         * Null unless a test run failed.
+         */
+        public String getFailureMessage()
+        {
+            return this.failureMessage;
         }
     }
 

@@ -39,6 +39,7 @@ public class ExecuteTestsResult
     private long durationMs;
     private boolean cancelled;
     private List<TestResult> tests;
+    private List<String> warnings = Collections.emptyList();
 
     public ExecuteTestsResult()
     {
@@ -183,5 +184,19 @@ public class ExecuteTestsResult
     public void setTests(List<TestResult> tests)
     {
         this.tests = tests;
+    }
+
+    /**
+     * Problems that did not stop the run but may make its results misleading - e.g. PCT tests that ran
+     * without their manifest's expected failures because the manifest could not be identified.
+     */
+    public List<String> getWarnings()
+    {
+        return this.warnings;
+    }
+
+    public void setWarnings(List<String> warnings)
+    {
+        this.warnings = warnings;
     }
 }
