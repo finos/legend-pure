@@ -19,7 +19,7 @@ import org.finos.legend.pure.m3.coreinstance.lazy.OneValue;
 import org.finos.legend.pure.m3.coreinstance.lazy.PrimitiveValueResolver;
 import org.finos.legend.pure.m3.serialization.compiler.element.ElementBuilder;
 import org.finos.legend.pure.m3.serialization.compiler.element.InstanceData;
-import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceProvider;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferencesByVersion;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.VirtualPackageMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolvers;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -33,9 +33,9 @@ import java.util.function.Supplier;
 
 public abstract class AbstractM3GeneratedLazyVirtualPackage extends AbstractLazyVirtualPackage implements CoreInstanceWithStandardPrinting
 {
-    protected AbstractM3GeneratedLazyVirtualPackage(ModelRepository repository, VirtualPackageMetadata metadata, ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferenceProvider> backRefProviderDeserializer)
+    protected AbstractM3GeneratedLazyVirtualPackage(ModelRepository repository, VirtualPackageMetadata metadata, ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferencesByVersion> backRefDeserializer)
     {
-        super(repository, repository.nextId(), metadata, elementBuilder, referenceIds, backRefProviderDeserializer);
+        super(repository, repository.nextId(), metadata, elementBuilder, referenceIds, backRefDeserializer);
     }
 
     protected AbstractM3GeneratedLazyVirtualPackage(AbstractM3GeneratedLazyVirtualPackage source)

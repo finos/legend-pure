@@ -20,13 +20,19 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.api.tuple.primitive.IntObjectPair;
+import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.finos.legend.pure.m3.serialization.compiler.file.FileDeserializer;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReference;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceProvider;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceVisitor;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferencesByVersion;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ConcreteElementMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementBackReferenceMetadata;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementBackReferenceMetadata.InstanceBackReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.MetadataIndex;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.PackageableElementMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.VirtualPackageMetadata;
@@ -38,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -174,7 +181,7 @@ public abstract class ElementLoader
             if (elementMetadata != null)
             {
                 LOGGER.debug("Loading concrete element {}", path);
-                return this.builder.buildConcreteElement(elementMetadata, this.index, this.referenceIds, () -> deserialize(path), () -> deserializeBackReferences(path));
+                return this.builder.buildConcreteElement(elementMetadata, this.index, this.referenceIds, () -> deserialize(path), () -> deserializeConcreteElementBackReferences(path));
             }
 
             PackageableElementMetadata packageMetadata = this.index.getPackageMetadata(path);
@@ -185,7 +192,7 @@ public abstract class ElementLoader
                         (VirtualPackageMetadata) packageMetadata,
                         this.index,
                         this.referenceIds,
-                        () -> deserializeBackReferences(path));
+                        () -> deserializeVirtualPackageBackReferences(path));
             }
 
             // This should not be possible, but just in case ...
@@ -215,12 +222,64 @@ public abstract class ElementLoader
         return deserialized;
     }
 
-    private BackReferenceProvider deserializeBackReferences(String path)
+    private BackReferenceProvider deserializeConcreteElementBackReferences(String path)
     {
         boolean debug = LOGGER.isDebugEnabled();
         long start = debug ? System.nanoTime() : 0L;
         LOGGER.debug("Deserializing back references for {}", path);
+        // A concrete element resolves all of its back references with its own reference id version, so we merge the
+        // back references from every file
         MutableMap<String, MutableList<BackReference>> map = Maps.mutable.empty();
+        this.index.getBackReferenceModuleNames(path).forEach(moduleName ->
+        {
+            ElementBackReferenceMetadata backRefMetadata = deserializeBackReferences(moduleName, path);
+            if (backRefMetadata != null)
+            {
+                backRefMetadata.getInstanceBackReferenceMetadata().forEach(ibr -> collectBackReferences(moduleName, path, ibr, map.getIfAbsentPut(ibr.getInstanceReferenceId(), Lists.mutable::empty)));
+            }
+        });
+
+        BackReferenceProvider provider;
+        switch (map.size())
+        {
+            case 0:
+            {
+                provider = id -> Lists.fixedSize.empty();
+                break;
+            }
+            case 1:
+            {
+                Pair<String, MutableList<BackReference>> pair = map.keyValuesView().getAny();
+                String key = pair.getOne();
+                MutableList<BackReference> backRefs = ListHelper.sortAndRemoveDuplicates(pair.getTwo());
+                provider = id -> Objects.equals(id, key) ? backRefs : Lists.fixedSize.empty();
+                break;
+            }
+            default:
+            {
+                map.forEachValue(ListHelper::sortAndRemoveDuplicates);
+                provider = id -> map.getIfAbsentValue(id, Lists.fixedSize.empty());
+                break;
+            }
+        }
+        if (debug)
+        {
+            long end = System.nanoTime();
+            LOGGER.debug("Finished deserializing back references for {} in {}ns", path, end - start);
+        }
+        return provider;
+    }
+
+    private BackReferencesByVersion deserializeVirtualPackageBackReferences(String path)
+    {
+        boolean debug = LOGGER.isDebugEnabled();
+        long start = debug ? System.nanoTime() : 0L;
+        LOGGER.debug("Deserializing back references for {}", path);
+        // A virtual package has no reference id version of its own, so it must resolve its back references with the
+        // versions of their files, which may differ from module to module: we keep them apart by version. The package
+        // is its only instance, and its reference id is its path in every version, so the path finds its back
+        // references in files of every version.
+        MutableIntObjectMap<MutableList<BackReference>> backRefsByVersion = IntObjectMaps.mutable.empty();
         this.index.getBackReferenceModuleNames(path).forEach(moduleName ->
         {
             ElementBackReferenceMetadata backRefMetadata = deserializeBackReferences(moduleName, path);
@@ -228,32 +287,63 @@ public abstract class ElementLoader
             {
                 backRefMetadata.getInstanceBackReferenceMetadata().forEach(ibr ->
                 {
-                    String instanceRefId = ibr.getInstanceReferenceId();
-                    MutableList<BackReference> list = map.getIfAbsentPut(instanceRefId, Lists.mutable::empty);
-                    if (this.backRefFilter == null)
+                    if (path.equals(ibr.getInstanceReferenceId()))
                     {
-                        list.addAll(ibr.getBackReferences().castToList());
-                    }
-                    else
-                    {
-                        ibr.getBackReferences().select(new BackReferenceFilterPredicate(this.backRefFilter, moduleName, path, instanceRefId), list);
+                        collectBackReferences(moduleName, path, ibr, backRefsByVersion.getIfAbsentPut(backRefMetadata.getReferenceIdVersion(), Lists.mutable::empty));
                     }
                 });
             }
         });
 
-        if (map.isEmpty())
+        BackReferencesByVersion result;
+        switch (backRefsByVersion.size())
         {
-            return id -> Lists.fixedSize.empty();
+            case 0:
+            {
+                result = consumer ->
+                {
+                };
+                break;
+            }
+            case 1:
+            {
+                IntObjectPair<MutableList<BackReference>> pair = backRefsByVersion.keyValuesView().getAny();
+                int version = pair.getOne();
+                MutableList<BackReference> backRefs = ListHelper.sortAndRemoveDuplicates(pair.getTwo());
+                result = consumer -> consumer.accept(backRefs, version);
+                break;
+            }
+            default:
+            {
+                MutableList<IntObjectPair<MutableList<BackReference>>> pairs = backRefsByVersion.keyValuesView()
+                        .collect(pair ->
+                        {
+                            ListHelper.sortAndRemoveDuplicates(pair.getTwo());
+                            return pair;
+                        }, Lists.mutable.ofInitialCapacity(backRefsByVersion.size()))
+                        .sortThis(Comparator.comparingInt(IntObjectPair::getOne));
+                result = consumer -> pairs.forEach(pair -> consumer.accept(pair.getTwo(), pair.getOne()));
+                break;
+            }
         }
-
-        map.forEachValue(ListHelper::sortAndRemoveDuplicates);
         if (debug)
         {
             long end = System.nanoTime();
             LOGGER.debug("Finished deserializing back references for {} in {}ns", path, end - start);
         }
-        return id -> map.getIfAbsentValue(id, Lists.fixedSize.empty());
+        return result;
+    }
+
+    private void collectBackReferences(String moduleName, String path, InstanceBackReferenceMetadata instanceBackRefs, MutableList<BackReference> target)
+    {
+        if (this.backRefFilter == null)
+        {
+            target.addAll(instanceBackRefs.getBackReferences().castToList());
+        }
+        else
+        {
+            instanceBackRefs.getBackReferences().select(new BackReferenceFilterPredicate(this.backRefFilter, moduleName, path, instanceBackRefs.getInstanceReferenceId()), target);
+        }
     }
 
     abstract DeserializedConcreteElement deserializeConcreteElement(String path);

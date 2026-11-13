@@ -14,8 +14,11 @@
 
 package org.finos.legend.pure.m3.serialization.compiler.element;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
@@ -32,15 +35,21 @@ import org.finos.legend.pure.m3.serialization.compiler.file.FilePathProvider;
 import org.finos.legend.pure.m3.serialization.compiler.file.FileSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReference;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceProvider;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferencesByVersion;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ConcreteElementMetadata;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementBackReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.MetadataIndex;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleManifest;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataGenerator;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.VirtualPackageMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.reference.AbstractReferenceTest;
+import org.finos.legend.pure.m3.serialization.compiler.reference.PrefixedReferenceIdExtension;
+import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProvider;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProviders;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolver;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolvers;
+import org.finos.legend.pure.m3.serialization.compiler.reference.v1.ReferenceIdExtensionV1;
 import org.finos.legend.pure.m3.tools.GraphTools;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -52,6 +61,8 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -62,6 +73,7 @@ public abstract class AbstractElementBuilderTest<VP extends CoreInstance, CE ext
     public static TemporaryFolder TMP = new TemporaryFolder();
 
     private static Path serializationDir;
+    private static FileSerializer fileSerializer;
     private static FileDeserializer fileDeserializer;
     private static MetadataIndex metadataIndex;
 
@@ -76,7 +88,7 @@ public abstract class AbstractElementBuilderTest<VP extends CoreInstance, CE ext
         serializationDir = TMP.newFolder("files").toPath();
 
         ReferenceIdProviders referenceIds = ReferenceIdProviders.builder().withProcessorSupport(processorSupport).withAvailableExtensions().build();
-        FileSerializer fileSerializer = FileSerializer.builder()
+        fileSerializer = FileSerializer.builder()
                 .withFilePathProvider(FilePathProvider.builder().withLoadedExtensions().build())
                 .withSerializers(ConcreteElementSerializer.builder(processorSupport).withLoadedExtensions().withReferenceIdProviders(referenceIds).build(), ModuleMetadataSerializer.builder().withLoadedExtensions().build())
                 .build();
@@ -90,15 +102,20 @@ public abstract class AbstractElementBuilderTest<VP extends CoreInstance, CE ext
                 .serializeAll(serializationDir);
 
         metadataIndex = MetadataIndex.builder()
-                .withModules(runtime.getCodeStorage().getAllRepositories().collect(r -> fileDeserializer.deserializeModuleManifest(serializationDir, r.getName())))
+                .withModules(getModuleManifests())
                 .build();
+    }
+
+    private static RichIterable<ModuleManifest> getModuleManifests()
+    {
+        return runtime.getCodeStorage().getAllRepositories().collect(r -> fileDeserializer.deserializeModuleManifest(serializationDir, r.getName()));
     }
 
     @Before
     public void setUpElementBuilderAndLoader()
     {
         this.elementModelRepository = new ModelRepository();
-        this.elementBuilder = new ElementBuilderWrapper(newElementBuilder());
+        this.elementBuilder = new ElementBuilderWrapper(newElementBuilder(this.elementModelRepository));
         this.elementLoader = ElementLoader.builder()
                 .withMetadataIndex(metadataIndex)
                 .withElementBuilder(this.elementBuilder)
@@ -163,6 +180,82 @@ public abstract class AbstractElementBuilderTest<VP extends CoreInstance, CE ext
     public void testBuildTestModelPackage()
     {
         testVirtualPackage("test::model");
+    }
+
+    @Test
+    public void testVirtualPackageBackReferencesWithAnotherDefaultReferenceIdVersion()
+    {
+        // The files record reference id version 1, while this loader's default version is the test version
+        ElementLoader loader = ElementLoader.builder()
+                .withMetadataIndex(metadataIndex)
+                .withElementBuilder(newElementBuilder(new ModelRepository()))
+                .withReferenceIdExtension(new ReferenceIdExtensionV1())
+                .withReferenceIdExtension(new PrefixedReferenceIdExtension())
+                .withDefaultReferenceIdVersion(PrefixedReferenceIdExtension.VERSION)
+                .withFileDeserializer(fileDeserializer)
+                .withDirectory(serializationDir)
+                .build();
+
+        String path = "test::model";
+        Assert.assertEquals(path, getReferenceUsageSpecs(runtime.getCoreInstance(path)), getReferenceUsageSpecs(loader.loadElement(path)));
+    }
+
+    @Test
+    public void testVirtualPackageBackReferencesWithDifferentReferenceIdVersions() throws IOException
+    {
+        // Another module holds the same back references to the package as ref_test, but written with the test version
+        // of reference ids: the package gets them from both modules, each resolved with its own module's version
+        String path = "test::model";
+        String otherModule = "other_ref_test";
+        ElementBackReferenceMetadata version1BackRefs = fileDeserializer.deserializeModuleElementBackReferenceMetadata(serializationDir, "ref_test", path);
+        Assert.assertEquals(path, 1, version1BackRefs.getReferenceIdVersion());
+        ReferenceIdResolver version1Resolver = new ReferenceIdExtensionV1().newResolver(processorSupport::package_getByUserPath);
+        ReferenceIdProvider testVersionProvider = new PrefixedReferenceIdExtension().newProvider(processorSupport);
+        ElementBackReferenceMetadata.Builder testVersionBackRefs = ElementBackReferenceMetadata.builder(path).withReferenceIdVersion(PrefixedReferenceIdExtension.VERSION);
+        version1BackRefs.getInstanceBackReferenceMetadata().forEach(ibr -> testVersionBackRefs.withInstanceBackReferenceMetadata(
+                testVersionProvider.getReferenceId(version1Resolver.resolveReference(ibr.getInstanceReferenceId())),
+                ibr.getBackReferences().collect(br ->
+                {
+                    BackReference.ReferenceUsage refUsage = (BackReference.ReferenceUsage) br;
+                    String testVersionOwnerId = testVersionProvider.getReferenceId(version1Resolver.resolveReference(refUsage.getOwner()));
+                    return BackReference.newReferenceUsage(testVersionOwnerId, refUsage.getProperty(), refUsage.getOffset(), refUsage.getSourceInformation());
+                })));
+
+        Path otherDir = TMP.newFolder().toPath();
+        ModuleManifest otherManifest = ModuleManifest.builder(otherModule).withDependencies("platform", "ref_test").build();
+        fileSerializer.serializeModuleManifest(otherDir, otherManifest);
+        fileSerializer.serializeElementBackReferenceMetadata(otherDir, otherModule, testVersionBackRefs.build());
+
+        MutableList<String> expected = getReferenceUsageSpecs(runtime.getCoreInstance(path));
+        expected.addAll(expected.toList());
+        expected.sortThis();
+        try (URLClassLoader classLoader = new URLClassLoader(new URL[]{serializationDir.toUri().toURL(), otherDir.toUri().toURL()}, null))
+        {
+            for (int defaultVersion : new int[]{1, PrefixedReferenceIdExtension.VERSION})
+            {
+                ElementLoader loader = ElementLoader.builder()
+                        .withMetadataIndex(MetadataIndex.builder().withModules(getModuleManifests()).withModule(otherManifest).build())
+                        .withElementBuilder(newElementBuilder(new ModelRepository()))
+                        .withReferenceIdExtension(new ReferenceIdExtensionV1())
+                        .withReferenceIdExtension(new PrefixedReferenceIdExtension())
+                        .withDefaultReferenceIdVersion(defaultVersion)
+                        .withFileDeserializer(fileDeserializer)
+                        .withClassLoader(classLoader)
+                        .build();
+                Assert.assertEquals(path + " (default version " + defaultVersion + ")", expected, getReferenceUsageSpecs(loader.loadElement(path)));
+            }
+        }
+    }
+
+    private static MutableList<String> getReferenceUsageSpecs(CoreInstance element)
+    {
+        return element.getValueForMetaPropertyToMany(M3Properties.referenceUsages).collect(refUsage ->
+        {
+            CoreInstance owner = refUsage.getValueForMetaPropertyToOne(M3Properties.owner);
+            return "ReferenceUsage{owner=" + getUserPath(owner.getClassifier()) + " at " + owner.getSourceInformation().getMessage() +
+                    " property=" + PrimitiveUtilities.getStringValue(refUsage.getValueForMetaPropertyToOne(M3Properties.propertyName)) +
+                    " offset=" + refUsage.getValueForMetaPropertyToOne(M3Properties.offset).getName() + "}";
+        }, Lists.mutable.empty()).sortThis();
     }
 
     private void testConcretePackage(String path)
@@ -355,7 +448,7 @@ public abstract class AbstractElementBuilderTest<VP extends CoreInstance, CE ext
         testVirtualPackage(path, element);
     }
 
-    protected abstract ElementBuilder newElementBuilder();
+    protected abstract ElementBuilder newElementBuilder(ModelRepository repository);
 
     protected abstract Class<? extends VP> getExpectedVirtualPackageClass();
 
@@ -586,10 +679,10 @@ public abstract class AbstractElementBuilderTest<VP extends CoreInstance, CE ext
         }
 
         @Override
-        public CoreInstance buildVirtualPackage(VirtualPackageMetadata metadata, MetadataIndex index, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferenceProvider> backRefProviderDeserializer)
+        public CoreInstance buildVirtualPackage(VirtualPackageMetadata metadata, MetadataIndex index, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferencesByVersion> backRefDeserializer)
         {
             this.virtualPackages.add(metadata.getPath());
-            return this.delegate.buildVirtualPackage(metadata, index, referenceIds, backRefProviderDeserializer);
+            return this.delegate.buildVirtualPackage(metadata, index, referenceIds, backRefDeserializer);
         }
 
         @Override

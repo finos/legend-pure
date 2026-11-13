@@ -60,6 +60,7 @@ import org.finos.legend.pure.m3.serialization.compiler.element.InstanceData;
 import org.finos.legend.pure.m3.serialization.compiler.element.PropertyValues;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReference;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceProvider;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferencesByVersion;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ConcreteElementMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.MetadataIndex;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.VirtualPackageMetadata;
@@ -349,7 +350,7 @@ public class M3LazyCoreInstanceGenerator
         Class<? extends AbstractLazyCoreInstance> superClass = AbstractM3GeneratedLazyVirtualPackage.class;
 
         MutableList<Class<?>> additionalImports = Lists.mutable.with(
-                BackReferenceProvider.class,
+                BackReferencesByVersion.class,
                 MetadataIndex.class,
                 ReferenceIdResolvers.class,
                 Supplier.class,
@@ -498,9 +499,9 @@ public class M3LazyCoreInstanceGenerator
     private StringBuilder appendVirtualPackageConstructor(StringBuilder builder, String className)
     {
         return builder
-                .append("    public ").append(className).append("(ModelRepository repository, VirtualPackageMetadata metadata, MetadataIndex index, ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, PrimitiveValueResolver primitiveValueResolver, Supplier<? extends BackReferenceProvider> backRefProviderDeserializer)\n")
+                .append("    public ").append(className).append("(ModelRepository repository, VirtualPackageMetadata metadata, MetadataIndex index, ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, PrimitiveValueResolver primitiveValueResolver, Supplier<? extends BackReferencesByVersion> backRefDeserializer)\n")
                 .append("    {\n")
-                .append("        super(repository, metadata, elementBuilder, referenceIds, backRefProviderDeserializer);\n")
+                .append("        super(repository, metadata, elementBuilder, referenceIds, backRefDeserializer);\n")
                 .append("        this.state = new _State(getName(), metadata.getPath(), index, referenceIds, primitiveValueResolver);\n")
                 .append("    }\n");
     }
@@ -1522,7 +1523,7 @@ public class M3LazyCoreInstanceGenerator
     {
         return builder
                 .append("    @Override\n")
-                .append("    protected void initialize(ListIterable<? extends BackReference> backReferences, ReferenceIdResolvers referenceIds, ElementBuilder elementBuilder)\n")
+                .append("    protected void initialize(BackReferencesByVersion backReferences, ReferenceIdResolvers referenceIds, ElementBuilder elementBuilder)\n")
                 .append("    {\n")
                 .append("        _State current = this.state;\n")
                 .append("        this.state = new _State(current, backReferences, referenceIds, elementBuilder);\n")
@@ -1746,7 +1747,7 @@ public class M3LazyCoreInstanceGenerator
         });
         builder.append("        }\n");
         builder.append('\n');
-        builder.append("        private _State(_State init, ListIterable<? extends BackReference> backReferences, ReferenceIdResolvers referenceIds, ElementBuilder elementBuilder)\n");
+        builder.append("        private _State(_State init, BackReferencesByVersion backReferences, ReferenceIdResolvers referenceIds, ElementBuilder elementBuilder)\n");
         builder.append("        {\n");
         builder.append("            super(init);\n");
         if (simpleProperties.notEmpty())

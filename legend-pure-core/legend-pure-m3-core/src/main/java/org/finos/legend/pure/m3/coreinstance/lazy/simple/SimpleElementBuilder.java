@@ -25,6 +25,7 @@ import org.finos.legend.pure.m3.serialization.compiler.element.ElementLoader;
 import org.finos.legend.pure.m3.serialization.compiler.element.InstanceData;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReference;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceProvider;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferencesByVersion;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ConcreteElementMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.MetadataIndex;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.VirtualPackageMetadata;
@@ -64,10 +65,10 @@ public class SimpleElementBuilder implements ElementBuilder
     }
 
     @Override
-    public CoreInstance buildVirtualPackage(VirtualPackageMetadata metadata, MetadataIndex index, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferenceProvider> backRefProviderDeserializer)
+    public CoreInstance buildVirtualPackage(VirtualPackageMetadata metadata, MetadataIndex index, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferencesByVersion> backRefDeserializer)
     {
         LOGGER.debug("Building virtual package {}", metadata.getPath());
-        return new SimpleLazyVirtualPackage(this.repository, metadata, index, this, referenceIds, this.primitiveValueResolver, backRefProviderDeserializer);
+        return new SimpleLazyVirtualPackage(this.repository, metadata, index, this, referenceIds, this.primitiveValueResolver, backRefDeserializer);
     }
 
     @Override

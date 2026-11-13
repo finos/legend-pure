@@ -36,6 +36,7 @@ import org.finos.legend.pure.m3.serialization.compiler.file.FilePathProvider;
 import org.finos.legend.pure.m3.serialization.compiler.file.FileSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReference;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceProvider;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferencesByVersion;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ConcreteElementMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.MetadataIndex;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataGenerator;
@@ -461,7 +462,7 @@ public class TestElementLoader extends AbstractReferenceTest
         }
 
         @Override
-        public CoreInstance buildVirtualPackage(VirtualPackageMetadata metadata, MetadataIndex index, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferenceProvider> backRefProviderDeserializer)
+        public CoreInstance buildVirtualPackage(VirtualPackageMetadata metadata, MetadataIndex index, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferencesByVersion> backRefDeserializer)
         {
             this.virtualPackageCounter.incrementAndGet();
             return new VirtualPackageWrapper(metadata);

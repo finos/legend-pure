@@ -18,14 +18,15 @@ import org.finos.legend.pure.m3.coreinstance.lazy.generator.TestM3GeneratedLazyE
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.serialization.compiler.element.ElementBuilder;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 
 public class TestCompiledIncrementalCompilationElementBuilder extends TestM3GeneratedLazyElementBuilder
 {
     @Override
-    protected ElementBuilder newElementBuilder()
+    protected ElementBuilder newElementBuilder(ModelRepository repository)
     {
-        return CompiledIncrementalCompilationElementBuilder.newElementBuilder(Thread.currentThread().getContextClassLoader(), this.elementModelRepository);
+        return CompiledIncrementalCompilationElementBuilder.newElementBuilder(Thread.currentThread().getContextClassLoader(), repository);
     }
 
     @SuppressWarnings("unchecked")

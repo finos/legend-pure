@@ -28,6 +28,7 @@ import org.finos.legend.pure.m3.serialization.compiler.element.ValueOrReference;
 import org.finos.legend.pure.m3.serialization.compiler.element.ValueOrReferenceVisitor;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReference;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceConsumer;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferencesByVersion;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolver;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolvers;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -542,7 +543,7 @@ public class LazyCoreInstanceUtilities
     // Back references
 
     public static <FE extends CoreInstance, AE extends CoreInstance, P extends CoreInstance, QP extends CoreInstance, RU extends CoreInstance, G extends CoreInstance>
-    void collectBackReferences(ListIterable<? extends BackReference> backReferences,
+    void collectBackReferences(BackReferencesByVersion backReferences,
                                ReferenceIdResolvers referenceIds,
                                ElementBuilder elementBuilder,
                                Collection<? super Supplier<? extends FE>> applications,
@@ -552,7 +553,8 @@ public class LazyCoreInstanceUtilities
                                Collection<? super Supplier<? extends RU>> refUsages,
                                Collection<? super Supplier<? extends G>> specializations)
     {
-        collectBackReferences(backReferences, referenceIds.resolver(), null, elementBuilder, applications, modelElements, propertiesFromAssociations, qualifiedPropertiesFromAssociations, refUsages, specializations);
+        // Each version's back references are resolved with that version's resolver
+        backReferences.forEachVersion((versionBackReferences, version) -> collectBackReferences(versionBackReferences, referenceIds.resolver(version), null, elementBuilder, applications, modelElements, propertiesFromAssociations, qualifiedPropertiesFromAssociations, refUsages, specializations));
     }
 
     public static <FE extends CoreInstance, AE extends CoreInstance, P extends CoreInstance, QP extends CoreInstance, RU extends CoreInstance, G extends CoreInstance>

@@ -17,6 +17,7 @@ package org.finos.legend.pure.m3.coreinstance.lazy.generator;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.serialization.compiler.element.AbstractPackageableElementBuilderTest;
 import org.finos.legend.pure.m3.serialization.compiler.element.ElementBuilder;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.junit.Test;
 
 public class TestM3GeneratedLazyElementBuilder extends AbstractPackageableElementBuilderTest
@@ -57,9 +58,9 @@ public class TestM3GeneratedLazyElementBuilder extends AbstractPackageableElemen
     }
 
     @Override
-    protected ElementBuilder newElementBuilder()
+    protected ElementBuilder newElementBuilder(ModelRepository repository)
     {
-        return M3GeneratedLazyElementBuilder.newElementBuilder(Thread.currentThread().getContextClassLoader(), this.elementModelRepository);
+        return M3GeneratedLazyElementBuilder.newElementBuilder(Thread.currentThread().getContextClassLoader(), repository);
     }
 
     @Override

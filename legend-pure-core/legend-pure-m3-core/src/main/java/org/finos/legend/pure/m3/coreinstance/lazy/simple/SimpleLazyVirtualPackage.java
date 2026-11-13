@@ -26,8 +26,7 @@ import org.finos.legend.pure.m3.coreinstance.lazy.PropertyValue;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.serialization.compiler.element.ElementBuilder;
-import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReference;
-import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceProvider;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferencesByVersion;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.MetadataIndex;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.VirtualPackageMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolvers;
@@ -44,9 +43,9 @@ class SimpleLazyVirtualPackage extends AbstractLazyVirtualPackage implements Cor
 {
     private volatile SimpleLazyCoreInstanceState state;
 
-    protected SimpleLazyVirtualPackage(ModelRepository repository, VirtualPackageMetadata metadata, MetadataIndex index, ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, PrimitiveValueResolver primitiveValueResolver, Supplier<? extends BackReferenceProvider> backRefProviderDeserializer)
+    protected SimpleLazyVirtualPackage(ModelRepository repository, VirtualPackageMetadata metadata, MetadataIndex index, ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, PrimitiveValueResolver primitiveValueResolver, Supplier<? extends BackReferencesByVersion> backRefDeserializer)
     {
-        super(repository, repository.nextId(), metadata, elementBuilder, referenceIds, backRefProviderDeserializer);
+        super(repository, repository.nextId(), metadata, elementBuilder, referenceIds, backRefDeserializer);
         this.state = new SimpleLazyCoreInstanceState();
         this.state.setCompileStatesFrom(CompileStateSet.PROCESSED_VALIDATED);
         this.state.setKeyValue(M3PropertyPaths.name, OneValue.fromSupplier(() -> (CoreInstance) primitiveValueResolver.resolveString(getName())));
@@ -154,7 +153,7 @@ class SimpleLazyVirtualPackage extends AbstractLazyVirtualPackage implements Cor
     }
 
     @Override
-    protected void initialize(ListIterable<? extends BackReference> backReferences, ReferenceIdResolvers referenceIds, ElementBuilder elementBuilder)
+    protected void initialize(BackReferencesByVersion backReferences, ReferenceIdResolvers referenceIds, ElementBuilder elementBuilder)
     {
         MutableList<Supplier<? extends CoreInstance>> applications = Lists.mutable.empty();
         MutableList<Supplier<? extends CoreInstance>> modelElements = Lists.mutable.empty();
