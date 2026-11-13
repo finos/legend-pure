@@ -25,6 +25,7 @@ import org.finos.legend.pure.m3.serialization.compiler.element.ElementBuilder;
 import org.finos.legend.pure.m3.serialization.compiler.element.InstanceData;
 import org.finos.legend.pure.m3.serialization.compiler.element.PropertyValues;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReference;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferencesByVersion;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.MetadataIndex;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.PackageableElementMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolver;
@@ -475,7 +476,7 @@ public abstract class AbstractLazyCoreInstance extends AbstractCoreInstance impl
     }
 
     protected static <FE extends CoreInstance, AE extends CoreInstance, P extends CoreInstance, QP extends CoreInstance, RU extends CoreInstance, G extends CoreInstance>
-    void collectBackReferences(ListIterable<? extends BackReference> backReferences,
+    void collectBackReferences(BackReferencesByVersion backReferences,
                                ReferenceIdResolvers referenceIds,
                                ElementBuilder elementBuilder,
                                Collection<? super Supplier<? extends FE>> applications,

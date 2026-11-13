@@ -21,6 +21,7 @@ import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.serialization.compiler.element.AbstractElementBuilderTest;
 import org.finos.legend.pure.m3.serialization.compiler.element.ElementBuilder;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.Assert;
 import org.junit.Test;
@@ -63,9 +64,9 @@ public class TestSimpleElementBuilder extends AbstractElementBuilderTest<SimpleL
     }
 
     @Override
-    protected ElementBuilder newElementBuilder()
+    protected ElementBuilder newElementBuilder(ModelRepository repository)
     {
-        return SimpleElementBuilder.newElementBuilder(this.elementModelRepository);
+        return SimpleElementBuilder.newElementBuilder(repository);
     }
 
     @Override

@@ -14,10 +14,8 @@
 
 package org.finos.legend.pure.m3.coreinstance.lazy;
 
-import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.serialization.compiler.element.ElementBuilder;
-import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReference;
-import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceProvider;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferencesByVersion;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.VirtualPackageMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolvers;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -34,11 +32,11 @@ public abstract class AbstractLazyVirtualPackage extends AbstractLazyCoreInstanc
     protected final String path;
     private volatile Init init;
 
-    protected AbstractLazyVirtualPackage(ModelRepository repository, int internalSyntheticId, VirtualPackageMetadata metadata, ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferenceProvider> backRefProviderDeserializer)
+    protected AbstractLazyVirtualPackage(ModelRepository repository, int internalSyntheticId, VirtualPackageMetadata metadata, ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferencesByVersion> backRefDeserializer)
     {
         super(repository, internalSyntheticId, getNameFromPath(metadata.getPath()), null, CompileStateSet.PROCESSED_VALIDATED.toBitSet(), metadata.getClassifierPath(), referenceIds);
         this.path = metadata.getPath();
-        this.init = new Init(elementBuilder, referenceIds, backRefProviderDeserializer);
+        this.init = new Init(elementBuilder, referenceIds, backRefDeserializer);
     }
 
     protected AbstractLazyVirtualPackage(AbstractLazyVirtualPackage source)
@@ -68,8 +66,7 @@ public abstract class AbstractLazyVirtualPackage extends AbstractLazyCoreInstanc
                     LOGGER.debug("Initializing {}", this.path);
                     try
                     {
-                        BackReferenceProvider backReferenceProvider = local.backRefProviderDeserializer.get();
-                        initialize(backReferenceProvider.getBackReferences(this.path), local.referenceIds, local.elementBuilder);
+                        initialize(local.backRefDeserializer.get(), local.referenceIds, local.elementBuilder);
                         this.init = null;
                     }
                     catch (Throwable t)
@@ -87,19 +84,26 @@ public abstract class AbstractLazyVirtualPackage extends AbstractLazyCoreInstanc
         }
     }
 
-    protected abstract void initialize(ListIterable<? extends BackReference> backReferences, ReferenceIdResolvers referenceIds, ElementBuilder elementBuilder);
+    /**
+     * Initialize the package's back references.
+     *
+     * @param backReferences the package's back references, by the reference id version they must be resolved with
+     * @param referenceIds   reference id resolvers
+     * @param elementBuilder element builder
+     */
+    protected abstract void initialize(BackReferencesByVersion backReferences, ReferenceIdResolvers referenceIds, ElementBuilder elementBuilder);
 
     private static class Init
     {
         private final ElementBuilder elementBuilder;
         private final ReferenceIdResolvers referenceIds;
-        private final Supplier<? extends BackReferenceProvider> backRefProviderDeserializer;
+        private final Supplier<? extends BackReferencesByVersion> backRefDeserializer;
 
-        private Init(ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferenceProvider> backRefProviderDeserializer)
+        private Init(ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferencesByVersion> backRefDeserializer)
         {
             this.elementBuilder = elementBuilder;
             this.referenceIds = referenceIds;
-            this.backRefProviderDeserializer = backRefProviderDeserializer;
+            this.backRefDeserializer = backRefDeserializer;
         }
     }
 }

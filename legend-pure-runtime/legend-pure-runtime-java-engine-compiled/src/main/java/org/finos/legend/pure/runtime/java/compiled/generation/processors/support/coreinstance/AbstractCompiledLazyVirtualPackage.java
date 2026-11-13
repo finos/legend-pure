@@ -17,7 +17,7 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.suppor
 import org.finos.legend.pure.m3.coreinstance.lazy.AbstractLazyVirtualPackage;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.serialization.compiler.element.ElementBuilder;
-import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceProvider;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferencesByVersion;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.VirtualPackageMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolvers;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -28,14 +28,14 @@ import java.util.function.Supplier;
 
 public abstract class AbstractCompiledLazyVirtualPackage extends AbstractLazyVirtualPackage implements JavaCompiledCoreInstance
 {
-    protected AbstractCompiledLazyVirtualPackage(ModelRepository repository, VirtualPackageMetadata metadata, ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferenceProvider> backRefProviderDeserializer)
+    protected AbstractCompiledLazyVirtualPackage(ModelRepository repository, VirtualPackageMetadata metadata, ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferencesByVersion> backRefDeserializer)
     {
-        super(repository, (repository == null) ? -1 : repository.nextId(), metadata, elementBuilder, referenceIds, backRefProviderDeserializer);
+        super(repository, (repository == null) ? -1 : repository.nextId(), metadata, elementBuilder, referenceIds, backRefDeserializer);
     }
 
-    protected AbstractCompiledLazyVirtualPackage(VirtualPackageMetadata metadata, ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferenceProvider> backRefProviderDeserializer)
+    protected AbstractCompiledLazyVirtualPackage(VirtualPackageMetadata metadata, ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferencesByVersion> backRefDeserializer)
     {
-        this(null, metadata, elementBuilder, referenceIds, backRefProviderDeserializer);
+        this(null, metadata, elementBuilder, referenceIds, backRefDeserializer);
     }
 
     protected AbstractCompiledLazyVirtualPackage(AbstractCompiledLazyVirtualPackage source)

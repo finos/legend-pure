@@ -27,6 +27,7 @@ import org.finos.legend.pure.m3.serialization.compiler.element.ElementLoader;
 import org.finos.legend.pure.m3.serialization.compiler.element.InstanceData;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReference;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceProvider;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferencesByVersion;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ConcreteElementMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.MetadataIndex;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.VirtualPackageMetadata;
@@ -76,13 +77,13 @@ public class M3GeneratedLazyElementBuilder implements ElementBuilder
     }
 
     @Override
-    public CoreInstance buildVirtualPackage(VirtualPackageMetadata metadata, MetadataIndex index, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferenceProvider> backRefProviderDeserializer)
+    public CoreInstance buildVirtualPackage(VirtualPackageMetadata metadata, MetadataIndex index, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferencesByVersion> backRefDeserializer)
     {
         LOGGER.debug("Building virtual package {}", metadata.getPath());
         try
         {
             Constructor<? extends CoreInstance> constructor = getVirtualPackageConstructorFromCache();
-            return constructor.newInstance(this.repository, metadata, index, this, referenceIds, this.primitiveValueResolver, backRefProviderDeserializer);
+            return constructor.newInstance(this.repository, metadata, index, this, referenceIds, this.primitiveValueResolver, backRefDeserializer);
         }
         catch (Exception e)
         {

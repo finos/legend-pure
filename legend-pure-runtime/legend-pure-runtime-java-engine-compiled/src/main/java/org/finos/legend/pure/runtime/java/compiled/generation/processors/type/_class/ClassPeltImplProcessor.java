@@ -50,6 +50,7 @@ import org.finos.legend.pure.m3.serialization.compiler.element.InstanceData;
 import org.finos.legend.pure.m3.serialization.compiler.element.PropertyValues;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReference;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceProvider;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferencesByVersion;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ConcreteElementMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.MetadataIndex;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.VirtualPackageMetadata;
@@ -296,8 +297,7 @@ public class ClassPeltImplProcessor
         processorContext.setClassImplSuffix(CLASS_VIRTUAL_PACKAGE_SUFFIX);
 
         MutableList<Class<?>> additionalImports = Lists.mutable.with(
-                BackReference.class,
-                BackReferenceProvider.class,
+                BackReferencesByVersion.class,
                 ElementBuilder.class,
                 MetadataIndex.class,
                 ReferenceIdResolvers.class,
@@ -491,9 +491,9 @@ public class ClassPeltImplProcessor
 
     private static StringBuilder appendVirtualPackageConstructor(StringBuilder builder, String className)
     {
-        builder.append("    public ").append(className).append("(ModelRepository repository, VirtualPackageMetadata metadata, MetadataIndex index, ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferenceProvider> backRefProviderDeserializer)\n");
+        builder.append("    public ").append(className).append("(ModelRepository repository, VirtualPackageMetadata metadata, MetadataIndex index, ElementBuilder elementBuilder, ReferenceIdResolvers referenceIds, Supplier<? extends BackReferencesByVersion> backRefDeserializer)\n");
         builder.append("    {\n");
-        builder.append("        super(repository, metadata, elementBuilder, referenceIds, backRefProviderDeserializer);\n");
+        builder.append("        super(repository, metadata, elementBuilder, referenceIds, backRefDeserializer);\n");
         builder.append("        this._package = computePackage(metadata.getPath(), referenceIds);\n");
         builder.append("        this._children = computePackageChildren(metadata.getPath(), index, referenceIds);\n");
         builder.append("    }\n");
@@ -1146,7 +1146,7 @@ public class ClassPeltImplProcessor
     private static void appendVirtualPackageInitialize(StringBuilder builder, ListIterable<PropertyInfo> simpleProperties)
     {
         builder.append("    @Override\n")
-                .append("    protected void initialize(ListIterable<? extends BackReference> backReferences, ReferenceIdResolvers referenceIds, ElementBuilder elementBuilder)\n")
+                .append("    protected void initialize(BackReferencesByVersion backReferences, ReferenceIdResolvers referenceIds, ElementBuilder elementBuilder)\n")
                 .append("    {\n");
         MutableSet<String> backRefProperties = Sets.mutable.empty();
         simpleProperties.forEach(propertyInfo ->

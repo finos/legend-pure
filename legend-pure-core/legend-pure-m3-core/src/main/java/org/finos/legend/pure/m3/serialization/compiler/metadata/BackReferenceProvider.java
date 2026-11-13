@@ -18,5 +18,11 @@ import org.eclipse.collections.api.list.ListIterable;
 
 public interface BackReferenceProvider
 {
+    /**
+     * Get the back references for an instance, from all the files that hold them.
+     *
+     * @param instanceId reference id of the instance
+     * @return back references for the instance
+     */
     ListIterable<? extends BackReference> getBackReferences(String instanceId);
 }

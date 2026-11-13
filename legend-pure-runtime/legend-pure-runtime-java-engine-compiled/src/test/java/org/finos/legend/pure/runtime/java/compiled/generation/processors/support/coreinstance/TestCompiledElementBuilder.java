@@ -19,6 +19,7 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.serialization.compiler.element.AbstractPackageableElementBuilderTest;
 import org.finos.legend.pure.m3.serialization.compiler.element.ElementBuilder;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledProcessorSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
@@ -83,7 +84,7 @@ public class TestCompiledElementBuilder extends AbstractPackageableElementBuilde
     }
 
     @Override
-    protected ElementBuilder newElementBuilder()
+    protected ElementBuilder newElementBuilder(ModelRepository repository)
     {
         return CompiledElementBuilder.newElementBuilder(Thread.currentThread().getContextClassLoader());
     }
