@@ -136,9 +136,11 @@ faster startup.
 **Entry point:** `PureCompilerBinaryGenerator.serializeModules()`
 **Maven goal:** `compile-pure` (`legend-pure-maven-compiler`)
 
-A newer binary format that writes one file per `CoreInstance` element, plus module
-manifests and metadata indexes. Consumed by `PureCompilerLoader` for the next
-generation of binary loading. Coexists with PAR files during the migration period.
+A newer binary format — **PELT** (Pure Element) — that writes one file per packageable
+element, plus module manifests and metadata indexes. Consumed by `PureCompilerLoader`
+(interpreted engine) and `MetadataPelt` (compiled engine). Coexists with PAR files
+during the migration period. Format and loading machinery:
+[PELT Serialization](pelt-serialization.md).
 
 ---
 
