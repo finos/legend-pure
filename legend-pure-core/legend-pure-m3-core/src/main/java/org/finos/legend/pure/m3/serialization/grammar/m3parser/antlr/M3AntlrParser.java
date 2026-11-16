@@ -19,6 +19,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
@@ -119,8 +120,10 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.proper
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
@@ -434,36 +437,80 @@ public class M3AntlrParser implements Parser
         {
             return PackageableElement.getUserPathForPackageableElement(ci);
         }
-        return "^" + PackageableElement.getUserPathForPackageableElement(ci.getClassifier()) + (ci.getSourceInformation() == null ? "" : " " + ci.getSourceInformation().toM4String() + " ") + "(" + ci.getKeys().collect(s -> s + "=" + ci.getValueForMetaPropertyToMany(s).collect(coreInstance ->
+        if (_RelationType.isRelationType(ci, processorSupport))
         {
-            if (Instance.instanceOf(coreInstance, M3Paths.PackageableElement, processorSupport) &&
-                    !Instance.instanceOf(coreInstance, M3Paths.FunctionType, processorSupport) &&
-                    !Instance.instanceOf(coreInstance, M3Paths.Function, processorSupport))
+            return processRelationType(ci, processorSupport);
+        }
+        return processInstance(ci, key -> processProperty(ci, key, processorSupport));
+    }
+
+    private static String processInstance(CoreInstance ci, Function<String, String> processProperty)
+    {
+        return "^" + PackageableElement.getUserPathForPackageableElement(ci.getClassifier()) + processSourceInformation(ci) + "(" + ci.getKeys().collect(processProperty).makeString(",") + ")";
+    }
+
+    private static String processSourceInformation(CoreInstance ci)
+    {
+        return ci.getSourceInformation() == null ? "" : " " + ci.getSourceInformation().toM4String() + " ";
+    }
+
+    private static String processProperty(CoreInstance ci, String key, ProcessorSupport processorSupport)
+    {
+        return key + "=" + ci.getValueForMetaPropertyToMany(key).collect(value -> processValue(value, processorSupport));
+    }
+
+    private static String processValue(CoreInstance coreInstance, ProcessorSupport processorSupport)
+    {
+        if (Instance.instanceOf(coreInstance, M3Paths.PackageableElement, processorSupport) &&
+                !Instance.instanceOf(coreInstance, M3Paths.FunctionType, processorSupport) &&
+                !Instance.instanceOf(coreInstance, M3Paths.Function, processorSupport))
+        {
+            return PackageableElement.getUserPathForPackageableElement(coreInstance);
+        }
+        if (Instance.instanceOf(coreInstance.getClassifier(), M3Paths.PrimitiveType, processorSupport))
+        {
+            if (Instance.instanceOf(coreInstance, M3Paths.String, processorSupport))
             {
-                return PackageableElement.getUserPathForPackageableElement(coreInstance);
+                return "'" + coreInstance.getName() + "'";
             }
-            if (Instance.instanceOf(coreInstance.getClassifier(), M3Paths.PrimitiveType, processorSupport))
+            if (Instance.instanceOf(coreInstance, M3Paths.LatestDate, processorSupport))
             {
-                if (Instance.instanceOf(coreInstance, M3Paths.String, processorSupport))
-                {
-                    return "'" + coreInstance.getName() + "'";
-                }
-                if (Instance.instanceOf(coreInstance, M3Paths.LatestDate, processorSupport))
-                {
-                    return "%latest";
-                }
-                if (Instance.instanceOf(coreInstance, M3Paths.Date, processorSupport))
-                {
-                    return "%" + coreInstance.getName();
-                }
-                if (Instance.instanceOf(coreInstance, M3Paths.StrictTime, processorSupport))
-                {
-                    return "%" + coreInstance.getName();
-                }
-                return coreInstance.getName();
+                return "%latest";
             }
-            return process(coreInstance, processorSupport);
-        })).makeString(",") + ")";
+            if (Instance.instanceOf(coreInstance, M3Paths.Date, processorSupport))
+            {
+                return "%" + coreInstance.getName();
+            }
+            if (Instance.instanceOf(coreInstance, M3Paths.StrictTime, processorSupport))
+            {
+                return "%" + coreInstance.getName();
+            }
+            return coreInstance.getName();
+        }
+        return process(coreInstance, processorSupport);
+    }
+
+    // A RelationType refers back to itself from its classifierGenericType, its generalizations and each column's source
+    // type argument, none of which M4 can express. Only the columns are written, with an empty source type argument;
+    // AntlrContextToM3CoreInstance.instanceParser restores the back-references when the M4 is parsed.
+    private static String processRelationType(CoreInstance relationType, ProcessorSupport processorSupport)
+    {
+        return "^" + M3Paths.RelationType + processSourceInformation(relationType) +
+                "(" + M3Properties.columns + "=" + relationType.getValueForMetaPropertyToMany(M3Properties.columns).collect(column -> processColumn(column, processorSupport)) + ")";
+    }
+
+    private static String processColumn(CoreInstance column, ProcessorSupport processorSupport)
+    {
+        return processInstance(column, key -> M3Properties.classifierGenericType.equals(key) ?
+                key + "=" + processColumnGenericTypeWithoutSource(column.getValueForMetaPropertyToOne(key), processorSupport) :
+                processProperty(column, key, processorSupport));
+    }
+
+    private static String processColumnGenericTypeWithoutSource(CoreInstance columnGenericType, ProcessorSupport processorSupport)
+    {
+        return processInstance(columnGenericType, key -> M3Properties.typeArguments.equals(key) ?
+                key + "=" + Lists.mutable.with("^" + M3Paths.GenericType + "()").withAll(columnGenericType.getValueForMetaPropertyToMany(key).drop(1).collect(typeArgument -> processValue(typeArgument, processorSupport))) :
+                processProperty(columnGenericType, key, processorSupport));
     }
 
     @Override

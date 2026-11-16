@@ -1344,6 +1344,12 @@ public class AntlrContextToM3CoreInstance
         {
             Instance.setValuesForProperty(instance, propertyName, propertyValues.get(propertyName), this.processorSupport);
         }
+        if ((instance instanceof RelationType) && (((RelationType<?>) instance)._classifierGenericType() == null))
+        {
+            // Written by M3AntlrParser.process, which leaves out the RelationType's references back to itself
+            RelationType<?> relationType = (RelationType<?>) instance;
+            _RelationType.bindColumns(relationType, relationType._columns().toList(), sourceInfo, this.processorSupport);
+        }
         return instance;
     }
 

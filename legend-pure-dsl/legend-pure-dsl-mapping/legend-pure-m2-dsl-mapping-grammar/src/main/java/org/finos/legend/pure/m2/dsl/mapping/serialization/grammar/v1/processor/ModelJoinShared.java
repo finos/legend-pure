@@ -34,6 +34,10 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportG
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.KeyExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.AggColSpec;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.AggColSpecArray;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.FuncColSpec;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.FuncColSpecArray;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
@@ -118,31 +122,8 @@ public final class ModelJoinShared
         {
             return node;
         }
-        Iterable<? extends CoreInstance> children;
-        ImmutableSet<String> childBoundNames = boundNames;
-        if (node instanceof FunctionExpression)
-        {
-            children = ((FunctionExpression) node)._parametersValues();
-        }
-        else if (node instanceof InstanceValue)
-        {
-            children = ((InstanceValue) node)._valuesCoreInstance();
-        }
-        else if (node instanceof KeyExpression)
-        {
-            // The key is just the property name; only the value can hold variables or calls.
-            children = Lists.immutable.with(((KeyExpression) node)._expression());
-        }
-        else if (node instanceof LambdaFunction)
-        {
-            children = ((LambdaFunction<?>) node)._expressionSequence();
-            childBoundNames = boundNames.newWithAll(lambdaParamNames((LambdaFunction<?>) node));
-        }
-        else
-        {
-            return null;
-        }
-        for (CoreInstance child : children)
+        ImmutableSet<String> childBoundNames = boundNamesWithin(node, boundNames);
+        for (CoreInstance child : children(node))
         {
             CoreInstance found = findFirst(child, childBoundNames, test);
             if (found != null)
@@ -151,6 +132,54 @@ public final class ModelJoinShared
             }
         }
         return null;
+    }
+
+    /**
+     * The children {@link #findFirst} searches: a function expression's parameters, an instance value's values, the
+     * value of a {@code ^Class(key=value)} key expression and a lambda's body.
+     */
+    static Iterable<? extends CoreInstance> children(CoreInstance node)
+    {
+        if (node instanceof FunctionExpression)
+        {
+            return ((FunctionExpression) node)._parametersValues();
+        }
+        if (node instanceof InstanceValue)
+        {
+            return ((InstanceValue) node)._valuesCoreInstance();
+        }
+        if (node instanceof KeyExpression)
+        {
+            // The key is just the property name; only the value can hold variables or calls.
+            return Lists.immutable.with(((KeyExpression) node)._expression());
+        }
+        if (node instanceof LambdaFunction)
+        {
+            return ((LambdaFunction<?>) node)._expressionSequence();
+        }
+        if (node instanceof FuncColSpec)
+        {
+            return Lists.immutable.with(((FuncColSpec<?, ?>) node)._function());
+        }
+        if (node instanceof FuncColSpecArray)
+        {
+            return ((FuncColSpecArray<?, ?>) node)._funcSpecs();
+        }
+        if (node instanceof AggColSpec)
+        {
+            return Lists.immutable.with(((AggColSpec<?, ?, ?>) node)._map(), ((AggColSpec<?, ?, ?>) node)._reduce());
+        }
+        if (node instanceof AggColSpecArray)
+        {
+            return ((AggColSpecArray<?, ?, ?>) node)._aggSpecs();
+        }
+        return Lists.immutable.empty();
+    }
+
+    // The names bound in the children of `node`: those bound at `node`, plus its own parameters if it is a lambda.
+    static ImmutableSet<String> boundNamesWithin(CoreInstance node, ImmutableSet<String> boundNames)
+    {
+        return (node instanceof LambdaFunction) ? boundNames.newWithAll(lambdaParamNames((LambdaFunction<?>) node)) : boundNames;
     }
 
     // A lambda's FunctionType is anonymous, never behind an ImportStub.

@@ -19,6 +19,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingProperties;
@@ -41,6 +42,8 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.Relation
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.RelationFunctionPropertyMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
@@ -72,6 +75,9 @@ public class RelationFunctionInstanceSetImplementationProcessor extends Processo
 {
     private static final String RELATION_FUNCTIONS_PACKAGE = "meta::pure::functions::relation";
     private static final String JOIN_KIND = RELATION_FUNCTIONS_PACKAGE + "::JoinKind";
+    // Steps that keep every source row exactly once, so a join chain after them can still be matched to the mapped row.
+    private static final ImmutableSet<String> JOIN_SOURCE_STEPS = Sets.immutable.with("extend", "filter", "select", "rename", "sort");
+    private static final String JOIN_SOURCE_STEPS_TEXT = "extend, filter, select, rename or sort";
 
     @Override
     public void process(RelationFunctionInstanceSetImplementation instance, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
@@ -553,65 +559,129 @@ public class RelationFunctionInstanceSetImplementationProcessor extends Processo
     }
 
     /**
-     * Validates where navigationJoin/filterJoin and {@code $src} appear in a property's value expression, and
-     * returns the join chain (outermost call first) so its JoinKinds can be checked once matched. The only
-     * supported shapes are a chain as the entire value expression, or a chain followed by a single column
-     * access; the chain's innermost source must be {@code $src}, {@code $src} may appear nowhere else, and
-     * {@code $row} may appear in none of the joins' arguments (their join conditions included).
+     * Validates where navigationJoin/filterJoin and {@code $src} appear in a property's value expression, types the
+     * column access on each join chain, and returns every join call (outermost call of each chain first) so their
+     * JoinKinds can be checked once matched. A chain is either the entire value expression, or followed by a column
+     * access anywhere in it (e.g. {@code if($src->navigationJoin(...).COLUMN == 'Y', |true, |false)}). A chain's
+     * innermost source must be {@code $src}, optionally transformed by extend, filter, select, rename or sort (whose
+     * lambdas may use neither {@code $row}, {@code $src} nor a join chain). {@code $src} may appear nowhere else, a
+     * chain may not be used in another join's arguments, and {@code $row} may appear in none of the joins' arguments
+     * (their join conditions included).
      */
     private ListIterable<SimpleFunctionExpression> preResolveNavigationFilterJoinUsage(LambdaFunction<?> valueFn, Matcher matcher, ProcessorState state, ProcessorSupport processorSupport)
     {
-        SimpleFunctionExpression chainHead = null;
-        SimpleFunctionExpression columnAccess = null;
         ListIterable<? extends ValueSpecification> body = ListHelper.wrapListIterable(valueFn._expressionSequence());
-        if (body.size() == 1)
+        JoinUsages usages = new JoinUsages(body.size() == 1 ? body.get(0) : null, processorSupport);
+        body.forEach(expression -> usages.collect(expression, Sets.immutable.empty(), false));
+        // Every join call is in a chain by now, whatever the value's shape.
+        usages.joinCalls.forEach(RelationFunctionInstanceSetImplementationProcessor::rejectRowVariable);
+
+        usages.columnAccesses.forEach(columnAccess ->
         {
-            ValueSpecification topLevel = body.get(0);
-
-            if (topLevel instanceof SimpleFunctionExpression && isNavigationOrFilterJoinCall((SimpleFunctionExpression) topLevel, processorSupport))
-            {
-                chainHead = (SimpleFunctionExpression) topLevel;
-            }
-            else if (topLevel instanceof SimpleFunctionExpression && ((SimpleFunctionExpression) topLevel)._propertyName() != null)
-            {
-                SimpleFunctionExpression propertyAccess = (SimpleFunctionExpression) topLevel;
-                ListIterable<? extends ValueSpecification> params = ListHelper.wrapListIterable(propertyAccess._parametersValues());
-                ValueSpecification source = params.isEmpty() ? null : params.get(0);
-                if (source instanceof SimpleFunctionExpression && isNavigationOrFilterJoinCall((SimpleFunctionExpression) source, processorSupport))
-                {
-                    chainHead = (SimpleFunctionExpression) source;
-                    columnAccess = propertyAccess;
-                }
-                else if (isSrcVariable(source))
-                {
-                    String propertyName = ImportStub.withImportStubByPass(propertyAccess._propertyName()._valuesCoreInstance().getAny(), processorSupport).getName();
-                    throw new PureCompilationException(source.getSourceInformation(), "Can't find the property '" + propertyName + "' in the class " + M3Paths.Relation + "; use $row." + propertyName + " to access a column of the mapped row.");
-                }
-            }
-        }
-
-        MutableList<SimpleFunctionExpression> joinChain = Lists.mutable.empty();
-        VariableExpression chainSource = chainHead == null ? null : collectJoinChain(chainHead, joinChain, processorSupport);
-        rejectMisplacedJoinUsage(valueFn, joinChain, chainSource, processorSupport);
-        // Every join call is in the chain by now, whatever the value's shape.
-        joinChain.forEach(RelationFunctionInstanceSetImplementationProcessor::rejectRowVariable);
-
-        if (columnAccess != null)
-        {
+            SimpleFunctionExpression chainHead = (SimpleFunctionExpression) columnAccess._parametersValues().getFirst();
+            state.addJoinResultColumnAccess(columnAccess);
             matcher.fullMatch(chainHead, state);
-
             CoreInstance rowRawType = ImportStub.withImportStubByPass(chainHead._genericType()._typeArguments().getFirst()._rawTypeCoreInstance(), processorSupport);
             if (rowRawType instanceof RelationType)
             {
-                String propertyName = ImportStub.withImportStubByPass(columnAccess._propertyName()._valuesCoreInstance().getAny(), processorSupport).getName();
-                columnAccess._funcCoreInstance(_RelationType.findColumn((RelationType<?>) rowRawType, propertyName, columnAccess.getSourceInformation(), processorSupport));
+                columnAccess._funcCoreInstance(_RelationType.findColumn((RelationType<?>) rowRawType, propertyName(columnAccess, processorSupport), columnAccess.getSourceInformation(), processorSupport));
             }
-        }
-        return joinChain;
+        });
+        return usages.joinCalls;
     }
 
-    // Collects the chain from `call` down through each join's source, and returns the `$src` at its root.
-    private static VariableExpression collectJoinChain(SimpleFunctionExpression call, MutableList<SimpleFunctionExpression> chain, ProcessorSupport processorSupport)
+    private static final class JoinUsages
+    {
+        private final ValueSpecification wholeValue;
+        private final ProcessorSupport processorSupport;
+        private final MutableList<SimpleFunctionExpression> joinCalls = Lists.mutable.empty();
+        private final MutableList<SimpleFunctionExpression> columnAccesses = Lists.mutable.empty();
+
+        private JoinUsages(ValueSpecification wholeValue, ProcessorSupport processorSupport)
+        {
+            this.wholeValue = wholeValue;
+            this.processorSupport = processorSupport;
+        }
+
+        // A single depth-first walk over the value expression. A nested lambda's own {src | ...} is bound within
+        // it, so isn't mistaken for the relation-level $src.
+        private void collect(CoreInstance node, ImmutableSet<String> boundNames, boolean inJoinArguments)
+        {
+            if (isSrcVariable(node) && !boundNames.contains("src"))
+            {
+                throw new PureCompilationException(node.getSourceInformation(), "$src is the whole source relation and may only be used as the source of navigationJoin/filterJoin, optionally after " + JOIN_SOURCE_STEPS_TEXT + " (e.g. $src->navigationJoin(...).COLUMN); use $row to access the columns of the mapped row.");
+            }
+            if (node instanceof SimpleFunctionExpression)
+            {
+                SimpleFunctionExpression call = (SimpleFunctionExpression) node;
+                if (isNavigationOrFilterJoinCall(call, this.processorSupport))
+                {
+                    if (!inJoinArguments && call != this.wholeValue)
+                    {
+                        String functionName = joinFunctionName(call);
+                        throw new PureCompilationException(call.getSourceInformation(), "'" + functionName
+                                + "' may only be used as the property's entire value expression, or followed by a column access (e.g. $src->" + functionName + "(...).COLUMN).");
+                    }
+                    collectChain(call, boundNames, inJoinArguments);
+                    return;
+                }
+                if (!inJoinArguments && !boundNames.contains("src") && isJoinSourceStepCall(call, this.processorSupport) && stepsRootAtSrc(call, this.processorSupport))
+                {
+                    throw new PureCompilationException(call.getSourceInformation(), "'" + joinFunctionName(call) + "' applied to $src must lead into navigationJoin/filterJoin (e.g. $src->"
+                            + joinFunctionName(call) + "(...)->navigationJoin(...).COLUMN); use $row to access the columns of the mapped row.");
+                }
+                ValueSpecification source = (call._propertyName() == null) ? null : call._parametersValues().getFirst();
+                if (source instanceof SimpleFunctionExpression && isNavigationOrFilterJoinCall((SimpleFunctionExpression) source, this.processorSupport))
+                {
+                    collectChain((SimpleFunctionExpression) source, boundNames, inJoinArguments);
+                    this.columnAccesses.add(call);
+                    return;
+                }
+                if (isSrcVariable(source) && !boundNames.contains("src"))
+                {
+                    String propertyName = propertyName(call, this.processorSupport);
+                    throw new PureCompilationException(source.getSourceInformation(), "Can't find the property '" + propertyName + "' in the class " + M3Paths.Relation + "; use $row." + propertyName + " to access a column of the mapped row.");
+                }
+            }
+            ImmutableSet<String> childBoundNames = ModelJoinShared.boundNamesWithin(node, boundNames);
+            ModelJoinShared.children(node).forEach(child -> collect(child, childBoundNames, inJoinArguments));
+        }
+
+        private void collectChain(SimpleFunctionExpression chainHead, ImmutableSet<String> boundNames, boolean inJoinArguments)
+        {
+            if (inJoinArguments)
+            {
+                String functionName = joinFunctionName(chainHead);
+                throw new PureCompilationException(chainHead.getSourceInformation(), "'" + functionName
+                        + "' may not be used in the arguments of another navigationJoin/filterJoin; chain the joins instead (e.g. $src->navigationJoin(...)->" + functionName + "(...).COLUMN).");
+            }
+            MutableList<SimpleFunctionExpression> chain = Lists.mutable.empty();
+            MutableList<SimpleFunctionExpression> steps = Lists.mutable.empty();
+            VariableExpression chainSource = collectJoinChain(chainHead, chain, steps, this.processorSupport);
+            if (boundNames.contains("src"))
+            {
+                throw new PureCompilationException(chainSource.getSourceInformation(), joinSourceMessage(chain.getLast()));
+            }
+            steps.forEach(step -> rejectUnsupportedStepArguments(step, this.processorSupport));
+            this.joinCalls.addAll(chain);
+            chain.forEach(call -> ListHelper.wrapListIterable(call._parametersValues()).forEachWithIndex((argument, i) ->
+            {
+                if (i > 0)
+                {
+                    collect(argument, boundNames, true);
+                }
+            }));
+        }
+    }
+
+    private static String propertyName(SimpleFunctionExpression propertyAccess, ProcessorSupport processorSupport)
+    {
+        return ImportStub.withImportStubByPass(propertyAccess._propertyName()._valuesCoreInstance().getAny(), processorSupport).getName();
+    }
+
+    // Collects the chain from `call` down through each join's source, and the steps applied to `$src` ahead of the
+    // first join (outermost first), and returns the `$src` at its root.
+    private static VariableExpression collectJoinChain(SimpleFunctionExpression call, MutableList<SimpleFunctionExpression> chain, MutableList<SimpleFunctionExpression> steps, ProcessorSupport processorSupport)
     {
         chain.add(call);
         ListIterable<? extends ValueSpecification> params = ListHelper.wrapListIterable(call._parametersValues());
@@ -622,29 +692,85 @@ public class RelationFunctionInstanceSetImplementationProcessor extends Processo
         }
         if (source instanceof SimpleFunctionExpression && isNavigationOrFilterJoinCall((SimpleFunctionExpression) source, processorSupport))
         {
-            return collectJoinChain((SimpleFunctionExpression) source, chain, processorSupport);
+            return collectJoinChain((SimpleFunctionExpression) source, chain, steps, processorSupport);
         }
-        throw new PureCompilationException(call.getSourceInformation(), "The source of '" + joinFunctionName(call) + "' must be $src or another navigationJoin/filterJoin call.");
+        MutableList<SimpleFunctionExpression> peeled = Lists.mutable.empty();
+        ValueSpecification current = source;
+        while (current instanceof SimpleFunctionExpression && isJoinSourceStepCall((SimpleFunctionExpression) current, processorSupport))
+        {
+            peeled.add((SimpleFunctionExpression) current);
+            current = ((SimpleFunctionExpression) current)._parametersValues().getFirst();
+        }
+        if (isSrcVariable(current))
+        {
+            steps.addAll(peeled);
+            return (VariableExpression) current;
+        }
+        if (peeled.notEmpty() && current instanceof SimpleFunctionExpression && isNavigationOrFilterJoinCall((SimpleFunctionExpression) current, processorSupport))
+        {
+            SimpleFunctionExpression step = peeled.getFirst();
+            throw new PureCompilationException(step.getSourceInformation(), "'" + joinFunctionName(step) + "' cannot be applied between joins: " + "extend, filter, select, rename and sort"
+                    + " may only be applied to $src ahead of the first navigationJoin/filterJoin.");
+        }
+        if (current instanceof SimpleFunctionExpression && ((SimpleFunctionExpression) current)._functionName() != null && rootsAtSrc(current))
+        {
+            throw new PureCompilationException(current.getSourceInformation(), "'" + joinFunctionName((SimpleFunctionExpression) current) + "' cannot be applied to $src ahead of "
+                    + joinFunctionName(call) + ": only extend, filter, select, rename and sort are supported, as they keep every source row exactly once.");
+        }
+        throw new PureCompilationException(call.getSourceInformation(), joinSourceMessage(call));
     }
 
-    // A single walk over the value expression: any join call outside the chain, or any `$src` other than the
-    // chain's own source, is rejected. A nested lambda's own {src | ...} is bound within it, so isn't mistaken
-    // for the relation-level $src.
-    private static void rejectMisplacedJoinUsage(LambdaFunction<?> valueFn, ListIterable<SimpleFunctionExpression> joinChain, VariableExpression chainSource, ProcessorSupport processorSupport)
+    private static String joinSourceMessage(SimpleFunctionExpression call)
     {
-        CoreInstance misplaced = ModelJoinShared.findFirst(valueFn, Sets.immutable.empty(), (node, boundNames) ->
-                (node != chainSource && isSrcVariable(node) && !boundNames.contains("src"))
-                        || (node instanceof SimpleFunctionExpression && !joinChain.anySatisfy(c -> c == node) && isNavigationOrFilterJoinCall((SimpleFunctionExpression) node, processorSupport)));
-        if (misplaced instanceof VariableExpression)
+        return "The source of '" + joinFunctionName(call) + "' must be $src (optionally transformed by extend, filter, select, rename or sort) or another navigationJoin/filterJoin call.";
+    }
+
+    private static boolean rootsAtSrc(ValueSpecification expression)
+    {
+        ValueSpecification current = expression;
+        while (current instanceof SimpleFunctionExpression && !((SimpleFunctionExpression) current)._parametersValues().isEmpty())
         {
-            throw new PureCompilationException(misplaced.getSourceInformation(), "$src is the whole source relation and may only be used as the source of navigationJoin/filterJoin (e.g. $src->navigationJoin(...).COLUMN); use $row to access the columns of the mapped row.");
+            current = ((SimpleFunctionExpression) current)._parametersValues().getFirst();
         }
-        if (misplaced != null)
+        return isSrcVariable(current);
+    }
+
+    private static boolean stepsRootAtSrc(SimpleFunctionExpression call, ProcessorSupport processorSupport)
+    {
+        ValueSpecification current = call;
+        while (current instanceof SimpleFunctionExpression && isJoinSourceStepCall((SimpleFunctionExpression) current, processorSupport))
         {
-            String functionName = joinFunctionName((SimpleFunctionExpression) misplaced);
-            throw new PureCompilationException(misplaced.getSourceInformation(), "'" + functionName
-                    + "' may only be used as the property's entire value expression, or immediately followed by a single column access (e.g. $src->" + functionName
-                    + "(...).COLUMN); calling it from inside a helper function or a more complex expression is not supported.");
+            current = ((SimpleFunctionExpression) current)._parametersValues().getFirst();
+        }
+        return isSrcVariable(current);
+    }
+
+    // A step's lambdas range over the source rows, so they can use neither the mapped row, $src, nor a join chain.
+    private static void rejectUnsupportedStepArguments(SimpleFunctionExpression step, ProcessorSupport processorSupport)
+    {
+        String stepName = joinFunctionName(step);
+        ListIterable<? extends ValueSpecification> params = ListHelper.wrapListIterable(step._parametersValues());
+        for (int i = 1; i < params.size(); i++)
+        {
+            ValueSpecification argument = params.get(i);
+            VariableExpression row = findFreeVariable(argument, Sets.immutable.with("row"));
+            if (row != null)
+            {
+                throw new PureCompilationException(row.getSourceInformation(), "$row is not available in the arguments of '" + stepName + "' applied to $src: its lambdas range over the source rows, e.g. {x | $x.COLUMN}.");
+            }
+            CoreInstance join = ModelJoinShared.findFirst(argument, Sets.immutable.empty(), (node, boundNames) ->
+                    node instanceof SimpleFunctionExpression && isNavigationOrFilterJoinCall((SimpleFunctionExpression) node, processorSupport));
+            if (join != null)
+            {
+                String joinName = joinFunctionName((SimpleFunctionExpression) join);
+                throw new PureCompilationException(join.getSourceInformation(), "'" + joinName + "' may not be used in the arguments of '" + stepName
+                        + "' applied to $src; chain the joins after the steps instead (e.g. $src->" + stepName + "(...)->navigationJoin(...)->filterJoin(...).COLUMN).");
+            }
+            VariableExpression src = findFreeVariable(argument, Sets.immutable.with("src"));
+            if (src != null)
+            {
+                throw new PureCompilationException(src.getSourceInformation(), "$src is not available in the arguments of '" + stepName + "' applied to $src: its lambdas range over the source rows, e.g. {x | $x.COLUMN}.");
+            }
         }
     }
 
@@ -684,6 +810,30 @@ public class RelationFunctionInstanceSetImplementationProcessor extends Processo
         String name = joinFunctionName(call);
         return ("navigationJoin".equals(name) || "filterJoin".equals(name))
                 && ModelJoinShared.isCallToPlatformFunction(call._functionName(), call._importGroup(), RELATION_FUNCTIONS_PACKAGE, processorSupport);
+    }
+
+    // filter and sort also exist for collections, so a bare call is a step when every visible function of that name is
+    // a platform one (native, or in meta::pure): no user-defined function can pose as a step.
+    private static boolean isJoinSourceStepCall(SimpleFunctionExpression call, ProcessorSupport processorSupport)
+    {
+        if (call._functionName() == null || call._propertyName() != null || !JOIN_SOURCE_STEPS.contains(joinFunctionName(call)))
+        {
+            return false;
+        }
+        String functionName = call._functionName();
+        int separator = functionName.lastIndexOf("::");
+        if (separator != -1)
+        {
+            return RELATION_FUNCTIONS_PACKAGE.equals(functionName.substring(0, separator));
+        }
+        ListIterable<PackageableFunction<?>> visible = ModelJoinShared.findVisibleFunctions(functionName, call._importGroup(), processorSupport);
+        return visible.notEmpty() && visible.allSatisfy(RelationFunctionInstanceSetImplementationProcessor::isPlatformFunction);
+    }
+
+    private static boolean isPlatformFunction(PackageableFunction<?> function)
+    {
+        return function instanceof NativeFunction
+                || (function._package() != null && PackageableElement.getUserPathForPackageableElement(function._package()).startsWith("meta::pure::"));
     }
 
     private static String joinFunctionName(SimpleFunctionExpression call)
