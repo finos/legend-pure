@@ -35,6 +35,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionTy
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
@@ -419,6 +420,168 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals("String", chained._valueFn()._expressionSequence().getOnly()._genericType()._rawType()._name());
     }
 
+    private static final String COL_SPEC_FUNCTION_SOURCE = "###Pure\n" +
+            "import meta::pure::metamodel::relation::*;\n" +
+            "native function meta::pure::functions::relation::extend<T,Z>(r:Relation<T>[1], f:FuncColSpec<{T[1]->Any[0..1]},Z>[1]):Relation<T+Z>[1];\n" +
+            "native function meta::pure::functions::relation::extend<T,Z>(r:Relation<T>[1], fs:FuncColSpecArray<{T[1]->Any[*]},Z>[1]):Relation<T+Z>[1];\n" +
+            "native function meta::pure::functions::relation::groupBy<T,Z,K,V,R>(r:Relation<T>[1], cols:ColSpec<Z⊆T>[1], agg:AggColSpec<{T[1]->K[0..1]},{K[*]->V[0..1]},R>[1]):Relation<Z+R>[1];\n" +
+            "native function meta::pure::functions::relation::groupBy<T,Z,K,V,R>(r:Relation<T>[1], cols:ColSpecArray<Z⊆T>[1], agg:AggColSpecArray<{T[1]->K[0..1]},{K[*]->V[0..1]},R>[1]):Relation<Z+R>[1];\n" +
+            "native function meta::pure::functions::relation::project<T,Z>(r:Relation<T>[1], fs:FuncColSpecArray<{T[1]->Any[*]},Z>[1]):Relation<Z>[1];\n" +
+            "native function meta::pure::functions::relation::select<T,X>(r:Relation<X>[1], cols:ColSpecArray<T⊆X>[1]):Relation<T>[1];\n";
+
+    @Test
+    public void testNavigationJoinTargetWithFuncColSpecArrayCompiles()
+    {
+        compileColSpecMapping("    +firmName: String[1]: $src->navigationJoin(my::firmFunctionTyped()->extend(~[UPPER_NAME: r | $r.LEGALNAME->toUpper()]), {p, f | $p.FIRMID == $f.ID}).UPPER_NAME\n");
+        assertPersonPropertyValueType("firmName", "String");
+    }
+
+    @Test
+    public void testNavigationJoinTargetWithFuncColSpecCompiles()
+    {
+        compileColSpecMapping("    +firmName: String[1]: $src->navigationJoin(my::firmFunctionTyped()->extend(~PERSONS: r | 1), {p, f | $p.FIRMID == $f.ID}).LEGALNAME,\n" +
+                "    +persons: Integer[1]: $src->navigationJoin(my::firmFunctionTyped()->extend(~PERSONS: r | 1), {p, f | $p.FIRMID == $f.ID}).PERSONS\n");
+        assertPersonPropertyValueType("firmName", "String");
+        assertPersonPropertyValueType("persons", "Integer");
+    }
+
+    @Test
+    public void testNavigationJoinTargetWithMultiColumnFuncColSpecArrayCompiles()
+    {
+        compileColSpecMapping("    +nextFirmId: Integer[1]: $src->navigationJoin(my::firmFunctionTyped()->extend(~[UPPER_NAME: r | $r.LEGALNAME->toUpper(), NEXT_ID: r | $r.ID + 1]), {p, f | $p.FIRMID == $f.ID}).NEXT_ID\n");
+        assertPersonPropertyValueType("nextFirmId", "Integer");
+    }
+
+    @Test
+    public void testNavigationJoinTargetWithAggColSpecGroupByCompiles()
+    {
+        compileColSpecMapping("    +firmSize: Integer[1]: $src->navigationJoin(my::firmFunctionTyped()->groupBy(~ID, ~EMPLOYEES: r | 1 : y | $y->size()), {p, f | $p.FIRMID == $f.ID}).EMPLOYEES\n");
+        assertPersonPropertyValueType("firmSize", "Integer");
+    }
+
+    @Test
+    public void testNavigationJoinTargetWithAggColSpecArrayGroupByCompiles()
+    {
+        compileColSpecMapping("    +firmSize: Integer[1]: $src->navigationJoin(my::firmFunctionTyped()->groupBy(~[ID], ~[EMPLOYEES: r | 1 : y | $y->size(), NAMES: r | $r.LEGALNAME : y | $y->size()]), {p, f | $p.FIRMID == $f.ID}).NAMES\n");
+        assertPersonPropertyValueType("firmSize", "Integer");
+    }
+
+    @Test
+    public void testNavigationJoinTargetWithProjectCompiles()
+    {
+        compileColSpecMapping("    +firmName: String[1]: $src->navigationJoin(my::firmFunctionTyped()->project(~[ID: r | $r.ID, NAME: r | $r.LEGALNAME]), {p, f | $p.FIRMID == $f.ID}).NAME\n");
+        assertPersonPropertyValueType("firmName", "String");
+    }
+
+    @Test
+    public void testNavigationJoinTargetWithSelectCompiles()
+    {
+        compileColSpecMapping("    +firmName: String[1]: $src->navigationJoin(my::firmFunctionTyped()->select(~[ID, LEGALNAME]), {p, f | $p.FIRMID == $f.ID}).LEGALNAME\n");
+        assertPersonPropertyValueType("firmName", "String");
+    }
+
+    @Test
+    public void testNavigationJoinTargetWithFilterThenFuncColSpecCompiles()
+    {
+        compileColSpecMapping("    +firmName: String[1]: $src->navigationJoin(my::firmFunctionTyped()->filter(r | $r.ID > 0)->extend(~UPPER_NAME: r | $r.LEGALNAME->toUpper()), {p, f | $p.FIRMID == $f.ID}).UPPER_NAME\n");
+        assertPersonPropertyValueType("firmName", "String");
+    }
+
+    @Test
+    public void testFilterJoinTargetWithFuncColSpecCompiles()
+    {
+        compileColSpecMapping("    +gatedFirstName: String[1]: $src->filterJoin(my::firmFunctionTyped()->extend(~ACTIVE: r | 'Y'), {p, f | ($p.FIRMID == $f.ID) && ($f.ACTIVE == 'Y')}).FIRSTNAME\n");
+        assertPersonPropertyValueType("gatedFirstName", "String");
+    }
+
+    @Test
+    public void testNavigationJoinTargetWithInlineRelationTypeCastCompiles()
+    {
+        compileColSpecMapping("    +firmName: String[1]: $src->navigationJoin([]->cast(@meta::pure::metamodel::relation::Relation<(ID:Integer[1], LEGALNAME:String[1])>)->toOne(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME\n");
+        assertPersonPropertyValueType("firmName", "String");
+    }
+
+    @Test
+    public void testFuncColSpecOutsideAJoinCompiles()
+    {
+        compileColSpecMapping("    +firmCount: Integer[1]: my::firmFunctionTyped()->extend(~ONE: r | 1)->size()\n");
+        assertPersonPropertyValueType("firmCount", "Integer");
+    }
+
+    @Test
+    public void testFilterJoinAcceptsColSpecExtendedSrcAsSource()
+    {
+        compileColSpecMapping("    +gatedFirstName: String[1]: $src->extend(~ACTIVE: r | 'Y')->filterJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).FIRSTNAME\n");
+        assertPersonPropertyValueType("gatedFirstName", "String");
+    }
+
+    @Test
+    public void testRelationMappingInlineSrcWithFuncColSpecCompiles()
+    {
+        compileTestSource("colSpecFunc.pure", COL_SPEC_FUNCTION_SOURCE);
+        compileTestSource("class.pure", RELATION_MAPPING_CLASS_SOURCE);
+        compileTestSource("func.pure", RELATION_MAPPING_FUNCTION_SOURCE);
+        compileTestSource("mapping.pure", "###Mapping\n" +
+                "Mapping my::testMapping\n" +
+                "(\n" +
+                "  *my::Person[person]: Relation\n" +
+                "  {\n" +
+                "    ~src my::personFunctionTyped()->extend(~UPPER_NAME: r | $r.FIRSTNAME->toUpper())\n" +
+                "    firstName: UPPER_NAME\n" +
+                "  }\n" +
+                ")\n");
+        assertPersonPropertyValueType("firstName", "String");
+    }
+
+    // No project(~[...]) here: next to an extend, groupBy or select of the same relation, it leaves one more
+    // RelationType behind after a reload even in a plain Pure function, so that is not specific to Relation mappings.
+    private static final String COL_SPEC_PROPERTY_MAPPINGS =
+            "    +upperFirmName: String[1]: $src->navigationJoin(my::firmFunctionTyped()->extend(~[UPPER_NAME: r | $r.LEGALNAME->toUpper()]), {p, f | $p.FIRMID == $f.ID}).UPPER_NAME,\n" +
+            "    +persons: Integer[1]: $src->navigationJoin(my::firmFunctionTyped()->extend(~PERSONS: r | 1), {p, f | $p.FIRMID == $f.ID}).PERSONS,\n" +
+            "    +firmSize: Integer[1]: $src->navigationJoin(my::firmFunctionTyped()->groupBy(~[ID], ~[EMPLOYEES: r | 1 : y | $y->size()]), {p, f | $p.FIRMID == $f.ID}).EMPLOYEES,\n" +
+            "    +selectedName: String[1]: $src->navigationJoin(my::firmFunctionTyped()->select(~[ID, LEGALNAME]), {p, f | $p.FIRMID == $f.ID}).LEGALNAME,\n" +
+            "    +castFirmName: String[1]: $src->navigationJoin([]->cast(@meta::pure::metamodel::relation::Relation<(ID:Integer[1], LEGALNAME:String[1])>)->toOne(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME\n";
+
+    @Test
+    public void testColSpecsInPropertyValuesAreStableAcrossRecompilation()
+    {
+        compileColSpecMapping(COL_SPEC_PROPERTY_MAPPINGS);
+        assertColSpecPropertyValueTypes();
+
+        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(
+                runtime, functionExecution, Lists.fixedSize.of(
+                        Tuples.pair("colSpecFunc.pure", COL_SPEC_FUNCTION_SOURCE),
+                        Tuples.pair("class.pure", RELATION_MAPPING_CLASS_SOURCE),
+                        Tuples.pair("func.pure", RELATION_MAPPING_FUNCTION_SOURCE),
+                        Tuples.pair("joinFunc.pure", NAVIGATION_FILTER_JOIN_FUNCTION_SOURCE)
+                ), this.getAdditionalVerifiers()
+        );
+        assertColSpecPropertyValueTypes();
+    }
+
+    private void assertColSpecPropertyValueTypes()
+    {
+        assertPersonPropertyValueType("upperFirmName", "String");
+        assertPersonPropertyValueType("persons", "Integer");
+        assertPersonPropertyValueType("firmSize", "Integer");
+        assertPersonPropertyValueType("selectedName", "String");
+        assertPersonPropertyValueType("castFirmName", "String");
+    }
+
+    private void compileColSpecMapping(String extraPersonPropertyMappings)
+    {
+        compileTestSource("colSpecFunc.pure", COL_SPEC_FUNCTION_SOURCE);
+        compileInlineModelJoinMapping(extraPersonPropertyMappings, "");
+    }
+
+    private void assertPersonPropertyValueType(String propertyName, String expectedTypeName)
+    {
+        RelationFunctionInstanceSetImplementation set = (RelationFunctionInstanceSetImplementation)
+                ((Mapping) runtime.getCoreInstance("my::testMapping"))._classMappings().getOnly();
+        RelationFunctionPropertyMapping propertyMapping = (RelationFunctionPropertyMapping) set._propertyMappings().detect(pm -> propertyName.equals(pm._property()._name()));
+        Assert.assertEquals(propertyName, expectedTypeName, propertyMapping._valueFn()._expressionSequence().getOnly()._genericType()._rawType()._name());
+    }
+
     @Test
     public void testNavigationJoinRejectsSourceThatIsNotSrcOrAChain()
     {
@@ -443,7 +606,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
         }
         catch (PureCompilationException e)
         {
-            Assert.assertTrue("Got: " + e.getMessage(), e.getMessage().contains("The source of 'navigationJoin' must be $src or another navigationJoin/filterJoin call."));
+            Assert.assertTrue("Got: " + e.getMessage(), e.getMessage().contains("The source of 'navigationJoin' must be $src (optionally transformed by extend, filter, select, rename or sort) or another navigationJoin/filterJoin call."));
         }
     }
 
@@ -471,7 +634,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
         }
         catch (PureCompilationException e)
         {
-            Assert.assertTrue("Got: " + e.getMessage(), e.getMessage().contains("The source of 'filterJoin' must be $src or another navigationJoin/filterJoin call."));
+            Assert.assertTrue("Got: " + e.getMessage(), e.getMessage().contains("The source of 'filterJoin' must be $src (optionally transformed by extend, filter, select, rename or sort) or another navigationJoin/filterJoin call."));
         }
     }
 
@@ -913,15 +1076,195 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
         }
     }
 
+    // A join chain followed by a column access may appear anywhere in the property's value expression, as a
+    // Relational mapping's @Join | column may: the expression is evaluated on the source row, and the join is
+    // only added when a query reads the property.
+
+    private static final String JOIN_IN_EXPRESSION_PROPERTY_MAPPINGS =
+            "    +hasLegalName: Boolean[1]: if($src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME == 'Acme', | true, | false),\n" +
+            "    +firmOrGatedName: String[1]: if($row.CITY == 'London', | $src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME, | if($row.CITY == 'Paris', | $src->filterJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).FIRSTNAME, | 'none')),\n" +
+            "    +cityOrFirmName: String[1]: if($row.CITY->isEmpty(), | $src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME, | $row.CITY),\n" +
+            "    +hasFirm: Boolean[1]: $src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).ID->isNotEmpty(),\n" +
+            "    +nextFirmId: Integer[1]: $src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).ID + 1,\n" +
+            "    +firmLabel: String[1]: 'Firm: ' + $src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME,\n" +
+            "    +noFirm: Boolean[1]: $src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).ID->isEmpty(),\n" +
+            "    +chainedInIf: String[1]: if($row.AGE > 18, | $src->filterJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID})->navigationJoin(my::firmFunctionTyped(), meta::pure::functions::relation::JoinKind.INNER, {p, f | $p.FIRMID == $f.ID}).LEGALNAME, | 'minor'),\n" +
+            "    +firmNameToOne: String[1]: $src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME->toOne(),\n" +
+            "    +gatedFirstNameToOne: String[1]: $src->meta::pure::functions::relation::filterJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).FIRSTNAME->toOne(),\n" +
+            "    +cityViaNewInstance: String[1]: ^my::Address(city=$src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME->toOne()).city\n";
+
     @Test
-    public void testNavigationJoinRejectsUsageNestedInAnotherExpression()
+    public void testJoinColumnAccessCompilesAnywhereInTheValueExpression()
     {
-        // Only "the property's entire value" or "a single column access directly over it" are
-        // structurally validated; navigationJoin/filterJoin nested any deeper (e.g. inside ->toOne())
-        // must be rejected with a clear error instead of silently reaching the generic matcher.
+        compileInlineModelJoinMapping(JOIN_IN_EXPRESSION_PROPERTY_MAPPINGS, "");
+        assertValueTypes();
+
+        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(
+                runtime, functionExecution, Lists.fixedSize.of(
+                        Tuples.pair("class.pure", RELATION_MAPPING_CLASS_SOURCE),
+                        Tuples.pair("func.pure", RELATION_MAPPING_FUNCTION_SOURCE),
+                        Tuples.pair("joinFunc.pure", NAVIGATION_FILTER_JOIN_FUNCTION_SOURCE)
+                ), this.getAdditionalVerifiers()
+        );
+        assertValueTypes();
+    }
+
+    private void assertValueTypes()
+    {
+        RelationFunctionInstanceSetImplementation set = (RelationFunctionInstanceSetImplementation)
+                ((Mapping) runtime.getCoreInstance("my::testMapping"))._classMappings().getOnly();
+        Assert.assertEquals(
+                Lists.mutable.with("hasLegalName:Boolean", "firmOrGatedName:String", "cityOrFirmName:String", "hasFirm:Boolean", "nextFirmId:Integer", "firmLabel:String", "noFirm:Boolean", "chainedInIf:String", "firmNameToOne:String", "gatedFirstNameToOne:String", "cityViaNewInstance:String"),
+                set._propertyMappings().toList().drop(2).collect(pm -> pm._property()._name() + ":" + ((RelationFunctionPropertyMapping) pm)._valueFn()._expressionSequence().getOnly()._genericType()._rawType()._name()));
+        set._propertyMappings().toList().drop(2).forEach(pm -> Assert.assertEquals(pm._property()._name(), Lists.mutable.empty(), ((RelationFunctionPropertyMapping) pm)._valueFn()._openVariables().toList()));
+    }
+
+    @Test
+    public void testNavigationJoinRejectsUsageNestedInAnotherExpressionWithoutColumnAccess()
+    {
         assertPersonMappingFails(
-                "    +firmName: String[1]: $src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME->toOne()\n", "",
-                "'navigationJoin' may only be used as the property's entire value expression, or immediately followed by a single column access");
+                "    +firmCount: Integer[1]: $src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID})->size()\n", "",
+                "'navigationJoin' may only be used as the property's entire value expression, or followed by a column access (e.g. $src->navigationJoin(...).COLUMN).");
+    }
+
+    @Test
+    public void testChainRejectsUsageInsideIfWithoutColumnAccess()
+    {
+        assertPersonMappingFails(
+                "    +firmCount: Integer[1]: if($row.AGE > 18, | $src->filterJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID})->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID})->size(), | 0)\n", "",
+                "'navigationJoin' may only be used as the property's entire value expression, or followed by a column access (e.g. $src->navigationJoin(...).COLUMN).");
+    }
+
+    @Test
+    public void testNavigationJoinRejectsChainAsTargetOfAnotherJoin()
+    {
+        assertPersonMappingFails(
+                "    +firmName: String[1]: $src->navigationJoin($src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}), {p, f | $p.FIRMID == $f.ID}).LEGALNAME\n", "",
+                "'navigationJoin' may not be used in the arguments of another navigationJoin/filterJoin; chain the joins instead (e.g. $src->navigationJoin(...)->navigationJoin(...).COLUMN).");
+    }
+
+    @Test
+    public void testFilterJoinRejectsChainWithColumnAccessInsideAnotherJoinsCondition()
+    {
+        assertPersonMappingFails(
+                "    +firmName: String[1]: $src->navigationJoin(my::firmFunctionTyped(), {p, f | $src->filterJoin(my::firmFunctionTyped(), {p2, f2 | $p2.FIRMID == $f2.ID}).FIRMID == $f.ID}).LEGALNAME\n", "",
+                "'filterJoin' may not be used in the arguments of another navigationJoin/filterJoin; chain the joins instead (e.g. $src->navigationJoin(...)->filterJoin(...).COLUMN).");
+    }
+
+    @Test
+    public void testJoinInsideExpressionRejectsSrcOutsideTheChain()
+    {
+        assertPersonMappingFails(
+                "    +firmName: String[1]: if($src->size() > 0, | $src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME, | 'none')\n", "",
+                SRC_OUTSIDE_JOIN_MESSAGE);
+    }
+
+    @Test
+    public void testJoinInsideExpressionRejectsRowInCondition()
+    {
+        assertPersonMappingFails(
+                "    +hasLegalName: Boolean[1]: if($src->navigationJoin(my::firmFunctionTyped(), {p, f | $row.FIRMID == $f.ID}).LEGALNAME == 'Acme', | true, | false)\n", "",
+                ROW_IN_NAVIGATION_JOIN_CONDITION_MESSAGE);
+    }
+
+    @Test
+    public void testJoinInsideExpressionRejectsRightJoinKind()
+    {
+        assertPersonMappingFails(
+                "    +hasLegalName: Boolean[1]: if($src->navigationJoin(my::firmFunctionTyped(), meta::pure::functions::relation::JoinKind.RIGHT, {p, f | $p.FIRMID == $f.ID}).LEGALNAME == 'Acme', | true, | false)\n", "",
+                "JoinKind.RIGHT is not supported by navigationJoin(); use JoinKind.LEFT (the default) or JoinKind.INNER.");
+    }
+
+    @Test
+    public void testJoinInsideExpressionRejectsSourceThatIsNotSrcOrAChain()
+    {
+        assertPersonMappingFails(
+                "    +hasLegalName: Boolean[1]: if(my::firmFunctionTyped()->navigationJoin(my::firmFunctionTyped(), {p, f | $p.ID == $f.ID}).LEGALNAME == 'Acme', | true, | false)\n", "",
+                "The source of 'navigationJoin' must be $src (optionally transformed by extend, filter, select, rename or sort) or another navigationJoin/filterJoin call.");
+    }
+
+    private static final String VARIANT_FIRM_FUNCTION_SOURCE = "###Pure\n" +
+            "import meta::pure::metamodel::relation::*;\n" +
+            "import meta::pure::metamodel::variant::*;\n" +
+            "function my::get(v:Variant[0..1], key:String[1]):Variant[0..1]\n" +
+            "{\n" +
+            "  []\n" +
+            "}\n" +
+            "function my::toMany<T>(v:Variant[0..1], type:T[0..1]):T[*]\n" +
+            "{\n" +
+            "  []\n" +
+            "}\n" +
+            "function my::variantFirmFunction(): Relation<(ID:Integer[1], PAYLOAD:Variant[0..1])>[1]\n" +
+            "{\n" +
+            "  []->cast(@Relation<(ID:Integer[1], PAYLOAD:Variant[0..1])>)->toOne();\n" +
+            "}\n";
+
+    private static final String VARIANT_JOIN = "$src->navigationJoin(my::variantFirmFunction(), {p, f | $p.FIRMID == $f.ID}).PAYLOAD->my::get('tags')->my::toMany(@String)";
+
+    private void compileVariantJoinMapping(String propertyMapping)
+    {
+        compileTestSource("variantFunc.pure", VARIANT_FIRM_FUNCTION_SOURCE);
+        compileTestSource("class.pure", RELATION_MAPPING_CLASS_SOURCE);
+        compileTestSource("func.pure", RELATION_MAPPING_FUNCTION_SOURCE);
+        compileTestSource("mapping.pure", inlineJoinMappingSource(propertyMapping, ""));
+    }
+
+    @Test
+    public void testJoinVariantColumnFollowedByMapCompiles()
+    {
+        compileVariantJoinMapping("    +tags: String[*]: " + VARIANT_JOIN + "->map(x | $x->toUpper())\n");
+        assertPersonPropertyValueType("tags", "String");
+    }
+
+    @Test
+    public void testJoinVariantColumnFollowedByFilterCompiles()
+    {
+        compileVariantJoinMapping("    +tags: String[*]: " + VARIANT_JOIN + "->filter(x | $x != 'none')\n");
+        assertPersonPropertyValueType("tags", "String");
+    }
+
+    @Test
+    public void testJoinVariantColumnFollowedByFoldCompiles()
+    {
+        compileVariantJoinMapping("    +tagCount: Integer[1]: " + VARIANT_JOIN + "->fold({x, acc | $acc + 1}, 0)\n");
+        assertPersonPropertyValueType("tagCount", "Integer");
+    }
+
+    @Test
+    public void testJoinColumnFollowedByMapCompiles()
+    {
+        compileColSpecMapping("    +upperFirmName: String[1]: $src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME->map(x | $x->toUpper())\n");
+        assertPersonPropertyValueType("upperFirmName", "String");
+    }
+
+    @Test
+    public void testJoinColumnFollowedByFilterCompiles()
+    {
+        compileColSpecMapping("    +firmNames: String[*]: $src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME->filter(x | $x != 'none')\n");
+        assertPersonPropertyValueType("firmNames", "String");
+    }
+
+    @Test
+    public void testJoinColumnFollowedByFoldCompiles()
+    {
+        compileColSpecMapping("    +firmNameLength: Integer[1]: $src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME->fold({x, acc | $acc + $x->length()}, 0)\n");
+        assertPersonPropertyValueType("firmNameLength", "Integer");
+    }
+
+    @Test
+    public void testJoinInsideExpressionRejectsSrcBoundByANestedLambdaAsChainRoot()
+    {
+        assertPersonMappingFails(
+                "    +firmNames: String[*]: [1, 2]->map(src | $src->navigationJoin(my::firmFunctionTyped(), {p, f | $p == $f.ID}).LEGALNAME)\n", "",
+                "The source of 'navigationJoin' must be $src (optionally transformed by extend, filter, select, rename or sort) or another navigationJoin/filterJoin call.");
+    }
+
+    @Test
+    public void testJoinInsideExpressionRejectsLegacySrcColumnAccess()
+    {
+        assertPersonMappingFails(
+                "    +firmName: String[1]: if($src.CITY == 'London', | $src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME, | 'none')\n", "",
+                "Can't find the property 'CITY' in the class meta::pure::metamodel::relation::Relation; use $row.CITY to access a column of the mapped row.");
     }
 
     // The key/value pairs of a ^Class(key=value) new-instance expression are KeyExpressions, which the
@@ -935,11 +1278,11 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
-    public void testNavigationJoinRejectsUsageInsideNewInstanceKeyExpression()
+    public void testNavigationJoinRejectsUsageWithoutColumnAccessInsideNewInstanceKeyExpression()
     {
         assertPersonMappingFails(
-                "    +firmName: String[1]: ^my::Address(city=$src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME->toOne()).city\n", "",
-                "'navigationJoin' may only be used as the property's entire value expression, or immediately followed by a single column access");
+                "    +firmName: String[1]: ^my::Address(city=$src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID})->size()->toString()).city\n", "",
+                "'navigationJoin' may only be used as the property's entire value expression, or followed by a column access (e.g. $src->navigationJoin(...).COLUMN).");
     }
 
     @Test
@@ -1010,21 +1353,21 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
     public void testNavigationJoinRejectsRowAsSourceWithColumnAccess()
     {
         assertPersonMappingFails("    +firmName: String[1]: $row->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME\n", "",
-                "The source of 'navigationJoin' must be $src or another navigationJoin/filterJoin call.");
+                "The source of 'navigationJoin' must be $src (optionally transformed by extend, filter, select, rename or sort) or another navigationJoin/filterJoin call.");
     }
 
     @Test
     public void testNavigationJoinRejectsRowAsSourceAsWholeValue()
     {
         assertPersonMappingFails("    +firms: Any[1]: $row->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID})\n", "",
-                "The source of 'navigationJoin' must be $src or another navigationJoin/filterJoin call.");
+                "The source of 'navigationJoin' must be $src (optionally transformed by extend, filter, select, rename or sort) or another navigationJoin/filterJoin call.");
     }
 
     @Test
     public void testNavigationJoinRejectsRowAsSourceNestedInAnotherExpression()
     {
         assertPersonMappingFails("    +firmName: String[1]: $row->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME->toOne()\n", "",
-                "'navigationJoin' may only be used as the property's entire value expression, or immediately followed by a single column access");
+                "The source of 'navigationJoin' must be $src (optionally transformed by extend, filter, select, rename or sort) or another navigationJoin/filterJoin call.");
     }
 
     @Test
@@ -1077,14 +1420,14 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
     public void testFilterJoinRejectsRowAsSourceWithColumnAccess()
     {
         assertPersonMappingFails("    +gatedFirstName: String[1]: $row->filterJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).FIRSTNAME\n", "",
-                "The source of 'filterJoin' must be $src or another navigationJoin/filterJoin call.");
+                "The source of 'filterJoin' must be $src (optionally transformed by extend, filter, select, rename or sort) or another navigationJoin/filterJoin call.");
     }
 
     @Test
     public void testFilterJoinRejectsRowAsSourceAsWholeValue()
     {
         assertPersonMappingFails("    +gatedRows: Any[1]: $row->filterJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID})\n", "",
-                "The source of 'filterJoin' must be $src or another navigationJoin/filterJoin call.");
+                "The source of 'filterJoin' must be $src (optionally transformed by extend, filter, select, rename or sort) or another navigationJoin/filterJoin call.");
     }
 
     @Test
@@ -1105,7 +1448,7 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
     public void testChainedJoinRejectsRowAsChainRoot()
     {
         assertPersonMappingFails("    +chained: String[1]: $row->filterJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID})->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME\n", "",
-                "The source of 'filterJoin' must be $src or another navigationJoin/filterJoin call.");
+                "The source of 'filterJoin' must be $src (optionally transformed by extend, filter, select, rename or sort) or another navigationJoin/filterJoin call.");
     }
 
     @Test
@@ -1943,9 +2286,10 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
-    public void testSrcRejectedAsSourceOfFilter()
+    public void testSrcFilterNotLeadingIntoAJoinRejected()
     {
-        assertPersonMappingFails("    +cnt: Integer[1]: $src->filter(r | $r.FIRMID == 1)->size()\n", "", SRC_OUTSIDE_JOIN_MESSAGE);
+        compileTestSource("stepFunc.pure", JOIN_SOURCE_STEP_FUNCTION_SOURCE);
+        assertPersonMappingFails("    +cnt: Integer[1]: $src->filter(r | $r.FIRMID == 1)->size()\n", "", "'filter' applied to $src must lead into navigationJoin/filterJoin");
     }
 
     @Test
@@ -2095,14 +2439,14 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
     public void testQualifiedFilterJoinRejectsInvalidSource()
     {
         assertPersonMappingFails("    +firmIdCheck: Integer[1]: my::firmFunctionTyped()->meta::pure::functions::relation::filterJoin(my::firmFunctionTyped(), {p, f | $p.ID == $f.ID}).ID\n", "",
-                "The source of 'filterJoin' must be $src or another navigationJoin/filterJoin call.");
+                "The source of 'filterJoin' must be $src (optionally transformed by extend, filter, select, rename or sort) or another navigationJoin/filterJoin call.");
     }
 
     @Test
-    public void testQualifiedFilterJoinRejectsUsageNestedInAnotherExpression()
+    public void testQualifiedFilterJoinRejectsUsageNestedInAnotherExpressionWithoutColumnAccess()
     {
-        assertPersonMappingFails("    +gatedFirstName: String[1]: $src->meta::pure::functions::relation::filterJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}).FIRSTNAME->toOne()\n", "",
-                "'filterJoin' may only be used as the property's entire value expression, or immediately followed by a single column access");
+        assertPersonMappingFails("    +gatedCount: Integer[1]: $src->meta::pure::functions::relation::filterJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID})->size()\n", "",
+                "'filterJoin' may only be used as the property's entire value expression, or followed by a column access (e.g. $src->filterJoin(...).COLUMN).");
     }
 
     @Test
@@ -2389,5 +2733,285 @@ public class TestRelationMapping extends AbstractPureTestWithCoreCompiled
         compileTestSource("retypeClasses.pure", RETYPE_CLASSES_SOURCE);
         compileTestSource("retypePerson.pure", retypePersonSource(employerType));
         compileTestSource("retypeMapping.pure", RETYPE_MAPPING_SOURCE);
+    }
+
+    private static final String FIRM_JOIN = "my::firmFunctionTyped(), {p, f | $p.FIRMID == $f.ID}";
+
+    private static final String JOIN_SOURCE_STEP_FUNCTION_SOURCE = "###Pure\n" +
+            "import meta::pure::metamodel::relation::*;\n" +
+            "import meta::pure::functions::relation::*;\n" +
+            "native function meta::pure::functions::relation::rename<T,Z,K,V>(r:Relation<T>[1], old:ColSpec<Z=(?:K)⊆T>[1], new:ColSpec<V=(?:K)>[1]):Relation<T-Z+V>[1];\n" +
+            "native function meta::pure::functions::relation::sort<X,T>(rel:Relation<T>[1], sortInfo:SortInfo<X⊆T>[*]):Relation<T>[1];\n" +
+            "function meta::pure::functions::relation::descending<T>(column:ColSpec<T>[1]):SortInfo<T>[1]\n" +
+            "{\n" +
+            "  ^SortInfo<T>(column=$column, direction=SortType.DESC);\n" +
+            "}\n" +
+            "function meta::pure::functions::relation::ascending<T>(column:ColSpec<T>[1]):SortInfo<T>[1]\n" +
+            "{\n" +
+            "  ^SortInfo<T>(column=$column, direction=SortType.ASC);\n" +
+            "}\n";
+
+    private void compileJoinSourceStepFunctions()
+    {
+        compileTestSource("colSpecFunc.pure", COL_SPEC_FUNCTION_SOURCE);
+        compileTestSource("stepFunc.pure", JOIN_SOURCE_STEP_FUNCTION_SOURCE);
+    }
+
+    private void compileJoinSourceMapping(String extraPersonPropertyMappings, String otherClassMappings)
+    {
+        compileJoinSourceStepFunctions();
+        compileInlineModelJoinMapping(extraPersonPropertyMappings, otherClassMappings);
+    }
+
+    private void assertJoinSourceMappingFails(String extraPersonPropertyMappings, String otherClassMappings, String expectedMessage)
+    {
+        compileJoinSourceStepFunctions();
+        assertPersonMappingFails(extraPersonPropertyMappings, otherClassMappings, expectedMessage);
+    }
+
+    private static String joinSourceMapping(String propertyName, String type, String valueExpression)
+    {
+        return "    +" + propertyName + ": " + type + "[1]: " + valueExpression + "\n";
+    }
+
+    private RelationFunctionPropertyMapping compileJoinSourceProperty(String propertyName, String type, String valueExpression)
+    {
+        compileJoinSourceMapping(joinSourceMapping(propertyName, type, valueExpression), "");
+        RelationFunctionInstanceSetImplementation set = (RelationFunctionInstanceSetImplementation)
+                ((Mapping) runtime.getCoreInstance("my::testMapping"))._classMappings().getOnly();
+        return (RelationFunctionPropertyMapping) set._propertyMappings().detect(pm -> propertyName.equals(pm._property()._name()));
+    }
+
+    private static ListIterable<String> joinSourceColumns(RelationFunctionPropertyMapping propertyMapping)
+    {
+        ValueSpecification columnAccess = propertyMapping._valueFn()._expressionSequence().getOnly();
+        SimpleFunctionExpression firstJoin = (SimpleFunctionExpression) ((SimpleFunctionExpression) columnAccess)._parametersValues().getFirst();
+        while (firstJoin._parametersValues().getFirst() instanceof SimpleFunctionExpression
+                && ((SimpleFunctionExpression) firstJoin._parametersValues().getFirst())._functionName().endsWith("Join"))
+        {
+            firstJoin = (SimpleFunctionExpression) firstJoin._parametersValues().getFirst();
+        }
+        RelationType<?> sourceType = (RelationType<?>) firstJoin._parametersValues().getFirst()._genericType()._typeArguments().getFirst()._rawType();
+        return sourceType._columns().toList().collect(Column::_name);
+    }
+
+    @Test
+    public void testJoinSourceExtendedWithColumnVisibleInCondition()
+    {
+        RelationFunctionPropertyMapping pm = compileJoinSourceProperty("firmId2", "Integer",
+                "$src->extend(~K: x | $x.FIRMID + 1)->navigationJoin(my::firmFunctionTyped(), {p, f | $p.K == $f.ID}).ID");
+        Assert.assertEquals("Integer", pm._valueFn()._expressionSequence().getOnly()._genericType()._rawType()._name());
+        Assert.assertEquals(Lists.mutable.with("FIRSTNAME", "AGE", "FIRMID", "CITY", "K"), joinSourceColumns(pm));
+        Assert.assertEquals(Lists.mutable.empty(), pm._valueFn()._openVariables().toList());
+    }
+
+    @Test
+    public void testJoinSourceStepCalledQualified()
+    {
+        RelationFunctionPropertyMapping pm = compileJoinSourceProperty("firm", "String",
+                "$src->meta::pure::functions::relation::extend(~K: x | $x.FIRMID)->navigationJoin(my::firmFunctionTyped(), {p, f | $p.K == $f.ID}).LEGALNAME");
+        Assert.assertEquals(Lists.mutable.with("FIRSTNAME", "AGE", "FIRMID", "CITY", "K"), joinSourceColumns(pm));
+    }
+
+    @Test
+    public void testJoinSourceFiltered()
+    {
+        RelationFunctionPropertyMapping pm = compileJoinSourceProperty("adultFirm", "String",
+                "$src->filter(x | $x.AGE > 18)->navigationJoin(" + FIRM_JOIN + ").LEGALNAME");
+        Assert.assertEquals("String", pm._valueFn()._expressionSequence().getOnly()._genericType()._rawType()._name());
+        Assert.assertEquals(Lists.mutable.with("FIRSTNAME", "AGE", "FIRMID", "CITY"), joinSourceColumns(pm));
+    }
+
+    @Test
+    public void testJoinSourceSelected()
+    {
+        RelationFunctionPropertyMapping pm = compileJoinSourceProperty("firm", "String",
+                "$src->select(~[FIRMID, AGE])->filterJoin(" + FIRM_JOIN + ").FIRMID->toString()");
+        Assert.assertEquals(Lists.mutable.with("FIRMID", "AGE"), joinSourceColumns(pm));
+    }
+
+    @Test
+    public void testJoinSourceSelectDroppingTheConditionColumnFails()
+    {
+        assertJoinSourceMappingFails(joinSourceMapping("firm", "String", "$src->select(~[AGE])->navigationJoin(" + FIRM_JOIN + ").LEGALNAME"), "", "FIRMID");
+    }
+
+    @Test
+    public void testJoinSourceRenamed()
+    {
+        RelationFunctionPropertyMapping pm = compileJoinSourceProperty("firm", "String",
+                "$src->rename(~FIRMID, ~FID)->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FID == $f.ID}).LEGALNAME");
+        Assert.assertEquals(Lists.mutable.with("FIRSTNAME", "AGE", "CITY", "FID"), joinSourceColumns(pm));
+    }
+
+    @Test
+    public void testJoinSourceSorted()
+    {
+        RelationFunctionPropertyMapping pm = compileJoinSourceProperty("firm", "String",
+                "$src->sort(~AGE->descending())->navigationJoin(" + FIRM_JOIN + ").LEGALNAME");
+        Assert.assertEquals(Lists.mutable.with("FIRSTNAME", "AGE", "FIRMID", "CITY"), joinSourceColumns(pm));
+    }
+
+    @Test
+    public void testJoinSourceWithStepsInOrderThenTwoJoins()
+    {
+        RelationFunctionPropertyMapping pm = compileJoinSourceProperty("firm", "String",
+                "$src->extend(~K: x | $x.FIRMID)->filter(x | $x.K > 0)->rename(~K, ~L)->sort(~AGE->ascending())"
+                        + "->navigationJoin(my::firmFunctionTyped(), {p, f | $p.L == $f.ID})"
+                        + "->filterJoin(my::firmFunctionTyped(), meta::pure::functions::relation::JoinKind.INNER, {f, f2 | $f.ID == $f2.ID}).LEGALNAME");
+        Assert.assertEquals(Lists.mutable.with("FIRSTNAME", "AGE", "FIRMID", "CITY", "L"), joinSourceColumns(pm));
+    }
+
+    @Test
+    public void testJoinSourceWithStepsInsideExpressionAndAlongsideRowAccess()
+    {
+        RelationFunctionPropertyMapping pm = compileJoinSourceProperty("label", "String",
+                "if($row.AGE > 18 && $src->filter(x | $x.AGE > 1)->navigationJoin(" + FIRM_JOIN + ").LEGALNAME->isNotEmpty(), | $src->extend(~K: x | $x.FIRMID)->navigationJoin(my::firmFunctionTyped(), {p, f | $p.K == $f.ID}).LEGALNAME->toOne(), | $row.CITY)");
+        Assert.assertEquals("String", pm._valueFn()._expressionSequence().getOnly()._genericType()._rawType()._name());
+        Assert.assertEquals(Lists.mutable.empty(), pm._valueFn()._openVariables().toList());
+    }
+
+    @Test
+    public void testJoinSourceWithStepsInNavigationJoinTargetRelationStaysAllowed()
+    {
+        compileJoinSourceMapping(joinSourceMapping("firm", "String",
+                "$src->filter(x | $x.AGE > 1)->navigationJoin(my::firmFunctionTyped()->extend(~K: z | $z.ID), {p, f | $p.FIRMID == $f.K}).LEGALNAME"), "");
+    }
+
+    @Test
+    public void testJoinSourceStepsRejectedWhenNotLeadingIntoAJoin()
+    {
+        String message = "'extend' applied to $src must lead into navigationJoin/filterJoin (e.g. $src->extend(...)->navigationJoin(...).COLUMN); use $row to access the columns of the mapped row.";
+        assertJoinSourceMappingFails(joinSourceMapping("cnt", "Integer", "$src->extend(~K: x | 1)->size()"), "", message);
+    }
+
+    @Test
+    public void testJoinSourceFilterAloneAsWholeValueRejected()
+    {
+        assertJoinSourceMappingFails("    +r: Any[1]: $src->filter(x | $x.AGE > 1)\n", "",
+                "'filter' applied to $src must lead into navigationJoin/filterJoin");
+    }
+
+    @Test
+    public void testJoinSourceStepThenStepNotLeadingIntoAJoinRejectedAtOutermostStep()
+    {
+        assertJoinSourceMappingFails(joinSourceMapping("cnt", "Integer", "$src->extend(~K: x | 1)->sort(~AGE->ascending())->size()"), "",
+                "'sort' applied to $src must lead into navigationJoin/filterJoin");
+    }
+
+    private void assertUnsupportedJoinSourceStep(String step, String stepExpression)
+    {
+        assertJoinSourceMappingFails(joinSourceMapping("firm", "String", "$src->" + stepExpression + "->navigationJoin(" + FIRM_JOIN + ").LEGALNAME"), "",
+                "'" + step + "' cannot be applied to $src ahead of navigationJoin: only extend, filter, select, rename and sort are supported, as they keep every source row exactly once.");
+    }
+
+    @Test
+    public void testJoinSourceGroupByRejected()
+    {
+        assertUnsupportedJoinSourceStep("groupBy", "groupBy(~FIRMID, ~c : x | $x.AGE : y | $y->sum())");
+    }
+
+    @Test
+    public void testJoinSourceDistinctRejected()
+    {
+        assertUnsupportedJoinSourceStep("distinct", "distinct()");
+    }
+
+    @Test
+    public void testJoinSourceJoinRejected()
+    {
+        assertUnsupportedJoinSourceStep("join", "join(my::firmFunctionTyped(), meta::pure::functions::relation::JoinKind.INNER, {a, b | $a.FIRMID == $b.ID})");
+    }
+
+    @Test
+    public void testJoinSourceProjectRejected()
+    {
+        assertUnsupportedJoinSourceStep("project", "project(~[FIRMID: x | $x.FIRMID])");
+    }
+
+    @Test
+    public void testJoinSourceConcatenateRejected()
+    {
+        assertUnsupportedJoinSourceStep("concatenate", "concatenate($src)");
+    }
+
+    @Test
+    public void testJoinSourceLimitRejected()
+    {
+        assertUnsupportedJoinSourceStep("limit", "limit(1)");
+    }
+
+    @Test
+    public void testJoinSourceUnsupportedStepAfterSupportedStepRejected()
+    {
+        assertUnsupportedJoinSourceStep("drop", "extend(~K: x | 1)->drop(1)");
+    }
+
+    @Test
+    public void testJoinSourceStepBetweenJoinsRejected()
+    {
+        assertJoinSourceMappingFails(joinSourceMapping("firm", "String",
+                        "$src->navigationJoin(" + FIRM_JOIN + ")->filter(x | $x.AGE > 1)->navigationJoin(" + FIRM_JOIN + ").LEGALNAME"), "",
+                "'filter' cannot be applied between joins: extend, filter, select, rename and sort may only be applied to $src ahead of the first navigationJoin/filterJoin.");
+    }
+
+    @Test
+    public void testJoinSourceNotRootedAtSrcRejected()
+    {
+        assertJoinSourceMappingFails(joinSourceMapping("firm", "String", "my::firmFunctionTyped()->navigationJoin(my::firmFunctionTyped(), {p, f | $p.ID == $f.ID}).LEGALNAME"), "",
+                "The source of 'navigationJoin' must be $src (optionally transformed by extend, filter, select, rename or sort) or another navigationJoin/filterJoin call.");
+    }
+
+    @Test
+    public void testJoinSourceStepLambdaUsingRowRejected()
+    {
+        assertJoinSourceMappingFails(joinSourceMapping("firm", "String", "$src->filter(x | $x.AGE > $row.AGE)->navigationJoin(" + FIRM_JOIN + ").LEGALNAME"), "",
+                "$row is not available in the arguments of 'filter' applied to $src: its lambdas range over the source rows, e.g. {x | $x.COLUMN}.");
+    }
+
+    @Test
+    public void testJoinSourceExtendLambdaUsingRowRejected()
+    {
+        assertJoinSourceMappingFails(joinSourceMapping("firm", "String", "$src->extend(~K: x | $row.AGE)->navigationJoin(" + FIRM_JOIN + ").LEGALNAME"), "",
+                "$row is not available in the arguments of 'extend' applied to $src");
+    }
+
+    @Test
+    public void testJoinSourceStepLambdaUsingSrcRejected()
+    {
+        assertJoinSourceMappingFails(joinSourceMapping("firm", "String", "$src->filter(x | $src->size() > 1)->navigationJoin(" + FIRM_JOIN + ").LEGALNAME"), "",
+                "$src is not available in the arguments of 'filter' applied to $src: its lambdas range over the source rows, e.g. {x | $x.COLUMN}.");
+    }
+
+    @Test
+    public void testJoinSourceStepLambdaContainingJoinChainRejected()
+    {
+        assertJoinSourceMappingFails(joinSourceMapping("firm", "String",
+                        "$src->extend(~K: x | $src->navigationJoin(" + FIRM_JOIN + ").ID)->navigationJoin(" + FIRM_JOIN + ").LEGALNAME"), "",
+                "'navigationJoin' may not be used in the arguments of 'extend' applied to $src; chain the joins after the steps instead (e.g. $src->extend(...)->navigationJoin(...)->filterJoin(...).COLUMN).");
+    }
+
+    @Test
+    public void testSrcWithStepsRejectedInTargetOfAnotherJoin()
+    {
+        assertJoinSourceMappingFails(joinSourceMapping("firm", "String",
+                        "$src->navigationJoin($src->extend(~ID: x | $x.FIRMID), {p, f | $p.FIRMID == $f.ID}).LEGALNAME"), "",
+                SRC_OUTSIDE_JOIN_MESSAGE);
+    }
+
+    @Test
+    public void testSrcWithStepsRejectedInConditionOfAnotherJoin()
+    {
+        assertJoinSourceMappingFails(joinSourceMapping("firm", "String",
+                        "$src->navigationJoin(my::firmFunctionTyped(), {p, f | $p.FIRMID == $src->extend(~K: x | 1)->size()}).LEGALNAME"), "",
+                SRC_OUTSIDE_JOIN_MESSAGE);
+    }
+
+    @Test
+    public void testChainWithStepsRejectedInArgumentsOfAnotherJoin()
+    {
+        assertJoinSourceMappingFails(joinSourceMapping("firm", "String",
+                        "$src->navigationJoin($src->extend(~ID: x | $x.FIRMID)->navigationJoin(" + FIRM_JOIN + "), {p, f | $p.FIRMID == $f.ID}).LEGALNAME"), "",
+                "'navigationJoin' may not be used in the arguments of another navigationJoin/filterJoin");
     }
 }

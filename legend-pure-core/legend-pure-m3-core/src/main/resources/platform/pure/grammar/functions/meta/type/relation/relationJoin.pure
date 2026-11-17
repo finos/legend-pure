@@ -30,9 +30,10 @@ target's columns.
 Only valid inside a Relation class mapping property, and only lowered to SQL: it cannot be executed
 in memory. A source row matching several target rows yields one value per match.
 
-A `.COLUMN` projection on the result only resolves when this call is the property's own value
-expression (or one property access above it, e.g. `$src->navigationJoin(...).LEGALNAME`) -- calling
-`navigationJoin` from inside a separate helper function and projecting a column there does not work.
+The call (or the chain it ends) is either the property's entire value expression, or followed by a
+column access, e.g. `$src->navigationJoin(...).LEGALNAME`, which may appear anywhere in the value expression,
+e.g. `if($src->navigationJoin(...).LEGALNAME->isEmpty(), | 'none', | 'some')`. Calling `navigationJoin` from inside a
+separate helper function and projecting a column there does not work.
 
 **Parameters**
 - `rel` — the source relation: `$src`, or another `navigationJoin`/`filterJoin`.
@@ -79,9 +80,10 @@ Keeps a relation class mapping's source rows that match a row of `target`, with 
 Only valid inside a Relation class mapping property, and only lowered to SQL: it cannot be executed
 in memory. This is not a semi-join: a source row matching several target rows is repeated.
 
-A `.COLUMN` projection on the result only resolves when this call is the property's own value
-expression (or one property access above it, e.g. `$src->filterJoin(...).NAME`) -- calling
-`filterJoin` from inside a separate helper function and projecting a column there does not work.
+The call (or the chain it ends) is either the property's entire value expression, or followed by a
+column access, e.g. `$src->filterJoin(...).NAME`, which may appear anywhere in the value expression,
+e.g. `if($src->filterJoin(...).NAME->isEmpty(), | 'none', | 'some')`. Calling `filterJoin` from inside a
+separate helper function and projecting a column there does not work.
 
 **Parameters**
 - `rel` — the source relation: `$src`, or another `navigationJoin`/`filterJoin`.

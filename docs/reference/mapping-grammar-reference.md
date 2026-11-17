@@ -1248,7 +1248,8 @@ Mapping my::mappings::PersonMapping
   type. It is unrelated to `~src`
   (§15.3), which is the source-declaration keyword. Inside property expressions
   `$src` is bound to the **whole** source relation (`Relation<T>`, not a row),
-  solely as the source of `navigationJoin`/`filterJoin` (§15.10); `$src.<col>`
+  solely as the source of `navigationJoin`/`filterJoin`, optionally after
+  row-preserving steps (§15.10); `$src.<col>`
   is rejected with a hint to use `$row.<col>`.
 
 ### 15.2 `~func` — reference a named Pure function
@@ -1515,16 +1516,41 @@ another zero-argument relation function, with a condition over **columns**:
     ~func my::personRelation__Relation_1_
     firmName       : $src->navigationJoin(my::firmRelation(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME,
     firmNameInner  : $src->navigationJoin(my::firmRelation(), JoinKind.INNER, {p, f | $p.FIRMID == $f.ID}).LEGALNAME,
-    employedName   : $src->filterJoin(my::firmRelation(), {p, f | $p.FIRMID == $f.ID}).FIRSTNAME
+    employedName   : $src->filterJoin(my::firmRelation(), {p, f | $p.FIRMID == $f.ID}).FIRSTNAME,
+    adultFirmName  : $src->extend(~K: x | $x.FIRMID)->filter(x | $x.AGE > 18)->navigationJoin(my::firmRelation(), {p, f | $p.K == $f.ID}).LEGALNAME
 }
 ```
 
 - `navigationJoin` yields the target's columns; `filterJoin` keeps the source's
   columns (gated by the match). They chain:
   `$src->filterJoin(...)->navigationJoin(...).COL`.
-- Their source must be `$src` or another `navigationJoin`/`filterJoin`, and that
-  is the only place `$src` may appear: any other use (e.g. `$src->size()`, or
-  `$src` inside a join condition) is a compile error.
+- The source of the first join of a chain is `$src`, optionally transformed by
+  `extend`, `filter`, `select`, `rename` and `sort` (applied in the order written,
+  before the join); each further join's source is the previous join. These steps
+  keep every source row exactly once, so the join result can still be matched to
+  the mapped row. The steps' columns are visible to the join condition (its first
+  parameter ranges over the transformed relation, e.g. `K` after `extend(~K: ...)`).
+  `filter` makes the join columns empty for the source rows it removes; the
+  mapped instance itself is never dropped. Any other relation function between
+  `$src` and the first join (`groupBy`, `distinct`, `join`, `asOfJoin`, `project`,
+  `concatenate`, `limit`, `drop`, `slice`, `pivot`, ...) is a compile error, as are
+  these steps between two joins or after a join. The steps' lambdas range over the
+  source rows (`{x | $x.COL}`) and can use neither `$row`, `$src` nor a join chain.
+- `$src`, with or without those steps, may appear nowhere but at the root of a chain
+  leading into a join: any other use (e.g. `$src->size()`, `$src->extend(...)->size()`,
+  or `$src` inside a join's target or condition) is a compile error.
+- A chain is either the property's entire value, or followed by a column access
+  (`.COL`). A chain followed by `.COL` may appear anywhere in the value
+  expression — inside `if` branches, comparisons, `isEmpty`/`isNotEmpty`,
+  arithmetic, next to `$row` columns, several chains in one expression:
+
+  ```pure
+  +isAcme : Boolean[1] : if($src->navigationJoin(my::firmRelation(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME == 'Acme', | true, | false),
+  +label  : String[1]  : if($row.CITY->isEmpty(), | $src->navigationJoin(my::firmRelation(), {p, f | $p.FIRMID == $f.ID}).LEGALNAME, | $row.CITY)
+  ```
+
+  A chain without `.COL` nested in an expression, or a chain used in another
+  join's arguments (its target or condition), is a compile error.
 - `$row` (the mapped row) is not available to a join, which is over the whole
   source relation: it can't be a join's source (`$row->navigationJoin(...)`), nor
   appear in a join's condition or other arguments — whether the chain is the
@@ -1604,12 +1630,29 @@ stop importing that function, or call the platform one fully qualified
 | No / several root class mappings for the target class | `modelJoin: expected exactly one root class mapping for type '...' in this mapping or its includes, found N...` |
 | Root class mapping for the target class is an `Operation` | `modelJoin: Operation mappings are not supported as the target of modelJoin; the root class mapping for type '...' ('id') is an Operation.` |
 | Unknown column in a `navigationJoin`/`filterJoin` condition or projection | `The system can't find the column FOO in the Relation (...)` |
-| `navigationJoin`/`filterJoin` source is not `$src` or another join (e.g. `$row->navigationJoin(...)`) | `The source of 'navigationJoin' must be $src or another navigationJoin/filterJoin call.` |
+| `navigationJoin`/`filterJoin` source is not `$src` (optionally transformed) or another join (e.g. `$row->navigationJoin(...)`) | `The source of 'navigationJoin' must be $src (optionally transformed by extend, filter, select, rename or sort) or another navigationJoin/filterJoin call.` |
+| A step other than `extend`/`filter`/`select`/`rename`/`sort` between `$src` and the first join (e.g. `$src->groupBy(...)->navigationJoin(...)`) | `'groupBy' cannot be applied to $src ahead of navigationJoin: only extend, filter, select, rename and sort are supported, as they keep every source row exactly once.` |
+| A step between two joins, or after a join | `'filter' cannot be applied between joins: extend, filter, select, rename and sort may only be applied to $src ahead of the first navigationJoin/filterJoin.` |
+| Steps on `$src` that do not lead into a join (e.g. `$src->extend(...)->size()`) | `'extend' applied to $src must lead into navigationJoin/filterJoin (e.g. $src->extend(...)->navigationJoin(...).COLUMN); use $row to access the columns of the mapped row.` |
+| `$row` in a step's lambda | `$row is not available in the arguments of 'filter' applied to $src: its lambdas range over the source rows, e.g. {x \| $x.COLUMN}.` |
+| `$src` in a step's lambda | `$src is not available in the arguments of 'filter' applied to $src: its lambdas range over the source rows, e.g. {x \| $x.COLUMN}.` |
+| A join chain in a step's lambda | `'navigationJoin' may not be used in the arguments of 'extend' applied to $src; chain the joins after the steps instead (e.g. $src->extend(...)->navigationJoin(...)->filterJoin(...).COLUMN).` |
 | `$row` inside a `navigationJoin`/`filterJoin` condition | `navigationJoin()'s join condition is over the source and target rows: $row is not available. Use the condition's parameters, e.g. {p, f \| $p.FIRMID == $f.ID}.` |
 | `$row` in another argument of `navigationJoin`/`filterJoin` (e.g. the target) | `$row is not available in the arguments of navigationJoin(): the join is over the whole source relation, not the mapped row.` |
-| `$src` anywhere but the root of a join chain | `$src is the whole source relation and may only be used as the source of navigationJoin/filterJoin ...` |
+| `$src` anywhere but the root of a join chain | `$src is the whole source relation and may only be used as the source of navigationJoin/filterJoin, optionally after extend, filter, select, rename or sort ...` |
+| A chain nested in an expression without a column access (e.g. `$src->navigationJoin(...)->size()`) | `'navigationJoin' may only be used as the property's entire value expression, or followed by a column access (e.g. $src->navigationJoin(...).COLUMN).` |
+| A chain in another join's target or condition | `'navigationJoin' may not be used in the arguments of another navigationJoin/filterJoin; chain the joins instead (e.g. $src->navigationJoin(...)->navigationJoin(...).COLUMN).` |
 | A bare `modelJoin` while a same-named user function defined in the same compile batch is visible | `modelJoin() is ambiguous here: the function(s) my::pkg::modelJoin of the same name are also visible. ...` |
 | `JoinKind.RIGHT` / `JoinKind.FULL` | `JoinKind.RIGHT is not supported by navigationJoin(); use JoinKind.LEFT (the default) or JoinKind.INNER.` (for `filterJoin()`, the default named instead is `JoinKind.INNER`) |
+
+**Possible future enhancement: aggregates over a join.** A join chain is row-level: `.COL` reads one value from
+the joined row, so an aggregate over the chain itself (`$src->navigationJoin(...)->size()`, or `->sum()` over a joined
+column) is rejected, and `chain.COL->size()` is always 1. `Relational` mappings have no equivalent in a property
+mapping: aggregation happens in the query over a to-many property, and a Relation mapping does the same through a
+`modelJoin` to a class with a to-many association. Allowing a chain as the argument of `size`, `isEmpty`, `exists` and
+`sum`/`min`/`max`/`avg` over a column is a possible later addition.
+
+`sort` is accepted as a step before the first join; it keeps every row once and does not change the join result.
 
 ### 15.11 Difference from `Relational` mapping
 

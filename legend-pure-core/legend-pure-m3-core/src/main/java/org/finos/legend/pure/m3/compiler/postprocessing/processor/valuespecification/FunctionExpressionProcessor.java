@@ -319,6 +319,10 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                         //return;
                     }
                 }
+                else if (state.isJoinResultColumnAccess(functionExpression) && isRelationOfRelationType(sourceGenericType, processorSupport))
+                {
+                    foundFunctions.add(_RelationType.findColumn((RelationType<?>) ImportStub.withImportStubByPass(sourceGenericType._typeArguments().getFirst()._rawTypeCoreInstance(), processorSupport), propertyName, functionExpression.getSourceInformation(), processorSupport));
+                }
                 else
                 {
                     Multiplicity sourceMultiplicity = source._multiplicity();
@@ -853,6 +857,13 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         {
             GenericTypeTraceability.addTraceForEnum(functionExpression, repository, processorSupport);
         }
+    }
+
+    private static boolean isRelationOfRelationType(GenericType genericType, ProcessorSupport processorSupport)
+    {
+        return M3Paths.Relation.equals(PackageableElement.getUserPathForPackageableElement(genericType._rawType()))
+                && genericType._typeArguments().size() == 1
+                && ImportStub.withImportStubByPass(genericType._typeArguments().getFirst()._rawTypeCoreInstance(), processorSupport) instanceof RelationType;
     }
 
     private IntSet firstPassTypeInference(FunctionExpression functionExpression, ListIterable<? extends ValueSpecification> parametersValues, ProcessorState processorState, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport) throws PureCompilationException

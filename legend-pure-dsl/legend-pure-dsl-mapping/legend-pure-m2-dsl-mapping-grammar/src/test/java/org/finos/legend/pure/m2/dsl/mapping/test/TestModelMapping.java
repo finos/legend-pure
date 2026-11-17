@@ -1005,4 +1005,37 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
         assertPureException(PureCompilationException.class, "Type Error: 'Integer' not a subtype of 'String'", "mapping.pure", 8, 44, e);
     }
+
+    @Test
+    public void testPropertyMappingWithColSpecsAndRelationTypes()
+    {
+        runtime.createInMemorySource("model.pure",
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "Class Firm\n" +
+                        "{\n" +
+                        "  legalName : String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class FirmSource\n" +
+                        "{\n" +
+                        "  name : String[1];\n" +
+                        "}\n" +
+                        "native function meta::pure::functions::relation::extend<T,Z>(r:Relation<T>[1], f:FuncColSpec<{T[1]->Any[0..1]},Z>[1]):Relation<T+Z>[1];\n" +
+                        "native function meta::pure::functions::relation::select<T,X>(r:Relation<X>[1], cols:ColSpecArray<T⊆X>[1]):Relation<T>[1];\n");
+        runtime.createInMemorySource("mapping.pure",
+                "###Mapping\n" +
+                        "Mapping test::TestMapping\n" +
+                        "(\n" +
+                        "  Firm : Pure\n" +
+                        "  {\n" +
+                        "    ~src FirmSource\n" +
+                        "    legalName : $src.name + []->cast(@meta::pure::metamodel::relation::Relation<(NAME:String[1], ID:Integer[1])>)->toOne()->extend(~UPPER: r | $r.NAME->toUpper())->select(~[UPPER, ID])->size()->toString()\n" +
+                        "  }\n" +
+                        ")");
+        runtime.compile();
+
+        PureInstanceSetImplementation firmMapping = (PureInstanceSetImplementation) ((Mapping) runtime.getCoreInstance("test::TestMapping"))._classMappings().getOnly();
+        PurePropertyMapping legalName = (PurePropertyMapping) firmMapping._propertyMappings().getOnly();
+        Assert.assertEquals("String", legalName._transform()._expressionSequence().getOnly()._genericType()._rawType()._name());
+    }
 }

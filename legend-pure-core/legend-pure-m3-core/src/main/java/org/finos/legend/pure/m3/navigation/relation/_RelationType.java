@@ -92,7 +92,19 @@ public class _RelationType
     public static RelationType<?> build(ListIterable<? extends CoreInstance> cols, SourceInformation pureSourceInformation, ProcessorSupport processorSupport)
     {
         RelationType<?> newRelationType = (RelationType<?>) processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.RelationType);
-        GenericType source = (GenericType) processorSupport.type_wrapGenericType(newRelationType);
+        bindColumns(newRelationType, cols, pureSourceInformation, processorSupport);
+        return newRelationType;
+    }
+
+    /**
+     * Makes {@code relationType} the owner of {@code cols}: sets them as its columns and points each column's source
+     * type, {@code relationType}'s classifier generic type and its generalization to Any back at {@code relationType}.
+     * Besides {@link #build}, the M3 instance parser uses this to restore those back-references on a RelationType that
+     * was serialized to M4 without them.
+     */
+    public static void bindColumns(RelationType<?> relationType, ListIterable<? extends CoreInstance> cols, SourceInformation pureSourceInformation, ProcessorSupport processorSupport)
+    {
+        GenericType source = (GenericType) processorSupport.type_wrapGenericType(relationType);
 
         cols.forEach(c -> _Column.updateSource((Column<?, ?>) c, source));
 
@@ -106,20 +118,18 @@ public class _RelationType
         GenericType classifierGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.GenericType);
         classifierGenericType._rawType((Type) _Package.getByUserPath(M3Paths.RelationType, processorSupport));
         classifierGenericType._typeArgumentsAdd(source);
-        newRelationType._classifierGenericType(classifierGenericType);
+        relationType._classifierGenericType(classifierGenericType);
 
         // SubType of Any
         Generalization generalization = (Generalization) processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.Generalization);
-        generalization._specific(newRelationType);
+        generalization._specific(relationType);
         org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType anyG = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.GenericType);
         anyG._rawType((Class<?>) processorSupport.type_TopType());
         generalization._general(anyG);
-        newRelationType._generalizationsAdd(generalization);
+        relationType._generalizationsAdd(generalization);
 
         // Set columns
-        newRelationType.setKeyValues(Lists.mutable.with("columns"), cols);
-
-        return newRelationType;
+        relationType.setKeyValues(Lists.mutable.with("columns"), cols);
     }
 
     public static Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> alignColumnSets(RichIterable<? extends Column<?, ?>> candidateColumns, RichIterable<? extends Column<?, ?>> signatureColumns, ProcessorSupport processorSupport)

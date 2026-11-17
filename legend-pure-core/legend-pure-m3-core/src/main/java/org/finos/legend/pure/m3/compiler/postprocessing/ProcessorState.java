@@ -45,6 +45,7 @@ public class ProcessorState extends MatcherState
     private final MutableStack<TypeInferenceContext> typeInferenceContext = Stacks.mutable.empty();
     private final MutableStack<MilestoneDateContext> milestoningDates = Stacks.mutable.empty();
     private final MutableSet<CoreInstance> functionDefinitions = Sets.mutable.empty();
+    private final MutableSet<CoreInstance> joinResultColumnAccesses = Sets.mutable.empty();
     private final Message message;
     private final ParserLibrary parserLibrary;
     private final InlineDSLLibrary inlineDSLLibrary;
@@ -246,6 +247,16 @@ public class ProcessorState extends MatcherState
     public void addVariable(String variable)
     {
         this.variables.add(variable);
+    }
+
+    public void addJoinResultColumnAccess(CoreInstance columnAccess)
+    {
+        this.joinResultColumnAccesses.add(columnAccess);
+    }
+
+    public boolean isJoinResultColumnAccess(CoreInstance columnAccess)
+    {
+        return this.joinResultColumnAccesses.contains(columnAccess);
     }
 
     public SourceMutation getSourceMutation()
