@@ -15,6 +15,7 @@ This file lists the maintainers of this repository.
 | @gs-rpant1729 | Rohit Pant | Goldman Sachs | rohit.r.pant@gs.com |
 | @kevin-m-knight-gs | Kevin Knight | Goldman Sachs |  |
 | @mimi-tam | Mimi Tam | Goldman Sachs |  |
+| @nschue-gs | Nicholas Schuetze | Goldman Sachs |  |
 | @rafaelbey | Rafael Bey-Hernandez | Goldman Sachs |  |
 
 For information about maintainer responsibilities and resources, see the [FINOS Maintainers Cheatsheet](https://community.finos.org/docs/finos-maintainers-cheatsheet).
