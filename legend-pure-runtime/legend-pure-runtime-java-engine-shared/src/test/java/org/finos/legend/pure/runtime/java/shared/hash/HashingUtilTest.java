@@ -17,23 +17,25 @@ package org.finos.legend.pure.runtime.java.shared.hash;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Locale;
+
 public class HashingUtilTest
 {
     @Test
     public void testMD5Hash()
     {
-        Assert.assertEquals("65A8E27D8879283831B664BD8B7F0AD4", HashingUtil.hash("Hello, World!", HashType.MD5).toUpperCase());
+        Assert.assertEquals("65A8E27D8879283831B664BD8B7F0AD4", HashingUtil.hash("Hello, World!", HashType.MD5).toUpperCase(Locale.ROOT));
     }
 
     @Test
     public void testSHA1Hash()
     {
-        Assert.assertEquals("0A0A9F2A6772942557AB5355D76AF442F8F65E01", HashingUtil.hash("Hello, World!", HashType.SHA1).toUpperCase());
+        Assert.assertEquals("0A0A9F2A6772942557AB5355D76AF442F8F65E01", HashingUtil.hash("Hello, World!", HashType.SHA1).toUpperCase(Locale.ROOT));
     }
 
     @Test
     public void testSHA256Hash()
     {
-        Assert.assertEquals("DFFD6021BB2BD5B0AF676290809EC3A53191DD81C7F70A4B28688A362182986F", HashingUtil.hash("Hello, World!", HashType.SHA256).toUpperCase());
+        Assert.assertEquals("DFFD6021BB2BD5B0AF676290809EC3A53191DD81C7F70A4B28688A362182986F", HashingUtil.hash("Hello, World!", HashType.SHA256).toUpperCase(Locale.ROOT));
     }
 }

@@ -31,6 +31,7 @@ import org.junit.Test;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,7 +44,7 @@ public class TestVavrHamtMutableMapAdapter
         @Override
         public int computeHashCode(String object)
         {
-            return object == null ? 0 : object.toLowerCase().hashCode();
+            return object == null ? 0 : object.toLowerCase(Locale.ROOT).hashCode();
         }
 
         @Override
