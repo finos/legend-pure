@@ -94,6 +94,7 @@ import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformati
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParserBaseVisitor<String>
@@ -1265,7 +1266,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     private AsciiNodeBuilder visitOneJoinBlock(OneJoinContext ctx, Token joinType, ScopeInfo scope, String db)
     {
         MutableList<String> values = Lists.mutable.with("INNER", "OUTER");
-        if (joinType != null && !values.contains(joinType.getText().toUpperCase()))
+        if (joinType != null && !values.contains(joinType.getText().toUpperCase(Locale.ROOT)))
         {
             throw new PureParserException(sourceInformation.getPureSourceInformation(joinType), "The joinType is not recognized. Valid join types are: " + values);
         }

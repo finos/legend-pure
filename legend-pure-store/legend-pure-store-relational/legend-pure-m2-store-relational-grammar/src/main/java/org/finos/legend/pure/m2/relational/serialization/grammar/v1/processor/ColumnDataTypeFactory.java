@@ -23,6 +23,8 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.list.mutable.FastList;
 
+import java.util.Locale;
+
 
 public class ColumnDataTypeFactory
 {
@@ -75,7 +77,7 @@ public class ColumnDataTypeFactory
 
     public static String getPureTypeName(String typeName)
     {
-        return COLUMN_TYPE_MAP.get(typeName.toUpperCase());
+        return COLUMN_TYPE_MAP.get(typeName.toUpperCase(Locale.ROOT));
     }
 
     private static ImmutableMap<String, String> buildTypeMap()

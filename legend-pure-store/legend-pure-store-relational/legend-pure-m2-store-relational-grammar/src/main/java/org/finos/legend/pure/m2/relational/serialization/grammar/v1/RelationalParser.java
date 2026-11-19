@@ -87,6 +87,8 @@ import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformati
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureAntlrErrorStrategy;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
+import java.util.Locale;
+
 import static org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.ParsingUtils.isAntlrRecognitionExceptionUsingFastParser;
 
 public class RelationalParser implements IRelationalParser
@@ -351,7 +353,7 @@ public class RelationalParser implements IRelationalParser
     public GenericType convertType(CoreInstance type, ModelRepository repository, ProcessorSupport processorSupport)
     {
         String result;
-        String typeStr = type.getClassifier().getName().toUpperCase();
+        String typeStr = type.getClassifier().getName().toUpperCase(Locale.ROOT);
         switch (typeStr)
         {
             case "VARCHAR":
