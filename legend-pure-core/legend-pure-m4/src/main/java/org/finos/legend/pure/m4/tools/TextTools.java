@@ -324,7 +324,7 @@ public class TextTools
     }
 
     /**
-     * Convert a code point of a string to lower case using the rules of the default locale.
+     * Convert a code point of a string to lower case using the rules of the root locale, whatever the default locale.
      *
      * @param string string
      * @param index  index of the code point (a char index, not a count of code points)
@@ -332,7 +332,7 @@ public class TextTools
      */
     public static String toLowerCase(String string, int index)
     {
-        return toLowerCase(string, index, Locale.getDefault());
+        return toLowerCase(string, index, Locale.ROOT);
     }
 
     /**
@@ -349,7 +349,7 @@ public class TextTools
     }
 
     /**
-     * Convert a region of a string to lower case using the rules of the default locale.
+     * Convert a region of a string to lower case using the rules of the root locale, whatever the default locale.
      *
      * @param string string
      * @param start  region start (inclusive)
@@ -358,7 +358,7 @@ public class TextTools
      */
     public static String toLowerCase(String string, int start, int end)
     {
-        return toLowerCase(string, start, end, Locale.getDefault());
+        return toLowerCase(string, start, end, Locale.ROOT);
     }
 
     /**
@@ -382,7 +382,7 @@ public class TextTools
     }
 
     /**
-     * Convert a code point of a string to upper case using the rules of the default locale.
+     * Convert a code point of a string to upper case using the rules of the root locale, whatever the default locale.
      *
      * @param string string
      * @param index  index of the code point (a char index, not a count of code points)
@@ -390,7 +390,7 @@ public class TextTools
      */
     public static String toUpperCase(String string, int index)
     {
-        return toUpperCase(string, index, Locale.getDefault());
+        return toUpperCase(string, index, Locale.ROOT);
     }
 
     /**
@@ -407,7 +407,7 @@ public class TextTools
     }
 
     /**
-     * Convert a region of a string to upper case using the rules of the default locale.
+     * Convert a region of a string to upper case using the rules of the root locale, whatever the default locale.
      *
      * @param string string
      * @param start  region start (inclusive)
@@ -416,7 +416,7 @@ public class TextTools
      */
     public static String toUpperCase(String string, int start, int end)
     {
-        return toUpperCase(string, start, end, Locale.getDefault());
+        return toUpperCase(string, start, end, Locale.ROOT);
     }
 
     /**

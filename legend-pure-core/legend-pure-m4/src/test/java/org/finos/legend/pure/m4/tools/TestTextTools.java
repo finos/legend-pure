@@ -623,10 +623,12 @@ public class TestTextTools
             Assert.assertSame(s, TextTools.toLowerCase(s, 0, s.length(), Locale.ROOT));
         });
 
-        // the default locale overloads delegate to the explicit locale overloads
-        String text = "THE QUICK BROWN FOX";
-        Assert.assertEquals(TextTools.toLowerCase(text, 0, Locale.getDefault()), TextTools.toLowerCase(text, 0));
-        Assert.assertEquals(TextTools.toLowerCase(text, 3, 15, Locale.getDefault()), TextTools.toLowerCase(text, 3, 15));
+        // the overloads without a locale use the root locale, whatever the default locale
+        withDefaultLocale(Locale.forLanguageTag("tr-TR"), () ->
+        {
+            Assert.assertEquals("iTEM", TextTools.toLowerCase("ITEM", 0));
+            Assert.assertEquals("THE item", TextTools.toLowerCase("THE ITEM", 4, 8));
+        });
     }
 
     @Test
@@ -654,9 +656,11 @@ public class TestTextTools
             Assert.assertSame(s, TextTools.toUpperCase(s, 0, s.length(), Locale.ROOT));
         });
 
-        String text = "the quick brown fox";
-        Assert.assertEquals(TextTools.toUpperCase(text, 0, Locale.getDefault()), TextTools.toUpperCase(text, 0));
-        Assert.assertEquals(TextTools.toUpperCase(text, 3, 15, Locale.getDefault()), TextTools.toUpperCase(text, 3, 15));
+        withDefaultLocale(Locale.forLanguageTag("tr-TR"), () ->
+        {
+            Assert.assertEquals("Item", TextTools.toUpperCase("item", 0));
+            Assert.assertEquals("the ITEM", TextTools.toUpperCase("the item", 4, 8));
+        });
     }
 
     @Test
@@ -724,6 +728,24 @@ public class TestTextTools
         Assert.assertThrows(StringIndexOutOfBoundsException.class, () -> TextTools.toUpperCase("abc", -1, Locale.ROOT));
         Assert.assertThrows(StringIndexOutOfBoundsException.class, () -> TextTools.toUpperCase("abc", 0, 4, Locale.ROOT));
         Assert.assertThrows(StringIndexOutOfBoundsException.class, () -> TextTools.toUpperCase("abc", 2, 1, Locale.ROOT));
+    }
+
+    private static void withDefaultLocale(Locale locale, Runnable runnable)
+    {
+        Locale defaultLocale = Locale.getDefault();
+        Locale displayLocale = Locale.getDefault(Locale.Category.DISPLAY);
+        Locale formatLocale = Locale.getDefault(Locale.Category.FORMAT);
+        Locale.setDefault(locale);
+        try
+        {
+            runnable.run();
+        }
+        finally
+        {
+            Locale.setDefault(defaultLocale);
+            Locale.setDefault(Locale.Category.DISPLAY, displayLocale);
+            Locale.setDefault(Locale.Category.FORMAT, formatLocale);
+        }
     }
 
     private static boolean isSurrogate(int codePoint)
