@@ -14,8 +14,7 @@
 
 package org.finos.legend.pure.m4.serialization.grammar;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 /**
  * Escapes and unescapes the text of Pure string literals.
@@ -53,12 +52,23 @@ public class StringEscape
         {
             first++;
         }
-        return (first == length) ? string : appendEscaped(new StringBuilder(length + 16).append(string, 0, first), string, first).toString();
+        if (first == length)
+        {
+            return string;
+        }
+
+        StringBuilder builder = new StringBuilder(length + 16).append(string, 0, first);
+        appendEscaped(SafeAppendable.wrap(builder), string, first);
+        return builder.toString();
     }
 
     public static <T extends Appendable> T escape(T appendable, String string)
     {
-        return (string == null) ? appendable : appendEscaped(appendable, string, 0);
+        if (string != null)
+        {
+            appendEscaped(SafeAppendable.wrap(appendable), string, 0);
+        }
+        return appendable;
     }
 
     public static String unescape(String string)
@@ -69,12 +79,23 @@ public class StringEscape
         }
 
         int first = string.indexOf('\\');
-        return (first == -1) ? string : appendUnescaped(new StringBuilder(string.length()).append(string, 0, first), string, first).toString();
+        if (first == -1)
+        {
+            return string;
+        }
+
+        StringBuilder builder = new StringBuilder(string.length()).append(string, 0, first);
+        appendUnescaped(SafeAppendable.wrap(builder), string, first);
+        return builder.toString();
     }
 
     public static <T extends Appendable> T unescape(T appendable, String string)
     {
-        return (string == null) ? appendable : appendUnescaped(appendable, string, 0);
+        if (string != null)
+        {
+            appendUnescaped(SafeAppendable.wrap(appendable), string, 0);
+        }
+        return appendable;
     }
 
     private static boolean needsEscape(char c)
@@ -82,99 +103,83 @@ public class StringEscape
         return (c < ' ') || (c > 0x7F) || (c == '\'') || (c == '\\');
     }
 
-    private static <T extends Appendable> T appendEscaped(T appendable, String string, int start)
+    private static void appendEscaped(SafeAppendable appendable, String string, int start)
     {
-        try
+        for (int i = start, length = string.length(); i < length; i++)
         {
-            for (int i = start, length = string.length(); i < length; i++)
+            char c = string.charAt(i);
+            switch (c)
             {
-                char c = string.charAt(i);
-                switch (c)
+                case '\'':
                 {
-                    case '\'':
+                    appendable.append("\\'");
+                    break;
+                }
+                case '\\':
+                {
+                    appendable.append("\\\\");
+                    break;
+                }
+                case '\b':
+                {
+                    appendable.append("\\b");
+                    break;
+                }
+                case '\t':
+                {
+                    appendable.append("\\t");
+                    break;
+                }
+                case '\n':
+                {
+                    appendable.append("\\n");
+                    break;
+                }
+                case '\f':
+                {
+                    appendable.append("\\f");
+                    break;
+                }
+                case '\r':
+                {
+                    appendable.append("\\r");
+                    break;
+                }
+                default:
+                {
+                    if ((c < ' ') || (c > 0x7F))
                     {
-                        appendable.append("\\'");
-                        break;
+                        appendable.append('\\').append('u')
+                                .append(HEX_DIGITS[(c >>> 12) & 0xF])
+                                .append(HEX_DIGITS[(c >>> 8) & 0xF])
+                                .append(HEX_DIGITS[(c >>> 4) & 0xF])
+                                .append(HEX_DIGITS[c & 0xF]);
                     }
-                    case '\\':
+                    else
                     {
-                        appendable.append("\\\\");
-                        break;
-                    }
-                    case '\b':
-                    {
-                        appendable.append("\\b");
-                        break;
-                    }
-                    case '\t':
-                    {
-                        appendable.append("\\t");
-                        break;
-                    }
-                    case '\n':
-                    {
-                        appendable.append("\\n");
-                        break;
-                    }
-                    case '\f':
-                    {
-                        appendable.append("\\f");
-                        break;
-                    }
-                    case '\r':
-                    {
-                        appendable.append("\\r");
-                        break;
-                    }
-                    default:
-                    {
-                        if ((c < ' ') || (c > 0x7F))
-                        {
-                            appendable.append('\\').append('u')
-                                    .append(HEX_DIGITS[(c >>> 12) & 0xF])
-                                    .append(HEX_DIGITS[(c >>> 8) & 0xF])
-                                    .append(HEX_DIGITS[(c >>> 4) & 0xF])
-                                    .append(HEX_DIGITS[c & 0xF]);
-                        }
-                        else
-                        {
-                            appendable.append(c);
-                        }
+                        appendable.append(c);
                     }
                 }
             }
-            return appendable;
-        }
-        catch (IOException e)
-        {
-            throw new UncheckedIOException(e);
         }
     }
 
-    private static <T extends Appendable> T appendUnescaped(T appendable, String string, int start)
+    private static void appendUnescaped(SafeAppendable appendable, String string, int start)
     {
-        try
+        int length = string.length();
+        int i = start;
+        while (i < length)
         {
-            int length = string.length();
-            int i = start;
-            while (i < length)
+            char c = string.charAt(i);
+            if (c == '\\')
             {
-                char c = string.charAt(i);
-                if (c == '\\')
-                {
-                    i = appendUnescapedSequence(appendable, string, i);
-                }
-                else
-                {
-                    appendable.append(c);
-                    i++;
-                }
+                i = appendUnescapedSequence(appendable, string, i);
             }
-            return appendable;
-        }
-        catch (IOException e)
-        {
-            throw new UncheckedIOException(e);
+            else
+            {
+                appendable.append(c);
+                i++;
+            }
         }
     }
 
@@ -183,7 +188,7 @@ public class StringEscape
      *
      * @return the index after the sequence
      */
-    private static int appendUnescapedSequence(Appendable appendable, String string, int index) throws IOException
+    private static int appendUnescapedSequence(SafeAppendable appendable, String string, int index)
     {
         int next = index + 1;
         if (next == string.length())
@@ -249,7 +254,7 @@ public class StringEscape
         }
     }
 
-    private static int appendOctalEscape(Appendable appendable, String string, int index) throws IOException
+    private static int appendOctalEscape(SafeAppendable appendable, String string, int index)
     {
         // one to three digits, with a third only when the first is 0 to 3, so that the value fits in 8 bits
         int length = string.length();
@@ -273,7 +278,7 @@ public class StringEscape
         return ('0' <= c) && (c <= '7');
     }
 
-    private static int appendUnicodeEscape(Appendable appendable, String string, int index) throws IOException
+    private static int appendUnicodeEscape(SafeAppendable appendable, String string, int index)
     {
         int length = string.length();
         int start = index + 2;
