@@ -103,6 +103,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -875,7 +876,7 @@ public class M3LazyCoreInstanceGenerator
     {
         // There are no associations with primitive types, so we can assume the property is not from an association
         String primitiveTypeName = propertyInfo.resolvedRawType.getName();
-        String lowerPrimitiveTypeName = TextTools.toLowerCase(primitiveTypeName, 0);
+        String lowerPrimitiveTypeName = TextTools.toLowerCase(primitiveTypeName, 0, Locale.ROOT);
         if (propertyInfo.isToOne())
         {
             builder.append("    public ").append(propertyInfo.returnTypeJava).append(" _").append(propertyInfo.name).append("()\n");

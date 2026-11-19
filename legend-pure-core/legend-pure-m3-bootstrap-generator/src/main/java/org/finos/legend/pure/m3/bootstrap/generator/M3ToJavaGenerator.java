@@ -41,6 +41,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -1067,7 +1068,7 @@ public class M3ToJavaGenerator
 
     private String createPropertyKeyName(String propertyName)
     {
-        return propertyName.toUpperCase() + "_PROPERTY_KEY";
+        return propertyName.toUpperCase(Locale.ROOT) + "_PROPERTY_KEY";
     }
 
     private String createClassPropertySetterToMany(CoreInstance property, CoreInstance propertyReturnGenericType, Imports imports, String interfaceName)
@@ -2364,7 +2365,7 @@ public class M3ToJavaGenerator
         {
             propertyName += "_";
         }
-        return propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+        return propertyName.substring(0, 1).toUpperCase(Locale.ROOT) + propertyName.substring(1);
     }
 
     private static String getUnifiedMethodName(CoreInstance property)
@@ -2750,7 +2751,7 @@ public class M3ToJavaGenerator
             throw new RuntimeException("Type should not be null!");
         }
         String typeName = type.getName();
-        String toPrimitiveFn = "PrimitiveHelper." + typeName.toUpperCase() + "_TO_COREINSTANCE_FN";
+        String toPrimitiveFn = "PrimitiveHelper." + typeName.toUpperCase(Locale.ROOT) + "_TO_COREINSTANCE_FN";
         if ("Float".equals(typeName))
         {
             expression = "new java.math.BigDecimal(" + expression + ")";
