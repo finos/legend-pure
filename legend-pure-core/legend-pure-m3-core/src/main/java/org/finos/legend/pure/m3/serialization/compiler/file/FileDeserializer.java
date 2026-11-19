@@ -184,7 +184,7 @@ public class FileDeserializer
                 throw new ElementNotFoundException(elementPath, "cannot find resource " + resourceName);
             }
             LOGGER.debug("Deserializing {} from resource '{}': {}", elementPath, resourceName, url);
-            try (InputStream stream = url.openStream())
+            try (InputStream stream = new BufferedInputStream(url.openStream()))
             {
                 return this.elementDeserializer.deserialize(stream);
             }
@@ -341,7 +341,7 @@ public class FileDeserializer
                 throw new ModuleMetadataNotFoundException(moduleName, "manifest", "cannot find resource " + resourceName);
             }
             LOGGER.debug("Deserializing module {} manifest from resource '{}': {}", moduleName, resourceName, url);
-            try (InputStream stream = url.openStream())
+            try (InputStream stream = new BufferedInputStream(url.openStream()))
             {
                 return this.moduleSerializer.deserializeManifest(stream);
             }
@@ -498,7 +498,7 @@ public class FileDeserializer
                 throw new ModuleMetadataNotFoundException(moduleName, "source metadata", "cannot find resource " + resourceName);
             }
             LOGGER.debug("Deserializing module {} source metadata from resource '{}': {}", moduleName, resourceName, url);
-            try (InputStream stream = url.openStream())
+            try (InputStream stream = new BufferedInputStream(url.openStream()))
             {
                 return this.moduleSerializer.deserializeSourceMetadata(stream);
             }
@@ -656,7 +656,7 @@ public class FileDeserializer
                 throw new ModuleMetadataNotFoundException(moduleName, "external reference metadata", "cannot find resource " + resourceName);
             }
             LOGGER.debug("Deserializing module {} external reference metadata from resource '{}': {}", moduleName, resourceName, url);
-            try (InputStream stream = url.openStream())
+            try (InputStream stream = new BufferedInputStream(url.openStream()))
             {
                 return this.moduleSerializer.deserializeExternalReferenceMetadata(stream);
             }
@@ -895,7 +895,7 @@ public class FileDeserializer
                 return null;
             }
             LOGGER.debug("Deserializing module {} element {} back reference metadata from resource '{}': {}", moduleName, elementPath, resourceName, url);
-            try (InputStream stream = url.openStream())
+            try (InputStream stream = new BufferedInputStream(url.openStream()))
             {
                 return this.moduleSerializer.deserializeBackReferenceMetadata(stream);
             }
@@ -1008,7 +1008,7 @@ public class FileDeserializer
                 return null;
             }
             LOGGER.debug("Deserializing module {} back reference index from resource '{}': {}", moduleName, resourceName, url);
-            try (InputStream stream = url.openStream())
+            try (InputStream stream = new BufferedInputStream(url.openStream()))
             {
                 return this.moduleSerializer.deserializeBackReferenceIndex(stream);
             }
@@ -1164,7 +1164,7 @@ public class FileDeserializer
                 throw new ModuleMetadataNotFoundException(moduleName, "function name metadata", "cannot find resource " + resourceName);
             }
             LOGGER.debug("Deserializing module {} function name metadata from resource '{}': {}", moduleName, resourceName, url);
-            try (InputStream stream = url.openStream())
+            try (InputStream stream = new BufferedInputStream(url.openStream()))
             {
                 return this.moduleSerializer.deserializeFunctionNameMetadata(stream);
             }
