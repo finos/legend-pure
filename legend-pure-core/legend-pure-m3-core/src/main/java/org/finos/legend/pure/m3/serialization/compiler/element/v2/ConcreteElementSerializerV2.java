@@ -23,6 +23,8 @@ import org.finos.legend.pure.m3.serialization.compiler.strings.StringIndexer;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m3.tools.CompressorPool;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -47,8 +49,11 @@ public class ConcreteElementSerializerV2 implements ConcreteElementSerializerExt
     {
         try (CompressorPool.CloseableDeflater deflater = CompressorPool.getInstance().borrowDeflater(COMPRESSION_LEVEL, true))
         {
+            // V1 writes a primitive at a time: the buffer saves a call to the deflater for each one
             DeflaterOutputStream zipStream = new DeflaterOutputStream(stream, deflater);
-            this.v1.serialize(zipStream, element, stringIndexer, referenceIdProvider, processorSupport);
+            BufferedOutputStream bufferedStream = new BufferedOutputStream(zipStream);
+            this.v1.serialize(bufferedStream, element, stringIndexer, referenceIdProvider, processorSupport);
+            bufferedStream.flush();
             zipStream.finish();
         }
         catch (IOException e)
@@ -62,7 +67,8 @@ public class ConcreteElementSerializerV2 implements ConcreteElementSerializerExt
     {
         try (CompressorPool.CloseableInflater inflater = CompressorPool.getInstance().borrowInflater(true))
         {
-            return this.v1.deserialize(new InflaterInputStream(stream, inflater), stringIndexer, referenceIdVersion);
+            // V1 reads a primitive at a time: the buffer saves a call to the inflater for each one
+            return this.v1.deserialize(new BufferedInputStream(new InflaterInputStream(stream, inflater)), stringIndexer, referenceIdVersion);
         }
     }
 }
