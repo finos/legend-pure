@@ -21,6 +21,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Locale;
 import java.util.Stack;
 import java.util.UUID;
 import org.eclipse.collections.api.list.ListIterable;
@@ -72,7 +73,7 @@ public class FunctionExecutionInterpretedWithCodeCoverage extends FunctionExecut
         SourceInformation covered = function.getSourceInformation();
         if (covered != null)
         {
-            this.writer.printf("%s %d %d %d %d%n", covered.getSourceId(), covered.getStartLine() - 1, covered.getStartColumn() - 1, covered.getEndLine() - 1, covered.getEndColumn());
+            this.writer.printf(Locale.ROOT, "%s %d %d %d %d%n", covered.getSourceId(), covered.getStartLine() - 1, covered.getStartColumn() - 1, covered.getEndLine() - 1, covered.getEndColumn());
         }
         return super.executeFunction(limitScope, function, params, resolvedTypeParameters, resolvedMultiplicityParameters, varContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
     }
