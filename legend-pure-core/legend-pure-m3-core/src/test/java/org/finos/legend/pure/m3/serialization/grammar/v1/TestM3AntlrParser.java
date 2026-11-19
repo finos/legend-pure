@@ -15,8 +15,13 @@
 package org.finos.legend.pure.m3.serialization.grammar.v1;
 
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunctionInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
 import org.finos.legend.pure.m3.statelistener.M3M4StateListener;
 import org.finos.legend.pure.m3.statelistener.VoidM3M4StateListener;
@@ -26,6 +31,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.Locale;
 
 public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
 {
@@ -733,5 +740,62 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
     {
         String code = "^meta::pure::functions::lang::KeyValue(key='pkg', value=::)";
         new M3AntlrParser(null).parse(code, "test" + i++, true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+    }
+
+    @Test
+    public void testOperatorsWithTurkishDefaultLocale()
+    {
+        // In Turkish, "I".toLowerCase() is a dotless i (U+0131), so operator names must not depend on the default locale
+        String code = "function test::operators():Any[*]\n" +
+                "{\n" +
+                "   1 - 2;\n" +
+                "   2 * 3;\n" +
+                "   6 / 3;\n" +
+                "   1 + 6 / 3;\n" +
+                "   1 - 2 * 3;\n" +
+                "   1 < 6 / 3;\n" +
+                "   true || false && true;\n" +
+                "}\n";
+        Locale defaultLocale = Locale.getDefault();
+        Locale displayLocale = Locale.getDefault(Locale.Category.DISPLAY);
+        Locale formatLocale = Locale.getDefault(Locale.Category.FORMAT);
+        Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+        try
+        {
+            new M3AntlrParser(null).parse(code, "test" + i++, true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        }
+        finally
+        {
+            Locale.setDefault(defaultLocale);
+            Locale.setDefault(Locale.Category.DISPLAY, displayLocale);
+            Locale.setDefault(Locale.Category.FORMAT, formatLocale);
+        }
+        ConcreteFunctionDefinition<?> function = this.newInstances.selectInstancesOf(ConcreteFunctionDefinition.class).getOnly();
+        Assert.assertEquals(
+                Lists.mutable.with(
+                        "minus([1, 2])",
+                        "times([2, 3])",
+                        "divide(6, 3)",
+                        "plus([1, divide(6, 3)])",
+                        "minus([1, times([2, 3])])",
+                        "lessThan(1, divide(6, 3))",
+                        "or(true, and(false, true))"),
+                function._expressionSequence().collect(TestM3AntlrParser::render, Lists.mutable.empty()));
+    }
+
+    private static String render(CoreInstance instance)
+    {
+        if (instance instanceof SimpleFunctionExpression)
+        {
+            return instance.getValueForMetaPropertyToMany(M3Properties.parametersValues)
+                    .collect(TestM3AntlrParser::render)
+                    .makeString(((SimpleFunctionExpression) instance)._functionName() + "(", ", ", ")");
+        }
+        if (instance instanceof InstanceValue)
+        {
+            ListIterable<? extends CoreInstance> values = instance.getValueForMetaPropertyToMany(M3Properties.values);
+            return (values.size() == 1) ? render(values.get(0)) : values.collect(TestM3AntlrParser::render).makeString("[", ", ", "]");
+        }
+        return instance.getName();
     }
 }

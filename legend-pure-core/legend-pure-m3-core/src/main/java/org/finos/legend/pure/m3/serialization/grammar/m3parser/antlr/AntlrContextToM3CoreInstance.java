@@ -247,6 +247,7 @@ import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformati
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 import java.util.List;
+import java.util.Locale;
 
 public class AntlrContextToM3CoreInstance
 {
@@ -638,7 +639,7 @@ public class AntlrContextToM3CoreInstance
 
         CoreInstance other = this.expression(ctx.expression(), exprName, typeParamtersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         SimpleFunctionExpression sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(terminalNode.getSymbol()), null, null, importId, null);
-        sfe._functionName(op.name().toLowerCase());
+        sfe._functionName(op.name().toLowerCase(Locale.ROOT));
         sfe._parametersValues(Lists.mutable.of((ValueSpecification) initialValue, (ValueSpecification) other));
         return sfe;
     }
@@ -650,7 +651,7 @@ public class AntlrContextToM3CoreInstance
             return buildBoolean(ctx, op, initialValue, exprName, typeParamtersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         }
 
-        if (isLowerPrecedenceBoolean(sfe.getValueForMetaPropertyToOne("functionName").getName(), op.name().toLowerCase()))
+        if (isLowerPrecedenceBoolean(sfe.getValueForMetaPropertyToOne("functionName").getName(), op.name().toLowerCase(Locale.ROOT)))
         {
             ListIterable<? extends CoreInstance> params = sfe.getValueForMetaPropertyToMany("parametersValues");
             SimpleFunctionExpression newSfe = buildBoolean(ctx, op, params.getLast(), exprName, typeParamtersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
@@ -1799,7 +1800,7 @@ public class AntlrContextToM3CoreInstance
                 throw new IllegalStateException("Unexpected arithmetic operation for buildArithmeticWithListParam: " + op);
         }
 
-        String op_str = op.toString().toLowerCase();
+        String op_str = op.toString().toLowerCase(Locale.ROOT);
 
         for (ExpressionContext eCtx : ctx.expression())
         {
@@ -1914,7 +1915,7 @@ public class AntlrContextToM3CoreInstance
     // so we end up with plus(1, mult(2,4))
     private SimpleFunctionExpression processOp(BuildArithmeticExpression builder, SimpleFunctionExpression sfe, ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameters, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
-        String opStr = op.name().toLowerCase();
+        String opStr = op.name().toLowerCase(Locale.ROOT);
         // Case where we are building from scratch
         if (sfe == null)
         {
