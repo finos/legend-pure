@@ -56,6 +56,7 @@ import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandl
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -587,14 +588,14 @@ public class Source
 
     private RichIterable<SourceCoordinates> findCaseInsensitive(String string)
     {
-        String lowerCase = string.toLowerCase();
+        String lowerCase = string.toLowerCase(Locale.ROOT);
         MutableList<SourceCoordinates> results = Lists.mutable.with();
         Matcher lines = LINE_PATTERN.matcher(this.content);
         int length = lowerCase.length();
         for (int i = 0; lines.find(); i++)
         {
             String originalLine = lines.group();
-            String line = originalLine.toLowerCase();
+            String line = originalLine.toLowerCase(Locale.ROOT);
             for (int index = line.indexOf(lowerCase); index != -1; index = line.indexOf(lowerCase, index + 1))
             {
                 results.add(new SourceCoordinates(this.id, i + 1, index + 1, i + 1, index + length,
