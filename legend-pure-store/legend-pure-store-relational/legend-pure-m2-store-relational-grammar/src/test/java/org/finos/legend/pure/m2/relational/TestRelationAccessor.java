@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m2.relational;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.store.RelationStoreAccessorInstance;
@@ -318,6 +319,63 @@ public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreComp
 
         // The accessor's container is the *user-facing* database the path starts from, not the included one.
         assertEquals(mainDb, accessor._sourceElementContainer());
+        assertEquals(table, accessor._sourceElement());
+    }
+
+    @Test
+    public void testRelationAccessorWithQuotedTableNameContainingDot()
+    {
+        String sourceCode =
+                "###Pure\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.\"person.table\"}#" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "( \n" +
+                        "   Table \"person.table\"(firstName VARCHAR(200))\n" +
+                        ")\n";
+        createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+
+        ConcreteFunctionDefinition<?> function = (ConcreteFunctionDefinition<?>) this.runtime.getFunction("f__Relation_1_");
+        InstanceValue iv = (InstanceValue) function._expressionSequence().getOnly();
+        RelationStoreAccessorInstance accessor = (RelationStoreAccessorInstance) iv._values().getOnly();
+
+        DatabaseInstance database = (DatabaseInstance) this.runtime.getCoreInstance("my::mainDb");
+        Table table = database._schemas().getOnly()._tables().getOnly();
+
+        assertEquals(Lists.mutable.with("my::mainDb", "\"person.table\""), accessor._path().toList());
+        assertEquals(table, accessor._sourceElement());
+    }
+
+    @Test
+    public void testRelationAccessorWithQuotedSchemaAndTableNamesContainingDots()
+    {
+        String sourceCode =
+                "###Pure\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.\"my.schema\".\"person.table\"}#" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "(\n" +
+                        "   Schema \"my.schema\"\n" +
+                        "   (\n" +
+                        "      Table \"person.table\"(firstName VARCHAR(200))\n" +
+                        "   )\n" +
+                        ")\n";
+        createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+
+        ConcreteFunctionDefinition<?> function = (ConcreteFunctionDefinition<?>) this.runtime.getFunction("f__Relation_1_");
+        InstanceValue iv = (InstanceValue) function._expressionSequence().getOnly();
+        RelationStoreAccessorInstance accessor = (RelationStoreAccessorInstance) iv._values().getOnly();
+
+        DatabaseInstance database = (DatabaseInstance) this.runtime.getCoreInstance("my::mainDb");
+        Table table = database._schemas().detect(s -> "\"my.schema\"".equals(s._name()))._tables().getOnly();
+
+        assertEquals(Lists.mutable.with("my::mainDb", "\"my.schema\"", "\"person.table\""), accessor._path().toList());
         assertEquals(table, accessor._sourceElement());
     }
 
