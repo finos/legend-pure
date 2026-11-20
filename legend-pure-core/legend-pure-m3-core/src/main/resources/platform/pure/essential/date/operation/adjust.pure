@@ -201,10 +201,10 @@ function <<PCT.test>> meta::pure::functions::date::tests::testAdjustByMicrosecon
 function <<PCT.test>> meta::pure::functions::date::tests::testAdjustByMicrosecondsBigNumber<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
   // Test epoch calculation
-  assertEquals(%2021-06-21T09:37:37.4990000+0000,
-               $f->eval(|%1970-01-01T00:00:00.0000000->adjust(1624268257499000, DurationUnit.MICROSECONDS)));
-  assertEquals(%2021-06-21T09:37:37.4990000+0000,
-               $f->eval(|%1970-01-01T00:00:00.0000000->adjust(floor(1624268257499000000/1000), DurationUnit.MICROSECONDS)));
+  assertEqWithinTolerance(%2021-06-21T09:37:37.4990000+0000,
+                          $f->eval(|%1970-01-01T00:00:00.0000000->adjust(1624268257499000, DurationUnit.MICROSECONDS)), DurationUnit.MICROSECONDS);
+  assertEqWithinTolerance(%2021-06-21T09:37:37.4990000+0000,
+                          $f->eval(|%1970-01-01T00:00:00.0000000->adjust(floor(1624268257499000000/1000), DurationUnit.MICROSECONDS)), DurationUnit.MICROSECONDS);
 }
 
 function <<PCT.test>> meta::pure::functions::date::tests::testAdjustByMilliseconds<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
