@@ -69,7 +69,7 @@ public class ColumnDataTypeFactory
             {
                 //System.out.println("ColumnDataTypeException --> "+sourceName+" "+typeName.beginLine+" "+typeName.toString());
                 //return String.format("^%s%s()", DATA_TYPE_ROOT_PACKAGE, pureTypeName);
-                throw new ColumnDataTypeException(String.format("The data type %s requires %d values but %d were provided", typeName, conParamLength, paramValues.length));
+                throw new ColumnDataTypeException(String.format(Locale.ROOT, "The data type %s requires %d values but %d were provided", typeName, conParamLength, paramValues.length));
             }
         }
 
