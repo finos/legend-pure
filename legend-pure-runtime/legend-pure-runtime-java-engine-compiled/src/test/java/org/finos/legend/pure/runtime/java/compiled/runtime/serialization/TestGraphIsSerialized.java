@@ -44,6 +44,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Formatter;
+import java.util.Locale;
 
 public class TestGraphIsSerialized
 {
@@ -131,7 +132,7 @@ public class TestGraphIsSerialized
         if (missingSize > 0)
         {
             StringBuilder message = new StringBuilder();
-            Formatter formatter = new Formatter(message);
+            Formatter formatter = new Formatter(message, Locale.ROOT);
             formatter.format("%,d instances not marked as serialized:", missingSize);
             int toPrint = Math.min(missingSize, 10);
             missingSerialized.forEachWithIndex(0, toPrint - 1, (elt, i) -> formatter.format("%n\t%s", elt));
