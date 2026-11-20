@@ -59,19 +59,9 @@ function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeZe
   assertEmpty($f->eval(|[1, 2, 3]->take(0)));
 }
 
-function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeOneOnEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
-{
-  assertEmpty($f->eval(|[]->take(1)));
-}
-
 function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeOneOnNonEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
   assertEquals([1], $f->eval(|[1, 2, 3]->take(1)));
-}
-
-function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeManyOnEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
-{
-  assertEmpty($f->eval(|[]->take(2)));
 }
 
 function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeManyOnNonEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]

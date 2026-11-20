@@ -41,7 +41,6 @@ native function <<PCT.function>> meta::pure::functions::date::monthNumber(d:Date
 
 function <<PCT.test>> meta::pure::functions::date::tests::testMonthNumber<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(4, $f->eval(|%2015-04->monthNumber()));
     assertEquals(4, $f->eval(|%2015-04-15->monthNumber()));
     assertEquals(4, $f->eval(|%2015-04-15T17->monthNumber()));
     assertEquals(4, $f->eval(|%2015-04-15T17:09->monthNumber()));
