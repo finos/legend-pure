@@ -107,29 +107,29 @@ public class CsvReader
 
     private static void skipStartLines(Reader csvReader, String recordSeparator, long skipStartLines) throws IOException
     {
-        byte[] separatorBytes = recordSeparator.getBytes();
+        char[] separator = recordSeparator.toCharArray();
         for (int line = 0; line < skipStartLines; line++)
         {
-            byte[] buffer = new byte[separatorBytes.length];
+            char[] buffer = new char[separator.length];
             for (int i = 0; i < buffer.length; i++)
             {
-                buffer[i] = readByte(csvReader);
+                buffer[i] = readChar(csvReader);
             }
-            while (!Arrays.equals(separatorBytes, buffer))
+            while (!Arrays.equals(separator, buffer))
             {
                 System.arraycopy(buffer, 1, buffer, 0, buffer.length - 1);
-                buffer[buffer.length - 1] = readByte(csvReader);
+                buffer[buffer.length - 1] = readChar(csvReader);
             }
         }
     }
 
-    private static byte readByte(Reader csvReader) throws IOException
+    private static char readChar(Reader csvReader) throws IOException
     {
         int ch = csvReader.read();
         if (ch == -1)
         {
             throw new IOException("End of file encountered while skipping start lines");
         }
-        return (byte)ch;
+        return (char)ch;
     }
 }
