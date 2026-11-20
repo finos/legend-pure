@@ -33,6 +33,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.Log;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Locale;
 import java.util.Set;
 
 import static org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaCodeGeneration.durationSinceInSeconds;
@@ -153,8 +154,8 @@ public class PureCompiledJarMojo extends AbstractMojo
         }
         catch (Exception e)
         {
-            log.error(String.format("    Error (%.9fs)", durationSinceInSeconds(start)), e);
-            log.error(String.format("    FAILURE building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
+            log.error(String.format(Locale.ROOT, "    Error (%.9fs)", durationSinceInSeconds(start)), e);
+            log.error(String.format(Locale.ROOT, "    FAILURE building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
             throw new MojoExecutionException("Error building Pure compiled mode jar", e);
         }
         finally

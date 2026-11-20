@@ -22,6 +22,8 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.SourceRegistry;
 import org.finos.legend.pure.m4.ModelRepository;
 
+import java.util.Locale;
+
 abstract class AbstractPureGraphCache implements PureGraphCache
 {
     private final CacheState cacheState = new CacheState(false, 0, true);
@@ -142,7 +144,7 @@ abstract class AbstractPureGraphCache implements PureGraphCache
             updateCacheState();
             if (message != null)
             {
-                message.setMessage(String.format("Cache found (size=%,dB)", getCacheSize()));
+                message.setMessage(String.format(Locale.ROOT, "Cache found (size=%,dB)", getCacheSize()));
             }
         }
         else if (message != null)

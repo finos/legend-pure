@@ -18,6 +18,7 @@ import org.eclipse.collections.api.RichIterable;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.io.PrintStream;
+import java.util.Locale;
 
 public class PrintStreamTransactionObserver implements TransactionObserver
 {
@@ -48,12 +49,12 @@ public class PrintStreamTransactionObserver implements TransactionObserver
     @Override
     public void added(RichIterable<CoreInstance> instances)
     {
-        this.stream.format("%sNew instances: %,d%n", this.prefix, instances.size());
+        this.stream.format(Locale.ROOT, "%sNew instances: %,d%n", this.prefix, instances.size());
     }
 
     @Override
     public void modified(RichIterable<CoreInstance> instances)
     {
-        this.stream.format("%sModified instances: %,d%n", this.prefix, instances.size());
+        this.stream.format(Locale.ROOT, "%sModified instances: %,d%n", this.prefix, instances.size());
     }
 }

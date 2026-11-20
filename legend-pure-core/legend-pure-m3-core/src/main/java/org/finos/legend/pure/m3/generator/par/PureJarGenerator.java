@@ -29,6 +29,7 @@ import org.finos.legend.pure.m3.serialization.runtime.ParserService;
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.util.Locale;
 import java.util.Set;
 
 public class PureJarGenerator
@@ -71,10 +72,10 @@ public class PureJarGenerator
         }
         catch (Exception e)
         {
-            log.error(String.format("  -> Pure PAR generation failed (%.9fs)", durationSinceInSeconds(start)), e);
+            log.error(String.format(Locale.ROOT, "  -> Pure PAR generation failed (%.9fs)", durationSinceInSeconds(start)), e);
             throw e;
         }
-        log.info(String.format("  -> Finished Pure PAR generation in %.9fs", durationSinceInSeconds(start)));
+        log.info(String.format(Locale.ROOT, "  -> Finished Pure PAR generation in %.9fs", durationSinceInSeconds(start)));
     }
 
     private static CodeRepositorySet resolveRepositories(Set<String> repositories, Set<String> excludedRepositories, Set<String> extraRepositories, ClassLoader classLoader, Log log)

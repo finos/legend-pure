@@ -54,6 +54,7 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Locale;
 import java.util.Set;
 
 public class JavaCodeGeneration
@@ -235,7 +236,7 @@ public class JavaCodeGeneration
                 log.info("  Start compiling Java classes");
                 PureJavaCompiler compiler = compileJavaSources(startCompilation, generate, addExternalAPI, log);
                 writeJavaClassFiles(startCompilation, compiler, classesDirectory, log);
-                log.info(String.format("  Finished compiling Java classes (%.9fs)", durationSinceInSeconds(startCompilation)));
+                log.info(String.format(Locale.ROOT, "  Finished compiling Java classes (%.9fs)", durationSinceInSeconds(startCompilation)));
             }
             else
             {
@@ -243,12 +244,12 @@ public class JavaCodeGeneration
             }
 
             // Write class files
-            log.info(String.format("  Finished building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
+            log.info(String.format(Locale.ROOT, "  Finished building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
         }
         catch (Exception e)
         {
-            log.error(String.format("    Error (%.9fs)", durationSinceInSeconds(start)), e);
-            log.error(String.format("    FAILURE building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
+            log.error(String.format(Locale.ROOT, "    Error (%.9fs)", durationSinceInSeconds(start)), e);
+            log.error(String.format(Locale.ROOT, "    FAILURE building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
             throw new RuntimeException("Error building Pure compiled mode jar", e);
         }
     }
@@ -261,7 +262,7 @@ public class JavaCodeGeneration
 
     private static void completeStep(String step, long stepStart, Log log)
     {
-        log.debug(String.format("    Finished %s (%.9fs)", step, durationSinceInSeconds(stepStart)));
+        log.debug(String.format(Locale.ROOT, "    Finished %s (%.9fs)", step, durationSinceInSeconds(stepStart)));
     }
 
     private static CodeRepositorySet getAllRepositories(Set<String> extraRepositories)
@@ -414,12 +415,12 @@ public class JavaCodeGeneration
                 runtime.loadAndCompileCore(message);
                 runtime.loadAndCompileSystem(message);
             }
-            log.info(String.format("    Finished Pure initialization (%.9fs)", durationSinceInSeconds(start)));
+            log.info(String.format(Locale.ROOT, "    Finished Pure initialization (%.9fs)", durationSinceInSeconds(start)));
             return runtime;
         }
         catch (Exception e)
         {
-            log.error(String.format("    Error initializing Pure (%.9fs)", durationSinceInSeconds(start)), e);
+            log.error(String.format(Locale.ROOT, "    Error initializing Pure (%.9fs)", durationSinceInSeconds(start)), e);
             throw e;
         }
     }

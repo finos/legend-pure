@@ -38,6 +38,8 @@ import org.finos.legend.pure.m3.serialization.runtime.pattern.URLPatternLibrary;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
+import java.util.Locale;
+
 public class ProcessorState extends MatcherState
 {
     private VariableContext variableContext;
@@ -406,7 +408,7 @@ public class ProcessorState extends MatcherState
         @Override
         public void startProcessing(CoreInstance instance)
         {
-            this.message.setMessage(String.format("Binding (%,d)", ++this.count));
+            this.message.setMessage(String.format(Locale.ROOT, "Binding (%,d)", ++this.count));
         }
     }
 }
