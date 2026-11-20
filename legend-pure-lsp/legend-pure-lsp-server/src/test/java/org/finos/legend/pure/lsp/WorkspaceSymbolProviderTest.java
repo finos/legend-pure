@@ -14,7 +14,9 @@
 
 package org.finos.legend.pure.lsp;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.SymbolKind;
@@ -44,6 +46,7 @@ public class WorkspaceSymbolProviderTest
         uriMapper.register("file:///test/ws_sym_class.pure", "ws_sym_class.pure");
         uriMapper.register("file:///test/ws_sym_enum.pure", "ws_sym_enum.pure");
         uriMapper.register("file:///test/ws_sym_func.pure", "ws_sym_func.pure");
+        uriMapper.register("file:///test/ws_sym_invoice.pure", "ws_sym_invoice.pure");
 
         // Create test sources
         LegendPureSession.CompileResult r1 = session.modifyAndCompile(
@@ -66,6 +69,13 @@ public class WorkspaceSymbolProviderTest
         );
         Assert.assertTrue("greet function should compile: " +
                 (r3.getError() != null ? r3.getError().getMessage() : ""), r3.isSuccess());
+
+        LegendPureSession.CompileResult r4 = session.modifyAndCompile(
+                "ws_sym_invoice.pure",
+                "Class test::ws::sym::Invoice\n{\n  number: String[1];\n}\n"
+        );
+        Assert.assertTrue("Invoice class should compile: " +
+                (r4.getError() != null ? r4.getError().getMessage() : ""), r4.isSuccess());
 
         // Build the symbol index after all sources are compiled
         provider = new WorkspaceSymbolProvider();
@@ -133,6 +143,34 @@ public class WorkspaceSymbolProviderTest
 
         Assert.assertEquals("Case-insensitive search should find Customer", 1, lowerMatches.size());
         Assert.assertEquals("Case-insensitive search should find Customer", 1, upperMatches.size());
+    }
+
+    @Test
+    public void search_caseInsensitive_withTurkishDefaultLocale()
+    {
+        // In Turkish, "I".toLowerCase() is a dotless i (U+0131), so a search must not depend on the default locale
+        Locale defaultLocale = Locale.getDefault();
+        Locale displayLocale = Locale.getDefault(Locale.Category.DISPLAY);
+        Locale formatLocale = Locale.getDefault(Locale.Category.FORMAT);
+        Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+        try
+        {
+            WorkspaceSymbolProvider turkishProvider = new WorkspaceSymbolProvider();
+            turkishProvider.buildIndex(session.getPureRuntime());
+            for (String query : Arrays.asList("invoice", "INVOICE", "Invoice"))
+            {
+                long matches = turkishProvider.search(uriMapper, query, 100).stream()
+                        .filter(s -> s.getName().equals("Invoice"))
+                        .count();
+                Assert.assertEquals("Should find exactly one Invoice for " + query, 1, matches);
+            }
+        }
+        finally
+        {
+            Locale.setDefault(defaultLocale);
+            Locale.setDefault(Locale.Category.DISPLAY, displayLocale);
+            Locale.setDefault(Locale.Category.FORMAT, formatLocale);
+        }
     }
 
     @Test

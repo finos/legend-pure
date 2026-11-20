@@ -25,6 +25,8 @@ import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunNotifier;
 
+import java.util.Locale;
+
 public class IgnoreUnsupportedApiPureTestSuiteRunner extends SuiteMethod
 {
     public IgnoreUnsupportedApiPureTestSuiteRunner(Class<?> testClass) throws Throwable
@@ -77,7 +79,7 @@ public class IgnoreUnsupportedApiPureTestSuiteRunner extends SuiteMethod
                 String info = ((PureException) e).getInfo();
                 if (info != null)
                 {
-                    String infoLowercase = info.toLowerCase();
+                    String infoLowercase = info.toLowerCase(Locale.ROOT);
                     return infoLowercase.contains("[unsupported-api]");
                 }
             }

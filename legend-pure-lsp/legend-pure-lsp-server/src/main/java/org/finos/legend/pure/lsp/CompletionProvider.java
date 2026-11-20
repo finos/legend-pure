@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -132,7 +133,7 @@ public class CompletionProvider
             return Collections.emptyList();
         }
 
-        String lowerPrefix = (prefix != null) ? prefix.toLowerCase() : "";
+        String lowerPrefix = (prefix != null) ? prefix.toLowerCase(Locale.ROOT) : "";
         ListIterable<? extends CoreInstance> children =
                 pkg.getValueForMetaPropertyToMany(M3Properties.children);
         if (children == null)
@@ -152,7 +153,7 @@ public class CompletionProvider
             {
                 continue;
             }
-            if (!lowerPrefix.isEmpty() && !name.toLowerCase().startsWith(lowerPrefix))
+            if (!lowerPrefix.isEmpty() && !name.toLowerCase(Locale.ROOT).startsWith(lowerPrefix))
             {
                 continue;
             }
@@ -167,7 +168,7 @@ public class CompletionProvider
                                                                    List<String> importPaths,
                                                                    String prefix)
     {
-        String lowerPrefix = prefix.toLowerCase();
+        String lowerPrefix = prefix.toLowerCase(Locale.ROOT);
 
         // Collect unique package paths: file imports → root → auto-imports
         Set<String> seen = new HashSet<>();
@@ -226,7 +227,7 @@ public class CompletionProvider
                 {
                     continue;
                 }
-                if (!name.toLowerCase().startsWith(lowerPrefix))
+                if (!name.toLowerCase(Locale.ROOT).startsWith(lowerPrefix))
                 {
                     continue;
                 }

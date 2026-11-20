@@ -27,6 +27,7 @@ import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandl
 import org.finos.legend.pure.m4.serialization.Writer;
 
 import java.io.OutputStream;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 public class SourceRegistry
@@ -157,8 +158,8 @@ public class SourceRegistry
 
     public RichIterable<String> findSourceIds(String fileName)
     {
-        String lowerCaseFileName = fileName.toLowerCase();
-        return this.sourcesById.keysView().select(id -> id.toLowerCase().contains(lowerCaseFileName), Lists.mutable.empty());
+        String lowerCaseFileName = fileName.toLowerCase(Locale.ROOT);
+        return this.sourcesById.keysView().select(id -> id.toLowerCase(Locale.ROOT).contains(lowerCaseFileName), Lists.mutable.empty());
     }
 
     void registerSource(Source source)

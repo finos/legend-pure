@@ -19,6 +19,8 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Locale;
+
 public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreCompiled
 {
     @Test
@@ -43,7 +45,7 @@ public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreC
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).size());
-        Assert.assertEquals(dataType.toUpperCase(), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase());
+        Assert.assertEquals(dataType.toUpperCase(Locale.ROOT), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase(Locale.ROOT));
     }
 
     @Test
@@ -68,7 +70,7 @@ public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreC
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).size());
-        Assert.assertEquals(dataType.toUpperCase(), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase());
+        Assert.assertEquals(dataType.toUpperCase(Locale.ROOT), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase(Locale.ROOT));
     }
 
     @Test
@@ -93,7 +95,7 @@ public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreC
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).size());
-        Assert.assertEquals(dataType.toUpperCase(), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase());
+        Assert.assertEquals(dataType.toUpperCase(Locale.ROOT), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase(Locale.ROOT));
     }
 
     @Test
@@ -118,7 +120,7 @@ public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreC
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).size());
-        Assert.assertEquals(dataType.toUpperCase(), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase());
+        Assert.assertEquals(dataType.toUpperCase(Locale.ROOT), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase(Locale.ROOT));
     }
 
     @Test
@@ -143,7 +145,7 @@ public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreC
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).size());
-        Assert.assertEquals(dataType.toUpperCase(), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase());
+        Assert.assertEquals(dataType.toUpperCase(Locale.ROOT), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase(Locale.ROOT));
     }
 
     @Test
@@ -168,7 +170,7 @@ public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreC
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).size());
-        Assert.assertEquals(dataType.toUpperCase(), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase());
+        Assert.assertEquals(dataType.toUpperCase(Locale.ROOT), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase(Locale.ROOT));
     }
 
     @Test
@@ -193,7 +195,7 @@ public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreC
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).size());
-        Assert.assertEquals(dataType.toUpperCase(), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase());
+        Assert.assertEquals(dataType.toUpperCase(Locale.ROOT), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase(Locale.ROOT));
         Assert.assertEquals(size, PrimitiveUtilities.getIntegerValue(db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getValueForMetaPropertyToMany("size").getFirst()));
     }
 
@@ -219,7 +221,7 @@ public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreC
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).size());
-        Assert.assertEquals(dataType.toUpperCase(), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase());
+        Assert.assertEquals(dataType.toUpperCase(Locale.ROOT), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase(Locale.ROOT));
         Assert.assertEquals(size, PrimitiveUtilities.getIntegerValue(db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getValueForMetaPropertyToMany("size").getFirst()));
     }
 
@@ -245,7 +247,7 @@ public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreC
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).size());
-        Assert.assertEquals(dataType.toUpperCase(), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase());
+        Assert.assertEquals(dataType.toUpperCase(Locale.ROOT), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase(Locale.ROOT));
         Assert.assertEquals(size, PrimitiveUtilities.getIntegerValue(db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getValueForMetaPropertyToMany("size").getFirst()));
     }
 
@@ -271,7 +273,7 @@ public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreC
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).size());
-        Assert.assertEquals(dataType.toUpperCase(), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase());
+        Assert.assertEquals(dataType.toUpperCase(Locale.ROOT), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase(Locale.ROOT));
         Assert.assertEquals(size, PrimitiveUtilities.getIntegerValue(db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getValueForMetaPropertyToMany("size").getFirst()));
     }
 
@@ -298,7 +300,7 @@ public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreC
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).size());
-        Assert.assertEquals(dataType.toUpperCase(), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase());
+        Assert.assertEquals(dataType.toUpperCase(Locale.ROOT), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase(Locale.ROOT));
         Assert.assertEquals(precision, PrimitiveUtilities.getIntegerValue(db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getValueForMetaPropertyToMany("precision").getFirst()));
         Assert.assertEquals(scale, PrimitiveUtilities.getIntegerValue(db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getValueForMetaPropertyToMany("scale").getFirst()));
     }
@@ -326,7 +328,7 @@ public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreC
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).size());
-        Assert.assertEquals(dataType.toUpperCase(), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase());
+        Assert.assertEquals(dataType.toUpperCase(Locale.ROOT), db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getClassifier().getName().toUpperCase(Locale.ROOT));
         Assert.assertEquals(precision, PrimitiveUtilities.getIntegerValue(db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getValueForMetaPropertyToMany("precision").getFirst()));
         Assert.assertEquals(scale, PrimitiveUtilities.getIntegerValue(db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getValueForMetaPropertyToMany("scale").getFirst()));
     }

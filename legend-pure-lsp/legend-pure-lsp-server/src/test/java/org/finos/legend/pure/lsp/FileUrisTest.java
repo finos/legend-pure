@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -109,7 +110,7 @@ public class FileUrisTest
         String uri = path.toUri().toString();
         Matcher matcher = DRIVE_URI_PREFIX.matcher(uri);
         return matcher.find()
-                ? ("file:///" + matcher.group(1).toLowerCase() + "%3A/" + uri.substring(matcher.end()))
+                ? ("file:///" + matcher.group(1).toLowerCase(Locale.ROOT) + "%3A/" + uri.substring(matcher.end()))
                 : uri;
     }
 }

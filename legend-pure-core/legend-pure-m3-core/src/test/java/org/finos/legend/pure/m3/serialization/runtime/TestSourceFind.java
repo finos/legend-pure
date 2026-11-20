@@ -14,11 +14,14 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
+import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.test.Verify;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Locale;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 public class TestSourceFind
@@ -48,6 +51,32 @@ public class TestSourceFind
         // check preview text
         Assert.assertEquals(Sets.immutable.with(new SourceCoordinates.Preview("The ", "Quick", " Brown Fox")), source.find("Quick", true).collect(SourceCoordinates::getPreview).toSet());
         Assert.assertEquals(Sets.immutable.with(new SourceCoordinates.Preview("The ", "Quick", " Brown Fox"), new SourceCoordinates.Preview("", "QUICK", "")), source.find("quick", false).collect(SourceCoordinates::getPreview).toSet());
+    }
+
+    @Test
+    public void testFindStringCaseInsensitiveWithTurkishDefaultLocale()
+    {
+        // In Turkish, "I".toLowerCase() is a dotless i (U+0131), so a search must not depend on the default locale
+        Source source = new Source("testSource.pure", false, false, "LIST\nlist\nList\n");
+        ImmutableSet<SourceCoordinates> expected = Sets.immutable.with(
+                new SourceCoordinates("testSource.pure", 1, 1, 1, 4),
+                new SourceCoordinates("testSource.pure", 2, 1, 2, 4),
+                new SourceCoordinates("testSource.pure", 3, 1, 3, 4));
+        Assert.assertEquals(expected, withTurkishDefaultLocale(() -> source.find("list", false).toSet()));
+        Assert.assertEquals(expected, withTurkishDefaultLocale(() -> source.find("LIST", false).toSet()));
+    }
+
+    @Test
+    public void testFindSourceIdsWithTurkishDefaultLocale()
+    {
+        // In Turkish, "I".toLowerCase() is a dotless i (U+0131), so a search must not depend on the default locale
+        SourceRegistry registry = new SourceRegistry(null, null);
+        registry.registerSource(new Source("/test/LIST.pure", false, false, ""));
+        registry.registerSource(new Source("/test/list.pure", false, false, ""));
+        registry.registerSource(new Source("/test/other.pure", false, false, ""));
+        ImmutableSet<String> expected = Sets.immutable.with("/test/LIST.pure", "/test/list.pure");
+        Assert.assertEquals(expected, withTurkishDefaultLocale(() -> registry.findSourceIds("list").toSet()));
+        Assert.assertEquals(expected, withTurkishDefaultLocale(() -> registry.findSourceIds("LIST").toSet()));
     }
 
     @Test
@@ -85,5 +114,23 @@ public class TestSourceFind
     {
         Source source = new Source("testSource.pure", false, false, " the quick brown fox\njumped over the\nlazy dog \n\nthe\nquick\nbrown\nfox\njumped\nover\nthe\nlazy\ndog\n");
         Assert.assertEquals(new SourceCoordinates.Preview("the quic", "k brown fox\njumped over the\nlaz", "y dog"), source.getPreviewTextWithCoordinates(1, 10, 3, 3));
+    }
+
+    private static <T> T withTurkishDefaultLocale(Supplier<T> supplier)
+    {
+        Locale defaultLocale = Locale.getDefault();
+        Locale displayLocale = Locale.getDefault(Locale.Category.DISPLAY);
+        Locale formatLocale = Locale.getDefault(Locale.Category.FORMAT);
+        Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+        try
+        {
+            return supplier.get();
+        }
+        finally
+        {
+            Locale.setDefault(defaultLocale);
+            Locale.setDefault(Locale.Category.DISPLAY, displayLocale);
+            Locale.setDefault(Locale.Category.FORMAT, formatLocale);
+        }
     }
 }

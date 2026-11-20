@@ -16,6 +16,7 @@ package org.finos.legend.pure.lsp;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
@@ -55,7 +56,7 @@ public class WorkspaceSymbolProvider
 
     public List<SymbolInformation> search(UriMapper uriMapper, String query, int maxResults)
     {
-        String lowerQuery = (query != null) ? query.toLowerCase() : "";
+        String lowerQuery = (query != null) ? query.toLowerCase(Locale.ROOT) : "";
         List<SymbolInformation> results = new ArrayList<>();
 
         for (IndexEntry entry : this.index)
@@ -172,14 +173,14 @@ public class WorkspaceSymbolProvider
                    String sourceId, int startLine, int startColumn, int endLine, int endColumn)
         {
             this.qualifiedPath = qualifiedPath;
-            this.lowerPath = qualifiedPath.toLowerCase();
+            this.lowerPath = qualifiedPath.toLowerCase(Locale.ROOT);
             this.classifierName = classifierName;
             this.simpleFunctionName = simpleFunctionName;
             // For functions, search matches against the simple name (e.g. "compileLegendGrammar")
             // as well as the qualified path. This lets developers search naturally.
             if (simpleFunctionName != null)
             {
-                this.lowerSearchName = (qualifiedPath + " " + simpleFunctionName).toLowerCase();
+                this.lowerSearchName = (qualifiedPath + " " + simpleFunctionName).toLowerCase(Locale.ROOT);
             }
             else
             {

@@ -74,6 +74,7 @@ import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecifications;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 import java.util.ArrayDeque;
+import java.util.Locale;
 import java.util.Queue;
 
 public class DatabaseProcessor extends Processor<Database>
@@ -229,7 +230,7 @@ public class DatabaseProcessor extends Processor<Database>
                 {
                     throw new PureCompilationException(column.getSourceInformation(), "Multiple columns named '" + columnName + "' found in " +
                             (tableOrView instanceof NamedRelation
-                                    ? (tableOrView.getClassifier().getName().toLowerCase() + " " + ((NamedRelation) tableOrView)._name())
+                                    ? (tableOrView.getClassifier().getName().toLowerCase(Locale.ROOT) + " " + ((NamedRelation) tableOrView)._name())
                                     : "relation"));
                 }
                 ((Column) column)._owner((Relation) tableOrView);

@@ -28,8 +28,15 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -235,7 +242,62 @@ public class TestM3CoreInstanceGenerator
                 directFiles, mainFiles);
     }
 
+    @Test
+    public void testGenerate_productionFileList_outputDoesNotDependOnDefaultLocale() throws Exception
+    {
+        // In Turkish, "i".toUpperCase() is a dotted capital I (U+0130), and "I".toLowerCase() is a dotless i
+        // (U+0131), so the generated code must not depend on the default locale
+        Path rootDir = TMP.newFolder("generate-root-locale").toPath();
+        Path turkishDir = TMP.newFolder("generate-turkish-locale").toPath();
+        generateWithDefaultLocale(Locale.ROOT, rootDir);
+        generateWithDefaultLocale(Locale.forLanguageTag("tr-TR"), turkishDir);
+
+        Map<String, String> rootFiles = readJavaFilesWithSortedLines(rootDir);
+        Map<String, String> turkishFiles = readJavaFilesWithSortedLines(turkishDir);
+        Assert.assertEquals(rootFiles.keySet(), turkishFiles.keySet());
+        rootFiles.forEach((file, lines) -> Assert.assertEquals(file, lines, turkishFiles.get(file)));
+    }
+
     // ---- private helpers ----
+
+    private static void generateWithDefaultLocale(Locale locale, Path outputDir)
+    {
+        Locale defaultLocale = Locale.getDefault();
+        Locale displayLocale = Locale.getDefault(Locale.Category.DISPLAY);
+        Locale formatLocale = Locale.getDefault(Locale.Category.FORMAT);
+        Locale.setDefault(locale);
+        try
+        {
+            M3CoreInstanceGenerator.generate(
+                    outputDir.toString() + File.separator,
+                    "M3Platform",
+                    Sets.mutable.with(PRODUCTION_FILES.split("\\s*,\\s*")),
+                    null);
+        }
+        finally
+        {
+            Locale.setDefault(defaultLocale);
+            Locale.setDefault(Locale.Category.DISPLAY, displayLocale);
+            Locale.setDefault(Locale.Category.FORMAT, formatLocale);
+        }
+    }
+
+    // The order of some lines, such as imports, varies from one runtime to the next, so this sorts each file's lines
+    private static Map<String, String> readJavaFilesWithSortedLines(Path root) throws java.io.IOException
+    {
+        List<Path> javaFiles;
+        try (Stream<Path> files = Files.walk(root))
+        {
+            javaFiles = files.filter(p -> p.toString().endsWith(".java")).collect(Collectors.toList());
+        }
+        Map<String, String> contents = new TreeMap<>();
+        for (Path javaFile : javaFiles)
+        {
+            String content = new String(Files.readAllBytes(javaFile), StandardCharsets.UTF_8);
+            contents.put(root.relativize(javaFile).toString(), Arrays.stream(content.split("\\R")).sorted().collect(Collectors.joining("\n")));
+        }
+        return contents;
+    }
 
     private static java.util.Set<String> collectJavaFileNames(Path root) throws java.io.IOException
     {
