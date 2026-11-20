@@ -68,6 +68,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Fu
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.util.Locale;
 import java.util.TimeZone;
 
 public class CoreHelper
@@ -1223,12 +1224,12 @@ public class CoreHelper
 
     public static String toLowerCase(String str)
     {
-        return str.toLowerCase();
+        return str.toLowerCase(Locale.ROOT);
     }
 
     public static String toUpperCase(String str)
     {
-        return str.toUpperCase();
+        return str.toUpperCase(Locale.ROOT);
     }
 
     public static String trim(String str)

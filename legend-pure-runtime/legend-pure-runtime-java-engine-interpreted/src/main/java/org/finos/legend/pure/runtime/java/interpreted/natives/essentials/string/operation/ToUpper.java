@@ -33,6 +33,7 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationConte
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
+import java.util.Locale;
 import java.util.Stack;
 
 public class ToUpper extends NativeFunction
@@ -48,6 +49,6 @@ public class ToUpper extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
     {
         String str = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport).getName();
-        return ValueSpecificationBootstrap.wrapValueSpecification(this.repository.newCoreInstance(str.toUpperCase(), processorSupport.package_getByUserPath(M3Paths.String), null), ValueSpecification.isExecutable(params.get(0), processorSupport), processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(this.repository.newCoreInstance(str.toUpperCase(Locale.ROOT), processorSupport.package_getByUserPath(M3Paths.String), null), ValueSpecification.isExecutable(params.get(0), processorSupport), processorSupport);
     }
 }
