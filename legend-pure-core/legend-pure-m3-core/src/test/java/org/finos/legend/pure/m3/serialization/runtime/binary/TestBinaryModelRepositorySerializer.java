@@ -45,6 +45,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -110,13 +111,13 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
 
             JarEntry definitionIndexEntry = stream.getNextJarEntry();
             Assert.assertEquals(PureRepositoryJarTools.DEFINITION_INDEX_NAME, definitionIndexEntry.getName());
-            JSONObject definitionIndex = (JSONObject) JSONValue.parse(new InputStreamReader(stream));
+            JSONObject definitionIndex = (JSONObject) JSONValue.parse(new InputStreamReader(stream, StandardCharsets.UTF_8));
             stream.closeEntry();
             Verify.assertMapsEqual(expectedDefinitionIndex, definitionIndex);
 
             JarEntry referenceIndexEntry = stream.getNextJarEntry();
             Assert.assertEquals(PureRepositoryJarTools.REFERENCE_INDEX_NAME, referenceIndexEntry.getName());
-            JSONObject referenceIndex = (JSONObject) JSONValue.parse(new InputStreamReader(stream));
+            JSONObject referenceIndex = (JSONObject) JSONValue.parse(new InputStreamReader(stream, StandardCharsets.UTF_8));
             stream.closeEntry();
             for (Entry<?, ?> entry : ((Map<?, ?>) referenceIndex).entrySet())
             {
