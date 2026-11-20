@@ -31,6 +31,7 @@ import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Locale;
 
 public class CsvReader
 {
@@ -55,7 +56,7 @@ public class CsvReader
                 String file = codeStorage.getContentAsText(filePath);
                 if (file.getBytes(StandardCharsets.UTF_8).length > sizeLimitBytes)
                 {
-                    throw new PureExecutionException("File is too large, file was " + String.format("%.2f", file.length() * 1.0 / MEGA_BYTE) + " Mb, limit is " + sizeLimitMegabytes + " Mb", functionExpressionCallStack);
+                    throw new PureExecutionException("File is too large, file was " + String.format(Locale.ROOT, "%.2f", file.length() * 1.0 / MEGA_BYTE) + " Mb, limit is " + sizeLimitMegabytes + " Mb", functionExpressionCallStack);
                 }
                 csvParser = CSVParser.parse(file, CSVFormat.EXCEL);
             }
@@ -66,7 +67,7 @@ public class CsvReader
                 {
                     if (file.length() > sizeLimitBytes)
                     {
-                        throw new PureExecutionException("File is too large, file was " + String.format("%.2f", file.length() * 1.0 / MEGA_BYTE) + " Mb, limit is " + sizeLimitMegabytes + " Mb", functionExpressionCallStack);
+                        throw new PureExecutionException("File is too large, file was " + String.format(Locale.ROOT, "%.2f", file.length() * 1.0 / MEGA_BYTE) + " Mb, limit is " + sizeLimitMegabytes + " Mb", functionExpressionCallStack);
                     }
                     csvParser = CSVParser.parse(file, Charset.defaultCharset(), CSVFormat.EXCEL);
                 }

@@ -30,6 +30,7 @@ import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
 import java.util.EnumMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -200,7 +201,7 @@ public class PureJavaCompileException extends Exception
                 long end = Math.min(diagnostic.getLineNumber() + SOURCE_CONTEXT_LINES, sourceLines.length);
                 if (lineNo - sourceLinesHighwater > 2)
                 {
-                    addLine(String.format("%04d:%04d ...", sourceLinesHighwater + 1, lineNo - 1));
+                    addLine(String.format(Locale.ROOT, "%04d:%04d ...", sourceLinesHighwater + 1, lineNo - 1));
                     sourceLinesHighwater = lineNo - 1;
                 }
                 else
@@ -212,7 +213,7 @@ public class PureJavaCompileException extends Exception
                 {
                     if (sourceLinesHighwater < lineNo)
                     {
-                        addLine(String.format("%04d %s", lineNo, sourceLines[(int) (lineNo - 1)]));
+                        addLine(String.format(Locale.ROOT, "%04d %s", lineNo, sourceLines[(int) (lineNo - 1)]));
                         sourceLinesHighwater = lineNo;
                     }
                     lineNo++;

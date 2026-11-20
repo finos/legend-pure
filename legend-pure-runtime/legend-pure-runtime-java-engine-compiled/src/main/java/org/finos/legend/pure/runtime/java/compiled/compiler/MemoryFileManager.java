@@ -37,6 +37,7 @@ import java.io.OutputStream;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.jar.JarInputStream;
@@ -144,7 +145,7 @@ public class MemoryFileManager extends ForwardingJavaFileManager<StandardJavaFil
         }
         if (this.message != null)
         {
-            this.message.setMessage(String.format("Compiling Java classes (%,d)", this.count));
+            this.message.setMessage(String.format(Locale.ROOT, "Compiling Java classes (%,d)", this.count));
         }
         this.count++;
         return source;

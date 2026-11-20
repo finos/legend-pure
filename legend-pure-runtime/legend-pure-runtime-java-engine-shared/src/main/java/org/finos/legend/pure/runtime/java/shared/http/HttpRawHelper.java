@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 public class HttpRawHelper
 {
@@ -62,7 +63,7 @@ public class HttpRawHelper
         }
         catch (URISyntaxException e)
         {
-            String errMsg = String.format("Cannot build URI from url (%s, %d, %s)", host, port, path);
+            String errMsg = String.format(Locale.ROOT, "Cannot build URI from url (%s, %d, %s)", host, port, path);
             throw new RuntimeException(errMsg, e);
         }
         return executeRequest(httpMethod, uri, mimeType, body);

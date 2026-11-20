@@ -36,6 +36,7 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.junit.Assert;
 
 import java.util.Formatter;
+import java.util.Locale;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -204,7 +205,7 @@ public class CompiledStateIntegrityTestTools
             }
             int errorCount = errorMessages.size();
             StringBuilder message = new StringBuilder(errorCount * 128).append("There ").append((errorCount == 1) ? "is" : "are");
-            new Formatter(message).format(" %,d", errorCount);
+            new Formatter(message, Locale.ROOT).format(" %,d", errorCount);
             if (instanceDescription != null)
             {
                 message.append(' ').append(instanceDescription);
@@ -255,7 +256,7 @@ public class CompiledStateIntegrityTestTools
         if (errorCount > 0)
         {
             StringBuilder message = new StringBuilder(errorCount * 128);
-            new Formatter(message).format("There %s %,d %s violation", (errorCount == 1) ? "is" : "are", errorCount, violationDescription);
+            new Formatter(message, Locale.ROOT).format("There %s %,d %s violation", (errorCount == 1) ? "is" : "are", errorCount, violationDescription);
             if (errorCount != 1)
             {
                 message.append('s');

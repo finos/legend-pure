@@ -35,6 +35,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.JavaSourceCodeGene
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Locale;
 
 /**
  * Generates java source code from the class path
@@ -96,7 +97,7 @@ public class JavaModelFactoryGenerator
             runtime.loadAndCompileCore();
             runtime.loadAndCompileSystem();
         }
-        System.out.format("      Finished Pure initialization (%.6fs)%n", (System.nanoTime() - start) / 1_000_000_000.0);
+        System.out.format(Locale.ROOT, "      Finished Pure initialization (%.6fs)%n", (System.nanoTime() - start) / 1_000_000_000.0);
 
         JavaSourceCodeGenerator javaSourceCodeGenerator = new JavaSourceCodeGenerator(runtime.getProcessorSupport(), runtime.getCodeStorage(), true, filePath, false, Sets.mutable.empty(), name, JavaPackageAndImportBuilder.externalizablePackage());
         javaSourceCodeGenerator.generateCode(allTypes);

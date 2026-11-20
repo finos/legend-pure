@@ -29,6 +29,7 @@ import org.finos.legend.pure.runtime.java.extension.store.relational.shared.Conn
 
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Locale;
 
 public class ConnectionManager
 {
@@ -180,7 +181,7 @@ public class ConnectionManager
                     "sql='" + this.sql.substring(0, 100) + '\'' +
                     ", fetchSize=" + this.fetchSize +
                     ", queryTimeoutSeconds=" + this.queryTimeoutSeconds +
-                    ", startTime=" + String.format("%1tY-%<tm-%<td %<tH:%<tM:%<tS.%<tL %<tZ", this.startTime) +
+                    ", startTime=" + String.format(Locale.ROOT, "%1tY-%<tm-%<td %<tH:%<tM:%<tS.%<tL %<tZ", this.startTime) +
                     '}';
         }
     }

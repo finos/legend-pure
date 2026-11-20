@@ -71,6 +71,7 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 
 import java.net.URL;
+import java.util.Locale;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 
@@ -125,7 +126,7 @@ public class GraphLoader
         MapIterable<String, byte[]> fileBytes = this.loadedFiles.isEmpty() ? this.jarLibrary.readAllFiles() : this.jarLibrary.readFiles(this.jarLibrary.getAllFiles().reject(this::fileIsLoaded));
         if (message != null)
         {
-            message.setMessage(String.format("    Reading all (%,d) files ...", fileBytes.size()));
+            message.setMessage(String.format(Locale.ROOT, "    Reading all (%,d) files ...", fileBytes.size()));
         }
         loadFileBytes(fileBytes, message);
     }
@@ -235,7 +236,7 @@ public class GraphLoader
     {
         if (message != null)
         {
-            message.setMessage(String.format("    Reading %,d files ...", +files.size()));
+            message.setMessage(String.format(Locale.ROOT, "    Reading %,d files ...", +files.size()));
         }
         MapIterable<String, byte[]> fileBytes = this.jarLibrary.readFiles(LazyIterate.reject(files, this::fileIsLoaded));
         loadFileBytes(fileBytes, message);
@@ -256,7 +257,7 @@ public class GraphLoader
         int fileCount = fileBytes.size();
         if (message != null)
         {
-            message.setMessage(String.format("    Deserializing %,d files ...", fileCount));
+            message.setMessage(String.format(Locale.ROOT, "    Deserializing %,d files ...", fileCount));
         }
         ExternalReferenceSerializerLibrary serializerLibrary = ExternalReferenceSerializerLibrary.newLibrary(this.parserLibrary);
         ReferenceFactory referenceFactory = CachedReferenceFactory.wrap(new SimpleReferenceFactory());
@@ -290,7 +291,7 @@ public class GraphLoader
     {
         if (message != null)
         {
-            message.setMessage(String.format("    Initializing %,d nodes ...", nodes.size()));
+            message.setMessage(String.format(Locale.ROOT, "    Initializing %,d nodes ...", nodes.size()));
         }
         nodes.forEach(this::initializeTopLevelNode);
         if (shouldParallelize(nodes.size(), INITIALIZE_NODES_THRESHOLD))

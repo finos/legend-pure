@@ -25,6 +25,7 @@ import java.io.StringWriter;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 /**
  * Tests for {@link DateFormat}: rendering a Pure date through a format string, writing the
@@ -617,9 +618,9 @@ public class TestDateFormat
                 int offsetSeconds = PureDateToJava.start().toInstant(date).atZone(zone).getOffset().getTotalSeconds();
                 int minutes = Math.abs(offsetSeconds / 60);
                 String sign = (offsetSeconds < 0) ? "-" : "+";
-                String rfc822 = String.format("%s%02d%02d", sign, minutes / 60, minutes % 60);
+                String rfc822 = String.format(Locale.ROOT, "%s%02d%02d", sign, minutes / 60, minutes % 60);
                 String iso8601 = (offsetSeconds == 0) ? "Z" :
-                        ((minutes % 60 == 0) ? String.format("%s%02d", sign, minutes / 60) : rfc822);
+                        ((minutes % 60 == 0) ? String.format(Locale.ROOT, "%s%02d", sign, minutes / 60) : rfc822);
 
                 Assert.assertEquals(context, rfc822, format("[" + zoneId + "]Z", date));
                 Assert.assertEquals(context, iso8601, format("[" + zoneId + "]X", date));
