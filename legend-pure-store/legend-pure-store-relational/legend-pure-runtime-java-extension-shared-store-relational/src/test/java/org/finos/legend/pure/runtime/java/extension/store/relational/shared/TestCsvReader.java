@@ -14,6 +14,9 @@
 
 package org.finos.legend.pure.runtime.java.extension.store.relational.shared;
 
+import org.apache.commons.csv.CSVRecord;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Stacks;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.junit.Assert;
@@ -63,6 +66,17 @@ public class TestCsvReader
         assertContains("File is too large, file was 0.00 Mb, limit is 0 Mb", e.getInfo());
     }
 
+    @Test
+    public void testFileIsReadAsUtf8() throws IOException
+    {
+        // Greek letters are in neither windows-1252 nor ISO-8859-1, default charsets of JVMs before Java 18
+        Path file = this.tmp.newFile("data.csv").toPath();
+        Files.write(file, "name\r\n\u03B1\u03B2\u03B3\r\n".getBytes(StandardCharsets.UTF_8));
+
+        Iterable<CSVRecord> records = CsvReader.readCsv(null, null, file.toString(), null, Stacks.mutable.empty());
+        Assert.assertEquals(Lists.mutable.with(Lists.mutable.with("name"), Lists.mutable.with("\u03B1\u03B2\u03B3")), toLists(records));
+    }
+
     private String writeCsvFile() throws IOException
     {
         Path file = this.tmp.newFile("data.csv").toPath();
@@ -76,5 +90,17 @@ public class TestCsvReader
         {
             Assert.fail("Expected to find \"" + expected + "\" in: " + actual);
         }
+    }
+
+    private static MutableList<MutableList<String>> toLists(Iterable<CSVRecord> records)
+    {
+        MutableList<MutableList<String>> result = Lists.mutable.empty();
+        for (CSVRecord record : records)
+        {
+            MutableList<String> values = Lists.mutable.empty();
+            record.forEach(values::add);
+            result.add(values);
+        }
+        return result;
     }
 }

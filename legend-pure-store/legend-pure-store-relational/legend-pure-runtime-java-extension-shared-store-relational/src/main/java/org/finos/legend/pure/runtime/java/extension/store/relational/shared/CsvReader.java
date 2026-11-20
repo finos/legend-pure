@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Locale;
@@ -69,7 +68,7 @@ public class CsvReader
                     {
                         throw new PureExecutionException("File is too large, file was " + String.format(Locale.ROOT, "%.2f", file.length() * 1.0 / MEGA_BYTE) + " Mb, limit is " + sizeLimitMegabytes + " Mb", functionExpressionCallStack);
                     }
-                    csvParser = CSVParser.parse(file, Charset.defaultCharset(), CSVFormat.EXCEL);
+                    csvParser = CSVParser.parse(file, StandardCharsets.UTF_8, CSVFormat.EXCEL);
                 }
                 else
                 {
