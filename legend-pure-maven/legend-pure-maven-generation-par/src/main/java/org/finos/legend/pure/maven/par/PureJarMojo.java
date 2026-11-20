@@ -116,8 +116,8 @@ public class PureJarMojo extends AbstractMojo
                     mavenProject,
                     mojoExecution,
                     mavenRepoSession,
-                    projectOutputDirectory,
-                    projectTestOutputDirectory,
+                    null,
+                    null,
                     mavenProjectDependenciesResolver
             );
             try (URLClassLoader classLoader = new URLClassLoader(dependencyUrls, Thread.currentThread().getContextClassLoader()))
