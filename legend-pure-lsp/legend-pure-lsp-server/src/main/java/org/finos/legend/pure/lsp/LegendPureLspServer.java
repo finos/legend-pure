@@ -1317,8 +1317,8 @@ public class LegendPureLspServer implements LanguageServer, LanguageClientAware
 
     public static void main(String[] args) throws Exception
     {
-        PrintStream originalOut = new PrintStream(
-                new BufferedOutputStream(new FileOutputStream(FileDescriptor.out)), true);
+        PrintStream originalOut = Utf8PrintStreams.create(
+                new BufferedOutputStream(new FileOutputStream(FileDescriptor.out)));
         PrintStream stderrOut = Utf8PrintStreams.create(
                 new BufferedOutputStream(new FileOutputStream(FileDescriptor.err)));
         System.setOut(stderrOut);

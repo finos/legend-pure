@@ -49,8 +49,8 @@ public class LegendPureMcpServer
 
     public static void main(String[] args) throws IOException
     {
-        PrintStream protocolOut = new PrintStream(
-                new BufferedOutputStream(new FileOutputStream(FileDescriptor.out)), true);
+        PrintStream protocolOut = Utf8PrintStreams.create(
+                new BufferedOutputStream(new FileOutputStream(FileDescriptor.out)));
         PrintStream stderrOut = Utf8PrintStreams.create(
                 new BufferedOutputStream(new FileOutputStream(FileDescriptor.err)));
         // Anything printing to System.out (Pure console defaults, stray libraries) must not
