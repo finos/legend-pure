@@ -15,8 +15,9 @@
 package org.finos.legend.pure.lsp;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -58,7 +59,7 @@ public class WorkspaceDriftWatcherTest
         File resourcesDir = tempFolder.newFolder("module", "src", "main", "resources");
         File repoDir = new File(resourcesDir, "myrepo");
         Assert.assertTrue(repoDir.mkdirs());
-        try (FileWriter w = new FileWriter(new File(resourcesDir, "myrepo.definition.json")))
+        try (Writer w = Files.newBufferedWriter(new File(resourcesDir, "myrepo.definition.json").toPath(), StandardCharsets.UTF_8))
         {
             w.write("{\"name\": \"myrepo\"}");
         }
@@ -175,7 +176,7 @@ public class WorkspaceDriftWatcherTest
     private File writeFile(String name, String content) throws IOException
     {
         File file = this.resourcesRoot.resolve(name).toFile();
-        try (FileWriter w = new FileWriter(file))
+        try (Writer w = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8))
         {
             w.write(content);
         }

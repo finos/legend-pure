@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -86,9 +87,9 @@ public class FileUrisTest
     public void uriMapper_derivesTheSameSourceIdFromEverySpelling() throws IOException
     {
         Path resources = Files.createDirectories(this.tempFolder.getRoot().toPath().resolve("module/src/main/resources"));
-        Files.write(resources.resolve("my_repo.definition.json"), "{\"name\": \"my_repo\"}".getBytes());
+        Files.write(resources.resolve("my_repo.definition.json"), "{\"name\": \"my_repo\"}".getBytes(StandardCharsets.UTF_8));
         Path file = Files.createDirectories(resources.resolve("my_repo/sub")).resolve("Model.pure");
-        Files.write(file, "Class my::Model {}".getBytes());
+        Files.write(file, "Class my::Model {}".getBytes(StandardCharsets.UTF_8));
 
         RepositoryScanner scanner = new RepositoryScanner();
         scanner.scan(Collections.singletonList(this.tempFolder.getRoot().toPath()));

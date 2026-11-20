@@ -37,6 +37,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -170,12 +171,12 @@ public class TestRunner implements Runnable
                 return;
             }
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            PrintStream ps = new PrintStream(stream);
+            PrintStream ps = new PrintStream(stream, false, StandardCharsets.UTF_8.name());
             console.setPrintStream(ps);
             try
             {
                 executeTestFunc(test, testCollection.getTestFunctionParam(), testCollection.getTestFunctionParamCustomizer());
-                this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), stream.toString(), TestStatus.SUCCESS);
+                this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), new String(stream.toByteArray(), StandardCharsets.UTF_8), TestStatus.SUCCESS);
                 this.passedTests.add(PackageableElement.getUserPathForPackageableElement(test) + (testCollection.getTestParameterizationId() == null ? "" : "[" + testCollection.getTestParameterizationId() + "]"));
             }
             catch (Throwable t)
@@ -183,11 +184,11 @@ public class TestRunner implements Runnable
                 PureException exception = PureException.findPureException(t);
                 if (exception instanceof PureAssertFailException)
                 {
-                    this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), stream.toString(), new AssertFailTestStatus((PureAssertFailException) exception));
+                    this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), new String(stream.toByteArray(), StandardCharsets.UTF_8), new AssertFailTestStatus((PureAssertFailException) exception));
                 }
                 else
                 {
-                    this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), stream.toString(), new ErrorTestStatus(t));
+                    this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), new String(stream.toByteArray(), StandardCharsets.UTF_8), new ErrorTestStatus(t));
                 }
                 this.failedTests.add(PackageableElement.getUserPathForPackageableElement(test) + (testCollection.getTestParameterizationId() == null ? "" : "[" + testCollection.getTestParameterizationId() + "]"));
             }

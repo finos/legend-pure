@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.lsp;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -47,8 +48,8 @@ public class WorkspaceSyncIntegrationTest
         Files.createDirectories(sourceFile.getParent());
 
         String originalContent = "Class test::sync::SyncPerson\n{\n  name: String[1];\n}\n";
-        Files.write(resourcesDir.resolve("sync_repo.definition.json"), DEFINITION.getBytes());
-        Files.write(sourceFile, originalContent.getBytes());
+        Files.write(resourcesDir.resolve("sync_repo.definition.json"), DEFINITION.getBytes(StandardCharsets.UTF_8));
+        Files.write(sourceFile, originalContent.getBytes(StandardCharsets.UTF_8));
 
         LegendPureLspServer server = new LegendPureLspServer();
         server.preconfigureAndWarm(Collections.singletonList(workspaceRoot), Collections.emptySet());
@@ -56,7 +57,7 @@ public class WorkspaceSyncIntegrationTest
 
         String sourceId = "/sync_repo/model/SyncPerson.pure";
         String newContent = "Class test::sync::SyncPerson\n{\n  name: String[1];\n  age: Integer[1];\n}\n";
-        Files.write(sourceFile, newContent.getBytes());
+        Files.write(sourceFile, newContent.getBytes(StandardCharsets.UTF_8));
 
         String uri = sourceFile.toUri().toString();
         SyncWorkspaceResult result = server.syncWorkspace(new SyncWorkspaceParams(Collections.singletonList(uri))).get();
@@ -75,7 +76,7 @@ public class WorkspaceSyncIntegrationTest
         Path resourcesDir = workspaceRoot.resolve("sync-module/src/main/resources");
         Path repoDir = resourcesDir.resolve("sync_repo");
         Files.createDirectories(repoDir);
-        Files.write(resourcesDir.resolve("sync_repo.definition.json"), DEFINITION.getBytes());
+        Files.write(resourcesDir.resolve("sync_repo.definition.json"), DEFINITION.getBytes(StandardCharsets.UTF_8));
 
         LegendPureLspServer server = new LegendPureLspServer();
         server.preconfigureAndWarm(Collections.singletonList(workspaceRoot), Collections.emptySet());
@@ -84,7 +85,7 @@ public class WorkspaceSyncIntegrationTest
         Path newFile = repoDir.resolve("model/BrandNew.pure");
         Files.createDirectories(newFile.getParent());
         String content = "Class test::sync::BrandNew\n{\n  id: Integer[1];\n}\n";
-        Files.write(newFile, content.getBytes());
+        Files.write(newFile, content.getBytes(StandardCharsets.UTF_8));
 
         String uri = newFile.toUri().toString();
         SyncWorkspaceResult result = server.syncWorkspace(new SyncWorkspaceParams(Collections.singletonList(uri))).get();
@@ -103,8 +104,8 @@ public class WorkspaceSyncIntegrationTest
         Path sourceFile = repoDir.resolve("model/ToDelete.pure");
         Files.createDirectories(sourceFile.getParent());
 
-        Files.write(resourcesDir.resolve("sync_repo.definition.json"), DEFINITION.getBytes());
-        Files.write(sourceFile, "Class test::sync::ToDelete\n{\n  name: String[1];\n}\n".getBytes());
+        Files.write(resourcesDir.resolve("sync_repo.definition.json"), DEFINITION.getBytes(StandardCharsets.UTF_8));
+        Files.write(sourceFile, "Class test::sync::ToDelete\n{\n  name: String[1];\n}\n".getBytes(StandardCharsets.UTF_8));
 
         LegendPureLspServer server = new LegendPureLspServer();
         server.preconfigureAndWarm(Collections.singletonList(workspaceRoot), Collections.emptySet());
@@ -131,8 +132,8 @@ public class WorkspaceSyncIntegrationTest
         Files.createDirectories(sourceFile.getParent());
 
         String originalContent = "Class test::sync::OpenDoc\n{\n  name: String[1];\n}\n";
-        Files.write(resourcesDir.resolve("sync_repo.definition.json"), DEFINITION.getBytes());
-        Files.write(sourceFile, originalContent.getBytes());
+        Files.write(resourcesDir.resolve("sync_repo.definition.json"), DEFINITION.getBytes(StandardCharsets.UTF_8));
+        Files.write(sourceFile, originalContent.getBytes(StandardCharsets.UTF_8));
 
         LegendPureLspServer server = new LegendPureLspServer();
         server.preconfigureAndWarm(Collections.singletonList(workspaceRoot), Collections.emptySet());
@@ -144,7 +145,7 @@ public class WorkspaceSyncIntegrationTest
 
         // A conflicting disk change while the document is open in an editor.
         String diskContent = "Class test::sync::OpenDoc\n{\n  name: String[1];\n  fromDisk: Boolean[1];\n}\n";
-        Files.write(sourceFile, diskContent.getBytes());
+        Files.write(sourceFile, diskContent.getBytes(StandardCharsets.UTF_8));
 
         SyncWorkspaceResult result = server.syncWorkspace(new SyncWorkspaceParams(Collections.singletonList(uri))).get();
 
@@ -163,15 +164,15 @@ public class WorkspaceSyncIntegrationTest
         Files.createDirectories(sourceFile.getParent());
 
         String originalContent = "Class test::sync::LockHeld\n{\n  name: String[1];\n}\n";
-        Files.write(resourcesDir.resolve("sync_repo.definition.json"), DEFINITION.getBytes());
-        Files.write(sourceFile, originalContent.getBytes());
+        Files.write(resourcesDir.resolve("sync_repo.definition.json"), DEFINITION.getBytes(StandardCharsets.UTF_8));
+        Files.write(sourceFile, originalContent.getBytes(StandardCharsets.UTF_8));
 
         LegendPureLspServer server = new LegendPureLspServer();
         server.preconfigureAndWarm(Collections.singletonList(workspaceRoot), Collections.emptySet());
         String sourceId = "/sync_repo/model/LockHeld.pure";
 
         String newContent = "Class test::sync::LockHeld\n{\n  name: String[1];\n  age: Integer[1];\n}\n";
-        Files.write(sourceFile, newContent.getBytes());
+        Files.write(sourceFile, newContent.getBytes(StandardCharsets.UTF_8));
         String uri = sourceFile.toUri().toString();
 
         // Simulates an in-flight execution/paused SHARED debug session holding the read lock: sync must

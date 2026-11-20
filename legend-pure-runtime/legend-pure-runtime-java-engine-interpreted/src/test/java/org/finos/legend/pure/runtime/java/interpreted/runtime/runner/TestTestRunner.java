@@ -94,6 +94,26 @@ public class TestTestRunner extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
+    public void testOutputOutsideDefaultCharset() throws Exception
+    {
+        // Greek and Chinese letters are in neither windows-1252 nor ISO-8859-1, default charsets of JVMs before Java 18
+        compileTestSource("fromString.pure", "function <<test.Test>> test::charset::test():Boolean[1]\n" +
+                "{\n" +
+                "   print('\u03B1\u03B2\u03B3 \u4E2D\u6587', 1);\n" +
+                "   assert(true, |'');\n" +
+                "}\n");
+        UnitTestTestCallBack callback = new UnitTestTestCallBack();
+        TestRunner testRunner = new TestRunner("test::charset", runtime, functionExecution, callback, false);
+        testRunner.run();
+
+        MutableList<CallBackGroup> groups = callback.getGroups();
+        Assert.assertEquals(1, groups.size());
+        String message = groups.get(0).getMessage();
+        Assert.assertTrue(message, message.startsWith("\u03B1\u03B2\u03B3 \u4E2D\u6587"));
+        Verify.assertInstanceOf(SuccessTestStatus.class, groups.get(0).getStatus());
+    }
+
+    @Test
     public void testSetup() throws Exception
     {
         compileTestSource("function <<test.BeforePackage>> a::b::setUp():Nil[0]\n" +

@@ -1482,7 +1482,7 @@ public class LegendPureSession
         finally
         {
             context.endExecution(exec);
-            console.setPrintStream(new PrintStream(new ByteArrayOutputStream(), true));
+            console.setPrintStream(Utf8PrintStreams.create(new ByteArrayOutputStream()));
             console.setConsole(false);
             txn.rollback();
         }
@@ -1902,7 +1902,7 @@ public class LegendPureSession
             }
             finally
             {
-                console.setPrintStream(new PrintStream(new ByteArrayOutputStream(), true));
+                console.setPrintStream(Utf8PrintStreams.create(new ByteArrayOutputStream()));
                 console.setConsole(false);
                 txn.rollback();
             }

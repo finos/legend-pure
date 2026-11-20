@@ -34,6 +34,7 @@ import javax.tools.StandardLocation;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,7 +58,7 @@ public class MemoryFileManager extends ForwardingJavaFileManager<StandardJavaFil
 
     public MemoryFileManager(JavaCompiler compiler, MemoryFileManager parent, Message message)
     {
-        super(compiler.getStandardFileManager(null, null, null));
+        super(compiler.getStandardFileManager(null, null, StandardCharsets.UTF_8));
         this.parent = parent;
         this.message = message;
     }

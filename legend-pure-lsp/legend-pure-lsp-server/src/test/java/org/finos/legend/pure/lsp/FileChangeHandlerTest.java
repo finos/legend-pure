@@ -15,8 +15,10 @@
 package org.finos.legend.pure.lsp;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import org.eclipse.lsp4j.FileChangeType;
@@ -67,7 +69,7 @@ public class FileChangeHandlerTest
     public void toFileChanges_readsCreatedFile() throws IOException
     {
         File pureFile = tempFolder.newFile("test.pure");
-        try (FileWriter w = new FileWriter(pureFile))
+        try (Writer w = Files.newBufferedWriter(pureFile.toPath(), StandardCharsets.UTF_8))
         {
             w.write("Class my::Test {}");
         }
@@ -90,12 +92,12 @@ public class FileChangeHandlerTest
     public void toFileChanges_batchesMultipleEvents() throws IOException
     {
         File file1 = tempFolder.newFile("a.pure");
-        try (FileWriter w = new FileWriter(file1))
+        try (Writer w = Files.newBufferedWriter(file1.toPath(), StandardCharsets.UTF_8))
         {
             w.write("Class a::A {}");
         }
         File file2 = tempFolder.newFile("b.pure");
-        try (FileWriter w = new FileWriter(file2))
+        try (Writer w = Files.newBufferedWriter(file2.toPath(), StandardCharsets.UTF_8))
         {
             w.write("Class b::B {}");
         }

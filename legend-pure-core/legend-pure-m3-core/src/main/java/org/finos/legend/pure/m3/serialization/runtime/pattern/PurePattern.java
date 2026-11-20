@@ -33,7 +33,9 @@ import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -105,7 +107,7 @@ public class PurePattern
             String value;
             if (this.urlArguments.contains(name))
             {
-                String arg = URLDecoder.decode(matcher.group(name));
+                String arg = decodeUrlArgument(matcher.group(name));
                 value = convertValue(arg, type, stringType, isDateType, processorSupport);
             }
             else
@@ -171,6 +173,19 @@ public class PurePattern
     private static String convertDate(String value)
     {
         return value.startsWith("%") ? value : ("%" + value);
+    }
+
+    private static String decodeUrlArgument(String arg)
+    {
+        try
+        {
+            return URLDecoder.decode(arg, StandardCharsets.UTF_8.name());
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            // every Java platform supports UTF-8
+            throw new IllegalStateException(e);
+        }
     }
 
     private static String convertEnum(String value, CoreInstance type)

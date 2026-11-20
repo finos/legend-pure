@@ -195,7 +195,7 @@ public class TestM3CoreInstanceGenerator
                  {
                      try
                      {
-                         String content = new String(Files.readAllBytes(p));
+                         String content = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
                          Assert.assertTrue(
                                  "Generated file " + p.getFileName() + " must contain a class or interface declaration",
                                  content.contains("public class ") || content.contains("public interface "));
