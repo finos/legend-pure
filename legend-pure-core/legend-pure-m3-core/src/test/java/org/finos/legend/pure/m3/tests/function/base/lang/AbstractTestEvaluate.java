@@ -81,6 +81,21 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     }
 
     @Test
+    public void testEvaluateWithUpcastArgument()
+    {
+        // The wrapper ValueSpecification carries the upcast static type (A), but the actual
+        // instance is a B; eval must accept it, as compiled mode dispatches on the instance.
+        compileTestSource("fromString.pure",
+                "Class test::A {}\n" +
+                        "Class test::B extends test::A {}\n" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert(^test::B()->cast(@test::A)->match([b:test::B[1] | {x:test::B[1]|true}->eval($b)]), |'');\n" +
+                        "}\n");
+        execute("test():Boolean[1]");
+    }
+
+    @Test
     public void testEvaluatePropertyWrongType()
     {
         compileTestSource("fromString.pure",
