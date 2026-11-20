@@ -23,6 +23,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Regression tests for the match expression double-execution bug.
@@ -49,10 +51,10 @@ public abstract class AbstractTestMatchSideEffects extends AbstractPureTestWithC
                         "    ])\n" +
                         "}\n");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        functionExecution.getConsole().setPrintStream(new PrintStream(baos));
+        functionExecution.getConsole().setPrintStream(newUtf8PrintStream(baos));
         functionExecution.getConsole().setConsole(true);
         execute("testNestedMatch():Integer[1]");
-        String out = baos.toString();
+        String out = new String(baos.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals("inner lambda must execute exactly once", 1, countOccurrences(out, "'inner'"));
         Assert.assertEquals("outer lambda must execute exactly once", 1, countOccurrences(out, "'outer'"));
     }
@@ -72,10 +74,10 @@ public abstract class AbstractTestMatchSideEffects extends AbstractPureTestWithC
                         "    ])\n" +
                         "}\n");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        functionExecution.getConsole().setPrintStream(new PrintStream(baos));
+        functionExecution.getConsole().setPrintStream(newUtf8PrintStream(baos));
         functionExecution.getConsole().setConsole(true);
         execute("testTripleMatch():Integer[1]");
-        String out = baos.toString();
+        String out = new String(baos.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals("first lambda must execute exactly once", 1, countOccurrences(out, "'first'"));
         Assert.assertEquals("second lambda must execute exactly once", 1, countOccurrences(out, "'second'"));
         Assert.assertEquals("third lambda must execute exactly once", 1, countOccurrences(out, "'third'"));
@@ -96,10 +98,10 @@ public abstract class AbstractTestMatchSideEffects extends AbstractPureTestWithC
                         "    1->match($fns);\n" +
                         "}\n");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        functionExecution.getConsole().setPrintStream(new PrintStream(baos));
+        functionExecution.getConsole().setPrintStream(newUtf8PrintStream(baos));
         functionExecution.getConsole().setConsole(true);
         CoreInstance result = execute("testDynamicMatch():Integer[1]");
-        String out = baos.toString();
+        String out = new String(baos.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals("dynamic lambda must execute exactly once", 1, countOccurrences(out, "'dynamic'"));
         Assert.assertEquals("return value must be 2 (1+1), not 3 from a double execution", 2, PrimitiveUtilities.getIntegerValue(result.getValueForMetaPropertyToOne(M3Properties.values)).intValue());
     }
@@ -124,10 +126,10 @@ public abstract class AbstractTestMatchSideEffects extends AbstractPureTestWithC
                         "    10->match($fns);\n" +
                         "}\n");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        functionExecution.getConsole().setPrintStream(new PrintStream(baos));
+        functionExecution.getConsole().setPrintStream(newUtf8PrintStream(baos));
         functionExecution.getConsole().setConsole(true);
         CoreInstance result = execute("testNamedFnMatch():Integer[1]");
-        String out = baos.toString();
+        String out = new String(baos.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals("named function body must execute exactly once", 1, countOccurrences(out, "'namedFn'"));
         Assert.assertEquals("return value must be 15 (10+5), not 20 from double execution", 15, PrimitiveUtilities.getIntegerValue(result.getValueForMetaPropertyToOne(M3Properties.values)).intValue());
     }
@@ -150,13 +152,26 @@ public abstract class AbstractTestMatchSideEffects extends AbstractPureTestWithC
                         "    42->match($fns);\n" +
                         "}\n");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        functionExecution.getConsole().setPrintStream(new PrintStream(baos));
+        functionExecution.getConsole().setPrintStream(newUtf8PrintStream(baos));
         functionExecution.getConsole().setConsole(true);
         CoreInstance result = execute("testDynamicMultiClauseMatch():String[1]");
-        String out = baos.toString();
+        String out = new String(baos.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals("string clause must not fire", 0, countOccurrences(out, "'stringClause'"));
         Assert.assertEquals("int clause must fire exactly once", 1, countOccurrences(out, "'intClause'"));
         Assert.assertEquals("return value must be 'was_int'", "was_int", PrimitiveUtilities.getStringValue(result.getValueForMetaPropertyToOne(M3Properties.values)));
+    }
+
+    private static PrintStream newUtf8PrintStream(ByteArrayOutputStream stream)
+    {
+        try
+        {
+            return new PrintStream(stream, false, StandardCharsets.UTF_8.name());
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            // every Java platform supports UTF-8
+            throw new IllegalStateException(e);
+        }
     }
 
     private static int countOccurrences(String text, String sub)

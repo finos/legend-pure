@@ -15,6 +15,7 @@
 package org.finos.legend.pure.lsp;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -37,12 +38,12 @@ public class RepositoryScannerTest
                 .resolve("my-module/src/main/resources");
         Files.createDirectories(resourcesDir);
         Files.write(resourcesDir.resolve("my_repo.definition.json"),
-                "{\"name\": \"my_repo\", \"pattern\": \"(my::repo)(::.*)?\" }".getBytes());
+                "{\"name\": \"my_repo\", \"pattern\": \"(my::repo)(::.*)?\" }".getBytes(StandardCharsets.UTF_8));
 
         // Also create a .pure file to resolve
         Path pureDir = resourcesDir.resolve("my_repo/sub/path");
         Files.createDirectories(pureDir);
-        Files.write(pureDir.resolve("model.pure"), "Class my::repo::Model {}".getBytes());
+        Files.write(pureDir.resolve("model.pure"), "Class my::repo::Model {}".getBytes(StandardCharsets.UTF_8));
 
         RepositoryScanner scanner = new RepositoryScanner();
         scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));
@@ -59,11 +60,11 @@ public class RepositoryScannerTest
                 .resolve("mod/src/main/resources");
         Files.createDirectories(resourcesDir);
         Files.write(resourcesDir.resolve("test_repo.definition.json"),
-                "{\"name\": \"test_repo\", \"pattern\": \"(test)(::.*)?\" }".getBytes());
+                "{\"name\": \"test_repo\", \"pattern\": \"(test)(::.*)?\" }".getBytes(StandardCharsets.UTF_8));
 
         Path pureFile = resourcesDir.resolve("test_repo/pkg/MyClass.pure");
         Files.createDirectories(pureFile.getParent());
-        Files.write(pureFile, "Class test::MyClass {}".getBytes());
+        Files.write(pureFile, "Class test::MyClass {}".getBytes(StandardCharsets.UTF_8));
 
         RepositoryScanner scanner = new RepositoryScanner();
         scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));
@@ -80,7 +81,7 @@ public class RepositoryScannerTest
                 .resolve("mod/src/main/resources");
         Files.createDirectories(resourcesDir);
         Files.write(resourcesDir.resolve("test_repo.definition.json"),
-                "{\"name\": \"test_repo\", \"pattern\": \"(test)(::.*)?\" }".getBytes());
+                "{\"name\": \"test_repo\", \"pattern\": \"(test)(::.*)?\" }".getBytes(StandardCharsets.UTF_8));
 
         RepositoryScanner scanner = new RepositoryScanner();
         scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));
@@ -118,11 +119,11 @@ public class RepositoryScannerTest
                 .resolve("mod/src/main/resources");
         Files.createDirectories(resourcesDir);
         Files.write(resourcesDir.resolve("uri_repo.definition.json"),
-                "{\"name\": \"uri_repo\"}".getBytes());
+                "{\"name\": \"uri_repo\"}".getBytes(StandardCharsets.UTF_8));
 
         Path pureFile = resourcesDir.resolve("uri_repo/Test.pure");
         Files.createDirectories(pureFile.getParent());
-        Files.write(pureFile, "Class test::Test {}".getBytes());
+        Files.write(pureFile, "Class test::Test {}".getBytes(StandardCharsets.UTF_8));
 
         RepositoryScanner scanner = new RepositoryScanner();
         scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));
@@ -141,7 +142,7 @@ public class RepositoryScannerTest
                 .resolve("mod/target/classes/src/main/resources");
         Files.createDirectories(targetResources);
         Files.write(targetResources.resolve("hidden.definition.json"),
-                "{\"name\": \"hidden\"}".getBytes());
+                "{\"name\": \"hidden\"}".getBytes(StandardCharsets.UTF_8));
 
         RepositoryScanner scanner = new RepositoryScanner();
         scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));
@@ -159,7 +160,7 @@ public class RepositoryScannerTest
                     .resolve("module-" + repo + "/src/main/resources");
             Files.createDirectories(resourcesDir);
             Files.write(resourcesDir.resolve(repo + ".definition.json"),
-                    ("{\"name\": \"" + repo + "\"}").getBytes());
+                    ("{\"name\": \"" + repo + "\"}").getBytes(StandardCharsets.UTF_8));
         }
 
         RepositoryScanner scanner = new RepositoryScanner();
@@ -175,7 +176,7 @@ public class RepositoryScannerTest
     public void parseRepoName_extractsNameField() throws IOException
     {
         Path file = tempFolder.newFile("test.definition.json").toPath();
-        Files.write(file, "{\n  \"name\": \"my_repo\",\n  \"pattern\": \".*\"\n}".getBytes());
+        Files.write(file, "{\n  \"name\": \"my_repo\",\n  \"pattern\": \".*\"\n}".getBytes(StandardCharsets.UTF_8));
 
         Assert.assertEquals("my_repo", RepositoryScanner.parseRepoName(file));
     }
@@ -184,7 +185,7 @@ public class RepositoryScannerTest
     public void parseRepoName_handlesCompactJson() throws IOException
     {
         Path file = tempFolder.newFile("compact.definition.json").toPath();
-        Files.write(file, "{\"name\":\"compact_repo\"}".getBytes());
+        Files.write(file, "{\"name\":\"compact_repo\"}".getBytes(StandardCharsets.UTF_8));
 
         Assert.assertEquals("compact_repo", RepositoryScanner.parseRepoName(file));
     }
@@ -196,7 +197,7 @@ public class RepositoryScannerTest
                 .resolve("mod/src/main/resources");
         Files.createDirectories(resourcesDir);
         Files.write(resourcesDir.resolve("clearme.definition.json"),
-                "{\"name\": \"clearme\"}".getBytes());
+                "{\"name\": \"clearme\"}".getBytes(StandardCharsets.UTF_8));
 
         RepositoryScanner scanner = new RepositoryScanner();
         scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));
@@ -221,7 +222,7 @@ public class RepositoryScannerTest
         // Create repo directory with .pure files
         Path repoDir = resourcesDir.resolve("test_repo/sub");
         Files.createDirectories(repoDir);
-        Files.write(repoDir.resolve("model.pure"), "Class test::Model {}".getBytes());
+        Files.write(repoDir.resolve("model.pure"), "Class test::Model {}".getBytes(StandardCharsets.UTF_8));
 
         // Create the storage with root = resources/test_repo (correct)
         org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository repo =
@@ -252,7 +253,7 @@ public class RepositoryScannerTest
         Path resourcesDir = tempFolder.getRoot().toPath().resolve("resources");
         Path repoDir = resourcesDir.resolve("test_repo/sub");
         Files.createDirectories(repoDir);
-        Files.write(repoDir.resolve("model.pure"), "Class test::Model {}".getBytes());
+        Files.write(repoDir.resolve("model.pure"), "Class test::Model {}".getBytes(StandardCharsets.UTF_8));
 
         org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository repo =
                 new org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository(
@@ -306,11 +307,11 @@ public class RepositoryScannerTest
                 .resolve("mod/src/main/resources");
         Files.createDirectories(resourcesDir);
         Files.write(resourcesDir.resolve("my_repo.definition.json"),
-                "{\"name\": \"my_repo\"}".getBytes());
+                "{\"name\": \"my_repo\"}".getBytes(StandardCharsets.UTF_8));
 
         Path pureFile = resourcesDir.resolve("my_repo/sub/Model.pure");
         Files.createDirectories(pureFile.getParent());
-        Files.write(pureFile, "Class my::repo::Model {}".getBytes());
+        Files.write(pureFile, "Class my::repo::Model {}".getBytes(StandardCharsets.UTF_8));
 
         RepositoryScanner scanner = new RepositoryScanner();
         scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));
@@ -328,11 +329,11 @@ public class RepositoryScannerTest
                 .resolve("mod/src/main/resources");
         Files.createDirectories(resourcesDir);
         Files.write(resourcesDir.resolve("my_repo.definition.json"),
-                "{\"name\": \"my_repo\"}".getBytes());
+                "{\"name\": \"my_repo\"}".getBytes(StandardCharsets.UTF_8));
 
         Path fixtureFile = resourcesDir.resolve("data/ingest/fixture.pure");
         Files.createDirectories(fixtureFile.getParent());
-        Files.write(fixtureFile, "###Lakehouse\n<TEST_GROUP>".getBytes());
+        Files.write(fixtureFile, "###Lakehouse\n<TEST_GROUP>".getBytes(StandardCharsets.UTF_8));
 
         RepositoryScanner scanner = new RepositoryScanner();
         scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));
@@ -352,11 +353,11 @@ public class RepositoryScannerTest
                 .resolve("mod/src/main/resources");
         Files.createDirectories(resourcesDir);
         Files.write(resourcesDir.resolve("my_repo.definition.json"),
-                "{\"name\": \"my_repo\"}".getBytes());
+                "{\"name\": \"my_repo\"}".getBytes(StandardCharsets.UTF_8));
 
         Path fixtureFile = resourcesDir.resolve("my_repo/data/ingest/matview/fixture.pure");
         Files.createDirectories(fixtureFile.getParent());
-        Files.write(fixtureFile, "###Lakehouse\n<TEST_GROUP>".getBytes());
+        Files.write(fixtureFile, "###Lakehouse\n<TEST_GROUP>".getBytes(StandardCharsets.UTF_8));
 
         RepositoryScanner scanner = new RepositoryScanner();
         scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));
@@ -372,11 +373,11 @@ public class RepositoryScannerTest
                 .resolve("mod/src/main/resources");
         Files.createDirectories(resourcesDir);
         Files.write(resourcesDir.resolve("my_repo.definition.json"),
-                "{\"name\": \"my_repo\"}".getBytes());
+                "{\"name\": \"my_repo\"}".getBytes(StandardCharsets.UTF_8));
 
         Path welcomeFile = resourcesDir.resolve("my_repo/data/welcome.pure");
         Files.createDirectories(welcomeFile.getParent());
-        Files.write(welcomeFile, "function go():Any[*] {[]}".getBytes());
+        Files.write(welcomeFile, "function go():Any[*] {[]}".getBytes(StandardCharsets.UTF_8));
 
         RepositoryScanner scanner = new RepositoryScanner();
         scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));
@@ -393,11 +394,11 @@ public class RepositoryScannerTest
                 .resolve("mod/src/main/resources");
         Files.createDirectories(resourcesDir);
         Files.write(resourcesDir.resolve("my_repo.definition.json"),
-                "{\"name\": \"my_repo\"}".getBytes());
+                "{\"name\": \"my_repo\"}".getBytes(StandardCharsets.UTF_8));
 
         Path nestedFile = resourcesDir.resolve("my_repo/core/pure/data/Model.pure");
         Files.createDirectories(nestedFile.getParent());
-        Files.write(nestedFile, "Class my::repo::Model {}".getBytes());
+        Files.write(nestedFile, "Class my::repo::Model {}".getBytes(StandardCharsets.UTF_8));
 
         RepositoryScanner scanner = new RepositoryScanner();
         scanner.scan(Collections.singletonList(tempFolder.getRoot().toPath()));

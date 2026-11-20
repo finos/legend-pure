@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.lsp;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -43,7 +44,7 @@ public class FixtureFileEditorLifecycleTest
         Files.write(resourcesDir.resolve("real_repo.definition.json"),
                 ("{\"name\":\"real_repo\","
                         + "\"pattern\":\"(test::reallife)(::.*)?\","
-                        + "\"dependencies\":[\"platform\"]}").getBytes());
+                        + "\"dependencies\":[\"platform\"]}").getBytes(StandardCharsets.UTF_8));
 
         // A fixture file in a *different* module with no definition.json of its own - the exact shape
         // of the alloy-lakehouse integration-test-compatibility crash.
@@ -51,7 +52,7 @@ public class FixtureFileEditorLifecycleTest
         Path fixtureFile = fixtureResourcesDir.resolve("data/ingest/matview/catalog/matview.pure");
         Files.createDirectories(fixtureFile.getParent());
         String fixtureContent = "###Lakehouse\n<TEST_GROUP>";
-        Files.write(fixtureFile, fixtureContent.getBytes());
+        Files.write(fixtureFile, fixtureContent.getBytes(StandardCharsets.UTF_8));
 
         LegendPureLspServer server = new LegendPureLspServer();
         server.preconfigureAndWarm(Collections.singletonList(workspaceRoot), Collections.emptySet());

@@ -116,10 +116,10 @@ public class UriMapperTest
         java.nio.file.Path resourcesDir = tempDir.resolve("mod/src/main/resources");
         java.nio.file.Files.createDirectories(resourcesDir);
         java.nio.file.Files.write(resourcesDir.resolve("my_repo.definition.json"),
-                "{\"name\": \"my_repo\"}".getBytes());
+                "{\"name\": \"my_repo\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
         java.nio.file.Path pureFile = resourcesDir.resolve("my_repo/sub/file.pure");
         java.nio.file.Files.createDirectories(pureFile.getParent());
-        java.nio.file.Files.write(pureFile, "Class X {}".getBytes());
+        java.nio.file.Files.write(pureFile, "Class X {}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
         RepositoryScanner scanner = new RepositoryScanner();
         scanner.scan(java.util.Collections.singletonList(tempDir));
@@ -155,9 +155,9 @@ public class UriMapperTest
         {
             java.nio.file.Path resourcesDir = tempDir.resolve("core-module/src/main/resources");
             java.nio.file.Files.createDirectories(resourcesDir.resolve("core/pure/extensions"));
-            java.nio.file.Files.write(resourcesDir.resolve("core.definition.json"), "{\"name\": \"core\"}".getBytes());
+            java.nio.file.Files.write(resourcesDir.resolve("core.definition.json"), "{\"name\": \"core\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
             java.nio.file.Path pureFile = resourcesDir.resolve("core/pure/extensions/functions.pure");
-            java.nio.file.Files.write(pureFile, "Class X {}".getBytes());
+            java.nio.file.Files.write(pureFile, "Class X {}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
             RepositoryScanner scanner = new RepositoryScanner();
             scanner.scan(java.util.Collections.singletonList(tempDir));
@@ -186,12 +186,12 @@ public class UriMapperTest
             // to be legend-pure-compilable, sitting under some other module's src/main/resources/data).
             java.nio.file.Path coreResourcesDir = tempDir.resolve("core-module/src/main/resources");
             java.nio.file.Files.createDirectories(coreResourcesDir.resolve("core"));
-            java.nio.file.Files.write(coreResourcesDir.resolve("core.definition.json"), "{\"name\": \"core\"}".getBytes());
+            java.nio.file.Files.write(coreResourcesDir.resolve("core.definition.json"), "{\"name\": \"core\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
             java.nio.file.Path fixtureResourcesDir = tempDir.resolve("some-other-module/src/main/resources");
             java.nio.file.Path fixtureFile = fixtureResourcesDir.resolve("data/ingest/matview/catalog/matview.pure");
             java.nio.file.Files.createDirectories(fixtureFile.getParent());
-            java.nio.file.Files.write(fixtureFile, "###Lakehouse\n<TEST_GROUP>".getBytes());
+            java.nio.file.Files.write(fixtureFile, "###Lakehouse\n<TEST_GROUP>".getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
             RepositoryScanner scanner = new RepositoryScanner();
             scanner.scan(java.util.Collections.singletonList(tempDir));
@@ -229,7 +229,7 @@ public class UriMapperTest
         {
             java.nio.file.Path resourcesDir = tempDir.resolve("core-module/src/main/resources");
             java.nio.file.Files.createDirectories(resourcesDir.resolve("core"));
-            java.nio.file.Files.write(resourcesDir.resolve("core.definition.json"), "{\"name\": \"core\"}".getBytes());
+            java.nio.file.Files.write(resourcesDir.resolve("core.definition.json"), "{\"name\": \"core\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
             RepositoryScanner scanner = new RepositoryScanner();
             scanner.scan(java.util.Collections.singletonList(tempDir));
