@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m4.logs;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 public abstract class AbstractPureLogger implements PureLogger
 {
@@ -40,7 +41,7 @@ public abstract class AbstractPureLogger implements PureLogger
     {
         try
         {
-            return String.format(formatString, formatArgs);
+            return String.format(Locale.ROOT, formatString, formatArgs);
         }
         catch (Exception e)
         {
