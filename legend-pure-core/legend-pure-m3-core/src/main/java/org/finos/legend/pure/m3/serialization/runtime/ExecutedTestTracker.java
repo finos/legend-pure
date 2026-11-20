@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -163,7 +164,7 @@ public class ExecutedTestTracker
 
         return new JSONObject(count.collect((testState, count1) ->
         {
-            NumberFormat df = DecimalFormat.getPercentInstance();
+            NumberFormat df = DecimalFormat.getPercentInstance(Locale.ROOT);
             return Tuples.pair(testState.name(), df.format(count1 / totalCount));
         }));
     }

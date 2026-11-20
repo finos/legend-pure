@@ -33,6 +33,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 
 import java.util.Formatter;
+import java.util.Locale;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
@@ -126,7 +127,7 @@ public class GraphStatistics
 
     private static void writeInstanceCountsByClassifierPathDeltas(Appendable appendable, String formatString, SetIterable<String> classifierPaths, ToIntFunction<String> countFn1, ToIntFunction<String> countFn2)
     {
-        try (Formatter formatter = new Formatter(appendable))
+        try (Formatter formatter = new Formatter(appendable, Locale.ROOT))
         {
             classifierPaths.toSortedList().forEach(classifier ->
             {
