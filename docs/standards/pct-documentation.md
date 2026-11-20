@@ -177,7 +177,7 @@ Files carrying position assertions, as of writing:
 | `essential/io/print.pure` | `TestSourceNavigation` (`getLine()`) |
 | `essential/meta/source/sourceInformation.pure` | itself — positions of elements **below** the declaration |
 | `essential/collection/index/at.pure` | itself, via `assertError` |
-| `essential/date/creation/date.pure`, `date/extract/{dayOfMonth,hour,minute,second}.pure` | themselves |
+| `essential/date/creation/date.pure`, `date/extract/{dayOfMonth,hour,minute,monthNumber,second}.pure` | themselves |
 | `essential/tests/{assert,assertEquals,assertError,assertFalse,assertNotEquals,assertSameElements}.pure` | themselves |
 
 Update the numbers in the same commit. Do not compute the offset by hand — make the edit, then re-read

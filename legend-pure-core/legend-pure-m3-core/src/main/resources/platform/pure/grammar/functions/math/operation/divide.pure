@@ -23,6 +23,8 @@ the type of its operands — the result is always a `Float`, even when both oper
 precision. When an exact result matters, use `divide(Decimal[1], Decimal[1], Integer[1]):Decimal[1]`,
 which takes a scale and returns a `Decimal`.
 
+Dividing by zero (`0`, `0.0`, or `0.0d`) fails with an error such as `Cannot divide 0 by zero`.
+
 **Parameters**
 - `left` — the dividend.
 - `right` — the divisor.
@@ -35,6 +37,7 @@ which takes a scale and returns a `Decimal`.
 3 / 2         // 1.5
 4 / -2        // -2.0
 1 / 96        // 0.010416666666666666
+1 / 0         // fails: Cannot divide 0 by zero
 ```
 
 **See also** `divide(Decimal[1], Decimal[1], Integer[1]):Decimal[1]`,
@@ -54,7 +57,8 @@ Divides one decimal by another, rounding the result to a given number of decimal
 
 The `scale` is what makes this the right choice for exact arithmetic: decimal division can produce a
 non-terminating expansion, so a scale must be chosen somewhere. Fixing it here keeps the result an exact
-`Decimal` rather than falling back to floating point.
+`Decimal` rather than falling back to floating point. Dividing by zero (`0.0d`) fails with an error such
+as `Cannot divide 0.0 by zero`.
 
 **Parameters**
 - `left` — the dividend.
@@ -108,4 +112,15 @@ function <<PCT.test>> meta::pure::functions::math::tests::divide::testDecimalDiv
     assertEq(-0.5, $f->eval(|-4.0d/8/1.0));
     assertEq(1.0, $f->eval(|16d/8/2.0));
     assertEq(-31.42d, $f->eval(|-3.1415d->divide(0.1d, 2)));
+}
+
+function <<PCT.test>> meta::pure::functions::math::tests::divide::testDivideByZeroError<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertError(| $f->eval(|1 / 0), 'Cannot divide 0 by zero');
+    assertError(| $f->eval(|divide(1, 0)), 'Cannot divide 0 by zero');
+    assertError(| $f->eval(|4 / 2 / 0), 'Cannot divide 0 by zero');
+    assertError(| $f->eval(|1.0 / 0.0), 'Cannot divide 0.0 by zero');
+    assertError(| $f->eval(|1.0d / 0.0d), 'Cannot divide 0.0 by zero');
+    assertError(| $f->eval(|1.0d->divide(0.0d, 2)), 'Cannot divide 0.0 by zero');
+    assertError(| $f->eval(|1.0d->divide(0.00d, 2)), 'Cannot divide 0.00 by zero');
 }

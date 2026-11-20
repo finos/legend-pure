@@ -14,13 +14,16 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.operation;
 
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
+
+import java.math.BigDecimal;
 
 public class DivideDecimal extends AbstractNativeFunctionGeneric
 {
     public DivideDecimal()
     {
-        super(getMethod(CompiledSupport.class, "divideDecimal"),"divide_Decimal_1__Decimal_1__Integer_1__Decimal_1_");
+        super(getMethod(CompiledSupport.class, "divideDecimal", BigDecimal.class, BigDecimal.class, long.class, SourceInformation.class), true, false, false, "divide_Decimal_1__Decimal_1__Integer_1__Decimal_1_");
     }
 }
