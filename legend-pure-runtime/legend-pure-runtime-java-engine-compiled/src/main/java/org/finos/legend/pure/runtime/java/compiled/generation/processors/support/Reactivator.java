@@ -246,6 +246,8 @@ public class Reactivator
                 MutableMap<String, Object> openVariables = Maps.mutable.empty();
                 lambdaOpenVariablesMap.getMap().forEachKeyValue((key, values) -> openVariables.put((String) key, ((List<?>) values)._values()));
                 Pure.getOpenVariables(lambdaFunction, bridge).getMap().forEachKeyValue((key, values) -> openVariables.put((String) key, ((List<?>) values)._values()));
+                // Capture only the declared open variables, as generated __vars and interpreted closures do
+                openVariables.keySet().retainAll(Sets.mutable.withAll(lambdaFunction._openVariables()));
                 results.add(bridge.buildLambda(lambdaFunction, DynamicPureFunctionImpl.createPureFunction(lambdaFunction, openVariables, bridge)));
             }
             else if (value instanceof Iterable)

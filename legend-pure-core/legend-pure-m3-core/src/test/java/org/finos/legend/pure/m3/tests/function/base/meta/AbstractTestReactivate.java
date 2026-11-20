@@ -186,4 +186,55 @@ public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCom
                         "}\n");
         Assert.assertEquals(runtime.getCoreInstance("test::pkg1"), ((InstanceValue) execute("test::pkg1::test():Any[1]"))._values().getOnly());
     }
+
+    private static final String SCOPE_WITH_UNREFERENCED_VARIABLES =
+            "   let scope = newMap([pair('used', list(1)->cast(@List<Any>)), pair('unused', list('scope value')->cast(@List<Any>)), pair('x', list(99)->cast(@List<Any>))]);\n";
+
+    @Test
+    public void testReactivatedLambdaReportsOnlyReferencedOpenVariables()
+    {
+        compileTestSource("testSource.pure",
+                "function go():Any[*]\n" +
+                        "{\n" +
+                        "   let used = 1;\n" +
+                        "   let t = {|{x:Integer[1] | $x + $used}};\n" +
+                        SCOPE_WITH_UNREFERENCED_VARIABLES +
+                        "   let l = $t.expressionSequence->at(0)->reactivate($scope)->cast(@Function<{Integer[1]->Integer[1]}>)->toOne();\n" +
+                        "   let keys = $l->openVariableValues()->keys();\n" +
+                        "   assert(($keys->size() == 1) && $keys->contains('used'), |'unexpected open variable keys');\n" +
+                        "   assert(3 == $l->eval(2), |'eval');\n" +
+                        "}\n");
+        execute("go():Any[*]");
+    }
+
+    @Test
+    public void testReactivatedClosedLambdaReportsNoOpenVariables()
+    {
+        compileTestSource("testSource.pure",
+                "function go():Any[*]\n" +
+                        "{\n" +
+                        "   let t = {|{x:Integer[1] | $x + 1}};\n" +
+                        SCOPE_WITH_UNREFERENCED_VARIABLES +
+                        "   let l = $t.expressionSequence->at(0)->reactivate($scope)->cast(@Function<{Integer[1]->Integer[1]}>)->toOne();\n" +
+                        "   assert($l->openVariableValues()->keys()->isEmpty(), |'unexpected open variable keys');\n" +
+                        "   assert(3 == $l->eval(2), |'eval');\n" +
+                        "}\n");
+        execute("go():Any[*]");
+    }
+
+    @Test
+    public void testLambdaInNewKeyExpressionReportsOnlyReferencedOpenVariables()
+    {
+        compileTestSource("testSource.pure",
+                "Class test::Holder { f : Function<{Integer[1]->Integer[1]}>[1]; }\n" +
+                        "function go():Any[*]\n" +
+                        "{\n" +
+                        "   let t = {|^test::Holder(f = {x:Integer[1] | $x + 1})};\n" +
+                        SCOPE_WITH_UNREFERENCED_VARIABLES +
+                        "   let h = $t.expressionSequence->at(0)->reactivate($scope)->cast(@test::Holder)->toOne();\n" +
+                        "   assert($h.f->openVariableValues()->keys()->isEmpty(), |'unexpected open variable keys');\n" +
+                        "   assert(3 == $h.f->eval(2), |'eval');\n" +
+                        "}\n");
+        execute("go():Any[*]");
+    }
 }
