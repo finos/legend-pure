@@ -243,7 +243,7 @@ public class _RelationType
                             RichIterable<? extends Stereotype> mergedStereotypes = Lists.mutable.<Stereotype>withAll(stereotypesA).withAll(stereotypesB).distinct();
                             RichIterable<? extends TaggedValue> taggedValuesA = c.getOne()._taggedValues() == null ? Lists.mutable.empty() : c.getOne()._taggedValues();
                             RichIterable<? extends TaggedValue> taggedValuesB = c.getTwo()._taggedValues() == null ? Lists.mutable.empty() : c.getTwo()._taggedValues();
-                            RichIterable<? extends TaggedValue> mergedTaggedValues = Lists.mutable.<TaggedValue>withAll(taggedValuesA).withAll(taggedValuesB).distinctBy(TaggedValue::_tagCoreInstance);
+                            RichIterable<? extends TaggedValue> mergedTaggedValues = Lists.mutable.<TaggedValue>withAll(taggedValuesA).withAll(taggedValuesB).distinctBy(TaggedValue::_tag);
                             return _Column.getColumnInstance(cName, wildcard, merged, mergedMul, mergedStereotypes, mergedTaggedValues, null, processorSupport);
                         }),
                         existingGenericType.getValueForMetaPropertyToOne(M3Properties.rawType).getSourceInformation(),

@@ -14,6 +14,12 @@
 
 package org.finos.legend.pure.m3.tests.elements.relation;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
@@ -101,6 +107,34 @@ public class TestRelationType extends AbstractPureTestWithCoreCompiled
         FunctionType fType1 = (FunctionType) Function.computeFunctionType(runtime.getFunction("func1__Relation_$0_1$_"), runtime.getProcessorSupport());
         FunctionType fType2 = (FunctionType) Function.computeFunctionType(runtime.getFunction("func2__Relation_$0_1$_"), runtime.getProcessorSupport());
         Assert.assertEquals("(num:Number[1], other:Varchar(222))", GenericType.print(_RelationType.merge(fType1._returnType()._typeArguments().getFirst(), fType2._returnType()._typeArguments().getFirst(), true, runtime.getProcessorSupport()), processorSupport));
+    }
+
+    @Test
+    public void testMergeWithAnnotatedColumns()
+    {
+        compileTestSource("fromString.pure",
+                "Profile test::doc\n" +
+                        "{\n" +
+                        "  stereotypes: [s1, s2];\n" +
+                        "  tags: [t1, t2, t3];\n" +
+                        "}\n" +
+                        "function func1():Any[1]\n" +
+                        "{\n" +
+                        "   ~<<test::doc.s1>> {test::doc.t1 = 'one', test::doc.t2 = 'two'} b:Integer[1];\n" +
+                        "}\n" +
+                        "function func2():Any[1]\n" +
+                        "{\n" +
+                        "   ~<<test::doc.s1, test::doc.s2>> {test::doc.t2 = 'other', test::doc.t3 = 'three'} b:Integer[1];\n" +
+                        "}");
+        // the ColSpec's type argument is a relation type whose single column carries the annotations
+        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType relationType1 = ((ConcreteFunctionDefinition<?>) runtime.getFunction("func1__Any_1_"))._expressionSequence().getLast()._genericType()._typeArguments().getFirst();
+        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType relationType2 = ((ConcreteFunctionDefinition<?>) runtime.getFunction("func2__Any_1_"))._expressionSequence().getLast()._genericType()._typeArguments().getFirst();
+        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType merged = _RelationType.merge(relationType1, relationType2, true, runtime.getProcessorSupport());
+        Column<?, ?> column = ((RelationType<?>) merged._rawType())._columns().getOnly();
+        // stereotypes are de-duplicated by identity, tagged values by tag (the first occurrence wins)
+        Assert.assertEquals(Lists.mutable.with("s1", "s2"), column._stereotypes().collect(Stereotype::_value).toList());
+        Assert.assertEquals(Lists.mutable.with("t1", "t2", "t3"), column._taggedValues().collect(tv -> tv._tag()._value()).toList());
+        Assert.assertEquals(Lists.mutable.with("one", "two", "three"), column._taggedValues().collect(TaggedValue::_value).toList());
     }
 
     @Test
