@@ -33,6 +33,10 @@ on:
       releaseVersion:
         description: "New release version"
         required: true
+      fullStackVersion:
+        description: "Full stack release: MAJOR.MINOR of the full stack version (e.g. 5.3). Creates branch legend-release-<version> once the release completes. Leave empty for a regular release."
+        required: false
+        default: ""
       dryRun:
         description: "Rehearse the release without pushing or publishing anything"
         type: boolean
@@ -109,6 +113,7 @@ jobs:
           # workflow input is attacker-controlled as far as the shell cares.
           RELEASE_VERSION: ${{ inputs.releaseVersion }}
           DRY_RUN: ${{ inputs.dryRun }}
+          FULL_STACK_VERSION: ${{ inputs.fullStackVersion }}
         run: |
           set -euo pipefail
           if ! printf '%s' "${RELEASE_VERSION}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
@@ -134,6 +139,16 @@ jobs:
           fi
           IFS=. read -r major minor patch <<< "${RELEASE_VERSION}"
           development="${major}.${minor}.$((patch + 1))-SNAPSHOT"
+          if [ -n "${FULL_STACK_VERSION}" ]; then
+            if ! printf '%s' "${FULL_STACK_VERSION}" | grep -Eq '^[0-9]+\.[0-9]+$'; then
+              echo "::error::fullStackVersion must be MAJOR.MINOR; got '${FULL_STACK_VERSION}'."
+              exit 1
+            fi
+            if git ls-remote --exit-code --heads origin "refs/heads/legend-release-${FULL_STACK_VERSION}" > /dev/null 2>&1; then
+              echo "::error::Branch legend-release-${FULL_STACK_VERSION} already exists; full stack version ${FULL_STACK_VERSION} already has a release branch."
+              exit 1
+            fi
+          fi
           # The tag is pushed onto the tested commit itself; nothing is committed first.
           tag="legend-pure-${RELEASE_VERSION}"
           if git ls-remote --exit-code origin "refs/tags/${tag}" > /dev/null 2>&1; then
@@ -367,6 +382,21 @@ jobs:
             echo "::error::Remote tag ${RELEASE_TAG} is ${pushed}, not ${RELEASE_SHA}."
             exit 1
           fi
+
+      - name: Create full stack release branch
+        if: ${{ !inputs.dryRun && inputs.fullStackVersion != '' }}
+        env:
+          BRANCH_NAME: legend-release-${{ inputs.fullStackVersion }}
+          GH_TOKEN: ${{ secrets.FINOS_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git push origin "${RELEASE_SHA}:refs/heads/${BRANCH_NAME}"
+          gh label create "backport ${BRANCH_NAME}" \
+            --repo "${{ github.repository }}" \
+            --color "0E8A16" \
+            --description "Apply to a PR to auto-open a backport PR against ${BRANCH_NAME} when merged" \
+            --force \
+            || echo "::warning::Could not create label 'backport ${BRANCH_NAME}' - create it manually"
 
       - name: Bump to the next development version
         if: ${{ !inputs.dryRun }}
