@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.lsp;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -105,8 +106,8 @@ public class LegendPureSessionIntegrationTest
         Files.write(resourcesDir.resolve("overlay_repo.definition.json"),
                 ("{\"name\":\"overlay_repo\","
                         + "\"pattern\":\"(test::overlay)(::.*)?\","
-                        + "\"dependencies\":[\"platform\"]}").getBytes());
-        Files.write(sourceFile, originalContent.getBytes());
+                        + "\"dependencies\":[\"platform\"]}").getBytes(StandardCharsets.UTF_8));
+        Files.write(sourceFile, originalContent.getBytes(StandardCharsets.UTF_8));
 
         RepositoryScanner scanner = new RepositoryScanner();
         scanner.scan(Collections.singletonList(workspaceRoot));
@@ -120,7 +121,7 @@ public class LegendPureSessionIntegrationTest
 
         Assert.assertFalse("Invalid workspace edit should produce diagnostics", result.isSuccess());
         Assert.assertFalse("Pure compile errors should not be internal recovery errors", result.isInternalError());
-        Assert.assertEquals("Invalid edit must not overwrite disk", originalContent, new String(Files.readAllBytes(sourceFile)));
+        Assert.assertEquals("Invalid edit must not overwrite disk", originalContent, new String(Files.readAllBytes(sourceFile), StandardCharsets.UTF_8));
         Assert.assertEquals("Runtime should keep last good source content after failed compile",
                 originalContent, workspaceSession.getPureRuntime().getSourceById(sourceId).getContent());
     }
@@ -138,8 +139,8 @@ public class LegendPureSessionIntegrationTest
         Files.write(resourcesDir.resolve("overlay_background_repo.definition.json"),
                 ("{\"name\":\"overlay_background_repo\","
                         + "\"pattern\":\"(test::overlay::background)(::.*)?\","
-                        + "\"dependencies\":[\"platform\"]}").getBytes());
-        Files.write(sourceFile, originalContent.getBytes());
+                        + "\"dependencies\":[\"platform\"]}").getBytes(StandardCharsets.UTF_8));
+        Files.write(sourceFile, originalContent.getBytes(StandardCharsets.UTF_8));
 
         RepositoryScanner scanner = new RepositoryScanner();
         scanner.scan(Collections.singletonList(workspaceRoot));
@@ -149,7 +150,7 @@ public class LegendPureSessionIntegrationTest
 
         String sourceId = "/overlay_background_repo/model/BackgroundPerson.pure";
         String invalidDiskContent = "Class test::overlay::background::BackgroundPerson\n{\n  bad: NoSuchType99[1];\n}\n";
-        Files.write(sourceFile, invalidDiskContent.getBytes());
+        Files.write(sourceFile, invalidDiskContent.getBytes(StandardCharsets.UTF_8));
 
         LegendPureSession.CompileResult result = workspaceSession.applyBulkChangesAndCompile(Collections.singletonList(
                 new LegendPureSession.FileChange(
@@ -159,7 +160,7 @@ public class LegendPureSessionIntegrationTest
 
         Assert.assertFalse("Invalid background disk edit should produce diagnostics", result.isSuccess());
         Assert.assertFalse("Pure compile errors should not be internal recovery errors", result.isInternalError());
-        Assert.assertEquals("Invalid background edit must remain on disk", invalidDiskContent, new String(Files.readAllBytes(sourceFile)));
+        Assert.assertEquals("Invalid background edit must remain on disk", invalidDiskContent, new String(Files.readAllBytes(sourceFile), StandardCharsets.UTF_8));
         Assert.assertEquals("Runtime should keep last good source content after failed background compile",
                 originalContent, workspaceSession.getPureRuntime().getSourceById(sourceId).getContent());
     }
@@ -180,7 +181,7 @@ public class LegendPureSessionIntegrationTest
         Files.write(resourcesDir.resolve("never_compiled_repo.definition.json"),
                 ("{\"name\":\"never_compiled_repo\","
                         + "\"pattern\":\"(test::neverbefore)(::.*)?\","
-                        + "\"dependencies\":[\"platform\"]}").getBytes());
+                        + "\"dependencies\":[\"platform\"]}").getBytes(StandardCharsets.UTF_8));
         // Deliberately no BrandNew.pure written to disk yet - the whole point is that this source has
         // never existed anywhere (not on disk, not in the runtime) until the modifyAndCompile call below
         // introduces it live, matching a freshly-created file pushed via textDocument/didChange before

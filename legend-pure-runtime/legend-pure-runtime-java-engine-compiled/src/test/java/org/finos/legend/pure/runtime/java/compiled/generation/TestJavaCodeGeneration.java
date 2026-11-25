@@ -318,7 +318,7 @@ public class TestJavaCodeGeneration
         Assert.assertTrue(
                 "Package_Impl.java should always be generated for platform repository",
                 packageImpl.exists());
-        String packageImplSrc = new String(Files.readAllBytes(packageImpl.toPath()));
+        String packageImplSrc = new String(Files.readAllBytes(packageImpl.toPath()), StandardCharsets.UTF_8);
         Assert.assertTrue(
                 "Package_Impl.java should declare the correct package",
                 packageImplSrc.contains("package org.finos.legend.pure.generated"));
@@ -362,7 +362,7 @@ public class TestJavaCodeGeneration
         Assert.assertTrue(
                 "PureCompiledLambda.java should always be generated in test-sources for platform",
                 lambdaFile.exists());
-        String lambdaSrc = new String(Files.readAllBytes(lambdaFile.toPath()));
+        String lambdaSrc = new String(Files.readAllBytes(lambdaFile.toPath()), StandardCharsets.UTF_8);
         Assert.assertTrue(
                 "PureCompiledLambda.java should declare the correct package",
                 lambdaSrc.contains("package org.finos.legend.pure.generated"));

@@ -34,7 +34,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -93,14 +93,14 @@ public class PureRepositoryJarMetadata
             throw new RuntimeException("Invalid Pure jar: expected " + PureRepositoryJarTools.DEFINITION_INDEX_NAME + ", found " + entry.getName());
         }
 
-        ImmutableMap<String, String> index = readDefinitionIndex(new BufferedReader(new InputStreamReader(jarStream)));
+        ImmutableMap<String, String> index = readDefinitionIndex(new BufferedReader(new InputStreamReader(jarStream, StandardCharsets.UTF_8)));
         jarStream.closeEntry();
         return index;
     }
 
     private static ImmutableMap<String, String> readDefinitionIndexFromFile(Path file) throws IOException
     {
-        try (BufferedReader reader = Files.newBufferedReader(file, Charset.defaultCharset()))
+        try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8))
         {
             return readDefinitionIndex(reader);
         }
@@ -114,14 +114,14 @@ public class PureRepositoryJarMetadata
             throw new RuntimeException("Invalid Pure jar: expected " + PureRepositoryJarTools.REFERENCE_INDEX_NAME + ", found " + entry.getName());
         }
 
-        ImmutableMap<String, ImmutableSet<String>> index = readExternalReferenceIndex(new BufferedReader(new InputStreamReader(jarStream)));
+        ImmutableMap<String, ImmutableSet<String>> index = readExternalReferenceIndex(new BufferedReader(new InputStreamReader(jarStream, StandardCharsets.UTF_8)));
         jarStream.closeEntry();
         return index;
     }
 
     private static ImmutableMap<String, ImmutableSet<String>> readExternalReferenceIndexFromFile(Path file) throws IOException
     {
-        try (BufferedReader reader = Files.newBufferedReader(file, Charset.defaultCharset()))
+        try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8))
         {
             return readExternalReferenceIndex(reader);
         }

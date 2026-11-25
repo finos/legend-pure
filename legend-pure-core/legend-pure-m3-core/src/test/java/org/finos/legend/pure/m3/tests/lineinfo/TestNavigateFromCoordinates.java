@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class TestNavigateFromCoordinates extends AbstractPureTestWithCoreCompiledPlatform
@@ -46,7 +47,7 @@ public class TestNavigateFromCoordinates extends AbstractPureTestWithCoreCompile
     @Test
     public void testNavigation1() throws Exception
     {
-        runtime.createInMemorySource("sourceId.pure", new Scanner(TestNavigateFromCoordinates.class.getResourceAsStream("/org/finos/legend/pure/m3/tests/lineinfo/file1.pure")).useDelimiter("\\Z").next());
+        runtime.createInMemorySource("sourceId.pure", new Scanner(TestNavigateFromCoordinates.class.getResourceAsStream("/org/finos/legend/pure/m3/tests/lineinfo/file1.pure"), StandardCharsets.UTF_8.name()).useDelimiter("\\Z").next());
         runtime.compile();
         Assert.assertEquals(this.fromPackage("A"), this.get(28, 6));
         Assert.assertEquals(this.fromPackage("B"), this.get(30, 16));
@@ -60,7 +61,7 @@ public class TestNavigateFromCoordinates extends AbstractPureTestWithCoreCompile
     @Test
     public void testNavigation2() throws Exception
     {
-        runtime.createInMemorySource("sourceId.pure", new Scanner(TestNavigateFromCoordinates.class.getResourceAsStream("/org/finos/legend/pure/m3/tests/lineinfo/file2.pure")).useDelimiter("\\Z").next());
+        runtime.createInMemorySource("sourceId.pure", new Scanner(TestNavigateFromCoordinates.class.getResourceAsStream("/org/finos/legend/pure/m3/tests/lineinfo/file2.pure"), StandardCharsets.UTF_8.name()).useDelimiter("\\Z").next());
         runtime.compile();
         Assert.assertEquals("deprecated", this.get(17, 10).getName());
         Assert.assertEquals("deprecated", this.get(17, 20).getName());

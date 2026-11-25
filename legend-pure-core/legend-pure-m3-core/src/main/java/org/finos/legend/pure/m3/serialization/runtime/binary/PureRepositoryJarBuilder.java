@@ -30,6 +30,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
@@ -123,7 +124,7 @@ class PureRepositoryJarBuilder implements Closeable
         JarEntry entry = new JarEntry(PureRepositoryJarTools.DEFINITION_INDEX_NAME);
         entry.setTime(FIXED_ENTRY_TIME);
         this.jarStream.putNextEntry(entry);
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.jarStream), 256);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.jarStream, StandardCharsets.UTF_8), 256);
         writer.append("{\n");
         boolean first = true;
         for (String instancePath : instanceDefinitionIndex.keysView().toSortedList())
@@ -152,7 +153,7 @@ class PureRepositoryJarBuilder implements Closeable
         JarEntry entry = new JarEntry(PureRepositoryJarTools.REFERENCE_INDEX_NAME);
         entry.setTime(FIXED_ENTRY_TIME);
         this.jarStream.putNextEntry(entry);
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.jarStream));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.jarStream, StandardCharsets.UTF_8));
         writer.append("{\n");
         boolean first = true;
         for (String binPath : paths)

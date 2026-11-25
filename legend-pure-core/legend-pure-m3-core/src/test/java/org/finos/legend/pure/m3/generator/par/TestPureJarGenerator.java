@@ -27,6 +27,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
@@ -319,7 +320,7 @@ public class TestPureJarGenerator
             if (writtenVersion == null)
             {
                 // Some versions use a different attribute name; fall back to any attribute check
-                String manifestContent = new String(readAllBytes(zip.getInputStream(manifestEntry)));
+                String manifestContent = new String(readAllBytes(zip.getInputStream(manifestEntry)), StandardCharsets.UTF_8);
                 Assert.assertTrue(
                         "MANIFEST.MF should contain the platform version '" + expectedVersion + "'",
                         manifestContent.contains(expectedVersion));
@@ -389,7 +390,7 @@ public class TestPureJarGenerator
         {
             ZipEntry manifestEntry = zip.getEntry("META-INF/MANIFEST.MF");
             Assert.assertNotNull("MANIFEST.MF must be present", manifestEntry);
-            String manifestContent = new String(readAllBytes(zip.getInputStream(manifestEntry)));
+            String manifestContent = new String(readAllBytes(zip.getInputStream(manifestEntry)), StandardCharsets.UTF_8);
             // Both the platform version and model version should appear somewhere in the manifest
             Assert.assertTrue(
                     "MANIFEST.MF should reference the platform version",
